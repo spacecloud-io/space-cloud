@@ -89,6 +89,11 @@ func (s *server) handleRead() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
+		// Create empty read options if it does not exist
+		if req.Options == nil {
+			req.Options = new(model.ReadOptions)
+		}
+
 		// Create an args object
 		args := map[string]interface{}{
 			"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
