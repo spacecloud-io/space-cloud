@@ -82,7 +82,7 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 	case utils.One:
 		findOneOptions := options.FindOne()
 
-		if req.Options.Select == nil {
+		if req.Options.Select != nil {
 			findOneOptions.SetProjection(req.Options.Select)
 		}
 
