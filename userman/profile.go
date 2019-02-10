@@ -115,7 +115,7 @@ func (m *Module) handleProfiles() http.HandlerFunc {
 		}
 
 		req := &model.ReadRequest{Find: find, Operation: utils.All}
-		user, err := m.crud.Read(ctx, dbType, project, "users", req)
+		users, err := m.crud.Read(ctx, dbType, project, "users", req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
@@ -123,6 +123,6 @@ func (m *Module) handleProfiles() http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"users": user})
+		json.NewEncoder(w).Encode(map[string]interface{}{"users": users})
 	}
 }
