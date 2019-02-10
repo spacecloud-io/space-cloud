@@ -16,7 +16,7 @@ func (s *SQL) Update(ctx context.Context, project, col string, req *model.Update
 	query := goqu.From(col).Prepared(true)
 	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
 
-	if req.Find == nil {
+	if req.Find != nil {
 
 		// Get the where clause from query object
 		var err error
