@@ -239,3 +239,54 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 
 	return &requestMetaData{project: project, dbType: dbType, col: col, token: tokens[0]}
 }
+
+func (s *server) handleAggregate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// Get the path parameters
+		meta := getRequestMetaData(r)
+
+		// Check if the user is authicated
+		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+			return
+		}
+
+		// Load the request from the body
+		req := model.AggregateRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
+
+		// Create an args object
+		args := map[string]interface{}{
+			"args":    map[string]interface{}{"find": req.Pipeline, "op": req.Operation, "auth": authObj},
+			"project": meta.project, // Don't forget to do this for every request
+		}
+
+		// Check if user is authorized to make this request
+		err = s.auth.IsAuthorized(meta.dbType, meta.col, args)
+		if err != nil {
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+			return
+		}
+
+		// Perform the read operation
+		result, err := s.crud.Aggregate(ctx, meta.dbType, meta.project, meta.col, &req)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Give positive acknowledgement
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+	}
+}

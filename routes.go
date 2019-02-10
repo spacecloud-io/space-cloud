@@ -8,4 +8,5 @@ func (s *server) routes() {
 	crudRouter.HandleFunc("/read", s.handleRead())
 	crudRouter.HandleFunc("/update", s.handleUpdate())
 	crudRouter.HandleFunc("/delete", s.handleDelete())
+	crudRouter.HandleFunc("/aggr", s.handleAggregate())
 }
