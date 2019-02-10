@@ -55,6 +55,22 @@ func (m *Module) GetRule(dbType, col string) (*Rule, error) {
 	return nil, ErrRuleNotFound
 }
 
+// CreateToken generates a new JWT Token
+func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
+	claims := jwt.MapClaims{}
+	for k, v := range obj {
+		claims[k] = v
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(m.secret))
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
 // IsAuthenticated checks if the caller is authentic
 func (m *Module) IsAuthenticated(token, dbType, col string) (map[string]interface{}, error) {
 	rule, err := m.GetRule(dbType, col)
