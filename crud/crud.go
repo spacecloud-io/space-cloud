@@ -9,7 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// Module is the root block providing convinient wrappers
+// Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
 	blocks map[string]Crud
