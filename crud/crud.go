@@ -21,6 +21,7 @@ type Crud interface {
 	Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error)
 	Update(ctx context.Context, project, col string, req *model.UpdateRequest) error
 	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
+	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	GetDBType() utils.DBType
 }
 

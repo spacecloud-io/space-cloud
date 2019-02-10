@@ -34,3 +34,9 @@ type DeleteRequest struct {
 	Find      map[string]interface{} `json:"find"`
 	Operation string                 `json:"op"`
 }
+
+// AggregateRequest is the http body received for an aggregate request
+type AggregateRequest struct {
+	Pipeline  interface{} `json:"pipe"`
+	Operation string      `json:"op"`
+}

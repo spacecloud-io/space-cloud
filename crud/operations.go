@@ -57,3 +57,16 @@ func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *m
 
 	return crud.Delete(ctx, project, col, req)
 }
+
+// Aggregate performs an aggregation defined via the pipeline
+func (m *Module) Aggregate(ctx context.Context, dbType, project, col string, req *model.AggregateRequest) (interface{}, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return nil, err
+	}
+
+	return crud.Aggregate(ctx, project, col, req)
+}
