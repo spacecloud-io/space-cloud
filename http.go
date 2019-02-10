@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type requestMetaData struct {
@@ -26,7 +27,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authicated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col)
+		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Create)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -45,7 +46,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, args)
+		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Create, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -77,7 +78,7 @@ func (s *server) handleRead() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authicated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col)
+		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Read)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -101,7 +102,7 @@ func (s *server) handleRead() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, args)
+		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Read, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -133,7 +134,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authicated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col)
+		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Update)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -152,7 +153,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, args)
+		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Update, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -184,7 +185,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authicated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col)
+		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Delete)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -203,7 +204,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, args)
+		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Delete, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -224,22 +225,6 @@ func (s *server) handleDelete() http.HandlerFunc {
 	}
 }
 
-func getRequestMetaData(r *http.Request) *requestMetaData {
-	// Get the path parameters
-	vars := mux.Vars(r)
-	project := vars["project"]
-	dbType := vars["dbType"]
-	col := vars["col"]
-
-	// Get the JWT token from header
-	tokens, ok := r.Header["Authorization"]
-	if !ok {
-		tokens = []string{""}
-	}
-
-	return &requestMetaData{project: project, dbType: dbType, col: col, token: tokens[0]}
-}
-
 func (s *server) handleAggregate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -251,7 +236,7 @@ func (s *server) handleAggregate() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authicated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col)
+		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Aggregation)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -270,7 +255,7 @@ func (s *server) handleAggregate() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, args)
+		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Aggregation, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -289,4 +274,20 @@ func (s *server) handleAggregate() http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
+}
+
+func getRequestMetaData(r *http.Request) *requestMetaData {
+	// Get the path parameters
+	vars := mux.Vars(r)
+	project := vars["project"]
+	dbType := vars["dbType"]
+	col := vars["col"]
+
+	// Get the JWT token from header
+	tokens, ok := r.Header["Authorization"]
+	if !ok {
+		tokens = []string{""}
+	}
+
+	return &requestMetaData{project: project, dbType: dbType, col: col, token: tokens[0]}
 }

@@ -30,3 +30,23 @@ const (
 	// Postgres is the type used for PostgresQL
 	Postgres DBType = "sql-postgres"
 )
+
+// OperationType is the type of operation being performed on the database
+type OperationType string
+
+const (
+	// Create is the type used for insert operations
+	Create OperationType = "insert"
+
+	// Read is the type used for query operation
+	Read OperationType = "query"
+
+	// Update is the type used ofr update operations
+	Update OperationType = "update"
+
+	// Delete is the type used for delete operations
+	Delete OperationType = "delete"
+
+	// Aggregation is the type used for aggregations
+	Aggregation OperationType = "aggr"
+)

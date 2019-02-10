@@ -1,6 +1,10 @@
 package main
 
+import "github.com/spaceuptech/space-cloud/config"
+
 func (s *server) routes() {
+	// Initialize the routes for config management
+	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.env, s.loadConfig))
 
 	// Initialize the routes for the crud operations
 	crudRouter := s.router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()

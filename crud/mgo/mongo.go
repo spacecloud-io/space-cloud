@@ -35,6 +35,11 @@ func Init(connection string) (*Mongo, error) {
 	return &Mongo{client, timeOut}, nil
 }
 
+// Close gracefully the Mongo client
+func (m *Mongo) Close() error {
+	return m.client.Disconnect(context.TODO())
+}
+
 // GetDBType returns the dbType of the crud block
 func (m *Mongo) GetDBType() utils.DBType {
 	return utils.Mongo

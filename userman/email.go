@@ -17,6 +17,7 @@ import (
 func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Allow this feature only if the email sign in function is enabled
 		if !m.isActive("email") {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
@@ -71,6 +72,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Allow this feature only if the email sign in function is enabled
 		if !m.isActive("email") {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
