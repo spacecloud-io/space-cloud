@@ -21,7 +21,7 @@ func Init(crud *crud.Module, auth *auth.Module) *Module {
 	return &Module{crud: crud, auth: auth}
 }
 
-// SetConfig set the rules adn secret key required by the user management module
+// SetConfig set the config required by the user management module
 func (m *Module) SetConfig(auth config.Auth) {
 	m.Lock()
 	defer m.Unlock()

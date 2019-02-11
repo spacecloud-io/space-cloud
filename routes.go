@@ -6,6 +6,9 @@ func (s *server) routes() {
 	// Initialize the routes for config management
 	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.env, s.loadConfig))
 
+	// Initialize the routes for faas engine
+	s.router.Methods("POST").Path("/v1/api/faas/{engine}/{func}").HandlerFunc(s.faas.HandleRequest(s.auth))
+
 	// Initialize the routes for the crud operations
 	crudRouter := s.router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
 	crudRouter.HandleFunc("/create", s.handleCreate())
@@ -25,4 +28,5 @@ func (s *server) routes() {
 	userRouter.Methods("POST").PathPrefix("/v1/api/{project}/files/create").HandlerFunc(s.file.HandleCreateFile(s.auth))
 	userRouter.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleRead(s.auth))
 	userRouter.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
+
 }
