@@ -32,7 +32,7 @@ func (m *Module) SetConfig(secret string, rules config.Crud, fileStore *config.F
 
 	m.rules = rules
 	m.secret = secret
-	if fileStore.Enabled {
+	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
 	}
 }

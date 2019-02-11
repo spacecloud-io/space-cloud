@@ -21,7 +21,7 @@ const (
 	contentTypeMultiPartForm   = "multipart/form-data"
 )
 
-// HandleCreateFile creates the create file or diorectory endpoint
+// HandleCreateFile creates the create file or directory endpoint
 func (m *Module) HandleCreateFile(auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
