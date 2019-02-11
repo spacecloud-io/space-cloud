@@ -19,10 +19,11 @@ type Env struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud     Crud      `json:"crud"`
-	Auth     Auth      `json:"auth"`
-	FaaS     *FaaS     `json:"faas"`
-	Realtime *Realtime `json:"realtime"`
+	Crud      Crud       `json:"crud"`
+	Auth      Auth       `json:"auth"`
+	FaaS      *FaaS      `json:"faas"`
+	Realtime  *Realtime  `json:"realtime"`
+	FileStore *FileStore `json:"fileStore"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -32,13 +33,13 @@ type Crud map[string]*CrudStub // The key here is the database type
 type CrudStub struct {
 	Connection  string                `json:"conn"`
 	Collections map[string]*TableRule `json:"collections"` // The key here is table name
-	IsPrimary   string                `json:"isPrimary"`
+	IsPrimary   bool                  `json:"isPrimary"`
 }
 
 // TableRule containes the config at the collection level
 type TableRule struct {
 	IsRealTimeEnabled bool             `json:"isRealtimeEnabled"`
-	Rules          map[string]*Rule `json:"rules"` // The key here is query, insert, update or delete
+	Rules             map[string]*Rule `json:"rules"` // The key here is query, insert, update or delete
 }
 
 // Rule is the authorisation object at the query level
@@ -74,4 +75,17 @@ type FaaS struct {
 type Realtime struct {
 	Enabled bool   `json:"enabled"`
 	Kafka   string `json:"kafka"`
+}
+
+// FileStore holds the config for the file store module
+type FileStore struct {
+	StoreType  string      `json:"storeType"`
+	Connection string      `json:"conn"`
+	Rules      []*FileRule `json:"rules"`
+}
+
+// FileRule is the authorization object at the file rule level
+type FileRule struct {
+	Prefix string           `json:"prefix"`
+	Rule   map[string]*Rule `json:"rule"` // The key can be create, read, delete
 }
