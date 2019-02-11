@@ -37,7 +37,7 @@ type CrudStub struct {
 
 // TableRule containes the config at the collection level
 type TableRule struct {
-	EnableRealtime bool             `json:"enableRealtime"`
+	IsRealTimeEnabled bool             `json:"isRealtimeEnabled"`
 	Rules          map[string]*Rule `json:"rules"` // The key here is query, insert, update or delete
 }
 

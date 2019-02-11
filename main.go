@@ -30,7 +30,7 @@ func main() {
 				cli.StringFlag{
 					Name:  "config",
 					Value: "none",
-					Usage: "Load space-cloud config from `FILE`",
+					Usage: "Load space cloud config from `FILE`",
 				},
 				cli.StringFlag{
 					Name:  "project",
@@ -64,6 +64,7 @@ func actionRun(c *cli.Context) error {
 		return errors.New("Invalid config")
 	}
 
+  // Project and env cannot be changed once space cloud has started
 	s := initServer(project, env)
 
 	if configPath != "none" {

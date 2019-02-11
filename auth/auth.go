@@ -24,7 +24,7 @@ func Init(crud *crud.Module) *Module {
 	return &Module{rules: make(config.Crud), crud: crud}
 }
 
-// SetConfig set the rules adn secret key required by the auth block
+// SetConfig set the rules and secret key required by the auth block
 func (m *Module) SetConfig(secret string, rules config.Crud) {
 	m.Lock()
 	defer m.Unlock()

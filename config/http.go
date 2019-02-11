@@ -17,7 +17,7 @@ func HandleConfig(env string, cb func(*Config) error) http.HandlerFunc {
 
 		// Load the body of the request
 		config := new(Config)
-		err := json.NewDecoder(r.Body).Decode(&config)
+		err := json.NewDecoder(r.Body).Decode(config)
 		defer r.Body.Close()
 
 		// Throw error if request was of incorrect type
