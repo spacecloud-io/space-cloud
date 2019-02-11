@@ -16,6 +16,13 @@ import (
 func (m *Module) HandleProfile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Allow this feature only if the user management is enabled
+		if !m.isEnabled() {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			return
+		}
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -33,7 +40,7 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 		}
 
 		// Check if the user is authicated
-		authObj, err := m.auth.IsAuthenticated(tokens[0], dbType, "users")
+		authObj, err := m.auth.IsAuthenticated(tokens[0], dbType, "users", utils.Read)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -50,7 +57,7 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = m.auth.IsAuthorized(dbType, "users", args)
+		err = m.auth.IsAuthorized(dbType, "users", utils.Read, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -74,6 +81,13 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 func (m *Module) handleProfiles() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Allow this feature only if the user management is enabled
+		if !m.isEnabled() {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			return
+		}
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -90,7 +104,7 @@ func (m *Module) handleProfiles() http.HandlerFunc {
 		}
 
 		// Check if the user is authicated
-		authObj, err := m.auth.IsAuthenticated(tokens[0], dbType, "users")
+		authObj, err := m.auth.IsAuthenticated(tokens[0], dbType, "users", utils.Read)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -107,7 +121,7 @@ func (m *Module) handleProfiles() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = m.auth.IsAuthorized(dbType, "users", args)
+		err = m.auth.IsAuthorized(dbType, "users", utils.Read, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})

@@ -6,33 +6,31 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 
+	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/crud"
+	"github.com/spaceuptech/space-cloud/utils"
 )
-
-// Rule is the authorisation object received from space cloud
-type Rule struct {
-	Rule      string                 `json:"rule"`
-	Eval      string                 `json:"eval"`
-	FieldType string                 `json:"type"`
-	F1        interface{}            `json:"f1"`
-	F2        interface{}            `json:"f2"`
-	Clauses   []*Rule                `json:"clauses"`
-	DbType    string                 `json:"db"`
-	Col       string                 `json:"col"`
-	Find      map[string]interface{} `json:"find"`
-}
 
 // Module is responsible for authentication and authorsation
 type Module struct {
 	sync.RWMutex
-	rules  map[string]map[string]*Rule
+	rules  config.Crud
 	secret string
 	crud   *crud.Module
 }
 
 // Init creates a new instance of the auth object
 func Init(crud *crud.Module) *Module {
-	return &Module{rules: make(map[string]map[string]*Rule), crud: crud}
+	return &Module{rules: make(config.Crud), crud: crud}
+}
+
+// SetConfig set the rules and secret key required by the auth block
+func (m *Module) SetConfig(secret string, rules config.Crud) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.rules = rules
+	m.secret = secret
 }
 
 // SetSecret sets the secret key to be used for JWT authentication
@@ -42,14 +40,12 @@ func (m *Module) SetSecret(secret string) {
 	m.secret = secret
 }
 
-// GetRule returns the rule associated with the particular database and collection.
-// It returns an ErrRuleNotFound when the rules doesn't exist
-func (m *Module) GetRule(dbType, col string) (*Rule, error) {
-	m.RLock()
-	defer m.RUnlock()
+func (m *Module) getRule(dbType, col string, query utils.OperationType) (*config.Rule, error) {
 	if dbRules, p1 := m.rules[dbType]; p1 {
-		if rule, p2 := dbRules[col]; p2 {
-			return rule, nil
+		if collection, p2 := dbRules.Collections[col]; p2 {
+			if rule, p3 := collection.Rules[string(query)]; p3 {
+				return rule, nil
+			}
 		}
 	}
 	return nil, ErrRuleNotFound
@@ -57,6 +53,9 @@ func (m *Module) GetRule(dbType, col string) (*Rule, error) {
 
 // CreateToken generates a new JWT Token
 func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
+	m.RLock()
+	defer m.RUnlock()
+
 	claims := jwt.MapClaims{}
 	for k, v := range obj {
 		claims[k] = v
@@ -72,8 +71,11 @@ func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
 }
 
 // IsAuthenticated checks if the caller is authentic
-func (m *Module) IsAuthenticated(token, dbType, col string) (map[string]interface{}, error) {
-	rule, err := m.GetRule(dbType, col)
+func (m *Module) IsAuthenticated(token, dbType, col string, query utils.OperationType) (map[string]interface{}, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	rule, err := m.getRule(dbType, col, query)
 	if err != nil {
 		return nil, err
 	}
@@ -109,8 +111,11 @@ func (m *Module) IsAuthenticated(token, dbType, col string) (map[string]interfac
 }
 
 // IsAuthorized checks if the caller is authorized to make the request
-func (m *Module) IsAuthorized(dbType, col string, args map[string]interface{}) error {
-	rule, err := m.GetRule(dbType, col)
+func (m *Module) IsAuthorized(dbType, col string, query utils.OperationType, args map[string]interface{}) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	rule, err := m.getRule(dbType, col, query)
 	if err != nil {
 		return err
 	}
@@ -133,7 +138,6 @@ func (m *Module) IsAuthorized(dbType, col string, args map[string]interface{}) e
 
 	case "query":
 		return matchQuery(rule, m.crud, args)
-		// TODO: case for query
 
 	default:
 		return ErrIncorrectMatch

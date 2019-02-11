@@ -45,6 +45,11 @@ func Init(dbType utils.DBType, connection string) (*SQL, error) {
 	return s, nil
 }
 
+// Close gracefully the SQL client
+func (s *SQL) Close() error {
+	return s.client.Close()
+}
+
 // GetDBType returns the dbType of the crud block
 func (s *SQL) GetDBType() utils.DBType {
 	switch s.dbType {

@@ -3,12 +3,13 @@ package auth
 import (
 	"context"
 
+	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/crud"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func matchQuery(rule *Rule, crud *crud.Module, args map[string]interface{}) error {
+func matchQuery(rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
 	// Adjust the find object to load any variables referenced from state
 	rule.Find = utils.Adjust(rule.Find, args).(map[string]interface{})
 
@@ -20,7 +21,7 @@ func matchQuery(rule *Rule, crud *crud.Module, args map[string]interface{}) erro
 	return err
 }
 
-func matchAnd(rule *Rule, args map[string]interface{}) error {
+func matchAnd(rule *config.Rule, args map[string]interface{}) error {
 	for _, r := range rule.Clauses {
 		err := match(r, args)
 		if err != nil {
@@ -31,7 +32,7 @@ func matchAnd(rule *Rule, args map[string]interface{}) error {
 	return nil
 }
 
-func matchOr(rule *Rule, args map[string]interface{}) error {
+func matchOr(rule *config.Rule, args map[string]interface{}) error {
 	for _, r := range rule.Clauses {
 		err := match(r, args)
 		if err == nil {
@@ -42,7 +43,7 @@ func matchOr(rule *Rule, args map[string]interface{}) error {
 	return ErrIncorrectMatch
 }
 
-func match(rule *Rule, args map[string]interface{}) error {
+func match(rule *config.Rule, args map[string]interface{}) error {
 	switch rule.FieldType {
 	case "string":
 		return matchString(rule, args)

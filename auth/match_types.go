@@ -1,8 +1,11 @@
 package auth
 
-import "github.com/spaceuptech/space-cloud/utils"
+import (
+	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
+)
 
-func matchString(rule *Rule, args map[string]interface{}) error {
+func matchString(rule *config.Rule, args map[string]interface{}) error {
 	f1String, ok := rule.F1.(string)
 	if !ok {
 		return ErrIncorrectRuleFieldType
@@ -29,7 +32,7 @@ func matchString(rule *Rule, args map[string]interface{}) error {
 	return ErrIncorrectMatch
 }
 
-func matchNumber(rule *Rule, args map[string]interface{}) error {
+func matchNumber(rule *config.Rule, args map[string]interface{}) error {
 
 	f1, err := utils.LoadNumber(rule.F1, args)
 	if err != nil {
@@ -76,7 +79,7 @@ func matchNumber(rule *Rule, args map[string]interface{}) error {
 	return ErrIncorrectRuleFieldType
 }
 
-func matchBool(rule *Rule, args map[string]interface{}) error {
+func matchBool(rule *config.Rule, args map[string]interface{}) error {
 
 	f1, err := utils.LoadBool(rule.F1, args)
 	if err != nil {
