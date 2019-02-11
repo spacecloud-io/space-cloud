@@ -8,7 +8,7 @@ type File struct {
 	Close func() error
 }
 
-// CreateFileRequest is the request received to create a new file
+// CreateFileRequest is the request received to create a new file or directory
 type CreateFileRequest struct {
 	Path    string `json:"path"`
 	Name    string `json:"name"`

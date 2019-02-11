@@ -79,6 +79,7 @@ type Realtime struct {
 
 // FileStore holds the config for the file store module
 type FileStore struct {
+	Enabled    bool        `json:"enabled"`
 	StoreType  string      `json:"storeType"`
 	Connection string      `json:"conn"`
 	Rules      []*FileRule `json:"rules"`

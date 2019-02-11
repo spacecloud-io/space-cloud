@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/crud"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
@@ -16,13 +15,13 @@ import (
 // Module is responsible for managing the file storage module
 type Module struct {
 	sync.RWMutex
-	crud  *crud.Module
-	store FileStore
+	store   FileStore
+	enabled bool
 }
 
 // Init creates a new instance of the file store object
-func Init(crud *crud.Module) *Module {
-	return &Module{crud: crud}
+func Init() *Module {
+	return &Module{enabled: false, store: nil}
 }
 
 // FileStore abstracts the implementation file storage operations
@@ -46,9 +45,18 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	defer m.Unlock()
 
 	// Close the previous store connections
-	err := m.store.Close()
-	if err != nil {
-		return err
+	if m.store != nil {
+		err := m.store.Close()
+		if err != nil {
+			return err
+		}
+	}
+
+	// Disable the module if file store is not enabled
+	if !conf.Enabled {
+		m.enabled = false
+		m.store = nil
+		return nil
 	}
 
 	// Create a new crud blocks
@@ -57,7 +65,14 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 		return err
 	}
 	m.store = s
+	m.enabled = true
 	return nil
+}
+
+func (m *Module) isEnabled() bool {
+	m.RLock()
+	defer m.RUnlock()
+	return m.enabled
 }
 
 func initBlock(fileStoreType utils.FileStoreType, connection string) (FileStore, error) {
