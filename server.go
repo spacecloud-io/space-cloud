@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/auth"
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/crud"
+	"github.com/spaceuptech/space-cloud/filestore"
 	"github.com/spaceuptech/space-cloud/userman"
 )
 
@@ -17,6 +18,7 @@ type server struct {
 	auth    *auth.Module
 	crud    *crud.Module
 	user    *userman.Module
+	file    *filestore.Module
 	project string
 	env     string
 }
@@ -26,7 +28,8 @@ func initServer(project, env string) *server {
 	c := crud.Init()
 	a := auth.Init(c)
 	u := userman.Init(c, a)
-	return &server{r, a, c, u, project, env}
+	f := filestore.Init()
+	return &server{r, a, c, u, f, project, env}
 }
 
 func (s *server) start(port string) error {
@@ -45,10 +48,13 @@ func (s *server) loadConfig(config *config.Config) error {
 	}
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(env.Secret, env.Modules.Crud)
+	s.auth.SetConfig(env.Secret, env.Modules.Crud, env.Modules.FileStore)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(env.Modules.Auth)
+
+	// Set the configuration for the file storage module
+	s.file.SetConfig(env.Modules.FileStore)
 
 	// Set the configuration for the curd module
 	return s.crud.SetConfig(env.Modules.Crud)

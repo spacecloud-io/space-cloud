@@ -9,6 +9,31 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
+func (m *Module) matchRule(rule *config.Rule, args map[string]interface{}) error {
+	switch rule.Rule {
+	case "allow", "authenticated":
+		return nil
+
+	case "deny":
+		return ErrIncorrectMatch
+
+	case "match":
+		return match(rule, args)
+
+	case "and":
+		return matchAnd(rule, args)
+
+	case "or":
+		return matchOr(rule, args)
+
+	case "query":
+		return matchQuery(rule, m.crud, args)
+
+	default:
+		return ErrIncorrectMatch
+	}
+}
+
 func matchQuery(rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
 	// Adjust the find object to load any variables referenced from state
 	rule.Find = utils.Adjust(rule.Find, args).(map[string]interface{})

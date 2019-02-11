@@ -14,9 +14,10 @@ import (
 // Module is responsible for authentication and authorsation
 type Module struct {
 	sync.RWMutex
-	rules  config.Crud
-	secret string
-	crud   *crud.Module
+	rules     config.Crud
+	secret    string
+	crud      *crud.Module
+	fileRules []*config.FileRule
 }
 
 // Init creates a new instance of the auth object
@@ -25,12 +26,15 @@ func Init(crud *crud.Module) *Module {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(secret string, rules config.Crud) {
+func (m *Module) SetConfig(secret string, rules config.Crud, fileStore *config.FileStore) {
 	m.Lock()
 	defer m.Unlock()
 
 	m.rules = rules
 	m.secret = secret
+	if fileStore != nil && fileStore.Enabled {
+		m.fileRules = fileStore.Rules
+	}
 }
 
 // SetSecret sets the secret key to be used for JWT authentication
@@ -70,20 +74,7 @@ func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
 	return tokenString, nil
 }
 
-// IsAuthenticated checks if the caller is authentic
-func (m *Module) IsAuthenticated(token, dbType, col string, query utils.OperationType) (map[string]interface{}, error) {
-	m.RLock()
-	defer m.RUnlock()
-
-	rule, err := m.getRule(dbType, col, query)
-	if err != nil {
-		return nil, err
-	}
-
-	if rule.Rule == "allow" {
-		return map[string]interface{}{}, nil
-	}
-
+func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
@@ -110,6 +101,23 @@ func (m *Module) IsAuthenticated(token, dbType, col string, query utils.Operatio
 	return nil, errors.New("AUTH: JWT token could not be verified")
 }
 
+// IsAuthenticated checks if the caller is authentic
+func (m *Module) IsAuthenticated(token, dbType, col string, query utils.OperationType) (map[string]interface{}, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	rule, err := m.getRule(dbType, col, query)
+	if err != nil {
+		return nil, err
+	}
+
+	if rule.Rule == "allow" {
+		return map[string]interface{}{}, nil
+	}
+
+	return m.parseToken(token)
+}
+
 // IsAuthorized checks if the caller is authorized to make the request
 func (m *Module) IsAuthorized(dbType, col string, query utils.OperationType, args map[string]interface{}) error {
 	m.RLock()
@@ -120,26 +128,5 @@ func (m *Module) IsAuthorized(dbType, col string, query utils.OperationType, arg
 		return err
 	}
 
-	switch rule.Rule {
-	case "allow", "authenticated":
-		return nil
-
-	case "deny":
-		return ErrIncorrectMatch
-
-	case "match":
-		return match(rule, args)
-
-	case "and":
-		return matchAnd(rule, args)
-
-	case "or":
-		return matchOr(rule, args)
-
-	case "query":
-		return matchQuery(rule, m.crud, args)
-
-	default:
-		return ErrIncorrectMatch
-	}
+	return m.matchRule(rule, args)
 }

@@ -16,7 +16,8 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	blocks map[string]Crud
+	blocks    map[string]Crud
+	primaryDB string
 }
 
 // Crud abstracts the implementation crud operations of databases
@@ -48,6 +49,19 @@ func initBlock(dbType utils.DBType, connection string) (Crud, error) {
 	}
 }
 
+// GetPrimaryDB get the database configured as primary
+func (m *Module) GetPrimaryDB() (Crud, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	c, p := m.blocks[m.primaryDB]
+	if !p {
+		return nil, errors.New("CRUD: Primary DB not configured")
+	}
+
+	return c, nil
+}
+
 func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 	if crud, p := m.blocks[dbType]; p {
 		return crud, nil
@@ -72,6 +86,9 @@ func (m *Module) SetConfig(crud config.Crud) error {
 		c, err := initBlock(utils.DBType(k), v.Connection)
 		if err != nil {
 			return err
+		}
+		if v.IsPrimary {
+			m.primaryDB = k
 		}
 		m.blocks[k] = c
 	}
