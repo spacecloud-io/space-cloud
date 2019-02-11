@@ -74,6 +74,14 @@ func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
 	return tokenString, nil
 }
 
+// GetAuthObj returns the auth object from a token string
+func (m *Module) GetAuthObj(token string) (map[string]interface{}, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	return m.parseToken(token)
+}
+
 func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
