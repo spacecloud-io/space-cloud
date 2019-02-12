@@ -9,7 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
-	"github.com/spaceuptech/space-cloud/filestore/local"
+	"github.com/spaceuptech/space-cloud/modules/filestore/local"
 )
 
 // Module is responsible for managing the file storage module

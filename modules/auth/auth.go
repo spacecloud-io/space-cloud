@@ -7,8 +7,9 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/crud"
 	"github.com/spaceuptech/space-cloud/utils"
+
+	"github.com/spaceuptech/space-cloud/modules/crud"
 )
 
 // Module is responsible for authentication and authorsation

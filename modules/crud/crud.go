@@ -5,12 +5,12 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/spaceuptech/space-cloud/crud/mgo"
-	"github.com/spaceuptech/space-cloud/crud/sql"
-
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+
+	"github.com/spaceuptech/space-cloud/modules/crud/mgo"
+	"github.com/spaceuptech/space-cloud/modules/crud/sql"
 )
 
 // Module is the root block providing convenient wrappers

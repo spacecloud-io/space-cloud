@@ -3,9 +3,10 @@ package userman
 import (
 	"sync"
 
-	"github.com/spaceuptech/space-cloud/auth"
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/crud"
+
+	"github.com/spaceuptech/space-cloud/modules/auth"
+	"github.com/spaceuptech/space-cloud/modules/crud"
 )
 
 // Module is responsible for user management

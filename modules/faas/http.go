@@ -6,8 +6,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/spaceuptech/space-cloud/auth"
 	"github.com/spaceuptech/space-cloud/model"
+
+	"github.com/spaceuptech/space-cloud/modules/auth"
 )
 
 // HandleRequest creates a FaaS request endpoint

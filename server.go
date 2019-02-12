@@ -6,12 +6,12 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/spaceuptech/space-cloud/auth"
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/crud"
-	"github.com/spaceuptech/space-cloud/faas"
-	"github.com/spaceuptech/space-cloud/filestore"
-	"github.com/spaceuptech/space-cloud/userman"
+	"github.com/spaceuptech/space-cloud/modules/auth"
+	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/faas"
+	"github.com/spaceuptech/space-cloud/modules/filestore"
+	"github.com/spaceuptech/space-cloud/modules/userman"
 )
 
 type server struct {

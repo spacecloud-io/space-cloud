@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/spaceuptech/space-cloud/auth"
+
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+
+	"github.com/spaceuptech/space-cloud/modules/auth"
 )
 
 // Supported content types
