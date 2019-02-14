@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Getting Started",
+    "url": "/getting-started",
+    "pages": [
+      "space-cli",
+      "sample-apps"
+    ]
+  },
+  {
+    "name": "User Management",
+    "url": "/user-management",
+    "pages": [
+      "oauth"
+    ]
+  },
+  {
+    "name": "Database",
+    "url": "/database",
+    "pages": [
+      "data-explorer"
+    ]
+  },
+  {
+    "name": "File Storage",
+    "url": "/file-storage",
+    "pages": []
+  },
+  {
+    "name": "Realtime",
+    "url": "/realtime",
+    "pages": []
+  },
+  {
+    "name": "Functions",
+    "url": "/functions",
+    "pages": []
+  },
+  {
+    "name": "Security",
+    "url": "/security",
+    "pages": [
+      "database",
+      "file-storage"
+    ]
+  },
+  {
+    "name": "Deploy",
+    "url": "/deploy",
+    "pages": []
+  },
+  {
+    "name": "API Reference",
+    "url": "/api",
+    "pages": []
+  },
+  {
+    "name": "Architecture",
+    "url": "/architecture",
+    "pages": []
+  }
+]
