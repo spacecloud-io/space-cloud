@@ -4,7 +4,7 @@ import "github.com/spaceuptech/space-cloud/config"
 
 func (s *server) routes() {
 	// Initialize the routes for config management
-	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.env, s.loadConfig))
+	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
 
 	// Initialize the routes for faas engine
 	s.router.Methods("POST").Path("/v1/api/faas/{engine}/{func}").HandlerFunc(s.faas.HandleRequest(s.auth))

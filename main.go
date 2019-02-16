@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"os"
 
@@ -32,15 +31,9 @@ func main() {
 					Value: "none",
 					Usage: "Load space cloud config from `FILE`",
 				},
-				cli.StringFlag{
-					Name:  "project",
-					Value: "none",
-					Usage: "The project id to start space cloud with",
-				},
-				cli.StringFlag{
-					Name:  "env",
-					Value: "dev",
-					Usage: "The environment to start space cloud in",
+				cli.BoolFlag{
+					Name:  "prod",
+					Usage: "Run space-cloud in production mode",
 				},
 			},
 		},
@@ -56,16 +49,10 @@ func actionRun(c *cli.Context) error {
 	// Load cli flags
 	port := c.String("port")
 	configPath := c.String("config")
-	project := c.String("project")
-	env := c.String("env")
+	isProd := c.Bool("prod")
 
-	if project == "none" {
-		log.Println("Cannot start space cloud with the project", project)
-		return errors.New("Invalid config")
-	}
-
-  // Project and env cannot be changed once space cloud has started
-	s := initServer(project, env)
+	// Project and env cannot be changed once space cloud has started
+	s := initServer(isProd)
 
 	if configPath != "none" {
 		config, err := config.LoadConfigFromFile(configPath)

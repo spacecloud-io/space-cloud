@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,56 +14,45 @@ import (
 )
 
 type server struct {
-	router  *mux.Router
-	auth    *auth.Module
-	crud    *crud.Module
-	user    *userman.Module
-	file    *filestore.Module
-	faas    *faas.Module
-	project string
-	env     string
+	router *mux.Router
+	auth   *auth.Module
+	crud   *crud.Module
+	user   *userman.Module
+	file   *filestore.Module
+	faas   *faas.Module
+	isProd bool
 }
 
-func initServer(project, env string) *server {
+func initServer(isProd bool) *server {
 	r := mux.NewRouter()
 	c := crud.Init()
 	a := auth.Init(c)
 	u := userman.Init(c, a)
 	f := filestore.Init()
 	faas := faas.Init()
-	return &server{r, a, c, u, f, faas, project, env}
+	return &server{r, a, c, u, f, faas, isProd}
 }
 
 func (s *server) start(port string) error {
 	return http.ListenAndServe(":"+port, s.router)
 }
 
-func (s *server) loadConfig(config *config.Config) error {
-	proj, p := config.Projects[s.project]
-	if !p {
-		return errors.New("Config doesn't include " + s.project + " project")
-	}
-
-	env, p := proj.Env[s.env]
-	if !p {
-		return errors.New("Config doesn't include " + s.env + " environment")
-	}
-
+func (s *server) loadConfig(config *config.Project) error {
 	// Set the configuration for the auth module
-	s.auth.SetConfig(env.Secret, env.Modules.Crud, env.Modules.FileStore)
+	s.auth.SetConfig(config.Secret, config.Modules.Crud, config.Modules.FileStore)
 
 	// Set the configuration for the user management module
-	s.user.SetConfig(env.Modules.Auth)
+	s.user.SetConfig(config.Modules.Auth)
 
 	// Set the configuration for the file storage module
-	s.file.SetConfig(env.Modules.FileStore)
+	s.file.SetConfig(config.Modules.FileStore)
 
 	// Set the configuration for the FaaS module
-	err := s.faas.SetConfig(env.Modules.FaaS)
+	err := s.faas.SetConfig(config.Modules.FaaS)
 	if err != nil {
 		return err
 	}
 
 	// Set the configuration for the curd module
-	return s.crud.SetConfig(env.Modules.Crud)
+	return s.crud.SetConfig(config.Modules.Crud)
 }
