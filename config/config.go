@@ -7,12 +7,7 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	Name string          `json:"name"`
-	Env  map[string]*Env `json:"env"` // The key here is the env name
-}
-
-// Env holds the configuration for a particular environment
-type Env struct {
+	ID      string `json:"id"`
 	Secret  string
 	Modules *Modules `json:"modules"`
 }
