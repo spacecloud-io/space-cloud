@@ -9,7 +9,8 @@ Space Cloud is an open source, high performance web service which provides insta
 ## Table of Contents
 
 - [About Space Cloud](#about-space-cloud)
-- [What makes Space Cloud unique](#what-maks-space-cloud-unique)
+- [What makes Space Cloud unique](#what-makes-space-cloud-unique)
+- [Documentation](#documentation)
 - [Getting started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Download Space Cloud](#download-space-cloud)
