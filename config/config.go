@@ -8,7 +8,7 @@ type Config struct {
 // Project holds the project level configuration
 type Project struct {
 	ID      string `json:"id"`
-	Secret  string
+	Secret  string `json:"secret"`
 	Modules *Modules `json:"modules"`
 }
 

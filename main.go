@@ -33,7 +33,7 @@ func main() {
 				},
 				cli.BoolFlag{
 					Name:  "prod",
-					Usage: "The environment to start space cloud in",
+					Usage: "Run space-cloud in production mode",
 				},
 			},
 		},
@@ -49,7 +49,7 @@ func actionRun(c *cli.Context) error {
 	// Load cli flags
 	port := c.String("port")
 	configPath := c.String("config")
-	isProd := c.Bool("env")
+	isProd := c.Bool("prod")
 
 	// Project and env cannot be changed once space cloud has started
 	s := initServer(isProd)
