@@ -83,7 +83,7 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 	// Create a new crud blocks
 	for k, v := range crud {
-		c, err := initBlock(utils.DBType(k), v.Connection)
+		c, err := initBlock(utils.DBType(k), v.Conn)
 		if err != nil {
 			return err
 		}
