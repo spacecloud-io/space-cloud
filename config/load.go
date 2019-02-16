@@ -1,19 +1,18 @@
 package config
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"github.com/spf13/viper"
 )
 
 // LoadConfigFromFile loads the config from the provided file path
 func LoadConfigFromFile(path string) (*Project, error) {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
+	viper.SetConfigFile(path)
 
 	conf := new(Project)
-	err = json.Unmarshal(data, conf)
+	viper.Unmarshal(conf)
+
+	viper.ReadInConfig()
+	err := viper.Unmarshal(&conf)
 	if err != nil {
 		return nil, err
 	}

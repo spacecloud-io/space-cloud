@@ -7,8 +7,8 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	ID      string `json:"id"`
-	Secret  string `json:"secret"`
+	ID      string   `json:"id"`
+	Secret  string   `json:"secret"`
 	Modules *Modules `json:"modules"`
 }
 
@@ -26,7 +26,7 @@ type Crud map[string]*CrudStub // The key here is the database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Connection  string                `json:"conn"`
+	Conn        string                `json:"conn"`
 	Collections map[string]*TableRule `json:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary"`
 }
@@ -39,15 +39,15 @@ type TableRule struct {
 
 // Rule is the authorisation object at the query level
 type Rule struct {
-	Rule      string                 `json:"rule"`
-	Eval      string                 `json:"eval"`
-	FieldType string                 `json:"type"`
-	F1        interface{}            `json:"f1"`
-	F2        interface{}            `json:"f2"`
-	Clauses   []*Rule                `json:"clauses"`
-	DbType    string                 `json:"db"`
-	Col       string                 `json:"col"`
-	Find      map[string]interface{} `json:"find"`
+	Rule    string                 `json:"rule"`
+	Eval    string                 `json:"eval"`
+	Type    string                 `json:"type"`
+	F1      interface{}            `json:"f1"`
+	F2      interface{}            `json:"f2"`
+	Clauses []*Rule                `json:"clauses"`
+	DB      string                 `json:"db"`
+	Col     string                 `json:"col"`
+	Find    map[string]interface{} `json:"find"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -74,10 +74,10 @@ type Realtime struct {
 
 // FileStore holds the config for the file store module
 type FileStore struct {
-	Enabled    bool        `json:"enabled"`
-	StoreType  string      `json:"storeType"`
-	Connection string      `json:"conn"`
-	Rules      []*FileRule `json:"rules"`
+	Enabled   bool        `json:"enabled"`
+	StoreType string      `json:"storeType"`
+	Conn      string      `json:"conn"`
+	Rules     []*FileRule `json:"rules"`
 }
 
 // FileRule is the authorization object at the file rule level
