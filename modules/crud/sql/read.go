@@ -10,7 +10,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
 	_ "github.com/lib/pq"                              // Import for postgres
-	_ "gopkg.in/doug-martin/goqu.v5/adapters/postgres" // Adapter for postfres
+	_ "gopkg.in/doug-martin/goqu.v4/adapters/postgres" // Adapter for postfres
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
