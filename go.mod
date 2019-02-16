@@ -29,4 +29,5 @@ require (
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/doug-martin/goqu.v4 v4.2.0
+	gopkg.in/doug-martin/goqu.v5 v5.0.0
 )

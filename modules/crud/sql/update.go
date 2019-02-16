@@ -6,6 +6,10 @@ import (
 
 	goqu "gopkg.in/doug-martin/goqu.v4"
 
+	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
+	_ "github.com/lib/pq"                              // Import for postgres
+	_ "gopkg.in/doug-martin/goqu.v4/adapters/postgres" // Adapter for postgres
+
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -31,7 +35,7 @@ func (s *SQL) Update(ctx context.Context, project, col string, req *model.Update
 		return utils.ErrInvalidParams
 	}
 
-	record, err := generateRecord(req.Update)
+	record, err := generateRecord(req.Update["$set"])
 	if err != nil {
 		return err
 	}
