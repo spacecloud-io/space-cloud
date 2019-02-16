@@ -48,7 +48,15 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 		}
 
 		// Create the find object
-		find := map[string]interface{}{"id": id}
+		find := map[string]interface{}{}
+
+		switch utils.DBType(dbType) {
+		case utils.Mongo:
+			find["_id"] = id
+
+		default:
+			find["id"] = id
+		}
 
 		// Create an args object
 		args := map[string]interface{}{
@@ -78,7 +86,7 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 }
 
 // HandleProfiles returns the handler for fetching all user profiles
-func (m *Module) handleProfiles() http.HandlerFunc {
+func (m *Module) HandleProfiles() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Allow this feature only if the user management is enabled

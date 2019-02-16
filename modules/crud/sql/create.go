@@ -6,8 +6,9 @@ import (
 
 	goqu "gopkg.in/doug-martin/goqu.v4"
 
-	_ "github.com/go-sql-driver/mysql" // Import for MySQL
-	_ "github.com/lib/pq"              // Import for postgres
+	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
+	_ "github.com/lib/pq"                              // Import for postgres
+	_ "gopkg.in/doug-martin/goqu.v4/adapters/postgres" // Adapter for postgres
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -22,11 +23,12 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 	var insert []interface{}
 	if req.Operation == "one" {
 		insert = []interface{}{req.Document.(map[string]interface{})}
-	}
-
-	insert, ok := req.Document.([]interface{})
-	if !ok {
-		return utils.ErrInvalidParams
+	} else {
+		var ok bool
+		insert, ok = req.Document.([]interface{})
+		if !ok {
+			return utils.ErrInvalidParams
+		}
 	}
 
 	// Iterate over records to be inserted
