@@ -51,22 +51,21 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 
 		if req.Options.Sort != nil {
 			// Format the order array to a suitable type
-			orderArray, ok := req.Options.Sort.([]interface{})
+			orderMap, ok := req.Options.Sort.(map[string]interface{})
 			if !ok {
 				return nil, errors.New("SQL: Order Array is incorrect")
 			}
 			orderBys := []goqu.OrderedExpression{}
 
 			// Iterate over order array
-			for _, item := range orderArray {
-				o := item.(string)
-
+			for k, value := range orderMap {
+				orderValue := value.(float64)
 				// Add order type based on type attribute of order element
 				var exp goqu.OrderedExpression
-				if strings.HasPrefix(o, "-") {
-					exp = goqu.I(o[strings.IndexRune(o, '-')+1 : len(o)]).Desc()
+				if orderValue < 0 {
+					exp = goqu.I(k).Desc()
 				} else {
-					exp = goqu.I(o).Asc()
+					exp = goqu.I(k).Asc()
 				}
 
 				// Append the order expression to the order expression array
