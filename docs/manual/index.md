@@ -8,7 +8,7 @@ Space Cloud is an open-source, high performance web engine which lets you create
 
 Space Cloud is purpose-built to power fast-growing, realtime online services on public, private and hybrid clouds requiring global scale at prototyping agility. Built with extensibility in mind, it provides APIs for you to extend the platform in the form of functions in any language.
 
-## What makes Space Cloud unique?
+## What makes Space Cloud unique?  
 Space Cloud is a single web engine which integrates with all you back end technologies and exposes them as easy-to-use REST APIs. You can leverage the power of the tools you already love without changing a single line of code. No migrations are necessary. Add new platforms or technologies as needed without having to worry about how to use them.
 
 In a nutshell, Space Cloud provides you:
@@ -18,7 +18,7 @@ In a nutshell, Space Cloud provides you:
 - Flexibility to work with the tech choice of your choice.
 - Various pre-built modules such as [User Management](https://spaceuptech.com/docs/user-mangement/), [Realtime CRUD](https://spaceuptech.com/docs/realtime) and [File Storage](https://spaceuptech.com/docs/file-storage).
 
-## Commonly used terms
+## Commonly used terms  
 There are a couple of terms we use to the refer the various pieces of Space Cloud. Let's clear them up right away.
 
 ### Space Cloud - [(Product Page)](https://spaceuptech.com)
