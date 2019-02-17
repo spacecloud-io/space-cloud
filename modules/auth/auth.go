@@ -18,7 +18,7 @@ type Module struct {
 	rules     config.Crud
 	secret    string
 	crud      *crud.Module
-	fileRules []*config.FileRule
+	fileRules map[string]*config.FileRule
 }
 
 // Init creates a new instance of the auth object
