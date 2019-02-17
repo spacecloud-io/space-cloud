@@ -3,7 +3,7 @@ const showdown = require('showdown')
 const express = require('express')
 const handlebars = require('handlebars')
 
-const converter = new showdown.Converter()
+const converter = new showdown.Converter({simpleLineBreaks: true})
 const app = express()
 
 var config = []
@@ -28,7 +28,7 @@ const handleIndex = (_, res) => {
     }
 
     const name = "Documentation"
-    res.send(render(data, name))
+    res.send(render(data, name, 'overview'))
   })
 }
 
@@ -44,14 +44,14 @@ const handlePage = (req, res) => {
     }
 
     const name = config.find(page => page.url == dir).name
-    res.send(render(data, name))
+    res.send(render(data, name, req.params.file))
   })
 }
 
-const render = (data, name) => {
+const render = (data, name, pageUrl) => {
   const html = converter.makeHtml(data)
-  const pages = config.map(page => Object.assign({}, page, {
-    files: [{ title: 'Overview', url: 'overview' }].concat(page.pages.map(p => ({ title: p[1], url: p[0] })))
+  const pages = config.map(page => Object.assign({}, {isActive: page.name === name}, page, {
+    files: [{ title: 'Overview', url: 'overview', isActive: pageUrl === 'overview' && page.name === name  }].concat(page.pages.map(p => ({ title: p[1], url: p[0], isActive: pageUrl === p[0] && page.name === name })))
   }))
 
   return template({ pages: pages, html: html, name: name })
