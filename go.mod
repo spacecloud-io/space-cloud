@@ -17,6 +17,7 @@ require (
 	github.com/nats-io/nkeys v0.0.2 // indirect
 	github.com/nats-io/nuid v1.0.0 // indirect
 	github.com/satori/go.uuid v1.2.0
+	github.com/spf13/viper v1.3.1
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
 	github.com/urfave/cli v1.20.0
@@ -29,4 +30,5 @@ require (
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/doug-martin/goqu.v4 v4.2.0
+	gopkg.in/doug-martin/goqu.v5 v5.0.0
 )
