@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
@@ -34,7 +35,19 @@ func initServer(isProd bool) *server {
 }
 
 func (s *server) start(port string) error {
-	return http.ListenAndServe(":"+port, s.router)
+	// Allow cors
+	corsObj := cors.New(cors.Options{
+		AllowCredentials: true,
+		AllowOriginFunc: func(s string) bool {
+			return true
+		},
+		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
+		AllowedHeaders: []string{"Authorization", "Content-Type"},
+		ExposedHeaders: []string{"Authorization", "Content-Type"},
+	})
+
+	handler := corsObj.Handler(s.router)
+	return http.ListenAndServe(":"+port, handler)
 }
 
 func (s *server) loadConfig(config *config.Project) error {
