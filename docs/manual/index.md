@@ -31,5 +31,8 @@ Space Cloud is the name for the umbrella project. Together with some other proje
 - Head straight to our [getting started guide](https://spaceuptech.com/docs/getting-started).
 - New to Space Cloud? Checkout the [tutorial](https://spaceuptech.com/tutorials) instead.
 
-[next](https://spaceuptech.com/docs/getting-started) >>
-
+<div class="btns-wrapper">
+  <a href="https://spaceuptech.com/docs/getting-started" class="waves-effect waves-light btn primary-btn-fill btn-small">
+    Next<i class="material-icons btn-with-icon">arrow_forward</i>
+  </a>
+</div>

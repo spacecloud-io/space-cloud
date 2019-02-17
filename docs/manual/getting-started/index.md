@@ -14,4 +14,11 @@ To get started with Space Cloud you will need to:
 - [Digital Ocean](https://spaceuptech.com/docs/deploy/digital-ocean): Coming Soon!
 - [Google Cloud Platform](https://spaceuptech.com/docs/deploy/digital-ocean): Coming Soon!
 
-<< [previous](https://spaceuptech.com/docs) | [next](https://spaceuptech.com/docs/getting-started/space-cli) >>
+<div class="btns-wrapper">
+  <a href="https://spaceuptech.com/docs" class="waves-effect waves-light btn primary-btn-border btn-small">
+    <i class="material-icons btn-with-icon">arrow_back</i>Previous
+  </a>
+  <a href="https://spaceuptech.com/docs/space-cli" class="waves-effect waves-light btn primary-btn-fill btn-small">
+    Next<i class="material-icons btn-with-icon">arrow_forward</i>
+  </a>
+</div>
