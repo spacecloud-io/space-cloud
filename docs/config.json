@@ -1,62 +1,62 @@
 [
   {
     "name": "Getting Started",
-    "url": "/getting-started",
+    "url": "getting-started",
     "pages": [
-      "space-cli",
-      "sample-apps"
+      ["space-cli", "Space CLI"],
+      ["sample-apps", "Sample Apps"]
     ]
   },
   {
     "name": "User Management",
-    "url": "/user-management",
+    "url": "user-management",
     "pages": [
-      "oauth"
+      ["oauth", "OAuth"]
     ]
   },
   {
     "name": "Database",
-    "url": "/database",
+    "url": "database",
     "pages": [
-      "data-explorer"
+      ["data-explorer", "Data Explorer"]
     ]
   },
   {
     "name": "File Storage",
-    "url": "/file-storage",
+    "url": "file-storage",
     "pages": []
   },
   {
     "name": "Realtime",
-    "url": "/realtime",
+    "url": "realtime",
     "pages": []
   },
   {
     "name": "Functions",
-    "url": "/functions",
+    "url": "functions",
     "pages": []
   },
   {
     "name": "Security",
-    "url": "/security",
+    "url": "security",
     "pages": [
-      "database",
-      "file-storage"
+      ["database", "Database"],
+      ["file-storage", "File Storage"]
     ]
   },
   {
     "name": "Deploy",
-    "url": "/deploy",
+    "url": "deploy",
     "pages": []
   },
   {
     "name": "API Reference",
-    "url": "/api",
+    "url": "api",
     "pages": []
   },
   {
     "name": "Architecture",
-    "url": "/architecture",
+    "url": "architecture",
     "pages": []
   }
 ]

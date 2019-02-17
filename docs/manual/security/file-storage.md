@@ -1,3 +1,3 @@
-# Securing file strorage
+# Securing file storage
 
 Coming soon!
