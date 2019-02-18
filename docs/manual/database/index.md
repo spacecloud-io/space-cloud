@@ -1,8 +1,8 @@
 # Database Module
 
-The database module is the core of Space Cloud. It abstracts the database CRUD operations and provides an easy to use REST API. The API loosely follows the Mongo DB DSL. In addition to that, it expects a JWT token in the `Authorization` header. This JWT token is used along with user defined security rules to enforce authentication and authorization.
+The database module is the core of Space Cloud. It provides instant REST APIs on any database out there. it allows you to perfrom CRUD operations on the database directly from the frontend. The API loosely follows the Mongo DB DSL. In addition to that, it expects a JWT token in the `Authorization` header. This JWT token is used along with user defined security rules to enforce authentication and authorization.
 
-By CRUD I mean Create, Update and Delete operations. These are the most basic operations that one can perform on the database. In addition to that, we offer a flexible query language (based on the Mongo DB query DSL) to slice and dice data as needed.
+By CRUD I mean Create, Update and Delete operations. These are the most basic operations that one can perform on a database. In addition to that, we offer a flexible query language (based on the Mongo DB query DSL) to slice and dice data as needed.
 
 Currently the database module supports the following databases:
 - Mongo DB
