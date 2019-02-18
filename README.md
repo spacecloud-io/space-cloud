@@ -4,7 +4,7 @@
 <a href="https://discord.gg/ypXEEBr"><img src="https://img.shields.io/badge/chat-discord-brightgreen.svg?logo=discord&style=flat"></a>
 <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
 
-Space Cloud is an open source, high performance web service which provides instant REST APIs on the database of your choice. Build Internet Scale apps with the agility of a prototype!
+Space Cloud is an open source, high performance web service which provides instant Realtime APIs on the database of your choice. Build Internet Scale apps with the agility of a prototype!
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ Space Cloud is an open source, high performance web service which provides insta
 
 > Note: Space Cloud is in still in Beta.
 
-Space Cloud is an open-source, high performance web engine which lets you create instant REST APIs on most of the databases out there. Written in Golang, it provides a high throughput layer for your backend services. It's completely unopinionated and works with the tech stack of your choice.
+Space Cloud is an open-source, high performance web engine which lets you create instant Realtime APIs on most of the databases out there. Written in Golang, it provides a high throughput layer for your backend services. It's completely unopinionated and works with the tech stack of your choice.
 
 Space Cloud is purpose-built to power fast-growing, realtime online services on public, private and hybrid clouds requiring global scale at prototyping agility. Built with extensibility in mind, it provides APIs for you to extend the platform in the form of functions in any language.
 
@@ -33,7 +33,7 @@ Space Cloud is purpose-built to power fast-growing, realtime online services on 
 Space Cloud is a single web engine which integrates with all you back end technologies and exposes them as easy-to-use REST APIs. You can leverage the power of the tools you already love without changing a single line of code. No migrations are necessary. Add new platforms or technologies as needed without having to worry about how to use them.
 
 In a nutshell, Space Cloud provides you:
-- Instant REST APIs to consume directly from your frontend.
+- Instant Realtime APIs to consume directly from your frontend.
 - Authentication and authorization baked in by default.
 - Freedom from vendor lock ins.
 - Flexibility to work with the tech stack of your choice.
