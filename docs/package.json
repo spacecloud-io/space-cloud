@@ -11,6 +11,7 @@
   "dependencies": {
     "express": "^4.16.4",
     "handlebars": "^4.1.0",
-    "showdown": "^1.9.0"
+    "showdown": "^1.9.0",
+    "xmlbuilder": "^10.1.1"
   }
 }
