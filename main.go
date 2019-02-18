@@ -32,8 +32,9 @@ func main() {
 					Usage: "Load space cloud config from `FILE`",
 				},
 				cli.BoolFlag{
-					Name:  "prod",
-					Usage: "Run space-cloud in production mode",
+					Name:   "prod",
+					Usage:  "Run space-cloud in production mode",
+					EnvVar: "PROD",
 				},
 			},
 		},

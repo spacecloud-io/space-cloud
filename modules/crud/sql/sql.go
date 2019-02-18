@@ -41,6 +41,11 @@ func Init(dbType utils.DBType, connection string) (*SQL, error) {
 		return nil, err
 	}
 
+	err = sql.Ping()
+	if err != nil {
+		return nil, err
+	}
+
 	s.client = sql
 	return s, nil
 }
