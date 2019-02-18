@@ -22,12 +22,17 @@ func Init(connection string) (*Mongo, error) {
 		return nil, err
 	}
 
-	timeOut := 20 * time.Second
+	timeOut := 5 * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
 	defer cancel()
 
 	err = client.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.Ping(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

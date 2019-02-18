@@ -31,7 +31,7 @@ func HandleConfig(isProd bool, cb func(*Project) error) http.HandlerFunc {
 		err = cb(config)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
