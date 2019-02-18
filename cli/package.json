@@ -1,0 +1,20 @@
+{
+  "name": "space-cli",
+  "version": "0.1.0",
+  "description": "A cli tool to create projects for space cloud and run quick starts",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "boxen": "^2.1.0",
+    "colors": "^1.3.3",
+    "commander": "^2.19.0",
+    "inquirer": "^6.2.2",
+    "node-emoji": "^1.10.0",
+    "pad": "^2.2.2",
+    "typed.js": "^2.0.10"
+  }
+}
