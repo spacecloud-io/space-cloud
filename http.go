@@ -61,6 +61,25 @@ func (s *server) handleCreate() http.HandlerFunc {
 			return
 		}
 
+		// Send realtime message in dev mode
+		if !s.isProd && req.Operation == utils.One {
+			data := req.Document.(map[string]interface{})
+			idVar := "id"
+			if meta.dbType == string(utils.Mongo) {
+				idVar = "_id"
+			}
+
+			if id, p := data[idVar]; p {
+				s.realtime.Send(&model.FeedData{
+					Group:     meta.col,
+					Type:      utils.RealtimeWrite,
+					TimeStamp: time.Now().Unix(),
+					ID:        id.(string),
+					Payload:   data,
+				})
+			}
+		}
+
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{})
@@ -168,6 +187,38 @@ func (s *server) handleUpdate() http.HandlerFunc {
 			return
 		}
 
+		// Send realtime message in dev mode
+		if !s.isProd && req.Operation == utils.One {
+			idVar := "id"
+			if meta.dbType == string(utils.Mongo) {
+				idVar = "_id"
+			}
+
+			if id, p := req.Find[idVar]; p {
+				// Create the find object
+				find := map[string]interface{}{}
+
+				switch utils.DBType(meta.dbType) {
+				case utils.Mongo:
+					find["_id"] = id
+
+				default:
+					find["id"] = id
+				}
+
+				data, err := s.crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
+				if err == nil {
+					s.realtime.Send(&model.FeedData{
+						Group:     meta.col,
+						Type:      utils.RealtimeWrite,
+						TimeStamp: time.Now().Unix(),
+						ID:        id.(string),
+						Payload:   data.(map[string]interface{}),
+					})
+				}
+			}
+		}
+
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{})
@@ -217,6 +268,25 @@ func (s *server) handleDelete() http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
+		}
+
+		// Send realtime message in dev mode
+		if !s.isProd && req.Operation == utils.One {
+			idVar := "id"
+			if meta.dbType == string(utils.Mongo) {
+				idVar = "_id"
+			}
+
+			if id, p := req.Find[idVar]; p {
+				if err != nil {
+					s.realtime.Send(&model.FeedData{
+						Group:     meta.col,
+						Type:      utils.RealtimeDelete,
+						TimeStamp: time.Now().Unix(),
+						ID:        id.(string),
+					})
+				}
+			}
 		}
 
 		// Give positive acknowledgement

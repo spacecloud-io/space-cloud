@@ -6,6 +6,9 @@ func (s *server) routes() {
 	// Initialize the routes for config management
 	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
 
+	// Initialze the route for the realtime module
+	s.router.HandleFunc("/v1/api/realtime/json", handleWebsocket(s.realtime))
+
 	// Initialize the routes for faas engine
 	s.router.Methods("POST").Path("/v1/api/faas/{engine}/{func}").HandlerFunc(s.faas.HandleRequest(s.auth))
 
