@@ -3,9 +3,15 @@
     "name": "Getting Started",
     "url": "getting-started",
     "pages": [
-      ["space-cli", "Space CLI"],
+      ["space-cli", "Quick start (Space CLI)"],
+      ["manual", "Quick start (Manual)"],
       ["sample-apps", "Sample Apps"]
     ]
+  },
+  {
+    "name": "Configuration File",
+    "url": "config",
+    "pages": []
   },
   {
     "name": "User Management",

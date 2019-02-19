@@ -1,14 +1,14 @@
 # Run Sample Apps
 
-Once you've understood the basics on how to create and deploy a project with Space Cloud, it is time to explore the features Space Cloud has to offer. For this very purpose we have created some sample apps using popular web technologies (like React, etc.). In Space Console, we have a feature called `templates` which loads the configurations required for these apps.
+> Note: Currently we have no sample apps available. Working hard to get some up. Want to see put up your app for the world to see. Head over to our [discord](https://discord.gg/ypXEEBr) server and we'll love to hear you out!
 
-## Create project using templates
+Once you've understood the basics on how to create and deploy a project with Space Cloud, it is time to explore the features Space Cloud has to offer. For this very purpose we have created some sample apps using popular web technologies (like React, etc.) and databases.
 
-// Image pointing to templates goes here
-
-The cards on the right of the welcome screen are the various templates available for you to check out. To start using the template you need to simply select a template and hit the `Create` button.
-
-Checkout the [tutorials page](https://spaceuptech.com/tutorials) for better documentation on templates along with their frontend.
+## Running the sample apps
+The steps to run the sample apps similar to the getting-started guide over [here](/docs/getting-started/space-cli). The command goes like this:
+```
+space-cli new --sample [SAMPLE_APP_NAME]
+```
 
 ## Next steps
 The next step is to dive into the various Space Cloud modules.
@@ -17,4 +17,11 @@ The next step is to dive into the various Space Cloud modules.
 - [Realtime](https://spaceuptech.com/docs/realtime)
 - [Functions](https://spaceuptech.com/docs/functions)
 
-<< [previous](https://spaceuptech.com/docs/getting-started/space-cli) | [next](https://spaceuptech.com/docs/user-management) >>
+<div class="btns-wrapper">
+  <a href="/docs/getting-started/space-cli" class="waves-effect waves-light btn primary-btn-border btn-small">
+    <i class="material-icons btn-with-icon">arrow_back</i>Previous
+  </a>
+  <a href="/docs/config/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">
+    Next<i class="material-icons btn-with-icon">arrow_forward</i>
+  </a>
+</div>
