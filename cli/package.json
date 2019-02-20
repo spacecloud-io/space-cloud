@@ -9,12 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "boxen": "^2.1.0",
-    "colors": "^1.3.3",
     "commander": "^2.19.0",
-    "inquirer": "^6.2.2",
-    "node-emoji": "^1.10.0",
-    "pad": "^2.2.2",
-    "typed.js": "^2.0.10"
+    "handlebars": "^4.1.0",
+    "inquirer": "^6.2.2"
   }
 }

@@ -1,0 +1,151 @@
+---
+id: {{id}}
+secret: some-secret
+modules:
+  crud:
+    {{#ifEquals primaryDb 'mongo'}}
+    mongo:
+      conn: {{conn}}
+      isPrimary: true
+      collections:
+        users:
+          rules:
+            create:
+              rule: allow
+            read:
+              rule: allow
+            update:
+              rule: allow
+            delete:
+              rule: allow
+          isRealtimeEnabled: false
+    {{else}}      
+    # mongo:
+    #   conn: mongodb://localhost:27017
+    #   isPrimary: false
+    #   collections:
+    #     users:
+    #       rules:
+    #         create:
+    #           rule: allow
+    #         read:
+    #           rule: allow
+    #         update:
+    #           rule: allow
+    #         delete:
+    #           rule: allow
+    #       isRealtimeEnabled: false      
+    {{/ifEquals}}
+    {{#ifEquals primaryDb 'sql-mysql'}}
+    sql-mysql:
+      conn: {{conn}}
+      isPrimary: true
+      collections:
+        users:
+          rules:
+            create:
+              rule: allow
+            read:
+              rule: allow
+            update:
+              rule: allow
+            delete:
+              rule: allow
+          isRealtimeEnabled: false
+    {{else}}      
+    # sql-mysql:
+    #   conn: root:my-secret-pw@/test
+    #   isPrimary: false
+    #   collections:
+    #     users:
+    #       rules:
+    #         create:
+    #           rule: allow
+    #         read:
+    #           rule: allow
+    #         update:
+    #           rule: allow
+    #         delete:
+    #           rule: allow
+    #       isRealtimeEnabled: false      
+    {{/ifEquals}}
+    {{#ifEquals primaryDb 'sql-postgres'}}
+    sql-postgres:
+      conn: {{conn}}
+      isPrimary: true
+      collections:
+        users:
+          rules:
+            create:
+              rule: allow
+            read:
+              rule: allow
+            update:
+              rule: allow
+            delete:
+              rule: allow
+          isRealtimeEnabled: false
+    {{else}}      
+    # sql-postgres:
+    #   conn: postgres://postgres:mysecretpassword@localhost/postgres?sslmode=disable
+    #   isPrimary: false
+    #   collections:
+    #     users:
+    #       rules:
+    #         create:
+    #           rule: allow
+    #         read:
+    #           rule: allow
+    #         update:
+    #           rule: allow
+    #         delete:
+    #           rule: allow
+    #       isRealtimeEnabled: false      
+    {{/ifEquals}}
+  # auth:
+  #   email:
+  #     enabled: true
+  #   google:
+  #     enabled: true
+  #     id:
+  #     host:
+  #     secret:
+  #     redirect:
+  #   facebook:
+  #     enabled: true
+  #     id:
+  #     host:
+  #     secret:
+  #     redirect:
+  #   twitter:
+  #     enabled: true
+  #     id:
+  #     host:
+  #     secret:
+  #     redirect:
+  #   github:
+  #     enabled: true
+  #     id:
+  #     host:
+  #     secret:
+  #     redirect:  
+  # faas:
+  #   enabled: true
+  #   nats: nats://localhost:4222
+  # realtime:
+  #   enabled: true
+  #   kafka:
+  # fileStore:
+  #   enabled: true
+  #   storeType: local
+  #   conn: 
+  #   rules:
+  #     rule1:
+  #       prefix: /
+  #       rule:
+  #         create:
+  #           rule: allow
+  #         read:
+  #           rule: allow
+  #         delete:
+  #           rule: allow
