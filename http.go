@@ -62,21 +62,34 @@ func (s *server) handleCreate() http.HandlerFunc {
 		}
 
 		// Send realtime message in dev mode
-		if !s.isProd && req.Operation == utils.One {
-			data := req.Document.(map[string]interface{})
-			idVar := "id"
-			if meta.dbType == string(utils.Mongo) {
-				idVar = "_id"
+		if !s.isProd {
+			var rows []interface{}
+			if req.Operation == utils.One {
+				rows = []interface{}{req.Document}
+			} else if req.Operation == utils.All {
+				rows = req.Document.([]interface{})
+			} else {
+				rows = []interface{}{}
 			}
 
-			if id, p := data[idVar]; p {
-				s.realtime.Send(&model.FeedData{
-					Group:     meta.col,
-					Type:      utils.RealtimeWrite,
-					TimeStamp: time.Now().Unix(),
-					ID:        id.(string),
-					Payload:   data,
-				})
+			for _, t := range rows {
+				data := t.(map[string]interface{})
+
+				idVar := "id"
+				if meta.dbType == string(utils.Mongo) {
+					idVar = "_id"
+				}
+
+				// Send realtime message if id fields exists
+				if id, p := data[idVar]; p {
+					s.realtime.Send(&model.FeedData{
+						Group:     meta.col,
+						Type:      utils.RealtimeWrite,
+						TimeStamp: time.Now().Unix(),
+						ID:        id.(string),
+						Payload:   data,
+					})
+				}
 			}
 		}
 
