@@ -43,7 +43,7 @@ func matchQuery(rule *config.Rule, crud *crud.Module, args map[string]interface{
 	req := &model.ReadRequest{Find: rule.Find, Operation: utils.One}
 
 	// Execute the read request
-	_, err := crud.Read(context.TODO(), rule.DbType, args["project"].(string), rule.Col, req)
+	_, err := crud.Read(context.TODO(), rule.DB, args["project"].(string), rule.Col, req)
 	return err
 }
 
@@ -70,7 +70,7 @@ func matchOr(rule *config.Rule, args map[string]interface{}) error {
 }
 
 func match(rule *config.Rule, args map[string]interface{}) error {
-	switch rule.FieldType {
+	switch rule.Type {
 	case "string":
 		return matchString(rule, args)
 

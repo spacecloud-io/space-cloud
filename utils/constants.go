@@ -58,10 +58,10 @@ type OperationType string
 
 const (
 	// Create is the type used for insert operations
-	Create OperationType = "insert"
+	Create OperationType = "create"
 
 	// Read is the type used for query operation
-	Read OperationType = "query"
+	Read OperationType = "read"
 
 	// Update is the type used ofr update operations
 	Update OperationType = "update"

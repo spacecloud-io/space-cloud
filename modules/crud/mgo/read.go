@@ -38,20 +38,22 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 	case utils.All:
 		findOptions := options.Find()
 
-		if req.Options.Select != nil {
-			findOptions.SetProjection(req.Options.Select)
-		}
+		if req.Options != nil {
+			if req.Options.Select != nil {
+				findOptions.SetProjection(req.Options.Select)
+			}
 
-		if req.Options.Skip != nil {
-			findOptions.SetSkip(*req.Options.Skip)
-		}
+			if req.Options.Skip != nil {
+				findOptions.SetSkip(*req.Options.Skip)
+			}
 
-		if req.Options.Limit != nil {
-			findOptions.SetLimit(*req.Options.Limit)
-		}
+			if req.Options.Limit != nil {
+				findOptions.SetLimit(*req.Options.Limit)
+			}
 
-		if req.Options.Sort != nil {
-			findOptions.SetSort(req.Options.Sort)
+			if req.Options.Sort != nil {
+				findOptions.SetSort(req.Options.Sort)
+			}
 		}
 
 		var results []map[string]interface{}
@@ -82,16 +84,18 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 	case utils.One:
 		findOneOptions := options.FindOne()
 
-		if req.Options.Select != nil {
-			findOneOptions.SetProjection(req.Options.Select)
-		}
+		if req.Options != nil {
+			if req.Options.Select != nil {
+				findOneOptions.SetProjection(req.Options.Select)
+			}
 
-		if req.Options.Skip != nil {
-			findOneOptions.SetSkip(*req.Options.Skip)
-		}
+			if req.Options.Skip != nil {
+				findOneOptions.SetSkip(*req.Options.Skip)
+			}
 
-		if req.Options.Sort != nil {
-			findOneOptions.SetSort(req.Options.Sort)
+			if req.Options.Sort != nil {
+				findOneOptions.SetSort(req.Options.Sort)
+			}
 		}
 
 		var res map[string]interface{}

@@ -60,7 +60,7 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	}
 
 	// Create a new crud blocks
-	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Connection)
+	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn)
 	if err != nil {
 		return err
 	}

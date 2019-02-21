@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base href="/docs">
+  <title>Documentation | Space Cloud</title>
+  <link rel="shortcut icon" type="image/png" href="/docs/images/kit/logo-up.png" />
+  <link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons|Raleway:100,200,300,400,500,600,700,800,900|Open+Sans:300,400,600,700,800"
+    rel="stylesheet">
+  <link type="text/css" rel="stylesheet" href="/docs/css/app.css" media="screen,projection" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+  <!--Company description-->
+  <meta name="description" content="Documentation for Space Cloud. Instant REST APIs on any database.">
+  <!--Google analytics-->
+  <!-- Global Site Tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-104521884-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag('js', new Date());
+    gtag('config', 'UA-104521884-1', {
+      'optimize_id': 'GTM-5KWD7NC'
+    });
+  </script>
+  <style>
+    .async-hide {
+      opacity: 0 !important
+    }
+  </style>
+  <script>
+    (function (a, s, y, n, c, h, i, d, e) {
+      s.className += ' ' + y;
+      h.start = 1 * new Date;
+      h.end = i = function () {
+        s.className = s.className.replace(RegExp(' ?' + y), '')
+      };
+      (a[n] = a[n] || []).hide = h;
+      setTimeout(function () {
+        i();
+        h.end = null
+      }, c);
+      h.timeout = c;
+    })(window, document.documentElement, 'async-hide', 'dataLayer', 4000, {
+      'GTM-5KWD7NC': true
+    });
+  </script>
+</head>
+
+<body>
+  <div class="main-wrapper">
+    <!-- <img class="landing-vectors" src="/docs/images/index/landing_bg.svg" alt=""> -->
+    <div class="navbar-fixed">
+      <nav id="navbar">
+        <div class="nav-wrapper">
+          <a href="/" class="brand-logo">
+            <img class="logo-img" id="spaceup-logo" src="/docs/images/kit/logo-black.svg" alt="">
+          </a>
+          <a href="#" data-target="index-sidenav" class="sidenav-trigger">
+            <i class="material-icons">menu</i>
+          </a>
+          <a href="https://github.com/spaceuptech/space-cloud">
+            <img class="github-logo-mobile" id="github-logo-mobile" src="/docs/images/index/github_black.svg" alt="">
+          </a>
+          <!-- below is a desktop navbar-->
+          <ul class="right hide-on-med-and-down">
+            <li>
+              <a class="active" href="/docs">Docs</a>
+            </li>
+            <li>
+              <a href="/blog">Blog</a>
+            </li>
+            <!-- <li>
+              <a href="https://spaceuptech.com/tour/todo-app/getting-started">
+                Tutorials
+              </a>
+            </li> -->
+            <li>
+              <a href="https://github.com/spaceuptech/space-cloud">
+                <img id="github-logo-desktop" src="/docs/images/index/github_black.svg" alt="">
+              </a>
+            </li>
+            <li>
+              <a href="https://spaceuptech.com/docs/getting-started" target="_blank"
+                class="waves-effect waves-light btn primary-btn-fill navbar-btn btn-small">
+                Get Started<i class="material-icons btn-with-icon">forward</i>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <!-- below is a mobile sidenav-->
+    <ul class="sidenav" id="index-sidenav">
+      <a href="/" class="sidenav-logo-wrapper">
+        <img class="logo-img" src="/docs/images/kit/logo-black.svg" alt="">
+      </a>
+      <li>
+        <a href="/">
+          <i class="material-icons">home</i>Home</a>
+      </li>
+      <li>
+        <a href="/blog" class="active">
+          <i class="material-icons">import_contacts</i>Docs</a>
+      </li>
+      <li>
+        <a href="/blog">
+          <i class="material-icons">forum</i>Blog</a>
+      </li>
+      <!-- <li>
+        <a href="https://spaceuptech.com/tour/todo-app/getting-started" target="_blank">
+          <i class="material-icons">school</i>Tutorials
+        </a>
+      </li> -->
+    </ul>
+    <div class="desktop-docs-sidebar">
+      <ul class="collapsible">
+        {{#each pages}}
+        {{#if isActive}}
+        <li class="active">
+        {{else}}
+        <li>
+        {{/if}}
+          <a class="collapsible-header">{{name}}</a>
+          <div class="collapsible-body">
+            <ul>
+              {{#each files}}
+              {{#if isActive}}
+              <li><a href="/docs/{{../url}}/{{url}}" class="active">{{title}}</a></li>
+              {{else}}
+              <li><a href="/docs/{{../url}}/{{url}}">{{title}}</a></li>
+              {{/if}}
+              {{/each}}
+            </ul>
+          </div>
+        </li>
+        {{/each}}
+      </ul>
+    </div>
+    <div class="sidebar-selected-section" id="sidebar-selected-section">
+      <i class="material-icons">chevron_right</i>
+      <span class="open-source-text sidebar-title">{{name}}</span>
+    </div>
+    <div class="sidebar-dropdown closed-sidebar" id="sidebar-dropdown">
+      <div class="mobile-docs-sidebar">
+          <ul class="collapsible">
+              {{#each pages}}
+              {{#if isActive}}
+              <li class="active">
+              {{else}}
+              <li>
+              {{/if}}
+                <a class="collapsible-header">{{name}}</a>
+                <div class="collapsible-body">
+                  <ul>
+                    {{#each files}}
+                    {{#if isActive}}
+                    <li><a href="/docs/{{../url}}/{{url}}" class="active">{{title}}</a></li>
+                    {{else}}
+                    <li><a href="/docs/{{../url}}/{{url}}">{{title}}</a></li>
+                    {{/if}}
+                    {{/each}}
+                  </ul>
+                </div>
+              </li>
+              {{/each}}
+          </ul>
+      </div>
+    </div>
+    <div class="content-wrapper">
+      <div class="row" style="margin:0">
+        <div class="col s12 l6">
+          <div class="docs-content">
+            {{{html}}}
+          </div>
+          <div class="contribution-wrapper">
+            <div class="row" style="margin:0">
+              <div class="col s12 l7">
+                <div class="chats-wrapper">
+                  <p class="chat-title open-source-text">Have a technical question?</p>
+                  <div class="image-wrapper">
+                    <a href=""><img src="/docs/images/index/discord.svg" alt=""></a>
+                    <a href=""><img src="/docs/images/index/stack_overflow.svg" style="margin-left:30px" alt=""></a>
+                  </div>
+                </div>
+              </div>
+              <div class="col s12 l5">
+                <div class="github-wrapper">
+                  <p class="github-title open-source-text">Edit docs!</p>
+                  <a href=""><img class="github-image" src="/docs/images/index/github_black.svg" alt=""></a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--JavaScript at end of body for optimized loading-->
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script type="text/javascript"
+    src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('.collapsible').collapsible();
+      $('.sidenav').sidenav();
+      $('#sidebar-selected-section').click(function () {
+        var className = $('#sidebar-dropdown').attr('class');
+        if (className.includes("closed-sidebar")) {
+          $('#sidebar-dropdown').removeClass('closed-sidebar');
+          $('#sidebar-dropdown').addClass('expanded-sidebar');
+        }
+        if (className.includes("expanded-sidebar")) {
+          $('#sidebar-dropdown').removeClass('expanded-sidebar');
+          $('#sidebar-dropdown').addClass('closed-sidebar');
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

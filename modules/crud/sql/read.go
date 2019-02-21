@@ -2,13 +2,15 @@ package sql
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"strings"
 
 	goqu "gopkg.in/doug-martin/goqu.v4"
 
-	_ "github.com/go-sql-driver/mysql" // Import for MySQL
-	_ "github.com/lib/pq"              // Import for postgres
+	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
+	_ "github.com/lib/pq"                              // Import for postgres
+	_ "gopkg.in/doug-martin/goqu.v4/adapters/postgres" // Adapter for postfres
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -20,15 +22,6 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 	query := goqu.From(col).Prepared(true)
 	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
 
-	// Check if the select clause exists
-	if req.Options.Select != nil {
-		selArray := []interface{}{}
-		for key := range req.Options.Select {
-			selArray = append(selArray, key)
-		}
-		query = query.Select(selArray...)
-	}
-
 	if req.Find != nil {
 		// Get the where clause from query object
 		var err error
@@ -38,39 +31,49 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 		}
 	}
 
-	if req.Options.Skip != nil {
-		query = query.Offset(uint(*req.Options.Skip))
-	}
-
-	if req.Options.Limit != nil {
-		query = query.Limit(uint(*req.Options.Limit))
-	}
-
-	if req.Options.Sort != nil {
-		// Format the order array to a suitable type
-		orderArray, ok := req.Options.Sort.([]interface{})
-		if !ok {
-			return nil, errors.New("SQL: Order Array is incorrect")
-		}
-		orderBys := []goqu.OrderedExpression{}
-
-		// Iterate over order array
-		for _, item := range orderArray {
-			o := item.(string)
-
-			// Add order type based on type attribute of order element
-			var exp goqu.OrderedExpression
-			if strings.HasPrefix(o, "-") {
-				exp = goqu.I(o[strings.IndexRune(o, '-')+1 : len(o)]).Desc()
-			} else {
-				exp = goqu.I(o).Asc()
+	if req.Options != nil {
+		// Check if the select clause exists
+		if req.Options.Select != nil {
+			selArray := []interface{}{}
+			for key := range req.Options.Select {
+				selArray = append(selArray, key)
 			}
-
-			// Append the order expression to the order expression array
-			orderBys = append(orderBys, exp)
+			query = query.Select(selArray...)
 		}
-		query = query.Order(orderBys...)
 
+		if req.Options.Skip != nil {
+			query = query.Offset(uint(*req.Options.Skip))
+		}
+
+		if req.Options.Limit != nil {
+			query = query.Limit(uint(*req.Options.Limit))
+		}
+
+		if req.Options.Sort != nil {
+			// Format the order array to a suitable type
+			orderMap, ok := req.Options.Sort.(map[string]interface{})
+			if !ok {
+				return nil, errors.New("SQL: Order Array is incorrect")
+			}
+			orderBys := []goqu.OrderedExpression{}
+
+			// Iterate over order array
+			for k, value := range orderMap {
+				orderValue := value.(float64)
+				// Add order type based on type attribute of order element
+				var exp goqu.OrderedExpression
+				if orderValue < 0 {
+					exp = goqu.I(k).Desc()
+				} else {
+					exp = goqu.I(k).Asc()
+				}
+
+				// Append the order expression to the order expression array
+				orderBys = append(orderBys, exp)
+			}
+			query = query.Order(orderBys...)
+
+		}
 	}
 
 	// Generate the sql string and arguments
@@ -92,6 +95,13 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 	}
 	defer rows.Close()
 
+	var rowTypes []*sql.ColumnType
+
+	switch s.GetDBType() {
+	case utils.MySQL:
+		rowTypes, _ = rows.ColumnTypes()
+	}
+
 	switch req.Operation {
 	case utils.One:
 		mapping := make(map[string]interface{})
@@ -104,10 +114,10 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 			return nil, err
 		}
 
-		// switch db.driver {
-		// case MySQL:
-		// 	mysqlTypeCheck(rowTypes, mapping)
-		// }
+		switch s.GetDBType() {
+		case utils.MySQL:
+			mysqlTypeCheck(rowTypes, mapping)
+		}
 
 		return mapping, nil
 
@@ -120,10 +130,15 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 				return nil, err
 			}
 
-			// switch db.driver {
-			// case MySQL:
-			// 	mysqlTypeCheck(rowTypes, mapping)
-			// }
+			switch s.GetDBType() {
+			case utils.MySQL:
+				rowTypes, _ = rows.ColumnTypes()
+			}
+
+			switch s.GetDBType() {
+			case utils.MySQL:
+				mysqlTypeCheck(rowTypes, mapping)
+			}
 
 			array = append(array, mapping)
 		}

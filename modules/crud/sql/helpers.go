@@ -1,7 +1,10 @@
 package sql
 
 import (
+	"database/sql"
 	"errors"
+	"log"
+	"strconv"
 
 	goqu "gopkg.in/doug-martin/goqu.v4"
 )
@@ -78,4 +81,36 @@ func generateRecord(temp interface{}) (goqu.Record, error) {
 		record[k] = v
 	}
 	return record, nil
+}
+
+func mysqlTypeCheck(types []*sql.ColumnType, mapping map[string]interface{}) {
+	for _, colType := range types {
+		typeName := colType.DatabaseTypeName()
+		if typeName == "VARCHAR" || typeName == "TEXT" {
+			val, ok := mapping[colType.Name()].([]byte)
+			if !ok {
+				mapping[colType.Name()] = ""
+			} else {
+				mapping[colType.Name()] = string(val)
+			}
+		}
+		if data, ok := mapping[colType.Name()].([]byte); (typeName == "BIGINT" || typeName == "INT" || typeName == "SMALLINT") && ok {
+			var err error
+			mapping[colType.Name()], err = strconv.ParseInt(string(data), 10, 64)
+			if err != nil {
+				log.Println("Error:", err)
+			}
+		}
+		if data, ok := mapping[colType.Name()].([]byte); (typeName == "DECIMAL") && ok {
+			var err error
+			mapping[colType.Name()], err = strconv.ParseFloat(string(data), 64)
+			if err != nil {
+				log.Println("Error:", err)
+			}
+		}
+		if data, ok := mapping[colType.Name()].([]byte); (typeName == "DATE") && ok {
+			mapping[colType.Name()] = string(data)
+		}
+
+	}
 }

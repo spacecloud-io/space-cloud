@@ -40,14 +40,30 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 
 		authObj, _ := auth.GetAuthObj(tokens[0])
 
-		data, err := m.Request(engine, function, req.Timeout, map[string]interface{}{"auth": authObj, "params": req.Params})
+		dataBytes, err := m.Request(engine, function, req.Timeout, map[string]interface{}{"auth": authObj, "params": req.Params})
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		data := map[string]interface{}{}
+		err = json.Unmarshal(dataBytes, &data)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Create the result to be sent back
+		resultBytes, err := json.Marshal(map[string]interface{}{"result": data})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+		w.Write(resultBytes)
 	}
 }

@@ -3,11 +3,12 @@ package userman
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -112,6 +113,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		createReq := &model.CreateRequest{Operation: utils.One, Document: req}
 		err = m.crud.Create(ctx, dbType, project, "users", createReq)
 		if err != nil {
+			log.Println("Err: ", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Could not create new user"})
 			return

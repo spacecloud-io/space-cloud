@@ -17,7 +17,7 @@ func matchString(rule *config.Rule, args map[string]interface{}) error {
 
 	f1 := utils.LoadStringIfExists(f1String, args)
 	f2 := utils.LoadStringIfExists(f2String, args)
-	switch rule.FieldType {
+	switch rule.Type {
 	case "==":
 		if f1 == f2 {
 			return nil
@@ -44,7 +44,7 @@ func matchNumber(rule *config.Rule, args map[string]interface{}) error {
 		return err
 	}
 
-	switch rule.FieldType {
+	switch rule.Type {
 	case "==":
 		if f1 == f2 {
 			return nil
@@ -91,7 +91,7 @@ func matchBool(rule *config.Rule, args map[string]interface{}) error {
 		return err
 	}
 
-	switch rule.FieldType {
+	switch rule.Type {
 	case "==":
 		if f1 == f2 {
 			return nil

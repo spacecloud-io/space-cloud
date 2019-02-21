@@ -6,6 +6,10 @@ import (
 
 	"github.com/spaceuptech/space-cloud/model"
 	goqu "gopkg.in/doug-martin/goqu.v4"
+
+	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
+	_ "github.com/lib/pq"                              // Import for postgres
+	_ "gopkg.in/doug-martin/goqu.v4/adapters/postgres" // Adapter for postgres
 )
 
 // Delete removes the document(s) from the database which match the condition
