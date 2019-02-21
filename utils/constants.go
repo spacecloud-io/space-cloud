@@ -81,7 +81,7 @@ const (
 	RealtimeWrite string = "write"
 
 	// RealtimeDelete is for delete operations
-	RealtimeDelete string = "selete"
+	RealtimeDelete string = "delete"
 )
 const (
 	// TypeRealtimeSubscribe is the request type for live query subscription
