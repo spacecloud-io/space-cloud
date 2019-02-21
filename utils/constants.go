@@ -72,3 +72,24 @@ const (
 	// Aggregation is the type used for aggregations
 	Aggregation OperationType = "aggr"
 )
+
+const (
+	// RealtimeWorkerCount are the number of goroutines to process realtime data
+	RealtimeWorkerCount int = 10
+
+	// RealtimeWrite is for create and update operations
+	RealtimeWrite string = "write"
+
+	// RealtimeDelete is for delete operations
+	RealtimeDelete string = "delete"
+)
+const (
+	// TypeRealtimeSubscribe is the request type for live query subscription
+	TypeRealtimeSubscribe string = "realtime-subscribe"
+
+	// TypeRealtimeUnsubscribe is the request type for live query subscription
+	TypeRealtimeUnsubscribe string = "realtime-unsubscribe"
+
+	// TypeRealtimeFeed is the response type for realtime feed
+	TypeRealtimeFeed string = "realtime-feed"
+)

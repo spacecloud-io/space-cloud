@@ -69,15 +69,16 @@ type FaaS struct {
 // Realtime holds the config for the realtime module
 type Realtime struct {
 	Enabled bool   `json:"enabled"`
-	Kafka   string `json:"kafka"`
+	Broker  string `json:"broker"`
+	Conn    string `json:"Conn"`
 }
 
 // FileStore holds the config for the file store module
 type FileStore struct {
-	Enabled    bool                 `json:"enabled"`
-	StoreType  string               `json:"storeType"`
-	Conn       string               `json:"conn"`
-	Rules      map[string]*FileRule `json:"rules"`
+	Enabled   bool                 `json:"enabled"`
+	StoreType string               `json:"storeType"`
+	Conn      string               `json:"conn"`
+	Rules     map[string]*FileRule `json:"rules"`
 }
 
 // FileRule is the authorization object at the file rule level
