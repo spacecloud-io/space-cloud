@@ -44,7 +44,7 @@ exports.handleNew = configTemplate => cmd => {
       {
         type: "list",
         name: "primaryDb",
-        message: "Choose a main database",
+        message: "Choose a primary database",
         choices: dbOptions
       },
       {
@@ -64,11 +64,11 @@ exports.handleNew = configTemplate => cmd => {
         "\nSuccess! Created a config.yaml file in the current directory"
       );
       console.log(
-        "It consists of the details you entered just now along with all other possible configurations being commented out for you to play with.\n"
+        "It contains other possible configuration you can do with Space Cloud along with the details you provided.\n"
       );
       console.log("Next steps: ");
       console.log(
-        `\n1] Read docs from https://spaceuptech.com/docs/ and edit config file as per your needs`
+        `\n1] Read the docs from https://spaceuptech.com/docs/ and edit config file as per your needs`
       );
       console.log("\n2] run space-cli deploy --local --config config.yaml");
     });
