@@ -70,7 +70,7 @@ You can find a sample config for the todo app [here](https://raw.githubuserconte
 ### Start Space Cloud
 You can start `space-cloud` with the following command. Make sure mongo db is running before this step
 ```
-space-cloud run --config config.yml
+space-cloud run --config config.yaml
 ```
 
 That's it. Your backend is up and running!
