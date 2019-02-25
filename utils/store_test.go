@@ -15,6 +15,21 @@ type LoadValueStub struct {
 	state map[string]interface{}
 	ret   interface{}
 }
+type LoadNumberStub struct {
+	key  interface{}
+	args map[string]interface{}
+	ret  float64
+}
+type LoadBoolStub struct {
+	key  interface{}
+	args map[string]interface{}
+	ret  bool
+}
+type AdjustStub struct {
+	obj   interface{}
+	state map[string]interface{}
+	ret   interface{}
+}
 
 func TestUtilsExists(t *testing.T) {
 	trueCases := 1
@@ -58,14 +73,15 @@ func TestUtilsExists(t *testing.T) {
 }
 
 func TestLoadValue(t *testing.T) {
-	trueCases := 3
+	trueCases := 4
 	m := map[string]interface{}{
 		"args": map[string]interface{}{
 			"auth":   "key",
 			"nested": "key2",
 			"group1": map[string]interface{}{
-				"key": "nested",
-				"id":  "value",
+				"key":  "nested",
+				"key2": 10,
+				"id":   "value",
 				"nested": map[string]interface{}{
 					"id": "group1",
 				},
@@ -93,7 +109,12 @@ func TestLoadValue(t *testing.T) {
 			state: m,
 			ret:   "group1",
 		},
-		//False / Error Cases.
+		&LoadValueStub{
+			value: "args.group1.key2",
+			state: m,
+			ret:   10,
+		},
+		// False/Error Cases.
 		&LoadValueStub{
 			value: "",
 			state: m,
@@ -124,6 +145,51 @@ func TestLoadValue(t *testing.T) {
 			state: m,
 			ret:   "",
 		},
+		&LoadValueStub{
+			value: "args.group1.key1",
+			state: m,
+			ret:   "",
+		},
+		&LoadValueStub{
+			value: "args.group1[abc]",
+			state: m,
+			ret:   "",
+		},
+		&LoadValueStub{
+			value: "args.group1.id2[args.auth]",
+			state: m,
+			ret:   "",
+		},
+		&LoadValueStub{
+			value: "args.group3[args.auth].abc",
+			state: m,
+			ret:   "",
+		},
+		&LoadValueStub{
+			value: "args.group1[args.auth].abc",
+			state: m,
+			ret:   "",
+		},
+		&LoadValueStub{
+			value: "args.group1[args.auth1].abc",
+			state: m,
+			ret:   "",
+		},
+		&LoadValueStub{
+			value: "abc",
+			state: m,
+			ret:   "",
+		},
+		&LoadValueStub{
+			value: "args.group1[args.group1.key2].id",
+			state: m,
+			ret:   "",
+		},
+		&LoadValueStub{
+			value: "args.group1[args.group1.key2]",
+			state: m,
+			ret:   "",
+		},
 	}
 	for i, eachTest := range test {
 		res, err := LoadValue(eachTest.value, eachTest.state)
@@ -138,135 +204,311 @@ func TestLoadValue(t *testing.T) {
 	}
 }
 
-// func TestLoadStringIfExists(t *testing.T) {
+func TestLoadStringIfExists(t *testing.T) {
+	trueCases := 2
+	m := map[string]interface{}{
+		"args": map[string]interface{}{
+			"auth": map[string]interface{}{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+	}
+	test := []*LoadStringIfExistStub{
+		&LoadStringIfExistStub{
+			value: "args.auth.key1",
+			state: m,
+			ret:   "value1",
+		},
+		&LoadStringIfExistStub{
+			value: "args.auth.key3",
+			state: m,
+			ret:   "args.auth.key3",
+		},
+		//False Cases :
+		&LoadStringIfExistStub{
+			value: "args.auth.key",
+			state: m,
+			ret:   "value1",
+		},
+		&LoadStringIfExistStub{
+			value: "args.auth.key1",
+			state: m,
+			ret:   "args.auth.key1",
+		},
+	}
+	for i, eachTest := range test {
+		res := LoadStringIfExists(eachTest.value, eachTest.state)
+		eq := reflect.DeepEqual(eachTest.ret, res)
+		if i < trueCases {
+			if !eq {
+				t.Error(i+1, ":", "Incorrect Match 1")
+			}
+			continue
+		}
+		if eq {
+			t.Error(i+1, ":", "Incorrect Match 2")
+		}
+	}
+}
 
-// 	m := map[string]interface{}{
-// 		"args": map[string]interface{}{
-// 			"auth": map[string]interface{}{
-// 				"id":   "UserID",
-// 				"role": "admin",
-// 				"key1": "value1",
-// 				"key2": "value2",
-// 				"nested": map[string]interface{}{
-// 					"value1": "v1",
-// 				},
-// 			},
-// 		},
-// 	}
-// 	k := map[string]interface{}{
-// 		"files": map[string]interface{}{
-// 			"file1": "myfile",
-// 		},
-// 		"args": "",
-// 	}
-// 	l := map[string]interface{}{
-// 		"": "Empty",
-// 	}
+func TestLoadNumber(t *testing.T) {
+	trueCases := 3
+	m := map[string]interface{}{
+		"args": map[string]interface{}{
+			"auth": map[string]interface{}{
+				"key1": int64(10),
+				"key2": float64(20),
+				"key3": int(30),
+			},
+		},
+	}
+	test := []*LoadNumberStub{
+		&LoadNumberStub{
+			key:  "args.auth.key1",
+			args: m,
+			ret:  10,
+		},
+		&LoadNumberStub{
+			key:  "args.auth.key2",
+			args: m,
+			ret:  20,
+		},
+		&LoadNumberStub{
+			key:  int64(10),
+			args: m,
+			ret:  float64(10),
+		},
 
-// 	test := []*LoadStringIfExistStub{
-// 		//1
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth.id",
-// 			state: m,
-// 			ret:   "UserID",
-// 		},
-// 		//2
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth.role",
-// 			state: m,
-// 			ret:   "admin",
-// 		},
-// 		//3
-// 		&LoadStringIfExistStub{
-// 			value: "",
-// 			state: m,
-// 			ret:   "",
-// 		},
-// 		//4
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth.nested[args.auth.key1]",
-// 			state: m,
-// 			ret:   "v1",
-// 		},
-// 		//5
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth.nested[args.auth.key2]",
-// 			state: m,
-// 			ret:   "args.auth.nested[args.auth.key2]",
-// 		},
-// 		//6
-// 		&LoadStringIfExistStub{
-// 			value: "(",
-// 			state: m,
-// 			ret:   "(",
-// 		},
-// 		//7
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth",
-// 			state: k,
-// 			ret:   "args.auth",
-// 		},
-// 		//8
-// 		&LoadStringIfExistStub{
-// 			value: "files.myfile",
-// 			state: k,
-// 			ret:   "files.myfile",
-// 		},
-// 		//9
-// 		&LoadStringIfExistStub{
-// 			value: "files.file1",
-// 			state: k,
-// 			ret:   "myfile",
-// 		},
-// 		//10
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth",
-// 			state: l,
-// 			ret:   "args.auth",
-// 		},
-// 		//False Cases
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth.role",
-// 			state: m,
-// 			ret:   "args.auth.role",
-// 		},
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth.id",
-// 			state: m,
-// 			ret:   "args.auth.id",
-// 		},
-// 		&LoadStringIfExistStub{
-// 			value: "",
-// 			state: m,
-// 			ret:   "Error",
-// 		},
-// 		&LoadStringIfExistStub{
-// 			value: "args.auth.nested[args.auth.key1]",
-// 			state: m,
-// 			ret:   "args.auth.nested[args.auth.key1]",
-// 		},
-// 		&LoadStringIfExistStub{
-// 			value: "(",
-// 			state: m,
-// 			ret:   "",
-// 		},
-// 		&LoadStringIfExistStub{
-// 			value: "",
-// 			state: l,
-// 			ret:   "Empty",
-// 		},
-// 	}
-// 	for i, eachTest := range test {
-// 		res := LoadStringIfExists(eachTest.value, eachTest.state)
-// 		eq := reflect.DeepEqual(eachTest.ret, res)
-// 		if i < 10 {
-// 			if !eq {
-// 				t.Error(i+1, ":", "Incorrect Match")
-// 			}
-// 			continue
-// 		}
-// 		if eq {
-// 			t.Error(i+1, ":", "Incorrect Match")
-// 		}
-// 	}
-// }
+		// False Cases :
+		&LoadNumberStub{
+			key:  "args.auth.key4",
+			args: m,
+			ret:  30,
+		},
+		&LoadNumberStub{
+			key:  "args.auth.key3",
+			args: m,
+			ret:  30,
+		},
+		&LoadNumberStub{
+			key:  int(10),
+			args: m,
+			ret:  float64(10),
+		},
+	}
+	for i, eachTest := range test {
+		res, err := LoadNumber(eachTest.key, eachTest.args)
+		if i < trueCases {
+			if err != nil || res != eachTest.ret {
+				t.Error(i+1, ":", "Incorrect Match 1", err)
+			}
+			continue
+		} else if err == nil && res == eachTest.ret {
+			t.Error(i+1, ":", "Incorrect Match 2")
+		}
+
+	}
+}
+
+func TestLoadBool(t *testing.T) {
+	trueCases := 2
+	m := map[string]interface{}{
+		"args": map[string]interface{}{
+			"auth": map[string]interface{}{
+				"key1": true,
+			},
+		},
+	}
+	test := []*LoadBoolStub{
+		&LoadBoolStub{
+			key:  "args.auth.key1",
+			args: m,
+			ret:  true,
+		},
+		&LoadBoolStub{
+			key:  true,
+			args: m,
+			ret:  true,
+		},
+		// False Cases:
+		&LoadBoolStub{
+			key:  "args.auth.key2",
+			args: m,
+			ret:  true,
+		},
+		&LoadBoolStub{
+			key:  false,
+			args: m,
+			ret:  true,
+		},
+		&LoadBoolStub{
+			key:  int(10),
+			args: m,
+			ret:  true,
+		},
+	}
+	for i, eachTest := range test {
+		res, err := LoadBool(eachTest.key, eachTest.args)
+		if i < trueCases {
+			if err != nil || res != eachTest.ret {
+				t.Error(i+1, ":", "Incorrect Match 1", err)
+			}
+			continue
+		} else if res == eachTest.ret && err == nil {
+			t.Error(i+1, ":", "Incorrect Match 2")
+		}
+	}
+}
+
+func TestAdjust(t *testing.T) {
+	trueCases := 6
+	m := map[string]interface{}{
+		"args": map[string]interface{}{
+			"auth": map[string]interface{}{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+	}
+
+	test := []*AdjustStub{
+		&AdjustStub{
+			obj:   "args.auth.key1",
+			state: m,
+			ret:   "value1",
+		},
+		&AdjustStub{
+			obj:   "args.auth.key3",
+			state: m,
+			ret:   "args.auth.key3",
+		},
+		&AdjustStub{
+			obj:   int(10),
+			state: m,
+			ret:   int(10),
+		},
+		&AdjustStub{
+			obj: map[string]interface{}{
+				"args1": map[string]interface{}{
+					"auth1": "args.auth.key1",
+				},
+			},
+			state: m,
+			ret: map[string]interface{}{
+				"args1": map[string]interface{}{
+					"auth1": "value1",
+				},
+			},
+		},
+		&AdjustStub{
+			obj: map[string]interface{}{
+				"args": map[string]interface{}{
+					"auth": "args.auth1",
+				},
+			},
+			state: m,
+			ret: map[string]interface{}{
+				"args": map[string]interface{}{
+					"auth": "args.auth1",
+				},
+			},
+		},
+		&AdjustStub{
+			obj: []interface{}{
+				map[string]interface{}{
+					"args": map[string]interface{}{
+						"auth": "args.auth.key1",
+					},
+				},
+				map[string]interface{}{
+					"args": map[string]interface{}{
+						"auth": "args.auth.key2",
+					},
+				},
+			},
+			state: m,
+			ret: []interface{}{
+				map[string]interface{}{
+					"args": map[string]interface{}{
+						"auth": "value1",
+					},
+				},
+				map[string]interface{}{
+					"args": map[string]interface{}{
+						"auth": "value2",
+					},
+				},
+			},
+		},
+		// False/Error Cases:
+		&AdjustStub{
+			obj:   "args.auth.key1",
+			state: m,
+			ret:   "val",
+		},
+		&AdjustStub{
+			obj:   "args.auth.key3",
+			state: m,
+			ret:   "value1",
+		},
+		&AdjustStub{
+			obj:   int(10),
+			state: m,
+			ret:   float64(10),
+		},
+		&AdjustStub{
+			obj: map[string]interface{}{
+				"args1": map[string]interface{}{
+					"auth1": "args.auth.key3",
+				},
+			},
+			state: m,
+			ret: map[string]interface{}{
+				"args1": map[string]interface{}{
+					"auth1": "",
+				},
+			},
+		},
+		&AdjustStub{
+			obj: []interface{}{
+				map[string]interface{}{
+					"args": map[string]interface{}{
+						"auth": "args.auth",
+					},
+				},
+				map[string]interface{}{
+					"args": map[string]interface{}{
+						"auth": "args.auth",
+					},
+				},
+			},
+			state: m,
+			ret: []interface{}{
+				map[string]interface{}{
+					"args": map[string]interface{}{
+						"auth": "value1",
+					},
+				},
+				map[string]interface{}{
+					"args": map[string]interface{}{
+						"auth": "value2",
+					},
+				},
+			},
+		},
+	}
+	for i, eachTest := range test {
+		res := Adjust(eachTest.obj, eachTest.state)
+		eq := reflect.DeepEqual(eachTest.ret, res)
+		if i < trueCases {
+			if !eq {
+				t.Error(i+1, ":", "Incorrect Match 1")
+			}
+			continue
+		}
+		if eq {
+			t.Error(i+1, ":", "Incorrect Match 2")
+		}
+	}
+}
