@@ -5,8 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -17,7 +19,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func handleWebsocket(realtime *realtime.Module) http.HandlerFunc {
+func handleWebsocket(realtime *realtime.Module, auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -34,20 +36,54 @@ func handleWebsocket(realtime *realtime.Module) http.HandlerFunc {
 			switch req.Type {
 			case utils.TypeRealtimeSubscribe:
 				// For realtime subscribe event
-				data := req.Data.(model.RealtimeRequest)
-				queryID := realtime.AddLiveQuery(data.Group, client, data.Where)
+				data := new(model.RealtimeRequest)
+				mapstructure.Decode(req.Data, data)
+
+				// Check if the user is authicated
+				authObj, err := auth.IsAuthenticated(data.Token, data.DBType, data.Group, utils.Read)
+				if err != nil {
+					client.Write(model.Message{
+						ID:   req.ID,
+						Type: req.Type,
+						Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
+					})
+					return
+				}
+
+				// Create an args object
+				args := map[string]interface{}{
+					"args":    map[string]interface{}{"find": data.Where, "op": utils.All, "auth": authObj},
+					"project": data.Project, // Don't forget to do this for every request
+				}
+
+				// Check if user is authorized to make this request
+				err = auth.IsAuthorized(data.DBType, data.Group, utils.Read, args)
+				if err != nil {
+					client.Write(model.Message{
+						ID:   req.ID,
+						Type: req.Type,
+						Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
+					})
+					return
+				}
+
+				realtime.AddLiveQuery(data.ID, data.Group, client, data.Where)
 				client.Write(model.Message{
+					ID:   req.ID,
 					Type: req.Type,
-					Data: model.RealtimeResponse{Group: data.Group, ID: queryID},
+					Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true},
 				})
 
 			case utils.TypeRealtimeUnsubscribe:
 				// For realtime unsubscribe event
-				data := req.Data.(model.RealtimeRequest)
+				data := new(model.RealtimeRequest)
+				mapstructure.Decode(req.Data, data)
+
 				realtime.RemoveLiveQuery(data.Group, client.ClientID(), data.ID)
 				client.Write(model.Message{
+					ID:   req.ID,
 					Type: req.Type,
-					Data: model.RealtimeResponse{Group: data.Group, ID: data.ID},
+					Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true},
 				})
 			}
 		})
