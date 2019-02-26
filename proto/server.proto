@@ -36,7 +36,7 @@ message AggregateRequest {
 }
 message Response {
   bool Ack = 1;
-  string Err = 2;
+  string Error = 2;
   repeated bytes result = 3;
 }
 message Meta {
