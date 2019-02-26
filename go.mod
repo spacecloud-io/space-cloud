@@ -13,6 +13,7 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.0.0
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mongodb/mongo-go-driver v0.3.0
 	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.7.0

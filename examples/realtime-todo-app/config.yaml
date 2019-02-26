@@ -1,0 +1,24 @@
+---
+secret: some-secret
+modules:
+  crud:
+    mongo:
+      conn: mongodb://localhost:27017
+      collections:
+        todos:
+          rules:
+            read:
+              rule: allow
+            create:
+              rule: allow
+            update:
+              rule: allow
+            delete:
+              rule: allow
+          isRealtimeEnabled: true
+      isPrimary: true
+  auth:
+    email:
+      enabled: true
+  realtime:
+    enabled: true

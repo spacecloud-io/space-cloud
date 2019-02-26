@@ -84,9 +84,10 @@ func (s *server) handleCreate() http.HandlerFunc {
 				if id, p := data[idVar]; p {
 					s.realtime.Send(&model.FeedData{
 						Group:     meta.col,
+						DBType:    meta.dbType,
 						Type:      utils.RealtimeWrite,
 						TimeStamp: time.Now().Unix(),
-						ID:        id.(string),
+						DocID:     id.(string),
 						Payload:   data,
 					})
 				}
@@ -225,7 +226,8 @@ func (s *server) handleUpdate() http.HandlerFunc {
 						Group:     meta.col,
 						Type:      utils.RealtimeWrite,
 						TimeStamp: time.Now().Unix(),
-						ID:        id.(string),
+						DocID:     id.(string),
+						DBType:    meta.dbType,
 						Payload:   data.(map[string]interface{}),
 					})
 				}
@@ -296,7 +298,8 @@ func (s *server) handleDelete() http.HandlerFunc {
 						Group:     meta.col,
 						Type:      utils.RealtimeDelete,
 						TimeStamp: time.Now().Unix(),
-						ID:        id.(string),
+						DocID:     id.(string),
+						DBType:    meta.dbType,
 					})
 				}
 			}

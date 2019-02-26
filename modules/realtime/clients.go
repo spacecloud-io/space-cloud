@@ -3,8 +3,6 @@ package realtime
 import (
 	"sync"
 
-	"github.com/satori/go.uuid"
-
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -14,7 +12,7 @@ type queryStub struct {
 }
 
 // AddLiveQuery tracks a client for a live query
-func (m *Module) AddLiveQuery(group string, client *utils.Client, whereObj map[string]interface{}) string {
+func (m *Module) AddLiveQuery(id, group string, client *utils.Client, whereObj map[string]interface{}) {
 	// Load clients in a particular group
 	clients := new(sync.Map)
 	t, _ := m.groups.LoadOrStore(group, clients)
@@ -26,9 +24,7 @@ func (m *Module) AddLiveQuery(group string, client *utils.Client, whereObj map[s
 	queries = t.(*sync.Map)
 
 	// Add the query
-	id := uuid.NewV1().String()
 	queries.Store(id, &queryStub{client, whereObj})
-	return id
 }
 
 // RemoveLiveQuery removes a particular live query
