@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"log"
 	"strings"
 )
 
@@ -59,6 +58,18 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		return nil, errors.New("The variable does not map to internal state")
 	}
 
+	if tempArray[0] == "utils" {
+		function := tempArray[1]
+		pre := strings.IndexRune(function, '(')
+		post := strings.IndexRune(function, ')')
+		if strings.HasPrefix(function, "exists") {
+			_, err := LoadValue(function[pre+1:post], state)
+			return err == nil, nil
+		} else {
+			return nil, errors.New("Invalid utils operation")
+		}
+	}
+
 	scope, present := state[tempArray[0]]
 	if !present {
 		return nil, errors.New("Scope not present")
@@ -67,24 +78,6 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 	obj, ok := scope.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("Invalid state object")
-	}
-
-	if tempArray[0] == "files" {
-		file, present := obj[tempArray[1]]
-		if !present {
-			log.Println("file: ", tempArray[1], "files: ", obj)
-			return nil, errors.New("File not present")
-		}
-		return file, nil
-	}
-	if tempArray[0] == "utils" {
-		function := tempArray[1]
-		pre := strings.IndexRune(function, '(')
-		post := strings.IndexRune(function, ')')
-		if strings.HasPrefix(function, "exists") {
-			_, err := LoadValue(function[pre+1:post], state)
-			return err == nil, nil
-		}
 	}
 
 	for index, k := range tempArray {
