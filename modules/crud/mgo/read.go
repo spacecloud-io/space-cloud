@@ -40,19 +40,19 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 
 		if req.Options != nil {
 			if req.Options.Select != nil {
-				findOptions.SetProjection(req.Options.Select)
+				findOptions = findOptions.SetProjection(req.Options.Select)
 			}
 
 			if req.Options.Skip != nil {
-				findOptions.SetSkip(*req.Options.Skip)
+				findOptions = findOptions.SetSkip(*req.Options.Skip)
 			}
 
 			if req.Options.Limit != nil {
-				findOptions.SetLimit(*req.Options.Limit)
+				findOptions = findOptions.SetLimit(*req.Options.Limit)
 			}
 
 			if req.Options.Sort != nil {
-				findOptions.SetSort(req.Options.Sort)
+				findOptions = findOptions.SetSort(req.Options.Sort)
 			}
 		}
 
@@ -86,15 +86,15 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 
 		if req.Options != nil {
 			if req.Options.Select != nil {
-				findOneOptions.SetProjection(req.Options.Select)
+				findOneOptions = findOneOptions.SetProjection(req.Options.Select)
 			}
 
 			if req.Options.Skip != nil {
-				findOneOptions.SetSkip(*req.Options.Skip)
+				findOneOptions = findOneOptions.SetSkip(*req.Options.Skip)
 			}
 
 			if req.Options.Sort != nil {
-				findOneOptions.SetSort(req.Options.Sort)
+				findOneOptions = findOneOptions.SetSort(req.Options.Sort)
 			}
 		}
 
