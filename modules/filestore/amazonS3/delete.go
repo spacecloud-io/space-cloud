@@ -1,4 +1,4 @@
-package amazonS3
+package amazons3
 
 import (
 	"context"

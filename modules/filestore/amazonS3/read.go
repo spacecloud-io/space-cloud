@@ -1,4 +1,4 @@
-package amazonS3
+package amazons3
 
 import (
 	"bufio"
@@ -17,18 +17,23 @@ func (a *AmazonS3) ListDir(ctx context.Context, project string, req *model.ListF
 	svc := s3.New(a.session)
 
 	resp, _ := svc.ListObjects(&s3.ListObjectsInput{
-		Bucket: aws.String(project),
-		Prefix: aws.String(req.Path),
+		Bucket:    aws.String(project),
+		Prefix:    aws.String(req.Path),
+		Delimiter: aws.String("/"),
 	})
-	result := []*model.ListFilesResponse{}
-	for _, key := range resp.Contents {
-		dir, file := filepath.Split(*key.Key)
-		t := &model.ListFilesResponse{Name: file, Type: "file"}
-		if file == "" {
-			t.Type = "dir"
-			t.Name = filepath.Base(dir)
-		}
 
+	result := []*model.ListFilesResponse{}
+	resp.Contents = resp.Contents[1:]
+
+	for _, key := range resp.Contents {
+		t := &model.ListFilesResponse{Name: filepath.Base(*key.Key), Type: "file"}
+		if req.Type == "all" || req.Type == t.Type {
+			result = append(result, t)
+		}
+	}
+
+	for _, key := range resp.CommonPrefixes {
+		t := &model.ListFilesResponse{Name: filepath.Base(*key.Prefix), Type: "dir"}
 		if req.Type == "all" || req.Type == t.Type {
 			result = append(result, t)
 		}
