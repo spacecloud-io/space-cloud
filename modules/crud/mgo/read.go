@@ -3,7 +3,7 @@ package mgo
 import (
 	"context"
 
-	"github.com/mongodb/mongo-go-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -19,7 +19,7 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 	case utils.Count:
 		countOptions := options.Count()
 
-		result, err = collection.Count(ctx, req.Find, countOptions)
+		result, err = collection.CountDocuments(ctx, req.Find, countOptions)
 		if err != nil {
 			return nil, err
 		}
