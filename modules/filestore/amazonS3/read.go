@@ -18,7 +18,7 @@ func (a *AmazonS3) ListDir(ctx context.Context, project string, req *model.ListF
 
 	resp, _ := svc.ListObjects(&s3.ListObjectsInput{
 		Bucket:    aws.String(project),
-		Prefix:    aws.String(req.Path),
+		Prefix:    aws.String(req.Path), //backslach at the end is important
 		Delimiter: aws.String("/"),
 	})
 
