@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -17,7 +18,7 @@ type Mongo struct {
 
 // Init initialises a new mongo instance
 func Init(connection string) (*Mongo, error) {
-	client, err := mongo.NewClient(connection)
+	client, err := mongo.NewClient(options.Client().ApplyURI(connection))
 	if err != nil {
 		return nil, err
 	}

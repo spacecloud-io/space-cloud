@@ -14,7 +14,6 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/mongodb/mongo-go-driver v0.3.0
 	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.7.0
 	github.com/nats-io/nkeys v0.0.2 // indirect
@@ -27,6 +26,7 @@ require (
 	github.com/urfave/cli v1.20.0
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
+	go.mongodb.org/mongo-driver v1.0.0-rc1
 	golang.org/x/crypto v0.0.0-20190131182504-b8fe1690c613 // indirect
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
 	golang.org/x/sys v0.0.0-20190209173611-3b5209105503 // indirect
