@@ -19,7 +19,7 @@ modules:
             update:
               rule: allow
             delete:
-							rule: allow
+              rule: allow
   auth:
     email:
       enabled: false
