@@ -1,7 +1,6 @@
 package realtime
 
 import (
-	"log"
 	"reflect"
 	"sync"
 
@@ -21,7 +20,6 @@ func (m *Module) worker() {
 	}
 
 	for data := range m.feed {
-		log.Println(data)
 		clientsTemp, ok := m.groups.Load(data.Group)
 		if !ok {
 			continue
