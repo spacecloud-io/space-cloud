@@ -26,9 +26,11 @@ func (m *Module) SetConfig(conf *config.Realtime) error {
 	m.Lock()
 	defer m.Unlock()
 
-	if !conf.Enabled {
+	if conf == nil || !conf.Enabled {
 		m.enabled = false
-		close(m.feed)
+		if m.feed != nil {
+			close(m.feed)
+		}
 		return nil
 	}
 

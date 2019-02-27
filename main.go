@@ -38,6 +38,11 @@ func main() {
 				},
 			},
 		},
+		{
+			Name:   "init",
+			Usage:  "creates a confg file with sensible defaults",
+			Action: actionInit,
+		},
 	}
 
 	err := app.Run(os.Args)
@@ -68,4 +73,8 @@ func actionRun(c *cli.Context) error {
 
 	s.routes()
 	return s.start(port)
+}
+
+func actionInit(c *cli.Context) error {
+	return config.GenerateConfig()
 }
