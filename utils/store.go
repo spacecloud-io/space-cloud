@@ -65,9 +65,9 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		if strings.HasPrefix(function, "exists") {
 			_, err := LoadValue(function[pre+1:post], state)
 			return err == nil, nil
-		} else {
-			return nil, errors.New("Invalid utils operation")
 		}
+
+		return nil, errors.New("Invalid utils operation")
 	}
 
 	scope, present := state[tempArray[0]]
