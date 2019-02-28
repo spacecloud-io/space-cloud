@@ -39,7 +39,7 @@ const (
 	Local FileStoreType = "local"
 
 	// AmazonS3 is the type used for the AmazonS3 storage
-	AmazonS3 FileStoreType = "amazons3"
+	AmazonS3 FileStoreType = "amazon-s3"
 )
 
 // FileOpType is the type of file operation being performed on the file store
