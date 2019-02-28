@@ -1,6 +1,7 @@
 module github.com/spaceuptech/space-cloud
 
 require (
+	github.com/aws/aws-sdk-go v1.17.4
 	github.com/c2fo/testify v0.0.0-20150827203832-fba96363964a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
