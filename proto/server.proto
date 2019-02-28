@@ -1,43 +1,43 @@
 syntax = "proto3";
 package proto;
 message CreateRequest {
-  repeated bytes Document = 1;
+  bytes Document = 1;
   string Operation = 2;
   Meta Meta = 3;
 }
 message ReadRequest {
-  repeated bytes Find = 1;
+  bytes Find = 1;
   string Operation = 2;
   ReadOptions Options = 3;
   Meta Meta = 4;
 }
 message ReadOptions {
-  map<string,int> Select = 1;
-  repeated bytes Sort = 2;
+  map<string,int32> Select = 1;
+  map<string,int32> Sort = 2;
   int64 Skip = 3;
   int64 Limit = 4;
   string Distinct = 5;
 }
 message UpdateRequest {
-  repeated bytes Find = 1;
+  bytes Find = 1;
   string Operation = 2;
-  repeated bytes Update = 3;
-  Meta meta = 4;
+  bytes Update = 3;
+  Meta Meta = 4;
 }
 message DeleteRequest {
-  repeated bytes Find = 1;
+  bytes Find = 1;
   string Operation = 2;
-  Meta meta = 3;
+  Meta Meta = 3;
 }
 message AggregateRequest {
-  repeated bytes Pipeline = 1;
+  bytes Pipeline = 1;
   string Operation = 2;
   Meta Meta = 3;
 }
 message Response {
-  bool Ack = 1;
+  int32 Status = 1;
   string Error = 2;
-  repeated bytes result = 3;
+  bytes Result = 3;
 }
 message Meta {
   string Project = 1;
