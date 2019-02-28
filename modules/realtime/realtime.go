@@ -24,11 +24,13 @@ func Init() *Module {
 // SetConfig set the rules and secret key required by the crud block
 func (m *Module) SetConfig(conf *config.Realtime) error {
 	m.Lock()
-	defer m.RUnlock()
+	defer m.Unlock()
 
-	if !conf.Enabled {
+	if conf == nil || !conf.Enabled {
 		m.enabled = false
-		close(m.feed)
+		if m.feed != nil {
+			close(m.feed)
+		}
 		return nil
 	}
 

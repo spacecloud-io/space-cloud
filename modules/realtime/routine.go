@@ -1,7 +1,6 @@
 package realtime
 
 import (
-	"log"
 	"reflect"
 	"sync"
 
@@ -21,7 +20,6 @@ func (m *Module) worker() {
 	}
 
 	for data := range m.feed {
-		log.Println(data)
 		clientsTemp, ok := m.groups.Load(data.Group)
 		if !ok {
 			continue
@@ -29,12 +27,16 @@ func (m *Module) worker() {
 		clients := clientsTemp.(*sync.Map)
 		clients.Range(func(key interface{}, value interface{}) bool {
 			queries := value.(*sync.Map)
-			queries.Range(func(key interface{}, value interface{}) bool {
+			queries.Range(func(id interface{}, value interface{}) bool {
 				query := value.(*queryStub)
 
 				// Send feed data if type is delete or the where clause matches
 				if data.Type == utils.RealtimeDelete || validate(query.whereObj, data.Payload) {
-					query.client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: data})
+					dataPoint := &model.FeedData{
+						QueryID: id.(string), DocID: data.DocID, Group: data.Group, Payload: data.Payload,
+						TimeStamp: data.TimeStamp, Type: data.Type, DBType: data.DBType,
+					}
+					query.client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: dataPoint})
 				}
 				return true
 			})

@@ -1,0 +1,55 @@
+syntax = "proto3";
+package proto;
+message CreateRequest {
+  repeated bytes Document = 1;
+  string Operation = 2;
+  Meta Meta = 3;
+}
+message ReadRequest {
+  repeated bytes Find = 1;
+  string Operation = 2;
+  ReadOptions Options = 3;
+  Meta Meta = 4;
+}
+message ReadOptions {
+  map<string,int> Select = 1;
+  repeated bytes Sort = 2;
+  int64 Skip = 3;
+  int64 Limit = 4;
+  string Distinct = 5;
+}
+message UpdateRequest {
+  repeated bytes Find = 1;
+  string Operation = 2;
+  repeated bytes Update = 3;
+  Meta meta = 4;
+}
+message DeleteRequest {
+  repeated bytes Find = 1;
+  string Operation = 2;
+  Meta meta = 3;
+}
+message AggregateRequest {
+  repeated bytes Pipeline = 1;
+  string Operation = 2;
+  Meta Meta = 3;
+}
+message Response {
+  bool Ack = 1;
+  string Error = 2;
+  repeated bytes result = 3;
+}
+message Meta {
+  string Project = 1;
+  string DBType = 2;
+  string Col = 3;
+  string Token = 4;
+}
+
+service SpaceCloud {
+  rpc Create(CreateRequest) returns (Response) {}
+  rpc Read(ReadRequest) returns (Response) {}
+  rpc Update(UpdateRequest) returns (Response) {}
+  rpc Delete(DeleteRequest) returns (Response) {}
+  rpc Aggregate(AggregateRequest) returns (Response) {}
+}

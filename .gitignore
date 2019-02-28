@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+*.zip
 
 # Test binary, build with `go test -c`
 *.test
@@ -16,3 +17,4 @@ css
 .sass-cache
 
 space-cloud
+publish.sh

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Page Title</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://spaceuptech.com/downloads/libraries/space-api-v0.3.28.js"></script>
+</head>
+
+<body>
+  <!-- Sign In -->
+  <b>Sign In:</b><br />
+  <input id="txtEmail1" placeholder="Email" type="text" /><br />
+  <input id="txtPass1" placeholder="Password" type="password" /><br />
+  <button onclick="login()">Login</button>
+  <br /><br />
+
+  <!-- Sign Up -->
+  <b>Sign Up:</b><br />
+  <input id="txtEmail2" placeholder="Email" type="text" /><br />
+  <input id="txtName2" placeholder="Name" type="text" /><br />
+  <input id="txtPass2" placeholder="Password" type="password" /><br />
+  <button onclick="signUp()">Sign Up</button>
+  <br /><br />
+
+  <!-- TODOs -->
+  <b>TODOs</b><br />
+  <input id="txtTodo" type="text" placeholder="Todo" />
+  <button onclick="addTodo()">Add</button>
+  <ul id="todos"></ul>
+
+  <script>
+    const generateId = () => {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+    // Initialise the API
+    var api = new Space.API("todo-app", "http://localhost:8080");
+    var db = api.Mongo();
+    var userId = "";
+    // Login function
+    function login() {
+      // Get the input field values
+      var email = document.getElementById("txtEmail1").value;
+      var pass = document.getElementById("txtPass1").value;
+      // Call the Sign In method
+      db.signIn(email, pass).then(res => {
+        // Verify if sign in is successful
+        if (res.status == 200) {
+          // Initialise the api token
+          api.setToken(res.data.token);
+          // Store the user id
+          userId = res.data.user._id;
+
+          const onSnapshot = (snapshot, type, docs) => {
+            // Clear the existing todos
+            document.getElementById("todos").innerHTML = ''
+
+            // Print the todos
+            docs.forEach(element => {
+              printTodo(element.todo);
+            });
+          }
+
+          const onError = (err) => {
+            console.log('Operation failed:', err)
+          }
+
+          // Get todos from the database
+          db.liveQuery("todos")
+            .where(Space.cond("userId", "==", userId))
+            .subscribe(onSnapshot, onError)
+
+          // Get todos from the database
+          db.get("todos")
+            .where(Space.cond("userId", "==", userId))
+            .all()
+            .then(res => {
+              // Verify if get request is successful
+              if (res.status == 200) {
+                // Iterate over the todos and print them
+                res.data.result.forEach(element => {
+                  printTodo(element.todo);
+                });
+              }
+            });
+
+          alert("Login Success");
+          return;
+        }
+        alert("Login Failed");
+      });
+    }
+    // Sign Up function
+    function signUp() {
+      // Get the input field values
+      var email = document.getElementById("txtEmail2").value;
+      var name = document.getElementById("txtName2").value;
+      var pass = document.getElementById("txtPass2").value;
+      // Call the Sign Up method
+      db.signUp(email, name, pass, "default").then(res => {
+        // Verify if sign in is successful
+        if (res.status == 200) {
+          // Initialise the api token
+          api.setToken(res.data.token);
+          alert("Sign Up Success");
+          return;
+        }
+        alert("Sign Up Failed");
+      });
+    }
+    // Function to add li to the todos list
+    function printTodo(todo) {
+      var list = document.getElementById("todos");
+      var todos = list.innerHTML;
+      todos += "<li>" + todo + "</li>";
+      list.innerHTML = todos;
+    }
+    // Add Todo function
+    function addTodo() {
+      // Get the input field values
+      var todo = document.getElementById("txtTodo").value;
+
+      // Add todo to the database
+      db.insert("todos")
+        .one({ _id: generateId(), todo: todo, userId: userId })
+        .then(res => {
+          // Verify if get request is successful
+          if (res.status != 200) {
+            alert("Error occured")
+            return;
+          }
+        });
+    }
+  </script>
+</body>
+
+</html>
