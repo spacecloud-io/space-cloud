@@ -30,7 +30,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Create)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -49,7 +49,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Create, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -114,7 +114,7 @@ func (s *server) handleRead() http.HandlerFunc {
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Read)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -138,7 +138,7 @@ func (s *server) handleRead() http.HandlerFunc {
 		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Read, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -170,7 +170,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Update)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -189,7 +189,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Update, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -254,7 +254,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Delete)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -273,7 +273,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Delete, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -325,7 +325,7 @@ func (s *server) handleAggregate() http.HandlerFunc {
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Aggregation)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -344,7 +344,7 @@ func (s *server) handleAggregate() http.HandlerFunc {
 		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Aggregation, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
