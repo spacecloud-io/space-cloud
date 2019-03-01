@@ -23,5 +23,5 @@ Security rules is a mechanism used to enforce authorization. The request is allo
 ## Next steps
 
 Each module has their own way of using security rules. You can head over to the module specific security rule page to know more.
-- [Database](https://spaceuptech.com/docs/security/database)
-- [File storage](https://spaceuptech.com/docs/security/file-storage)
+- [Database](/docs/security/database)
+- [File storage](/docs/security/file-storage)

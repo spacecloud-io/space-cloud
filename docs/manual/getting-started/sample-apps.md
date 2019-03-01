@@ -5,23 +5,23 @@
 Once you've understood the basics on how to create and deploy a project with Space Cloud, it is time to explore the features Space Cloud has to offer. For this very purpose we have created some sample apps using popular web technologies (like React, etc.) and databases.
 
 ## Running the sample apps
-The steps to run the sample apps similar to the getting-started guide over [here](/docs/getting-started/space-cli). The command goes like this:
+We have pre written some [sample applications](https://github.com/spaceuptech/space-cloud/tree/master/examples) for you to get started quickly. It contains a frontend app along with the `config.yaml` file.
 ```
-space-cli new --sample [SAMPLE_APP_NAME]
+space-cloud init --sample [SAMPLE_APP_NAME]
 ```
 
 ## Next steps
 The next step is to dive into the various Space Cloud modules.
-- [User Management](https://spaceuptech.com/docs/user-management)
-- [Database](https://spaceuptech.com/docs/database) (For CRUD operations)
-- [Realtime](https://spaceuptech.com/docs/realtime)
-- [Functions](https://spaceuptech.com/docs/functions)
+- [User Management](/docs/user-management)
+- [Database](/docs/database) (For CRUD operations)
+- [Realtime](/docs/realtime)
+- [Functions](/docs/functions)
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/space-cli" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/getting-started/manual" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/config/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/user-management/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

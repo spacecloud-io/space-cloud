@@ -93,7 +93,10 @@ Download the binary for your OS from here:
 - [Linux](https://spaceuptech.com/downloads/linux/space-cloud.zip)
 - [Windows](https://spaceuptech.com/downloads/windows/space-cloud.zip)
 
-Make the `space-cloud` binary executable and add it to you `PATH`.
+Make the `space-cloud` binary executable and add it to your `PATH`.
+```
+chmod +x space-cloud
+```
 
 ### Step 2: Download the config file
 Space Cloud needs a config file in order to function properly. It relies on the config file to load information like the database connection string, security rules, etc. 
@@ -103,15 +106,15 @@ You can find a sample config for the todo app [here](https://raw.githubuserconte
 ### Step 3: Start Space Cloud
 You can start `space-cloud` with the following command. Make sure mongo db is running before this step.
 ```
-space-cloud run --config config.yaml
+./space-cloud run --config config.yaml
 ```
 
 That's it. Your backend is up and running!
 
 ### Step 4: Download the TODO App
-We have built a simple todo app using HTML and vanilla Javascript which works with the backend you have just created. You can find it [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html).
+Our back end is up and running. Time to show off it's awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using html and javascript which uses the backend you have just setup. 
 
-Feel free to play around with it to explore all the capabilities of Space Cloud.
+Open it in two different windows, login into both and then try adding some todos to see the magic.
 
 ## Support & Troubleshooting
 
