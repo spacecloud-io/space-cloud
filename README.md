@@ -41,7 +41,7 @@ In a nutshell, Space Cloud provides you with all of the following *without havin
 ## How it works
 Space Cloud is meant to replace any backend php, nodejs, java code you may write to create your endpoints. Instead it *exposes your database over an external API* which can be consumed directly from the frontend. In other words, it *allows clients to fire database queries directly*.
 
-However, it's important to note that the client does not send database (SQL) queries to Space Cloud. Instead it sends an object describing the query to be executed. This object is first validated by Space Cloud (using security rules). Once the the client is authorized to make the request, a database query is dynamically generated and executed. The results are send directly to the concerned client.
+However, it's important to note that the client does not send database (SQL) queries to Space Cloud. Instead it sends an object describing the query to be executed. This object is first validated by Space Cloud (using security rules). Once the client is authorized to make the request, a database query is dynamically generated and executed. The results are send directly to the concerned client.
 
 We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud offers you APIs to write `functions` (which run as microservices alongside Space Cloud). These `functions` can be invoked from the frontend or by other `function`. In this scenario, Space Cloud acts merely as an api gateway between your `functions` and the client.
 
@@ -57,7 +57,7 @@ There are a lot of design decisions taken by us while creating Space Cloud. Thes
 ### Ease of use
 The main reason Space Cloud was born was to simplify the app / web development process. Right from making simple CURD operations to syncing data reliably in a distributed environment, everything must be as simple as a function call. This is the prime reason we chose to have a consistent API across all the databases / technologies we support.
 
-Our goal for this is to make the adoption of seemingly complicated architectures (like having multiple databases in a single project for higher performance) possible. Also, the apps build with Space Cloud should be future ready.
+Our goal here is to make the adoption of seemingly complicated architectures (like having multiple databases in a single project for higher performance) possible. Also, the apps built with Space Cloud should be future ready.
 
 This also means, that Space Cloud needs to be as unopinionated as possible to reuse the existing skill sets and tech you might be well versed with.
 
@@ -103,7 +103,7 @@ Space Cloud needs a config file in order to function properly. It relies on the 
 You can find a sample config for the todo app [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/config.yaml). Feel free to explore the file.
 
 ### Step 3: Start Space Cloud
-You can start `space-cloud` with the following command. Make sure mongo db is running before this step
+You can start `space-cloud` with the following command. Make sure mongo db is running before this step.
 ```
 space-cloud run --config config.yaml
 ```
