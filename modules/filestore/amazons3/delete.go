@@ -11,7 +11,7 @@ import (
 )
 
 func (a *AmazonS3) DeleteFile(ctx context.Context, project, path string) error {
-	sess, err := session.NewSession(&aws.Config{
+	session, err := session.NewSession(&aws.Config{
 		Region: aws.String(a.region),
 	},
 	)
@@ -19,21 +19,20 @@ func (a *AmazonS3) DeleteFile(ctx context.Context, project, path string) error {
 		fmt.Println("AmazonS3 Couldn't Establish Connection ", err)
 		return err
 	}
-	svc := s3.New(sess)
+	svc := s3.New(session)
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(project), Key: aws.String(path)})
 	if err != nil {
 		return err
 	}
 
-	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+	return svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(project),
 		Key:    aws.String(project + path),
 	})
-	return err
 }
 
 func (a *AmazonS3) DeleteDir(ctx context.Context, project, path string) error {
-	sess, err := session.NewSession(&aws.Config{
+	session, err := session.NewSession(&aws.Config{
 		Region: aws.String(a.region),
 	},
 	)
@@ -42,7 +41,7 @@ func (a *AmazonS3) DeleteDir(ctx context.Context, project, path string) error {
 		return err
 	}
 	// TODO: Consider AWS operation limit
-	svc := s3.New(sess)
+	svc := s3.New(session)
 
 	// Setup BatchDeleteIterator to iterate through a list of objects.
 	iter := s3manager.NewDeleteListIterator(svc, &s3.ListObjectsInput{
@@ -51,8 +50,5 @@ func (a *AmazonS3) DeleteDir(ctx context.Context, project, path string) error {
 	})
 
 	// Traverse iterator deleting each object
-	if err := s3manager.NewBatchDeleteWithClient(svc).Delete(aws.BackgroundContext(), iter); err != nil {
-		fmt.Println("Unable to delete objects from bucket %q, %v", project, err)
-	}
-	return err
+	return s3manager.NewBatchDeleteWithClient(svc).Delete(aws.BackgroundContext(), iter)
 }

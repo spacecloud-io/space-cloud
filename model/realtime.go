@@ -24,10 +24,11 @@ type RealtimeRequest struct {
 
 // RealtimeResponse is the object sent for realtime requests
 type RealtimeResponse struct {
-	Group string `json:"group"` // Group is the collection name
-	ID    string `json:"id"`    // id is the query id
-	Ack   bool   `json:"ack"`
-	Error string `json:"error"`
+	Group string      `json:"group"` // Group is the collection name
+	ID    string      `json:"id"`    // id is the query id
+	Ack   bool        `json:"ack"`
+	Error string      `json:"error"`
+	Docs  []*FeedData `json:"docs"`
 }
 
 // Message is the request body of the message
