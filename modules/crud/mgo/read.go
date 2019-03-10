@@ -56,7 +56,7 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 			}
 		}
 
-		var results []map[string]interface{}
+		results := []interface{}{}
 		cur, err := collection.Find(ctx, req.Find, findOptions)
 		defer cur.Close(ctx)
 		if err != nil {

@@ -34,7 +34,7 @@ func (m *Mongo) Aggregate(ctx context.Context, project, col string, req *model.A
 		return result, nil
 
 	case utils.All:
-		var results []map[string]interface{}
+		results := []interface{}{}
 
 		cur, err := collection.Aggregate(ctx, req.Pipeline)
 		defer cur.Close(ctx)

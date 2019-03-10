@@ -72,6 +72,7 @@ func (s *SQL) doExec(query string, args []interface{}) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(args...)
 	return err

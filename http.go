@@ -26,7 +26,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authicated
+		// Check if the user is authenticated
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Create)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -110,7 +110,7 @@ func (s *server) handleRead() http.HandlerFunc {
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authicated
+		// Check if the user is authenticated
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Read)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -166,11 +166,11 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authicated
+		// Check if the user is authenticated
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Update)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -203,6 +203,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 
 		// Send realtime message in dev mode
 		if !s.isProd && req.Operation == utils.One {
+
 			idVar := "id"
 			if meta.dbType == string(utils.Mongo) {
 				idVar = "_id"
@@ -210,15 +211,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 
 			if id, p := req.Find[idVar]; p {
 				// Create the find object
-				find := map[string]interface{}{}
-
-				switch utils.DBType(meta.dbType) {
-				case utils.Mongo:
-					find["_id"] = id
-
-				default:
-					find["id"] = id
-				}
+				find := map[string]interface{}{idVar: id}
 
 				data, err := s.crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
 				if err == nil {
@@ -250,7 +243,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authicated
+		// Check if the user is authenticated
 		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Delete)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
