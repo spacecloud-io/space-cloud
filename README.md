@@ -43,7 +43,7 @@ Space Cloud is meant to replace any backend php, nodejs, java code you may write
 
 However, it's important to note that **the client does not send database (SQL) queries** to Space Cloud. Instead it sends an object describing the query to be executed. This object is first **validated** by Space Cloud (using security rules). Once the client is authorized to make the request, **a database query is dynamically generated and executed**. The results are send directly to the concerned client.
 
-We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud offers you APIs to write `functions` (which run as microservices alongside Space Cloud). These `functions` can be invoked from the frontend or by other `function`. In this scenario, Space Cloud acts merely as an api gateway between your `functions` and the client.
+We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud offers you APIs to write `functions` (which runs as microservices alongside Space Cloud). These `functions` can be invoked from the frontend or by other `function`. In this scenario, Space Cloud acts merely as an api gateway between your `functions` and the client.
 
 <div style="text-align: center">
 <img src="https://spaceuptech.com/icons/space-cloud-detailed.png"  style="max-width: 80%" alt="Detailed Space Cloud architecture" />
@@ -72,7 +72,7 @@ The goal of this project is not to re-invent the wheel over and over again. In f
 
 ## Documentation
 We are working hard to document every aspect of Space Cloud to give you the best onboarding experience. Here are links to the various docs we have:
-- Space Cloud (Coming soon!)
+- [Space Cloud](https://spaceuptech.com/docs)
 - Client APIs:
     - [Javascript client](https://github.com/spaceuptech/space-api-js/wiki)
     - Java client (Coming soon!)
@@ -86,17 +86,22 @@ Let's see how to build a realtime todo app using Space Cloud
 > Note: MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as it's database.
 
 ### Step 1: Download Space Cloud
-You need to download the `space-cloud` binary for your operating system or you could build it directly from its source code. You will need go version 1.11.2 or later to build it from source.
+The first step is to download the `space-cloud` binary. This binary is the server creating the endpoints and connecting to your database.  You need to download binary for your operating system or you could build it directly from its source code. You will need go version 1.11.2 or later to build it from source.
 
 Download the binary for your OS from here:
 - [Mac](https://spaceuptech.com/downloads/darwin/space-cloud.zip)
 - [Linux](https://spaceuptech.com/downloads/linux/space-cloud.zip)
 - [Windows](https://spaceuptech.com/downloads/windows/space-cloud.zip)
 
-Make the `space-cloud` binary executable and add it to your `PATH`.
-```
-chmod +x space-cloud
-```
+You can unzip the compressed archive
+
+**For Linux / Mac:**`unzip space-cloud.zip`
+
+**For Windows:**      Right click on the archive and select `extract here`.
+
+Make the `space-cloud` binary executable and add it to your path.
+
+**For Linux / Mac:** `chmod +x space-cloud`
 
 ### Step 2: Download the config file
 Space Cloud needs a config file in order to function properly. It relies on the config file to load information like the database connection string, security rules, etc. 
@@ -104,10 +109,11 @@ Space Cloud needs a config file in order to function properly. It relies on the 
 You can find a sample config for the todo app [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/config.yaml). Feel free to explore the file.
 
 ### Step 3: Start Space Cloud
-You can start `space-cloud` with the following command. Make sure mongo db is running before this step.
-```
-./space-cloud run --config config.yaml
-```
+You can start `space-cloud` with the following command. Make sure MongoDB is running before this step.
+
+**For Linux / Mac:** `./space-cloud run --config config.yaml`
+
+**For Windows:** `space-cloud.exe run --config config.yaml`
 
 That's it. Your backend is up and running!
 

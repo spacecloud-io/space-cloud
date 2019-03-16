@@ -2,7 +2,7 @@
 
 > Note: It is recommended to use your own user management module for a production environment. The current user management module is not production ready.
 
-User management is used for managing the various sign in methods which are generally used to develop applications. It's basically a means for the user to sign up or login into your application. In addition to that it provides the user with a `JWT token` which is used in all the other modules for authentication and authorization. 
+User management is used for managing the various sign in methods which are generally used to develop applications. It's basically a way for the user to sign up or login into your application. In addition to that it provides the user with a `JWT token` which is used in all the other modules for authentication and authorization. 
 
 
 
@@ -22,7 +22,7 @@ The various sign in methods supported are:
 
 The config pertaining to user management module can be found inside the `auth` key under the `modules` object. Here's the snippet showing how to enable **basic email authentication**. This 3 line snippet will create the necessary endpoints required by the user management module.
 
-```
+```yaml
 modules:
   auth:
     email:

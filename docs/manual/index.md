@@ -20,7 +20,7 @@ Space Cloud is meant to replace any backend php, nodejs, java code you may write
 
 However, it's important to note that **the client does not send database (SQL) queries** to Space Cloud. Instead it sends an object describing the query to be executed. This object is first **validated** by Space Cloud (using security rules). Once the client is authorized to make the request, **a database query is dynamically generated and executed**. The results are send directly to the concerned client.
 
-We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud offers you APIs to write `functions` (which run as microservices alongside Space Cloud). These `functions` can be invoked from the frontend or by other `function`. In this scenario, Space Cloud acts merely as an api gateway between your `functions` and the client.
+We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud offers you APIs to write `functions` (which runs as microservices alongside Space Cloud). These `functions` can be invoked from the frontend or by other `function`. In this scenario, Space Cloud acts merely as an api gateway between your `functions` and the client.
 
 <img src="https://spaceuptech.com/icons/space-cloud-detailed.png" alt="Detailed Space Cloud architecture" />
 

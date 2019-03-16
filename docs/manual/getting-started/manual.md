@@ -7,27 +7,28 @@ In this guide I will walk you through how to develop a realtime todo app using S
 ## Prerequisites
 - [MongoDB Database](https://docs.mongodb.com/manual/installation/)
 
-> Note: MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as it's database.
+> Note: MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as its database.
 
 ## Step 1: Download `space-cloud`
-The first step is to download the `space-cloud` binary. This binary is the serve creating the endpoints and connecting to your database.  You need to download binary for your operating system or you could build it directly from its source code. You will need go version 1.11.2 or later to build it from source.
+The first step is to download the `space-cloud` binary. This binary is the server creating the endpoints and connecting to your database.  You need to download binary for your operating system or you could build it directly from its source code. You will need go version 1.11.2 or later to build it from source.
 
 Download the binary for your OS from here:
 - [Mac](https://spaceuptech.com/downloads/darwin/space-cloud.zip)
 - [Linux](https://spaceuptech.com/downloads/linux/space-cloud.zip)
 - [Windows](https://spaceuptech.com/downloads/windows/space-cloud.zip)
 
-Make the `space-cloud` binary executable and add it to your path.
-```
-chmod +x space-cloud
-```
+You can unzip the compressed archive
+
+**For Linux / Mac:** `unzip space-cloud.zip && chmod +x space-cloud`
+
+**For Windows:**      Right click on the archive and select `extract here`.
 
 ## Step 2: Download the sample config file
-Space Cloud needs a config file in order to function. The config file is used to load information like the database to be used, it's connection string, security rules, etc. You can find the config used for our todo app [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/config.yaml).
+Space Cloud needs a config file in order to function. The config file is used to load information like the database to be used, its connection string, security rules, etc. You can find the config used for our todo app [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/config.yaml).
 
 This is how the config file looks like.
 
-```
+```yaml
 id: space-cloud
 secret: some-secret
 modules:
@@ -72,18 +73,16 @@ modules:
             rule: allow
 ```
 
-Quickly going through it, `id` is the project id name. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `faas` (functions), `realtime` and `fileStore` are supported.
+Quickly going through it, `id` is the project name. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `faas` (functions), `realtime` and `fileStore` are supported.
 
-To create a new Space Cloud project, run the following command to create a bare minimum config file:
-```
-./space-cloud init
-```
+**Note:** When you are starting a project from scratch, you can run `./space-cloud init` (on Linux / Mac) or `space-cloud.exe init` (on Windows) to create a bare minimum config file.
 
 ## Step 3: Start Space Cloud
-You can start `space-cloud` with the following command. Make sure mongo db is running before this step
-```
-./space-cloud run --config config.yml
-```
+You can start `space-cloud` with the following command. Make sure MongoDB is running before this step.
+
+**For Linux / Mac:** `./space-cloud run --config config.yaml`
+
+**For Windows:** `space-cloud.exe run --config config.yaml`
 
 That's it. Your backend is up and running!
 
