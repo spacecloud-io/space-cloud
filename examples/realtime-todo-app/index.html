@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>Page Title</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="https://spaceuptech.com/downloads/libraries/space-api-v0.3.28.js"></script>
+  <script src="https://spaceuptech.com/downloads/libraries/space-api-v0.4.1.js"></script>
 </head>
 
 <body>
@@ -56,7 +56,7 @@
           // Store the user id
           userId = res.data.user._id;
 
-          const onSnapshot = (snapshot, type, docs) => {
+          const onSnapshot = (docs, type) => {
             // Clear the existing todos
             document.getElementById("todos").innerHTML = ''
 
@@ -74,20 +74,6 @@
           db.liveQuery("todos")
             .where(Space.cond("userId", "==", userId))
             .subscribe(onSnapshot, onError)
-
-          // Get todos from the database
-          db.get("todos")
-            .where(Space.cond("userId", "==", userId))
-            .all()
-            .then(res => {
-              // Verify if get request is successful
-              if (res.status == 200) {
-                // Iterate over the todos and print them
-                res.data.result.forEach(element => {
-                  printTodo(element.todo);
-                });
-              }
-            });
 
           alert("Login Success");
           return;
@@ -131,7 +117,7 @@
         .then(res => {
           // Verify if get request is successful
           if (res.status != 200) {
-            alert("Error occured")
+            alert("Error occurred")
             return;
           }
         });
