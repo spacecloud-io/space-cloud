@@ -28,8 +28,8 @@ func (s *server) routes() {
 	userRouter.Methods("GET").Path("/profiles").HandlerFunc(s.user.HandleProfiles())
 
 	// Initialize the routes for the file management operations
-	userRouter.Methods("POST").PathPrefix("/v1/api/{project}/files/create").HandlerFunc(s.file.HandleCreateFile(s.auth))
+	userRouter.Methods("POST").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleCreateFile(s.auth))
 	userRouter.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleRead(s.auth))
-	userRouter.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
+        userRouter.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
 
 }
