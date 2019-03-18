@@ -1,49 +1,49 @@
 syntax = "proto3";
 package proto;
 message CreateRequest {
-  bytes Document = 1;
-  string Operation = 2;
-  Meta Meta = 3;
+  bytes document = 1;
+  string operation = 2;
+  Meta meta = 3;
 }
 message ReadRequest {
-  bytes Find = 1;
-  string Operation = 2;
-  ReadOptions Options = 3;
-  Meta Meta = 4;
+  bytes find = 1;
+  string operation = 2;
+  ReadOptions options = 3;
+  Meta meta = 4;
 }
 message ReadOptions {
-  map<string,int32> Select = 1;
-  map<string,int32> Sort = 2;
-  int64 Skip = 3;
-  int64 Limit = 4;
-  string Distinct = 5;
+  map<string,int32> select = 1;
+  map<string,int32> sort = 2;
+  int64 skip = 3;
+  int64 limit = 4;
+  string distinct = 5;
 }
 message UpdateRequest {
-  bytes Find = 1;
-  string Operation = 2;
-  bytes Update = 3;
-  Meta Meta = 4;
+  bytes find = 1;
+  string operation = 2;
+  bytes update = 3;
+  Meta meta = 4;
 }
 message DeleteRequest {
-  bytes Find = 1;
-  string Operation = 2;
-  Meta Meta = 3;
+  bytes find = 1;
+  string operation = 2;
+  Meta meta = 3;
 }
 message AggregateRequest {
-  bytes Pipeline = 1;
-  string Operation = 2;
-  Meta Meta = 3;
+  bytes pipeline = 1;
+  string operation = 2;
+  Meta meta = 3;
 }
 message Response {
-  int32 Status = 1;
-  string Error = 2;
-  bytes Result = 3;
+  int32 status = 1;
+  string error = 2;
+  bytes result = 3;
 }
 message Meta {
-  string Project = 1;
-  string DBType = 2;
-  string Col = 3;
-  string Token = 4;
+  string project = 1;
+  string dbType = 2;
+  string col = 3;
+  string token = 4;
 }
 
 service SpaceCloud {
