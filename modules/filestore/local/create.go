@@ -13,8 +13,13 @@ import (
 // CreateFile creates a file in the path provided
 func (l *Local) CreateFile(ctx context.Context, project string, req *model.CreateFileRequest, file io.Reader) error {
 	path := l.rootPath + "/" + project + req.Path
+
+	// Create the dir recursively if it does not exists or overwrite if a file of same name already exists.
 	if !isPathDir(path) {
-		return errors.New("Local: Provided path is not a directory")
+		err := os.MkdirAll(path, os.ModePerm)
+		if err != nil {
+			return err
+		}
 	}
 
 	f, err := os.Create(path + "/" + req.Name)

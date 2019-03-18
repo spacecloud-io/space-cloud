@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -39,10 +40,17 @@ func (a *AmazonS3) CreateDir(ctx context.Context, project string, req *model.Cre
 		fmt.Println("AmazonS3 Couldn't Establish Connection ", err)
 		return err
 	}
+
+	path := req.Path
+	// back slash at the end is important, if not then file will be created of that name
+	if !strings.HasSuffix(path, "/") {
+		path = req.Path + "/"
+	}
+
 	svc := s3.New(sess)
 	request := &s3.PutObjectInput{
 		Bucket: aws.String(project),
-		Key:    aws.String(req.Path), // back slash at the end important if not then file will be create of that name
+		Key:    aws.String(req.Path),
 	}
 	_, err = svc.PutObject(request)
 	return err
