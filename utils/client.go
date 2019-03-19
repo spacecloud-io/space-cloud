@@ -45,6 +45,7 @@ func (c *Client) Write(res interface{}) {
 // Close closes the client
 func (c *Client) Close() {
 	c.cancel()
+	close(c.channel)
 	c.socket.Close()
 }
 
