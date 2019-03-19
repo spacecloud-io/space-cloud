@@ -16,6 +16,15 @@ import (
 
 // Create inserts a document (or multiple when op is "all") into the database
 func (s *SQL) Create(ctx context.Context, project, col string, req *model.CreateRequest) error {
+	sqlQuery, args, err := s.GenerateCreateQuery(ctx, project, col, req)
+	if err != nil {
+		return err
+	}
+	return s.doExec(sqlQuery, args)
+}
+
+//GenerateCreateQuery makes query for create operation
+func (s *SQL) GenerateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)
 	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
@@ -27,7 +36,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 		var ok bool
 		insert, ok = req.Document.([]interface{})
 		if !ok {
-			return utils.ErrInvalidParams
+			return "", nil, utils.ErrInvalidParams
 		}
 	}
 
@@ -37,7 +46,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 		// Genrate a record out of object
 		record, err := generateRecord(temp)
 		if err != nil {
-			return err
+			return "", nil, err
 		}
 
 		// Append record to records array
@@ -46,10 +55,9 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 
 	sqlQuery, args, err := query.ToInsertSql(records)
 	if err != nil {
-		return err
+		return "", nil, err
 	}
 
 	sqlQuery = strings.Replace(sqlQuery, "\"", "", -1)
-
-	return s.doExec(sqlQuery, args)
+	return sqlQuery, args, nil
 }
