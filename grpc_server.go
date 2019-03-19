@@ -11,7 +11,7 @@ import (
 
 func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
 
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DBType, in.Meta.Col, utils.Create)
+	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Create)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -48,7 +48,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DBType, in.Meta.Col, utils.Create, args)
+	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Create, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -57,7 +57,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	}
 
 	// Perform the write operation
-	err = s.crud.Create(ctx, in.Meta.DBType, in.Meta.Project, in.Meta.Col, &req)
+	err = s.crud.Create(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -73,7 +73,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 
 func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
 
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DBType, in.Meta.Col, utils.Read)
+	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Read)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -111,7 +111,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DBType, in.Meta.Col, utils.Read, args)
+	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Read, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -120,7 +120,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	}
 
 	// Perform the read operation
-	result, err := s.crud.Read(ctx, in.Meta.DBType, in.Meta.Project, in.Meta.Col, &req)
+	result, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -146,7 +146,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
 
 	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DBType, in.Meta.Col, utils.Update)
+	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Update)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -179,7 +179,7 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DBType, in.Meta.Col, utils.Read, args)
+	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Read, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -187,7 +187,7 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &out, nil
 	}
 
-	err = s.crud.Update(ctx, in.Meta.DBType, in.Meta.Project, in.Meta.Col, &req)
+	err = s.crud.Update(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -205,7 +205,7 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
 
 	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DBType, in.Meta.Col, utils.Delete)
+	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -232,7 +232,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DBType, in.Meta.Col, utils.Delete, args)
+	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Delete, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -241,7 +241,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	}
 
 	// Perform the delete operation
-	err = s.crud.Delete(ctx, in.Meta.DBType, in.Meta.Project, in.Meta.Col, &req)
+	err = s.crud.Delete(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -258,7 +258,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
 
 	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DBType, in.Meta.Col, utils.Delete)
+	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -284,7 +284,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DBType, in.Meta.Col, utils.Aggregation, args)
+	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Aggregation, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -293,7 +293,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	}
 
 	// Perform the read operation
-	result, err := s.crud.Aggregate(ctx, in.Meta.DBType, in.Meta.Project, in.Meta.Col, &req)
+	result, err := s.crud.Aggregate(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500

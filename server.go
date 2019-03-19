@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -42,10 +43,10 @@ func initServer(isProd bool) *server {
 }
 
 func (s *server) start(port string) error {
-	
+
 	portInt, _ := strconv.Atoi(port)
 	go s.initGRPCServer(strconv.Itoa(portInt + 1))
-	
+
 	// Allow cors
 	corsObj := cors.New(cors.Options{
 		AllowCredentials: true,
