@@ -1,4 +1,9 @@
 syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.spaceuptech.space_api.proto";
+option java_outer_classname = "SpaceCloudProto";
+
 package proto;
 
 message CreateRequest {
