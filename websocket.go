@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -31,6 +30,7 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 		}
 		client := utils.CreateWebsocketClient(c)
 		defer client.Close()
+		defer realtime.RemoveClient(client.ClientID())
 
 		client.RoutineWrite()
 
@@ -104,7 +104,6 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 						}
 					}
 				}
-				fmt.Println("length", len(feedData))
 				// Add the live query
 				realtime.AddLiveQuery(data.ID, data.Group, client, data.Where)
 				client.Write(model.Message{

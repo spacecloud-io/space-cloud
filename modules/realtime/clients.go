@@ -48,14 +48,11 @@ func (m *Module) RemoveLiveQuery(group, clientID, queryID string) {
 }
 
 // RemoveClient removes a client
-func (m *Module) RemoveClient(group, clientID string) {
-	// Load clients in a particular group
-	clientsTemp, ok := m.groups.Load(group)
-	if !ok {
-		return
-	}
-	clients := clientsTemp.(*sync.Map)
-
-	// Remove the client
-	clients.Delete(group)
+func (m *Module) RemoveClient(clientID string) {
+	// Delete the client from all groups
+	m.groups.Range(func(key interface{}, value interface{}) bool {
+		clients := value.(*sync.Map)
+		clients.Delete(clientID)
+		return true
+	})
 }
