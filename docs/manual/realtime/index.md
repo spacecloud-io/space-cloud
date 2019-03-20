@@ -26,7 +26,7 @@ The configuration pertaining to the realtime module can be found under the `real
 ```yaml
 modules:
   realtime:
-    enabled: true
+    enabled: true     # Enable the realtime module globally
     kafka: localhost
 
 # Config for other modules go here 
@@ -52,8 +52,11 @@ modules:
               rule: allow
             delete:
               rule: allow
+  realtime:
+    enabled: true     # Enable the realtime module globally
+    kafka: localhost
 
-# Config for other modules go here 
+  # Config for other modules go here 
 ```
 
 ## Next steps

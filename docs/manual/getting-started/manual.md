@@ -29,6 +29,7 @@ Space Cloud needs a config file in order to function. The config file is used to
 This is how the config file looks like.
 
 ```yaml
+---
 id: space-cloud
 secret: some-secret
 modules:
@@ -91,7 +92,7 @@ That was quick wasn't it?
 ## Step 4: Try it out
 Our back end is up and running. Time to show off it's awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using html and javascript which uses the backend you have just setup. 
 
-Open it in two different windows, login into both and then try adding some todos to see the magic.
+Open it in two different windows by double clicking the html file twice, login into both and then try adding some todos to see the magic.
 
 ## Next Steps
 Awesome! We just made a realtime app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/getting-started/sample-apps).

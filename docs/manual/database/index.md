@@ -9,13 +9,9 @@ Currently the database module supports the following databases:
 - MySQL and MySQL compatible databases
 - Postgres and Postgres compatible databases
 
-## Prerequisites
-- A running database (We'll be using MongoDB in this example)
-- Space Cloud binary ([Linux](https://spaceuptech.com/downloads/linux/space-cloud.zip), [Mac](https://spaceuptech.com/downloads/darwin/space-cloud.zip), [Windows](https://spaceuptech.com/downloads/windows/space-cloud.zip))
-
 ## Configure the crud module
 
-The config pertaining to user management module can be found inside the `crud` key under the `modules` object. Here's the snippet:
+The config pertaining to crud module can be found inside the `crud` key under the `modules` object. Here's the snippet:
 
 ```yaml
 modules:
@@ -44,7 +40,7 @@ As you can see `crud`, in this case has the key `mongo` which stands for the Mon
 For each database, you need to specify the following fields:
 - **conn**: This is the connection string to connect to the database with.
 - **isPrimary**: Specifies if the database is to be used as the primary database. Note, you **cannot have more than one primary database**.
-- **collections**: These are the table / collections which need to be exposed via Space Cloud. They contain two sub fields `isRealtimeEnabled` and `rules`. `rules` are nothing but the [security rules](/docs/security), to control the database access.
+- **collections**: These are the table / collections which need to be exposed via Space Cloud. They contain two sub fields `isRealtimeEnabled` and `rules`. `rules` are nothing but the [security rules](/docs/security/database), to control the database access.
 
 The snippet shown above configures Space Cloud to use `MongoDB` as the primary database present at `mongodb://localhost:27017`. It exposes a single collection `todos`. All types of operations (create, read, update and delete) are allowed on the `todos` collection. This implies that, any anonymous user will be able to perform any operations on the database. To expose more tables / collections, simple add new objects under the `collections` key.
 
@@ -83,13 +79,13 @@ modules:
   # Config for other modules go here
 ```
 
-> Note: The `allow` rule must only be used cautiously. It must never be used for update and delete operations in production. You can read more about security rules [here](/docs/security). 
+> **Note:** The `allow` rule must only be used cautiously. It must never be used for update and delete operations in production. You can read more about security rules [here](/docs/security/database). 
 
 ## Next steps
 
-Now you know the basics of the database module. The next step would be diving deeper into the [security rules](/docs/security) and its structure. Let's make sure that the apps we build are secure!
+Now you know the basics of the database module. The next step would be diving deeper into the [security rules](/docs/security/database) and its structure. Let's make sure that the apps we build are secure!
 
-You can also check out the [API docs](/docs/api) to start building your app right away.
+You can also check out the [API docs](/docs/api) to start building your app right away or head over to the next module.
 
 <div class="btns-wrapper">
   <a href="/docs/user-management/overview" class="waves-effect waves-light btn primary-btn-border btn-small">

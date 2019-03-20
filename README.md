@@ -120,7 +120,7 @@ That's it. Your backend is up and running!
 ### Step 4: Download the TODO App
 Our back end is up and running. Time to show off it's awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using html and javascript which uses the backend you have just setup. 
 
-Open it in two different windows, login into both and then try adding some todos to see the magic.
+Open it in two different windows by double clicking the html file twice, login into both and then try adding some todos to see the magic.
 
 ## Support & Troubleshooting
 
