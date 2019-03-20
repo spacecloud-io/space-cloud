@@ -44,6 +44,10 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 	for _, r := range m.fileRules {
 		rulePath := strings.Split(r.Prefix, "/")
 
+		if len(in1) < len(rulePath) {
+			continue
+		}
+
 		// Create a match flag
 		validMatch := true
 
