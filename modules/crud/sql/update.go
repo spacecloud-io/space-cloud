@@ -16,7 +16,7 @@ import (
 
 // Update updates the document(s) which match the condition provided.
 func (s *SQL) Update(ctx context.Context, project, col string, req *model.UpdateRequest) error {
-	sqlString, args, err := s.GenerateUpdateQuery(ctx, project, col, req)
+	sqlString, args, err := s.generateUpdateQuery(ctx, project, col, req)
 	if err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (s *SQL) Update(ctx context.Context, project, col string, req *model.Update
 }
 
 //GenerateUpdateQuery makes query for update operation
-func (s *SQL) GenerateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest) (string, []interface{}, error) {
+func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)
 	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
