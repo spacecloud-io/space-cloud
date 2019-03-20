@@ -21,7 +21,7 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 	return s.doExec(sqlString, args)
 }
 
-//GenrateDeleteQuery makes query for delete operation
+//genrateDeleteQuery makes query for delete operation
 func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)

@@ -23,7 +23,7 @@ func (s *SQL) Update(ctx context.Context, project, col string, req *model.Update
 	return s.doExec(sqlString, args)
 }
 
-//GenerateUpdateQuery makes query for update operation
+//generateUpdateQuery makes query for update operation
 func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)

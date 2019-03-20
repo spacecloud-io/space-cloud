@@ -23,7 +23,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 	return s.doExec(sqlQuery, args)
 }
 
-//GenerateCreateQuery makes query for create operation
+//generateCreateQuery makes query for create operation
 func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)
