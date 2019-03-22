@@ -77,3 +77,14 @@ func (s *SQL) doExec(query string, args []interface{}) error {
 	_, err = stmt.Exec(args...)
 	return err
 }
+
+func doTransactionExec(query string, args []interface{}, tx *sqlx.Tx) error {
+	stmt, err := tx.Preparex(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(args...)
+	return err
+}
