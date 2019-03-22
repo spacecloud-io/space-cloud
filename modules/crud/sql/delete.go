@@ -14,7 +14,15 @@ import (
 
 // Delete removes the document(s) from the database which match the condition
 func (s *SQL) Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error {
+	sqlString, args, err := s.generateDeleteQuery(ctx, project, col, req)
+	if err != nil {
+		return err
+	}
+	return s.doExec(sqlString, args)
+}
 
+//genrateDeleteQuery makes query for delete operation
+func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)
 	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
@@ -24,16 +32,15 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 		var err error
 		query, err = generateWhereClause(query, req.Find)
 		if err != nil {
-			return err
+			return "", nil, err
 		}
 	}
 
 	// Generate SQL string and arguments
 	sqlString, args, err := query.ToDeleteSql()
 	if err != nil {
-		return err
+		return "", nil, err
 	}
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
-
-	return s.doExec(sqlString, args)
+	return sqlString, args, nil
 }
