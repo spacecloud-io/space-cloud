@@ -14,7 +14,7 @@ import (
 
 // Delete removes the document(s) from the database which match the condition
 func (s *SQL) Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error {
-	sqlString, args, err := s.generateDeleteQuery(ctx, project, col, req)
+	sqlString, args, err := s.GenerateDeleteQuery(ctx, project, col, req)
 	if err != nil {
 		return err
 	}
@@ -22,7 +22,7 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 }
 
 //genrateDeleteQuery makes query for delete operation
-func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
+func (s *SQL) GenerateDeleteQuery(ctx context.Context, project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)
 	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))

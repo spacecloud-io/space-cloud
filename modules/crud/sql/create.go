@@ -16,7 +16,7 @@ import (
 
 // Create inserts a document (or multiple when op is "all") into the database
 func (s *SQL) Create(ctx context.Context, project, col string, req *model.CreateRequest) error {
-	sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, req)
+	sqlQuery, args, err := s.GenerateCreateQuery(ctx, project, col, req)
 	if err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 }
 
 //generateCreateQuery makes query for create operation
-func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
+func (s *SQL) GenerateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)
 	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
@@ -38,6 +38,7 @@ func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req 
 		if !ok {
 			return "", nil, utils.ErrInvalidParams
 		}
+
 	}
 
 	// Iterate over records to be inserted
