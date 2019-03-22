@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -58,6 +59,12 @@ func (m *Module) HandleCreateFile(auth *auth.Module) http.HandlerFunc {
 
 		path := r.Form.Get("path")
 		fileType := r.Form.Get("fileType")
+		makeAll, err := strconv.ParseBool(r.Form.Get("makeAll"))
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Incorrect value for makeAll"})
+			return
+		}
 
 		// Check if the user is authorised to make this request
 		err = auth.IsFileOpAuthorised(token, path, utils.FileCreate, map[string]interface{}{})
@@ -69,7 +76,8 @@ func (m *Module) HandleCreateFile(auth *auth.Module) http.HandlerFunc {
 
 		if fileType == "file" {
 			file, header, err := r.FormFile("file")
-			err = m.CreateFile(ctx, project, &model.CreateFileRequest{Name: header.Filename, Path: path, Type: fileType}, file)
+			defer file.Close()
+			err = m.CreateFile(ctx, project, &model.CreateFileRequest{Name: header.Filename, Path: path, Type: fileType, MakeAll: makeAll}, file)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -77,7 +85,7 @@ func (m *Module) HandleCreateFile(auth *auth.Module) http.HandlerFunc {
 			}
 		} else {
 			name := r.Form.Get("name")
-			err = m.CreateDir(ctx, project, &model.CreateFileRequest{Name: name, Path: path, Type: fileType})
+			err = m.CreateDir(ctx, project, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

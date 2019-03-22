@@ -13,6 +13,8 @@ func (s *server) routes() {
 	s.router.Methods("POST").Path("/v1/api/faas/{engine}/{func}").HandlerFunc(s.faas.HandleRequest(s.auth))
 
 	// Initialize the routes for the crud operations
+	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/transaction").HandlerFunc(s.handleTransaction())
+
 	crudRouter := s.router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
 	crudRouter.HandleFunc("/create", s.handleCreate())
 	crudRouter.HandleFunc("/read", s.handleRead())
@@ -28,8 +30,8 @@ func (s *server) routes() {
 	userRouter.Methods("GET").Path("/profiles").HandlerFunc(s.user.HandleProfiles())
 
 	// Initialize the routes for the file management operations
-	userRouter.Methods("POST").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleCreateFile(s.auth))
-	userRouter.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleRead(s.auth))
-        userRouter.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
+	s.router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(s.file.HandleCreateFile(s.auth))
+	s.router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleRead(s.auth))
+	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
 
 }

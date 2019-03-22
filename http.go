@@ -370,3 +370,186 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 
 	return &requestMetaData{project: project, dbType: dbType, col: col, token: tokens[0]}
 }
+
+func (s *server) handleTransaction() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// Get the path parameters
+		meta := getRequestMetaData(r)
+
+		// Load the request from the body
+		var txRequest model.TransactionRequest
+		json.NewDecoder(r.Body).Decode(&txRequest)
+		defer r.Body.Close()
+
+		args := map[string]interface{}{}
+		for _, req := range txRequest.Requests {
+
+			switch req.Type {
+			case string(utils.Update):
+				authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Update)
+				if err != nil {
+					w.WriteHeader(http.StatusUnauthorized)
+					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+					return
+				}
+				args = map[string]interface{}{
+					"args":    map[string]interface{}{"find": req.Find, "update": req.Update, "op": req.Operation, "auth": authObj},
+					"project": meta.project, // Don't forget to do this for every request
+				}
+
+				// Check if user is authorized to make this request
+				err = s.auth.IsAuthorized(meta.dbType, req.Col, utils.Update, args)
+				if err != nil {
+					w.WriteHeader(http.StatusForbidden)
+					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+					return
+				}
+
+			case string(utils.Create):
+				authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Create)
+				if err != nil {
+					w.WriteHeader(http.StatusUnauthorized)
+					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+					return
+				}
+				// Create an args object
+				args = map[string]interface{}{
+					"args":    map[string]interface{}{"doc": &req.Document, "op": req.Operation, "auth": authObj},
+					"project": meta.project, // Don't forget to do this for every request
+				}
+
+				// Check if user is authorized to make this request
+				err = s.auth.IsAuthorized(meta.dbType, req.Col, utils.Create, args)
+				if err != nil {
+					w.WriteHeader(http.StatusForbidden)
+					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+					return
+				}
+
+			case string(utils.Delete):
+
+				authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Delete)
+				if err != nil {
+					w.WriteHeader(http.StatusUnauthorized)
+					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
+					return
+				}
+				// Create an args object
+				args = map[string]interface{}{
+					"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
+					"project": meta.project, // Don't forget to do this for every request
+				}
+
+				// Check if user is authorized to make this request
+				err = s.auth.IsAuthorized(meta.dbType, req.Col, utils.Delete, args)
+				if err != nil {
+					w.WriteHeader(http.StatusForbidden)
+					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
+					return
+				}
+
+			}
+		}
+
+		// Perform the transaction operation
+		err := s.crud.Transaction(ctx, meta.dbType, meta.project, &txRequest)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		if !s.isProd {
+
+			for _, req := range txRequest.Requests {
+				switch req.Type {
+				case string(utils.Create):
+					var rows []interface{}
+					if req.Operation == utils.One {
+						rows = []interface{}{req.Document}
+					} else if req.Operation == utils.All {
+						rows = req.Document.([]interface{})
+					} else {
+						rows = []interface{}{}
+					}
+
+					for _, t := range rows {
+						data := t.(map[string]interface{})
+
+						idVar := "id"
+						if meta.dbType == string(utils.Mongo) {
+							idVar = "_id"
+						}
+
+						// Send realtime message if id fields exists
+						if id, p := data[idVar]; p {
+							s.realtime.Send(&model.FeedData{
+								Group:     req.Col,
+								DBType:    meta.dbType,
+								Type:      utils.RealtimeWrite,
+								TimeStamp: time.Now().Unix(),
+								DocID:     id.(string),
+								Payload:   data,
+							})
+						}
+					}
+
+				case string(utils.Delete):
+					if req.Operation == utils.One {
+						idVar := "id"
+						if meta.dbType == string(utils.Mongo) {
+							idVar = "_id"
+						}
+
+						if id, p := req.Find[idVar]; p {
+							if err != nil {
+								s.realtime.Send(&model.FeedData{
+									Group:     req.Col,
+									Type:      utils.RealtimeDelete,
+									TimeStamp: time.Now().Unix(),
+									DocID:     id.(string),
+									DBType:    meta.dbType,
+								})
+							}
+						}
+					}
+
+				case string(utils.Update):
+					// Send realtime message in dev mode
+					if req.Operation == utils.One {
+
+						idVar := "id"
+						if meta.dbType == string(utils.Mongo) {
+							idVar = "_id"
+						}
+
+						if id, p := req.Find[idVar]; p {
+							// Create the find object
+							find := map[string]interface{}{idVar: id}
+
+							data, err := s.crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
+							if err == nil {
+								s.realtime.Send(&model.FeedData{
+									Group:     meta.col,
+									Type:      utils.RealtimeWrite,
+									TimeStamp: time.Now().Unix(),
+									DocID:     id.(string),
+									DBType:    meta.dbType,
+									Payload:   data.(map[string]interface{}),
+								})
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Give positive acknowledgement
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+	}
+}
