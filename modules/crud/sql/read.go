@@ -81,13 +81,13 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 
-	stmt, err := s.client.Preparex(sqlString)
+	stmt, err := s.client.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return nil, err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Queryx(args...)
+	rows, err := stmt.QueryxContext(ctx, args...)
 	if err != nil {
 		return nil, err
 	}

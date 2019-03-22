@@ -20,7 +20,7 @@ func (s *SQL) Update(ctx context.Context, project, col string, req *model.Update
 	if err != nil {
 		return err
 	}
-	return s.doExec(sqlString, args)
+	return s.doExecContext(ctx, sqlString, args)
 }
 
 //generateUpdateQuery makes query for update operation
