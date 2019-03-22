@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/model"
 	pb "github.com/spaceuptech/space-cloud/proto"
@@ -63,6 +64,39 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 		out.Status = 500
 		out.Error = err.Error()
 		return &out, nil
+	}
+
+	// Send realtime message in dev mode
+	if !s.isProd {
+		var rows []interface{}
+		if req.Operation == utils.One {
+			rows = []interface{}{req.Document}
+		} else if req.Operation == utils.All {
+			rows = req.Document.([]interface{})
+		} else {
+			rows = []interface{}{}
+		}
+
+		for _, t := range rows {
+			data := t.(map[string]interface{})
+
+			idVar := "id"
+			if in.Meta.DbType == string(utils.Mongo) {
+				idVar = "_id"
+			}
+
+			// Send realtime message if id fields exists
+			if id, p := data[idVar]; p {
+				s.realtime.Send(&model.FeedData{
+					Group:     in.Meta.Col,
+					DBType:    in.Meta.DbType,
+					Type:      utils.RealtimeWrite,
+					TimeStamp: time.Now().Unix(),
+					DocID:     id.(string),
+					Payload:   data,
+				})
+			}
+		}
 	}
 
 	// Give positive acknowledgement
@@ -195,6 +229,39 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &out, nil
 	}
 
+	// Send realtime message in dev mode
+	if !s.isProd && req.Operation == utils.One {
+		idVar := "id"
+		if in.Meta.DbType == string(utils.Mongo) {
+			idVar = "_id"
+		}
+
+		if id, p := req.Find[idVar]; p {
+			// Create the find object
+			find := map[string]interface{}{}
+
+			switch utils.DBType(in.Meta.DbType) {
+			case utils.Mongo:
+				find["_id"] = id
+
+			default:
+				find["id"] = id
+			}
+
+			data, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &model.ReadRequest{Find: find, Operation: utils.One})
+			if err == nil {
+				s.realtime.Send(&model.FeedData{
+					Group:     in.Meta.Col,
+					Type:      utils.RealtimeWrite,
+					TimeStamp: time.Now().Unix(),
+					DocID:     id.(string),
+					DBType:    in.Meta.DbType,
+					Payload:   data.(map[string]interface{}),
+				})
+			}
+		}
+	}
+
 	// Give positive acknowledgement
 	out := pb.Response{}
 	out.Status = 200
@@ -247,6 +314,26 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 		out.Status = 500
 		out.Error = err.Error()
 		return &out, nil
+	}
+
+	// Send realtime message in dev mode
+	if !s.isProd && req.Operation == utils.One {
+		idVar := "id"
+		if in.Meta.DbType == string(utils.Mongo) {
+			idVar = "_id"
+		}
+
+		if id, p := req.Find[idVar]; p {
+			if err != nil {
+				s.realtime.Send(&model.FeedData{
+					Group:     in.Meta.Col,
+					Type:      utils.RealtimeDelete,
+					TimeStamp: time.Now().Unix(),
+					DocID:     id.(string),
+					DBType:    in.Meta.DbType,
+				})
+			}
+		}
 	}
 
 	// Give positive acknowledgement
