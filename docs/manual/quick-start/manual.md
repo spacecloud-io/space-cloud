@@ -95,17 +95,17 @@ Our back end is up and running. Time to show off it's awesome powers. We have bu
 Open it in two different windows by double clicking the html file twice, login into both and then try adding some todos to see the magic.
 
 ## Next Steps
-Awesome! We just made a realtime app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/getting-started/sample-apps).
+Awesome! We just made a realtime app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/quick-start/sample-apps).
 - [User Management](/docs/user-management)
 - [Database](/docs/database) (For CRUD operations)
 - [Realtime](/docs/realtime)
 - [Functions](/docs/functions)
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/quick-start/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/getting-started/sample-apps" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/quick-start/sample-apps" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

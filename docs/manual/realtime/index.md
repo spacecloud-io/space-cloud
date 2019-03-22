@@ -27,7 +27,7 @@ The configuration pertaining to the realtime module can be found under the `real
 modules:
   realtime:
     enabled: true     # Enable the realtime module globally
-    kafka: localhost
+    kafka: localhost  # Connection string for kafka
 
 # Config for other modules go here 
 ```
@@ -58,6 +58,8 @@ modules:
 
   # Config for other modules go here 
 ```
+
+## API
 
 ## Next steps
 That's all you need to do to enable the realtime module. It's time to go ahead and how to use the realtime module on the frontend. Here are the client side APIs.

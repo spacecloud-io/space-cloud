@@ -5,7 +5,7 @@ To get started with Space Cloud you will need to:
 - Run `space-cloud` using the config file
 
 ## Choose a getting started guide:
-- [Using the binary](/docs/getting-started/manual): You can manually deploy `space-cloud` on your machine using the binary.
+- [Using the binary](/docs/quick-start/manual): You can manually deploy `space-cloud` on your machine using the binary.
 - Using docker: Coming soon!
 
 ### For production deployments:
@@ -17,7 +17,7 @@ To get started with Space Cloud you will need to:
   <a href="/docs" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/getting-started/manual" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/quick-start/manual" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

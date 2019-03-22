@@ -74,7 +74,7 @@
               <a href="/blog">Blog</a>
             </li>
             <!-- <li>
-              <a href="https://spaceuptech.com/tour/todo-app/getting-started">
+              <a href="https://spaceuptech.com/tour/todo-app/quick-start">
                 Tutorials
               </a>
             </li> -->
@@ -84,7 +84,7 @@
               </a>
             </li>
             {{!-- <li>
-              <a href="/docs/getting-started" target="_blank"
+              <a href="/docs/quick-start" target="_blank"
                 class="waves-effect waves-light btn primary-btn-fill navbar-btn btn-small">
                 Get Started<i class="material-icons btn-with-icon">forward</i>
               </a>
@@ -111,13 +111,21 @@
           <i class="material-icons">forum</i>Blog</a>
       </li>
       <!-- <li>
-        <a href="https://spaceuptech.com/tour/todo-app/getting-started" target="_blank">
+        <a href="https://spaceuptech.com/tour/todo-app/quick-start" target="_blank">
           <i class="material-icons">school</i>Tutorials
         </a>
       </li> -->
     </ul>
     <div class="desktop-docs-sidebar">
       <ul class="collapsible">
+        {{#if isHome}}
+        <li class="active">
+        <a class="active collapsible-header" href="/docs">Introduction</a>
+        {{else}}
+        <li>
+        <a class="collapsible-header" href="/docs">Introduction</a>
+        {{/if}}
+        </li>
         {{#each pages}}
         {{#if isActive}}
         <li class="active">

@@ -58,11 +58,13 @@ CREATE TABLE users (
 );
 ```
 
+> **Note:** You can always add more fields / columns as needed.
+
 ## Next steps
 That's all you need to do to enable the user management module. You can check the usage of OAuth based sign in methods [here](/docs/user-management/oauth).
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/sample-apps" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/quick-start/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
   <a href="/docs/user-management/oauth" class="waves-effect waves-light btn primary-btn-fill btn-small">

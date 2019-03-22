@@ -1,7 +1,7 @@
 [
   {
-    "name": "Getting Started",
-    "url": "getting-started",
+    "name": "Quick Start",
+    "url": "quick-start",
     "pages": [
       [
         "manual",
@@ -26,7 +26,28 @@
   {
     "name": "Database",
     "url": "database",
-    "pages": []
+    "pages": [
+      [
+        "create",
+        "Create Data"
+      ],
+      [
+        "read",
+        "Read Data"
+      ],
+      [
+        "update",
+        "Update Data"
+      ],
+      [
+        "delete",
+        "Delete Data"
+      ],
+      [
+        "config",
+        "Configuration"
+      ]
+    ]
   },
   {
     "name": "Realtime",
@@ -36,7 +57,12 @@
   {
     "name": "File Storage",
     "url": "file-storage",
-    "pages": []
+    "pages": [
+      [
+        "config",
+        "Configuration"
+      ]
+    ]
   },
   {
     "name": "Functions",

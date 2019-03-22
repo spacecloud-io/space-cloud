@@ -18,7 +18,7 @@ The next step is to dive into the various Space Cloud modules.
 - [Functions](/docs/functions)
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/manual" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/quick-start/manual" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
   <a href="/docs/user-management/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">

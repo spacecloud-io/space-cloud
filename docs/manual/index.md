@@ -46,11 +46,11 @@ We believe that each app built with Space Cloud, must be extremely robust and fu
 The goal of this project is not to re-invent the wheel over and over again. In fact, integration with proven technologies is preferred over implementing them ourselves. For example, we are using [Apache Kafka](https://kafka.apache.org/) under the hood, to make our `realtime database` feature reliable. Also, [Nats](https://nats.io/) is used to implement the `functions` modules for high throughput and scale.
 
 ## What's next?
-- Head straight to our [getting started guide](/docs/getting-started).
+- Head straight to our [getting started guide](/docs/quick-start).
 <!-- - New to Space Cloud? Checkout the [tutorial](https://spaceuptech.com/tutorials) instead. -->
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/quick-start" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

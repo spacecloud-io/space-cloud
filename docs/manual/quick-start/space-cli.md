@@ -47,17 +47,17 @@ That was quick wasn't it?
 Our back end is up and running. We have built a [basic todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/basic-todo-app/index.html) using html and javascript which uses the backend you have just setup. Try signing up and adding some todos to test it out.
 
 ## Next Steps
-Awesome! We just made an end-to-end app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/getting-started/sample-apps).
+Awesome! We just made an end-to-end app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/quick-start/sample-apps).
 - [User Management](/docs/user-management)
 - [Database](/docs/database) (For CRUD operations)
 - [Realtime](/docs/real-time)
 - [Functions](/docs/functions)
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/quick-start/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/getting-started/sample-apps" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/quick-start/sample-apps" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>
