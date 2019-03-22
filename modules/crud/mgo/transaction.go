@@ -4,42 +4,43 @@ import (
 	"context"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Transaction performs the provided operations in a single transaction
-func (m *Mongo) Transaction(ctx context.Context, project string, reqs []map[string]interface{}) error {
+func (m *Mongo) Transaction(ctx context.Context, project string, txRequest *model.TransactionRequest) error {
 	return m.client.UseSession(ctx, func(session mongo.SessionContext) error {
 		err := session.StartTransaction()
 		if err != nil {
 			return err
 		}
-		for _, req := range reqs {
-			col := req["col"].(string)
+		for _, req := range txRequest.Requests {
+			col := req.Col
 
-			switch req["type"].(string) {
-			case "create":
-				doc := req["doc"]
-				op := req["op"].(string)
+			switch req.Type {
+			case string(utils.Create):
+				doc := req.Document
+				op := req.Operation
 
 				err = m.Create(session, project, col, &model.CreateRequest{Document: doc, Operation: op})
 				if err != nil {
 					session.AbortTransaction(session)
 					return err
 				}
-			case "update":
-				find := req["find"].(map[string]interface{})
-				op := req["op"].(string)
-				update := req["update"].(map[string]interface{})
+			case string(utils.Update):
+				find := req.Find
+				op := req.Operation
+				update := req.Update
 
 				err = m.Update(session, project, col, &model.UpdateRequest{Find: find, Operation: op, Update: update})
 				if err != nil {
 					session.AbortTransaction(session)
 					return err
 				}
-			case "delete":
-				find := req["find"].(map[string]interface{})
-				op := req["op"].(string)
+			case string(utils.Delete):
+				find := req.Find
+				op := req.Operation
 
 				err = m.Delete(session, project, col, &model.DeleteRequest{Find: find, Operation: op})
 				if err != nil {
