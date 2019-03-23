@@ -19,7 +19,7 @@ func (s *SQL) Transaction(ctx context.Context, project string, txRequest *model.
 	for _, req := range txRequest.Requests {
 		switch req.Type {
 		case string(utils.Create):
-			sqlQuery, args, err := s.generateCreateQuery(ctx, project, req.Col, &model.CreateRequest{Document: req.Document, Operation: req.Operation})
+			sqlQuery, args, err := s.GenerateCreateQuery(ctx, project, req.Col, &model.CreateRequest{Document: req.Document, Operation: req.Operation})
 			if err != nil {
 				return err
 			}
@@ -29,7 +29,7 @@ func (s *SQL) Transaction(ctx context.Context, project string, txRequest *model.
 			}
 
 		case string(utils.Delete):
-			sqlQuery, args, err := s.generateDeleteQuery(ctx, project, req.Col, &model.DeleteRequest{Find: req.Find, Operation: req.Operation})
+			sqlQuery, args, err := s.GenerateDeleteQuery(ctx, project, req.Col, &model.DeleteRequest{Find: req.Find, Operation: req.Operation})
 			if err != nil {
 				return err
 			}
@@ -39,7 +39,7 @@ func (s *SQL) Transaction(ctx context.Context, project string, txRequest *model.
 			}
 
 		case string(utils.Update):
-			sqlQuery, args, err := s.generateUpdateQuery(ctx, project, req.Col, &model.UpdateRequest{Find: req.Find, Operation: req.Operation, Update: req.Update})
+			sqlQuery, args, err := s.GenerateUpdateQuery(ctx, project, req.Col, &model.UpdateRequest{Find: req.Find, Operation: req.Operation, Update: req.Update})
 			if err != nil {
 				return err
 			}
