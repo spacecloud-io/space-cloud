@@ -11,7 +11,7 @@ import (
 
 // ListDir lists the directory
 func (l *Local) ListDir(ctx context.Context, project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
-	path := l.rootPath + "/" + project + req.Path
+	path := l.rootPath + project + req.Path
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (l *Local) ListDir(ctx context.Context, project string, req *model.ListFile
 
 // ReadFile reads a file from the path provided
 func (l *Local) ReadFile(ctx context.Context, project, path string) (*model.File, error) {
-	p := l.rootPath + "/" + project + path
+	p := l.rootPath + project + path
 	f, err := os.Open(p)
 	if err != nil {
 		return nil, err

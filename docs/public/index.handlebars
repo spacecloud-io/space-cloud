@@ -74,7 +74,7 @@
               <a href="/blog">Blog</a>
             </li>
             <!-- <li>
-              <a href="https://spaceuptech.com/tour/todo-app/getting-started">
+              <a href="https://spaceuptech.com/tour/todo-app/quick-start">
                 Tutorials
               </a>
             </li> -->
@@ -83,12 +83,12 @@
                 <img id="github-logo-desktop" src="/docs/images/index/github_black.svg" alt="">
               </a>
             </li>
-            <li>
-              <a href="https://spaceuptech.com/docs/getting-started" target="_blank"
+            {{!-- <li>
+              <a href="/docs/quick-start" target="_blank"
                 class="waves-effect waves-light btn primary-btn-fill navbar-btn btn-small">
                 Get Started<i class="material-icons btn-with-icon">forward</i>
               </a>
-            </li>
+            </li> --}}
           </ul>
         </div>
       </nav>
@@ -111,19 +111,27 @@
           <i class="material-icons">forum</i>Blog</a>
       </li>
       <!-- <li>
-        <a href="https://spaceuptech.com/tour/todo-app/getting-started" target="_blank">
+        <a href="https://spaceuptech.com/tour/todo-app/quick-start" target="_blank">
           <i class="material-icons">school</i>Tutorials
         </a>
       </li> -->
     </ul>
     <div class="desktop-docs-sidebar">
       <ul class="collapsible">
+        {{#if isHome}}
+        <li class="active">
+        <a class="active collapsible-header" href="/docs">Introduction</a>
+        {{else}}
+        <li>
+        <a class="collapsible-header" href="/docs">Introduction</a>
+        {{/if}}
+        </li>
         {{#each pages}}
         {{#if isActive}}
         <li class="active">
-        {{else}}
+          {{else}}
         <li>
-        {{/if}}
+          {{/if}}
           <a class="collapsible-header">{{name}}</a>
           <div class="collapsible-body">
             <ul>
@@ -146,28 +154,28 @@
     </div>
     <div class="sidebar-dropdown closed-sidebar" id="sidebar-dropdown">
       <div class="mobile-docs-sidebar">
-          <ul class="collapsible">
-              {{#each pages}}
-              {{#if isActive}}
-              <li class="active">
-              {{else}}
-              <li>
-              {{/if}}
-                <a class="collapsible-header">{{name}}</a>
-                <div class="collapsible-body">
-                  <ul>
-                    {{#each files}}
-                    {{#if isActive}}
-                    <li><a href="/docs/{{../url}}/{{url}}" class="active">{{title}}</a></li>
-                    {{else}}
-                    <li><a href="/docs/{{../url}}/{{url}}">{{title}}</a></li>
-                    {{/if}}
-                    {{/each}}
-                  </ul>
-                </div>
-              </li>
-              {{/each}}
-          </ul>
+        <ul class="collapsible">
+          {{#each pages}}
+          {{#if isActive}}
+          <li class="active">
+            {{else}}
+          <li>
+            {{/if}}
+            <a class="collapsible-header">{{name}}</a>
+            <div class="collapsible-body">
+              <ul>
+                {{#each files}}
+                {{#if isActive}}
+                <li><a href="/docs/{{../url}}/{{url}}" class="active">{{title}}</a></li>
+                {{else}}
+                <li><a href="/docs/{{../url}}/{{url}}">{{title}}</a></li>
+                {{/if}}
+                {{/each}}
+              </ul>
+            </div>
+          </li>
+          {{/each}}
+        </ul>
       </div>
     </div>
     <div class="content-wrapper">
@@ -182,15 +190,17 @@
                 <div class="chats-wrapper">
                   <p class="chat-title open-source-text">Have a technical question?</p>
                   <div class="image-wrapper">
-                    <a href=""><img src="/docs/images/index/discord.svg" alt=""></a>
-                    <a href=""><img src="/docs/images/index/stack_overflow.svg" style="margin-left:30px" alt=""></a>
+                    <a href="https://discord.gg/ypXEEBr"><img src="/docs/images/index/discord.svg" alt=""></a>
+                    <a href="https://stackoverflow.com/search?q=space-cloud"><img
+                        src="/docs/images/index/stack_overflow.svg" style="margin-left:30px" alt=""></a>
                   </div>
                 </div>
               </div>
               <div class="col s12 l5">
                 <div class="github-wrapper">
                   <p class="github-title open-source-text">Edit docs!</p>
-                  <a href=""><img class="github-image" src="/docs/images/index/github_black.svg" alt=""></a>
+                  <a href="https://github.com/YourTechBud/space-cloud/tree/master/docs/manual"><img class="github-image"
+                      src="/docs/images/index/github_black.svg" alt=""></a>
                 </div>
               </div>
             </div>

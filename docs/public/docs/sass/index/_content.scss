@@ -75,7 +75,7 @@
         width: 100%;
         height: auto;
       }
-      b {
+      b, strong {
         font-weight: 600;
       }
       ul {
@@ -94,7 +94,6 @@
           font-size: 14px;
           line-height: 1.7;
           @media #{$large-and-up} {
-            margin-bottom: 12px;
             font-size: 16px;
             line-height: 1.7;
           }
@@ -120,7 +119,6 @@
           font-size: 14px;
           line-height: 1.7;
           @media #{$large-and-up} {
-            margin-bottom: 12px;
             font-size: 16px;
             line-height: 1.7;
           }
@@ -131,7 +129,6 @@
       }
       code {
         background-color: $link-selected;
-        padding: 4px 8px;
         border-radius: 4px;
       }
       pre {

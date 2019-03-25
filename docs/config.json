@@ -1,41 +1,68 @@
 [
   {
-    "name": "Getting Started",
-    "url": "getting-started",
+    "name": "Quick Start",
+    "url": "quick-start",
     "pages": [
-      ["space-cli", "Quick start (Space CLI)"],
-      ["manual", "Quick start (Manual)"],
-      ["sample-apps", "Sample Apps"]
+      [
+        "manual",
+        "Quick start (Manual)"
+      ],
+      [
+        "sample-apps",
+        "Sample Apps"
+      ]
     ]
-  },
-  {
-    "name": "Configuration File",
-    "url": "config",
-    "pages": []
   },
   {
     "name": "User Management",
     "url": "user-management",
     "pages": [
-      ["oauth", "OAuth"]
+      [
+        "oauth",
+        "OAuth"
+      ]
     ]
   },
   {
     "name": "Database",
     "url": "database",
     "pages": [
-      ["data-explorer", "Data Explorer"]
+      [
+        "create",
+        "Create Data"
+      ],
+      [
+        "read",
+        "Read Data"
+      ],
+      [
+        "update",
+        "Update Data"
+      ],
+      [
+        "delete",
+        "Delete Data"
+      ],
+      [
+        "config",
+        "Configuration"
+      ]
     ]
-  },
-  {
-    "name": "File Storage",
-    "url": "file-storage",
-    "pages": []
   },
   {
     "name": "Realtime",
     "url": "realtime",
     "pages": []
+  },
+  {
+    "name": "File Storage",
+    "url": "file-storage",
+    "pages": [
+      [
+        "config",
+        "Configuration"
+      ]
+    ]
   },
   {
     "name": "Functions",
@@ -46,8 +73,14 @@
     "name": "Security",
     "url": "security",
     "pages": [
-      ["database", "Database"],
-      ["file-storage", "File Storage"]
+      [
+        "database",
+        "Database"
+      ],
+      [
+        "file-storage",
+        "File Storage"
+      ]
     ]
   },
   {

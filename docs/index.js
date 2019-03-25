@@ -56,7 +56,10 @@ const render = (data, name, pageUrl) => {
     files: [{ title: 'Overview', url: 'overview', isActive: pageUrl === 'overview' && page.name === name }].concat(page.pages.map(p => ({ title: p[1], url: p[0], isActive: pageUrl === p[0] && page.name === name })))
   }))
 
-  return template({ pages: pages, html: html, name: name })
+  const isHome = name === 'Documentation'
+
+
+  return template({ pages: pages, html: html, name: name, isHome: isHome })
 }
 
 const handleSitemap = (_, res) => {

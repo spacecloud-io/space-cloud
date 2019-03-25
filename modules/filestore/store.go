@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
+	"github.com/spaceuptech/space-cloud/modules/filestore/amazons3"
 	"github.com/spaceuptech/space-cloud/modules/filestore/local"
 )
 
@@ -86,7 +87,8 @@ func initBlock(fileStoreType utils.FileStoreType, connection string) (FileStore,
 	switch fileStoreType {
 	case utils.Local:
 		return local.Init(connection)
-
+	case utils.AmazonS3:
+		return amazons3.Init(connection) // connection is the aws region code
 	default:
 		return nil, utils.ErrInvalidParams
 	}

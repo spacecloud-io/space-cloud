@@ -1,7 +1,9 @@
 package sql
 
 import (
+	"context"
 	"errors"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -13,8 +15,9 @@ import (
 
 // SQL holds the sql db object
 type SQL struct {
-	client *sqlx.DB
-	dbType string
+	client  *sqlx.DB
+	dbType  string
+	timeOut time.Duration
 }
 
 // Init initialises a new sql instance
@@ -23,6 +26,11 @@ func Init(dbType utils.DBType, connection string) (*SQL, error) {
 	var err error
 
 	s := &SQL{}
+
+	timeOut := 5 * time.Second
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
+	defer cancel()
 
 	switch dbType {
 	case utils.Postgres:
@@ -41,12 +49,13 @@ func Init(dbType utils.DBType, connection string) (*SQL, error) {
 		return nil, err
 	}
 
-	err = sql.Ping()
+	err = sql.PingContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	s.client = sql
+	s.timeOut = timeOut
 	return s, nil
 }
 
@@ -67,12 +76,24 @@ func (s *SQL) GetDBType() utils.DBType {
 	return utils.MySQL
 }
 
-func (s *SQL) doExec(query string, args []interface{}) error {
-	stmt, err := s.client.Preparex(query)
+func (s *SQL) doExecContext(ctx context.Context, query string, args []interface{}) error {
+	stmt, err := s.client.PreparexContext(ctx, query)
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 
-	_, err = stmt.Exec(args...)
+	_, err = stmt.ExecContext(ctx, args...)
+	return err
+}
+
+func doTransactionExecContext(ctx context.Context, query string, args []interface{}, tx *sqlx.Tx) error {
+	stmt, err := tx.PreparexContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, args...)
 	return err
 }

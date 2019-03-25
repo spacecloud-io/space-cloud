@@ -70,3 +70,16 @@ func (m *Module) Aggregate(ctx context.Context, dbType, project, col string, req
 
 	return crud.Aggregate(ctx, project, col, req)
 }
+
+// Create inserts a document (or multiple when op is "all") into the database based on dbType
+func (m *Module) Transaction(ctx context.Context, dbType, project string, req *model.TransactionRequest) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return err
+	}
+
+	return crud.Transaction(ctx, project, req)
+}
