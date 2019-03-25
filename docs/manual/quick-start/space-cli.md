@@ -25,7 +25,7 @@ It will prompt you to put a project id. Let's keep is `todo-app` for now.
 
 Hit enter.
 
-And your done. `space-cli` has automatically created the config file for the todo-app. Feel free to explore the config file. You can read more about it to create your own apps right [here](https://spaceuptech.com/docs/config/overview).
+And your done. `space-cli` has automatically created the config file for the todo-app. Feel free to explore the config file. You can read more about it to create your own apps right [here](/docs/config/overview).
 
 ## Step 3: Deploy the backend
 The only task remaining for us to do is deploy our backend. `space-cli` comes with a neat API to deploy the entire backend along with the database using docker. You can deploy the backend using the following command:
@@ -35,7 +35,7 @@ space-cli deploy --local --config todo-app.yml
 
 This function will load the YAML file and deploy MongoDB and `space-cloud` using docker. Note, you could use this command to deploy the database of your choice. `space-cli` goes through the config file and deploys all the dependencies for you.
 
-> Note: It is recommended to deploy Space Cloud projects using the `cloud` option for production use cases. This command is used to push the project config to an already running cluster. For more notes on how to deployments check out the [deploy page](https://spaceuptech.com/docs/deploy).
+> Note: It is recommended to deploy Space Cloud projects using the `cloud` option for production use cases. This command is used to push the project config to an already running cluster. For more notes on how to deployments check out the [deploy page](/docs/deploy).
 
 Awesome!
 
@@ -47,17 +47,17 @@ That was quick wasn't it?
 Our back end is up and running. We have built a [basic todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/basic-todo-app/index.html) using html and javascript which uses the backend you have just setup. Try signing up and adding some todos to test it out.
 
 ## Next Steps
-Awesome! We just made an end-to-end app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](https://spaceuptech.com/docs/getting-started/sample-apps).
-- [User Management](https://spaceuptech.com/docs/user-management)
-- [Database](https://spaceuptech.com/docs/database) (For CRUD operations)
-- [Realtime](https://spaceuptech.com/docs/real-time)
-- [Functions](https://spaceuptech.com/docs/functions)
+Awesome! We just made an end-to-end app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/quick-start/sample-apps).
+- [User Management](/docs/user-management)
+- [Database](/docs/database) (For CRUD operations)
+- [Realtime](/docs/real-time)
+- [Functions](/docs/functions)
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/quick-start/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/getting-started/sample-apps" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/quick-start/sample-apps" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

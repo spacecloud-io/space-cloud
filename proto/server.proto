@@ -51,6 +51,18 @@ message Meta {
   string col = 3;
   string token = 4;
 }
+message AllRequest {
+  string col = 1;
+  bytes document = 2;
+  string operation = 3;
+  bytes find = 4;
+  bytes update = 5;
+  string type = 6;
+}
+message TransactionRequest {
+  repeated AllRequest transactionrequest = 1;
+  Meta meta = 2;
+}
 
 service SpaceCloud {
   rpc Create(CreateRequest) returns (Response) {}
@@ -58,4 +70,5 @@ service SpaceCloud {
   rpc Update(UpdateRequest) returns (Response) {}
   rpc Delete(DeleteRequest) returns (Response) {}
   rpc Aggregate(AggregateRequest) returns (Response) {}
+  rpc HandleTransaction(TransactionRequest) returns (Response) {}
 }

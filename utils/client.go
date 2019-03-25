@@ -14,7 +14,7 @@ import (
 type Client struct {
 	id      string
 	channel chan interface{}
-	ctx     context.Context
+	Context context.Context
 	cancel  context.CancelFunc
 	socket  *websocket.Conn
 }
@@ -38,13 +38,14 @@ func (c *Client) RoutineWrite() {
 func (c *Client) Write(res interface{}) {
 	select {
 	case c.channel <- res:
-	case <-c.ctx.Done():
+	case <-c.Context.Done():
 	}
 }
 
 // Close closes the client
 func (c *Client) Close() {
 	c.cancel()
+	close(c.channel)
 	c.socket.Close()
 }
 

@@ -402,3 +402,271 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	out.Result = temp1
 	return &out, nil
 }
+
+func (s *server) HandleTransaction(ctx context.Context, in *pb.TransactionRequest) (*pb.Response, error) {
+
+	allRequests := []model.AllRequest{}
+	for _, req := range in.Transactionrequest {
+		switch req.Type {
+
+		case string(utils.Update):
+			eachReq := model.AllRequest{}
+			var updateObj map[string]interface{}
+			if err := json.Unmarshal(req.Update, &updateObj); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			var findObj map[string]interface{}
+			if err := json.Unmarshal(req.Update, &findObj); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			var document interface{}
+			if err := json.Unmarshal(req.Update, &document); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			eachReq.Find = findObj
+			eachReq.Update = updateObj
+			eachReq.Document = document
+			eachReq.Col = req.Col
+			eachReq.Operation = req.Operation
+			eachReq.Type = req.Type
+
+			allRequests = append(allRequests, eachReq)
+
+			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Update)
+			if err != nil {
+				out := pb.Response{}
+				out.Status = 401
+				out.Error = err.Error()
+				return &out, nil
+			}
+			args := map[string]interface{}{
+				"args":    map[string]interface{}{"find": eachReq.Find, "update": eachReq.Update, "op": eachReq.Operation, "auth": authObj},
+				"project": in.Meta.Project, // Don't forget to do this for every request
+			}
+
+			// Check if user is authorized to make this request
+			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Update, args)
+			if err != nil {
+				out := pb.Response{}
+				out.Status = 403
+				out.Error = err.Error()
+				return &out, nil
+			}
+
+		case string(utils.Create):
+			eachReq := model.AllRequest{}
+			var updateObj map[string]interface{}
+			if err := json.Unmarshal(req.Update, &updateObj); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			var findObj map[string]interface{}
+			if err := json.Unmarshal(req.Update, &findObj); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			var document interface{}
+			if err := json.Unmarshal(req.Update, &document); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			eachReq.Find = findObj
+			eachReq.Update = updateObj
+			eachReq.Document = document
+			eachReq.Col = req.Col
+			eachReq.Operation = req.Operation
+			eachReq.Type = req.Type
+
+			allRequests = append(allRequests, eachReq)
+
+			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Create)
+			if err != nil {
+				out := pb.Response{}
+				out.Status = 401
+				out.Error = err.Error()
+				return &out, nil
+			}
+			// Create an args object
+			args := map[string]interface{}{
+				"args":    map[string]interface{}{"doc": eachReq.Document, "op": eachReq.Operation, "auth": authObj},
+				"project": in.Meta.Project, // Don't forget to do this for every request
+			}
+
+			// Check if user is authorized to make this request
+			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Create, args)
+			if err != nil {
+				out := pb.Response{}
+				out.Status = 403
+				out.Error = err.Error()
+				return &out, nil
+			}
+
+		case string(utils.Delete):
+			eachReq := model.AllRequest{}
+			var updateObj map[string]interface{}
+			if err := json.Unmarshal(req.Update, &updateObj); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			var findObj map[string]interface{}
+			if err := json.Unmarshal(req.Update, &findObj); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			var document interface{}
+			if err := json.Unmarshal(req.Update, &document); err != nil {
+				out := pb.Response{}
+				out.Status = 500
+				out.Error = err.Error()
+				return &out, nil
+			}
+			eachReq.Find = findObj
+			eachReq.Update = updateObj
+			eachReq.Document = document
+			eachReq.Col = req.Col
+			eachReq.Operation = req.Operation
+			eachReq.Type = req.Type
+
+			allRequests = append(allRequests, eachReq)
+
+			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Delete)
+			if err != nil {
+				out := pb.Response{}
+				out.Status = 401
+				out.Error = err.Error()
+				return &out, nil
+			}
+			// Create an args object
+			args := map[string]interface{}{
+				"args":    map[string]interface{}{"find": eachReq.Find, "op": eachReq.Operation, "auth": authObj},
+				"project": in.Meta.Project, // Don't forget to do this for every request
+			}
+
+			// Check if user is authorized to make this request
+			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Delete, args)
+			if err != nil {
+				out := pb.Response{}
+				out.Status = 403
+				out.Error = err.Error()
+				return &out, nil
+			}
+		}
+	}
+	// Perform the transaction operation
+	transaction := model.TransactionRequest{}
+	transaction.Requests = allRequests
+	err := s.crud.Transaction(ctx, in.Meta.DbType, in.Meta.Project, &transaction)
+	if err != nil {
+		out := pb.Response{}
+		out.Status = 500
+		out.Error = err.Error()
+		return &out, nil
+	}
+	if !s.isProd {
+
+		for _, req := range transaction.Requests {
+			switch req.Type {
+			case string(utils.Create):
+				var rows []interface{}
+				if req.Operation == utils.One {
+					rows = []interface{}{req.Document}
+				} else if req.Operation == utils.All {
+					rows = req.Document.([]interface{})
+				} else {
+					rows = []interface{}{}
+				}
+
+				for _, t := range rows {
+					data := t.(map[string]interface{})
+
+					idVar := "id"
+					if in.Meta.DbType == string(utils.Mongo) {
+						idVar = "_id"
+					}
+
+					// Send realtime message if id fields exists
+					if id, p := data[idVar]; p {
+						s.realtime.Send(&model.FeedData{
+							Group:     req.Col,
+							DBType:    in.Meta.DbType,
+							Type:      utils.RealtimeWrite,
+							TimeStamp: time.Now().Unix(),
+							DocID:     id.(string),
+							Payload:   data,
+						})
+					}
+				}
+
+			case string(utils.Delete):
+				if req.Operation == utils.One {
+					idVar := "id"
+					if in.Meta.DbType == string(utils.Mongo) {
+						idVar = "_id"
+					}
+
+					if id, p := req.Find[idVar]; p {
+						if err != nil {
+							s.realtime.Send(&model.FeedData{
+								Group:     req.Col,
+								Type:      utils.RealtimeDelete,
+								TimeStamp: time.Now().Unix(),
+								DocID:     id.(string),
+								DBType:    in.Meta.DbType,
+							})
+						}
+					}
+				}
+
+			case string(utils.Update):
+				// Send realtime message in dev mode
+				if req.Operation == utils.One {
+
+					idVar := "id"
+					if in.Meta.DbType == string(utils.Mongo) {
+						idVar = "_id"
+					}
+
+					if id, p := req.Find[idVar]; p {
+						// Create the find object
+						find := map[string]interface{}{idVar: id}
+
+						data, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
+						if err == nil {
+							s.realtime.Send(&model.FeedData{
+								Group:     req.Col,
+								Type:      utils.RealtimeWrite,
+								TimeStamp: time.Now().Unix(),
+								DocID:     id.(string),
+								DBType:    in.Meta.DbType,
+								Payload:   data.(map[string]interface{}),
+							})
+						}
+					}
+				}
+			}
+		}
+	}
+	// Give positive acknowledgement
+	out := pb.Response{}
+	out.Status = 200
+	return &out, nil
+}

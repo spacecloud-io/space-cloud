@@ -1,24 +1,43 @@
 ---
+id: space-cloud
 secret: some-secret
 modules:
   crud:
     mongo:
       conn: mongodb://localhost:27017
+      isPrimary: true
       collections:
         todos:
+          isRealtimeEnabled: true
           rules:
-            read:
-              rule: allow
             create:
+              rule: allow
+            read:
               rule: allow
             update:
               rule: allow
             delete:
               rule: allow
-          isRealtimeEnabled: true
-      isPrimary: true
   auth:
     email:
       enabled: true
+  faas:
+    enabled: false
+    nats: nats://localhost:4222
   realtime:
     enabled: true
+    kafka: localhost
+  fileStore:
+    enabled: false
+    storeType: local
+    conn: ./
+    rules:
+      rule1:
+        prefix: /
+        rule:
+          create:
+            rule: allow
+          read:
+            rule: allow
+          delete:
+            rule: allow

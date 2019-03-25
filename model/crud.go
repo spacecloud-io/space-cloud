@@ -40,3 +40,16 @@ type AggregateRequest struct {
 	Pipeline  interface{} `json:"pipe"`
 	Operation string      `json:"op"`
 }
+
+type AllRequest struct {
+	Col       string                 `json:"col"`
+	Document  interface{}            `json:"doc"`
+	Operation string                 `json:"op"`
+	Find      map[string]interface{} `json:"find"`
+	Update    map[string]interface{} `json:"update"`
+	Type      string                 `json:"type"`
+}
+
+type TransactionRequest struct {
+	Requests []AllRequest `json:"reqs"`
+}
