@@ -39,13 +39,10 @@ The above snippet instructs `space-cloud` to connect to MongoDB at `mongodb://lo
 
 You can learn more about on the various parameters available for configuring the database module [here](/docs/database/config).
 
-## API
-
-Comming soon
 
 ## Next steps
 
-Now you know the basics of the database module. The next step would be diving deeper into the [configuration](/docs/database/config) and its structure. Let's make sure that the apps we build are secure!
+Now you know the basics of the database module. The next step would be diving deeper into the [configuration](/docs/database/config) and its structure. You could also continue to see how to use the database module on the frontend.
 
 <div class="btns-wrapper">
   <a href="/docs/user-management/overview" class="waves-effect waves-light btn primary-btn-border btn-small">

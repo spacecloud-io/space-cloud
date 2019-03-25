@@ -152,10 +152,10 @@ clauses:
 Great! You can now start securing your app. You may now checkout the [security rules for file storage module](/docs/security/file-storage) or head over to the section to [deploy your app](/docs/deploy/overview).
 
 <div class="btns-wrapper">
-  <a href="/docs/functions/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/security/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/deploy/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/security/file-storage" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>
