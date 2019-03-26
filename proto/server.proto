@@ -70,5 +70,5 @@ service SpaceCloud {
   rpc Update(UpdateRequest) returns (Response) {}
   rpc Delete(DeleteRequest) returns (Response) {}
   rpc Aggregate(AggregateRequest) returns (Response) {}
-  rpc HandleTransaction(TransactionRequest) returns (Response) {}
+  rpc Transactions(TransactionRequest) returns (Response) {}
 }
