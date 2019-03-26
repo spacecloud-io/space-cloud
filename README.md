@@ -4,7 +4,7 @@
 <a href="https://discord.gg/ypXEEBr"><img src="https://img.shields.io/badge/chat-discord-brightgreen.svg?logo=discord&style=flat"></a>
 <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
 
-Space Cloud is an open source, high performance web server which provides instant realtime APIs on the database of your choice. Build Internet Scale apps with the agility of a prototype!
+Space Cloud is an open source, high performance web server which provides instant realtime APIs on the database of your choice. Build highly scalable apps with the agility of a prototype!
 
 ## Table of Contents
 
