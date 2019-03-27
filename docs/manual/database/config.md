@@ -111,7 +111,7 @@ modules:
 
 ## Next steps
 
-Now you know the basics of the database module. The next step would be diving deeper into the [security rules](/docs/security/database) and its structure. Let's make sure that the apps we build are secure!
+Now you know the basics of the database module. The next step would be checking out the realtime module to bring realtime updates to your app!
 
 <div class="btns-wrapper">
   <a href="/docs/database/delete" class="waves-effect waves-light btn primary-btn-border btn-small">

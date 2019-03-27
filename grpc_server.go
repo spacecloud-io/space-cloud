@@ -403,7 +403,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	return &out, nil
 }
 
-func (s *server) HandleTransaction(ctx context.Context, in *pb.TransactionRequest) (*pb.Response, error) {
+func (s *server) Transactions(ctx context.Context, in *pb.TransactionRequest) (*pb.Response, error) {
 
 	allRequests := []model.AllRequest{}
 	for _, req := range in.Transactionrequest {
