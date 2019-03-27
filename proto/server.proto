@@ -1,49 +1,67 @@
 syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.spaceuptech.space_api.proto";
+option java_outer_classname = "SpaceCloudProto";
+
 package proto;
+
 message CreateRequest {
-  repeated bytes Document = 1;
-  string Operation = 2;
-  Meta Meta = 3;
+  bytes document = 1;
+  string operation = 2;
+  Meta meta = 3;
 }
 message ReadRequest {
-  repeated bytes Find = 1;
-  string Operation = 2;
-  ReadOptions Options = 3;
-  Meta Meta = 4;
+  bytes find = 1;
+  string operation = 2;
+  ReadOptions options = 3;
+  Meta meta = 4;
 }
 message ReadOptions {
-  map<string,int> Select = 1;
-  repeated bytes Sort = 2;
-  int64 Skip = 3;
-  int64 Limit = 4;
-  string Distinct = 5;
+  map<string,int32> select = 1;
+  map<string,int32> sort = 2;
+  int64 skip = 3;
+  int64 limit = 4;
+  string distinct = 5;
 }
 message UpdateRequest {
-  repeated bytes Find = 1;
-  string Operation = 2;
-  repeated bytes Update = 3;
+  bytes find = 1;
+  string operation = 2;
+  bytes update = 3;
   Meta meta = 4;
 }
 message DeleteRequest {
-  repeated bytes Find = 1;
-  string Operation = 2;
+  bytes find = 1;
+  string operation = 2;
   Meta meta = 3;
 }
 message AggregateRequest {
-  repeated bytes Pipeline = 1;
-  string Operation = 2;
-  Meta Meta = 3;
+  bytes pipeline = 1;
+  string operation = 2;
+  Meta meta = 3;
 }
 message Response {
-  bool Ack = 1;
-  string Error = 2;
-  repeated bytes result = 3;
+  int32 status = 1;
+  string error = 2;
+  bytes result = 3;
 }
 message Meta {
-  string Project = 1;
-  string DBType = 2;
-  string Col = 3;
-  string Token = 4;
+  string project = 1;
+  string dbType = 2;
+  string col = 3;
+  string token = 4;
+}
+message AllRequest {
+  string col = 1;
+  bytes document = 2;
+  string operation = 3;
+  bytes find = 4;
+  bytes update = 5;
+  string type = 6;
+}
+message TransactionRequest {
+  repeated AllRequest transactionrequest = 1;
+  Meta meta = 2;
 }
 
 service SpaceCloud {
@@ -52,4 +70,5 @@ service SpaceCloud {
   rpc Update(UpdateRequest) returns (Response) {}
   rpc Delete(DeleteRequest) returns (Response) {}
   rpc Aggregate(AggregateRequest) returns (Response) {}
+  rpc Transactions(TransactionRequest) returns (Response) {}
 }
