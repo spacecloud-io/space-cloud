@@ -152,7 +152,7 @@ clauses:
 Great! You can now start securing your app. You may now checkout the [security rules for database module](/docs/security/database) or head over to the section to [deploy your app](/docs/deploy/overview).
 
 <div class="btns-wrapper">
-  <a href="/docs/functions/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/security/database" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
   <a href="/docs/deploy/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">

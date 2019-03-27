@@ -4,7 +4,7 @@
 <a href="https://discord.gg/ypXEEBr"><img src="https://img.shields.io/badge/chat-discord-brightgreen.svg?logo=discord&style=flat"></a>
 <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
 
-Space Cloud is an open source, high performance web server which provides instant realtime APIs on the database of your choice. Build Internet Scale apps with the agility of a prototype!
+Space Cloud is an open source, high performance web server which provides instant realtime APIs on the database of your choice. Build highly scalable apps with the agility of a prototype!
 
 ## Table of Contents
 
@@ -55,7 +55,7 @@ Apart from these, Space Cloud also integrates with tons of cloud technologies to
 There are a lot of design decisions taken by us while creating Space Cloud. These form the guiding principles which heavily influence the roadmap ahead. Understanding them would also make our **objectives of creating Space Cloud** a lot more clear.
 
 ### Ease of use
-The main reason Space Cloud was born was to simplify the app / web development process. Right from making simple CURD operations to syncing data reliably in a distributed environment, **everything must be as simple as a function call**. This is the prime reason we chose to have a consistent API across all the databases / technologies we support.
+The main reason Space Cloud was born was to simplify the app / web development process. Right from making simple CRUD operations to syncing data reliably in a distributed environment, **everything must be as simple as a function call**. This is the prime reason we chose to have a consistent API across all the databases / technologies we support.
 
 This also means, that Space Cloud needs to be as unopinionated as possible to reuse the existing skill sets and tech you might be well versed with.
 

@@ -65,10 +65,10 @@ modules:
 
 ## Next steps
 
-Now you know the basics of the file storage module. The next step would be diving deeper into the [security rules](/docs/security/file-storage) and its structure. Let's make sure that the apps we build are secure!
+Now you know the basics of the file storage module. The next step would be checking out the functions module to extend Space Cloud by writing custom logic on backend!
 
 <div class="btns-wrapper">
-  <a href="/docs/file-storage/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/file-storage/delete" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
   <a href="/docs/functions/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">
