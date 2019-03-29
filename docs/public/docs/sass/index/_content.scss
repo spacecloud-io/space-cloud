@@ -137,6 +137,7 @@
         padding: 20px;
         margin-top: 24px;
         margin-bottom: 24px;
+        overflow-x: auto;
         @media #{$large-and-up} {
           margin-top: 30px;
           margin-bottom: 30px;
