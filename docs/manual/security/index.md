@@ -4,7 +4,7 @@ Space Cloud leverages multiple security systems with the philosophy that applica
 
 Every module in Space Cloud supports JWT-based authentication. Access to any database not specified in the configuration file is denied by default. Whenever possible, use JWT-based authentication in production. You can check out the [official website](https://jwt.io) of the JWT project to learn more about it.
 
-## How JWT are tokens used
+## How JWT is used
 
 `space-cloud` looks for the JWT token in the `Authorization` header in each HTTP request made to it.
 
