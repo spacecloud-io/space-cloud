@@ -78,7 +78,7 @@ func match(rule *config.Rule, args map[string]interface{}) error {
 		return matchNumber(rule, args)
 
 	case "bool":
-		return matchNumber(rule, args)
+		return matchBool(rule, args)
 	}
 
 	return ErrIncorrectMatch
