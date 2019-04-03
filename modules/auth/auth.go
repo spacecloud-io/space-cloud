@@ -123,7 +123,6 @@ func (m *Module) IsAuthenticated(token, dbType, col string, query utils.Operatio
 	if rule.Rule == "allow" {
 		return map[string]interface{}{}, nil
 	}
-
 	return m.parseToken(token)
 }
 
