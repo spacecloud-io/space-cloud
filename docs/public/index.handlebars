@@ -9,6 +9,10 @@
     href="https://fonts.googleapis.com/icon?family=Material+Icons|Raleway:100,200,300,400,500,600,700,800,900|Open+Sans:300,400,600,700,800"
     rel="stylesheet">
   <link type="text/css" rel="stylesheet" href="/docs/css/app.css" media="screen,projection" />
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
+  <script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/go.min.js"></script>
+  <script charset="UTF-8"
+    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
   <!--Company description-->
   <meta name="description" content="Documentation for Space Cloud. Instant REST APIs on any database.">
@@ -214,8 +218,7 @@
     integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
   <script type="text/javascript"
     src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/vs2015.min.css">
-  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
   <script>
     $(document).ready(function () {
       $('.collapsible').collapsible();
@@ -231,11 +234,9 @@
           $('#sidebar-dropdown').addClass('closed-sidebar');
         }
       });
-      hljs.initHighlightingOnLoad();
     });
   </script>
-  <script>
-  </script>
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/vs2015.min.css">
 </body>
 
 </html>
