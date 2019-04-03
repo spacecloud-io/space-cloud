@@ -87,7 +87,7 @@ func (s *SQL) doExecContext(ctx context.Context, query string, args []interface{
 	return err
 }
 
-func doTransactionExecContext(ctx context.Context, query string, args []interface{}, tx *sqlx.Tx) error {
+func doBatchExecContext(ctx context.Context, query string, args []interface{}, tx *sqlx.Tx) error {
 	stmt, err := tx.PreparexContext(ctx, query)
 	if err != nil {
 		return err
