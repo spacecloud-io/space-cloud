@@ -1,4 +1,4 @@
-<p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud" height="300px"></a></p>
+<p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud"></a></p>
 
 <h3 align="center">
 	Instant Realtime APIs on any database
@@ -48,7 +48,7 @@ Space Cloud replaces your traditional backend servers and simplifies app develop
 
 Making enterprise scale apps at the speed of **prototyping** is still a distant dream for many of us. Even a simple chat app becomes complicated **at scale**. Following best practices when starting something from scratch is very time consuming. Securing your app is a different ball game altogether.
 
-Well, there are some excellent tools out there which helps simplify app development like [Google Firebase](https://firebase.google.com/). But these tools come with own **vendor lock ins**. They either force you to use their own cloud or only work with a particular database. The next gen apps on the other hand always require multiple task specific databases and should even run on a private cloud.
+Well, there are some excellent tools out there which helps simplify app development like [Google Firebase](https://firebase.google.com/). But these tools come with their own **vendor lock ins**. They either force you to use their own cloud or only work with a particular database. The next gen apps on the other hand always require multiple task specific databases and should even run on a private cloud.
 
 We believed that **technology should adapt to your needs** and not the other way around. You should be able to choose any **database**, **cloud vendor** or **technology** of your preference. Agility should not come at the cost of flexibility. Space Cloud was born to solve precisely these problems.
 
