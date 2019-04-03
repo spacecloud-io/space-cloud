@@ -13,7 +13,7 @@
     }
     .docs-content {
       h1 {
-        font-family: 'Raleway', sans-serif;
+        font-family: "Raleway", sans-serif;
         font-weight: 600;
         margin-top: 0;
         margin-bottom: 24px;
@@ -28,7 +28,7 @@
         }
       }
       h2 {
-        font-family: 'Raleway', sans-serif;
+        font-family: "Raleway", sans-serif;
         font-weight: 600;
         color: $dark-color;
         font-size: 20px;
@@ -41,7 +41,7 @@
         }
       }
       h3 {
-        font-family: 'Raleway', sans-serif;
+        font-family: "Raleway", sans-serif;
         font-weight: 600;
         color: $dark-color;
         font-size: 16px;
@@ -69,13 +69,14 @@
       a {
         color: $link;
         cursor: pointer;
-        text-decoration: underline dotted #8381E0;
+        text-decoration: underline dotted #8381e0;
       }
       img {
         width: 100%;
         height: auto;
       }
-      b, strong {
+      b,
+      strong {
         font-weight: 600;
       }
       ul {
@@ -131,8 +132,8 @@
         background-color: $link-selected;
         border-radius: 4px;
       }
-      pre {
-        background-color: $link-selected;
+      pre .hljs {
+        background-color: $dark-code-color;
         border-radius: 4px;
         padding: 20px;
         margin-top: 24px;
@@ -229,7 +230,7 @@
       }
       .chat-title,
       .github-title {
-        font-family: 'Raleway', sans-serif;
+        font-family: "Raleway", sans-serif;
         font-weight: 600;
         margin: 0;
       }

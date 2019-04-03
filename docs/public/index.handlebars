@@ -103,7 +103,7 @@
           <i class="material-icons">home</i>Home</a>
       </li>
       <li>
-        <a href="/blog" class="active">
+        <a href="/docs" class="active">
           <i class="material-icons">import_contacts</i>Docs</a>
       </li>
       <li>
@@ -120,11 +120,11 @@
       <ul class="collapsible">
         {{#if isHome}}
         <li class="active">
-        <a class="active collapsible-header" href="/docs">Introduction</a>
-        {{else}}
+          <a class="active collapsible-header" href="/docs">Introduction</a>
+          {{else}}
         <li>
-        <a class="collapsible-header" href="/docs">Introduction</a>
-        {{/if}}
+          <a class="collapsible-header" href="/docs">Introduction</a>
+          {{/if}}
         </li>
         {{#each pages}}
         {{#if isActive}}
@@ -214,6 +214,8 @@
     integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
   <script type="text/javascript"
     src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/vs2015.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
   <script>
     $(document).ready(function () {
       $('.collapsible').collapsible();
@@ -229,7 +231,10 @@
           $('#sidebar-dropdown').addClass('closed-sidebar');
         }
       });
+      hljs.initHighlightingOnLoad();
     });
+  </script>
+  <script>
   </script>
 </body>
 
