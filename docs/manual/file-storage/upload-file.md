@@ -4,7 +4,7 @@ You can easily allow users to upload and download files via the File Management 
 
 ## Upload a file
 
-Uploading a file via Space Cloud from frontend is as simple as getting the reference of the file and calling `uploadFile` on the front end. Here's a code snippet to upload the file:
+Uploading a file via Space Cloud from frontend is as simple as getting the reference of the file and calling `uploadFile` on the frontend. Here's a code snippet to upload the file:
 
 ```js
 import { API } from "space-api";
@@ -30,15 +30,16 @@ api.FileStore()
 ```
 
 The `uploadFile` function takes two parameters to upload a file which are as follows:
-- `path` - The path at which to upload the file.
-- `file` - A file of the type HTML5 File API.
+- **path** - The path at which to upload the file.
+- **file** - A file of the type HTML5 File API.
 
 The `path` can be nested as well. For e.g a `path` - /folder1/folder2 would mean to upload the file inside folder2 which is in folder1. If any of the folders mentioned in the `path` were not present, they would be created before uploading the file.
 
 ## Response
+
 A response object sent by the server contains the **status** fields explained below:
 
-**status** : Number describing the status of the upload operation. Following values are possible:
+**status:** Number describing the status of the upload operation. Following values are possible:
 
 - 200 - Successful upload
 - 401 - Request was unauthenticatedoverview
@@ -47,14 +48,15 @@ A response object sent by the server contains the **status** fields explained be
 
 
 ## Download a file
+
 All files uploaded via File Management module are accessible on the following url - 
 
 ```js
 const url = `http://localhost:8080/api/$projectName/files/$path`
 ```
 The url is different for each file and has following variable parts to it:
-- `$projectName` - This is the name of project with which you initialized the API.
-- `$path` - This is the path at which the file was uploaded
+- **$projectName** - This is the name of project with which you initialized the API
+- **$path** - This is the path at which the file was uploaded
 
 
 ## Next steps

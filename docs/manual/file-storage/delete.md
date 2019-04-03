@@ -24,9 +24,10 @@ api.FileStore()
 The `delete` function takes a `path` of the file or folder to be deleted. The `path` consists of the path at which the file / folder was uploaded / created and the name of the file / folder as well. The `delete` function will recursively delete all files / folders in a folder if the `path` was for a folder. The `path` can be nested as well. For e.g a `path` - /folder1/folder2/file1 would mean to delete the file inside folder2 which is in folder1.
 
 ## Response
+
 A response object sent by the server contains the **status** fields explained below:
 
-**status** : Number describing the status of the upload operation. Following values are possible:
+**status:** Number describing the status of the upload operation. Following values are possible:
 
 - 200 - Successfully deleted file / folder
 - 401 - Request was unauthenticated
@@ -35,7 +36,7 @@ A response object sent by the server contains the **status** fields explained be
 
 ## Next steps
 
-Now you know all the operations of file storage module. So let's take a deeper dive into configuring the file storage module of Space Cloud
+Now you know all the operations of file storage module. So let's take a deeper dive into configuring the file storage module of Space Cloud.
 
 <div class="btns-wrapper">
   <a href="/docs/file-storage/list-files" class="waves-effect waves-light btn primary-btn-border btn-small">

@@ -6,7 +6,7 @@ The functions module is a means to extend the functionality provided by Space Cl
 
 ## How it works
 
-As a user, you need to write functions on the backend. In a single project you can write multiple functions. A collection of functions is called an `engine`. So in other words, you can write engines in the language of your choice which will have multiple functions registered to it.
+As an user, you need to write functions on the backend. In a single project you can write multiple functions. A collection of functions is called an `engine`. So in other words, you can write engines in the language of your choice which will have multiple functions registered to it.
 
 All engines connect to [nats](https://nats.io) and subscribe to a subject name which is a derivative of the engine name. Nats is a pub-sub network which load balances requests between the engines.
 

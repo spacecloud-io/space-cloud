@@ -2,7 +2,7 @@
 
 This guide will help you get started with Space Cloud and Mongo DB on your local machine. It exposes complete functionality of Space Cloud.
 
-In this guide I will walk you through how to develop a realtime todo app using Space Cloud. We'll be deploying the `space-cloud` binary manually.
+In this guide we will walk you through how to develop a realtime todo app using Space Cloud. We'll be deploying the `space-cloud` binary manually.
 
 ## Prerequisites
 - [MongoDB Database](https://docs.mongodb.com/manual/installation/)
@@ -90,12 +90,12 @@ That's it. Your backend is up and running!
 That was quick wasn't it?
 
 ## Step 4: Try it out
-Our back end is up and running. Time to show off it's awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using html and javascript which uses the backend you have just setup. 
+Our backend is up and running. Time to show off it's awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using html and javascript which uses the backend you have just setup. 
 
 Open it in two different windows by double clicking the html file twice, login into both and then try adding some todos to see the magic.
 
 ## Next Steps
-Awesome! We just made a realtime app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/quick-start/sample-apps).
+Awesome! We just made a realtime app without writing a single line of backend code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/quick-start/sample-apps).
 - [User Management](/docs/user-management)
 - [Database](/docs/database) (For CRUD operations)
 - [Realtime](/docs/realtime)

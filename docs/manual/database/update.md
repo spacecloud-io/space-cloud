@@ -1,6 +1,6 @@
 # Updating Data
 
-You can update / modify existing data in your app by simply calling `db.update` on the front end. Here's a code snippet to update all documents matching a specific condition:
+You can update / modify existing data in your app by simply calling `db.update` on the frontend. Here's a code snippet to update all documents matching a specific condition:
 
 ```js
 import { API, and, or, cond } from "space-api";
@@ -36,11 +36,13 @@ You can update a single document using `one` method. Multiple documents can be u
 > Note: `one` method is not available for SQL databases.
 
 ## Update operations
+
 You can perform different types of update operations like set, push, rename, etc. on your data. Following are the different types of update operations:
 
 > Note: In SQL databases, only `set` operation is available.
 
 ### Set operation
+
 You can set the value of any field / column in your data by using `set` method like below: 
 ```js
 // Set text of todo by new value
@@ -50,6 +52,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 The `set` method accepts an object of key-value pairs where key is the field / column name whereas value is the new value with which you want to update the field / column. 
 
 ### Push operation
+
 You can push an element to an array in a document by using the `push` method like below:  
 ```js
 // Add a new category for a todo
@@ -59,6 +62,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 The `push` method accepts an object of key-value pairs where key is the field name of the array whereas value is the new value which you want to push into that array.
 
 ### Remove operation
+
 You can remove / delete a field in a document by using `remove` method like below:
 ```js
 // Remove categories and time field
@@ -68,6 +72,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 The `remove` method accepts multiple inputs each being the name of a field you want to remove.  
 
 ### Rename operation
+
 You can rename the name of a field in a document by using `rename` method like below:
 ```js
 // Rename 'text' field to 'content'
@@ -77,6 +82,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 The `rename` method accepts an object of key-value pairs where key is the current name of a field while value (string) is the new name that you want to assign to that field.
 
 ### Increment operation
+
 You can increment / decrement the value of a integer field in your data by using the `inc` method like below:
 ```js
 // Increment 'likes' by 3
@@ -90,6 +96,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 The `inc` method accepts an object of key-value pairs where key is the name of the field whose value is to be incremented whereas value is the amount by which the value has to be incremented. As you would have noticed you can decrement a value by using negative integers.
 
 ### Multiply operation
+
 You can multiply the value of a integer field in your data by using the `mul` method like below:
 ```js
 // Multiply 'likes' by 10
@@ -99,6 +106,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 The `inc` method accepts an object of key-value pairs where key is the name of the field whose value is to be multiplied whereas value is the amount by which the value has to be multiplied.
 
 ### Max operation
+
 Sometimes you might want to update a number in your document with a new value only if the new value is greater than the existing value. This can be acheived by using `max` method like below:
 ```js
 // Updates 'likes' if it was lesser than 50
@@ -107,6 +115,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 ```
 
 ### Min operation
+
 Sometimes you might want to update a number in your document with a new value only if the new value is lesser than the existing value. This can be acheived by using `min` method like below:
 ```js
 // Updates 'likes' if it was greater than 50
@@ -115,6 +124,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 ```
 
 ### Current timestamp operation
+
 You can update a field with the value of current timestamp by using the `currentTimestamp` method like below:
 ```js
 // Update 'lastUpdated' with current timestamp 
@@ -124,6 +134,7 @@ db.update('todos').where(cond('_id_', '==', 1))
 The `currentTimestamp` method accepts multiple inputs each being the name of the field you want to update with current timestamp.
 
 ### Current date operation
+
 You can update a field with the value of current date by using the `currentDate` method like below:
 ```js
 // Update 'lastUpdated' with current date 
@@ -190,7 +201,7 @@ db.update('todos').where(condition)
 
 A response object sent by the server contains the **status** fields explained below:
 
-**status** : Number describing the status of the operation. Following values are possible:
+**status:** Number describing the status of the operation. Following values are possible:
 
 - 200 - Operation was successful
 - 401 - Request was unauthenticated
@@ -213,6 +224,7 @@ db.update('todos').where(cond('category', '==', 'frontend')).
 ```
 
 ## Upserting a document:
+
 Sometimes you might want to create a document or update it if it already exists. You can acheive this by using the `upsert` method like below:
 ```js
 // Create a todo or update it

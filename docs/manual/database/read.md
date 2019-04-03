@@ -1,29 +1,30 @@
 # Reading Data
 
-You can query data from your database by simply calling `db.get` on the front end. Here's a code snippet to fetch a single document:
+You can query data from your database by simply calling `db.get` on the frontend. Here's a code snippet to fetch a single document:
 
 ```js
-import { API, and, or, cond } from 'space-api';
+import { API, and, or, cond } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API('todo-app', 'http://localhost:8080');
+const api = new API("todo-app", "http://localhost:8080");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
 
 // The condition to be matched
-const condition = cond('_id', '==', 1)
+const condition = cond("_id", "==", 1);
 
 // Get the todo
-db.get('todos').where(condition).one().then(res => {
-  if (res.status === 200) {
-    // res.data contains the documents returned by the database
-    console.log('Response:', res.data);
-    return;
-  }
-}).catch(ex => {
-  // Exception occured while processing request
-});
+db.get("todos").where(condition).one().then(res => {
+    if (res.status === 200) {
+      // res.data contains the documents returned by the database
+      console.log("Response:", res.data);
+      return;
+    }
+  })
+  .catch(ex => {
+    // Exception occured while processing request
+  });
 ```
 
 As you would have noticed, the above function is asynchronous in nature. `todos` is the name of the collection / table which contains all your todos.
@@ -52,13 +53,13 @@ db.get('todos').where(condition).one().then(res => ...)
 
 The operators allowed are:
 
-- **==    :** Passes if `op1` is equal to `op2`
-- **!=    :** Passes if `op1` is not equal to `op2`
-- **>     :** Passes if `op1` is greater than `op2`
-- **<     :** Passes if `op1` is lesser than `op2`
-- **>=    :** Passes if `op1` is greater than or equal to `op2`
-- **<=    :** Passes if `op1` is lesser than or equal to `op2`
-- **in    :** Passes if `op1` is in `op2`
+- **== :** Passes if `op1` is equal to `op2`
+- **!= :** Passes if `op1` is not equal to `op2`
+- **> :** Passes if `op1` is greater than `op2`
+- **< :** Passes if `op1` is lesser than `op2`
+- **>= :** Passes if `op1` is greater than or equal to `op2`
+- **<= :** Passes if `op1` is lesser than or equal to `op2`
+- **in :** Passes if `op1` is in `op2`
 - **notIn :** Passes if `op1` is not in `op2`
 
 ### Combining multiple conditions
@@ -86,18 +87,19 @@ db.get('todos').where(condition).one().then(res => ...);
 
 A response object sent by the server contains the **status** and **data** fields explained below:
 
-**status** : Number describing the status of the operation. Following values are possible:
+**status:** Number describing the status of the operation. Following values are possible:
 
 - 200 - Operation was successful
 - 401 - Request was unauthenticated
 - 403 - Request was unauthorized
 - 500 - Internal server error
 
-**data** - An object containing the following fields:
+**data:** An object containing the following fields:
 
 - result - A single object in case of `one`, array of objects in case of `all`, an array in case of `distinct` and an integer in case of `count`
 
 ## Selecting only a few fields
+
 You can specify which fields to be returned for the docs in the result by using `select` method as shown below:
 
 ```js
@@ -118,7 +120,9 @@ db.get('posts').where(cond('category', '==', 'some-category'))
 ```
 
 ### Sorting
+
 You can receive a sorted result set by using the `sort` function. This is how you do it:
+
 ```js
 // Sort syntax
 db.get(collection).where(conditions).sort(...fields).all().then()
@@ -131,6 +135,7 @@ db.get('posts').where(cond('category', '==', 'some-category'))
 `sort` takes any number of `fields` as input parameters. `field` is a string corresponding to either field of the JSON document in case of document oriented databases like Mongo DB or name of column in case of SQL databases. The `sort` function sorts the result set in the order of the provided fields. For the above example, result will be sorted by title first and then by author. The minus sign in front of author means that the result set will sorted in a descending order for the author field.
 
 ### Skipping
+
 You can skip n number of rows from the beginning of the result set by using `skip`. It takes an integer as an parameter. This is how you can skip docs:
 
 ```js
@@ -143,7 +148,9 @@ db.get('posts').where(cond('category', '==', 'some-category'))
 ```
 
 ### Limiting
+
 You can limit the number of docs / rows returned by the server by using `limit`. It takes an integer as an parameter. This is how you can limit result set:
+
 ```js
 // Limit syntax
 db.get(collection).where(conditions).limit(n).all().then()
@@ -151,7 +158,7 @@ db.get(collection).where(conditions).limit(n).all().then()
 // Limit result up to 10 rows / docs
 db.get('posts').where(cond('category', '==', 'some-category'))
   .limit(10).all().then(res => ...);
-``` 
+```
 
 ## Reading a single document:
 
@@ -161,13 +168,16 @@ db.get('todos').where(cond('_id', '==', 1)).one().then(res => ...).catch(ex => .
 ```
 
 ## Reading multiple documents at once:
+
 ```js
 // Read multiple todos at once!
 db.get('todos').where(cond('categories', '==', 'some-category')).all().then(res => ...).catch(ex => ...);
 ```
 
 ## Reading count of number of documents:
+
 Sometimes, you might only want to fetch the number of documents for a given query but not the actual result or docs. In that case, you can use `count` method. This is how you can fetch just the count:
+
 ```js
 // Read count of todos
 db.get('todos').where(cond('categories', '==', 'some-category')).count().then(res => ...).catch(ex => ...);
@@ -176,12 +186,14 @@ db.get('todos').where(cond('categories', '==', 'some-category')).count().then(re
 > Note: `count` is only available in Mongo DB.
 
 ## Reading only distinct values:
+
 You can read the distinct values of a given field by using the `distinct` method as shown below:
 
 ```js
 // Read distinct values of categories of todos
 db.get('todos').distinct('category').then(res => ...).catch(ex => ...);
 ```
+
 `res.data.result` will be an array of the unique values for the given field.
 
 ## Next steps

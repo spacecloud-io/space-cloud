@@ -27,13 +27,14 @@ The `call` function takes four arguments which are as follows:
 As you would have noticed, the above function is asynchronous in nature. 
 
 ## Response
+
 A response object sent by the server contains the **status** and **data** fields explained below:
 
-**status** : Number describing the status of the operation. Following values are possible:
+**status:** Number describing the status of the operation. Following values are possible:
 - 200 - Operation was successful
 - 500 - Internal server error
 
-**data** - Object returned by the function
+**data:** Object returned by the function.
 
 ## Next steps
 

@@ -1,5 +1,5 @@
 # Listening to real-time`db.liveQuery
-You can listen / subscribe to changes happening in your app's data in real time by simply calling `db.liveQuery` on the front end. Here's a code snippet to do this:
+You can listen / subscribe to changes happening in your app's data in real time by simply calling `db.liveQuery` on the frontend. Here's a code snippet to do this:
 
 ```js
 import { API, cond, or, and } from 'space-api';
@@ -35,11 +35,11 @@ if (on some logic) {
 `liveQuery` function takes the name of the collection / table on which you want to subscribe. `subscribe` takes two functions `onSnapshot` and `onError` functions as it's input paramters and makes a request to subscribe for the given collection / table and `where` clause. 
 
 `onSnapshot` function is called for the first time when you have successfully subscribed with the initial data and on consequent data changes (i.e. whenever new data is added, removed or updated within the where clause). The `onSnapshot` function is always called with the following two params: 
-**docs** - An array of latest result set.
-**type** - Type of operation due to which the the `onSnapshot` is called. It can have one of the following values:
-- initial - Called only once for the initial data on successful subscription.
-- write - Whenever any data is added or updated.
-- delete - Whenever any data is deleted.
+**docs:** An array of latest result set.
+**type:** Type of operation due to which the `onSnapshot` is called. It can have one of the following values:
+- **initial** - Called only once for the initial data on successful subscription
+- **write** - Whenever any data is added or updated
+- **delete** - Whenever any data is deleted
 
 `onError` function is called with the `error` if there was any error subscribing to data.
 

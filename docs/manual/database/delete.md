@@ -1,6 +1,6 @@
 # Deleting Data
 
-You can delete data in your app by simply calling `db.delete` on the front end. Here's a code snippet to delete all documents matching a specific condition:
+You can delete data in your app by simply calling `db.delete` on the frontend. Here's a code snippet to delete all documents matching a specific condition:
 
 ```js
 import { API, and, or, cond } from "space-api";
@@ -12,7 +12,7 @@ const api = new API("todo-app", "http://localhost:8080");
 const db = api.Mongo();
 
 // The condition to be matched
-const condition = cond("userId", "==", 'user1');
+const condition = cond("userId", "==", "user1");
 
 // Delete all todos of a particular user
 db.delete("todos")
@@ -56,13 +56,13 @@ db.delete('todos').where(condition).all().then(res => ...)
 
 The operators allowed are:
 
-- **==    :** Passes if `op1` is equal to `op2`
-- **!=    :** Passes if `op1` is not equal to `op2`
-- **>     :** Passes if `op1` is greater than `op2`
-- **<     :** Passes if `op1` is lesser than `op2`
-- **>=    :** Passes if `op1` is greater than or equal to `op2`
-- **<=    :** Passes if `op1` is lesser than or equal to `op2`
-- **in    :** Passes if `op1` is in `op2`
+- **== :** Passes if `op1` is equal to `op2`
+- **!= :** Passes if `op1` is not equal to `op2`
+- **> :** Passes if `op1` is greater than `op2`
+- **< :** Passes if `op1` is lesser than `op2`
+- **>= :** Passes if `op1` is greater than or equal to `op2`
+- **<= :** Passes if `op1` is lesser than or equal to `op2`
+- **in :** Passes if `op1` is in `op2`
 - **notIn :** Passes if `op1` is not in `op2`
 
 ### Combining multiple conditions
@@ -89,21 +89,22 @@ db.delete('todos').where(condition).all().then(res => ...)
 
 A response object sent by the server contains the **status** fields explained below:
 
-**status** : Number describing the status of the operation. Following values are possible:
+**status:** Number describing the status of the operation. Following values are possible:
 
 - 200 - Operation was successful
 - 401 - Request was unauthenticated
 - 403 - Request was unauthorized
 - 500 - Internal server error
 
-
 ## Deleting a single document:
+
 ```js
 // Deleting a single todo
 db.delete('todos').where(cond('_id', '==', 1)).one().then(res => ...).catch(ex => ...);
 ```
 
 ## Deleting multiple documents at once:
+
 ```js
 // Deleting all todos of a particular user
 db.delete('todos').where(cond("userId", "==", 'user1')).all().then(res => ...).catch(ex => ...);
@@ -111,7 +112,7 @@ db.delete('todos').where(cond("userId", "==", 'user1')).all().then(res => ...).c
 
 ## Next steps
 
-Now you know all the operations of CRUD module. So let's take a deeper dive into configuring the database module of Space Cloud
+Now you know all the operations of CRUD module. So let's take a deeper dive into configuring the database module of Space Cloud.
 
 <div class="btns-wrapper">
   <a href="/docs/database/update" class="waves-effect waves-light btn primary-btn-border btn-small">

@@ -60,7 +60,8 @@ modules:
 ```
 
 ## Next steps
-That's all you need to do to enable the realtime module. It's time to go ahead and how to use the realtime module on the frontend
+
+That's all you need to do to enable the realtime module. It's time to go ahead and how to use the realtime module on the frontend.
 
 <div class="btns-wrapper">
   <a href="/docs/database/overview" class="waves-effect waves-light btn primary-btn-border btn-small">

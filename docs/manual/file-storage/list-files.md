@@ -1,6 +1,6 @@
 # List files and folder
 
-You can list all files and folders within a specific folder by simply calling `listFiles` on the front end. Here's a code snippet that shows how to do it: 
+You can list all files and folders within a specific folder by simply calling `listFiles` on the frontend. Here's a code snippet that shows how to do it: 
 
 ```js
 import { API } from "space-api";
@@ -28,6 +28,7 @@ As shown above, the `listFiles` function takes a single parameter `path` and lis
 The `path` can be nested as well. For e.g if you give a  `path` - /folder1/folder2, then `listFiles` method will list all the files / folders located in folder2 which is in folder1.
 
 ## Response
+
 A response object sent by the server contains the **status** and **data** fields explained below:
 
 **status** : Number describing the status of the upload operation. Following values are possible:

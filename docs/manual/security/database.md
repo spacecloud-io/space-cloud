@@ -149,6 +149,7 @@ clauses:
 ```
 
 ## Next steps
+
 Great! You can now start securing your app. You may now checkout the [security rules for file storage module](/docs/security/file-storage) or head over to the section to [deploy your app](/docs/deploy/overview).
 
 <div class="btns-wrapper">

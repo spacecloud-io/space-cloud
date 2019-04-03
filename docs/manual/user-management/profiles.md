@@ -1,5 +1,5 @@
 # Reading user profiles
-You can easily read the profiles of any user in your app by simply calling the `db.profiles` (to fetch all profiles) or `db.profile` (to fetch a single profile) functions on the front end.
+You can easily read the profiles of any user in your app by simply calling the `db.profiles` (to fetch all profiles) or `db.profile` (to fetch a single profile) functions on the frontend.
 
 ## Fetch profile of a single user
 You can read the profile of a single user using `db.profile` function. It takes a single parameter - `id` (unique id of the user).
@@ -17,7 +17,7 @@ const db = api.Mongo();
 const userId = 'some-user-id'
 db.profile(userId).then(res => {
   if (res.status === 200) {
-    // res.user contains the profile of the user
+    // res.data.user contains the profile of the user
     console.log('User profile', res.data.user)
     return;
   }
@@ -40,8 +40,8 @@ const db = api.Mongo();
 // Read profiles of all users
 db.profiles().then(res => {
   if (res.status === 200) {
-    // res.users contains the profile of the users
-    console.log('User profile', res.data.users)
+    // res.data.users contains the profile of the users
+    console.log('Profiles', res.data.users)
     return;
   }
 }).catch(ex => {
@@ -52,15 +52,15 @@ db.profiles().then(res => {
 ## Response
 A response object sent by the server contains the **status**  and **data** fields explained below:
 
-**status** : Number describing the status of the operation. Following values are possible:
+**status:** Number describing the status of the operation. Following values are possible:
 - 200 - Operation was successful
 - 401 - Request was unauthenticated
 - 403 - Request was unauthorized
 - 500 - Internal server error
 
-**data** - The data object consists of one of the following fields:
-- user (for `profile`) - User object
-- users (for `profiles`) - Array of user objects 
+**data:** The data object consists of one of the following fields:
+- **user** (for `profile`) - User object
+- **users** (for `profiles`) - Array of user objects 
 
 <div class="btns-wrapper">
   <a href="/docs/user-management/signup" class="waves-effect waves-light btn primary-btn-border btn-small">

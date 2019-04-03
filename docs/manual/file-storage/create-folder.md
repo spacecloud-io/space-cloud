@@ -1,6 +1,6 @@
 # Create folder
 
-You can easily allow users to create a folder via the File Management module of Space Cloud by calling `createFolder` on front end. Here's a code snippet to do so: 
+You can easily allow users to create a folder via the File Management module of Space Cloud by calling `createFolder` on frontend. Here's a code snippet to do so: 
 
 ```js
 import { API } from "space-api";
@@ -23,15 +23,16 @@ api.FileStore()
 ```
 
 The `createFolder` function takes two parameters and creates a folder. The two parameters are as follows:
-- **path** - The path at which to create the folder.
-- **name** - The name of the folder.
+- **path:** The path at which to create the folder.
+- **name:** The name of the folder.
 
 The `path` can be nested as well. For e.g a `path` - /folder1/folder2 would mean to create the folder inside folder2 which is in folder1. If any of the folders mentioned in the `path` were not present, they would be created before creating the specified folder.
 
 ## Response
+
 A response object sent by the server contains the **status** fields explained below:
 
-**status** : Number describing the status of the upload operation. Following values are possible:
+**status:** Number describing the status of the upload operation. Following values are possible:
 
 - 200 - Successful creation of folder
 - 401 - Request was unauthenticated
