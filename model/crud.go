@@ -50,6 +50,6 @@ type AllRequest struct {
 	Type      string                 `json:"type"`
 }
 
-type TransactionRequest struct {
+type BatchRequest struct {
 	Requests []AllRequest `json:"reqs"`
 }

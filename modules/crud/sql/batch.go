@@ -8,12 +8,12 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// Transaction performs the provided operations in a single transaction
-func (s *SQL) Transaction(ctx context.Context, project string, txRequest *model.TransactionRequest) error {
+// Batch performs the provided operations in a single Batch
+func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchRequest) error {
 
 	tx, err := s.client.BeginTxx(ctx, nil) //TODO - Wirte *sqlx.TxOption instead of nil
 	if err != nil {
-		fmt.Println("Error in initiating transactions")
+		fmt.Println("Error in initiating Batch")
 		return err
 	}
 	for _, req := range txRequest.Requests {
@@ -50,7 +50,7 @@ func (s *SQL) Transaction(ctx context.Context, project string, txRequest *model.
 
 		}
 	}
-	err = tx.Commit() // commit the transaction
+	err = tx.Commit() // commit the Batch
 	if err != nil {
 		return err
 	}
