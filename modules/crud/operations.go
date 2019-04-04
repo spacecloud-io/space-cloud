@@ -72,7 +72,7 @@ func (m *Module) Aggregate(ctx context.Context, dbType, project, col string, req
 }
 
 // Create inserts a document (or multiple when op is "all") into the database based on dbType
-func (m *Module) Transaction(ctx context.Context, dbType, project string, req *model.TransactionRequest) error {
+func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.BatchRequest) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -81,5 +81,5 @@ func (m *Module) Transaction(ctx context.Context, dbType, project string, req *m
 		return err
 	}
 
-	return crud.Transaction(ctx, project, req)
+	return crud.Batch(ctx, project, req)
 }

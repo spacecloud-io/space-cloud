@@ -371,7 +371,7 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 	return &requestMetaData{project: project, dbType: dbType, col: col, token: tokens[0]}
 }
 
-func (s *server) handleTransaction() http.HandlerFunc {
+func (s *server) handleBatch() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -381,7 +381,7 @@ func (s *server) handleTransaction() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Load the request from the body
-		var txRequest model.TransactionRequest
+		var txRequest model.BatchRequest
 		json.NewDecoder(r.Body).Decode(&txRequest)
 		defer r.Body.Close()
 
@@ -455,8 +455,8 @@ func (s *server) handleTransaction() http.HandlerFunc {
 			}
 		}
 
-		// Perform the transaction operation
-		err := s.crud.Transaction(ctx, meta.dbType, meta.project, &txRequest)
+		// Perform the batch operation
+		err := s.crud.Batch(ctx, meta.dbType, meta.project, &txRequest)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

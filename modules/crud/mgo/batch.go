@@ -8,8 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// Transaction performs the provided operations in a single transaction
-func (m *Mongo) Transaction(ctx context.Context, project string, txRequest *model.TransactionRequest) error {
+// Batch performs the provided operations in a single Batch
+func (m *Mongo) Batch(ctx context.Context, project string, txRequest *model.BatchRequest) error {
 	return m.client.UseSession(ctx, func(session mongo.SessionContext) error {
 		err := session.StartTransaction()
 		if err != nil {

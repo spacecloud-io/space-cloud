@@ -403,10 +403,10 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	return &out, nil
 }
 
-func (s *server) Transactions(ctx context.Context, in *pb.TransactionRequest) (*pb.Response, error) {
+func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
 
 	allRequests := []model.AllRequest{}
-	for _, req := range in.Transactionrequest {
+	for _, req := range in.Batchrequest {
 		switch req.Type {
 
 		case string(utils.Update):
@@ -571,10 +571,10 @@ func (s *server) Transactions(ctx context.Context, in *pb.TransactionRequest) (*
 			}
 		}
 	}
-	// Perform the transaction operation
-	transaction := model.TransactionRequest{}
-	transaction.Requests = allRequests
-	err := s.crud.Transaction(ctx, in.Meta.DbType, in.Meta.Project, &transaction)
+	// Perform the Batch operation
+	batch := model.BatchRequest{}
+	batch.Requests = allRequests
+	err := s.crud.Batch(ctx, in.Meta.DbType, in.Meta.Project, &batch)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -583,7 +583,7 @@ func (s *server) Transactions(ctx context.Context, in *pb.TransactionRequest) (*
 	}
 	if !s.isProd {
 
-		for _, req := range transaction.Requests {
+		for _, req := range batch.Requests {
 			switch req.Type {
 			case string(utils.Create):
 				var rows []interface{}
@@ -667,6 +667,27 @@ func (s *server) Transactions(ctx context.Context, in *pb.TransactionRequest) (*
 	}
 	// Give positive acknowledgement
 	out := pb.Response{}
+	out.Status = 200
+	return &out, nil
+}
+func (s *server) Call(ctx context.Context, in *pb.FaaSRequest) (*pb.Response, error) {
+	var params interface{}
+	if err := json.Unmarshal(in.Params, &params); err != nil {
+		out := pb.Response{}
+		out.Status = 500
+		out.Error = err.Error()
+		return &out, nil
+	}
+
+	resultBytes,err := s.faas.Operation(s.auth,in.Token,in.Engine,in.Function,int(in.Timeout))
+	if err != nil {
+		out := pb.Response{}
+		out.Status = 500
+		out.Error = err.Error()
+		return &out, nil
+	}
+	out := pb.Response{}
+	out.Result = resultBytes
 	out.Status = 200
 	return &out, nil
 }

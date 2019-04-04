@@ -13,7 +13,7 @@ func (s *server) routes() {
 	s.router.Methods("POST").Path("/v1/api/faas/{engine}/{func}").HandlerFunc(s.faas.HandleRequest(s.auth))
 
 	// Initialize the routes for the crud operations
-	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/transaction").HandlerFunc(s.handleTransaction())
+	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(s.handleBatch())
 
 	crudRouter := s.router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
 	crudRouter.HandleFunc("/create", s.handleCreate())

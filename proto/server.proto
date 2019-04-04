@@ -59,9 +59,17 @@ message AllRequest {
   bytes update = 5;
   string type = 6;
 }
-message TransactionRequest {
-  repeated AllRequest transactionrequest = 1;
+message BatchRequest {
+  repeated AllRequest batchrequest = 1;
   Meta meta = 2;
+}
+
+message FaaSRequest {
+  bytes params = 1;
+  int64 timeout = 2;
+  string engine = 3;
+  string function = 4;
+  string token = 5;
 }
 
 service SpaceCloud {
@@ -70,5 +78,7 @@ service SpaceCloud {
   rpc Update(UpdateRequest) returns (Response) {}
   rpc Delete(DeleteRequest) returns (Response) {}
   rpc Aggregate(AggregateRequest) returns (Response) {}
-  rpc Transactions(TransactionRequest) returns (Response) {}
+  rpc Batch(BatchRequest) returns (Response) {}
+  
+  rpc Call(FaaSRequest) returns (Response) {}
 }
