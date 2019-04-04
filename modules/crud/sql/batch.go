@@ -23,7 +23,7 @@ func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchR
 			if err != nil {
 				return err
 			}
-			err = doBatchExecContext(ctx, sqlQuery, args, tx)
+			err = doTransactionExecContext(ctx, sqlQuery, args, tx)
 			if err != nil {
 				return err
 			}
@@ -33,7 +33,7 @@ func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchR
 			if err != nil {
 				return err
 			}
-			err = doBatchExecContext(ctx, sqlQuery, args, tx)
+			err = doTransactionExecContext(ctx, sqlQuery, args, tx)
 			if err != nil {
 				return err
 			}
@@ -43,7 +43,7 @@ func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchR
 			if err != nil {
 				return err
 			}
-			err = doBatchExecContext(ctx, sqlQuery, args, tx)
+			err = doTransactionExecContext(ctx, sqlQuery, args, tx)
 			if err != nil {
 				return err
 			}
