@@ -21,15 +21,15 @@ require (
 	github.com/nats-io/nuid v1.0.0 // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/sqs/goreturns v0.0.0-20181028201513-538ac6014518 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
 	github.com/urfave/cli v1.20.0
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.0.0-rc1
-	golang.org/x/crypto v0.0.0-20190131182504-b8fe1690c613 // indirect
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
-	golang.org/x/sys v0.0.0-20190209173611-3b5209105503 // indirect
+	golang.org/x/tools v0.0.0-20190404132500-923d25813098 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect

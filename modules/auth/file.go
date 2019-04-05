@@ -18,8 +18,7 @@ func (m *Module) IsFileOpAuthorised(token, path string, op utils.FileOpType, arg
 		return err
 	}
 	rule := rules.Rule[string(op)]
-
-	if rule.Rule == "allow" {
+	if rule.Rule == "allow"{
 		return nil
 	}
 
