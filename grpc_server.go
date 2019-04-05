@@ -31,7 +31,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 		}
 		req.Document = temp
 	} else if in.Operation == utils.All {
-		temp := []map[string]interface{}{}
+		temp := []interface{}{}
 		if err = json.Unmarshal(in.Document, &temp); err != nil {
 			out := pb.Response{}
 			out.Status = 500
@@ -197,6 +197,8 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &out, nil
 	}
 	req.Find = temp
+
+	temp = map[string]interface{}{}
 	if err = json.Unmarshal(in.Update, &temp); err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -679,7 +681,7 @@ func (s *server) Call(ctx context.Context, in *pb.FaaSRequest) (*pb.Response, er
 		return &out, nil
 	}
 
-	resultBytes,err := s.faas.Operation(s.auth,in.Token,in.Engine,in.Function,int(in.Timeout))
+	resultBytes, err := s.faas.Operation(s.auth, in.Token, in.Engine, in.Function, int(in.Timeout))
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
