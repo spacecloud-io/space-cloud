@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"strings"
+
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -18,7 +19,7 @@ func (m *Module) IsFileOpAuthorised(token, path string, op utils.FileOpType, arg
 		return err
 	}
 	rule := rules.Rule[string(op)]
-	if rule.Rule == "allow"{
+	if rule.Rule == "allow" {
 		return nil
 	}
 
@@ -35,31 +36,23 @@ func (m *Module) IsFileOpAuthorised(token, path string, op utils.FileOpType, arg
 	return m.matchRule(rule, args)
 }
 
-
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
 	pathParams := make(map[string]interface{})
 
 	in1 := strings.Split(path, "/")
 	// Remove last element if it is  Empty
-	 if in1[len(in1) -1 ] == ""{
-	 	in1 = in1[:len(in1)-1]	
-		}
+	if in1[len(in1)-1] == "" {
+		in1 = in1[:len(in1)-1]
+	}
 
 	for _, r := range m.fileRules {
 
-<<<<<<< HEAD
 		rulePath := strings.Split(r.Prefix, "/")
-		
-		if rulePath[len(rulePath) -1 ] == ""{
-			rulePath = rulePath[:len(rulePath)-1]	
-		}
-		
-=======
-		if len(in1) < len(rulePath) {
-			continue
+
+		if rulePath[len(rulePath)-1] == "" {
+			rulePath = rulePath[:len(rulePath)-1]
 		}
 
->>>>>>> 453b6c1e623b4335740e49afa700a82c4ab110b3
 		// Create a match flag
 		validMatch := true
 
@@ -68,7 +61,7 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 			if !strings.HasPrefix(p, ":") {
 
 				// Break the current rule since its an invalid match
-				if i == len(in1) || p != in1[i]  {
+				if i == len(in1) || p != in1[i] {
 					validMatch = false
 					break
 				}
