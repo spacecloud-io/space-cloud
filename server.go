@@ -1,10 +1,14 @@
 package main
 
 import (
+	"log"
+	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"google.golang.org/grpc"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
@@ -13,6 +17,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/modules/userman"
+	pb "github.com/spaceuptech/space-cloud/proto"
 )
 
 type server struct {
@@ -38,6 +43,10 @@ func initServer(isProd bool) *server {
 }
 
 func (s *server) start(port string) error {
+
+	portInt, _ := strconv.Atoi(port)
+	go s.initGRPCServer(strconv.Itoa(portInt + 1))
+
 	// Allow cors
 	corsObj := cors.New(cors.Options{
 		AllowCredentials: true,
@@ -74,4 +83,16 @@ func (s *server) loadConfig(config *config.Project) error {
 
 	// Set the configuration for the curd module
 	return s.crud.SetConfig(config.Modules.Crud)
+}
+
+func (s *server) initGRPCServer(port string) {
+	lis, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatal("Failed to listen: %v", err)
+	}
+	grpcServer := grpc.NewServer()
+	pb.RegisterSpaceCloudServer(grpcServer, s)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }

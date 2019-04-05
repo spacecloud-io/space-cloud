@@ -1,6 +1,6 @@
 # User Management Module
 
-> Note: It is recommended to use your own user management module for a production environment. The current user management module is not production ready.
+> **Note:** It is recommended to use your own user management module for a production environment. The current user management module is not production ready.
 
 User management is used for managing the various sign in methods which are generally used to develop applications. It's basically a way for the user to sign up or login into your application. In addition to that it provides the user with a `JWT token` which is used in all the other modules for authentication and authorization. 
 
@@ -26,7 +26,7 @@ The config pertaining to user management module can be found inside the `auth` k
 modules:
   auth:
     email:
-      enabled: false
+      enabled: true
 
   # Config for other modules go here 
 ```
@@ -58,14 +58,16 @@ CREATE TABLE users (
 );
 ```
 
+> **Note:** You can always add more fields / columns as needed.
+
 ## Next steps
-That's all you need to do to enable the user management module. You can check the usage of OAuth based sign in methods [here](/docs/user-management/oauth).
+That's all you need to do to enable the user management module. You can check it's usage by heading over to next page and see how to consume the endpoints on the client side.
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/sample-apps" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/quick-start/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/user-management/oauth" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/user-management/signin" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

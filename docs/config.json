@@ -1,7 +1,7 @@
 [
   {
-    "name": "Getting Started",
-    "url": "getting-started",
+    "name": "Quick Start",
+    "url": "quick-start",
     "pages": [
       [
         "manual",
@@ -18,6 +18,18 @@
     "url": "user-management",
     "pages": [
       [
+        "signin",
+        "Email Sign In"
+      ],
+      [
+        "signup",
+        "Email Sign Up"
+      ],
+      [
+        "profiles",
+        "Reading profiles"
+      ],
+      [
         "oauth",
         "OAuth"
       ]
@@ -28,25 +40,76 @@
     "url": "database",
     "pages": [
       [
-        "data-explorer",
-        "Data Explorer"
+        "create",
+        "Create Data"
+      ],
+      [
+        "read",
+        "Read Data"
+      ],
+      [
+        "update",
+        "Update Data"
+      ],
+      [
+        "delete",
+        "Delete Data"
+      ],
+      [
+        "config",
+        "Configuration"
       ]
     ]
   },
   {
     "name": "Realtime",
     "url": "realtime",
-    "pages": []
+    "pages": [
+      [
+        "live-query",
+        "Listening to real-time updates"
+      ]
+    ]
   },
   {
     "name": "File Storage",
     "url": "file-storage",
-    "pages": []
+    "pages": [
+      [
+        "upload-file",
+        "Upload and download files"
+      ],
+      [
+        "create-folder",
+        "Create folder"
+      ],
+      [
+        "list-files",
+        "List files and folders"
+      ],
+      [
+        "delete",
+        "Delete files and folders"
+      ],
+      [
+        "config",
+        "Configuration"
+      ]
+    ]
   },
   {
     "name": "Functions",
     "url": "functions",
-    "pages": []
+    "pages": [
+      [
+        "engine",
+        "Writing custom logic"
+      ],
+      [
+        "client",
+        "Accessing custom logic"
+      ]
+    ]
   },
   {
     "name": "Security",
@@ -65,11 +128,6 @@
   {
     "name": "Deploy",
     "url": "deploy",
-    "pages": []
-  },
-  {
-    "name": "API Reference",
-    "url": "api",
     "pages": []
   },
   {

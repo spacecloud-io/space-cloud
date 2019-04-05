@@ -31,4 +31,3 @@ modules:
   auth:
     email:
       enabled: true
-

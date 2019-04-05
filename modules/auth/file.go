@@ -19,7 +19,6 @@ func (m *Module) IsFileOpAuthorised(token, path string, op utils.FileOpType, arg
 		return err
 	}
 	rule := rules.Rule[string(op)]
-
 	if rule.Rule == "allow" {
 		return nil
 	}
@@ -41,9 +40,22 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 	pathParams := make(map[string]interface{})
 
 	in1 := strings.Split(path, "/")
+	// Remove last element if it is  Empty
+	if in1[len(in1)-1] == "" {
+		in1 = in1[:len(in1)-1]
+	}
+
 	for _, r := range m.fileRules {
+
 		rulePath := strings.Split(r.Prefix, "/")
 
+		if rulePath[len(rulePath)-1] == "" {
+			rulePath = rulePath[:len(rulePath)-1]
+		}
+
+		if len(in1) < len(rulePath) {
+			continue
+		}
 		// Create a match flag
 		validMatch := true
 
@@ -56,7 +68,6 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 					validMatch = false
 					break
 				}
-
 				continue
 			}
 
