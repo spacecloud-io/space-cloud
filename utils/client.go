@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/gorilla/websocket"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/model"
 )
@@ -51,7 +51,6 @@ func (c *Client) Close() {
 
 // Read startes a blocking reader routine
 func (c *Client) Read(cb DataCallback) {
-	defer c.Close()
 	for {
 		data := &model.Message{}
 		err := c.socket.ReadJSON(data)

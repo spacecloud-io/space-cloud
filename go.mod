@@ -1,12 +1,13 @@
 module github.com/spaceuptech/space-cloud
 
 require (
-	github.com/aws/aws-sdk-go v1.17.4
+	github.com/aws/aws-sdk-go v1.19.7
 	github.com/c2fo/testify v0.0.0-20150827203832-fba96363964a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/golang/protobuf v1.2.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/gorilla/mux v1.7.0
@@ -28,9 +29,15 @@ require (
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.0.0-rc1
+<<<<<<< HEAD
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
 	golang.org/x/tools v0.0.0-20190404132500-923d25813098 // indirect
+=======
+	golang.org/x/net v0.0.0-20190328230028-74de082e2cca // indirect
+	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4 // indirect
+>>>>>>> 453b6c1e623b4335740e49afa700a82c4ab110b3
 	google.golang.org/appengine v1.4.0 // indirect
+	google.golang.org/grpc v1.19.1
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect

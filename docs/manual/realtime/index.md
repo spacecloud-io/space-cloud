@@ -26,8 +26,8 @@ The configuration pertaining to the realtime module can be found under the `real
 ```yaml
 modules:
   realtime:
-    enabled: true
-    kafka: localhost
+    enabled: true     # Enable the realtime module globally
+    kafka: localhost  # Connection string for kafka
 
 # Config for other modules go here 
 ```
@@ -52,20 +52,22 @@ modules:
               rule: allow
             delete:
               rule: allow
+  realtime:
+    enabled: true     # Enable the realtime module globally
+    kafka: localhost
 
-# Config for other modules go here 
+  # Config for other modules go here 
 ```
 
 ## Next steps
-That's all you need to do to enable the realtime module. It's time to go ahead and how to use the realtime module on the frontend. Here are the client side APIs.
-- [Javascript Client](/docs/api/javascript)
-- Java (Coming soon!)
+
+That's all you need to do to enable the realtime module. It's time to go ahead and how to use the realtime module on the frontend.
 
 <div class="btns-wrapper">
-  <a href="/docs/database" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/database/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/file-storage" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/realtime/live-query" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

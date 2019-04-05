@@ -1,6 +1,6 @@
 # Run Sample Apps
 
-> Note: Currently we have no sample apps available. Working hard to get some up. Want to see put up your app for the world to see. Head over to our [discord](https://discord.gg/ypXEEBr) server and we'll love to hear you out!
+> Note: Currently we have no sample apps available. Working hard to get some up. Want to put up your app for the world to see?. Head over to our [discord](https://discord.gg/ypXEEBr) server and we'll love to hear you out!
 
 Once you've understood the basics on how to create and deploy a project with Space Cloud, it is time to explore the features Space Cloud has to offer. For this very purpose we have created some sample apps using popular web technologies (like React, etc.) and databases.
 
@@ -18,7 +18,7 @@ The next step is to dive into the various Space Cloud modules.
 - [Functions](/docs/functions)
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/manual" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/quick-start/manual" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
   <a href="/docs/user-management/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">

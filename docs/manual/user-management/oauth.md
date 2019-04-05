@@ -5,7 +5,7 @@
 Coming soon!
 
 <div class="btns-wrapper">
-  <a href="/docs/user-management/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/user-management/profiles" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
   <a href="/docs/database" class="waves-effect waves-light btn primary-btn-fill btn-small">
