@@ -1,21 +1,10 @@
----
+
 secret: some-secret
 modules:
   crud:
-    mongo:
-      conn: mongodb://localhost:27017
+    sql-mysql:
+      conn: root:ATad2913-pw@/project
       collections:
-        todos:
-          rules:
-            read:
-              rule: allow
-            create:
-              rule: allow
-            update:
-              rule: allow
-            delete:
-              rule: allow
-          isRealtimeEnabled: false
         users:
           rules:
             read:
