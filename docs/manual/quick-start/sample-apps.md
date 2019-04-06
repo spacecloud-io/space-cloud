@@ -6,6 +6,7 @@ Once you've understood the basics on how to create and deploy a project with Spa
 
 ## Running the sample apps
 We have pre written some [sample applications](https://github.com/spaceuptech/space-cloud/tree/master/examples) for you to get started quickly. It contains a frontend app along with the `config.yaml` file.
+
 ```
 space-cloud init --sample [SAMPLE_APP_NAME]
 ```

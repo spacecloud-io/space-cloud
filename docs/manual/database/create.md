@@ -52,7 +52,6 @@ db.insert('todos').one(doc).then(res => ...).catch(ex => ...);
 ## Adding multiple documents simultaneously:
 
 ```js
-// Create multiple todos at once!
 const docs = [
   { _id: 1, text: 'Star Space Cloud on Github!', time: new Date()},
   { _id: 1, text: 'Fork Space Cloud on Github!', time: new Date()}

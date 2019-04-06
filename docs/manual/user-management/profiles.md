@@ -4,7 +4,17 @@ You can easily read the profiles of any user in your app by simply calling the `
 ## Fetch profile of a single user
 You can read the profile of a single user using `db.profile` function. It takes a single parameter - `id` (unique id of the user).
 
-```js
+<div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js">Javascript</a></li>
+      <li class="tab col s2"><a href="#java">Java</a></li>
+      <li class="tab col s2"><a href="#python">Python</a></li>
+    </ul>
+  </div>
+  <div id="js" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
@@ -24,11 +34,28 @@ db.profile(userId).then(res => {
 }).catch(ex => {
   // Exception occured while processing request
 });
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 ## Fetch profiles of all users
+
 You can read the profiles of all users with the help of `profiles` function as shown below:
-```js
+
+<div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js">Javascript</a></li>
+      <li class="tab col s2"><a href="#java">Java</a></li>
+      <li class="tab col s2"><a href="#python">Python</a></li>
+    </ul>
+  </div>
+  <div id="js" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
@@ -47,7 +74,12 @@ db.profiles().then(res => {
 }).catch(ex => {
   // Exception occured while processing request
 });
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 ## Response
 A response object sent by the server contains the **status**  and **data** fields explained below:

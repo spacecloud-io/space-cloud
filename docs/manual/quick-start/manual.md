@@ -21,7 +21,7 @@ You can unzip the compressed archive
 
 **For Linux / Mac:** `unzip space-cloud.zip && chmod +x space-cloud`
 
-**For Windows:**      Right click on the archive and select `extract here`.
+**For Windows:** Right click on the archive and select `extract here`.
 
 ## Step 2: Download the sample config file
 Space Cloud needs a config file in order to function. The config file is used to load information like the database to be used, its connection string, security rules, etc. You can find the config used for our todo app [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/config.yaml).

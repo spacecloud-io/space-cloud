@@ -1,7 +1,17 @@
 # Add basic email sign in to your app 
-You can easily allow users to log in to your app via email using the `db.signIn` function. This is how you could add a simple log in feature in your app. Make sure you have enabled the `auth` module. Here's a code snippet to implement basic email sign in: 
+You can easily allow users to log in to your app via email using the `db.signIn` function. This is how you could add a simple log in feature in your app. Make sure you have enabled the `auth` module. Here's a code snippet to implement basic email sign in:
 
-```js
+<div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js">Javascript</a></li>
+      <li class="tab col s2"><a href="#java">Java</a></li>
+      <li class="tab col s2"><a href="#python">Python</a></li>
+    </ul>
+  </div>
+  <div id="js" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
@@ -24,7 +34,12 @@ db.signIn('demo@example.com', '1234').then(res => {
 }).catch(ex => {
   // Exception occured while processing request
 });
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 As you would have noticed, the above function is asynchronous in nature. The `signIn` method takes 2 parameters:
 - **email** - Email of the user.

@@ -1,7 +1,17 @@
 # Add basic email sign up to your app 
 You can easily allow users to create a new user on your app via email using the `db.signUp` function. Here's a code snippet to do a basic email sign up:
 
-```js
+<div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js">Javascript</a></li>
+      <li class="tab col s2"><a href="#java">Java</a></li>
+      <li class="tab col s2"><a href="#python">Python</a></li>
+    </ul>
+  </div>
+  <div id="js" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
@@ -24,7 +34,12 @@ db.signUp('demo@example.com', 'User1', '1234', 'default').then(res => {
 }).catch(ex => {
   // Exception occured while processing request
 });
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 As you would have noticed, the above function is asynchronous in nature. The `signUp` method takes 4 parameters and creates a new `user` with an auto generated unique id in the `users` collection / table. The 4 parameters used to create a new `user` are as follows:
 
