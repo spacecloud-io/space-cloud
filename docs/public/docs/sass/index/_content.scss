@@ -122,34 +122,36 @@
       }
 
       .tabs-wrapper {
+        margin: 24px 0px;
+
         @media #{$large-and-up} {
           margin: 30px 0px;
         }
+
         ul.tabs {
-          padding-left: 14px;
-          margin-top: 24px;
-          margin-bottom: 24px;
+          padding-left: 0px;
+          margin-top: 0px;
+          margin-bottom: 12px;
           border-bottom: 1px solid $border-color;
-  
+
           @media #{$large-and-up} {
             padding-left: 0px;
             margin-top: 0px;
             margin-bottom: 15px;
           }
-  
+
           li {
-            list-style-type: square;
-            padding-left: 0px;
-            margin-bottom: 0px;
-            font-size: 14px;
-            line-height: 1.7;
+            line-height: 48px;
             text-transform: initial;
-  
+            margin-left: 4px;
+            margin-bottom: 0;
+            padding-left: 0;
+
             @media #{$large-and-up} {
               line-height: 48px;
               margin-left: 4px;
             }
-  
+
             a {
               color: $dark-color;
               text-decoration: none;
@@ -157,35 +159,32 @@
               border: 1px solid $border-color;
               border-radius: 4px;
               background-color: $link-hover;
-              font-size: 16px;
+              font-size: 14px;
+              @media #{$large-and-up} {
+                font-size: 16px;
+              }
             }
-  
+
             a.active {
               color: $link;
               font-weight: 600;
               background-color: $default-color;
             }
           }
-  
+
           li:first-child {
-            @media #{$large-and-up} {
-              margin-left: 0;
-            }
+            margin-left: 0;
           }
-  
+
           li.indicator {
             display: none;
           }
         }
+
         pre {
-          margin-top: 24px;
-          margin-bottom: 24px;
-  
-          @media #{$large-and-up} {
-            margin-top: 0px;
-            margin-bottom: 0px;
-          }
-  
+          margin-top: 0px;
+          margin-bottom: 0px;
+
           code.hljs {
             padding: 0px 20px;
           }
