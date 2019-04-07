@@ -2,7 +2,17 @@
 
 You can easily extend Space Cloud by writing your custom logic on the backend in the form of simple functions. These functions run as a microservice on the backend. This is how you write a simple function using the `engine-api` -
 
-```go
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#go1">Go</a></li>
+      <li class="tab col s2"><a href="#java1">Java</a></li>
+      <li class="tab col s2"><a href="#python1">Python</a></li>
+    </ul>
+  </div>
+  <div id="go1" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import "spaceuptech.com/space-engine-go/engine"
 
 // Function to be registered
@@ -29,7 +39,12 @@ myEngine.Start()
 
 // Call function of some other engine
 res, err := myEngine.Call("some-engine", "some-func", engine.M{"msg": "space-engine-go is awesome!"}, 1000)
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 Use `engine.Init` to initialize an instance of an `engine`. An `engine` can harbour multiple functions which can be invoked by frontend. The `engine.Init` function takes two parameters **engineName** and **url** which are as follows:
 - **engineName:** Name of the engine. Uniquely identifies an engine

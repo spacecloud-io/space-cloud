@@ -134,7 +134,7 @@
           @media #{$large-and-up} {
             padding-left: 0px;
             margin-top: 0px;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
           }
   
           li {
@@ -205,59 +205,15 @@
         code.hljs {
           background-color: $dark-code-color;
           border-radius: 4px;
-          padding: 20px 20px;
+          padding: 20px;
           overflow-x: auto;
         }
       }
 
-      ol {
-        padding-left: 14px;
-        margin-top: 24px;
-        margin-bottom: 24px;
-
-        @media #{$large-and-up} {
-          padding-left: 16px;
-          margin-top: 30px;
-          margin-bottom: 30px;
-        }
-
-        li {
-          list-style-type: decimal;
-          padding-left: 8px;
-          color: $dark-color;
-          margin-bottom: 8px;
-          font-size: 14px;
-          line-height: 1.7;
-
-          @media #{$large-and-up} {
-            font-size: 16px;
-            line-height: 1.7;
-          }
-        }
-
-        li:last-child {
-          margin-bottom: 0;
-        }
+      code {
+        background-color: $link-selected;
+        border-radius: 4px;
       }
-
-      // code {
-      //   background-color: $link-selected;
-      //   border-radius: 4px;
-      // }
-
-      // pre .hljs {
-      //   background-color: $dark-code-color;
-      //   border-radius: 4px;
-      //   padding: 20px;
-      //   margin-top: 24px;
-      //   margin-bottom: 24px;
-      //   overflow-x: auto;
-
-      //   @media #{$large-and-up} {
-      //     margin-top: 30px;
-      //     margin-bottom: 30px;
-      //   }
-      // }
 
       blockquote {
         margin-top: 24px;
@@ -290,6 +246,36 @@
 
         .primary-btn-fill {
           color: $default-color;
+        }
+      }
+
+      ol {
+        padding-left: 14px;
+        margin-top: 24px;
+        margin-bottom: 24px;
+
+        @media #{$large-and-up} {
+          padding-left: 16px;
+          margin-top: 30px;
+          margin-bottom: 30px;
+        }
+
+        li {
+          list-style-type: decimal;
+          padding-left: 8px;
+          color: $dark-color;
+          margin-bottom: 8px;
+          font-size: 14px;
+          line-height: 1.7;
+
+          @media #{$large-and-up} {
+            font-size: 16px;
+            line-height: 1.7;
+          }
+        }
+
+        li:last-child {
+          margin-bottom: 0;
         }
       }
 

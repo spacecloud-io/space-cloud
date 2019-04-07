@@ -1,8 +1,18 @@
 # List files and folder
 
-You can list all files and folders within a specific folder by simply calling `listFiles` on the frontend. Here's a code snippet that shows how to do it: 
+You can list all files and folders within a specific folder by simply calling `listFiles` on the frontend. Here's a code snippet that shows how to do it:
 
-```js
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
+      <li class="tab col s2"><a href="#java1">Java</a></li>
+      <li class="tab col s2"><a href="#python1">Python</a></li>
+    </ul>
+  </div>
+  <div id="js1" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
@@ -21,7 +31,12 @@ api.FileStore()
   .catch(ex => {
     // Exception occured while processing request
   });
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 As shown above, the `listFiles` function takes a single parameter `path` and lists all the files / folders located at that path.
 

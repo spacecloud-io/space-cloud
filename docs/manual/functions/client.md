@@ -1,7 +1,17 @@
 # Access custom logic
 You can call a function running on the backend (written via functions module of Space Cloud) on frontend by simply calling `api.call` on frontend. Here's a code snippet showing how to do it:
 
-```js
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js1">Go</a></li>
+      <li class="tab col s2"><a href="#java1">Java</a></li>
+      <li class="tab col s2"><a href="#python1">Python</a></li>
+    </ul>
+  </div>
+  <div id="js1" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
@@ -16,7 +26,12 @@ api.call('my-engine', 'my-func', { msg: 'Space Cloud is awesome!' }, 1000)
   }).catch(ex => {
     // Exception occured while processing request
   })
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 The `call` function takes four arguments which are as follows:
 - **engineName** - Name of the engine
