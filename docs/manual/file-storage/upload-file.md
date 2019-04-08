@@ -6,7 +6,17 @@ You can easily allow users to upload and download files via the File Management 
 
 Uploading a file via Space Cloud from frontend is as simple as getting the reference of the file and calling `uploadFile` on the frontend. Here's a code snippet to upload the file:
 
-```js
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
+      <li class="tab col s2"><a href="#java1">Java</a></li>
+      <li class="tab col s2"><a href="#python1">Python</a></li>
+    </ul>
+  </div>
+  <div id="js1" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
@@ -27,7 +37,12 @@ api.FileStore()
   .catch(ex => {
     // Exception occured while processing request
   });
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 The `uploadFile` function takes two parameters to upload a file which are as follows:
 - **path** - The path at which to upload the file.
@@ -49,11 +64,27 @@ A response object sent by the server contains the **status** fields explained be
 
 ## Download a file
 
-All files uploaded via File Management module are accessible on the following url - 
+All files uploaded via File Management module are accessible on the following url:
 
-```js
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js2">Javascript</a></li>
+      <li class="tab col s2"><a href="#java2">Java</a></li>
+      <li class="tab col s2"><a href="#python2">Python</a></li>
+    </ul>
+  </div>
+  <div id="js2" class="col s12" style="padding:0">
+    <pre>
+      <code>
 const url = `http://localhost:8080/api/$projectName/files/$path`
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java2" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python2" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
+
 The url is different for each file and has following variable parts to it:
 - **$projectName** - This is the name of project with which you initialized the API
 - **$path** - This is the path at which the file was uploaded

@@ -1,7 +1,17 @@
 # Listening to real-time`db.liveQuery
 You can listen / subscribe to changes happening in your app's data in real time by simply calling `db.liveQuery` on the frontend. Here's a code snippet to do this:
 
-```js
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
+      <li class="tab col s2"><a href="#java1">Java</a></li>
+      <li class="tab col s2"><a href="#python1">Python</a></li>
+    </ul>
+  </div>
+  <div id="js1" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API, cond, or, and } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
@@ -30,7 +40,12 @@ let unsubscribe = db.liveQuery('posts').where(condition).subscribe(onSnapshot, o
 if (on some logic) {
   unsubscribe()
 }
-```
+      </code>
+    </pre>
+  </div>
+  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
+  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+</div>
 
 `liveQuery` function takes the name of the collection / table on which you want to subscribe. `subscribe` takes two functions `onSnapshot` and `onError` functions as it's input paramters and makes a request to subscribe for the given collection / table and `where` clause. 
 
