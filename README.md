@@ -10,7 +10,7 @@
 		•
 		<a href="https://spaceuptech.com/docs">Docs</a>
 		•
-		<a href="https://discord.gg/ypXEEBr/">Support</a>
+		<a href="https://discord.gg/ypXEEBr">Support</a>
 	</strong>
 </p>
 <p align="center">

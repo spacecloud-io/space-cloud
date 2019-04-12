@@ -4,12 +4,12 @@ You can listen / subscribe to changes happening in your app's data in real time 
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
-      <li class="tab col s2"><a href="#java1">Java</a></li>
-      <li class="tab col s2"><a href="#python1">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#live-query-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#live-query-java">Java</a></li>
+      <li class="tab col s2"><a href="#live-query-python">Python</a></li>
     </ul>
   </div>
-  <div id="js1" class="col s12" style="padding:0">
+  <div id="live-query-js" class="col s12" style="padding:0">
     <pre>
       <code>
 import { API, cond, or, and } from 'space-api';
@@ -43,8 +43,20 @@ if (on some logic) {
       </code>
     </pre>
   </div>
-  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="live-query-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="live-query-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 `liveQuery` function takes the name of the collection / table on which you want to subscribe. `subscribe` takes two functions `onSnapshot` and `onError` functions as it's input paramters and makes a request to subscribe for the given collection / table and `where` clause. 

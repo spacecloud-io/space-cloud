@@ -9,14 +9,14 @@ Uploading a file via Space Cloud from frontend is as simple as getting the refer
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
-      <li class="tab col s2"><a href="#java1">Java</a></li>
-      <li class="tab col s2"><a href="#python1">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#upload-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#upload-java">Java</a></li>
+      <li class="tab col s2"><a href="#upload-python">Python</a></li>
     </ul>
   </div>
-  <div id="js1" class="col s12" style="padding:0">
+  <div id="upload-js" class="col s12" style="padding:0">
     <pre>
-      <code>
+      <code class="javascript">
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
@@ -40,8 +40,20 @@ api.FileStore()
       </code>
     </pre>
   </div>
-  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="upload-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="upload-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 The `uploadFile` function takes two parameters to upload a file which are as follows:
@@ -66,24 +78,9 @@ A response object sent by the server contains the **status** fields explained be
 
 All files uploaded via File Management module are accessible on the following url:
 
- <div class="row tabs-wrapper">
-  <div class="col s12" style="padding:0">
-    <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js2">Javascript</a></li>
-      <li class="tab col s2"><a href="#java2">Java</a></li>
-      <li class="tab col s2"><a href="#python2">Python</a></li>
-    </ul>
-  </div>
-  <div id="js2" class="col s12" style="padding:0">
-    <pre>
-      <code>
-const url = `http://localhost:8080/api/$projectName/files/$path`
-      </code>
-    </pre>
-  </div>
-  <div id="java2" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python2" class="col s12" style="padding:0">Python Client Coming Soon!</div>
-</div>
+```
+url = `http://localhost:8080/api/$projectName/files/$path`
+```
 
 The url is different for each file and has following variable parts to it:
 - **$projectName** - This is the name of project with which you initialized the API

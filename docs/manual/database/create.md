@@ -1,18 +1,18 @@
 # Creating data
 
-You can add data to your app by simply calling `db.insert` on the frontend. Here's a code snippet to do so:
+You can add data to your app by simply calling `db.insert` on the frontend. Here's a code snippet to add a single document/record to your app:
 
 <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
-      <li class="tab col s2"><a href="#java1">Java</a></li>
-      <li class="tab col s2"><a href="#python1">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#insert-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#insert-java">Java</a></li>
+      <li class="tab col s2"><a href="#insert-python">Python</a></li>
     </ul>
   </div>
-  <div id="js1" class="col s12" style="padding:0">
+  <div id="insert-js" class="col s12" style="padding:0">
     <pre>
-      <code>
+      <code class="javascript">
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
@@ -24,8 +24,9 @@ const db = api.Mongo();
 // The todo to be created
 const doc = { _id: 1, text: "Star Space Cloud on Github!", time: new Date() };
 
-// Insert the todo in 'todos' collection / table
-db.insert("todos").one(doc).then(res => {
+db.insert("todos").doc(doc).apply()
+  .then(res => {
+    // Insert the todo in 'todos' collection / table
     if (res.status === 200) {
       // Todo was created successfully
       return;
@@ -34,75 +35,75 @@ db.insert("todos").one(doc).then(res => {
   .catch(ex => {
     // Exception occured while processing request
   });
-      </code>
-    </pre>
+    </code>
+</pre>
   </div>
-  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
-</div>
-
-As you would have noticed, the above function is asynchronous in nature. `doc` is the document that you want to insert while `todos` is the name of the collection / table in which you want to insert your `doc`.
-
-You can insert a single document using the `one` method or multiple documents using the `all` method.
-
-## Response
-
-A response object sent by the server contains the **status** fields explained below:
-
-**status:** Number describing the status of the operation. Following values are possible:
-
-- 200 - Operation was successful
-- 401 - Request was unauthenticated
-- 403 - Request was unauthorized
-- 500 - Internal server error
-
-## Adding a single document:
-
-<div class="row tabs-wrapper">
-  <div class="col s12" style="padding:0">
-    <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js2">Javascript</a></li>
-      <li class="tab col s2"><a href="#java2">Java</a></li>
-      <li class="tab col s2"><a href="#python2">Python</a></li>
-    </ul>
-  </div>
-  <div id="js2" class="col s12" style="padding:0">
+  <div id="insert-java" class="col s12" style="padding:0">
     <pre>
-      <code>
-// Create a single todo
-const doc = { _id: 1, text: 'Star Space Cloud on Github!', time: new Date()};
-db.insert('todos').one(doc).then(res => ...).catch(ex => ...);
+      <code class="java">
+// Java client coming soon!      
       </code>
     </pre>
   </div>
-  <div id="java2" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python2" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+ <div id="insert-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
+
+As you would have noticed, the `insert` method is asynchronous in nature. It takes the name of the concerned collection/table. The `doc` method takes an object to be inserted. The `apply` method actually triggers the given request to `space-cloud` and returns a promise.
 
 ## Adding multiple documents simultaneously:
 
 <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js3">Javascript</a></li>
-      <li class="tab col s2"><a href="#java3">Java</a></li>
-      <li class="tab col s2"><a href="#python3">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#insertmany-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#insertmany-java">Java</a></li>
+      <li class="tab col s2"><a href="#insertmany-python">Python</a></li>
     </ul>
   </div>
-  <div id="js3" class="col s12" style="padding:0">
+  <div id="insertmany-js" class="col s12" style="padding:0">
     <pre>
-      <code>
+      <code class="javascript">
 const docs = [
-  { _id: 1, text: 'Star Space Cloud on Github!', time: new Date()},
-  { _id: 1, text: 'Fork Space Cloud on Github!', time: new Date()}
+  { _id: 1, text: "Star Space Cloud on Github!", time: new Date() },
+  { _id: 1, text: "Fork Space Cloud on Github!", time: new Date() }
 ];
-db.insert('todos').all(docs).then(res => ...).catch(ex => ...);
+db.insert('todos').docs(docs).apply().then(res => ...).catch(ex => ...);
       </code>
     </pre>
   </div>
-  <div id="java3" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python3" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="insertmany-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="insertmany-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
+
+The `docs` method takes an array of objects to be inserted.
+
+## Response
+
+On response from the server, the callback passed to the `then` method is called with the response object as described below:
+
+```
+{
+  "status": "number" // Status of the operation
+}
+```
 
 ## Next steps
 

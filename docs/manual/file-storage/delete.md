@@ -4,14 +4,14 @@ You can easily allow users to delete a file or folder via the File Management mo
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
-      <li class="tab col s2"><a href="#java1">Java</a></li>
-      <li class="tab col s2"><a href="#python1">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#delete-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#delete-java">Java</a></li>
+      <li class="tab col s2"><a href="#delete-python">Python</a></li>
     </ul>
   </div>
-  <div id="js1" class="col s12" style="padding:0">
+  <div id="delete-js" class="col s12" style="padding:0">
     <pre>
-      <code>
+      <code class="javascript">
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
@@ -32,8 +32,20 @@ api.FileStore()
       </code>
     </pre>
   </div>
-  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="delete-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="delete-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 The `delete` function takes a `path` of the file or folder to be deleted. The `path` consists of the path at which the file / folder was uploaded / created and the name of the file / folder as well. The `delete` function will recursively delete all files / folders in a folder if the `path` was for a folder. The `path` can be nested as well. For e.g a `path` - /folder1/folder2/file1 would mean to delete the file inside folder2 which is in folder1.

@@ -4,14 +4,14 @@ You can easily allow users to log in to your app via email using the `db.signIn`
 <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
-      <li class="tab col s2"><a href="#java1">Java</a></li>
-      <li class="tab col s2"><a href="#python1">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#signin-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#signin-java">Java</a></li>
+      <li class="tab col s2"><a href="#signin-python">Python</a></li>
     </ul>
   </div>
-  <div id="js1" class="col s12" style="padding:0">
+  <div id="signin-js" class="col s12" style="padding:0">
     <pre>
-      <code>
+      <code class="javascript">
 import { API } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
@@ -37,8 +37,20 @@ db.signIn('demo@example.com', '1234').then(res => {
       </code>
     </pre>
   </div>
-  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="signin-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="signin-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 As you would have noticed, the above function is asynchronous in nature. The `signIn` method takes 2 parameters:

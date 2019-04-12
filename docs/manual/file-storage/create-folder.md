@@ -5,14 +5,14 @@ You can easily allow users to create a folder via the File Management module of 
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
-      <li class="tab col s2"><a href="#java1">Java</a></li>
-      <li class="tab col s2"><a href="#python1">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#create-folder-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#create-folder-java">Java</a></li>
+      <li class="tab col s2"><a href="#create-folder-python">Python</a></li>
     </ul>
   </div>
-  <div id="js1" class="col s12" style="padding:0">
+  <div id="create-folder-js" class="col s12" style="padding:0">
     <pre>
-      <code>
+      <code class="javascript">
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
@@ -33,8 +33,20 @@ api.FileStore()
       </code>
     </pre>
   </div>
-  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="create-folder-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="create-folder-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 The `createFolder` function takes two parameters and creates a folder. The two parameters are as follows:

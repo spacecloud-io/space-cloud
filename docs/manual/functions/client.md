@@ -4,12 +4,12 @@ You can call a function running on the backend (written via functions module of 
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js1">Go</a></li>
-      <li class="tab col s2"><a href="#java1">Java</a></li>
-      <li class="tab col s2"><a href="#python1">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#client-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#client-java">Java</a></li>
+      <li class="tab col s2"><a href="#client-python">Python</a></li>
     </ul>
   </div>
-  <div id="js1" class="col s12" style="padding:0">
+  <div id="client-js" class="col s12" style="padding:0">
     <pre>
       <code>
 import { API } from "space-api";
@@ -29,8 +29,20 @@ api.call('my-engine', 'my-func', { msg: 'Space Cloud is awesome!' }, 1000)
       </code>
     </pre>
   </div>
-  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="client-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="client-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 The `call` function takes four arguments which are as follows:

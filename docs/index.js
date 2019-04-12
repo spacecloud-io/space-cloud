@@ -5,7 +5,7 @@ const handlebars = require('handlebars')
 
 const builder = require('xmlbuilder')
 
-const converter = new showdown.Converter({ simpleLineBreaks: true })
+const converter = new showdown.Converter({ simpleLineBreaks: true, tables: true })
 const app = express()
 
 var config = []

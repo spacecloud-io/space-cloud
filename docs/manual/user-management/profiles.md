@@ -7,14 +7,14 @@ You can read the profile of a single user using `db.profile` function. It takes 
 <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js1">Javascript</a></li>
-      <li class="tab col s2"><a href="#java1">Java</a></li>
-      <li class="tab col s2"><a href="#python1">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#profile-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#profile-java">Java</a></li>
+      <li class="tab col s2"><a href="#profile-python">Python</a></li>
     </ul>
   </div>
-  <div id="js1" class="col s12" style="padding:0">
+  <div id="profile-js" class="col s12" style="padding:0">
     <pre>
-      <code>
+      <code class="javascript">
 import { API } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
@@ -37,8 +37,20 @@ db.profile(userId).then(res => {
       </code>
     </pre>
   </div>
-  <div id="java1" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python1" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="profile-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="profile-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 ## Fetch profiles of all users
@@ -48,14 +60,14 @@ You can read the profiles of all users with the help of `profiles` function as s
 <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#js2">Javascript</a></li>
-      <li class="tab col s2"><a href="#java2">Java</a></li>
-      <li class="tab col s2"><a href="#python2">Python</a></li>
+      <li class="tab col s2"><a class="active" href="#profiles-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#profiles-java">Java</a></li>
+      <li class="tab col s2"><a href="#profiles-python">Python</a></li>
     </ul>
   </div>
-  <div id="js2" class="col s12" style="padding:0">
+  <div id="profiles-js" class="col s12" style="padding:0">
     <pre>
-      <code>
+      <code class="javascript">
 import { API } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
@@ -77,8 +89,20 @@ db.profiles().then(res => {
       </code>
     </pre>
   </div>
-  <div id="java2" class="col s12" style="padding:0">Java Client Coming Soon!</div>
-  <div id="python2" class="col s12" style="padding:0">Python Client Coming Soon!</div>
+  <div id="profiles-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="profiles-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 ## Response
