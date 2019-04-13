@@ -1,0 +1,35 @@
+services:
+    - docker
+
+language: go
+
+go:
+  -  "1.12"
+
+env:
+  - GO111MODULE=on  
+
+branches:
+  only:
+  - master
+
+notifications:
+  email:
+    - info@spaceuptech.com
+
+install:
+  - go build
+  # - docker build --tag=spaceuptech/space-cloud:latest .
+  
+script:
+  - go test ./...
+
+deploy:
+  provider: script
+  script: bash deploy.sh
+  on:
+    branch: master
+
+
+after_script:
+  - cat /tmp/results.xml

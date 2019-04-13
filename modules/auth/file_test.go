@@ -42,7 +42,7 @@ func TestGetFileRule(t *testing.T) {
 					t.Error(data, rules, err1)
 				}
 			} else {
-				if err1 != nil {
+				if err1 == nil {
 					t.Error(data, rules, err1)
 				}
 			}
