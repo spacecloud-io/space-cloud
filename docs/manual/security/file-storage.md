@@ -47,6 +47,7 @@ Example (allow read request with a valid JWT token):
 rule:
   read:
     rule: authenticated
+```
 
 ### Deny ( `deny` )
 This rule is to deny all incoming requests. It is especially useful to deny certain operations like `delete` while selectively allowing the other ones.
