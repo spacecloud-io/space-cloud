@@ -26,7 +26,7 @@ func TestGenerateDeleteQuery(t *testing.T) {
 	}
 	var ctx context.Context
 	project := "projectName"
-	s, _ := InitializeDatabase("sql-mysql")
+	s := SQL{dbType: string("sql-mysql")}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			sqlString, _, err := s.generateDeleteQuery(ctx, project, test.tableName, &test.req)
