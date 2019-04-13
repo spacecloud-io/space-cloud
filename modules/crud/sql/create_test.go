@@ -2,13 +2,10 @@ package sql
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/model"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -32,11 +29,7 @@ func TestGenerateCreateQuery(t *testing.T) {
 	var ctx context.Context
 
 	for _, dbTypeValue := range dbTypes {
-		s, err := InitializeDatabase(dbTypeValue)
-		if err != nil {
-			fmt.Println("initialization ", err)
-			return
-		}
+		s := SQL{dbType: string(dbTypeValue)}
 		for i, structValue := range tddStruct {
 			sqlQuery, _, err := s.generateCreateQuery(ctx, structValue.project, structValue.col, &structValue.req)
 
@@ -51,34 +44,4 @@ func TestGenerateCreateQuery(t *testing.T) {
 		}
 	}
 
-}
-
-func InitializeDatabase(dbType utils.DBType) (*SQL, error) {
-	var sql *sqlx.DB
-	var err error
-	s := &SQL{}
-	switch dbType {
-	case utils.Postgres:
-		sql, err = sqlx.Open("postgres", "postgres://myuser:password@localhost/testdb?sslmode=disable")
-		s.dbType = "postgres"
-
-	case utils.MySQL:
-		sql, err = sqlx.Open("mysql", "testuser:password@(localhost:3306)/testdb")
-		s.dbType = "mysql"
-
-	default:
-		return nil, errors.New("SQL: Invalid driver provided")
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = sql.Ping()
-	if err != nil {
-		return nil, err
-	}
-
-	s.client = sql
-	return s, nil
 }

@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 func TestGenerateUpdateQuery(t *testing.T) {
 	truecases := 10
-	var ctx context.Context
 	project := "projectName"
 	tests := []struct {
 		name, tableName, wantThis, orThis string
@@ -30,10 +30,10 @@ func TestGenerateUpdateQuery(t *testing.T) {
 		{name: "Error No $set", tableName: "fooTable", wantThis: "UPDATE fooTable SET String1=? WHERE ((FindString1 = ?) AND (FindString2 = ?))", req: model.UpdateRequest{Update: map[string]interface{}{}, Find: map[string]interface{}{"FindString1": "1", "FindString2": "2"}}},
 		{name: "Query Update sql", tableName: "fooTable", wantThis: "UPDATE fooTable SET String1=? WHERE ((FindString1 = ?) AND (FindString2 = ?))", req: model.UpdateRequest{Update: map[string]interface{}{"$set": map[string]interface{}{}}, Find: map[string]interface{}{"FindString1": "1", "FindString2": "2"}}},
 	}
-	s, _ := InitializeDatabase("sql-mysql")
+	s := SQL{dbType: string(utils.MySQL)}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sqlString, _, err := s.generateUpdateQuery(ctx, project, test.tableName, &test.req)
+			sqlString, _, err := s.generateUpdateQuery(context.TODO(), project, test.tableName, &test.req)
 			if i < truecases {
 				if i == 0 {
 					if ((sqlString != test.wantThis) && (sqlString != test.orThis)) || err != nil {

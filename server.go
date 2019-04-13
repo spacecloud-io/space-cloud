@@ -88,11 +88,11 @@ func (s *server) loadConfig(config *config.Project) error {
 func (s *server) initGRPCServer(port string) {
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		log.Fatal("Failed to listen: %v", err)
+		log.Fatal("Failed to listen:", err)
 	}
 	grpcServer := grpc.NewServer()
 	pb.RegisterSpaceCloudServer(grpcServer, s)
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		log.Fatal("failed to serve:", err)
 	}
 }
