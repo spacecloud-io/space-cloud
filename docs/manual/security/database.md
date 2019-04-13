@@ -36,14 +36,14 @@ rules:
     rule: allow
 ```
 
-### Authorized ( `authorized` )
+### Authenticated ( `authenticated` )
 This rule is used to allow the request if a valid JWT token is found in the `Authorization`. No checks are imposed beyond that. Basically it authorizes every request which has passed the authentication stage.
 
 Example (allow read request with a valid JWT token):
 ```yaml
 rules:
   read:
-    rule: authorized
+    rule: authenticated
 ```
 
 ### Deny ( `deny` )
