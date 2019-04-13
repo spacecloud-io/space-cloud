@@ -14,10 +14,13 @@
 	</strong>
 </p>
 <p align="center">
+    <a href="https://travis-ci.com/spaceuptech/space-cloud"><img
+		alt="Build Status"
+		src="https://travis-ci.com/spaceuptech/space-cloud.svg?branch=master"></a>
+    <br/>
     <a href="https://opensource.org/licenses/Apache-2.0"><img
 		alt="Apache License"
 		src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a>
-    <br/>
     <a href="https://discord.gg/ypXEEBr"><img src="https://img.shields.io/badge/chat-discord-brightgreen.svg?logo=discord&%20style=flat"></a>
     <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/                 Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
 </p>
