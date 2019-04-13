@@ -1,0 +1,36 @@
+services:
+    - docker
+
+language: go
+
+go:
+  -  "1.x"
+
+install:
+  - mkdir linux && mkdir windows && mkdir darwin
+  - GOOS=darwin GOARCH=amd64 go build -ldflags '-s -w -extldflags "-static"' .
+  - zip space-cloud.zip space-cloud
+  - mv ./space-cloud.zip ./darwin/
+  - rm space-cloud
+  - GOOS=windows GOARCH=amd64 go build -ldflags '-s -w -extldflags "-static"' .
+  - zip space-cloud.zip space-cloud.exe
+  - mv ./space-cloud.zip ./windows/
+  - rm space-cloud.exe
+  - GOOS=linux GOARCH=amd64 go build -ldflags '-s -w -extldflags "-static"' .
+  - zip space-cloud.zip space-cloud
+  - mv ./space-cloud.zip ./linux/
+  # Don't remove the space-cloud file of linux as it is required by docker
+  - docker build --tag=spaceuptech/space-cloud:latest .
+  
+script:
+  - go test ./...
+
+deploy:
+  provider: script
+  script: bash deploy.sh
+  on:
+    branch: master
+
+
+after_script:
+  - cat /tmp/results.xml
