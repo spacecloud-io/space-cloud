@@ -3,6 +3,7 @@ package faas
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -37,8 +38,9 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 		if !ok {
 			tokens = []string{""}
 		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		resultBytes,err := m.Operation(auth,tokens[0],engine,function,req.Timeout)
+		resultBytes, err := m.Operation(auth, token, engine, function, req.Timeout)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

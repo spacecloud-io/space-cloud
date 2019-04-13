@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -368,7 +369,9 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 		tokens = []string{""}
 	}
 
-	return &requestMetaData{project: project, dbType: dbType, col: col, token: tokens[0]}
+	token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+	return &requestMetaData{project: project, dbType: dbType, col: col, token: token}
 }
 
 func (s *server) handleBatch() http.HandlerFunc {
