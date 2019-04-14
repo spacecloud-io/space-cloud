@@ -8,7 +8,7 @@ Currently the database module supports the following databases:
 
 - Mongo DB
 - MySQL and MySQL compatible databases
-- Postgres and Postgres compatible databases
+- Postgres compatible databases
 
 ## Enable the crud (database) module
 
