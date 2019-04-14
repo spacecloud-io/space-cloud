@@ -8,6 +8,7 @@
     background: $default-color;
     border-right: 1px solid $border-color;
     overflow: auto;
+    z-index: 1;
 
     @media #{$small-and-down} {
       display: none;

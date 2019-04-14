@@ -6,11 +6,11 @@
     @media #{$large-and-up} {
       position: absolute;
       top: 64px;
-      left: 300px;
+      left: 0;
       right: 0;
       bottom: 0;
       overflow: auto;
-      padding: 40px 0px 0px 60px;
+      padding: 40px 0px 0px 360px;
     }
 
     .docs-content {
