@@ -37,6 +37,11 @@ func main() {
 					Usage:  "Run space-cloud in production mode",
 					EnvVar: "PROD",
 				},
+				cli.BoolFlag{
+					Name:   "disable-metrics",
+					Usage:  "Disable annonymous metric collection",
+					EnvVar: "DISABLE_METRICS",
+				},
 			},
 		},
 		{
@@ -57,6 +62,7 @@ func actionRun(c *cli.Context) error {
 	port := c.String("port")
 	configPath := c.String("config")
 	isProd := c.Bool("prod")
+	disableMetrics := c.Bool("disable-metrics")
 
 	// Project and env cannot be changed once space cloud has started
 	s := initServer(isProd)
@@ -70,6 +76,11 @@ func actionRun(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Anonymously collect usage metrics if not explicitly disabled
+	if !disableMetrics {
+		go s.routineMetrics()
 	}
 
 	s.routes()
