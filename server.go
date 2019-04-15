@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"sync"
 
+	"google.golang.org/grpc/credentials"
+
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
@@ -62,6 +64,11 @@ func (s *server) start(port string) error {
 	})
 
 	handler := corsObj.Handler(s.router)
+
+	if s.config.SSL != nil {
+		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Crt, handler)
+	}
+
 	return http.ListenAndServe(":"+port, handler)
 }
 
@@ -97,7 +104,17 @@ func (s *server) initGRPCServer(port string) {
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
 	}
-	grpcServer := grpc.NewServer()
+
+	options := []grpc.ServerOption{}
+	if s.config.SSL != nil {
+		creds, err := credentials.NewServerTLSFromFile(s.config.SSL.Crt, s.config.SSL.Key)
+		if err != nil {
+			log.Fatalln("Error -", err)
+		}
+		options = append(options, grpc.Creds(creds))
+	}
+
+	grpcServer := grpc.NewServer(options...)
 	pb.RegisterSpaceCloudServer(grpcServer, s)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
