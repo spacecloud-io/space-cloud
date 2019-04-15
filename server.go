@@ -7,11 +7,10 @@ import (
 	"strconv"
 	"sync"
 
-	"google.golang.org/grpc/credentials"
-
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
@@ -66,7 +65,7 @@ func (s *server) start(port string) error {
 	handler := corsObj.Handler(s.router)
 
 	if s.config.SSL != nil {
-		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Crt, handler)
+		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
 	}
 
 	return http.ListenAndServe(":"+port, handler)

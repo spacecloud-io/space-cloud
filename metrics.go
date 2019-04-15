@@ -26,13 +26,8 @@ func (s *server) routineMetrics() {
 
 	db := a.Mongo()
 	startTime := time.Now().UTC()
-	project := utils.M{}
 
 	s.lock.Lock()
-	if s.config != nil {
-		project["id"] = s.config.ID
-	}
-
 	obj := utils.M{"_id": id, "startTime": startTime, "lastUpdated": startTime}
 	if s.config != nil && s.config.Modules != nil {
 		obj["project"] = getProjectInfo(s.config.Modules)
