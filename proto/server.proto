@@ -72,6 +72,33 @@ message FaaSRequest {
   string token = 5;
 }
 
+message FeedData {
+  string queryId = 1;
+  string docId = 2;
+  string type = 3;
+  string group = 4;
+  string dbType = 5;
+  bytes payload = 6;
+  int64 timeStamp = 7;
+}
+
+message RealTimeRequest {
+  string token = 1;
+  string dbType = 2;
+  string project = 3;
+  string group = 4;
+  string type = 5;
+  string id = 6;
+  bytes where = 7;
+}
+
+message RealTimeResponse {
+  string group = 1;
+  string id = 2;
+  bool ack = 3;
+  string error = 4;
+  repeated FeedData feedData = 5;
+}
 service SpaceCloud {
   rpc Create(CreateRequest) returns (Response) {}
   rpc Read(ReadRequest) returns (Response) {}
@@ -81,4 +108,5 @@ service SpaceCloud {
   rpc Batch(BatchRequest) returns (Response) {}
   
   rpc Call(FaaSRequest) returns (Response) {}
+  rpc RealTime (stream RealTimeRequest) returns (stream RealTimeResponse) {}
 }
