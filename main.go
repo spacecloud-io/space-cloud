@@ -63,19 +63,14 @@ func actionRun(c *cli.Context) error {
 
 	if configPath != "none" {
 		config, err := config.LoadConfigFromFile(configPath)
-		if err != nil {
-			return err
-		}
-		err = s.loadConfig(config)
-		if err != nil {
-			return err
-		}
+		if err != nil { return err }
+		err = s.loadConfig(config); if err != nil { return err }
 	}
 
 	s.routes()
-	fmt.Println("Starting server on port " + port)
+	fmt.Printf("Starting server on port %s...\n", port)
 	return s.start(port)
-}
+}//-- end func actionRun
 
 func actionInit(c *cli.Context) error {
 	return config.GenerateConfig()

@@ -71,6 +71,6 @@ func (c *Client) ClientID() string {
 func CreateWebsocketClient(socket *websocket.Conn) *Client {
 	channel := make(chan interface{}, 5)
 	ctx, cancel := context.WithCancel(context.Background())
-	id := uuid.NewV1().String()
-	return &Client{id, channel, ctx, cancel, socket}
+	id := uuid.NewV1()
+	return &Client{id.String(), channel, ctx, cancel, socket}
 }

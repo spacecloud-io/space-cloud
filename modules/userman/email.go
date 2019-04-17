@@ -93,12 +93,14 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		req := map[string]interface{}{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
+		// DEBUG: remove, reveals password info
+		log.Printf("new user: %v", req)
 
 		// Create read request
 		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"], "pass": req["pass"]}, Operation: utils.One}
 		_, err := m.crud.Read(ctx, dbType, project, "users", readReq)
-		if err != nil {
-			log.Println("Err: ", err)
+		if err == nil {
+			// log.Println("Err: ", err)
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(map[string]string{"error": "User with provided email already exists"})
 			return

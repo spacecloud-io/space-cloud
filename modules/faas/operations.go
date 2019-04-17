@@ -27,4 +27,3 @@ func (m *Module)Operation(auth *auth.Module, token,engine,function string, timeo
 	}
 	return resultBytes,nil
 }
-

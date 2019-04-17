@@ -1,12 +1,16 @@
 package config
 
-var templateString = `---
-id: {{.ID}}
+/**
+ * Contains templates for config files
+ */
+
+const templateString = `---
+id: ID
 secret: some-secret
 modules:
   crud:
-    {{.PrimaryDB}}:
-      conn: {{.Conn}}
+    primary:
+      conn: CONN
       isPrimary: true
       collections:
         users:
@@ -28,7 +32,7 @@ modules:
     nats: nats://localhost:4222
   realtime:
     enabled: false
-    kafka: localhost
+    broker: localhost
   fileStore:
     enabled: false
     storeType: local
@@ -43,4 +47,7 @@ modules:
             rule: allow
           delete:
             rule: allow
-`
+`//-- end const templateString
+
+const defaultTemplate = templateString
+

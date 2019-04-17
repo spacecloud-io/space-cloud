@@ -700,19 +700,19 @@ func (m *FaaSRequest) GetToken() string {
 }
 
 func init() {
-	proto.RegisterType((*CreateRequest)(nil), "proto.CreateRequest")
-	proto.RegisterType((*ReadRequest)(nil), "proto.ReadRequest")
-	proto.RegisterType((*ReadOptions)(nil), "proto.ReadOptions")
-	proto.RegisterMapType((map[string]int32)(nil), "proto.ReadOptions.SelectEntry")
-	proto.RegisterMapType((map[string]int32)(nil), "proto.ReadOptions.SortEntry")
-	proto.RegisterType((*UpdateRequest)(nil), "proto.UpdateRequest")
-	proto.RegisterType((*DeleteRequest)(nil), "proto.DeleteRequest")
-	proto.RegisterType((*AggregateRequest)(nil), "proto.AggregateRequest")
-	proto.RegisterType((*Response)(nil), "proto.Response")
-	proto.RegisterType((*Meta)(nil), "proto.Meta")
-	proto.RegisterType((*AllRequest)(nil), "proto.AllRequest")
-	proto.RegisterType((*BatchRequest)(nil), "proto.BatchRequest")
-	proto.RegisterType((*FaaSRequest)(nil), "proto.FaaSRequest")
+	proto.RegisterType((*CreateRequest)(nil), "github.com/spaceuptech/space-cloud/proto.CreateRequest")
+	proto.RegisterType((*ReadRequest)(nil), "github.com/spaceuptech/space-cloud/proto.ReadRequest")
+	proto.RegisterType((*ReadOptions)(nil), "github.com/spaceuptech/space-cloud/proto.ReadOptions")
+	proto.RegisterMapType((map[string]int32)(nil), "github.com/spaceuptech/space-cloud/proto.ReadOptions.SelectEntry")
+	proto.RegisterMapType((map[string]int32)(nil), "github.com/spaceuptech/space-cloud/proto.ReadOptions.SortEntry")
+	proto.RegisterType((*UpdateRequest)(nil), "github.com/spaceuptech/space-cloud/proto.UpdateRequest")
+	proto.RegisterType((*DeleteRequest)(nil), "github.com/spaceuptech/space-cloud/proto.DeleteRequest")
+	proto.RegisterType((*AggregateRequest)(nil), "github.com/spaceuptech/space-cloud/proto.AggregateRequest")
+	proto.RegisterType((*Response)(nil), "github.com/spaceuptech/space-cloud/proto.Response")
+	proto.RegisterType((*Meta)(nil), "github.com/spaceuptech/space-cloud/proto.Meta")
+	proto.RegisterType((*AllRequest)(nil), "github.com/spaceuptech/space-cloud/proto.AllRequest")
+	proto.RegisterType((*BatchRequest)(nil), "github.com/spaceuptech/space-cloud/proto.BatchRequest")
+	proto.RegisterType((*FaaSRequest)(nil), "github.com/spaceuptech/space-cloud/proto.FaaSRequest")
 }
 
 func init() { proto.RegisterFile("server.proto", fileDescriptor_ad098daeda4239f7) }
@@ -1000,7 +1000,7 @@ func _SpaceCloud_Call_Handler(srv interface{}, ctx context.Context, dec func(int
 }
 
 var _SpaceCloud_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.SpaceCloud",
+	ServiceName: "github.com/spaceuptech/space-cloud/proto.SpaceCloud",
 	HandlerType: (*SpaceCloudServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

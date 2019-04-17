@@ -18,3 +18,10 @@ css
 
 space-cloud
 publish.sh
+
+pkg/
+src/github.com/
+src/go.mongodb.org/
+src/golang.org/
+src/google.golang.org/
+src/gopkg.in/
