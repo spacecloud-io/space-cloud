@@ -116,8 +116,10 @@ We are working hard to document every aspect of Space Cloud to give you the best
 
 - [Space Cloud](https://spaceuptech.com/docs)
 - Client APIs:
-  - [Javascript client](https://github.com/spaceuptech/space-api-js/wiki)
-  - Java client (Coming soon!)
+  - [JavaScript client](https://github.com/spaceuptech/space-api-js/wiki)
+  - [Python client](https://github.com/spaceuptech/space-api-python)
+  - [Go client](https://github.com/spaceuptech/space-api-go)
+  - [Java client](https://github.com/spaceuptech/space-api-java) (In Progress)
 
 ## Getting started
 
