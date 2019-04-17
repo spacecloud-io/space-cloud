@@ -60,8 +60,7 @@ func GenerateConfig() error {
 }
 
 func writeConfig(i *input) error {
-	dir, _ := os.Getwd()
-	f, err := os.Create(dir + "./" + i.ID + ".yaml")
+	f, err := os.Create("./" + i.ID + ".yaml")
 	if err != nil {
 		return err
 	}
