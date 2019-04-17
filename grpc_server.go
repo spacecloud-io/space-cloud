@@ -69,11 +69,12 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	// Send realtime message in dev mode
 	if !s.isProd {
 		var rows []interface{}
-		if req.Operation == utils.One {
+		switch req.Operation {
+		case utils.One:
 			rows = []interface{}{req.Document}
-		} else if req.Operation == utils.All {
+		case utils.All:
 			rows = req.Document.([]interface{})
-		} else {
+		default:
 			rows = []interface{}{}
 		}
 
@@ -589,11 +590,12 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			switch req.Type {
 			case string(utils.Create):
 				var rows []interface{}
-				if req.Operation == utils.One {
+				switch req.Operation {
+				case utils.One:
 					rows = []interface{}{req.Document}
-				} else if req.Operation == utils.All {
+				case utils.All:
 					rows = req.Document.([]interface{})
-				} else {
+				default:
 					rows = []interface{}{}
 				}
 
