@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/spaceuptech/space-cloud/model"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -707,9 +709,9 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			mapstructure.Decode(req.Data, data)
 
 			// Check if the user is authenticated
-			authObj, err := auth.IsAuthenticated(data.Token, data.DBType, data.Group, utils.Read)
+			authObj, err := s.auth.IsAuthenticated(data.Token, data.DBType, data.Group, utils.Read)
 			if err != nil {
-				client.Write(model.Message{
+				client.Write(&model.Message{
 					ID:   req.ID,
 					Type: req.Type,
 					Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
@@ -724,9 +726,9 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			}
 
 			// Check if user is authorized to make this request
-			err = auth.IsAuthorized(data.DBType, data.Group, utils.Read, args)
+			err = s.auth.IsAuthorized(data.DBType, data.Group, utils.Read, args)
 			if err != nil {
-				client.Write(model.Message{
+				client.Write(&model.Message{
 					ID:   req.ID,
 					Type: req.Type,
 					Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
@@ -735,9 +737,9 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			}
 
 			readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
-			result, err := crud.Read(client.Context, data.DBType, data.Project, data.Group, &readReq)
+			result, err := s.crud.Read(client.Context, data.DBType, data.Project, data.Group, &readReq)
 			if err != nil {
-				client.Write(model.Message{
+				client.Write(&model.Message{
 					ID:   req.ID,
 					Type: req.Type,
 					Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
@@ -769,8 +771,8 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 				}
 			}
 			// Add the live query
-			realtime.AddLiveQuery(data.ID, data.Group, client, data.Where)
-			client.Write(model.Message{
+			s.realtime.AddLiveQuery(data.ID, data.Group, client, data.Where)
+			client.Write(&model.Message{
 				ID:   req.ID,
 				Type: req.Type,
 				Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData},
@@ -781,12 +783,13 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			data := new(model.RealtimeRequest)
 			mapstructure.Decode(req.Data, data)
 
-			realtime.RemoveLiveQuery(data.Group, client.ClientID(), data.ID)
-			client.Write(model.Message{
+			s.realtime.RemoveLiveQuery(data.Group, client.ClientID(), data.ID)
+			client.Write(&model.Message{
 				ID:   req.ID,
 				Type: req.Type,
 				Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true},
 			})
 		}
 	})
+	return nil
 }

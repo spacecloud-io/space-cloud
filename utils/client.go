@@ -20,7 +20,7 @@ type Client struct {
 	cancel   context.CancelFunc
 	socket   *websocket.Conn              //only for Websocket
 	stream   pb.SpaceCloud_RealTimeServer //Only for grpc
-	protocol string
+	protocol RealTimeProtocol
 }
 
 // DataCallback is the callback invoked when data is read by the socket
@@ -28,7 +28,7 @@ type DataCallback func(data *model.Message)
 
 // RoutineWrite starts a json writer routine
 func (c *Client) RoutineWrite() {
-	if c.protocol == "WEBSOCKET" {
+	if c.protocol == Websocket {
 		go func() {
 			for res := range c.channel {
 				err := c.socket.WriteJSON(res)
@@ -37,7 +37,7 @@ func (c *Client) RoutineWrite() {
 				}
 			}
 		}()
-	} else if c.protocol == "GRPC" {
+	} else if c.protocol == Grpc {
 		go func() {
 			for res := range c.channel {
 				//Convert the Message into RealTime response.
@@ -93,8 +93,8 @@ func (c *Client) Close() {
 
 // Read startes a blocking reader routine
 func (c *Client) Read(cb DataCallback) {
-	if c.protocol == "WEBSOCKET" {
-		defer c.Close()
+	defer c.Close()
+	if c.protocol == Websocket {
 		for {
 			data := &model.Message{}
 			err := c.socket.ReadJSON(data)
@@ -104,8 +104,7 @@ func (c *Client) Read(cb DataCallback) {
 
 			cb(data)
 		}
-	} else if c.protocol == "GRPC" {
-		defer c.Close()
+	} else if c.protocol == Grpc {
 		for {
 			in, err := c.stream.Recv()
 			if err != nil {
@@ -118,7 +117,12 @@ func (c *Client) Read(cb DataCallback) {
 			data["Group"] = in.Group
 			data["Type"] = in.Type
 			data["ID"] = in.Id
-			data["Where"] = in.Where
+			var temp interface{}
+			err = json.Unmarshal(in.Where, &temp)
+			if err != nil {
+				return
+			}
+			data["Where"] = temp
 
 			msg := &model.Message{Type: in.Type, ID: in.Id, Data: data}
 			cb(msg)
@@ -137,7 +141,7 @@ func CreateWebsocketClient(socket *websocket.Conn) *Client {
 	channel := make(chan *model.Message, 5)
 	ctx, cancel := context.WithCancel(context.Background())
 	id := uuid.NewV1().String()
-	return &Client{id, channel, ctx, cancel, socket, nil, "WEBSOCKET"}
+	return &Client{id, channel, ctx, cancel, socket, nil, Websocket}
 }
 
 // CreateGRPCClient makes a client object to manage the grpc
@@ -145,5 +149,5 @@ func CreateGRPCClient(stream pb.SpaceCloud_RealTimeServer) *Client {
 	channel := make(chan *model.Message, 5)
 	ctx, cancel := context.WithCancel(context.Background())
 	id := uuid.NewV1().String()
-	return &Client{id, channel, ctx, cancel, nil, stream, "GRPC"}
+	return &Client{id, channel, ctx, cancel, nil, stream, Grpc}
 }

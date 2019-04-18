@@ -45,7 +45,7 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 				// Check if the user is authenticated
 				authObj, err := auth.IsAuthenticated(data.Token, data.DBType, data.Group, utils.Read)
 				if err != nil {
-					client.Write(model.Message{
+					client.Write(&model.Message{
 						ID:   req.ID,
 						Type: req.Type,
 						Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
@@ -62,7 +62,7 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 				// Check if user is authorized to make this request
 				err = auth.IsAuthorized(data.DBType, data.Group, utils.Read, args)
 				if err != nil {
-					client.Write(model.Message{
+					client.Write(&model.Message{
 						ID:   req.ID,
 						Type: req.Type,
 						Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
@@ -73,7 +73,7 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 				readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
 				result, err := crud.Read(client.Context, data.DBType, data.Project, data.Group, &readReq)
 				if err != nil {
-					client.Write(model.Message{
+					client.Write(&model.Message{
 						ID:   req.ID,
 						Type: req.Type,
 						Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
@@ -106,7 +106,7 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 				}
 				// Add the live query
 				realtime.AddLiveQuery(data.ID, data.Group, client, data.Where)
-				client.Write(model.Message{
+				client.Write(&model.Message{
 					ID:   req.ID,
 					Type: req.Type,
 					Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData},
@@ -118,7 +118,7 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 				mapstructure.Decode(req.Data, data)
 
 				realtime.RemoveLiveQuery(data.Group, client.ClientID(), data.ID)
-				client.Write(model.Message{
+				client.Write(&model.Message{
 					ID:   req.ID,
 					Type: req.Type,
 					Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true},

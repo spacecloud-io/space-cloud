@@ -96,3 +96,14 @@ const (
 	// TypeRealtimeFeed is the response type for realtime feed
 	TypeRealtimeFeed string = "realtime-feed"
 )
+
+// RealTimeProtocol is the type of protocol requested for Realtime.
+type RealTimeProtocol string
+
+const (
+	// Websocket for Realtime implementation.
+	Websocket RealTimeProtocol = "Websocket"
+
+	// Grpc for Realtime implementation.
+	Grpc RealTimeProtocol = "GRPC"
+)
