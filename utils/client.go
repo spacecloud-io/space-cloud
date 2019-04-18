@@ -37,7 +37,7 @@ func (c *Client) RoutineWrite() {
 				}
 			}
 		}()
-	} else if c.protocol == Grpc {
+	} else if c.protocol == GRPC {
 		go func() {
 			for res := range c.channel {
 				//Convert the Message into RealTime response.
@@ -104,7 +104,7 @@ func (c *Client) Read(cb DataCallback) {
 
 			cb(data)
 		}
-	} else if c.protocol == Grpc {
+	} else if c.protocol == GRPC {
 		for {
 			in, err := c.stream.Recv()
 			if err != nil {
@@ -149,5 +149,5 @@ func CreateGRPCClient(stream pb.SpaceCloud_RealTimeServer) *Client {
 	channel := make(chan *model.Message, 5)
 	ctx, cancel := context.WithCancel(context.Background())
 	id := uuid.NewV1().String()
-	return &Client{id, channel, ctx, cancel, nil, stream, Grpc}
+	return &Client{id, channel, ctx, cancel, nil, stream, GRPC}
 }

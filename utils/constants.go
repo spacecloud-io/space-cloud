@@ -104,6 +104,6 @@ const (
 	// Websocket for Realtime implementation.
 	Websocket RealTimeProtocol = "Websocket"
 
-	// Grpc for Realtime implementation.
-	Grpc RealTimeProtocol = "GRPC"
+	// GRPC for Realtime implementation.
+	GRPC RealTimeProtocol = "GRPC"
 )
