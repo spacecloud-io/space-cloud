@@ -5,10 +5,12 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
@@ -21,6 +23,7 @@ import (
 )
 
 type server struct {
+	lock     sync.Mutex
 	router   *mux.Router
 	auth     *auth.Module
 	crud     *crud.Module
@@ -29,6 +32,7 @@ type server struct {
 	faas     *faas.Module
 	realtime *realtime.Module
 	isProd   bool
+	config   *config.Project
 }
 
 func initServer(isProd bool) *server {
@@ -39,7 +43,7 @@ func initServer(isProd bool) *server {
 	f := filestore.Init()
 	realtime := realtime.Init()
 	faas := faas.Init()
-	return &server{r, a, c, u, f, faas, realtime, isProd}
+	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, isProd: isProd}
 }
 
 func (s *server) start(port string) error {
@@ -59,10 +63,19 @@ func (s *server) start(port string) error {
 	})
 
 	handler := corsObj.Handler(s.router)
+
+	if s.config.SSL != nil {
+		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
+	}
+
 	return http.ListenAndServe(":"+port, handler)
 }
 
 func (s *server) loadConfig(config *config.Project) error {
+	s.lock.Lock()
+	s.config = config
+	s.lock.Unlock()
+
 	// Set the configuration for the auth module
 	s.auth.SetConfig(config.Secret, config.Modules.Crud, config.Modules.FileStore)
 
@@ -90,7 +103,17 @@ func (s *server) initGRPCServer(port string) {
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
 	}
-	grpcServer := grpc.NewServer()
+
+	options := []grpc.ServerOption{}
+	if s.config.SSL != nil {
+		creds, err := credentials.NewServerTLSFromFile(s.config.SSL.Crt, s.config.SSL.Key)
+		if err != nil {
+			log.Fatalln("Error -", err)
+		}
+		options = append(options, grpc.Creds(creds))
+	}
+
+	grpcServer := grpc.NewServer(options...)
 	pb.RegisterSpaceCloudServer(grpcServer, s)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
