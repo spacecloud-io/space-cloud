@@ -88,7 +88,7 @@ func getConnectionString(db string) string {
 	case string(utils.Mongo):
 		return "mongodb://localhost:27017"
 	case string(utils.MySQL):
-		return "root:my-secret-pw@/test"
+		return "user:my-secret-pwd@/project"
 	case string(utils.Postgres):
 		return "postgres://postgres:mysecretpassword@localhost/postgres?sslmode=disable"
 	default:

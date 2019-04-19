@@ -47,7 +47,7 @@ modules:
             delete:
               rule: allow
     sql-mysql:
-      conn: root:my-secret-pw@/project
+      conn: user:my-secret-pwd@/project
       isPrimary: true
       collections:
         users:
