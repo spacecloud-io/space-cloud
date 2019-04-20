@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -64,6 +65,8 @@ func (s *server) start(port string) error {
 
 	handler := corsObj.Handler(s.router)
 
+	fmt.Println("Starting http server on port " + port)
+
 	if s.config.SSL != nil {
 		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
 	}
@@ -115,6 +118,8 @@ func (s *server) initGRPCServer(port string) {
 
 	grpcServer := grpc.NewServer(options...)
 	pb.RegisterSpaceCloudServer(grpcServer, s)
+
+	fmt.Println("Starting gRPC server on port " + port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
 	}

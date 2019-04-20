@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -84,7 +83,6 @@ func actionRun(c *cli.Context) error {
 	}
 
 	s.routes()
-	fmt.Println("Starting server on port " + port)
 	return s.start(port)
 }
 
