@@ -83,8 +83,6 @@ func actionRun(c *cli.Context) error {
 	}
 
 	s.routes()
-	log.Println("Starting server on port ", port)
-
 	return s.start(port)
 }
 
