@@ -695,3 +695,9 @@ func (s *server) Call(ctx context.Context, in *pb.FaaSRequest) (*pb.Response, er
 	out.Status = 200
 	return &out, nil
 }
+
+func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
+	client := utils.CreateGRPCClient(stream)
+	s.realtime.Operation(client, s.auth, s.crud)
+	return nil
+}
