@@ -38,14 +38,14 @@ func main() {
 				},
 				cli.BoolFlag{
 					Name:   "disable-metrics",
-					Usage:  "Disable annonymous metric collection",
+					Usage:  "Disable anonymous metric collection",
 					EnvVar: "DISABLE_METRICS",
 				},
 			},
 		},
 		{
 			Name:   "init",
-			Usage:  "creates a confg file with sensible defaults",
+			Usage:  "creates a config file with sensible defaults",
 			Action: actionInit,
 		},
 	}
@@ -67,11 +67,11 @@ func actionRun(c *cli.Context) error {
 	s := initServer(isProd)
 
 	if configPath != "none" {
-		config, err := config.LoadConfigFromFile(configPath)
+		conf, err := config.LoadConfigFromFile(configPath)
 		if err != nil {
 			return err
 		}
-		err = s.loadConfig(config)
+		err = s.loadConfig(conf)
 		if err != nil {
 			return err
 		}
@@ -86,6 +86,6 @@ func actionRun(c *cli.Context) error {
 	return s.start(port)
 }
 
-func actionInit(c *cli.Context) error {
+func actionInit(*cli.Context) error {
 	return config.GenerateConfig()
 }
