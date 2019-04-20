@@ -97,7 +97,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		// Create read request
 		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"], "pass": req["pass"]}, Operation: utils.One}
 		_, err := m.crud.Read(ctx, dbType, project, "users", readReq)
-		if err != nil {
+		if err == nil {
 			log.Println("Err: ", err)
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(map[string]string{"error": "User with provided email already exists"})
