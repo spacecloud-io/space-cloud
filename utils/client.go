@@ -35,6 +35,7 @@ func (c *Client) RoutineWrite() {
 				err := c.socket.WriteJSON(res)
 				if err != nil {
 					log.Println(err)
+					return
 				}
 			}
 		}()
@@ -45,13 +46,13 @@ func (c *Client) RoutineWrite() {
 				switch res.Type {
 				case TypeRealtimeSubscribe, TypeRealtimeUnsubscribe:
 					//Decode the Message
-					feedData := make([]*pb.FeedData, 1)
 					responseMsg := res.Data.(model.RealtimeResponse)
+					feedData := make([]*pb.FeedData, len(responseMsg.Docs))
 					for i, feed := range responseMsg.Docs {
 						payload, err := json.Marshal(feed.Payload)
 						if err != nil {
-							grpcResponse := pb.RealTimeResponse{Error: err.Error()}
-							c.stream.Send(&grpcResponse)
+							log.Println(err)
+							return
 						}
 						feedData[i] = &pb.FeedData{QueryId: feed.QueryID, DocId: feed.DocID, Type: feed.Type, Group: feed.Group, DbType: feed.DBType, Payload: payload, TimeStamp: feed.TimeStamp}
 					}
@@ -63,7 +64,6 @@ func (c *Client) RoutineWrite() {
 					feedData := make([]*pb.FeedData, 1)
 					payload, err := json.Marshal(feed.Payload)
 					if err != nil {
-						//Log the Error here and return
 						log.Println(err)
 						return
 					}
@@ -101,6 +101,7 @@ func (c *Client) Read(cb DataCallback) {
 			data := &model.Message{}
 			err := c.socket.ReadJSON(data)
 			if err != nil {
+				log.Println(err)
 				return
 			}
 
@@ -111,6 +112,7 @@ func (c *Client) Read(cb DataCallback) {
 		for {
 			in, err := c.stream.Recv()
 			if err != nil {
+				log.Println(err)
 				return
 			}
 			var data map[string]interface{}
@@ -123,6 +125,7 @@ func (c *Client) Read(cb DataCallback) {
 			var temp interface{}
 			err = json.Unmarshal(in.Where, &temp)
 			if err != nil {
+				log.Println(err)
 				return
 			}
 			data["Where"] = temp
