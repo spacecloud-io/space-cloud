@@ -28,7 +28,8 @@ type DataCallback func(data *model.Message)
 
 // RoutineWrite starts a json writer routine
 func (c *Client) RoutineWrite() {
-	if c.protocol == Websocket {
+	switch c.protocol {
+	case Websocket:
 		go func() {
 			for res := range c.channel {
 				err := c.socket.WriteJSON(res)
@@ -37,14 +38,14 @@ func (c *Client) RoutineWrite() {
 				}
 			}
 		}()
-	} else if c.protocol == GRPC {
+	case GRPC:
 		go func() {
 			for res := range c.channel {
 				//Convert the Message into RealTime response.
 				switch res.Type {
 				case TypeRealtimeSubscribe, TypeRealtimeUnsubscribe:
 					//Decode the Message
-					var feedData []*pb.FeedData
+					feedData := make([]*pb.FeedData, 1)
 					responseMsg := res.Data.(model.RealtimeResponse)
 					for i, feed := range responseMsg.Docs {
 						payload, err := json.Marshal(feed.Payload)
@@ -59,11 +60,12 @@ func (c *Client) RoutineWrite() {
 
 				case TypeRealtimeFeed:
 					feed := res.Data.(model.FeedData)
-					var feedData []*pb.FeedData
+					feedData := make([]*pb.FeedData, 1)
 					payload, err := json.Marshal(feed.Payload)
 					if err != nil {
-						grpcResponse := pb.RealTimeResponse{Error: err.Error()}
-						c.stream.Send(&grpcResponse)
+						//Log the Error here and return
+						log.Println(err)
+						return
 					}
 					feedData[0] = &pb.FeedData{
 						QueryId: feed.QueryID, DocId: feed.DocID, Type: feed.Type, Group: feed.Group, DbType: feed.DBType, Payload: payload, TimeStamp: feed.TimeStamp}
@@ -73,7 +75,6 @@ func (c *Client) RoutineWrite() {
 			}
 		}()
 	}
-
 }
 
 // Write wrties the object to the client
@@ -94,7 +95,8 @@ func (c *Client) Close() {
 // Read startes a blocking reader routine
 func (c *Client) Read(cb DataCallback) {
 	defer c.Close()
-	if c.protocol == Websocket {
+	switch c.protocol {
+	case Websocket:
 		for {
 			data := &model.Message{}
 			err := c.socket.ReadJSON(data)
@@ -104,7 +106,8 @@ func (c *Client) Read(cb DataCallback) {
 
 			cb(data)
 		}
-	} else if c.protocol == GRPC {
+
+	case GRPC:
 		for {
 			in, err := c.stream.Recv()
 			if err != nil {
@@ -127,8 +130,8 @@ func (c *Client) Read(cb DataCallback) {
 			msg := &model.Message{Type: in.Type, ID: in.Id, Data: data}
 			cb(msg)
 		}
-	}
 
+	}
 }
 
 // ClientID returns the client's id
