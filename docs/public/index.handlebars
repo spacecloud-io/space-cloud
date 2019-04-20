@@ -9,6 +9,11 @@
     href="https://fonts.googleapis.com/icon?family=Material+Icons|Raleway:100,200,300,400,500,600,700,800,900|Open+Sans:300,400,600,700,800"
     rel="stylesheet">
   <link type="text/css" rel="stylesheet" href="/docs/css/app.css" media="screen,projection" />
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
+  <script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/go.min.js"></script>
+  <script charset="UTF-8" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/python.min.js"></script>
+  <script charset="UTF-8"
+    src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
   <!--Company description-->
   <meta name="description" content="Documentation for Space Cloud. Instant REST APIs on any database.">
@@ -103,7 +108,7 @@
           <i class="material-icons">home</i>Home</a>
       </li>
       <li>
-        <a href="/blog" class="active">
+        <a href="/docs" class="active">
           <i class="material-icons">import_contacts</i>Docs</a>
       </li>
       <li>
@@ -120,11 +125,11 @@
       <ul class="collapsible">
         {{#if isHome}}
         <li class="active">
-        <a class="active collapsible-header" href="/docs">Introduction</a>
-        {{else}}
+          <a class="active collapsible-header" href="/docs">Introduction</a>
+          {{else}}
         <li>
-        <a class="collapsible-header" href="/docs">Introduction</a>
-        {{/if}}
+          <a class="collapsible-header" href="/docs">Introduction</a>
+          {{/if}}
         </li>
         {{#each pages}}
         {{#if isActive}}
@@ -180,7 +185,7 @@
     </div>
     <div class="content-wrapper">
       <div class="row" style="margin:0">
-        <div class="col s12 l6">
+        <div class="col s12 l8">
           <div class="docs-content">
             {{{html}}}
           </div>
@@ -199,7 +204,7 @@
               <div class="col s12 l5">
                 <div class="github-wrapper">
                   <p class="github-title open-source-text">Edit docs!</p>
-                  <a href="https://github.com/YourTechBud/space-cloud/tree/master/docs/manual"><img class="github-image"
+                  <a href="https://github.com/spaceuptech/space-cloud/tree/master/docs/manual"><img class="github-image"
                       src="/docs/images/index/github_black.svg" alt=""></a>
                 </div>
               </div>
@@ -214,10 +219,12 @@
     integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
   <script type="text/javascript"
     src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
   <script>
     $(document).ready(function () {
       $('.collapsible').collapsible();
       $('.sidenav').sidenav();
+      $('.tabs').tabs();
       $('#sidebar-selected-section').click(function () {
         var className = $('#sidebar-dropdown').attr('class');
         if (className.includes("closed-sidebar")) {
@@ -231,6 +238,7 @@
       });
     });
   </script>
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/vs2015.min.css">
 </body>
 
 </html>

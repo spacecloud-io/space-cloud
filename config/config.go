@@ -10,6 +10,13 @@ type Project struct {
 	ID      string   `json:"id" yaml:"id"`
 	Secret  string   `json:"secret" yaml:"secret"`
 	Modules *Modules `json:"modules" yaml:"modules"`
+	SSL     *SSL     `json:"ssl" yaml:"ssl"`
+}
+
+// SSL holds the certificate and key file locations
+type SSL struct {
+	Crt string `json:"crt" yaml:"crt"`
+	Key string `json:"key" yaml:"key"`
 }
 
 // Modules holds the config of all the modules of that environment

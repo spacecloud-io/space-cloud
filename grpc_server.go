@@ -31,7 +31,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 		}
 		req.Document = temp
 	} else if in.Operation == utils.All {
-		temp := []map[string]interface{}{}
+		temp := []interface{}{}
 		if err = json.Unmarshal(in.Document, &temp); err != nil {
 			out := pb.Response{}
 			out.Status = 500
@@ -69,11 +69,12 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	// Send realtime message in dev mode
 	if !s.isProd {
 		var rows []interface{}
-		if req.Operation == utils.One {
+		switch req.Operation {
+		case utils.One:
 			rows = []interface{}{req.Document}
-		} else if req.Operation == utils.All {
+		case utils.All:
 			rows = req.Document.([]interface{})
-		} else {
+		default:
 			rows = []interface{}{}
 		}
 
@@ -197,6 +198,8 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &out, nil
 	}
 	req.Find = temp
+
+	temp = map[string]interface{}{}
 	if err = json.Unmarshal(in.Update, &temp); err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -587,11 +590,12 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			switch req.Type {
 			case string(utils.Create):
 				var rows []interface{}
-				if req.Operation == utils.One {
+				switch req.Operation {
+				case utils.One:
 					rows = []interface{}{req.Document}
-				} else if req.Operation == utils.All {
+				case utils.All:
 					rows = req.Document.([]interface{})
-				} else {
+				default:
 					rows = []interface{}{}
 				}
 

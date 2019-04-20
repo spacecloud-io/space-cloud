@@ -1,7 +1,18 @@
 # Writing custom logic
+
 You can easily extend Space Cloud by writing your custom logic on the backend in the form of simple functions. These functions run as a microservice on the backend. This is how you write a simple function using the `engine-api` -
 
-```go
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#engine-go">Go</a></li>
+      <li class="tab col s2"><a href="#engine-java">Java</a></li>
+      <li class="tab col s2"><a href="#engine-python">Python</a></li>
+    </ul>
+  </div>
+  <div id="engine-go" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import "spaceuptech.com/space-engine-go/engine"
 
 // Function to be registered
@@ -28,24 +39,41 @@ myEngine.Start()
 
 // Call function of some other engine
 res, err := myEngine.Call("some-engine", "some-func", engine.M{"msg": "space-engine-go is awesome!"}, 1000)
-```
+      </code>
+    </pre>
+  </div>
+  <div id="engine-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="engine-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
+</div>
 
-Use `engine.Init` to initialize an instance of an `engine`. An `engine` can harbour multiple functions which can be invoked by front end. The `engine.Init` function takes two parameters **engineName** and **url** which are as follows:
-- **engineName**: Name of the engine. Uniquely identifies an engine.
-- **url**: Connection string of nats. Pass "" to use the default nats connection string.
+Use `engine.Init` to initialize an instance of an `engine`. An `engine` can harbour multiple functions which can be invoked by frontend. The `engine.Init` function takes two parameters **engineName** and **url** which are as follows:
+- **engineName:** Name of the engine. Uniquely identifies an engine
+- **url:** Connection string of nats. Pass "" to use the default nats connection string
 
 You can register a function that you have written to an `engine` by calling `RegisterFunc` on an `engine`. `RegisterFunc` takes a **name** and a **func** which are as follows:
-- **name**: Name of the function. Uniquely identifies a function within an engine.
-- **func**: Function that comprises of the custom logic. 
+- **name:** Name of the function. Uniquely identifies a function within an engine
+- **func:** Function that comprises of the custom logic
 
 `func` is the function that will comprise of the custome logic that you want. It can be invoked by the client as and when required. The function takes 3 parameters as decsribed below:
-- **params** - The params sent by the client.
-- **auth** - Auth object.
-- **cb** - Callback function used to return the response back to the client.
+- **params:** The params sent by the client
+- **auth:** Auth object
+- **cb:** Callback function used to return the response back to the client
 
 ## Next steps
 
-Great! So now you know how to write custom logic on backend . Let's checkout how to invoke it from the front end.
+Great! So now you know how to write custom logic on backend . Let's checkout how to invoke it from the frontend.
 
 <div class="btns-wrapper">
   <a href="/docs/functions/overview" class="waves-effect waves-light btn primary-btn-border btn-small">

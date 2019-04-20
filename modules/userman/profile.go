@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -38,9 +39,10 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 		if !ok {
 			tokens = []string{""}
 		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
 		// Check if the user is authicated
-		authObj, err := m.auth.IsAuthenticated(tokens[0], dbType, "users", utils.Read)
+		authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Read)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -110,9 +112,10 @@ func (m *Module) HandleProfiles() http.HandlerFunc {
 		if !ok {
 			tokens = []string{""}
 		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
 		// Check if the user is authicated
-		authObj, err := m.auth.IsAuthenticated(tokens[0], dbType, "users", utils.Read)
+		authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Read)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})

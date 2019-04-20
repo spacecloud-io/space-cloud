@@ -206,7 +206,7 @@ func getMetaData(r *http.Request) (token string, project string, path string) {
 	if !ok {
 		tokens = []string{""}
 	}
-	token = tokens[0]
+	token = strings.TrimPrefix(tokens[0], "Bearer ")
 	a := strings.Split(r.URL.Path, "/")[5:]
 	path = "/" + strings.Join(a, "/")
 	return

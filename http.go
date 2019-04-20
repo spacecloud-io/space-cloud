@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -64,11 +65,12 @@ func (s *server) handleCreate() http.HandlerFunc {
 		// Send realtime message in dev mode
 		if !s.isProd {
 			var rows []interface{}
-			if req.Operation == utils.One {
+			switch req.Operation {
+			case utils.One:
 				rows = []interface{}{req.Document}
-			} else if req.Operation == utils.All {
+			case utils.All:
 				rows = req.Document.([]interface{})
-			} else {
+			default:
 				rows = []interface{}{}
 			}
 
@@ -81,15 +83,17 @@ func (s *server) handleCreate() http.HandlerFunc {
 				}
 
 				// Send realtime message if id fields exists
-				if id, p := data[idVar]; p {
-					s.realtime.Send(&model.FeedData{
-						Group:     meta.col,
-						DBType:    meta.dbType,
-						Type:      utils.RealtimeWrite,
-						TimeStamp: time.Now().Unix(),
-						DocID:     id.(string),
-						Payload:   data,
-					})
+				if idTemp, p := data[idVar]; p {
+					if id, ok := idTemp.(string); ok {
+						s.realtime.Send(&model.FeedData{
+							Group:     meta.col,
+							DBType:    meta.dbType,
+							Type:      utils.RealtimeWrite,
+							TimeStamp: time.Now().Unix(),
+							DocID:     id,
+							Payload:   data,
+						})
+					}
 				}
 			}
 		}
@@ -209,20 +213,22 @@ func (s *server) handleUpdate() http.HandlerFunc {
 				idVar = "_id"
 			}
 
-			if id, p := req.Find[idVar]; p {
-				// Create the find object
-				find := map[string]interface{}{idVar: id}
+			if idTemp, p := req.Find[idVar]; p {
+				if id, ok := idTemp.(string); ok {
+					// Create the find object
+					find := map[string]interface{}{idVar: id}
 
-				data, err := s.crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
-				if err == nil {
-					s.realtime.Send(&model.FeedData{
-						Group:     meta.col,
-						Type:      utils.RealtimeWrite,
-						TimeStamp: time.Now().Unix(),
-						DocID:     id.(string),
-						DBType:    meta.dbType,
-						Payload:   data.(map[string]interface{}),
-					})
+					data, err := s.crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
+					if err == nil {
+						s.realtime.Send(&model.FeedData{
+							Group:     meta.col,
+							Type:      utils.RealtimeWrite,
+							TimeStamp: time.Now().Unix(),
+							DocID:     id,
+							DBType:    meta.dbType,
+							Payload:   data.(map[string]interface{}),
+						})
+					}
 				}
 			}
 		}
@@ -285,15 +291,17 @@ func (s *server) handleDelete() http.HandlerFunc {
 				idVar = "_id"
 			}
 
-			if id, p := req.Find[idVar]; p {
-				if err != nil {
-					s.realtime.Send(&model.FeedData{
-						Group:     meta.col,
-						Type:      utils.RealtimeDelete,
-						TimeStamp: time.Now().Unix(),
-						DocID:     id.(string),
-						DBType:    meta.dbType,
-					})
+			if idTemp, p := req.Find[idVar]; p {
+				if id, ok := idTemp.(string); ok {
+					if err != nil {
+						s.realtime.Send(&model.FeedData{
+							Group:     meta.col,
+							Type:      utils.RealtimeDelete,
+							TimeStamp: time.Now().Unix(),
+							DocID:     id,
+							DBType:    meta.dbType,
+						})
+					}
 				}
 			}
 		}
@@ -368,7 +376,9 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 		tokens = []string{""}
 	}
 
-	return &requestMetaData{project: project, dbType: dbType, col: col, token: tokens[0]}
+	token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+	return &requestMetaData{project: project, dbType: dbType, col: col, token: token}
 }
 
 func (s *server) handleBatch() http.HandlerFunc {
@@ -469,11 +479,12 @@ func (s *server) handleBatch() http.HandlerFunc {
 				switch req.Type {
 				case string(utils.Create):
 					var rows []interface{}
-					if req.Operation == utils.One {
+					switch req.Operation {
+					case utils.One:
 						rows = []interface{}{req.Document}
-					} else if req.Operation == utils.All {
+					case utils.All:
 						rows = req.Document.([]interface{})
-					} else {
+					default:
 						rows = []interface{}{}
 					}
 

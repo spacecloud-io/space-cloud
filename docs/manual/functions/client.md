@@ -1,7 +1,17 @@
 # Access custom logic
 You can call a function running on the backend (written via functions module of Space Cloud) on frontend by simply calling `api.call` on frontend. Here's a code snippet showing how to do it:
 
-```js
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#client-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#client-java">Java</a></li>
+      <li class="tab col s2"><a href="#client-python">Python</a></li>
+    </ul>
+  </div>
+  <div id="client-js" class="col s12" style="padding:0">
+    <pre>
+      <code>
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
@@ -16,7 +26,24 @@ api.call('my-engine', 'my-func', { msg: 'Space Cloud is awesome!' }, 1000)
   }).catch(ex => {
     // Exception occured while processing request
   })
-```
+      </code>
+    </pre>
+  </div>
+  <div id="client-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Java client coming soon!      
+      </code>
+    </pre>
+  </div>
+ <div id="client-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Python client coming soon!
+      </code>
+    </pre>
+  </div>
+</div>
 
 The `call` function takes four arguments which are as follows:
 - **engineName** - Name of the engine
@@ -27,13 +54,14 @@ The `call` function takes four arguments which are as follows:
 As you would have noticed, the above function is asynchronous in nature. 
 
 ## Response
+
 A response object sent by the server contains the **status** and **data** fields explained below:
 
-**status** : Number describing the status of the operation. Following values are possible:
+**status:** Number describing the status of the operation. Following values are possible:
 - 200 - Operation was successful
 - 500 - Internal server error
 
-**data** - Object returned by the function
+**data:** Object returned by the function.
 
 ## Next steps
 

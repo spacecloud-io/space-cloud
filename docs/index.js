@@ -5,7 +5,7 @@ const handlebars = require('handlebars')
 
 const builder = require('xmlbuilder')
 
-const converter = new showdown.Converter({ simpleLineBreaks: true })
+const converter = new showdown.Converter({ simpleLineBreaks: true, tables: true })
 const app = express()
 
 var config = []
@@ -86,4 +86,4 @@ app.get('/docs/:dir/:file', handlePage)
 
 
 const port = process.env.POST | 3000
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, () => console.log(`Documentation served from http://localhost:${port}/docs`))

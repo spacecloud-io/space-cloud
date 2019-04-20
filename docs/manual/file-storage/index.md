@@ -9,6 +9,7 @@ You can currently do the following operations in the file management module:
 - Upload a file
 - List all files / folders within a folder
 - Delete a file / folder
+
 ## Enable the file storage module
 
 The config pertaining to file management module can be found inside the `fileStore` key under the `modules` object. Here's the snippet:
@@ -33,7 +34,7 @@ modules:
   # Config for other modules go here
 ```
 
-The snippet shown above configues Space Cloud to use the local filesystem (`local`). The files will be stored under the `/tmp/data` directory. There is a single rule named `rule1` which allows all file storage operations (`create`, `read` and `delete`). All rules are applied based on prefix matching on the URL.
+The snippet shown above configures Space Cloud to use the local filesystem (`local`). The files will be stored under the `/tmp/data` directory. There is a single rule named `rule1` which allows all file storage operations (`create`, `read` and `delete`). All rules are applied based on prefix matching on the URL.
 
 You can learn more about on the various parameters available for configuring the file storage module [here](/docs/file-storage/config).
 

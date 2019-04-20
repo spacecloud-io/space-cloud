@@ -51,6 +51,10 @@ func (m *Module) getRule(dbType, col string, query utils.OperationType) (*config
 			if rule, p3 := collection.Rules[string(query)]; p3 {
 				return rule, nil
 			}
+		} else if defaultCol, p2 := dbRules.Collections["default"]; p2 {
+			if rule, p3 := defaultCol.Rules[string(query)]; p3 {
+				return rule, nil
+			}
 		}
 	}
 	return nil, ErrRuleNotFound
@@ -123,7 +127,6 @@ func (m *Module) IsAuthenticated(token, dbType, col string, query utils.Operatio
 	if rule.Rule == "allow" {
 		return map[string]interface{}{}, nil
 	}
-
 	return m.parseToken(token)
 }
 

@@ -1,8 +1,8 @@
 # Quick start (Manual)
 
-This guide will help you get started with Space Cloud and Mongo DB on your local machine. It exposes complete functionality of Space Cloud.
+This guide will help you get started with Space Cloud quickly on your local machine. You will go through how to develop a realtime todo app using Space Cloud and MongoDB. We'll be deploying the `space-cloud` binary manually.
 
-In this guide I will walk you through how to develop a realtime todo app using Space Cloud. We'll be deploying the `space-cloud` binary manually.
+> Note: If you instead want to start a project from scratch using `space-cloud`, then check out the [getting started](/docs/getting-started) guide.
 
 ## Prerequisites
 - [MongoDB Database](https://docs.mongodb.com/manual/installation/)
@@ -21,7 +21,7 @@ You can unzip the compressed archive
 
 **For Linux / Mac:** `unzip space-cloud.zip && chmod +x space-cloud`
 
-**For Windows:**      Right click on the archive and select `extract here`.
+**For Windows:** Right click on the archive and select `extract here`.
 
 ## Step 2: Download the sample config file
 Space Cloud needs a config file in order to function. The config file is used to load information like the database to be used, its connection string, security rules, etc. You can find the config used for our todo app [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/config.yaml).
@@ -73,10 +73,9 @@ modules:
           delete:
             rule: allow
 ```
-
 Quickly going through it, `id` is the project name. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `faas` (functions), `realtime` and `fileStore` are supported.
 
-**Note:** When you are starting a project from scratch, you can run `./space-cloud init` (on Linux / Mac) or `space-cloud.exe init` (on Windows) to create a bare minimum config file.
+> Note: The in-depth configurations of various modules are explained in their corresponding sections.
 
 ## Step 3: Start Space Cloud
 You can start `space-cloud` with the following command. Make sure MongoDB is running before this step.
@@ -90,16 +89,18 @@ That's it. Your backend is up and running!
 That was quick wasn't it?
 
 ## Step 4: Try it out
-Our back end is up and running. Time to show off it's awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using html and javascript which uses the backend you have just setup. 
+Our backend is up and running. Time to show off it's awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using html and javascript which uses the backend you have just setup. 
 
 Open it in two different windows by double clicking the html file twice, login into both and then try adding some todos to see the magic.
 
 ## Next Steps
-Awesome! We just made a realtime app without writing a single line of back end code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/quick-start/sample-apps).
-- [User Management](/docs/user-management)
-- [Database](/docs/database) (For CRUD operations)
-- [Realtime](/docs/realtime)
-- [Functions](/docs/functions)
+Awesome! We just made a realtime app without writing a single line of backend code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/quick-start/sample-apps).
+- Perform CRUD operations using [Database](/docs/database/) module
+- [Realtime](/docs/realtime/) data sync across all devices
+- Manage files with ease using [File Management](/docs/file-storage) module
+- Allow users to sign-in into your app using [User management](/docs/user-management) module
+- Write custom logic at backend using [Functions](/docs/functions/) module
+- [Secure](/docs/security) your apps
 
 <div class="btns-wrapper">
   <a href="/docs/quick-start/overview" class="waves-effect waves-light btn primary-btn-border btn-small">

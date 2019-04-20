@@ -5,6 +5,7 @@ The database module is the core of Space Cloud. It provides instant REST, gRPC A
 By CRUD I mean Create, Read, Update and Delete operations. These are the most basic operations that one can perform on a database. In addition to that, we offer a flexible query language (based on the Mongo DB query DSL) to slice and dice data as needed.
 
 Currently the database module supports the following databases:
+
 - Mongo DB
 - MySQL and MySQL compatible databases
 - Postgres and Postgres compatible databases
@@ -31,14 +32,12 @@ modules:
               rule: allow
             delete:
               rule: allow
-
   # Config for other modules go here
 ```
 
 The above snippet instructs `space-cloud` to connect to MongoDB at `mongodb://localhost:27017`. All operations (create, read, update and delete) are allowed on the `todos` collection.
 
-You can learn more about on the various parameters available for configuring the database module [here](/docs/database/config).
-
+You can learn more about the various parameters available for configuring the database module [here](/docs/database/config).
 
 ## Next steps
 

@@ -47,7 +47,7 @@ modules:
             delete:
               rule: allow
     sql-mysql:
-      conn: root:my-secret-pw@/project
+      conn: user:my-secret-pwd@/project
       isPrimary: true
       collections:
         users:
@@ -66,11 +66,11 @@ modules:
 ```
 
 For each database, you need to specify the following fields:
-- **conn**: This is the connection string to connect to the database with.
-- **isPrimary**: Specifies if the database is to be used as the primary database. Note, you **cannot have more than one primary database**.
-- **collections**: These are the table / collections which need to be exposed via Space Cloud. They contain two sub fields `isRealtimeEnabled` and `rules`. `rules` are nothing but the [security rules](/docs/security/database), to control the database access.
+- **conn:** This is the connection string to connect to the database with.
+- **isPrimary:** Specifies if the database is to be used as the primary database. Note, you **cannot have more than one primary database**.
+- **collections:** These are the table / collections which need to be exposed via Space Cloud. They contain two sub fields `isRealtimeEnabled` and `rules`. `rules` are nothing but the [security rules](/docs/security/database), to control the database access.
 
-The snippet shown above configures Space Cloud to use `MongoDB` as the primary database present at `mongodb://localhost:27017`. It exposes a single collection `todos`. All types of operations (create, read, update and delete) are allowed on the `todos` collection. This implies that, any anonymous user will be able to perform any operations on the database. To expose more tables / collections, simple add new objects under the `collections` key.
+The snippet shown above configures Space Cloud to use `MongoDB` as the primary database present at `mongodb://localhost:27017`. It exposes a single collection `todos`. All types of operations (create, read, update and delete) are allowed on the `todos` collection. This implies that, any anonymous user will be able to perform any operations on the database. To expose more tables / collections, simply add new objects under the `collections` key.
 
 Here's an example that has two collections `todos` and `users`. Note, updating and deleting users is denied.
 
