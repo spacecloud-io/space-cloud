@@ -22,6 +22,7 @@ func (s *server) routineMetrics() {
 	a, err := api.New("crm", "spaceuptech.com", "11001", true)
 	if err != nil {
 		fmt.Println("Error -", err)
+		return
 	}
 
 	db := a.Mongo()
