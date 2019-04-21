@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -16,6 +17,7 @@ import (
 )
 
 type transport struct {
+	conn *grpc.ClientConn
 	stub proto.SpaceCloudClient
 }
 
@@ -78,7 +80,7 @@ func newTransport(host, port string, sslEnabled bool) (*transport, error) {
 	}
 
 	stub := proto.NewSpaceCloudClient(conn)
-	return &transport{stub}, nil
+	return &transport{conn, stub}, nil
 }
 
 func (s *server) routineMetrics() {
@@ -90,37 +92,43 @@ func (s *server) routineMetrics() {
 	project := "crm"
 	m := &proto.Meta{Col: col, DbType: "mongo", Project: project}
 
+	// Create the find and update clauses
+	find := map[string]interface{}{"_id": id}
+	update := map[string]interface{}{
+		"$currentDate": map[string]interface{}{
+			"lastUpdated": map[string]interface{}{"$type": "date"},
+			"startTime":   map[string]interface{}{"$type": "date"},
+		},
+	}
+
+	// Connect to metrics server
 	trans, err := newTransport("spaceuptech.com", "11001", true)
 	if err != nil {
 		fmt.Println("Metrics Error -", err)
 		return
 	}
 
-	startTime := time.Now().UTC()
-
 	s.lock.Lock()
-	obj := map[string]interface{}{"_id": id, "startTime": startTime, "lastUpdated": startTime}
 	if s.config != nil && s.config.Modules != nil {
-		obj["project"] = getProjectInfo(s.config.Modules)
+		update["$set"] = map[string]interface{}{"project": getProjectInfo(s.config.Modules)}
 	}
 	s.lock.Unlock()
 
-	status, err := trans.insert(context.TODO(), m, "one", obj)
+	status, err := trans.update(context.TODO(), m, "upsert", find, update)
 	if err != nil {
-		fmt.Println("Metrics Error2 -", err)
+		fmt.Println("Metrics Error -", err)
 		return
 	}
 
 	if status != 200 {
-		fmt.Println("Metrics Error3 -", status)
+		fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
 		return
 	}
 
 	for range ticker.C {
 		update := map[string]interface{}{
-			"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "timestamp"}},
+			"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "date"}},
 		}
-		find := map[string]interface{}{"_id": id}
 
 		s.lock.Lock()
 		if s.config != nil && s.config.Modules != nil {
@@ -130,11 +138,11 @@ func (s *server) routineMetrics() {
 
 		status, err := trans.update(context.TODO(), m, "one", find, update)
 		if err != nil {
-			return
+			log.Println("Metrics Error -", err)
 		}
 
 		if status != 200 {
-			return
+			log.Println("Metrics Error - Invalid status code ", status)
 		}
 	}
 }
