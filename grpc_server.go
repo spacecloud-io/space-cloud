@@ -69,11 +69,12 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	// Send realtime message in dev mode
 	if !s.isProd {
 		var rows []interface{}
-		if req.Operation == utils.One {
+		switch req.Operation {
+		case utils.One:
 			rows = []interface{}{req.Document}
-		} else if req.Operation == utils.All {
+		case utils.All:
 			rows = req.Document.([]interface{})
-		} else {
+		default:
 			rows = []interface{}{}
 		}
 
@@ -589,11 +590,12 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			switch req.Type {
 			case string(utils.Create):
 				var rows []interface{}
-				if req.Operation == utils.One {
+				switch req.Operation {
+				case utils.One:
 					rows = []interface{}{req.Document}
-				} else if req.Operation == utils.All {
+				case utils.All:
 					rows = req.Document.([]interface{})
-				} else {
+				default:
 					rows = []interface{}{}
 				}
 
@@ -692,4 +694,10 @@ func (s *server) Call(ctx context.Context, in *pb.FaaSRequest) (*pb.Response, er
 	out.Result = resultBytes
 	out.Status = 200
 	return &out, nil
+}
+
+func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
+	client := utils.CreateGRPCClient(stream)
+	s.realtime.Operation(client, s.auth, s.crud)
+	return nil
 }

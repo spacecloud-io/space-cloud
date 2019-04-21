@@ -65,11 +65,12 @@ func (s *server) handleCreate() http.HandlerFunc {
 		// Send realtime message in dev mode
 		if !s.isProd {
 			var rows []interface{}
-			if req.Operation == utils.One {
+			switch req.Operation {
+			case utils.One:
 				rows = []interface{}{req.Document}
-			} else if req.Operation == utils.All {
+			case utils.All:
 				rows = req.Document.([]interface{})
-			} else {
+			default:
 				rows = []interface{}{}
 			}
 
@@ -478,11 +479,12 @@ func (s *server) handleBatch() http.HandlerFunc {
 				switch req.Type {
 				case string(utils.Create):
 					var rows []interface{}
-					if req.Operation == utils.One {
+					switch req.Operation {
+					case utils.One:
 						rows = []interface{}{req.Document}
-					} else if req.Operation == utils.All {
+					case utils.All:
 						rows = req.Document.([]interface{})
-					} else {
+					default:
 						rows = []interface{}{}
 					}
 

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -23,13 +23,13 @@ func GenerateConfig() error {
 	fmt.Println("This utility walks you through creating a config.yaml file for your space-cloud project.")
 	fmt.Println("It only covers the most essential configurations and suggests sensible defaults.")
 	fmt.Println()
-	fmt.Println("Press ^C at any time to quit.")
+	fmt.Println("Press ^C any time to quit.")
 
 	i := new(input)
 
 	// Ask the project id
 	dir, _ := os.Getwd()
-	array := strings.Split(dir, "/")
+	array := strings.Split(dir, string(os.PathSeparator))
 	dir = array[len(array)-1]
 	err := survey.AskOne(&survey.Input{Message: "project name:", Default: formatProjectID(dir)}, &i.ID, survey.Required)
 	if err != nil {
@@ -51,7 +51,7 @@ func GenerateConfig() error {
 	}
 
 	// Ask for the connection string
-	err = survey.AskOne(&survey.Input{Message: "connection string (" + i.PrimaryDB + "}", Default: getConnectionString(i.PrimaryDB)}, &i.Conn, survey.Required)
+	err = survey.AskOne(&survey.Input{Message: "connection string (" + i.PrimaryDB + ")", Default: getConnectionString(i.PrimaryDB)}, &i.Conn, survey.Required)
 	if err != nil {
 		return err
 	}
