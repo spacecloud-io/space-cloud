@@ -4,15 +4,14 @@ import (
 	"errors"
 	"sync"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/utils"
-
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// Module is responsible for authentication and authorsation
+// Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
 	rules     config.Crud
@@ -88,7 +87,7 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("Invalid signing method type")
+			return nil, errors.New("invalid signing method type")
 		}
 
 		return []byte(m.secret), nil
