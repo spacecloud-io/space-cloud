@@ -94,7 +94,6 @@ func (c *Client) Close() {
 
 // Read startes a blocking reader routine
 func (c *Client) Read(cb DataCallback) {
-	defer c.Close()
 	switch c.protocol {
 	case Websocket:
 		for {
