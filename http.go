@@ -293,15 +293,13 @@ func (s *server) handleDelete() http.HandlerFunc {
 
 			if idTemp, p := req.Find[idVar]; p {
 				if id, ok := idTemp.(string); ok {
-					if err != nil {
-						s.realtime.Send(&model.FeedData{
-							Group:     meta.col,
-							Type:      utils.RealtimeDelete,
-							TimeStamp: time.Now().Unix(),
-							DocID:     id,
-							DBType:    meta.dbType,
-						})
-					}
+					s.realtime.Send(&model.FeedData{
+						Group:     meta.col,
+						Type:      utils.RealtimeDelete,
+						TimeStamp: time.Now().Unix(),
+						DocID:     id,
+						DBType:    meta.dbType,
+					})
 				}
 			}
 		}

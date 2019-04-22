@@ -327,15 +327,13 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 		}
 
 		if id, p := req.Find[idVar]; p {
-			if err != nil {
-				s.realtime.Send(&model.FeedData{
-					Group:     in.Meta.Col,
-					Type:      utils.RealtimeDelete,
-					TimeStamp: time.Now().Unix(),
-					DocID:     id.(string),
-					DBType:    in.Meta.DbType,
-				})
-			}
+			s.realtime.Send(&model.FeedData{
+				Group:     in.Meta.Col,
+				Type:      utils.RealtimeDelete,
+				TimeStamp: time.Now().Unix(),
+				DocID:     id.(string),
+				DBType:    in.Meta.DbType,
+			})
 		}
 	}
 
