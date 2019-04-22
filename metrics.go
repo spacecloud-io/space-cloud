@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"runtime"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -100,6 +101,11 @@ func (s *server) routineMetrics() {
 			"startTime":   map[string]interface{}{"$type": "date"},
 		},
 	}
+	set := map[string]interface{}{
+		"os":      runtime.GOOS,
+		"isProd":  s.isProd,
+		"version": buildVersion,
+	}
 
 	// Connect to metrics server
 	trans, err := newTransport("spaceuptech.com", "11001", true)
@@ -110,10 +116,13 @@ func (s *server) routineMetrics() {
 
 	s.lock.Lock()
 	if s.config != nil && s.config.Modules != nil {
-		update["$set"] = map[string]interface{}{"project": getProjectInfo(s.config.Modules)}
+		set["project"] = getProjectInfo(s.config.Modules)
+		set["projectId"] = s.config.ID
+		set["sslEnabled"] = s.config.SSL != nil
 	}
 	s.lock.Unlock()
 
+	update["$set"] = set
 	status, err := trans.update(context.TODO(), m, "upsert", find, update)
 	if err != nil {
 		fmt.Println("Metrics Error -", err)
@@ -132,10 +141,13 @@ func (s *server) routineMetrics() {
 
 		s.lock.Lock()
 		if s.config != nil && s.config.Modules != nil {
-			update["$set"] = map[string]interface{}{"project": getProjectInfo(s.config.Modules)}
+			set["project"] = getProjectInfo(s.config.Modules)
+			set["projectId"] = s.config.ID
+			set["sslEnabled"] = s.config.SSL != nil
 		}
 		s.lock.Unlock()
 
+		update["$set"] = set
 		status, err := trans.update(context.TODO(), m, "one", find, update)
 		if err != nil {
 			log.Println("Metrics Error -", err)
