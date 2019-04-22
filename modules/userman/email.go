@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 
@@ -40,7 +42,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 		defer r.Body.Close()
 
 		// Create read request
-		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"], "pass": req["pass"]}, Operation: utils.One}
+		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"]}, Operation: utils.One}
 
 		user, err := m.crud.Read(ctx, dbType, project, "users", readReq)
 		if err != nil {
@@ -49,14 +51,27 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 			return
 		}
 
-		// Delete password from user
 		userObj := user.(map[string]interface{})
+
+		//Compares if the given password is correct
+		err = bcrypt.CompareHashAndPassword([]byte(userObj["pass"].(string)), []byte(req["pass"].(string)))
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Given credentials are not correct"})
+			return
+		}
+
+		// Delete password from user
 		delete(userObj, "pass")
 		delete(req, "pass")
 
 		// Create a token
+		if dbType == "mongo" {
+			req["_id"] = userObj["_id"]
+		} else {
+			req["id"] = userObj["id"]
+		}
 		req["role"] = userObj["role"]
-		req["name"] = userObj["name"]
 		token, err := m.auth.CreateToken(req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -94,9 +109,19 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
+		//Hash the password that's in the request
+		var err error
+		req["pass"], err = hashPassword(req["pass"].(string))
+		if err != nil {
+			log.Println("Err: ", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to hash password"})
+			return
+		}
+
 		// Create read request
-		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"], "pass": req["pass"]}, Operation: utils.One}
-		_, err := m.crud.Read(ctx, dbType, project, "users", readReq)
+		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"]}, Operation: utils.One}
+		_, err = m.crud.Read(ctx, dbType, project, "users", readReq)
 		if err == nil {
 			log.Println("Err: ", err)
 			w.WriteHeader(http.StatusConflict)
@@ -131,4 +156,19 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"user": req, "token": token})
 	}
+}
+
+func hashPassword(pwd string) (string, error) {
+	//Generates a new hash from the given password
+	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.MinCost)
+	if err != nil {
+		return "", err
+	}
+
+	//Checks if the hash is correct for the given password
+	err = bcrypt.CompareHashAndPassword(hash, []byte(pwd))
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }

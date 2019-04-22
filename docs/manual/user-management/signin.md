@@ -63,7 +63,8 @@ On getting the log in request, Space Cloud validates whether such an user exists
 
 **status:** Number describing the http status code of the response. Following values are possible:
 - 200 - Successful sign in
-- 400 - No user with the given email and password
+- 404 - No user with the given email
+- 401 - The given credentials are not correct
 - 500 - Internal server error
 
 **data:** The data object consists of the following fields:

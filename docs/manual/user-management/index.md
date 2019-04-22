@@ -53,7 +53,7 @@ CREATE TABLE users (
   id    VARCHAR(50) PRIMARY KEY,
   email VARCHAR(50) NOT NULL,
   name  VARCHAR(50) NOT NULL,
-  pass  VARCHAR(50) NOT NULL,
+  pass  VARCHAR(60) NOT NULL,
   role  VARCHAR(50)
 );
 ```
