@@ -27,6 +27,11 @@ func main() {
 					Usage: "Start HTTP server on port `PORT`",
 				},
 				cli.StringFlag{
+					Name:  "grpc-port",
+					Value: "8081",
+					Usage: "Start grpc on port `GRPC_PORT`",
+				},
+				cli.StringFlag{
 					Name:  "config",
 					Value: "none",
 					Usage: "Load space cloud config from `FILE`",
@@ -59,6 +64,7 @@ func main() {
 func actionRun(c *cli.Context) error {
 	// Load cli flags
 	port := c.String("port")
+	grpcPort := c.String("grpc-port")
 	configPath := c.String("config")
 	isProd := c.Bool("prod")
 	disableMetrics := c.Bool("disable-metrics")
@@ -83,7 +89,7 @@ func actionRun(c *cli.Context) error {
 	}
 
 	s.routes()
-	return s.start(port)
+	return s.start(port, grpcPort)
 }
 
 func actionInit(*cli.Context) error {
