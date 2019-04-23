@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -47,10 +46,9 @@ func initServer(isProd bool) *server {
 	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, isProd: isProd}
 }
 
-func (s *server) start(port string) error {
+func (s *server) start(port, grpcPort string) error {
 
-	portInt, _ := strconv.Atoi(port)
-	go s.initGRPCServer(strconv.Itoa(portInt + 1))
+	go s.initGRPCServer(grpcPort)
 
 	// Allow cors
 	corsObj := cors.New(cors.Options{
