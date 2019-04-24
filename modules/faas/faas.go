@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	nats "github.com/nats-io/go-nats"
+	"github.com/nats-io/go-nats"
 
 	"github.com/spaceuptech/space-cloud/config"
 )

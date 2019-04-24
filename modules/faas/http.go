@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/model"
-
 	"github.com/spaceuptech/space-cloud/modules/auth"
 )
 
@@ -16,14 +15,14 @@ import (
 func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Return if the faas module is not enabled
+		// Return if the static module is not enabled
 		if !m.isEnabled() {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
 			return
 		}
 
-		// Get the path parametrs
+		// Get the path parameters
 		vars := mux.Vars(r)
 		engine := vars["engine"]
 		function := vars["func"]

@@ -45,6 +45,7 @@ modules:
             rule: allow
   static:
     enabled: true
-    path: ./public
+    path: ./static
+	url_prefix: /static/
     gzip: false
 `

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/spaceuptech/space-cloud/modules/static"
 	"log"
 	"net"
 	"net/http"
@@ -31,6 +32,7 @@ type server struct {
 	file     *filestore.Module
 	faas     *faas.Module
 	realtime *realtime.Module
+	static   *static.Module
 	isProd   bool
 	config   *config.Project
 }
@@ -42,8 +44,9 @@ func initServer(isProd bool) *server {
 	u := userman.Init(c, a)
 	f := filestore.Init()
 	realtime := realtime.Init()
+	s := static.Init()
 	faas := faas.Init()
-	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, isProd: isProd}
+	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, static:s, isProd: isProd}
 }
 
 func (s *server) start(port string) error {
@@ -83,18 +86,26 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.user.SetConfig(config.Modules.Auth)
 
 	// Set the configuration for the file storage module
-	s.file.SetConfig(config.Modules.FileStore)
+	if err := s.file.SetConfig(config.Modules.FileStore); err != nil {
+		return err
+	}
 
 	// Set the configuration for the FaaS module
-	err := s.faas.SetConfig(config.Modules.FaaS)
-	if err != nil {
+	if err := s.faas.SetConfig(config.Modules.FaaS); err != nil {
 		return err
 	}
 
 	// Set the configuration for the Realtime module
-	s.realtime.SetConfig(config.Modules.Realtime)
+	if err := s.realtime.SetConfig(config.Modules.Realtime); err != nil {
+		return err
+	}
 
-	// Set the configuration for the curd module
+	// Set the configuration for Static module
+	if err := s.static.SetConfig(config.Modules.Static); err != nil {
+		return err
+	}
+
+	// Set the configuration for the crud module
 	return s.crud.SetConfig(config.Modules.Crud)
 }
 

@@ -99,5 +99,6 @@ type FileRule struct {
 type Static struct {
 	Enabled bool   `json:"enabled" yaml:"enabled"`
 	Path    string `json:"path" yaml:"path"`
-	Gzip    string `json:"gzip" yaml:"gzip"`
+	UrlPrefix string `json:"url_prefix" yaml:"url_prefix"`
+	Gzip    bool `json:"gzip" yaml:"gzip"`
 }
