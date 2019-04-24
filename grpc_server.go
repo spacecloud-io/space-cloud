@@ -327,15 +327,13 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 		}
 
 		if id, p := req.Find[idVar]; p {
-			if err != nil {
-				s.realtime.Send(&model.FeedData{
-					Group:     in.Meta.Col,
-					Type:      utils.RealtimeDelete,
-					TimeStamp: time.Now().Unix(),
-					DocID:     id.(string),
-					DBType:    in.Meta.DbType,
-				})
-			}
+			s.realtime.Send(&model.FeedData{
+				Group:     in.Meta.Col,
+				Type:      utils.RealtimeDelete,
+				TimeStamp: time.Now().Unix(),
+				DocID:     id.(string),
+				DBType:    in.Meta.DbType,
+			})
 		}
 	}
 
@@ -694,4 +692,10 @@ func (s *server) Call(ctx context.Context, in *pb.FaaSRequest) (*pb.Response, er
 	out.Result = resultBytes
 	out.Status = 200
 	return &out, nil
+}
+
+func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
+	client := utils.CreateGRPCClient(stream)
+	s.realtime.Operation(client, s.auth, s.crud)
+	return nil
 }

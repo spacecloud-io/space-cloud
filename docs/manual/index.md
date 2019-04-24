@@ -6,6 +6,7 @@
 
 Space Cloud is essentially a web server that automatically integrates with an existing or a new database to provide instant realtime APIs over REST, websockets, gRPC, etc. Written in Golang, it provides a high throughput data access layer which can be consumed directly from the frontend. It's completely unopinionated and works with the tech stack of your choice.
 
+
 <img src="https://spaceuptech.com/icons/space-cloud-basic.png"  alt="Basic Space Cloud architecture" />
 
 In a nutshell, Space Cloud provides you with all of the following **without having to write a single line of backend code**:
@@ -14,6 +15,11 @@ In a nutshell, Space Cloud provides you with all of the following **without havi
 - Baked-in security.
 - Freedom from vendor lock-ins.
 - Flexibility to work with the tech stack of your choice.
+
+Supported databases:heart::
+- **MongoDB**
+- **PostgreSQL** and PostgreSQL compatible databases (For eg. CockroachDB, Yugabyte etc.)
+- **MySQL** and MySQL compatible databases (For eg. TiDB)
 
 ## How it works
 
@@ -51,8 +57,8 @@ The goal of this project is not to re-invent the wheel over and over again. In f
 
 ## What's next?
 
-- Head straight to our [getting started guide](/docs/quick-start).
-<!-- - New to Space Cloud? Checkout the [tutorial](https://spaceuptech.com/tutorials) instead. -->
+- Check out a realtime todo app made using Space Cloud with our [quick started guide](/docs/quick-start).  
+- Start a new project from scratch using Space Cloud with our [getting started guide](/docs/quick-start).
 
 <div class="btns-wrapper">
   <a href="/docs/quick-start" class="waves-effect waves-light btn primary-btn-fill btn-small">

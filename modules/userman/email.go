@@ -21,7 +21,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 		// Allow this feature only if the email sign in function is enabled
 		if !m.isActive("email") {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "Email sign in feature is not enabled"})
 			return
 		}
 
@@ -60,7 +60,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 		token, err := m.auth.CreateToken(req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Could not create a JWT token"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create a JWT token"})
 			return
 		}
 
@@ -76,7 +76,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		// Allow this feature only if the email sign in function is enabled
 		if !m.isActive("email") {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "Email sign in feature is not enabled"})
 			return
 		}
 
@@ -98,8 +98,9 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"], "pass": req["pass"]}, Operation: utils.One}
 		_, err := m.crud.Read(ctx, dbType, project, "users", readReq)
 		if err == nil {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "User already exists"})
+			log.Println("Err: ", err)
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{"error": "User with provided email already exists"})
 			return
 		}
 
@@ -115,7 +116,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		if err != nil {
 			log.Println("Err: ", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Could not create new user"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create user account"})
 			return
 		}
 
@@ -123,7 +124,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		token, err := m.auth.CreateToken(req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Could not create a JWT token"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create a JWT token"})
 			return
 		}
 

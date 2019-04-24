@@ -8,7 +8,7 @@
 	<strong>
 		<a href="https://spaceuptech.com/">Website</a>
 		•
-		<a href="https://spaceuptech.com/docs">Docs</a>
+		<a href="https://spaceuptech.com/docs/">Docs</a>
 		•
 		<a href="https://discord.gg/ypXEEBr">Support</a>
 	</strong>
@@ -17,6 +17,9 @@
     <a href="https://travis-ci.com/spaceuptech/space-cloud"><img
 		alt="Build Status"
 		src="https://travis-ci.com/spaceuptech/space-cloud.svg?branch=master"></a>
+	<a href="https://goreportcard.com/report/github.com/spaceuptech/space-cloud">
+		<img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/spaceuptech/space-cloud">
+	</a>
     <br/>
     <a href="https://opensource.org/licenses/Apache-2.0"><img
 		alt="Apache License"
@@ -31,6 +34,12 @@ Space Cloud replaces your traditional backend servers and simplifies app develop
 - **_Secure_**: Authentication and authorization baked in by default
 - **_Extensible_**: Provision to write custom backend logic
 
+
+Supported databases:heart::
+- **MongoDB**
+- **PostgreSQL** and PostgreSQL compatible databases (For eg. CockroachDB, Yugabyte etc.)
+- **MySQL** and MySQL compatible databases (For eg. TiDB)
+
 ## Table of Contents
 
 - [Motivation](#motivation)
@@ -42,7 +51,7 @@ Space Cloud replaces your traditional backend servers and simplifies app develop
   - [Enterprise-ready](#enterprise-ready)
   - [Leverage the existing tools](#leverage-the-existing-tools)
 - [Documentation](#documentation)
-- [Getting started](#getting-started)
+- [Quick start](#quick-start)
 - [Support & Troubleshooting](#support--troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -114,14 +123,16 @@ The goal of this project is not to re-invent the wheel over and over again. In f
 
 We are working hard to document every aspect of Space Cloud to give you the best onboarding experience. Here are links to the various docs we have:
 
-- [Space Cloud](https://spaceuptech.com/docs)
+- [Space Cloud](https://spaceuptech.com/docs/)
 - Client APIs:
-  - [Javascript client](https://github.com/spaceuptech/space-api-js/wiki)
-  - Java client (Coming soon!)
+  - [JavaScript client](https://github.com/spaceuptech/space-api-js)
+  - [Python client](https://github.com/spaceuptech/space-api-python)
+  - [Go client](https://github.com/spaceuptech/space-api-go)
+  - [Java client](https://github.com/spaceuptech/space-api-java) (In Progress)
 
-## Getting started
+## Quick start
 
-Let's see how to build a realtime todo app using Space Cloud
+Let's see how to build a realtime todo app using Space Cloud and MongoDB
 
 ### Prerequisites
 
@@ -131,7 +142,7 @@ Let's see how to build a realtime todo app using Space Cloud
 
 ### Step 1: Download Space Cloud
 
-The first step is to download the `space-cloud` binary. This binary is the server creating the endpoints and connecting to your database. You need to download a binary for your operating system or you could build it directly from its source code. You will need go version 1.11.2 or later to build it from source.
+The first step is to download the `space-cloud` binary. This binary is the server connecting to your database and creating the endpoints for it. You need to download a binary for your operating system or you could build it directly from its source code. You will need go version 1.11.2 or later to build it from the source.
 
 Download the binary for your OS from here:
 

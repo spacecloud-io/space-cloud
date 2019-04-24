@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/spaceuptech/space-cloud/modules/static"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -19,6 +19,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/faas"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
+	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	pb "github.com/spaceuptech/space-cloud/proto"
 )
@@ -46,7 +47,7 @@ func initServer(isProd bool) *server {
 	realtime := realtime.Init()
 	s := static.Init()
 	faas := faas.Init()
-	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, static:s, isProd: isProd}
+	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, static: s, isProd: isProd}
 }
 
 func (s *server) start(port string) error {
@@ -66,6 +67,8 @@ func (s *server) start(port string) error {
 	})
 
 	handler := corsObj.Handler(s.router)
+
+	fmt.Println("Starting http server on port " + port)
 
 	if s.config.SSL != nil {
 		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
@@ -126,6 +129,8 @@ func (s *server) initGRPCServer(port string) {
 
 	grpcServer := grpc.NewServer(options...)
 	pb.RegisterSpaceCloudServer(grpcServer, s)
+
+	fmt.Println("Starting gRPC server on port " + port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
 	}
