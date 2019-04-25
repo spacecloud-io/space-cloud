@@ -20,7 +20,7 @@ func (m *Module) HandleRequest() http.HandlerFunc {
 		}
 
 		staticRouter := mux.NewRouter().StrictSlash(true)
-		staticRouter.PathPrefix("/static/").Handler(http.FileServer(&SpaFileSystem{http.Dir(m.getDirPath())}))
+		staticRouter.PathPrefix(m.URLPrefix).Handler(http.FileServer(&SpaFileSystem{http.Dir(m.getDirPath())}))
 
 		// compress if gzip enabled in config
 		if m.Gzip {

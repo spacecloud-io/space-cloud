@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	defaultDirPath   = "./static"
-	defaultUrlPrefix = "/static/"
+	defaultDirPath   = "./public"
+	defaultUrlPrefix = "/"
 )
 
 // Module is responsible for Static
@@ -19,7 +19,7 @@ type Module struct {
 	sync.RWMutex
 	Enabled   bool
 	Path      string
-	UrlPrefix string
+	URLPrefix string
 	Gzip      bool
 }
 
@@ -37,7 +37,7 @@ func (fs *SpaFileSystem) Open(name string) (http.File, error) {
 
 // Init returns a new instance of the Static module wit default values
 func Init() *Module {
-	return &Module{Path: defaultDirPath, UrlPrefix: defaultUrlPrefix, Gzip:false}
+	return &Module{Path: defaultDirPath, URLPrefix: defaultUrlPrefix, Gzip:false}
 }
 
 // SetConfig set the config required by the Static module
@@ -50,19 +50,20 @@ func (m *Module) SetConfig(s *config.Static) error {
 		return nil
 	}
 
-	if s.Gzip {
-		m.Gzip = true
+	m.Gzip = s.Gzip
+
+	m.Path = s.Path
+	if m.Path == "" {
+		m.Path = defaultDirPath
 	}
 
-	if s.Path != "" {
-		m.Path = s.Path
-	}
-
-	if s.UrlPrefix != "" {
-		m.Path = s.Path
+	m.URLPrefix = s.URLPrefix
+	if m.URLPrefix == "" {
+		m.URLPrefix = defaultUrlPrefix
 	}
 
 	m.Enabled = true
+
 	return nil
 }
 
