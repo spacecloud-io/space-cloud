@@ -7,8 +7,6 @@ assignees: ''
 
 ---
 
-### The problem
-A clear and concise description of what's the problem you currently face. Ex. I'm always frustrated when [...]
+### The problem faced currently?
 
-### The solution
-How do you think Space Cloud can help solve it?
+### How can we solve it?
