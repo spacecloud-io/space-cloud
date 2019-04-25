@@ -9,9 +9,9 @@ import (
 
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
-
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 // HandleEmailSignIn returns the handler for email sign in
@@ -38,6 +38,14 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 		req := map[string]interface{}{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
+
+		// Validate request email
+		v := validator.New()
+		if err := v.Var(req["email"], "email"); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request email"})
+			return
+		}
 
 		// Create read request
 		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"], "pass": req["pass"]}, Operation: utils.One}
@@ -93,6 +101,14 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		req := map[string]interface{}{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
+
+		// Validate request email
+		v := validator.New()
+		if err := v.Var(req["email"], "email"); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request email"})
+			return
+		}
 
 		// Create read request
 		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"], "pass": req["pass"]}, Operation: utils.One}

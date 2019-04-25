@@ -5,6 +5,8 @@ require (
 	github.com/c2fo/testify v0.0.0-20150827203832-fba96363964a // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-playground/locales v0.12.1 // indirect
+	github.com/go-playground/universal-translator v0.16.0 // indirect
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/protobuf v1.2.0
@@ -14,6 +16,7 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/leodido/go-urn v1.1.0 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nats-io/gnatsd v1.4.1 // indirect
@@ -36,5 +39,6 @@ require (
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/doug-martin/goqu.v4 v4.2.0
+	gopkg.in/go-playground/validator.v9 v9.28.0
 	gopkg.in/yaml.v2 v2.2.2
 )
