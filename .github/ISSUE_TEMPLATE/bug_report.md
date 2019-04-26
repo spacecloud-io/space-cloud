@@ -20,3 +20,6 @@ assignees: ''
 - OS:
 - The client api version (if applicable):
 - Browser (if applicable):
+
+>If this bug restricts your use of space-cloud, give it a thumbs up reaction, so that we can determine which bugs need to be fixed immediately.
+>👍
