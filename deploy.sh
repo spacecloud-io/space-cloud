@@ -2,7 +2,7 @@
 
 #Build linux-version first and determine the build-version
 GOOS=linux GOARCH=amd64 go build -ldflags '-s -w -extldflags "-static"' .
-BUILD_VERSION=$(space-cloud -v | cut -f3 -d ' ')
+BUILD_VERSION=$(./space-cloud -v | cut -f3 -d ' ')
 
 mkdir linux && mkdir windows && mkdir darwin
 zip space-cloud.zip space-cloud
