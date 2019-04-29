@@ -5,16 +5,21 @@ GOOS=linux GOARCH=amd64 go build -ldflags '-s -w -extldflags "-static"' .
 BUILD_VERSION=$(space-cloud -v | cut -f3 -d ' ')
 
 mkdir linux && mkdir windows && mkdir darwin
-zip space-cloud_v$BUILD_VERSION.zip space-cloud
-mv ./space-cloud_v$BUILD_VERSION.zip ./linux/
+zip space-cloud.zip space-cloud
+mv ./space-cloud.zip ./linux/
+cp ./linux/space-cloud.zip ./linux/space-cloud_v$BUILD_VERSION.zip 
 rm space-cloud
+
 GOOS=darwin GOARCH=amd64 go build -ldflags '-s -w -extldflags "-static"' .
-zip space-cloud_v$BUILD_VERSION.zip space-cloud
-mv ./space-cloud_v$BUILD_VERSION.zip ./darwin/
+zip space-cloud.zip space-cloud
+mv ./space-cloud.zip ./darwin/
+cp ./darwin/space-cloud.zip ./darwin/space-cloud_v$BUILD_VERSION.zip 
 rm space-cloud
+
 GOOS=windows GOARCH=amd64 go build -ldflags '-s -w -extldflags "-static"' .
-zip space-cloud_v$BUILD_VERSION.zip space-cloud.exe
-mv ./space-cloud_v$BUILD_VERSION.zip ./windows/
+zip space-cloud.zip space-cloud.exe
+mv ./space-cloud.zip ./windows/
+cp ./windows/space-cloud.zip ./windows/space-cloud_v$BUILD_VERSION.zip 
 rm space-cloud.exe
 
 # echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
