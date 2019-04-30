@@ -5,10 +5,28 @@ You can easily extend Space Cloud by writing your custom logic on the backend in
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
-      <li class="tab col s2"><a class="active" href="#engine-go">Go</a></li>
+      <li class="tab col s2"><a class="active" href="#engine-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#engine-go">Go</a></li>
       <li class="tab col s2"><a href="#engine-java">Java</a></li>
       <li class="tab col s2"><a href="#engine-python">Python</a></li>
     </ul>
+  </div>
+  <div id="engine-js" class="col s12" style="padding:0">
+    <pre>
+      <code>
+const Engine = require('space-engine-node');
+
+const engine = new Engine('my-engine');
+
+engine.registerFunc('my-func', (params, auth, cb) => {
+  console.log('Params:', params, 'Auth', auth)
+  // Do something
+
+  const res = { ack: true, message: 'Function as a Service is Awesome!' }
+  cb('response', res)
+})
+      </code>
+    </pre>
   </div>
   <div id="engine-go" class="col s12" style="padding:0">
     <pre>
