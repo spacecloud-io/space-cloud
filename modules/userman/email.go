@@ -56,7 +56,6 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 
 		// Create a token
 		req["role"] = userObj["role"]
-		req["name"] = userObj["name"]
 		if dbType == string(utils.Mongo) {
 			req["id"] = userObj["_id"]
 		} else {
@@ -113,7 +112,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		// Create a create request
 		id := uuid.NewV1()
 		if dbType == "mongo" {
-			req["id"] = id.String()
+			req["_id"] = id.String()
 		} else {
 			req["id"] = id.String()
 		}
@@ -127,8 +126,19 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		}
 
 		delete(req, "pass")
-		delete(req, "name")
-		token, err := m.auth.CreateToken(req)
+
+		// Create a new token Object
+		tokenObj := map[string]interface{}{
+			"email": req["email"],
+			"role":  req["role"],
+		}
+		if dbType == string(utils.Mongo) {
+			tokenObj["id"] = req["_id"]
+		} else {
+			tokenObj["id"] = req["id"]
+		}
+
+		token, err := m.auth.CreateToken(tokenObj)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to create a JWT token"})
