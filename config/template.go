@@ -23,7 +23,7 @@ modules:
   auth:
     email:
       enabled: false
-  faas:
+  functions:
     enabled: false
     nats: nats://localhost:4222
   realtime:

@@ -15,7 +15,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/faas"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/modules/userman"
@@ -29,7 +29,7 @@ type server struct {
 	crud     *crud.Module
 	user     *userman.Module
 	file     *filestore.Module
-	faas     *faas.Module
+	functions     *functions.Module
 	realtime *realtime.Module
 	isProd   bool
 	config   *config.Project
@@ -42,8 +42,8 @@ func initServer(isProd bool) *server {
 	u := userman.Init(c, a)
 	f := filestore.Init()
 	realtime := realtime.Init()
-	faas := faas.Init()
-	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, isProd: isProd}
+	functions := functions.Init()
+	return &server{router: r, auth: a, crud: c, user: u, file: f, functions: functions, realtime: realtime, isProd: isProd}
 }
 
 func (s *server) start(port, grpcPort string) error {
@@ -86,8 +86,8 @@ func (s *server) loadConfig(config *config.Project) error {
 	// Set the configuration for the file storage module
 	s.file.SetConfig(config.Modules.FileStore)
 
-	// Set the configuration for the FaaS module
-	err := s.faas.SetConfig(config.Modules.FaaS)
+	// Set the configuration for the Functions module
+	err := s.functions.SetConfig(config.Modules.Functions)
 	if err != nil {
 		return err
 	}

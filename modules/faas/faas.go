@@ -1,4 +1,4 @@
-package faas
+package functions
 
 import (
 	"encoding/json"
@@ -10,29 +10,29 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 )
 
-// Module is responsible for FaaS
+// Module is responsible for Functions
 type Module struct {
 	sync.RWMutex
 	nc      *nats.Conn
 	enabled bool
 }
 
-// Init returns a new instance of the FaaS module
+// Init returns a new instance of the Functions module
 func Init() *Module {
 	return new(Module)
 }
 
-// SetConfig set the config required by the FaaS module
-func (m *Module) SetConfig(faas *config.FaaS) error {
+// SetConfig set the config required by the Functions module
+func (m *Module) SetConfig(functions *config.Functions) error {
 	m.Lock()
 	defer m.Unlock()
 
-	if faas == nil || !faas.Enabled {
+	if functions == nil || !functions.Enabled {
 		m.enabled = false
 		return nil
 	}
 
-	nc, err := nats.Connect(faas.Nats)
+	nc, err := nats.Connect(functions.Nats)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (m *Module) Request(engine, function string, timeout int, val interface{}) 
 	}
 
 	// Send request over nats
-	subject := "faas:" + engine + ":" + function
+	subject := "functions:" + engine + ":" + function
 	msg, err := m.nc.Request(subject, data, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err

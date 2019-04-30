@@ -14,14 +14,13 @@ The `space-cloud` server acts as an api-gateway which connects to nats as well. 
 
 ## Enable the functions module
 
-The config pertaining to functions module can be found inside the `faas` key under the `modules` object. Here's the snippet:
+The config pertaining to functions module can be found inside the `functions` key under the `modules` object. Here's the snippet:
 
 ```yaml
 modules:
-  faas:
+  functions:
     enabled: true
     nats: nats://localhost:4222
-
   # Config for other modules go here
 ```
 
