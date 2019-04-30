@@ -7,7 +7,7 @@ Follow this guide to use Space Cloud APIs in your web app or any Javascript/Node
 ## Step 1: Install Space Cloud API
 **Install via npm:**
 ```bash
-$ npm install space-api
+$ npm install space-api --save
 ```
 
 **Or import as a stand alone library:**
