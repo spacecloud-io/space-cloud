@@ -17,6 +17,9 @@
     <a href="https://travis-ci.com/spaceuptech/space-cloud"><img
 		alt="Build Status"
 		src="https://travis-ci.com/spaceuptech/space-cloud.svg?branch=master"></a>
+	<a href="https://goreportcard.com/report/github.com/spaceuptech/space-cloud">
+		<img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/spaceuptech/space-cloud">
+	</a>
     <br/>
     <a href="https://opensource.org/licenses/Apache-2.0"><img
 		alt="Apache License"
