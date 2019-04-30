@@ -162,7 +162,7 @@ func (s *server) routineMetrics() {
 func getProjectInfo(config *config.Modules) map[string]interface{} {
 	project := map[string]interface{}{
 		"crud":      []string{},
-		"faas":      map[string]interface{}{"enabled": false},
+		"functions":      map[string]interface{}{"enabled": false},
 		"realtime":  map[string]interface{}{"enabled": false},
 		"fileStore": map[string]interface{}{"enabled": false},
 		"auth":      []string{},
@@ -186,8 +186,8 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 		project["auth"] = auth
 	}
 
-	if config.FaaS != nil {
-		project["faas"] = map[string]interface{}{"enabled": config.FaaS.Enabled}
+	if config.Functions != nil {
+		project["functions"] = map[string]interface{}{"enabled": config.Functions.Enabled}
 	}
 
 	if config.Realtime != nil {

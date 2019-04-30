@@ -1,4 +1,4 @@
-package faas
+package functions
 
 import(
 	"encoding/json"
