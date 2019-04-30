@@ -57,6 +57,12 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 		// Create a token
 		req["role"] = userObj["role"]
 		req["name"] = userObj["name"]
+		if dbType == string(utils.Mongo) {
+			req["id"] = userObj["_id"]
+		} else {
+			req["id"] = userObj["id"]
+		}
+
 		token, err := m.auth.CreateToken(req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -107,7 +113,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		// Create a create request
 		id := uuid.NewV1()
 		if dbType == "mongo" {
-			req["_id"] = id.String()
+			req["id"] = id.String()
 		} else {
 			req["id"] = id.String()
 		}
@@ -121,6 +127,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		}
 
 		delete(req, "pass")
+		delete(req, "name")
 		token, err := m.auth.CreateToken(req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
