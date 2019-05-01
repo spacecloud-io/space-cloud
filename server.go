@@ -48,7 +48,6 @@ func initServer(isProd bool) *server {
 }
 
 func (s *server) start(port string) error {
-
 	portInt, _ := strconv.Atoi(port)
 	go s.initGRPCServer(strconv.Itoa(portInt + 1))
 
@@ -80,7 +79,8 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.lock.Unlock()
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.Secret, config.Modules.Crud, config.Modules.FileStore)
+	s.auth.SetConfig(config.Secret, config.Modules.Crud,
+		config.Modules.FileStore)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(config.Modules.Auth)
@@ -89,10 +89,7 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.file.SetConfig(config.Modules.FileStore)
 
 	// Set the configuration for the FaaS module
-	err := s.faas.SetConfig(config.Modules.FaaS)
-	if err != nil {
-		return err
-	}
+	err = s.faas.SetConfig(config.Modules.FaaS); if err != nil { return }
 
 	// Set the configuration for the Realtime module
 	s.realtime.SetConfig(config.Modules.Realtime)

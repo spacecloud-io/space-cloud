@@ -33,17 +33,15 @@ func Init(dbType utils.DBType, connection string) (*SQL, error) {
 	defer cancel()
 
 	switch dbType {
-	case utils.Postgres:
-		sql, err = sqlx.Open("postgres", connection)
-		s.dbType = "postgres"
-
-	case utils.MySQL:
-		sql, err = sqlx.Open("mysql", connection)
-		s.dbType = "mysql"
-
-	default:
-		return nil, errors.New("SQL: Invalid driver provided")
-	}
+		case utils.Postgres:
+			sql, err = sqlx.Open("postgres", connection)
+			s.dbType = "postgres"
+		case utils.MySQL:
+			sql, err = sqlx.Open("mysql", connection)
+			s.dbType = "mysql"
+		default:
+			return nil, errors.New("SQL: Invalid driver provided")
+	}//-- end switch dbType
 
 	if err != nil {
 		return nil, err
@@ -97,3 +95,4 @@ func doTransactionExecContext(ctx context.Context, query string, args []interfac
 	_, err = stmt.ExecContext(ctx, args...)
 	return err
 }
+

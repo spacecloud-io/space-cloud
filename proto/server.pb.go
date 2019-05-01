@@ -955,7 +955,7 @@ func (x *spaceCloudRealTimeServer) Recv() (*RealTimeRequest, error) {
 }
 
 var _SpaceCloud_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.SpaceCloud",
+	ServiceName: "github.com/spaceuptech/space-cloud/proto.SpaceCloud",
 	HandlerType: (*SpaceCloudServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

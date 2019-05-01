@@ -41,18 +41,18 @@ func TestUtilsExists(t *testing.T) {
 	test := []*LoadValueStub{
 		//1
 		&LoadValueStub{
-			value: "utils.exists(args.auth)",
+			value: "github.com/spaceuptech/space-cloud/utils.exists(args.auth)",
 			state: m,
 			ret:   true,
 		},
 		//False
 		&LoadValueStub{
-			value: "utils.exists(args.auth.id)",
+			value: "github.com/spaceuptech/space-cloud/utils.exists(args.auth.id)",
 			state: m,
 			ret:   true,
 		},
 		&LoadValueStub{
-			value: "utils.abc",
+			value: "github.com/spaceuptech/space-cloud/utils.abc",
 			state: m,
 			ret:   false,
 		},

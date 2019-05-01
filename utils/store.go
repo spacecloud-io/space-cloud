@@ -58,7 +58,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		return nil, errors.New("The variable does not map to internal state")
 	}
 
-	if tempArray[0] == "utils" {
+	if tempArray[0] == "github.com/spaceuptech/space-cloud/utils" {
 		function := tempArray[1]
 		pre := strings.IndexRune(function, '(')
 		post := strings.IndexRune(function, ')')

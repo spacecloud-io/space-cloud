@@ -15,7 +15,8 @@ import (
 )
 
 // Create inserts a document (or multiple when op is "all") into the database
-func (s *SQL) Create(ctx context.Context, project, col string, req *model.CreateRequest) error {
+func (s *SQL) Create(ctx context.Context, project, col string,
+		req *model.CreateRequest) error {
 	sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, req)
 	if err != nil {
 		return err
@@ -24,7 +25,8 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 }
 
 //generateCreateQuery makes query for create operation
-func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
+func (s *SQL) generateCreateQuery(ctx context.Context, project, col string,
+		req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	query := goqu.From(col).Prepared(true)
 	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
@@ -41,23 +43,20 @@ func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req 
 	}
 
 	// Iterate over records to be inserted
-	records := []interface{}{}
+	records := make([]interface{}, 0, len(insert))
 	for _, temp := range insert {
-		// Genrate a record out of object
+		// Generate a record out of object
 		record, err := generateRecord(temp)
-		if err != nil {
-			return "", nil, err
-		}
+		if err != nil { return "", nil, err }
 
 		// Append record to records array
 		records = append(records, record)
-	}
+	}//-- end for range insert
 
 	sqlQuery, args, err := query.ToInsertSql(records)
-	if err != nil {
-		return "", nil, err
-	}
+	if err != nil { return "", nil, err }
 
 	sqlQuery = strings.Replace(sqlQuery, "\"", "", -1)
 	return sqlQuery, args, nil
-}
+}//-- end func generateCreateQuery
+

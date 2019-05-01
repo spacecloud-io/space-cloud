@@ -84,7 +84,7 @@ func actionRun(c *cli.Context) error {
 
 	s.routes()
 	return s.start(port)
-}
+}//-- end func actionRun
 
 func actionInit(*cli.Context) error {
 	return config.GenerateConfig()

@@ -1,11 +1,11 @@
-FROM alpine:3.9
+FROM golang:1.12 as builder
 WORKDIR /space-cloud
-# Copy the space-cloud binary from the build context to the container's working directory
-COPY space-cloud .
-RUN set -ex  \
-  && apk add --no-cache ca-certificates \
-  && chmod +x space-cloud
-ENV PROD=false
-ENV PATH="/space-cloud:${PATH}"
+COPY . /space-cloud
+RUN GOOS=linux GOARCH=amd64 go install -ldflags '-s -w -extldflags "-static"'
+
+FROM alpine:3.9
+COPY --from=builder /go/bin/space-cloud /usr/local/bin
+RUN chmod -R ugo=rx /usr/local/bin/
+RUN chmod ugo=rx /usr/local/bin/space-cloud
 EXPOSE 8080
-CMD ./space-cloud run
+

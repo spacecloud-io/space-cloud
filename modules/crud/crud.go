@@ -2,6 +2,8 @@ package crud
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"errors"
 	"sync"
 
@@ -37,18 +39,31 @@ func Init() *Module {
 	return &Module{blocks: make(map[string]Crud)}
 }
 
-func initBlock(dbType utils.DBType, connection string) (Crud, error) {
+func initBlock(dbType utils.DBType, connection string,
+		cfg *config.ConnConfig) (crud Crud, err error) {
 	switch dbType {
-	case utils.Mongo:
-		return mgo.Init(connection)
-
-	case utils.MySQL, utils.Postgres:
-		return sql.Init(dbType, connection)
-
-	default:
-		return nil, utils.ErrInvalidParams
-	}
-}
+		case utils.Mongo:
+			if connection == "" {
+				connection, err = config.ParseConnMongo(cfg)
+				if err != nil { return nil, err }
+			}
+			return mgo.Init(connection)
+		case utils.MySQL:
+			if connection == "" {
+				connection, err = config.ParseConnMySQL(cfg)
+				if err != nil { return nil, err }
+			}
+			return sql.Init(dbType, connection)
+		case utils.Postgres:
+			if connection == "" {
+				connection, err = config.ParseConnPostgres(cfg)
+				if err != nil { return nil, err }
+			}
+			return sql.Init(dbType, connection)
+		default:
+			return nil, utils.ErrInvalidParams
+	}//-- end switch dbType
+}//-- end func initBlock
 
 // GetPrimaryDB get the database configured as primary
 func (m *Module) GetPrimaryDB() (Crud, error) {
@@ -68,7 +83,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 		return crud, nil
 	}
 
-	return nil, errors.New("CRUD: No crud block present for db")
+	return nil, fmt.Errorf("CRUD: No crud block present for '%s'", dbType)
 }
 
 // SetConfig set the rules adn secret key required by the crud block
@@ -84,9 +99,11 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 	// Create a new crud blocks
 	for k, v := range crud {
-		c, err := initBlock(utils.DBType(k), v.Conn)
+		log.Printf("initializing crud block '%s'...", k)
+		// TODO: investigate cause of No CRUD error here
+		c, err := initBlock(utils.DBType(k), v.Conn, v.Connection)
 		if err != nil {
-			return errors.New("CURD: Error - " + k + " could not be initialised")
+			return errors.New("CRUD: Error - " + k + " could not be initialised")
 		}
 		if v.IsPrimary {
 			m.primaryDB = k
