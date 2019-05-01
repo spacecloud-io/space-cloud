@@ -73,7 +73,7 @@ func (s *server) start(port string) error {
 	return http.ListenAndServe(":"+port, handler)
 }
 
-func (s *server) loadConfig(config *config.Project) error {
+func (s *server) loadConfig(config *config.Project) (err error) {
 	s.lock.Lock()
 	s.config = config
 	s.lock.Unlock()
