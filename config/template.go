@@ -44,7 +44,7 @@ modules:
           delete:
             rule: allow
   static:
-    enabled: true
+    enabled: false
     path: ./public
     prefix: /
     gzip: false

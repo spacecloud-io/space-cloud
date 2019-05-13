@@ -1,9 +1,6 @@
 package static
 
 import (
-	"log"
-	"net/http"
-	"os"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -11,7 +8,7 @@ import (
 
 const (
 	defaultDirPath   = "./public"
-	defaultUrlPrefix = "/"
+	defaultURLPrefix = "/"
 )
 
 // Module is responsible for Static
@@ -23,21 +20,9 @@ type Module struct {
 	Gzip      bool
 }
 
-type SpaFileSystem struct {
-	root http.FileSystem
-}
-
-func (fs *SpaFileSystem) Open(name string) (http.File, error) {
-	f, err := fs.root.Open(name)
-	if os.IsNotExist(err) {
-		log.Panicln("[ERROR: Static module]: ", err)
-	}
-	return f, err
-}
-
 // Init returns a new instance of the Static module wit default values
 func Init() *Module {
-	return &Module{Path: defaultDirPath, URLPrefix: defaultUrlPrefix, Gzip:false}
+	return &Module{Path: defaultDirPath, URLPrefix: defaultURLPrefix, Gzip: false}
 }
 
 // SetConfig set the config required by the Static module
@@ -59,7 +44,7 @@ func (m *Module) SetConfig(s *config.Static) error {
 
 	m.URLPrefix = s.URLPrefix
 	if m.URLPrefix == "" {
-		m.URLPrefix = defaultUrlPrefix
+		m.URLPrefix = defaultURLPrefix
 	}
 
 	m.Enabled = true
