@@ -1,7 +1,7 @@
 package model
 
-// FaaSRequest is the api call request
-type FaaSRequest struct {
+// FunctionsRequest is the api call request
+type FunctionsRequest struct {
 	Params  interface{} `json:"params"`
 	Timeout int         `json:"timeout"`
 }

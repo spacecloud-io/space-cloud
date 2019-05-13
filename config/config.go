@@ -23,7 +23,7 @@ type SSL struct {
 type Modules struct {
 	Crud      Crud       `json:"crud" yaml:"crud"`
 	Auth      Auth       `json:"auth" yaml:"auth"`
-	FaaS      *FaaS      `json:"faas" yaml:"faas"`
+	Functions      *Functions      `json:"functions" yaml:"functions"`
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
 	Static    *Static    `json:"static" yaml:"static"`
@@ -68,8 +68,8 @@ type AuthStub struct {
 	Secret  string `json:"secret" yaml:"secret"`
 }
 
-// FaaS holds the config for the FaaS module
-type FaaS struct {
+// Functions holds the config for the Functions module
+type Functions struct {
 	Enabled bool   `json:"enabled" yaml:"enabled"`
 	Nats    string `json:"nats" yaml:"nats"`
 }

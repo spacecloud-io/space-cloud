@@ -11,8 +11,8 @@ func (s *server) routes() {
 	// Initialize the route for websocket
 	s.router.HandleFunc("/v1/api/socket/json", handleWebsocket(s.realtime, s.auth, s.crud))
 
-	// Initialize the routes for faas engine
-	s.router.Methods("POST").Path("/v1/api/faas/{engine}/{func}").HandlerFunc(s.faas.HandleRequest(s.auth))
+	// Initialize the routes for functions engine
+	s.router.Methods("POST").Path("/v1/api/functions/{engine}/{func}").HandlerFunc(s.functions.HandleRequest(s.auth))
 
 	// Initialize the routes for the crud operations
 	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(s.handleBatch())

@@ -18,7 +18,7 @@ It has these top-level messages:
 	Meta
 	AllRequest
 	BatchRequest
-	FaaSRequest
+	FunctionsRequest
 	FeedData
 	RealTimeRequest
 	RealTimeResponse
@@ -421,7 +421,7 @@ func (m *BatchRequest) GetMeta() *Meta {
 	return nil
 }
 
-type FaaSRequest struct {
+type FunctionsRequest struct {
 	Params   []byte `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
 	Timeout  int64  `protobuf:"varint,2,opt,name=timeout" json:"timeout,omitempty"`
 	Engine   string `protobuf:"bytes,3,opt,name=engine" json:"engine,omitempty"`
@@ -429,40 +429,40 @@ type FaaSRequest struct {
 	Token    string `protobuf:"bytes,5,opt,name=token" json:"token,omitempty"`
 }
 
-func (m *FaaSRequest) Reset()                    { *m = FaaSRequest{} }
-func (m *FaaSRequest) String() string            { return proto1.CompactTextString(m) }
-func (*FaaSRequest) ProtoMessage()               {}
-func (*FaaSRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+func (m *FunctionsRequest) Reset()                    { *m = FunctionsRequest{} }
+func (m *FunctionsRequest) String() string            { return proto1.CompactTextString(m) }
+func (*FunctionsRequest) ProtoMessage()               {}
+func (*FunctionsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
 
-func (m *FaaSRequest) GetParams() []byte {
+func (m *FunctionsRequest) GetParams() []byte {
 	if m != nil {
 		return m.Params
 	}
 	return nil
 }
 
-func (m *FaaSRequest) GetTimeout() int64 {
+func (m *FunctionsRequest) GetTimeout() int64 {
 	if m != nil {
 		return m.Timeout
 	}
 	return 0
 }
 
-func (m *FaaSRequest) GetEngine() string {
+func (m *FunctionsRequest) GetEngine() string {
 	if m != nil {
 		return m.Engine
 	}
 	return ""
 }
 
-func (m *FaaSRequest) GetFunction() string {
+func (m *FunctionsRequest) GetFunction() string {
 	if m != nil {
 		return m.Function
 	}
 	return ""
 }
 
-func (m *FaaSRequest) GetToken() string {
+func (m *FunctionsRequest) GetToken() string {
 	if m != nil {
 		return m.Token
 	}
@@ -656,7 +656,7 @@ func init() {
 	proto1.RegisterType((*Meta)(nil), "proto.Meta")
 	proto1.RegisterType((*AllRequest)(nil), "proto.AllRequest")
 	proto1.RegisterType((*BatchRequest)(nil), "proto.BatchRequest")
-	proto1.RegisterType((*FaaSRequest)(nil), "proto.FaaSRequest")
+	proto1.RegisterType((*FunctionsRequest)(nil), "proto.FunctionsRequest")
 	proto1.RegisterType((*FeedData)(nil), "proto.FeedData")
 	proto1.RegisterType((*RealTimeRequest)(nil), "proto.RealTimeRequest")
 	proto1.RegisterType((*RealTimeResponse)(nil), "proto.RealTimeResponse")
@@ -679,7 +679,7 @@ type SpaceCloudClient interface {
 	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*Response, error)
 	Aggregate(ctx context.Context, in *AggregateRequest, opts ...grpc.CallOption) (*Response, error)
 	Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*Response, error)
-	Call(ctx context.Context, in *FaaSRequest, opts ...grpc.CallOption) (*Response, error)
+	Call(ctx context.Context, in *FunctionsRequest, opts ...grpc.CallOption) (*Response, error)
 	RealTime(ctx context.Context, opts ...grpc.CallOption) (SpaceCloud_RealTimeClient, error)
 }
 
@@ -745,7 +745,7 @@ func (c *spaceCloudClient) Batch(ctx context.Context, in *BatchRequest, opts ...
 	return out, nil
 }
 
-func (c *spaceCloudClient) Call(ctx context.Context, in *FaaSRequest, opts ...grpc.CallOption) (*Response, error) {
+func (c *spaceCloudClient) Call(ctx context.Context, in *FunctionsRequest, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := grpc.Invoke(ctx, "/proto.SpaceCloud/Call", in, out, c.cc, opts...)
 	if err != nil {
@@ -794,7 +794,7 @@ type SpaceCloudServer interface {
 	Delete(context.Context, *DeleteRequest) (*Response, error)
 	Aggregate(context.Context, *AggregateRequest) (*Response, error)
 	Batch(context.Context, *BatchRequest) (*Response, error)
-	Call(context.Context, *FaaSRequest) (*Response, error)
+	Call(context.Context, *FunctionsRequest) (*Response, error)
 	RealTime(SpaceCloud_RealTimeServer) error
 }
 
@@ -911,7 +911,7 @@ func _SpaceCloud_Batch_Handler(srv interface{}, ctx context.Context, dec func(in
 }
 
 func _SpaceCloud_Call_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FaaSRequest)
+	in := new(FunctionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -923,7 +923,7 @@ func _SpaceCloud_Call_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: "/proto.SpaceCloud/Call",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SpaceCloudServer).Call(ctx, req.(*FaaSRequest))
+		return srv.(SpaceCloudServer).Call(ctx, req.(*FunctionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

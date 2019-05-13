@@ -672,7 +672,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	out.Status = 200
 	return &out, nil
 }
-func (s *server) Call(ctx context.Context, in *pb.FaaSRequest) (*pb.Response, error) {
+func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
 	var params interface{}
 	if err := json.Unmarshal(in.Params, &params); err != nil {
 		out := pb.Response{}
@@ -681,7 +681,7 @@ func (s *server) Call(ctx context.Context, in *pb.FaaSRequest) (*pb.Response, er
 		return &out, nil
 	}
 
-	resultBytes, err := s.faas.Operation(s.auth, in.Token, in.Engine, in.Function, int(in.Timeout))
+	resultBytes, err := s.functions.Operation(s.auth, in.Token, in.Engine, in.Function, int(in.Timeout))
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500

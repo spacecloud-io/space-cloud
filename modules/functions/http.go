@@ -1,4 +1,4 @@
-package faas
+package functions
 
 import (
 	"encoding/json"
@@ -11,11 +11,11 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/auth"
 )
 
-// HandleRequest creates a FaaS request endpoint
+// HandleRequest creates a Functions request endpoint
 func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Return if the faas module is not enabled
+		// Return if the functions module is not enabled
 		if !m.isEnabled() {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
@@ -28,7 +28,7 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 		function := vars["func"]
 
 		// Load the params from the body
-		req := model.FaaSRequest{}
+		req := model.FunctionsRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 

@@ -15,8 +15,8 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/faas"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
@@ -24,17 +24,17 @@ import (
 )
 
 type server struct {
-	lock     sync.Mutex
-	router   *mux.Router
-	auth     *auth.Module
-	crud     *crud.Module
-	user     *userman.Module
-	file     *filestore.Module
-	faas     *faas.Module
-	realtime *realtime.Module
-	static   *static.Module
-	isProd   bool
-	config   *config.Project
+	lock      sync.Mutex
+	router    *mux.Router
+	auth      *auth.Module
+	crud      *crud.Module
+	user      *userman.Module
+	file      *filestore.Module
+	functions *functions.Module
+	realtime  *realtime.Module
+	static    *static.Module
+	isProd    bool
+	config    *config.Project
 }
 
 func initServer(isProd bool) *server {
@@ -45,8 +45,8 @@ func initServer(isProd bool) *server {
 	f := filestore.Init()
 	realtime := realtime.Init()
 	s := static.Init()
-	faas := faas.Init()
-	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, static: s, isProd: isProd}
+	functions := functions.Init()
+	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd}
 }
 
 func (s *server) start(port, grpcPort string) error {
@@ -91,8 +91,8 @@ func (s *server) loadConfig(config *config.Project) error {
 		return err
 	}
 
-	// Set the configuration for the FaaS module
-	if err := s.faas.SetConfig(config.Modules.FaaS); err != nil {
+	// Set the configuration for the functions module
+	if err := s.functions.SetConfig(config.Modules.Functions); err != nil {
 		return err
 	}
 
