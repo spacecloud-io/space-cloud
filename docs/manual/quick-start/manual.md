@@ -78,7 +78,7 @@ modules:
             rule: allow
 ```
 
-Quickly going through it, `id` is the project name. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `functions` (functions), `realtime` and `fileStore` are supported.
+Quickly going through it, `id` is the project name. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `functions`, `realtime` and `fileStore` are supported.
 
 > Note: The in-depth configurations of various modules are explained in their corresponding sections.
 

@@ -23,7 +23,7 @@ type SSL struct {
 type Modules struct {
 	Crud      Crud       `json:"crud" yaml:"crud"`
 	Auth      Auth       `json:"auth" yaml:"auth"`
-	Functions      *Functions      `json:"functions" yaml:"functions"`
+	Functions *Functions `json:"functions" yaml:"functions"`
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
 	Static    *Static    `json:"static" yaml:"static"`
@@ -97,8 +97,8 @@ type FileRule struct {
 
 // Static holds the config for the static files module
 type Static struct {
-	Enabled bool   `json:"enabled" yaml:"enabled"`
-	Path    string `json:"path" yaml:"path"`
+	Enabled   bool   `json:"enabled" yaml:"enabled"`
+	Path      string `json:"path" yaml:"path"`
 	URLPrefix string `json:"prefix" yaml:"prefix"`
-	Gzip    bool `json:"gzip" yaml:"gzip"`
+	Gzip      bool   `json:"gzip" yaml:"gzip"`
 }
