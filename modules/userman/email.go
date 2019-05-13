@@ -72,6 +72,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 			req["id"] = userObj["id"]
 		}
 		req["role"] = userObj["role"]
+
 		token, err := m.auth.CreateToken(req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
