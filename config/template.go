@@ -23,7 +23,7 @@ modules:
   auth:
     email:
       enabled: false
-  faas:
+  functions:
     enabled: false
     nats: nats://localhost:4222
   realtime:
@@ -43,4 +43,9 @@ modules:
             rule: allow
           delete:
             rule: allow
+  static:
+    enabled: false
+    path: ./public
+    prefix: /
+    gzip: false
 `

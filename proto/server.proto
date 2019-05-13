@@ -64,7 +64,7 @@ message BatchRequest {
   Meta meta = 2;
 }
 
-message FaaSRequest {
+message FunctionsRequest {
   bytes params = 1;
   int64 timeout = 2;
   string engine = 3;
@@ -107,6 +107,6 @@ service SpaceCloud {
   rpc Aggregate(AggregateRequest) returns (Response) {}
   rpc Batch(BatchRequest) returns (Response) {}
   
-  rpc Call(FaaSRequest) returns (Response) {}
+  rpc Call(FunctionsRequest) returns (Response) {}
   rpc RealTime (stream RealTimeRequest) returns (stream RealTimeResponse) {}
 }

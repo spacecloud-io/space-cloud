@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -16,24 +15,26 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/faas"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
+	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	pb "github.com/spaceuptech/space-cloud/proto"
 )
 
 type server struct {
-	lock     sync.Mutex
-	router   *mux.Router
-	auth     *auth.Module
-	crud     *crud.Module
-	user     *userman.Module
-	file     *filestore.Module
-	faas     *faas.Module
-	realtime *realtime.Module
-	isProd   bool
-	config   *config.Project
+	lock      sync.Mutex
+	router    *mux.Router
+	auth      *auth.Module
+	crud      *crud.Module
+	user      *userman.Module
+	file      *filestore.Module
+	functions *functions.Module
+	realtime  *realtime.Module
+	static    *static.Module
+	isProd    bool
+	config    *config.Project
 }
 
 func initServer(isProd bool) *server {
@@ -43,14 +44,14 @@ func initServer(isProd bool) *server {
 	u := userman.Init(c, a)
 	f := filestore.Init()
 	realtime := realtime.Init()
-	faas := faas.Init()
-	return &server{router: r, auth: a, crud: c, user: u, file: f, faas: faas, realtime: realtime, isProd: isProd}
+	s := static.Init()
+	functions := functions.Init()
+	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd}
 }
 
-func (s *server) start(port string) error {
+func (s *server) start(port, grpcPort string) error {
 
-	portInt, _ := strconv.Atoi(port)
-	go s.initGRPCServer(strconv.Itoa(portInt + 1))
+	go s.initGRPCServer(grpcPort)
 
 	// Allow cors
 	corsObj := cors.New(cors.Options{
@@ -86,18 +87,26 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.user.SetConfig(config.Modules.Auth)
 
 	// Set the configuration for the file storage module
-	s.file.SetConfig(config.Modules.FileStore)
+	if err := s.file.SetConfig(config.Modules.FileStore); err != nil {
+		return err
+	}
 
-	// Set the configuration for the FaaS module
-	err := s.faas.SetConfig(config.Modules.FaaS)
-	if err != nil {
+	// Set the configuration for the functions module
+	if err := s.functions.SetConfig(config.Modules.Functions); err != nil {
 		return err
 	}
 
 	// Set the configuration for the Realtime module
-	s.realtime.SetConfig(config.Modules.Realtime)
+	if err := s.realtime.SetConfig(config.Modules.Realtime); err != nil {
+		return err
+	}
 
-	// Set the configuration for the curd module
+	// Set the configuration for Static module
+	if err := s.static.SetConfig(config.Modules.Static); err != nil {
+		return err
+	}
+
+	// Set the configuration for the crud module
 	return s.crud.SetConfig(config.Modules.Crud)
 }
 

@@ -23,9 +23,10 @@ type SSL struct {
 type Modules struct {
 	Crud      Crud       `json:"crud" yaml:"crud"`
 	Auth      Auth       `json:"auth" yaml:"auth"`
-	FaaS      *FaaS      `json:"faas" yaml:"faas"`
+	Functions *Functions `json:"functions" yaml:"functions"`
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
+	Static    *Static    `json:"static" yaml:"static"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -38,7 +39,7 @@ type CrudStub struct {
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
 }
 
-// TableRule containes the config at the collection level
+// TableRule contains the config at the collection level
 type TableRule struct {
 	IsRealTimeEnabled bool             `json:"isRealtimeEnabled" yaml:"isRealtimeEnabled"`
 	Rules             map[string]*Rule `json:"rules" yaml:"rules"` // The key here is query, insert, update or delete
@@ -67,8 +68,8 @@ type AuthStub struct {
 	Secret  string `json:"secret" yaml:"secret"`
 }
 
-// FaaS holds the config for the FaaS module
-type FaaS struct {
+// Functions holds the config for the Functions module
+type Functions struct {
 	Enabled bool   `json:"enabled" yaml:"enabled"`
 	Nats    string `json:"nats" yaml:"nats"`
 }
@@ -92,4 +93,12 @@ type FileStore struct {
 type FileRule struct {
 	Prefix string           `json:"prefix" yaml:"prefix"`
 	Rule   map[string]*Rule `json:"rule" yaml:"rule"` // The key can be create, read, delete
+}
+
+// Static holds the config for the static files module
+type Static struct {
+	Enabled   bool   `json:"enabled" yaml:"enabled"`
+	Path      string `json:"path" yaml:"path"`
+	URLPrefix string `json:"prefix" yaml:"prefix"`
+	Gzip      bool   `json:"gzip" yaml:"gzip"`
 }
