@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/model"
-
 	"github.com/spaceuptech/space-cloud/modules/auth"
 )
 
@@ -23,7 +22,7 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 			return
 		}
 
-		// Get the path parametrs
+		// Get the path parameters
 		vars := mux.Vars(r)
 		engine := vars["engine"]
 		function := vars["func"]
