@@ -17,9 +17,6 @@ func (s *server) routes() {
 	// Initialize the routes for the crud operations
 	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(s.handleBatch())
 
-	// Initialize the route for handling static files
-	s.router.Handle("/", s.static.HandleRequest())
-
 	crudRouter := s.router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
 	crudRouter.HandleFunc("/create", s.handleCreate())
 	crudRouter.HandleFunc("/read", s.handleRead())
@@ -38,4 +35,7 @@ func (s *server) routes() {
 	s.router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(s.file.HandleCreateFile(s.auth))
 	s.router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleRead(s.auth))
 	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
+
+	// Initialize the route for handling static files
+	s.static.HandleRequest(s.router)
 }
