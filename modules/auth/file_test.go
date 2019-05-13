@@ -23,7 +23,7 @@ func TestGetFileRule(t *testing.T) {
 		testName string
 		path     string
 	}{
-		//Successfull Tests
+		//Successful Tests
 		{testName: "Success", path: "/", module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule, "delete": fileRule, "read": fileRule}}},
 		{testName: "Success", path: "/folder", module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule, "delete": fileRule, "read": fileRule}}},
 		{testName: "Success", path: "/folder", module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule1, "delete": fileRule1, "read": fileRule1}}},

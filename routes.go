@@ -1,12 +1,14 @@
 package main
 
-import "github.com/spaceuptech/space-cloud/config"
+import (
+	"github.com/spaceuptech/space-cloud/config"
+)
 
 func (s *server) routes() {
 	// Initialize the routes for config management
 	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
 
-	// Initialze the route for websocket
+	// Initialize the route for websocket
 	s.router.HandleFunc("/v1/api/socket/json", handleWebsocket(s.realtime, s.auth, s.crud))
 
 	// Initialize the routes for faas engine
@@ -34,4 +36,6 @@ func (s *server) routes() {
 	s.router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleRead(s.auth))
 	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
 
+	// Initialize the route for handling static files
+	s.static.HandleRequest(s.router)
 }
