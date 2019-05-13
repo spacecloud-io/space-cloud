@@ -1,5 +1,5 @@
 ---
-id: space-cloud
+id: realtime-todo-app
 secret: some-secret
 modules:
   crud:
@@ -13,7 +13,11 @@ modules:
             create:
               rule: allow
             read:
-              rule: allow
+              rule: match
+              eval: ==  # Any one of them
+              type: string      # Any one of them
+              f1: args.auth.id                        # A value or variable
+              f2: args.find.userId
             update:
               rule: allow
             delete:
