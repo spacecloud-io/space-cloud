@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"strings"
-
+    "os"
 	"gopkg.in/yaml.v2"
 )
 
@@ -25,6 +25,10 @@ func LoadConfigFromFile(path string) (*Project, error) {
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	if conf.Modules.Crud["mongodb"].Conn[0] = "$"{
+		conf.Modules.Crud["mongodb"].Conn = os.Getenv(string.Trimprefix(conf.Modules.Crud["mongodb"].Conn), "$")
 	}
 
 	return conf, nil
