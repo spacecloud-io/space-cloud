@@ -3,10 +3,33 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"strings"
-    "os"
+
 	"gopkg.in/yaml.v2"
 )
+
+func LoadEnvironmentVariable(p *Project) {
+	if strings.HasPrefix(p.Secret, "$") {
+		TempString := strings.TrimPrefix(p.Secret, "$")
+		TempEnvVar, DoesItExist := os.LookupEnv(TempString)
+
+		if DoesItExist {
+			p.Secret = TempEnvVar
+		}
+	}
+
+	for i := range p.Modules.Crud {
+		if strings.HasPrefix(p.Modules.Crud[i].Conn, "$") {
+			TempStringC := strings.TrimPrefix(p.Modules.Crud[i].Conn, "$")
+			TempEnvVarC, DoesItExistC := os.LookupEnv(TempStringC)
+
+			if DoesItExistC {
+				p.Modules.Crud[i].Conn = TempEnvVarC
+			}
+		}
+	}
+}
 
 // LoadConfigFromFile loads the config from the provided file path
 func LoadConfigFromFile(path string) (*Project, error) {
@@ -27,9 +50,6 @@ func LoadConfigFromFile(path string) (*Project, error) {
 		return nil, err
 	}
 
-	if conf.Modules.Crud["mongodb"].Conn[0] = "$"{
-		conf.Modules.Crud["mongodb"].Conn = os.Getenv(string.Trimprefix(conf.Modules.Crud["mongodb"].Conn), "$")
-	}
-
+	LoadEnvironmentVariable(conf)
 	return conf, nil
 }
