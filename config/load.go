@@ -9,23 +9,23 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func LoadEnvironmentVariable(p *Project) {
+func loadEnvironmentVariable(p *Project) {
 	if strings.HasPrefix(p.Secret, "$") {
-		TempString := strings.TrimPrefix(p.Secret, "$")
-		TempEnvVar, DoesItExist := os.LookupEnv(TempString)
+		tempString := strings.TrimPrefix(p.Secret, "$")
+		tempEnvVar, doesItExist := os.LookupEnv(tempString)
 
-		if DoesItExist {
-			p.Secret = TempEnvVar
+		if doesItExist {
+			p.Secret = tempEnvVar
 		}
 	}
 
-	for i := range p.Modules.Crud {
-		if strings.HasPrefix(p.Modules.Crud[i].Conn, "$") {
-			TempStringC := strings.TrimPrefix(p.Modules.Crud[i].Conn, "$")
-			TempEnvVarC, DoesItExistC := os.LookupEnv(TempStringC)
+	for _, i := range p.Modules.Crud {
+		if strings.HasPrefix(i.Conn, "$") {
+			tempStringC := strings.TrimPrefix(i.Conn, "$")
+			tempEnvVarC, doesItExistC := os.LookupEnv(tempStringC)
 
-			if DoesItExistC {
-				p.Modules.Crud[i].Conn = TempEnvVarC
+			if doesItExistC {
+				i = tempEnvVarC
 			}
 		}
 	}
@@ -50,6 +50,6 @@ func LoadConfigFromFile(path string) (*Project, error) {
 		return nil, err
 	}
 
-	LoadEnvironmentVariable(conf)
+	loadEnvironmentVariable(conf)
 	return conf, nil
 }
