@@ -12,20 +12,20 @@ import (
 func loadEnvironmentVariable(p *Project) {
 	if strings.HasPrefix(p.Secret, "$") {
 		tempString := strings.TrimPrefix(p.Secret, "$")
-		tempEnvVar, doesItExist := os.LookupEnv(tempString)
+		tempEnvVar, present := os.LookupEnv(tempString)
 
-		if doesItExist {
+		if present {
 			p.Secret = tempEnvVar
 		}
 	}
 
-	for _, i := range p.Modules.Crud {
-		if strings.HasPrefix(i.Conn, "$") {
-			tempStringC := strings.TrimPrefix(i.Conn, "$")
-			tempEnvVarC, doesItExistC := os.LookupEnv(tempStringC)
+	for _, value := range p.Modules.Crud {
+		if strings.HasPrefix(value.Conn, "$") {
+			tempStringC := strings.TrimPrefix(value.Conn, "$")
+			tempEnvVarC, presentC := os.LookupEnv(tempStringC)
 
-			if doesItExistC {
-				i = tempEnvVarC
+			if presentC {
+				value = tempEnvVarC
 			}
 		}
 	}
