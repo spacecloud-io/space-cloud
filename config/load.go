@@ -25,7 +25,7 @@ func loadEnvironmentVariable(p *Project) {
 			tempEnvVarC, presentC := os.LookupEnv(tempStringC)
 
 			if presentC {
-				value = tempEnvVarC
+				value.Conn = tempEnvVarC
 			}
 		}
 	}
