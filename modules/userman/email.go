@@ -3,6 +3,7 @@ package userman
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -21,7 +22,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Allow this feature only if the email sign in function is enabled
-		if !m.isActive("email") {
+		if !m.IsActive("email") {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Email sign in feature is not enabled"})
 			return
@@ -90,7 +91,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Allow this feature only if the email sign in function is enabled
-		if !m.isActive("email") {
+		if !m.IsActive("email") {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Email sign in feature is not enabled"})
 			return
@@ -110,7 +111,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		//Hash the password that's in the request
+		// Hash the password that's in the request
 		var err error
 		req["pass"], err = hashPassword(req["pass"].(string))
 		if err != nil {
@@ -124,19 +125,23 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		readReq := &model.ReadRequest{Find: map[string]interface{}{"email": req["email"]}, Operation: utils.One}
 		_, err = m.crud.Read(ctx, dbType, project, "users", readReq)
 		if err == nil {
+			err = errors.New("User with provided email already exists")
 			log.Println("Err: ", err)
 			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(map[string]string{"error": "User with provided email already exists"})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Create a create request
-		id := uuid.NewV1()
+		id := uuid.NewV1().String()
 		if dbType == string(utils.Mongo) {
-			req["_id"] = id.String()
+			req["_id"] = id
 		} else {
-			req["id"] = id.String()
+			req["id"] = id
 		}
+		req["role"] = m.getDefaultRole()
+
+		// Execute create request
 		createReq := &model.CreateRequest{Operation: utils.One, Document: req}
 		err = m.crud.Create(ctx, dbType, project, "users", createReq)
 		if err != nil {
@@ -146,19 +151,8 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 			return
 		}
 
-		delete(req, "pass")
-
 		// Create a new token Object
-		tokenObj := map[string]interface{}{
-			"email": req["email"],
-			"role":  req["role"],
-		}
-		if dbType == string(utils.Mongo) {
-			tokenObj["id"] = req["_id"]
-		} else {
-			tokenObj["id"] = req["id"]
-		}
-
+		tokenObj := map[string]interface{}{"email": req["email"], "role": req["role"], "id": id}
 		token, err := m.auth.CreateToken(tokenObj)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

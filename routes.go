@@ -30,6 +30,10 @@ func (s *server) routes() {
 	userRouter.Methods("POST").Path("/email/signup").HandlerFunc(s.user.HandleEmailSignUp())
 	userRouter.Methods("GET").Path("/profile/{id}").HandlerFunc(s.user.HandleProfile())
 	userRouter.Methods("GET").Path("/profiles").HandlerFunc(s.user.HandleProfiles())
+	s.user.NewGoogleOAuth(userRouter)
+	s.user.NewFacebookOAuth(userRouter)
+	s.user.NewGithubOAuth(userRouter)
+	s.user.NewTwitterOAuth(userRouter)
 
 	// Initialize the routes for the file management operations
 	s.router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(s.file.HandleCreateFile(s.auth))

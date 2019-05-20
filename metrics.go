@@ -116,7 +116,7 @@ func (s *server) routineMetrics() {
 
 	s.lock.Lock()
 	if s.config != nil && s.config.Modules != nil {
-		set["project"] = getProjectInfo(s.config.Modules)
+		set["project"] = s.getProjectInfo(s.config.Modules)
 		set["projectId"] = s.config.ID
 		set["sslEnabled"] = s.config.SSL != nil
 	}
@@ -141,7 +141,7 @@ func (s *server) routineMetrics() {
 
 		s.lock.Lock()
 		if s.config != nil && s.config.Modules != nil {
-			set["project"] = getProjectInfo(s.config.Modules)
+			set["project"] = s.getProjectInfo(s.config.Modules)
 			set["projectId"] = s.config.ID
 			set["sslEnabled"] = s.config.SSL != nil
 		}
@@ -159,10 +159,10 @@ func (s *server) routineMetrics() {
 	}
 }
 
-func getProjectInfo(config *config.Modules) map[string]interface{} {
+func (s *server) getProjectInfo(config *config.Modules) map[string]interface{} {
 	project := map[string]interface{}{
 		"crud":      []string{},
-		"functions":      map[string]interface{}{"enabled": false},
+		"functions": map[string]interface{}{"enabled": false},
 		"realtime":  map[string]interface{}{"enabled": false},
 		"fileStore": map[string]interface{}{"enabled": false},
 		"auth":      []string{},
@@ -178,9 +178,12 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 
 	if config.Auth != nil {
 		auth := []string{}
-		for k, v := range config.Auth {
-			if v.Enabled {
-				auth = append(auth, k)
+		if s.user != nil {
+			methods := []string{"email", "google", "twitter", "fb", "github"}
+			for _, method := range methods {
+				if p := s.user.IsActive(method); p {
+					auth = append(auth, method)
+				}
 			}
 		}
 		project["auth"] = auth

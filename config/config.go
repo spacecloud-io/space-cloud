@@ -22,7 +22,7 @@ type SSL struct {
 // Modules holds the config of all the modules of that environment
 type Modules struct {
 	Crud      Crud       `json:"crud" yaml:"crud"`
-	Auth      Auth       `json:"auth" yaml:"auth"`
+	Auth      *Auth      `json:"auth" yaml:"auth"`
 	Functions *Functions `json:"functions" yaml:"functions"`
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
@@ -59,13 +59,28 @@ type Rule struct {
 }
 
 // Auth holds the mapping of the sign in method
-type Auth map[string]*AuthStub // The key here is the sign in method
+type Auth struct {
+	DefaultRole string `json:"defaultRole" yaml:"defaultRole"`
+	Email       *Email `json:"email" yaml:"email"`
+	Google      *OAuth `json:"google" yaml:"google"`
+	Facebook    *OAuth `json:"fb" yaml:"fb"`
+	Twitter     *OAuth `json:"twitter" yaml:"twitter"`
+	Github      *OAuth `json:"github" yaml:"github"`
+}
 
-// AuthStub holds the config at a single sign in level
-type AuthStub struct {
-	Enabled bool   `json:"enabled" yaml:"enabled"`
-	ID      string `json:"id" yaml:"id"`
-	Secret  string `json:"secret" yaml:"secret"`
+// Email stores the config for the email auth
+type Email struct {
+	Enabled bool `json:"enabled" yaml:"enabled"`
+}
+
+// OAuth stores the OAuth related config
+type OAuth struct {
+	Enabled     bool   `json:"enabled" yaml:"enabled"`
+	ID          string `json:"id" yaml:"id"`
+	Secret      string `json:"secret" yaml:"secret"`
+	Host        string `json:"host" yaml:"host"`
+	RedirectURL string `json:"redirectUrl" yaml:"redirectUrl"`
+	DBType      string `json:"dbType" yaml:"dbType"`
 }
 
 // Functions holds the config for the Functions module

@@ -84,7 +84,7 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.auth.SetConfig(config.Secret, config.Modules.Crud, config.Modules.FileStore)
 
 	// Set the configuration for the user management module
-	s.user.SetConfig(config.Modules.Auth)
+	s.user.SetConfig(config.ID, config.Modules.Auth)
 
 	// Set the configuration for the file storage module
 	if err := s.file.SetConfig(config.Modules.FileStore); err != nil {
