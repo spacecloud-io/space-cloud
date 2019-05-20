@@ -77,7 +77,14 @@ func (m *Module) HandleCreateFile(auth *auth.Module) http.HandlerFunc {
 		if fileType == "file" {
 			file, header, err := r.FormFile("file")
 			defer file.Close()
-			err = m.CreateFile(ctx, project, &model.CreateFileRequest{Name: header.Filename, Path: path, Type: fileType, MakeAll: makeAll}, file)
+
+			// Read file name from form if exists
+			fileName := header.Filename
+			if tempName := r.Form.Get("fileName"); tempName != "" {
+				fileName = tempName
+			}
+
+			err = m.CreateFile(ctx, project, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
