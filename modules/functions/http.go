@@ -24,7 +24,7 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		engine := vars["engine"]
+		service := vars["service"]
 		function := vars["func"]
 
 		// Load the params from the body
@@ -39,7 +39,7 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		resultBytes, err := m.Operation(auth, token, engine, function, req.Timeout)
+		resultBytes, err := m.Operation(auth, token, service, function, req.Timeout)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

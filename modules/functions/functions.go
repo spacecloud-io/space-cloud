@@ -42,8 +42,8 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 	return nil
 }
 
-// Request calls a function on the provided engine
-func (m *Module) Request(engine, function string, timeout int, val interface{}) ([]byte, error) {
+// Request calls a function on the provided service
+func (m *Module) Request(service, function string, timeout int, val interface{}) ([]byte, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -54,7 +54,7 @@ func (m *Module) Request(engine, function string, timeout int, val interface{}) 
 	}
 
 	// Send request over nats
-	subject := "functions:" + engine + ":" + function
+	subject := "functions:" + service + ":" + function
 	msg, err := m.nc.Request(subject, data, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err

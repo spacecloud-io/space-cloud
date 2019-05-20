@@ -67,7 +67,7 @@ message BatchRequest {
 message FunctionsRequest {
   bytes params = 1;
   int64 timeout = 2;
-  string engine = 3;
+  string service = 3;
   string function = 4;
   string token = 5;
 }

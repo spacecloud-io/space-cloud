@@ -681,7 +681,7 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 		return &out, nil
 	}
 
-	resultBytes, err := s.functions.Operation(s.auth, in.Token, in.Engine, in.Function, int(in.Timeout))
+	resultBytes, err := s.functions.Operation(s.auth, in.Token, in.service, in.Function, int(in.Timeout))
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
