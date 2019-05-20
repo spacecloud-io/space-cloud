@@ -82,6 +82,9 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 			return
 		}
 
+		// Delete password from user object
+		delete(user.(map[string]interface{}), "pass")
+
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"user": user})
 	}
@@ -145,6 +148,14 @@ func (m *Module) HandleProfiles() http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Internal server error"})
 			return
+		}
+
+		// Delete pass from users
+		if usersArray, ok := users.([]interface{}); ok {
+			for _, user := range usersArray {
+				userObj := user.(map[string]interface{})
+				delete(userObj, "pass")
+			}
 		}
 
 		w.WriteHeader(http.StatusOK)
