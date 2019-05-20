@@ -7,10 +7,10 @@ import(
 	
 )
 
-func (m *Module)Operation(auth *auth.Module, token,engine,function string, timeout int) ([]byte, error) {
+func (m *Module)Operation(auth *auth.Module, token,service,function string, timeout int) ([]byte, error) {
 	var params interface{}
 	authObj,_ := auth.GetAuthObj(token)
-	dataBytes,err := m.Request(engine, function, int(timeout), map[string]interface{}{"auth": authObj, "params": params})
+	dataBytes,err := m.Request(service, function, int(timeout), map[string]interface{}{"auth": authObj, "params": params})
 	if err != nil {
 		return nil,err	
 	}
