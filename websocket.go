@@ -5,11 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/modules/auth"
-	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -19,7 +17,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Module) http.HandlerFunc {
+func (s *server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -28,18 +26,34 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 		}
 
 		client := utils.CreateWebsocketClient(c)
-		defer realtime.RemoveClient(client.ClientID())
+		defer s.realtime.RemoveClient(client.ClientID())
+		defer s.functions.UnregisterService(client.ClientID())
+
 		defer client.Close()
-		client.RoutineWrite()
+		go client.RoutineWrite()
 
 		client.Read(func(req *model.Message) {
 			switch req.Type {
 			case utils.TypeRealtimeSubscribe:
-				realtime.Subscribe(client, auth, crud, req)
+				s.realtime.Subscribe(client, s.auth, s.crud, req)
 
 			case utils.TypeRealtimeUnsubscribe:
-				realtime.Unsubscribe(client, req)
+				s.realtime.Unsubscribe(client, req)
+
+			case utils.TypeServiceRegister:
+				// TODO add security rule for functions registered as well
+				data := new(model.ServiceRegisterRequest)
+				mapstructure.Decode(req.Data, data)
+
+				s.functions.RegisterService(client, data)
+
+			case utils.TypeServiceRequest:
+				data := new(model.FunctionsPayload)
+				mapstructure.Decode(req.Data, data)
+
+				s.functions.HandleServiceResponse(req.ID, data)
 			}
+
 		})
 	}
 }

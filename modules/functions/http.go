@@ -39,7 +39,7 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		resultBytes, err := m.Operation(auth, token, service, function, req.Timeout)
+		resultBytes, err := m.Operation(auth, token, service, function, req.Params, req.Timeout)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
