@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
@@ -27,6 +28,18 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 		}
 
 		client := utils.CreateWebsocketClient(c)
-		realtime.Operation(client, auth, crud)
+		defer realtime.RemoveClient(client.ClientID())
+		defer client.Close()
+		client.RoutineWrite()
+
+		client.Read(func(req *model.Message) {
+			switch req.Type {
+			case utils.TypeRealtimeSubscribe:
+				realtime.Subscribe(client, auth, crud, req)
+
+			case utils.TypeRealtimeUnsubscribe:
+				realtime.Unsubscribe(client, req)
+			}
+		})
 	}
 }

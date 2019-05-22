@@ -672,6 +672,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	out.Status = 200
 	return &out, nil
 }
+
 func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
 	var params interface{}
 	if err := json.Unmarshal(in.Params, &params); err != nil {
@@ -696,6 +697,18 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 
 func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	client := utils.CreateGRPCClient(stream)
-	s.realtime.Operation(client, s.auth, s.crud)
+	defer s.realtime.RemoveClient(client.ClientID())
+	defer client.Close()
+	client.RoutineWrite()
+
+	client.Read(func(req *model.Message) {
+		switch req.Type {
+		case utils.TypeRealtimeSubscribe:
+			s.realtime.Subscribe(client, s.auth, s.crud, req)
+
+		case utils.TypeRealtimeUnsubscribe:
+			s.realtime.Unsubscribe(client, req)
+		}
+	})
 	return nil
 }
