@@ -72,6 +72,15 @@ message FunctionsRequest {
   string token = 5;
 }
 
+message FunctionsPayload {
+  bytes auth = 1; 
+	bytes params = 2;
+	string service = 3;
+  string function = 4;
+  string type = 5;
+  string id = 6;
+}
+
 message FeedData {
   string queryId = 1;
   string docId = 2;
@@ -99,6 +108,7 @@ message RealTimeResponse {
   string error = 4;
   repeated FeedData feedData = 5;
 }
+
 service SpaceCloud {
   rpc Create(CreateRequest) returns (Response) {}
   rpc Read(ReadRequest) returns (Response) {}
@@ -108,5 +118,6 @@ service SpaceCloud {
   rpc Batch(BatchRequest) returns (Response) {}
   
   rpc Call(FunctionsRequest) returns (Response) {}
-  rpc RealTime (stream RealTimeRequest) returns (stream RealTimeResponse) {}
+  rpc RealTime(stream RealTimeRequest) returns (stream RealTimeResponse) {}
+  rpc Service(stream FunctionsPayload) returns (stream FunctionsPayload) {}
 }
