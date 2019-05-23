@@ -81,7 +81,7 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.lock.Unlock()
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.Secret, config.Modules.Crud, config.Modules.FileStore)
+	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(config.Modules.Auth)
