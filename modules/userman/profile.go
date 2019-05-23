@@ -67,7 +67,7 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = m.auth.IsAuthorized(dbType, "users", utils.Read, args)
+		err = m.auth.IsAuthorized(project, dbType, "users", utils.Read, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -135,7 +135,7 @@ func (m *Module) HandleProfiles() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = m.auth.IsAuthorized(dbType, "users", utils.Read, args)
+		err = m.auth.IsAuthorized(project, dbType, "users", utils.Read, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})

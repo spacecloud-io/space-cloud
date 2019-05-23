@@ -18,6 +18,7 @@ type Module struct {
 	secret    string
 	crud      *crud.Module
 	fileRules map[string]*config.FileRule
+	project   string
 }
 
 // Init creates a new instance of the auth object
@@ -26,10 +27,11 @@ func Init(crud *crud.Module) *Module {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(secret string, rules config.Crud, fileStore *config.FileStore) {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore) {
 	m.Lock()
 	defer m.Unlock()
 
+	m.project = project
 	m.rules = rules
 	m.secret = secret
 	if fileStore != nil && fileStore.Enabled {
@@ -130,9 +132,13 @@ func (m *Module) IsAuthenticated(token, dbType, col string, query utils.Operatio
 }
 
 // IsAuthorized checks if the caller is authorized to make the request
-func (m *Module) IsAuthorized(dbType, col string, query utils.OperationType, args map[string]interface{}) error {
+func (m *Module) IsAuthorized(project, dbType, col string, query utils.OperationType, args map[string]interface{}) error {
 	m.RLock()
 	defer m.RUnlock()
+
+	if project != m.project {
+		return errors.New("invalid project details provided")
+	}
 
 	rule, err := m.getRule(dbType, col, query)
 	if err != nil {

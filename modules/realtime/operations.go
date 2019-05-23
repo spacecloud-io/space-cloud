@@ -44,7 +44,7 @@ func (m *Module) Operation(client *utils.Client, auth *auth.Module, crud *crud.M
 			}
 
 			// Check if user is authorized to make this request
-			err = auth.IsAuthorized(data.DBType, data.Group, utils.Read, args)
+			err = auth.IsAuthorized(data.Project, data.DBType, data.Group, utils.Read, args)
 			if err != nil {
 				client.Write(&model.Message{
 					ID:   req.ID,
