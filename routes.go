@@ -37,5 +37,5 @@ func (s *server) routes() {
 	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
 
 	// Initialize the route for handling static files
-	s.static.HandleRequest(s.router)
+	s.router.PathPrefix("/").HandlerFunc(s.static.HandleRequest)
 }
