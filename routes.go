@@ -9,7 +9,7 @@ func (s *server) routes() {
 	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
 
 	// Initialize the route for websocket
-	s.router.HandleFunc("/v1/api/socket/json", handleWebsocket(s.realtime, s.auth, s.crud))
+	s.router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
 
 	// Initialize the routes for functions service
 	s.router.Methods("POST").Path("/v1/api/functions/{service}/{func}").HandlerFunc(s.functions.HandleRequest(s.auth))
