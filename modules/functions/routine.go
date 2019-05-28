@@ -11,6 +11,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 func (m *Module) initWorkers(workerCount int) {
@@ -60,7 +61,7 @@ func (m *Module) removeStaleRequests() {
 	}
 }
 
-func (m *Module) requestService(client *utils.Client, req *model.FunctionsPayload, reply string) {
+func (m *Module) requestService(client client.Client, req *model.FunctionsPayload, reply string) {
 	// Generate a unique id for request
 	id := uuid.NewV1().String()
 

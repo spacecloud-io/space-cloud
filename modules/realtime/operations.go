@@ -9,10 +9,11 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 // Subscribe performs the realtime subscribe operation.
-func (m *Module) Subscribe(client *utils.Client, auth *auth.Module, crud *crud.Module, req *model.Message) {
+func (m *Module) Subscribe(client client.Client, auth *auth.Module, crud *crud.Module, req *model.Message) {
 	// For realtime subscribe event
 	data := new(model.RealtimeRequest)
 	mapstructure.Decode(req.Data, data)
@@ -46,7 +47,7 @@ func (m *Module) Subscribe(client *utils.Client, auth *auth.Module, crud *crud.M
 	}
 
 	readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
-	result, err := crud.Read(client.Context, data.DBType, data.Project, data.Group, &readReq)
+	result, err := crud.Read(client.Context(), data.DBType, data.Project, data.Group, &readReq)
 	if err != nil {
 		client.Write(&model.Message{
 			ID:   req.ID,
@@ -90,7 +91,7 @@ func (m *Module) Subscribe(client *utils.Client, auth *auth.Module, crud *crud.M
 }
 
 // Unsubscribe performs the realtime unsubscribe operation.
-func (m *Module) Unsubscribe(client *utils.Client, req *model.Message) {
+func (m *Module) Unsubscribe(client client.Client, req *model.Message) {
 	// For realtime unsubscribe event
 	data := new(model.RealtimeRequest)
 	mapstructure.Decode(req.Data, data)

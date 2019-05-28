@@ -5,11 +5,11 @@ import (
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
-	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 // RegisterService registers a new service with the functions module
-func (m *Module) RegisterService(client *utils.Client, req *model.ServiceRegisterRequest) error {
+func (m *Module) RegisterService(c client.Client, req *model.ServiceRegisterRequest) error {
 
 	service := new(servicesStub)
 	t, _ := m.services.LoadOrStore(req.Service, service)
@@ -22,10 +22,10 @@ func (m *Module) RegisterService(client *utils.Client, req *model.ServiceRegiste
 			return err
 		}
 		service.subscription = sub
-		service.clients = []*utils.Client{}
+		service.clients = make([]client.Client, 0)
 	}
 
-	service.clients = append(service.clients, client)
+	service.clients = append(service.clients, c)
 	m.services.Store(req.Service, service)
 	return nil
 }
@@ -92,7 +92,7 @@ func (m *Module) Operation(auth *auth.Module, token, service, function string, p
 	return resultBytes, nil
 }
 
-func remove(s []*utils.Client, i int) []*utils.Client {
+func remove(s []client.Client, i int) []client.Client {
 	s[i] = s[len(s)-1]
 	// We do not need to put s[i] at the end, as it will be discarded anyway
 	return s[:len(s)-1]
