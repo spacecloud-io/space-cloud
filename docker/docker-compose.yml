@@ -1,0 +1,38 @@
+version: '3.7'
+
+services:
+
+  mongodb:
+    image: 'bitnami/mongodb:4.0'
+    ports:
+      - "27017:27017"
+    volumes:
+      - 'mongodb_data:/bitnami'
+
+  space-cloud:
+    image: 'rawsanj/space-cloud'
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    # Overridden entrypoint to run space-cloud with realtime-chat-react config file.
+    entrypoint:
+      - ./space-cloud
+      - run
+      - --config
+      - react-config.yaml
+    volumes:
+      - ./init-config.sh:/root/init-config.sh
+      - ./react-config.yaml:/root/react-config.yaml
+    depends_on:
+      - mongodb
+
+  realtime-chat-react:
+    image: 'rawsanj/realtime-chat-react'
+    ports:
+      - "80:80"
+    depends_on:
+      - space-cloud
+
+volumes:
+  mongodb_data:
+    driver: local
