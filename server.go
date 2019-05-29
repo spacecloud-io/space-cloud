@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	nats "github.com/nats-io/nats-server/server"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -35,6 +36,7 @@ type server struct {
 	static    *static.Module
 	isProd    bool
 	config    *config.Project
+	nats      *nats.Server
 }
 
 func initServer(isProd bool) *server {
