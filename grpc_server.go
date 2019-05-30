@@ -50,7 +50,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Create, args)
+	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Create, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -147,7 +147,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Read, args)
+	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Read, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -217,7 +217,7 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Read, args)
+	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Read, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -303,7 +303,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Delete, args)
+	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Delete, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -373,7 +373,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Aggregation, args)
+	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Aggregation, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -456,7 +456,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 
 			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Update, args)
+			err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Update, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403
@@ -510,7 +510,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 
 			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Create, args)
+			err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Create, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403
@@ -564,7 +564,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 
 			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Delete, args)
+			err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Delete, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403

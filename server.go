@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	nats "github.com/nats-io/nats-server/server"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -35,6 +36,7 @@ type server struct {
 	static    *static.Module
 	isProd    bool
 	config    *config.Project
+	nats      *nats.Server
 }
 
 func initServer(isProd bool) *server {
@@ -81,7 +83,7 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.lock.Unlock()
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.Secret, config.Modules.Crud, config.Modules.FileStore)
+	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(config.Modules.Auth)
