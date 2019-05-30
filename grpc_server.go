@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/spaceuptech/space-cloud/model"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -672,6 +673,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	out.Status = 200
 	return &out, nil
 }
+
 func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
 	var params interface{}
 	if err := json.Unmarshal(in.Params, &params); err != nil {
@@ -681,7 +683,7 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 		return &out, nil
 	}
 
-	resultBytes, err := s.functions.Operation(s.auth, in.Token, in.Service, in.Function, int(in.Timeout))
+	resultBytes, err := s.functions.Operation(s.auth, in.Token, in.Service, in.Function, params, int(in.Timeout))
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -694,8 +696,46 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 	return &out, nil
 }
 
+func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
+	client := utils.CreateGRPCServiceClient(stream)
+	defer s.functions.UnregisterService(client.ClientID())
+	defer client.Close()
+	go client.RoutineWrite()
+
+	client.Read(func(req *model.Message) {
+		switch req.Type {
+		case utils.TypeServiceRegister:
+			// TODO add security rule for functions registered as well
+			data := new(model.ServiceRegisterRequest)
+			mapstructure.Decode(req.Data, data)
+
+			s.functions.RegisterService(client, data)
+
+		case utils.TypeServiceRequest:
+			data := new(model.FunctionsPayload)
+			mapstructure.Decode(req.Data, data)
+
+			s.functions.HandleServiceResponse(req.ID, data)
+
+		}
+	})
+	return nil
+}
+
 func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	client := utils.CreateGRPCClient(stream)
-	s.realtime.Operation(client, s.auth, s.crud)
+	defer s.realtime.RemoveClient(client.ClientID())
+	defer client.Close()
+	go client.RoutineWrite()
+
+	client.Read(func(req *model.Message) {
+		switch req.Type {
+		case utils.TypeRealtimeSubscribe:
+			s.realtime.Subscribe(client, s.auth, s.crud, req)
+
+		case utils.TypeRealtimeUnsubscribe:
+			s.realtime.Unsubscribe(client, req)
+		}
+	})
 	return nil
 }
