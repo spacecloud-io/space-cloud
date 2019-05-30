@@ -79,6 +79,12 @@ func actionRun(c *cli.Context) error {
 	// Project and env cannot be changed once space cloud has started
 	s := initServer(isProd)
 
+	if !disableNats {
+		// TODO read nats config from the yaml file if it exists
+		s.runNatsServer(defaultNatsOptions)
+		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
+	}
+
 	if configPath != "none" {
 		conf, err := config.LoadConfigFromFile(configPath)
 		if err != nil {
@@ -93,12 +99,6 @@ func actionRun(c *cli.Context) error {
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
 		go s.routineMetrics()
-	}
-
-	if !disableNats {
-		// TODO read nats config from the yaml file if it exists
-		s.runNatsServer(defaultNatsOptions)
-		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
 	}
 
 	s.routes()

@@ -45,7 +45,7 @@ func (s *servicesStub) unsubscribe(services *sync.Map, key interface{}, clientID
 	// Iterate over all clients and delete the client whose id matches
 	for i, client := range s.clients {
 		if client.ClientID() == clientID {
-			remove(s.clients, i)
+			s.clients = remove(s.clients, i)
 			break
 		}
 	}
@@ -53,7 +53,6 @@ func (s *servicesStub) unsubscribe(services *sync.Map, key interface{}, clientID
 	if len(s.clients) == 0 {
 		s.subscription.Unsubscribe()
 		s.subscription = nil
-		s.clients = nil
 		services.Delete(key)
 	}
 }

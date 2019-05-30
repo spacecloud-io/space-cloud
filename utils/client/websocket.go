@@ -32,8 +32,8 @@ func (c *WebsocketClient) RoutineWrite() {
 // Write wrties the object to the client
 func (c *WebsocketClient) Write(res *model.Message) {
 	select {
-	case c.channel <- res:
 	case <-c.ctx.Done():
+	case c.channel <- res:
 	}
 }
 

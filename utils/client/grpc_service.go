@@ -81,6 +81,8 @@ func (c *GRPCServiceClient) Read(cb DataCallback) {
 			json.Unmarshal(in.Params, &params)
 			data := map[string]interface{}{
 				"params": params,
+				"id":     in.Id,
+				"error":  in.Error,
 			}
 			msg := &model.Message{ID: in.Id, Type: utils.TypeServiceRequest, Data: data}
 			cb(msg)

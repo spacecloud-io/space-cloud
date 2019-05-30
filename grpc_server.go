@@ -710,13 +710,13 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 			data := new(model.ServiceRegisterRequest)
 			mapstructure.Decode(req.Data, data)
 
-			s.functions.RegisterService(client, data)
+			s.functions.RegisterService(req.ID, client, data)
 
 		case utils.TypeServiceRequest:
 			data := new(model.FunctionsPayload)
 			mapstructure.Decode(req.Data, data)
 
-			s.functions.HandleServiceResponse(req.ID, data)
+			s.functions.HandleServiceResponse(data)
 
 		}
 	})

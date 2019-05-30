@@ -62,6 +62,7 @@ func (m *Module) removeStaleRequests() {
 func (m *Module) requestService(client client.Client, req *model.FunctionsPayload, reply string) {
 	// Generate a unique id for request
 	id := uuid.NewV1().String()
+	req.ID = id
 
 	// Add request to the map of pending requests
 	m.pendingRequests.Store(id, &pendingRequest{reply: reply, reqTime: time.Now()})
@@ -70,7 +71,6 @@ func (m *Module) requestService(client client.Client, req *model.FunctionsPayloa
 	client.Write(&model.Message{
 		Type: utils.TypeServiceRequest,
 		Data: req,
-		ID:   id,
 	})
 }
 

@@ -79,6 +79,7 @@ message FunctionsPayload {
   string function = 4;
   string type = 5;
   string id = 6;
+  string error = 7;
 }
 
 message FeedData {

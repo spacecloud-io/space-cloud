@@ -2,14 +2,16 @@ package functions
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
+	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 // RegisterService registers a new service with the functions module
-func (m *Module) RegisterService(c client.Client, req *model.ServiceRegisterRequest) error {
+func (m *Module) RegisterService(reqID string, c client.Client, req *model.ServiceRegisterRequest) {
 
 	service := new(servicesStub)
 	t, _ := m.services.LoadOrStore(req.Service, service)
@@ -19,7 +21,12 @@ func (m *Module) RegisterService(c client.Client, req *model.ServiceRegisterRequ
 	service.subscribe(m.nc, c, m.channel, req)
 
 	m.services.Store(req.Service, service)
-	return nil
+
+	c.Write(&model.Message{
+		ID:   reqID,
+		Type: utils.TypeServiceRegister,
+		Data: map[string]interface{}{"ack": true},
+	})
 }
 
 // UnregisterService removes a service from the functions module
@@ -35,9 +42,9 @@ func (m *Module) UnregisterService(clientID string) {
 }
 
 // HandleServiceResponse handles the service response
-func (m *Module) HandleServiceResponse(id string, res *model.FunctionsPayload) {
+func (m *Module) HandleServiceResponse(res *model.FunctionsPayload) {
 	// Load the pending request
-	t, p := m.pendingRequests.Load(id)
+	t, p := m.pendingRequests.Load(res.ID)
 	if !p {
 		return
 	}
@@ -48,7 +55,7 @@ func (m *Module) HandleServiceResponse(id string, res *model.FunctionsPayload) {
 	m.nc.Publish(req.reply, data)
 
 	// Remove the pending request from internal map
-	m.pendingRequests.Delete(id)
+	m.pendingRequests.Delete(res.ID)
 }
 
 // Operation handles the function call operation
@@ -62,6 +69,11 @@ func (m *Module) Operation(auth *auth.Module, token, service, function string, p
 	err = json.Unmarshal(dataBytes, &data)
 	if err != nil {
 		return nil, err
+	}
+
+	// Return an error if response recieved has an error
+	if len(data.Error) > 0 {
+		return nil, errors.New(data.Error)
 	}
 
 	// Create the result to be sent back
