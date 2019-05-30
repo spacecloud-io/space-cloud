@@ -34,8 +34,8 @@ func (m *Module) HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 		// Set the http headers
 		req.Header = make(http.Header)
-		if contentType, p := req.Header["Content-Type"]; p {
-			req.Header["Content_type"] = contentType
+		if contentType, p := r.Header["Content-Type"]; p {
+			req.Header["Content-Type"] = contentType
 		}
 
 		// Make the http client request

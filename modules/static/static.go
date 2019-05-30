@@ -59,10 +59,3 @@ func (m *Module) selectRoute(host, url string) (*config.StaticRoute, bool) {
 
 	return nil, false
 }
-
-func (m *Module) getDirPath(index int) string {
-	m.RLock()
-	defer m.RUnlock()
-
-	return m.routes[index].Path
-}
