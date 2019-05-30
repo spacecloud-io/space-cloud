@@ -8,16 +8,16 @@ import (
 	nats "github.com/nats-io/go-nats"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 type servicesStub struct {
 	sync.RWMutex
-	clients      []*utils.Client
+	clients      []client.Client
 	subscription *nats.Subscription
 }
 
-func (s *servicesStub) subscribe(nc *nats.Conn, client *utils.Client, channel chan *nats.Msg, req *model.ServiceRegisterRequest) error {
+func (s *servicesStub) subscribe(nc *nats.Conn, c client.Client, channel chan *nats.Msg, req *model.ServiceRegisterRequest) error {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -27,13 +27,13 @@ func (s *servicesStub) subscribe(nc *nats.Conn, client *utils.Client, channel ch
 			return err
 		}
 		s.subscription = sub
-		s.clients = []*utils.Client{}
+		s.clients = []client.Client{}
 	}
 
 	if s.clients == nil {
-		s.clients = []*utils.Client{}
+		s.clients = []client.Client{}
 	}
-	s.clients = append(s.clients, client)
+	s.clients = append(s.clients, c)
 
 	return nil
 }
@@ -58,14 +58,14 @@ func (s *servicesStub) unsubscribe(services *sync.Map, key interface{}, clientID
 	}
 }
 
-func (s *servicesStub) getClient() *utils.Client {
+func (s *servicesStub) getClient() client.Client {
 	s.RLock()
 	defer s.RUnlock()
 
 	return s.clients[rand.Intn(len(s.clients))]
 }
 
-func remove(s []*utils.Client, i int) []*utils.Client {
+func remove(s []client.Client, i int) []client.Client {
 	s[i] = s[len(s)-1]
 	// We do not need to put s[i] at the end, as it will be discarded anyway
 	return s[:len(s)-1]

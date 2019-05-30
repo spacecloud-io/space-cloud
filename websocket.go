@@ -9,6 +9,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 var upgrader = websocket.Upgrader{
@@ -25,7 +26,7 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 			return
 		}
 
-		client := utils.CreateWebsocketClient(c)
+		client := client.CreateWebsocketClient(c)
 		defer s.realtime.RemoveClient(client.ClientID())
 		defer s.functions.UnregisterService(client.ClientID())
 

@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
@@ -697,7 +698,7 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 }
 
 func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
-	client := utils.CreateGRPCServiceClient(stream)
+	client := client.CreateGRPCServiceClient(stream)
 	defer s.functions.UnregisterService(client.ClientID())
 	defer client.Close()
 	go client.RoutineWrite()
@@ -723,7 +724,7 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 }
 
 func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
-	client := utils.CreateGRPCClient(stream)
+	client := client.CreateGRPCRealtimeClient(stream)
 	defer s.realtime.RemoveClient(client.ClientID())
 	defer client.Close()
 	go client.RoutineWrite()

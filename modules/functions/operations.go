@@ -5,18 +5,18 @@ import (
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
-	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 // RegisterService registers a new service with the functions module
-func (m *Module) RegisterService(client *utils.Client, req *model.ServiceRegisterRequest) error {
+func (m *Module) RegisterService(c client.Client, req *model.ServiceRegisterRequest) error {
 
 	service := new(servicesStub)
 	t, _ := m.services.LoadOrStore(req.Service, service)
 	service = t.(*servicesStub)
 
 	// Subscribe to nats if not already subscribed
-	service.subscribe(m.nc, client, m.channel, req)
+	service.subscribe(m.nc, c, m.channel, req)
 
 	m.services.Store(req.Service, service)
 	return nil

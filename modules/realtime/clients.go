@@ -3,16 +3,16 @@ package realtime
 import (
 	"sync"
 
-	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 type queryStub struct {
-	client   *utils.Client
+	client   client.Client
 	whereObj map[string]interface{}
 }
 
 // AddLiveQuery tracks a client for a live query
-func (m *Module) AddLiveQuery(id, group string, client *utils.Client, whereObj map[string]interface{}) {
+func (m *Module) AddLiveQuery(id, group string, client client.Client, whereObj map[string]interface{}) {
 	// Load clients in a particular group
 	clients := new(sync.Map)
 	t, _ := m.groups.LoadOrStore(group, clients)
