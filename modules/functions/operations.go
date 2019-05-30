@@ -16,16 +16,8 @@ func (m *Module) RegisterService(c client.Client, req *model.ServiceRegisterRequ
 	service = t.(*servicesStub)
 
 	// Subscribe to nats if not already subscribed
-	if service.subscription == nil {
-		sub, err := m.nc.ChanQueueSubscribe(getSubjectName(req.Service), req.Service, m.channel)
-		if err != nil {
-			return err
-		}
-		service.subscription = sub
-		service.clients = make([]client.Client, 0)
-	}
+	service.subscribe(m.nc, c, m.channel, req)
 
-	service.clients = append(service.clients, c)
 	m.services.Store(req.Service, service)
 	return nil
 }
@@ -36,20 +28,8 @@ func (m *Module) UnregisterService(clientID string) {
 	m.services.Range(func(key interface{}, value interface{}) bool {
 		service := value.(*servicesStub)
 
-		// Iterate over all clients and delete the client whose id matches
-		for i, client := range service.clients {
-			if client.ClientID() == clientID {
-				remove(service.clients, i)
-				break
-			}
-		}
-
-		// Unsubscribe and delete service group if no clients are present in it
-		if len(service.clients) == 0 {
-			service.subscription.Unsubscribe()
-			m.services.Delete(key)
-		}
-
+		// Remove the client
+		service.unsubscribe(&m.services, key, clientID)
 		return true
 	})
 }
@@ -90,10 +70,4 @@ func (m *Module) Operation(auth *auth.Module, token, service, function string, p
 		return nil, err
 	}
 	return resultBytes, nil
-}
-
-func remove(s []client.Client, i int) []client.Client {
-	s[i] = s[len(s)-1]
-	// We do not need to put s[i] at the end, as it will be discarded anyway
-	return s[:len(s)-1]
 }

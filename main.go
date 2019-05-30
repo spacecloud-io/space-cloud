@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -46,6 +47,11 @@ func main() {
 					Usage:  "Disable anonymous metric collection",
 					EnvVar: "DISABLE_METRICS",
 				},
+				cli.BoolFlag{
+					Name:   "disable-nats",
+					Usage:  "Disable embedded nats server",
+					EnvVar: "DISABLE_NATS",
+				},
 			},
 		},
 		{
@@ -68,6 +74,7 @@ func actionRun(c *cli.Context) error {
 	configPath := c.String("config")
 	isProd := c.Bool("prod")
 	disableMetrics := c.Bool("disable-metrics")
+	disableNats := c.Bool("disable-nats")
 
 	// Project and env cannot be changed once space cloud has started
 	s := initServer(isProd)
@@ -86,6 +93,12 @@ func actionRun(c *cli.Context) error {
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
 		go s.routineMetrics()
+	}
+
+	if !disableNats {
+		// TODO read nats config from the yaml file if it exists
+		s.runNatsServer(defaultNatsOptions)
+		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
 	}
 
 	s.routes()

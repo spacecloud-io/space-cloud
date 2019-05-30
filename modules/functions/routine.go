@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"math/rand"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -38,8 +37,7 @@ func (m *Module) worker() {
 		}
 
 		service := t.(*servicesStub)
-		c := service.clients[rand.Intn(len(service.clients))]
-		m.requestService(c, req, msg.Reply)
+		m.requestService(service.getClient(), req, msg.Reply)
 	}
 }
 
