@@ -97,8 +97,15 @@ type FileRule struct {
 
 // Static holds the config for the static files module
 type Static struct {
-	Enabled   bool   `json:"enabled" yaml:"enabled"`
+	Enabled bool           `json:"enabled" yaml:"enabled"`
+	Gzip    bool           `json:"gzip" yaml:"gzip"`
+	Routes  []*StaticRoute `json:"routes" yaml:"routes"`
+}
+
+// StaticRoute holds the config for each route
+type StaticRoute struct {
 	Path      string `json:"path" yaml:"path"`
 	URLPrefix string `json:"prefix" yaml:"prefix"`
-	Gzip      bool   `json:"gzip" yaml:"gzip"`
+	Host      string `json:"host" yaml:"host"`
+	Proxy     string `json:"proxy" yaml:"proxy"`
 }
