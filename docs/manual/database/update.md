@@ -57,7 +57,20 @@ db.update("todos")
   <div id="update-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, AND, OR, COND
+api = API("books-app", "localhost:8081")
+db = api.my_sql()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).set({"name": "A book"}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -98,7 +111,20 @@ db.updateOne('todos').where(cond('_id_', '==', 1))
  <div id="update-one-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API, AND, OR, COND
+api = API("books-app", "localhost:8081")
+db = api.my_sql()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update_one("books").where(condition).set({"name": "A book"}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -135,7 +161,20 @@ db.upsert('todos').where(cond('_id', '==', 1))
  <div id="upsert-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.upsert("books").where(condition).set({"name": "A book"}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -187,7 +226,20 @@ db.update('todos').where(condition)
   <div id="cond-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, AND, OR, COND
+api = API("books-app", "localhost:8081")
+db = api.my_sql()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).set({"name": "A book"}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -249,7 +301,20 @@ db.update('todos').where(condition)
   <div id="multiple-cond-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, AND, OR, COND
+api = API("books-app", "localhost:8081")
+db = api.my_sql()
+
+# The condition to be matched
+condition = AND(COND("author", "==", "author1"), COND("name", "==", "someBook"))
+
+# Update the books
+response = db.update("books").where(condition).set({"name": "A book"}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -292,7 +357,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="set-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, AND, OR, COND
+api = API("books-app", "localhost:8081")
+db = api.my_sql()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).set({"name": "A book"}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -332,7 +410,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="push-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).push({"name": "A book"}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -371,7 +462,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="remove-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).remove("author").apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -410,7 +514,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="rename-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).rename({"writer":"author"}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -453,7 +570,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="inc-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).inc({"likes":1}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -492,7 +622,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="mul-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).mul({"likes":10}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -531,7 +674,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="max-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).max({"likes":100}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -568,7 +724,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="min-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).min({"likes":100}).apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -605,7 +774,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="current-timestamp-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).current_timestamp("last_read").apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -644,7 +826,20 @@ db.update('todos').where(cond('_id_', '==', 1))
   <div id="current-date-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!      
+from space_api import API, COND
+api = API("books-app", "localhost:8081")
+db = api.mongo()
+
+# The condition to be matched
+condition = COND("author", "==", "author1")
+
+# Update the books
+response = db.update("books").where(condition).current_date("last_read").apply()
+
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
