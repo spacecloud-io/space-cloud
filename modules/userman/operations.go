@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -13,19 +14,14 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (m *Module) Profile(ctx context.Context, token, dbType, project, id string) map[string]interface{} {
-	result := map[string]interface{}{"status": nil, "error": nil, "result": nil}
+func (m *Module) Profile(ctx context.Context, token, dbType, project, id string) (int, map[string]interface{}, error) {
 	if !m.IsEnabled() {
-		result["status"] = http.StatusNotFound
-		result["error"] = "This feature isn't enabled"
-		return result
+		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
 	
 	authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Read)
 	if err != nil {
-		result["status"] = http.StatusUnauthorized
-		result["error"] = err.Error()
-		return result
+		return http.StatusUnauthorized, nil, err
 	}
 
 	// Create the find object
@@ -47,40 +43,29 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 	// Check if user is authorized to make this request
 	err = m.auth.IsAuthorized(project, dbType, "users", utils.Read, args)
 	if err != nil {
-		result["status"] = http.StatusForbidden
-		result["error"] = err.Error()
-		return result
+		return http.StatusForbidden, nil, err
 	}
 	
 	req := &model.ReadRequest{Find: find, Operation: utils.One}
 	res, err := m.crud.Read(ctx, dbType, project, "users", req)
 	if err != nil {
-		result["status"] = http.StatusInternalServerError
-		result["error"] = err.Error()
-		return result
+		return http.StatusInternalServerError, nil, err
 	}
 
 	// Delete password from user object
 	delete(res.(map[string]interface{}), "pass")
 	
-	result["status"] = http.StatusOK
-	result["result"] = res
-	return result
+	return http.StatusOK, res.(map[string]interface{}), nil
 }
 
-func (m *Module) Profiles(ctx context.Context, token, dbType, project string) map[string]interface{} {
-	result := map[string]interface{}{"status": nil, "error": nil, "result": nil}
+func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (int, map[string]interface{}, error) {
 	if !m.IsEnabled() {
-		result["status"] = http.StatusNotFound
-		result["error"] = "This feature isn't enabled"
-		return result
+		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
 	
 	authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Read)
 	if err != nil {
-		result["status"] = http.StatusUnauthorized
-		result["error"] = err.Error()
-		return result
+		return http.StatusUnauthorized, nil, err
 	}
 
 	// Create the find object
@@ -95,17 +80,13 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) ma
 	// Check if user is authorized to make this request
 	err = m.auth.IsAuthorized(project, dbType, "users", utils.Read, args)
 	if err != nil {
-		result["status"] = http.StatusForbidden
-		result["error"] = err.Error()
-		return result
+		return http.StatusForbidden, nil, err
 	}
 	
 	req := &model.ReadRequest{Find: find, Operation: utils.All}
 	res, err := m.crud.Read(ctx, dbType, project, "users", req)
 	if err != nil {
-		result["status"] = http.StatusInternalServerError
-		result["error"] = err.Error()
-		return result
+		return http.StatusInternalServerError, nil, err
 	}
 
 	// Delete password from user object
@@ -116,18 +97,13 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) ma
 		}
 	}
 	
-	result["status"] = http.StatusOK
-	result["result"] = res
-	return result
+	return http.StatusOK, map[string]interface{}{"users": res}, nil
 }
 
-func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, password string) map[string]interface{} {
-	result := map[string]interface{}{"status": nil, "error": nil, "result": nil}
+func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, password string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
-	if !m.IsActive("email") {
-		result["status"] = http.StatusNotFound
-		result["error"] = "Email sign in feature is not enabled"
-		return result
+	if !m.IsEnabled() {
+		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
 	}
 
 	// Create read request
@@ -135,9 +111,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 
 	user, err := m.crud.Read(ctx, dbType, project, "users", readReq)
 	if err != nil {
-		result["status"] = http.StatusNotFound
-		result["error"] = "User not found"
-		return result
+		return http.StatusNotFound, nil, errors.New("User not found")
 	}
 
 	userObj := user.(map[string]interface{})
@@ -145,9 +119,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 	//Compares if the given password is correct
 	err = bcrypt.CompareHashAndPassword([]byte(userObj["pass"].(string)), []byte(password))
 	if err != nil {
-		result["status"] = http.StatusUnauthorized
-		result["error"] = "Given credentials are not correct"
-		return result
+		return http.StatusUnauthorized, nil, errors.New("Given credentials are not correct")
 	}
 
 	// Delete password from user
@@ -166,22 +138,15 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 
 	token, err := m.auth.CreateToken(req)
 	if err != nil {
-		result["status"] = http.StatusInternalServerError
-		result["error"] = "Failed to create a JWT token"
-		return result
+		return http.StatusInternalServerError, nil, errors.New("Failed to create a JWT token")
 	}
-	result["status"] = http.StatusOK
-	result["result"] = map[string]interface{}{"user": user, "token": token}
-	return result
+	return http.StatusOK, map[string]interface{}{"user": user, "token": token}, nil
 }
 
-func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, password, role string) map[string]interface{} {
-	result := map[string]interface{}{"status": nil, "error": nil, "result": nil}
+func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, password, role string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
-	if !m.IsActive("email") {
-		result["status"] = http.StatusNotFound
-		result["error"] = "Email sign in feature is not enabled"
-		return result
+	if !m.IsEnabled() {
+		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
 	}
 
 	//Hash the password that's in the request
@@ -189,19 +154,14 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	password, err = hashPassword(password)
 	if err != nil {
 		log.Println("Err: ", err)
-		result["status"] = http.StatusInternalServerError
-		result["error"] = "Failed to hash password"
-		return result
+		return http.StatusInternalServerError, nil, errors.New("Failed to hash password")
 	}
 
 	// Create read request
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
 	_, err = m.crud.Read(ctx, dbType, project, "users", readReq)
 	if err == nil {
-		log.Println("Err: ", err)
-		result["status"] = http.StatusConflict
-		result["error"] = "User with provided email already exists"
-		return result
+		return http.StatusConflict, nil, errors.New("User with provided email already exists")
 	}
 
 	req := map[string]interface{}{}
@@ -220,9 +180,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	err = m.crud.Create(ctx, dbType, project, "users", createReq)
 	if err != nil {
 		log.Println("Err: ", err)
-		result["status"] = http.StatusInternalServerError
-		result["error"] = "Failed to create user account"
-		return result
+		return http.StatusInternalServerError, nil, errors.New("Failed to create user account")
 	}
 
 	delete(req, "pass")
@@ -231,68 +189,56 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	tokenObj := map[string]interface{}{
 		"email": email,
 		"role":  role,
-	}
-	tokenObj["id"] = id.String()
+		"id":    id.String() }
 	
 	token, err := m.auth.CreateToken(tokenObj)
 	if err != nil {
-		result["status"] = http.StatusInternalServerError
-		result["error"] = "Failed to create a JWT token"
-		return result
+		return http.StatusInternalServerError, nil, errors.New("Failed to create a JWT token")
 	}
-	result["status"] = http.StatusOK
-	result["result"] = map[string]interface{}{"user": req, "token": token}
-	return result
+	return http.StatusOK, map[string]interface{}{"user": req, "token": token}, nil
 }
 
-func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, id, email, name, password string) map[string]interface{} {
-	result := map[string]interface{}{"status": nil, "error": nil, "result": nil}
+func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, id, email, name, password string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
-	if !m.IsActive("email") {
-		result["status"] = http.StatusNotFound
-		result["error"] = "Email sign in feature is not enabled"
-		return result
+	if !m.IsEnabled() {
+		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
 	}
 
 	authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Update)
 	if err != nil {
-		result["status"] = http.StatusUnauthorized
-		result["error"] = err.Error()
-		return result
+		return http.StatusUnauthorized, nil, err
 	}
 
 	req := model.UpdateRequest{}
-	temp := map[string]interface{}{}
-	var id_string string
+	find := map[string]interface{}{}
+	var idString string
 	if dbType == string(utils.Mongo) {
-		id_string = "_id"
+		idString = "_id"
 	} else {
-		id_string = "id"
+		idString = "id"
 	}
-	temp[id_string] = id
-	req.Find = temp
+	find[idString] = id
+	req.Find = find
 
-	temp = map[string]interface{}{}
-	temp_set := map[string]interface{}{}
+	update := map[string]interface{}{}
+	set := map[string]interface{}{}
 	if email != "" {
-		temp_set["email"] = email
+		set["email"] = email
 	}
 	if name != "" {
-		temp_set["name"] = name
+		set["name"] = name
 	}
 	if password != "" {
 		var err1 error
 		password, err1 = hashPassword(password)
 		if err1 != nil {
 			log.Println("Err: ", err1)
-			result["status"] = http.StatusInternalServerError
-			result["error"] = "Failed to hash password"
-			return result
+			return http.StatusInternalServerError, nil, errors.New("Failed to hash password")
 		}
-		temp_set["pass"] = password
+		set["pass"] = password
 	}
-	temp["$set"] = temp_set
-	req.Update = temp
+	update["$set"] = set
+	req.Update = update
 	req.Operation = utils.One
 
 	// Create an args object
@@ -304,24 +250,18 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 	// Check if user is authorized to make this request
 	err = m.auth.IsAuthorized(project, dbType, "users", utils.Update, args)
 	if err != nil {
-		result["status"] = http.StatusForbidden
-		result["error"] = err.Error()
-		return result
+		return http.StatusForbidden, nil, err
 	}
 
 	err = m.crud.Update(ctx, dbType, project, "users", &req)
 	if err != nil {
-		result["status"] = http.StatusInternalServerError
-		result["error"] = err.Error()
-		return result
+		return http.StatusInternalServerError, nil, err
 	}
 
-	readReq := &model.ReadRequest{Find: map[string]interface{}{id_string: id}, Operation: utils.One}
+	readReq := &model.ReadRequest{Find: map[string]interface{}{idString: id}, Operation: utils.One}
 	user, err1 := m.crud.Read(ctx, dbType, project, "users", readReq)
 	if err1 != nil {
-		result["status"] = http.StatusNotFound
-		result["error"] = "User not found"
-		return result
+		return http.StatusNotFound, nil, errors.New("User not found")
 	}
 
 	userObj := user.(map[string]interface{})
@@ -331,18 +271,14 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 
 	req1 := map[string]interface{}{}
 	req1["email"] = userObj["email"]
-	req1["id"] = userObj[id_string]
+	req1["id"] = userObj[idString]
 	req1["role"] = userObj["role"]
 
 	token1, err := m.auth.CreateToken(req1)
 	if err != nil {
-		result["status"] = http.StatusInternalServerError
-		result["error"] = "Failed to create a JWT token"
-		return result
+		return http.StatusInternalServerError, nil, errors.New("Failed to create a JWT token")
 	}
-	result["status"] = http.StatusOK
-	result["result"] = map[string]interface{}{"user": user, "token": token1}
-	return result
+	return http.StatusOK, map[string]interface{}{"user": user, "token": token1}, nil
 }
 
 func hashPassword(pwd string) (string, error) {

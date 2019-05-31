@@ -743,50 +743,91 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 }
 
 func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
-	result := s.user.Profile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id)
-	resp, err := generate_response(result)
-	return resp, err
-}
-
-func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
-	result := s.user.Profiles(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project)
-	resp, err := generate_response(result)
-	return resp, err
-}
-
-func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
-	result := s.user.EmailEditProfile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id, in.Email, in.Name, in.Password)
-	resp, err := generate_response(result)
-	return resp, err
-}
-
-func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
-	result := s.user.EmailSignIn(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Password)
-	resp, err := generate_response(result)
-	return resp, err
-}
-
-func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
-	result := s.user.EmailSignUp(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Name, in.Password, in.Role)
-	resp, err := generate_response(result)
-	return resp, err
-}
-
-func generate_response(result map[string]interface{}) (*pb.Response, error) {
+	status, result, err := s.user.Profile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id)
 	out := pb.Response{}
-
-	res, err := json.Marshal(result["result"])
+	out.Status = int32(status)
 	if err != nil {
-		out.Status = http.StatusInternalServerError
 		out.Error = err.Error()
 		return &out, nil
 	}
-
-	out.Status = int32(result["status"].(int))
-	if result["error"] == nil {
-		out.Result = res
-	} else {
-		out.Error = result["error"].(string)
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
 	}
+	out.Result = res
+	return &out, nil
+}
+
+func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
+	status, result, err := s.user.Profiles(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+	return &out, nil
+}
+
+func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
+	status, result, err := s.user.EmailEditProfile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id, in.Email, in.Name, in.Password)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+	return &out, nil
+}
+
+func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
+	status, result, err := s.user.EmailSignIn(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Password)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+	return &out, nil
+}
+
+func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
+	status, result, err := s.user.EmailSignUp(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Name, in.Password, in.Role)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
 	return &out, nil
 }

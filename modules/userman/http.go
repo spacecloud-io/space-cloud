@@ -31,14 +31,14 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		result := m.Profile(ctx, token, dbType, project, id)
+		status, result, err := m.Profile(ctx, token, dbType, project, id)
 
-		w.WriteHeader(result["status"].(int))
-		if result["error"] == nil {
-			json.NewEncoder(w).Encode(map[string]interface{}{"user": result["result"]})
-		} else {
-			json.NewEncoder(w).Encode(map[string]string{"error": result["error"].(string)})
+		w.WriteHeader(status)
+		if err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+		json.NewEncoder(w).Encode(map[string]interface{}{"user": result})
 	}
 }
 
@@ -61,14 +61,14 @@ func (m *Module) HandleProfiles() http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		result := m.Profiles(ctx, token, dbType, project)
+		status, result, err := m.Profiles(ctx, token, dbType, project)
 
-		w.WriteHeader(result["status"].(int))
-		if result["error"] == nil {
-			json.NewEncoder(w).Encode(map[string]interface{}{"user": result["result"]})
-		} else {
-			json.NewEncoder(w).Encode(map[string]string{"error": result["error"].(string)})
+		w.WriteHeader(status)
+		if err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+		json.NewEncoder(w).Encode(map[string]interface{}{"users": result})
 	}
 }
 
@@ -89,14 +89,14 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		result := m.EmailSignIn(ctx, dbType, project, req["email"].(string), req["pass"].(string))
+		status, result, err := m.EmailSignIn(ctx, dbType, project, req["email"].(string), req["pass"].(string))
 
-		w.WriteHeader(result["status"].(int))
-		if result["error"] == nil {
-			json.NewEncoder(w).Encode(result["result"])
-		} else {
-			json.NewEncoder(w).Encode(map[string]string{"error": result["error"].(string)})
+		w.WriteHeader(status)
+		if err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+		json.NewEncoder(w).Encode(result)
 	}
 }
 
@@ -117,14 +117,14 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		result := m.EmailSignUp(ctx, dbType, project, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
+		status, result, err := m.EmailSignUp(ctx, dbType, project, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
 
-		w.WriteHeader(result["status"].(int))
-		if result["error"] == nil {
-			json.NewEncoder(w).Encode(result["result"])
-		} else {
-			json.NewEncoder(w).Encode(map[string]string{"error": result["error"].(string)})
+		w.WriteHeader(status)
+		if err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+		json.NewEncoder(w).Encode(result)
 	}
 }
 
@@ -153,13 +153,13 @@ func (m *Module) HandleEmailEditProfile() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		result := m.EmailEditProfile(ctx, token, dbType, project, id, req["email"].(string), req["name"].(string), req["pass"].(string))
+		status, result, err := m.EmailEditProfile(ctx, token, dbType, project, id, req["email"].(string), req["name"].(string), req["pass"].(string))
 
-		w.WriteHeader(result["status"].(int))
-		if result["error"] == nil {
-			json.NewEncoder(w).Encode(result["result"])
-		} else {
-			json.NewEncoder(w).Encode(map[string]string{"error": result["error"].(string)})
+		w.WriteHeader(status)
+		if err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+		json.NewEncoder(w).Encode(result)
 	}
 }
