@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+	"net/http"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/spaceuptech/space-cloud/model"
@@ -739,4 +740,53 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 		}
 	})
 	return nil
+}
+
+func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
+	result := s.user.Profile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id)
+	resp, err := generate_response(result)
+	return resp, err
+}
+
+func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
+	result := s.user.Profiles(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project)
+	resp, err := generate_response(result)
+	return resp, err
+}
+
+func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
+	result := s.user.EmailEditProfile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id, in.Email, in.Name, in.Password)
+	resp, err := generate_response(result)
+	return resp, err
+}
+
+func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
+	result := s.user.EmailSignIn(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Password)
+	resp, err := generate_response(result)
+	return resp, err
+}
+
+func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
+	result := s.user.EmailSignUp(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Name, in.Password, in.Role)
+	resp, err := generate_response(result)
+	return resp, err
+}
+
+func generate_response(result map[string]interface{}) (*pb.Response, error) {
+	out := pb.Response{}
+
+	res, err := json.Marshal(result["result"])
+	if err != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err.Error()
+		return &out, nil
+	}
+
+	out.Status = int32(result["status"].(int))
+	if result["error"] == nil {
+		out.Result = res
+	} else {
+		out.Error = result["error"].(string)
+	}
+	return &out, nil
 }
