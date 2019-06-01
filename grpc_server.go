@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+	"net/http"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/spaceuptech/space-cloud/model"
@@ -739,4 +740,94 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 		}
 	})
 	return nil
+}
+
+func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
+	status, result, err := s.user.Profile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+	return &out, nil
+}
+
+func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
+	status, result, err := s.user.Profiles(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+	return &out, nil
+}
+
+func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
+	status, result, err := s.user.EmailEditProfile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id, in.Email, in.Name, in.Password)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+	return &out, nil
+}
+
+func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
+	status, result, err := s.user.EmailSignIn(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Password)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+	return &out, nil
+}
+
+func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
+	status, result, err := s.user.EmailSignUp(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Name, in.Password, in.Role)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+	return &out, nil
 }

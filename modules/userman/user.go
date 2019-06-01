@@ -34,7 +34,7 @@ func (m *Module) SetConfig(auth config.Auth) {
 	}
 }
 
-func (m *Module) isActive(method string) bool {
+func (m *Module) IsActive(method string) bool {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -42,7 +42,7 @@ func (m *Module) isActive(method string) bool {
 	return p
 }
 
-func (m *Module) isEnabled() bool {
+func (m *Module) IsEnabled() bool {
 	m.RLock()
 	defer m.RUnlock()
 

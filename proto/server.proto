@@ -110,6 +110,33 @@ message RealTimeResponse {
   repeated FeedData feedData = 5;
 }
 
+message ProfileRequest {
+  string id = 1;
+  Meta meta = 2;
+}
+message ProfilesRequest {
+  Meta meta = 1;
+}
+message EditProfileRequest {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  string password = 4;
+  Meta meta = 5;
+}
+message SignInRequest {
+  string email = 1;
+  string password = 2;
+  Meta meta = 3;
+}
+message SignUpRequest {
+  string email = 1;
+  string name = 2;
+  string password = 3;
+  string role = 4;
+  Meta meta = 5;
+}
+
 service SpaceCloud {
   rpc Create(CreateRequest) returns (Response) {}
   rpc Read(ReadRequest) returns (Response) {}
@@ -121,4 +148,10 @@ service SpaceCloud {
   rpc Call(FunctionsRequest) returns (Response) {}
   rpc RealTime(stream RealTimeRequest) returns (stream RealTimeResponse) {}
   rpc Service(stream FunctionsPayload) returns (stream FunctionsPayload) {}
+
+  rpc Profile(ProfileRequest) returns (Response) {}
+  rpc Profiles(ProfilesRequest) returns (Response) {}
+  rpc EditProfile(EditProfileRequest) returns (Response) {}
+  rpc SignIn(SignInRequest) returns (Response) {}
+  rpc SignUp(SignUpRequest) returns (Response) {}
 }
