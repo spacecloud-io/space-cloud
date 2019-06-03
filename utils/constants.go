@@ -31,6 +31,14 @@ const (
 	Postgres DBType = "sql-postgres"
 )
 
+// Broker is the type of broker used by Space Cloud
+type Broker string
+
+const (
+	// Nats is the type used for Nats
+	Nats Broker = "nats"
+)
+
 // FileStoreType is the type of file store used
 type FileStoreType string
 

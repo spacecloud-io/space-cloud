@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -24,7 +25,7 @@ func TestGetRule(t *testing.T) {
 		{testName: "Error : Nothing is Provided"},
 	}
 	successTestCases := 0
-	authModule := Init(&crud.Module{})
+	authModule := Init(&crud.Module{}, &functions.Module{})
 	for i, test := range authGetRule {
 		t.Run(test.testName, func(t *testing.T) {
 			(*authModule).rules = test.authModuleRules
@@ -56,7 +57,7 @@ func TestCreateToken(t *testing.T) {
 		// {testName: "Error Test : nothing is provided "},
 	}
 	successTestCases := 0
-	authModule := Init(&crud.Module{})
+	authModule := Init(&crud.Module{}, &functions.Module{})
 	for i, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecret(test.secretKey)
@@ -64,37 +65,6 @@ func TestCreateToken(t *testing.T) {
 			if i <= successTestCases {
 				if (test.wantThis != tokenString) || err != nil {
 					t.Error("Success Test ", "Got This ", tokenString, "Wanted This ", test.wantThis, "Error ", err)
-				}
-			}
-
-		})
-	}
-}
-
-func TestGetAuthObj(t *testing.T) {
-	var authGetAuthObj = []struct {
-		testName, secretKey, token string
-		wantThis                   map[string]interface{}
-	}{
-		{testName: "Successful Test", secretKey: "mySecretkey", wantThis: map[string]interface{}{"token1": "token1value", "token2": "token2value"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
-		// error test
-		{testName: "Error Test secret key is not provide", wantThis: map[string]interface{}{"token1": "token1value", "token2": "token2value"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
-		{testName: "Successful Test", secretKey: "mySecretkey", wantThis: map[string]interface{}{"token1": "token1value", "token2": "token2value"}, token: "abcdefghijkleyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
-	}
-	successTestCases := 0
-	authModule := Init(&crud.Module{})
-	for i, test := range authGetAuthObj {
-		t.Run(test.testName, func(t *testing.T) {
-			authModule.SetSecret(test.secretKey)
-			getAuthObect, err := authModule.GetAuthObj(test.token)
-			if i <= successTestCases {
-				if (!reflect.DeepEqual(getAuthObect, test.wantThis)) || err != nil {
-					t.Error("Success Test ", "Got This ", getAuthObect, "Wanted This ", test.wantThis, "Error ", err)
-				}
-			} else {
-
-				if (reflect.DeepEqual(getAuthObect, test.wantThis)) || err == nil {
-					t.Error("Error Test", "Got This ", getAuthObect, "Wanted This ", test.wantThis, "Error ", err)
 				}
 			}
 
@@ -166,7 +136,7 @@ func TestIsAuthorized(t *testing.T) {
 		{testName: "Error Test and == bool eval is not provided", err: ErrIncorrectRuleFieldType, dbType: "my-sql", col: "collectionName", project: "project", query: "rule1", authModuleRules: config.Crud{"my-sql": &config.CrudStub{Collections: map[string]*config.TableRule{"collectionName": &config.TableRule{Rules: map[string]*config.Rule{"rule1": &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}}}},
 	}
 	successTestCases := 31
-	authModule := Init(&crud.Module{})
+	authModule := Init(&crud.Module{}, &functions.Module{})
 	for i, test := range authIsAuthorized {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.rules = test.authModuleRules
@@ -199,10 +169,10 @@ func TestIsAuthenticated(t *testing.T) {
 		// error test
 	}
 	successTestCases := 1
-	authModule := Init(&crud.Module{})
+	authModule := Init(&crud.Module{}, &functions.Module{})
 	for i, test := range authIsAuthenticated {
 		t.Run(test.testName, func(t *testing.T) {
-			authModule.SetConfig("project", test.secretKey, test.authModuleRules, nil)
+			authModule.SetConfig("project", test.secretKey, test.authModuleRules, nil, nil)
 			getAuthObect, err := authModule.IsAuthenticated(test.token, test.dbType, test.col, test.query)
 			if i <= successTestCases {
 				if (!reflect.DeepEqual(getAuthObect, test.wantThis)) || err != nil {

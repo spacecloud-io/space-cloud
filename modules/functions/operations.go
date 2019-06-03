@@ -3,9 +3,9 @@ package functions
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/client"
 )
@@ -58,28 +58,36 @@ func (m *Module) HandleServiceResponse(res *model.FunctionsPayload) {
 	m.pendingRequests.Delete(res.ID)
 }
 
-// Operation handles the function call operation
-func (m *Module) Operation(auth *auth.Module, token, service, function string, params interface{}, timeout int) ([]byte, error) {
-	authObj, _ := auth.GetAuthObj(token)
-	dataBytes, err := m.Request(service, int(timeout), &model.FunctionsPayload{Service: service, Func: function, Auth: authObj, Params: params})
+// Call simply calls a function on a service
+func (m *Module) Call(service, function string, auth map[string]interface{}, params interface{}, timeout int) (interface{}, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	req := &model.FunctionsPayload{Service: service, Func: function, Auth: auth, Params: params}
+
+	// Marshal the object into json
+	data, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
-	data := new(model.FunctionsPayload)
-	err = json.Unmarshal(dataBytes, &data)
+
+	// Send request over nats
+	subject := getSubjectName(service)
+	msg, err := m.nc.Request(subject, data, time.Duration(timeout)*time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	res := new(model.FunctionsPayload)
+	err = json.Unmarshal(msg.Data, &res)
 	if err != nil {
 		return nil, err
 	}
 
 	// Return an error if response recieved has an error
-	if len(data.Error) > 0 {
-		return nil, errors.New(data.Error)
+	if len(res.Error) > 0 {
+		return nil, errors.New(res.Error)
 	}
 
-	// Create the result to be sent back
-	resultBytes, err := json.Marshal(map[string]interface{}{"result": data.Params})
-	if err != nil {
-		return nil, err
-	}
-	return resultBytes, nil
+	return res.Params, nil
 }

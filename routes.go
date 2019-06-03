@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
 func (s *server) routes() {
@@ -12,7 +13,7 @@ func (s *server) routes() {
 	s.router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
 
 	// Initialize the routes for functions service
-	s.router.Methods("POST").Path("/v1/api/functions/{service}/{func}").HandlerFunc(s.functions.HandleRequest(s.auth))
+	s.router.Methods("POST").Path("/v1/api/{project}/functions/{service}/{func}").HandlerFunc(handlers.HandleRequest(s.functions, s.auth))
 
 	// Initialize the routes for the crud operations
 	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(s.handleBatch())

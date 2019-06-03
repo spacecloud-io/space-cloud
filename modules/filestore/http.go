@@ -67,7 +67,7 @@ func (m *Module) HandleCreateFile(auth *auth.Module) http.HandlerFunc {
 		}
 
 		// Check if the user is authorised to make this request
-		err = auth.IsFileOpAuthorised(token, path, utils.FileCreate, map[string]interface{}{})
+		err = auth.IsFileOpAuthorised(project, token, path, utils.FileCreate, map[string]interface{}{})
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -125,7 +125,7 @@ func (m *Module) HandleRead(auth *auth.Module) http.HandlerFunc {
 		token, project, path := getMetaData(r)
 
 		// Check if the user is authorised to make this request
-		err := auth.IsFileOpAuthorised(token, path, utils.FileRead, map[string]interface{}{})
+		err := auth.IsFileOpAuthorised(project, token, path, utils.FileRead, map[string]interface{}{})
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -183,7 +183,7 @@ func (m *Module) HandleDelete(auth *auth.Module) http.HandlerFunc {
 		token, project, path := getMetaData(r)
 
 		// Check if the user is authorised to make this request
-		err := auth.IsFileOpAuthorised(token, path, utils.FileDelete, map[string]interface{}{})
+		err := auth.IsFileOpAuthorised(project, token, path, utils.FileDelete, map[string]interface{}{})
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})

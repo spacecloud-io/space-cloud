@@ -8,6 +8,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -17,17 +18,19 @@ type Module struct {
 	rules     config.Crud
 	secret    string
 	crud      *crud.Module
+	functions *functions.Module
 	fileRules map[string]*config.FileRule
+	funcRules config.FuncRules
 	project   string
 }
 
 // Init creates a new instance of the auth object
-func Init(crud *crud.Module) *Module {
-	return &Module{rules: make(config.Crud), crud: crud}
+func Init(crud *crud.Module, functions *functions.Module) *Module {
+	return &Module{rules: make(config.Crud), crud: crud, functions: functions}
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore) {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -36,6 +39,10 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	m.secret = secret
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
+	}
+
+	if functions != nil && functions.Enabled {
+		m.funcRules = functions.Rules
 	}
 }
 
@@ -78,14 +85,6 @@ func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
 	}
 
 	return tokenString, nil
-}
-
-// GetAuthObj returns the auth object from a token string
-func (m *Module) GetAuthObj(token string) (map[string]interface{}, error) {
-	m.RLock()
-	defer m.RUnlock()
-
-	return m.parseToken(token)
 }
 
 func (m *Module) parseToken(token string) (map[string]interface{}, error) {
@@ -145,5 +144,5 @@ func (m *Module) IsAuthorized(project, dbType, col string, query utils.Operation
 		return err
 	}
 
-	return m.matchRule(rule, args)
+	return m.matchRule(project, rule, args)
 }
