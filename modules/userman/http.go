@@ -15,7 +15,7 @@ import (
 func (m *Module) HandleProfile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -46,7 +46,7 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 func (m *Module) HandleProfiles() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -76,7 +76,7 @@ func (m *Module) HandleProfiles() http.HandlerFunc {
 func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -104,7 +104,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -132,7 +132,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 func (m *Module) HandleEmailEditProfile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters

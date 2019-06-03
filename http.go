@@ -21,7 +21,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -108,7 +108,7 @@ func (s *server) handleRead() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -164,7 +164,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -243,7 +243,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -314,7 +314,7 @@ func (s *server) handleAggregate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters
@@ -382,7 +382,7 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 func (s *server) handleBatch() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Get the path parameters

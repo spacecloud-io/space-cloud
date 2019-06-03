@@ -36,7 +36,7 @@ func (m *Module) HandleCreateFile(auth *auth.Module) http.HandlerFunc {
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Extract the path from the url
@@ -118,7 +118,7 @@ func (m *Module) HandleRead(auth *auth.Module) http.HandlerFunc {
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Extract the path from the url
@@ -176,7 +176,7 @@ func (m *Module) HandleDelete(auth *auth.Module) http.HandlerFunc {
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Extract the path from the url
