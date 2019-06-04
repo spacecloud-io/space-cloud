@@ -734,10 +734,18 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	client.Read(func(req *model.Message) {
 		switch req.Type {
 		case utils.TypeRealtimeSubscribe:
-			s.realtime.Subscribe(client, s.auth, s.crud, req)
+			// For realtime subscribe event
+			data := new(model.RealtimeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			s.realtime.Subscribe(req.ID, client, s.auth, s.crud, data)
 
 		case utils.TypeRealtimeUnsubscribe:
-			s.realtime.Unsubscribe(client, req)
+			// For realtime unsubscribe event
+			data := new(model.RealtimeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			s.realtime.Unsubscribe(req.ID, client, data)
 		}
 	})
 	return nil

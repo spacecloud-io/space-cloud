@@ -81,6 +81,8 @@ message FunctionsPayload {
   string type = 5;
   string id = 6;
   string error = 7;
+  string project = 8;
+  string token = 9;
 }
 
 message FeedData {

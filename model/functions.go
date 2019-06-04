@@ -19,4 +19,6 @@ type FunctionsPayload struct {
 // ServiceRegisterRequest is the register service request
 type ServiceRegisterRequest struct {
 	Service string `json:"service"`
+	Project string `json:"project"`
+	Token   string `json:"token"`
 }
