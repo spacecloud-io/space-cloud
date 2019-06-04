@@ -21,6 +21,9 @@ func Init() *Module {
 	return &Module{enabled: false}
 }
 
+// SendFeed is the function called whenever a data point (feed) is to be sent
+type SendFeed func(*model.FeedData)
+
 // SetConfig set the rules and secret key required by the crud block
 func (m *Module) SetConfig(conf *config.Realtime) error {
 	m.Lock()

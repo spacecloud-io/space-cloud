@@ -6,27 +6,19 @@ import (
 	"time"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/utils"
-	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 // RegisterService registers a new service with the functions module
-func (m *Module) RegisterService(reqID string, c client.Client, req *model.ServiceRegisterRequest) {
+func (m *Module) RegisterService(clientID string, req *model.ServiceRegisterRequest, sendPayload SendPayload) {
 
 	service := new(servicesStub)
 	t, _ := m.services.LoadOrStore(req.Service, service)
 	service = t.(*servicesStub)
 
 	// Subscribe to nats if not already subscribed
-	service.subscribe(m.nc, c, m.channel, req)
+	service.subscribe(m.nc, &serviceStub{clientID, sendPayload}, m.channel, req)
 
 	m.services.Store(req.Service, service)
-
-	c.Write(&model.Message{
-		ID:   reqID,
-		Type: utils.TypeServiceRegister,
-		Data: map[string]interface{}{"ack": true},
-	})
 }
 
 // UnregisterService removes a service from the functions module

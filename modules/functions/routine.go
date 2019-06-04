@@ -9,8 +9,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/utils"
-	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 func (m *Module) initWorkers(workerCount int) {
@@ -37,8 +35,20 @@ func (m *Module) worker() {
 		}
 
 		service := t.(*servicesStub)
-		m.requestService(service.getClient(), req, msg.Reply)
+		m.requestService(service.getService(), req, msg.Reply)
 	}
+}
+
+func (m *Module) requestService(service *serviceStub, req *model.FunctionsPayload, reply string) {
+	// Generate a unique id for request
+	id := uuid.NewV1().String()
+	req.ID = id
+
+	// Add request to the map of pending requests
+	m.pendingRequests.Store(id, &pendingRequest{reply: reply, reqTime: time.Now()})
+
+	// Send the request to the service
+	service.sendPayload(req)
 }
 
 func (m *Module) removeStaleRequests() {
@@ -57,21 +67,6 @@ func (m *Module) removeStaleRequests() {
 			return true
 		})
 	}
-}
-
-func (m *Module) requestService(client client.Client, req *model.FunctionsPayload, reply string) {
-	// Generate a unique id for request
-	id := uuid.NewV1().String()
-	req.ID = id
-
-	// Add request to the map of pending requests
-	m.pendingRequests.Store(id, &pendingRequest{reply: reply, reqTime: time.Now()})
-
-	// Send the request to the service
-	client.Write(&model.Message{
-		Type: utils.TypeServiceRequest,
-		Data: req,
-	})
 }
 
 func (m *Module) publishErrorResponse(subject string, err error) {
