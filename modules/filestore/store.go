@@ -77,7 +77,8 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	return nil
 }
 
-func (m *Module) isEnabled() bool {
+// IsEnabled checks if the file store module is enabled
+func (m *Module) IsEnabled() bool {
 	m.RLock()
 	defer m.RUnlock()
 	return m.enabled
