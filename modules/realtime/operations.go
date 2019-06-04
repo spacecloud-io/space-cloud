@@ -3,8 +3,6 @@ package realtime
 import (
 	"time"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
@@ -13,17 +11,14 @@ import (
 )
 
 // Subscribe performs the realtime subscribe operation.
-func (m *Module) Subscribe(client client.Client, auth *auth.Module, crud *crud.Module, req *model.Message) {
-	// For realtime subscribe event
-	data := new(model.RealtimeRequest)
-	mapstructure.Decode(req.Data, data)
+func (m *Module) Subscribe(id string, client client.Client, auth *auth.Module, crud *crud.Module, data *model.RealtimeRequest) {
 
 	// Check if the user is authenticated
 	authObj, err := auth.IsAuthenticated(data.Token, data.DBType, data.Group, utils.Read)
 	if err != nil {
 		client.Write(&model.Message{
-			ID:   req.ID,
-			Type: req.Type,
+			ID:   id,
+			Type: utils.TypeRealtimeSubscribe,
 			Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
 		})
 		return
@@ -39,8 +34,8 @@ func (m *Module) Subscribe(client client.Client, auth *auth.Module, crud *crud.M
 	err = auth.IsAuthorized(data.Project, data.DBType, data.Group, utils.Read, args)
 	if err != nil {
 		client.Write(&model.Message{
-			ID:   req.ID,
-			Type: req.Type,
+			ID:   id,
+			Type: utils.TypeRealtimeSubscribe,
 			Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
 		})
 		return
@@ -50,8 +45,8 @@ func (m *Module) Subscribe(client client.Client, auth *auth.Module, crud *crud.M
 	result, err := crud.Read(client.Context(), data.DBType, data.Project, data.Group, &readReq)
 	if err != nil {
 		client.Write(&model.Message{
-			ID:   req.ID,
-			Type: req.Type,
+			ID:   id,
+			Type: utils.TypeRealtimeSubscribe,
 			Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()},
 		})
 		return
@@ -84,22 +79,18 @@ func (m *Module) Subscribe(client client.Client, auth *auth.Module, crud *crud.M
 	// Add the live query
 	m.AddLiveQuery(data.ID, data.Group, client, data.Where)
 	client.Write(&model.Message{
-		ID:   req.ID,
-		Type: req.Type,
+		ID:   id,
+		Type: utils.TypeRealtimeSubscribe,
 		Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData},
 	})
 }
 
 // Unsubscribe performs the realtime unsubscribe operation.
-func (m *Module) Unsubscribe(client client.Client, req *model.Message) {
-	// For realtime unsubscribe event
-	data := new(model.RealtimeRequest)
-	mapstructure.Decode(req.Data, data)
-
+func (m *Module) Unsubscribe(id string, client client.Client, data *model.RealtimeRequest) {
 	m.RemoveLiveQuery(data.Group, client.ClientID(), data.ID)
 	client.Write(&model.Message{
-		ID:   req.ID,
-		Type: req.Type,
+		ID:   id,
+		Type: utils.TypeRealtimeUnsubscribe,
 		Data: model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true},
 	})
 }

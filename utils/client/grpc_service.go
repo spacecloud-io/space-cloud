@@ -72,7 +72,7 @@ func (c *GRPCServiceClient) Read(cb DataCallback) {
 
 		switch in.Type {
 		case utils.TypeServiceRegister:
-			data := map[string]interface{}{"service": in.Service}
+			data := map[string]interface{}{"service": in.Service, "token": in.Token, "project": in.Project}
 			msg := &model.Message{ID: in.Id, Type: utils.TypeServiceRegister, Data: data}
 			cb(msg)
 
