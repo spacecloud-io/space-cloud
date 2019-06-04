@@ -8,16 +8,20 @@ import (
 	nats "github.com/nats-io/go-nats"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/utils/client"
 )
+
+type serviceStub struct {
+	clientID    string
+	sendPayload SendPayload
+}
 
 type servicesStub struct {
 	sync.RWMutex
-	clients      []client.Client
+	services     []*serviceStub
 	subscription *nats.Subscription
 }
 
-func (s *servicesStub) subscribe(nc *nats.Conn, c client.Client, channel chan *nats.Msg, req *model.ServiceRegisterRequest) error {
+func (s *servicesStub) subscribe(nc *nats.Conn, ser *serviceStub, channel chan *nats.Msg, req *model.ServiceRegisterRequest) error {
 	s.RLock()
 	defer s.RUnlock()
 
@@ -27,14 +31,13 @@ func (s *servicesStub) subscribe(nc *nats.Conn, c client.Client, channel chan *n
 			return err
 		}
 		s.subscription = sub
-		s.clients = []client.Client{}
 	}
 
-	if s.clients == nil {
-		s.clients = []client.Client{}
+	if s.services == nil {
+		s.services = []*serviceStub{}
 	}
-	s.clients = append(s.clients, c)
 
+	s.services = append(s.services, ser)
 	return nil
 }
 
@@ -43,28 +46,28 @@ func (s *servicesStub) unsubscribe(services *sync.Map, key interface{}, clientID
 	defer s.Unlock()
 
 	// Iterate over all clients and delete the client whose id matches
-	for i, client := range s.clients {
-		if client.ClientID() == clientID {
-			s.clients = remove(s.clients, i)
+	for i, ser := range s.services {
+		if ser.clientID == clientID {
+			s.services = remove(s.services, i)
 			break
 		}
 	}
 
-	if len(s.clients) == 0 {
+	if len(s.services) == 0 {
 		s.subscription.Unsubscribe()
 		s.subscription = nil
 		services.Delete(key)
 	}
 }
 
-func (s *servicesStub) getClient() client.Client {
+func (s *servicesStub) getService() *serviceStub {
 	s.RLock()
 	defer s.RUnlock()
 
-	return s.clients[rand.Intn(len(s.clients))]
+	return s.services[rand.Intn(len(s.services))]
 }
 
-func remove(s []client.Client, i int) []client.Client {
+func remove(s []*serviceStub, i int) []*serviceStub {
 	s[i] = s[len(s)-1]
 	// We do not need to put s[i] at the end, as it will be discarded anyway
 	return s[:len(s)-1]

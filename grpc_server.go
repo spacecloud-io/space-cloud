@@ -705,6 +705,9 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	defer client.Close()
 	go client.RoutineWrite()
 
+	// Get client details
+	clientID := client.ClientID()
+
 	client.Read(func(req *model.Message) {
 		switch req.Type {
 		case utils.TypeServiceRegister:
@@ -712,7 +715,11 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 			data := new(model.ServiceRegisterRequest)
 			mapstructure.Decode(req.Data, data)
 
-			s.functions.RegisterService(req.ID, client, data)
+			s.functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
+				client.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
+			})
+
+			client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
 
 		case utils.TypeServiceRequest:
 			data := new(model.FunctionsPayload)
@@ -731,6 +738,10 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	defer client.Close()
 	go client.RoutineWrite()
 
+	// Get client details
+	ctx := client.Context()
+	clientID := client.ClientID()
+
 	client.Read(func(req *model.Message) {
 		switch req.Type {
 		case utils.TypeRealtimeSubscribe:
@@ -738,14 +749,30 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			data := new(model.RealtimeRequest)
 			mapstructure.Decode(req.Data, data)
 
-			s.realtime.Subscribe(req.ID, client, s.auth, s.crud, data)
+			// Subscribe to relaitme feed
+			feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
+				client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
+			})
+			if err != nil {
+				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
+				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				return
+			}
+
+			// Send response to client
+			res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData}
+			client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
 		case utils.TypeRealtimeUnsubscribe:
-			// For realtime unsubscribe event
+			// For realtime subscribe event
 			data := new(model.RealtimeRequest)
 			mapstructure.Decode(req.Data, data)
 
-			s.realtime.Unsubscribe(req.ID, client, data)
+			s.realtime.Unsubscribe(clientID, data)
+
+			// Send response to client
+			res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
+			client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 		}
 	})
 	return nil

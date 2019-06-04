@@ -7,6 +7,7 @@ import (
 	"github.com/nats-io/go-nats"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -19,6 +20,9 @@ type Module struct {
 	channel         chan *nats.Msg
 	pendingRequests sync.Map
 }
+
+// SendPayload is the function called whenever a data point (payload) is to be sent
+type SendPayload func(*model.FunctionsPayload)
 
 // Init returns a new instance of the Functions module
 func Init() *Module {
