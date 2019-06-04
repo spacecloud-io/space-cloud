@@ -1,4 +1,4 @@
-package userman
+package handlers
 
 import (
 	"context"
@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
-
 	"github.com/gorilla/mux"
+
+	"github.com/spaceuptech/space-cloud/modules/userman"
 )
 
 // HandleProfile returns the handler for fetching single user profile
-func (m *Module) HandleProfile() http.HandlerFunc {
+func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -31,7 +32,7 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		status, result, err := m.Profile(ctx, token, dbType, project, id)
+		status, result, err := userManagement.Profile(ctx, token, dbType, project, id)
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -43,7 +44,7 @@ func (m *Module) HandleProfile() http.HandlerFunc {
 }
 
 // HandleProfiles returns the handler for fetching all user profiles
-func (m *Module) HandleProfiles() http.HandlerFunc {
+func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -61,7 +62,7 @@ func (m *Module) HandleProfiles() http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		status, result, err := m.Profiles(ctx, token, dbType, project)
+		status, result, err := userManagement.Profiles(ctx, token, dbType, project)
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -73,7 +74,7 @@ func (m *Module) HandleProfiles() http.HandlerFunc {
 }
 
 // HandleEmailSignIn returns the handler for email sign in
-func (m *Module) HandleEmailSignIn() http.HandlerFunc {
+func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -89,7 +90,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := m.EmailSignIn(ctx, dbType, project, req["email"].(string), req["pass"].(string))
+		status, result, err := userManagement.EmailSignIn(ctx, dbType, project, req["email"].(string), req["pass"].(string))
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -101,7 +102,7 @@ func (m *Module) HandleEmailSignIn() http.HandlerFunc {
 }
 
 // HandleEmailSignUp returns the handler for email sign up
-func (m *Module) HandleEmailSignUp() http.HandlerFunc {
+func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -117,7 +118,7 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := m.EmailSignUp(ctx, dbType, project, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
+		status, result, err := userManagement.EmailSignUp(ctx, dbType, project, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -128,8 +129,8 @@ func (m *Module) HandleEmailSignUp() http.HandlerFunc {
 	}
 }
 
-// HandleEmailSignUp returns the handler for email sign up
-func (m *Module) HandleEmailEditProfile() http.HandlerFunc {
+// HandleEmailEditProfile returns the handler for edit profile
+func HandleEmailEditProfile(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -153,7 +154,7 @@ func (m *Module) HandleEmailEditProfile() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := m.EmailEditProfile(ctx, token, dbType, project, id, req["email"].(string), req["name"].(string), req["pass"].(string))
+		status, result, err := userManagement.EmailEditProfile(ctx, token, dbType, project, id, req["email"].(string), req["name"].(string), req["pass"].(string))
 
 		w.WriteHeader(status)
 		if err != nil {

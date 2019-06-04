@@ -44,7 +44,8 @@ func (m *Module) isEnabled() bool {
 	return m.Enabled
 }
 
-func (m *Module) selectRoute(host, url string) (*config.StaticRoute, bool) {
+// SelectRoute select the rules for a given request
+func (m *Module) SelectRoute(host, url string) (*config.StaticRoute, bool) {
 	m.RLock()
 	defer m.RUnlock()
 

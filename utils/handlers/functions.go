@@ -12,8 +12,8 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
-// HandleRequest creates a Functions request endpoint
-func HandleRequest(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
+// HandleFunctionCall creates a Functions request endpoint
+func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Return if the functions module is not enabled
