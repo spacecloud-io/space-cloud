@@ -685,17 +685,18 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 		return &out, nil
 	}
 
-	resultBytes, err := s.functions.Operation(s.auth, in.Token, in.Service, in.Function, params, int(in.Timeout))
+	auth, err := s.auth.IsFuncCallAuthorised(in.Project, in.Service, in.Function, in.Token, params)
 	if err != nil {
-		out := pb.Response{}
-		out.Status = 500
-		out.Error = err.Error()
-		return &out, nil
+		return &pb.Response{Status: 403, Error: err.Error()}, nil
 	}
-	out := pb.Response{}
-	out.Result = resultBytes
-	out.Status = 200
-	return &out, nil
+
+	result, err := s.functions.Call(in.Service, in.Function, auth, params, int(in.Timeout))
+	if err != nil {
+		return &pb.Response{Status: 500, Error: err.Error()}, nil
+	}
+
+	data, _ := json.Marshal(result)
+	return &pb.Response{Result: data, Status: 200}, nil
 }
 
 func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {

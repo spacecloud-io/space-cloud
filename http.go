@@ -134,8 +134,7 @@ func (s *server) handleRead() http.HandlerFunc {
 
 		// Create an args object
 		args := map[string]interface{}{
-			"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
+			"args": map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
 		}
 
 		// Check if user is authorized to make this request

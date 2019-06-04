@@ -1,9 +1,8 @@
 package functions
 
 import (
-	"encoding/json"
+	"errors"
 	"sync"
-	"time"
 
 	"github.com/nats-io/go-nats"
 
@@ -49,7 +48,11 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 	}
 
 	// Conect and create a new nats client
-	nc, err := nats.Connect(functions.Nats)
+	if functions.Broker != utils.Nats {
+		return errors.New("borker is not supported")
+	}
+
+	nc, err := nats.Connect(functions.Conn)
 	if err != nil {
 		return err
 	}
@@ -63,28 +66,8 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 	return nil
 }
 
-// Request calls a function on the provided service
-func (m *Module) Request(service string, timeout int, val interface{}) ([]byte, error) {
-	m.RLock()
-	defer m.RUnlock()
-
-	// Marshal the object into json
-	data, err := json.Marshal(val)
-	if err != nil {
-		return nil, err
-	}
-
-	// Send request over nats
-	subject := getSubjectName(service)
-	msg, err := m.nc.Request(subject, data, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, err
-	}
-
-	return msg.Data, nil
-}
-
-func (m *Module) isEnabled() bool {
+// IsEnabled checks if the functions module is enabled
+func (m *Module) IsEnabled() bool {
 	m.RLock()
 	defer m.RUnlock()
 

@@ -42,12 +42,12 @@ type server struct {
 func initServer(isProd bool) *server {
 	r := mux.NewRouter()
 	c := crud.Init()
-	a := auth.Init(c)
-	u := userman.Init(c, a)
 	f := filestore.Init()
 	realtime := realtime.Init()
 	s := static.Init()
 	functions := functions.Init()
+	a := auth.Init(c, functions)
+	u := userman.Init(c, a)
 	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd}
 }
 
@@ -83,7 +83,7 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.lock.Unlock()
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore)
+	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(config.Modules.Auth)

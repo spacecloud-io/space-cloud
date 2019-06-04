@@ -1,4 +1,4 @@
-package functions
+package handlers
 
 import (
 	"encoding/json"
@@ -9,14 +9,15 @@ import (
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
 // HandleRequest creates a Functions request endpoint
-func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
+func HandleRequest(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Return if the functions module is not enabled
-		if !m.isEnabled() {
+		if !functions.IsEnabled() {
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
 			return
@@ -24,6 +25,7 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
+		project := vars["project"]
 		service := vars["service"]
 		function := vars["func"]
 
@@ -39,13 +41,20 @@ func (m *Module) HandleRequest(auth *auth.Module) http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		resultBytes, err := m.Operation(auth, token, service, function, req.Params, req.Timeout)
+		authObj, err := auth.IsFuncCallAuthorised(project, service, function, token, req.Params)
 		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		result, err := functions.Call(service, function, authObj, req.Params, int(req.Timeout))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write(resultBytes)
+		json.NewEncoder(w).Encode(result)
 	}
 }
