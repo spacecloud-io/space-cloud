@@ -33,9 +33,24 @@ func (c *GRPCServiceClient) RoutineWrite() {
 			authData, _ := json.Marshal(reqMsg.Auth)
 			paramsData, _ := json.Marshal(reqMsg.Params)
 			c.streamServer.Send(&proto.FunctionsPayload{
+				Id:       reqMsg.ID,
+				Type: utils.TypeServiceRequest,
 				Auth:     authData,
 				Params:   paramsData,
 				Function: reqMsg.Func,
+			})
+
+		case utils.TypeServiceRegister:
+			reqMsg, ok := res.Data.(map[string]interface{})
+			if !ok {
+				log.Println("GRPC Service Error - Invalid data type", res.Data)
+				break
+			}
+			paramsData, _ := json.Marshal(reqMsg)
+			c.streamServer.Send(&proto.FunctionsPayload{
+				Id: res.ID,
+				Type: utils.TypeServiceRegister,
+				Params: paramsData,
 			})
 
 		default:
