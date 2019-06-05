@@ -423,14 +423,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 				return &out, nil
 			}
 			var findObj map[string]interface{}
-			if err := json.Unmarshal(req.Update, &findObj); err != nil {
-				out := pb.Response{}
-				out.Status = 500
-				out.Error = err.Error()
-				return &out, nil
-			}
-			var document interface{}
-			if err := json.Unmarshal(req.Update, &document); err != nil {
+			if err := json.Unmarshal(req.Find, &findObj); err != nil {
 				out := pb.Response{}
 				out.Status = 500
 				out.Error = err.Error()
@@ -438,7 +431,6 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 			eachReq.Find = findObj
 			eachReq.Update = updateObj
-			eachReq.Document = document
 			eachReq.Col = req.Col
 			eachReq.Operation = req.Operation
 			eachReq.Type = req.Type
@@ -468,29 +460,13 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 		case string(utils.Create):
 			eachReq := model.AllRequest{}
-			var updateObj map[string]interface{}
-			if err := json.Unmarshal(req.Update, &updateObj); err != nil {
-				out := pb.Response{}
-				out.Status = 500
-				out.Error = err.Error()
-				return &out, nil
-			}
-			var findObj map[string]interface{}
-			if err := json.Unmarshal(req.Update, &findObj); err != nil {
-				out := pb.Response{}
-				out.Status = 500
-				out.Error = err.Error()
-				return &out, nil
-			}
 			var document interface{}
-			if err := json.Unmarshal(req.Update, &document); err != nil {
+			if err := json.Unmarshal(req.Document, &document); err != nil {
 				out := pb.Response{}
 				out.Status = 500
 				out.Error = err.Error()
 				return &out, nil
 			}
-			eachReq.Find = findObj
-			eachReq.Update = updateObj
 			eachReq.Document = document
 			eachReq.Col = req.Col
 			eachReq.Operation = req.Operation
@@ -522,30 +498,14 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 		case string(utils.Delete):
 			eachReq := model.AllRequest{}
-			var updateObj map[string]interface{}
-			if err := json.Unmarshal(req.Update, &updateObj); err != nil {
-				out := pb.Response{}
-				out.Status = 500
-				out.Error = err.Error()
-				return &out, nil
-			}
 			var findObj map[string]interface{}
-			if err := json.Unmarshal(req.Update, &findObj); err != nil {
-				out := pb.Response{}
-				out.Status = 500
-				out.Error = err.Error()
-				return &out, nil
-			}
-			var document interface{}
-			if err := json.Unmarshal(req.Update, &document); err != nil {
+			if err := json.Unmarshal(req.Find, &findObj); err != nil {
 				out := pb.Response{}
 				out.Status = 500
 				out.Error = err.Error()
 				return &out, nil
 			}
 			eachReq.Find = findObj
-			eachReq.Update = updateObj
-			eachReq.Document = document
 			eachReq.Col = req.Col
 			eachReq.Operation = req.Operation
 			eachReq.Type = req.Type
