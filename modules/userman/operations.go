@@ -2,9 +2,9 @@ package userman
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
-	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -18,7 +18,7 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
-	
+
 	authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Read)
 	if err != nil {
 		return http.StatusUnauthorized, nil, err
@@ -45,7 +45,7 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 	if err != nil {
 		return http.StatusForbidden, nil, err
 	}
-	
+
 	req := &model.ReadRequest{Find: find, Operation: utils.One}
 	res, err := m.crud.Read(ctx, dbType, project, "users", req)
 	if err != nil {
@@ -54,7 +54,7 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 
 	// Delete password from user object
 	delete(res.(map[string]interface{}), "pass")
-	
+
 	return http.StatusOK, res.(map[string]interface{}), nil
 }
 
@@ -62,7 +62,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
-	
+
 	authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Read)
 	if err != nil {
 		return http.StatusUnauthorized, nil, err
@@ -82,7 +82,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 	if err != nil {
 		return http.StatusForbidden, nil, err
 	}
-	
+
 	req := &model.ReadRequest{Find: find, Operation: utils.All}
 	res, err := m.crud.Read(ctx, dbType, project, "users", req)
 	if err != nil {
@@ -96,7 +96,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 			delete(userObj, "pass")
 		}
 	}
-	
+
 	return http.StatusOK, map[string]interface{}{"users": res}, nil
 }
 
@@ -189,8 +189,8 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	tokenObj := map[string]interface{}{
 		"email": email,
 		"role":  role,
-		"id":    id.String() }
-	
+		"id":    id.String()}
+
 	token, err := m.auth.CreateToken(tokenObj)
 	if err != nil {
 		return http.StatusInternalServerError, nil, errors.New("Failed to create a JWT token")

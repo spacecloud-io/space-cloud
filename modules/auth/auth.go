@@ -24,6 +24,9 @@ type Module struct {
 	project   string
 }
 
+// TokenClaims holds the JWT token claims
+type TokenClaims map[string]interface{}
+
 // Init creates a new instance of the auth object
 func Init(crud *crud.Module, functions *functions.Module) *Module {
 	return &Module{rules: make(config.Crud), crud: crud, functions: functions}
@@ -69,12 +72,12 @@ func (m *Module) getRule(dbType, col string, query utils.OperationType) (*config
 }
 
 // CreateToken generates a new JWT Token
-func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
+func (m *Module) CreateToken(tokenClaims TokenClaims) (string, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	claims := jwt.MapClaims{}
-	for k, v := range obj {
+	for k, v := range tokenClaims {
 		claims[k] = v
 	}
 
@@ -87,7 +90,7 @@ func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
 	return tokenString, nil
 }
 
-func (m *Module) parseToken(token string) (map[string]interface{}, error) {
+func (m *Module) parseToken(token string) (TokenClaims, error) {
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
@@ -103,19 +106,19 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 
 	// Get the claims
 	if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
-		obj := make(map[string]interface{}, len(claims))
+		tokenClaims := make(TokenClaims, len(claims))
 		for key, val := range claims {
-			obj[key] = val
+			tokenClaims[key] = val
 		}
 
-		return obj, nil
+		return tokenClaims, nil
 	}
 
 	return nil, errors.New("AUTH: JWT token could not be verified")
 }
 
 // IsAuthenticated checks if the caller is authentic
-func (m *Module) IsAuthenticated(token, dbType, col string, query utils.OperationType) (map[string]interface{}, error) {
+func (m *Module) IsAuthenticated(token, dbType, col string, query utils.OperationType) (TokenClaims, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -125,7 +128,7 @@ func (m *Module) IsAuthenticated(token, dbType, col string, query utils.Operatio
 	}
 
 	if rule.Rule == "allow" {
-		return map[string]interface{}{}, nil
+		return nil, nil
 	}
 	return m.parseToken(token)
 }
