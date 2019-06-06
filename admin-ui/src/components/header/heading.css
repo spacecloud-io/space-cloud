@@ -1,0 +1,11 @@
+.heading {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.line {
+  margin-bottom: 24px;
+  border-bottom: 3px solid #FF6700;
+  width: 20%;
+}
