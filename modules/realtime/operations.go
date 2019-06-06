@@ -13,26 +13,15 @@ import (
 // Subscribe performs the realtime subscribe operation.
 func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Module, crud *crud.Module, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
 
-	// Check if the user is authenticated
-	authObj, err := auth.IsAuthenticated(data.Token, data.DBType, data.Group, utils.Read)
+	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
+
+	// Check if the user is authenthorised to make the request
+	_, err := auth.IsReadOpAuthorised(data.Project, data.DBType, data.Group, data.Token, readReq)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create an args object
-	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": data.Where, "op": utils.All, "auth": authObj},
-		"project": data.Project, // Don't forget to do this for every request
-	}
-
-	// Check if user is authorized to make this request
-	err = auth.IsAuthorized(data.Project, data.DBType, data.Group, utils.Read, args)
-	if err != nil {
-		return nil, err
-	}
-
-	readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
-	result, err := crud.Read(ctx, data.DBType, data.Project, data.Group, &readReq)
+	result, err := crud.Read(ctx, data.DBType, data.Project, data.Group, readReq)
 	if err != nil {
 		return nil, err
 	}

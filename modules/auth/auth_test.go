@@ -29,7 +29,7 @@ func TestGetRule(t *testing.T) {
 	for i, test := range authGetRule {
 		t.Run(test.testName, func(t *testing.T) {
 			(*authModule).rules = test.authModuleRules
-			gotThisRule, err := authModule.getRule(test.dbType, test.col, test.query)
+			gotThisRule, err := authModule.getCrudRule(test.dbType, test.col, test.query)
 			if i <= successTestCases {
 				if !reflect.DeepEqual(gotThisRule, test.wantThis) || err != nil {
 					t.Error("Success Test ", "Got This ", gotThisRule, "Wanted This ", test.wantThis, "Error ", err)

@@ -31,29 +31,15 @@ func HandleCrudCreate(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authenticated
-		authObj, err := auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Create)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the request from the body
 		req := model.CreateRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		// Create an args object
-		args := map[string]interface{}{
-			"args":    map[string]interface{}{"doc": &req.Document, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
-		}
-
-		// Check if user is authorized to make this request
-		err = auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Create, args)
+		// Check if the user is authenticated
+		status, err := auth.IsCreateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -119,14 +105,6 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authenticated
-		authObj, err := auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Read)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the request from the body
 		req := model.ReadRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
@@ -137,15 +115,10 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 			req.Options = new(model.ReadOptions)
 		}
 
-		// Create an args object
-		args := map[string]interface{}{
-			"args": map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
-		}
-
-		// Check if user is authorized to make this request
-		err = auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Read, args)
+		// Check if the user is authenticated
+		status, err := auth.IsReadOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -175,29 +148,14 @@ func HandleCrudUpdate(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authenticated
-		authObj, err := auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Update)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the request from the body
 		req := model.UpdateRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		// Create an args object
-		args := map[string]interface{}{
-			"args":    map[string]interface{}{"find": req.Find, "update": req.Update, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
-		}
-
-		// Check if user is authorized to make this request
-		err = auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Update, args)
+		status, err := auth.IsUpdateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -255,29 +213,14 @@ func HandleCrudDelete(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authenticated
-		authObj, err := auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Delete)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the request from the body
 		req := model.DeleteRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		// Create an args object
-		args := map[string]interface{}{
-			"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
-		}
-
-		// Check if user is authorized to make this request
-		err = auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Delete, args)
+		status, err := auth.IsDeleteOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -327,29 +270,14 @@ func HandleCrudAggregate(auth *auth.Module, crud *crud.Module) http.HandlerFunc 
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Check if the user is authicated
-		authObj, err := auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Aggregation)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the request from the body
 		req := model.AggregateRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		// Create an args object
-		args := map[string]interface{}{
-			"args":    map[string]interface{}{"find": req.Pipeline, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
-		}
-
-		// Check if user is authorized to make this request
-		err = auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Aggregation, args)
+		status, err := auth.IsAggregateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -401,73 +329,31 @@ func HandleCrudBatch(isProd bool, auth *auth.Module, crud *crud.Module, realtime
 		json.NewDecoder(r.Body).Decode(&txRequest)
 		defer r.Body.Close()
 
-		args := map[string]interface{}{}
 		for _, req := range txRequest.Requests {
 
+			// Make status and error variables
+			var status int
+			var err error
+
 			switch req.Type {
-			case string(utils.Update):
-				authObj, err := auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Update)
-				if err != nil {
-					w.WriteHeader(http.StatusUnauthorized)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
-					return
-				}
-				args = map[string]interface{}{
-					"args":    map[string]interface{}{"find": req.Find, "update": req.Update, "op": req.Operation, "auth": authObj},
-					"project": meta.project, // Don't forget to do this for every request
-				}
-
-				// Check if user is authorized to make this request
-				err = auth.IsAuthorized(meta.project, meta.dbType, req.Col, utils.Update, args)
-				if err != nil {
-					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-					return
-				}
-
 			case string(utils.Create):
-				authObj, err := auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Create)
-				if err != nil {
-					w.WriteHeader(http.StatusUnauthorized)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
-					return
-				}
-				// Create an args object
-				args = map[string]interface{}{
-					"args":    map[string]interface{}{"doc": &req.Document, "op": req.Operation, "auth": authObj},
-					"project": meta.project, // Don't forget to do this for every request
-				}
+				req := model.CreateRequest{Document: req.Document, Operation: req.Operation}
+				status, err = auth.IsCreateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 
-				// Check if user is authorized to make this request
-				err = auth.IsAuthorized(meta.project, meta.dbType, req.Col, utils.Create, args)
-				if err != nil {
-					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-					return
-				}
+			case string(utils.Update):
+				req := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
+				status, err = auth.IsUpdateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 
 			case string(utils.Delete):
+				req := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
+				status, err = auth.IsDeleteOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+			}
 
-				authObj, err := auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Delete)
-				if err != nil {
-					w.WriteHeader(http.StatusUnauthorized)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
-					return
-				}
-				// Create an args object
-				args = map[string]interface{}{
-					"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
-					"project": meta.project, // Don't forget to do this for every request
-				}
-
-				// Check if user is authorized to make this request
-				err = auth.IsAuthorized(meta.project, meta.dbType, req.Col, utils.Delete, args)
-				if err != nil {
-					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-					return
-				}
-
+			// Send error response
+			if err != nil {
+				w.WriteHeader(status)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
 			}
 		}
 
