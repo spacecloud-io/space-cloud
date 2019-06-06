@@ -43,13 +43,3 @@ func (m *Module) SetConfig(conf *config.Realtime) error {
 	// TODO: initialise kafka client
 	return nil
 }
-
-// Send broadcasts a realtime datapoint to the concerned clients
-func (m *Module) Send(data *model.FeedData) {
-	m.RLock()
-	defer m.RUnlock()
-
-	if m.enabled {
-		m.feed <- data
-	}
-}
