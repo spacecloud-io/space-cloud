@@ -53,40 +53,7 @@ func HandleCrudCreate(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 		}
 
 		// Send realtime message in dev mode
-		if !isProd {
-			var rows []interface{}
-			switch req.Operation {
-			case utils.One:
-				rows = []interface{}{req.Document}
-			case utils.All:
-				rows = req.Document.([]interface{})
-			default:
-				rows = []interface{}{}
-			}
-
-			for _, t := range rows {
-				data := t.(map[string]interface{})
-
-				idVar := "id"
-				if meta.dbType == string(utils.Mongo) {
-					idVar = "_id"
-				}
-
-				// Send realtime message if id fields exists
-				if idTemp, p := data[idVar]; p {
-					if id, ok := idTemp.(string); ok {
-						realtime.Send(&model.FeedData{
-							Group:     meta.col,
-							DBType:    meta.dbType,
-							Type:      utils.RealtimeWrite,
-							TimeStamp: time.Now().Unix(),
-							DocID:     id,
-							Payload:   data,
-						})
-					}
-				}
-			}
-		}
+		realtime.SendCreate(meta.dbType, meta.col, &req)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -169,32 +136,7 @@ func HandleCrudUpdate(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 		}
 
 		// Send realtime message in dev mode
-		if !isProd && req.Operation == utils.One {
-
-			idVar := "id"
-			if meta.dbType == string(utils.Mongo) {
-				idVar = "_id"
-			}
-
-			if idTemp, p := req.Find[idVar]; p {
-				if id, ok := idTemp.(string); ok {
-					// Create the find object
-					find := map[string]interface{}{idVar: id}
-
-					data, err := crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
-					if err == nil {
-						realtime.Send(&model.FeedData{
-							Group:     meta.col,
-							Type:      utils.RealtimeWrite,
-							TimeStamp: time.Now().Unix(),
-							DocID:     id,
-							DBType:    meta.dbType,
-							Payload:   data.(map[string]interface{}),
-						})
-					}
-				}
-			}
-		}
+		realtime.SendUpdate(ctx, meta.project, meta.dbType, meta.col, &req, crud)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -234,24 +176,7 @@ func HandleCrudDelete(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 		}
 
 		// Send realtime message in dev mode
-		if !isProd && req.Operation == utils.One {
-			idVar := "id"
-			if meta.dbType == string(utils.Mongo) {
-				idVar = "_id"
-			}
-
-			if idTemp, p := req.Find[idVar]; p {
-				if id, ok := idTemp.(string); ok {
-					realtime.Send(&model.FeedData{
-						Group:     meta.col,
-						Type:      utils.RealtimeDelete,
-						TimeStamp: time.Now().Unix(),
-						DocID:     id,
-						DBType:    meta.dbType,
-					})
-				}
-			}
-		}
+		realtime.SendDelete(meta.dbType, meta.col, &req)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -369,83 +294,19 @@ func HandleCrudBatch(isProd bool, auth *auth.Module, crud *crud.Module, realtime
 			for _, req := range txRequest.Requests {
 				switch req.Type {
 				case string(utils.Create):
-					var rows []interface{}
-					switch req.Operation {
-					case utils.One:
-						rows = []interface{}{req.Document}
-					case utils.All:
-						rows = req.Document.([]interface{})
-					default:
-						rows = []interface{}{}
-					}
-
-					for _, t := range rows {
-						data := t.(map[string]interface{})
-
-						idVar := "id"
-						if meta.dbType == string(utils.Mongo) {
-							idVar = "_id"
-						}
-
-						// Send realtime message if id fields exists
-						if id, p := data[idVar]; p {
-							realtime.Send(&model.FeedData{
-								Group:     req.Col,
-								DBType:    meta.dbType,
-								Type:      utils.RealtimeWrite,
-								TimeStamp: time.Now().Unix(),
-								DocID:     id.(string),
-								Payload:   data,
-							})
-						}
-					}
-
-				case string(utils.Delete):
-					if req.Operation == utils.One {
-						idVar := "id"
-						if meta.dbType == string(utils.Mongo) {
-							idVar = "_id"
-						}
-
-						if id, p := req.Find[idVar]; p {
-							if err != nil {
-								realtime.Send(&model.FeedData{
-									Group:     req.Col,
-									Type:      utils.RealtimeDelete,
-									TimeStamp: time.Now().Unix(),
-									DocID:     id.(string),
-									DBType:    meta.dbType,
-								})
-							}
-						}
-					}
+					// Send realtime message in dev mode
+					r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
+					realtime.SendCreate(meta.dbType, meta.col, &r)
 
 				case string(utils.Update):
 					// Send realtime message in dev mode
-					if req.Operation == utils.One {
+					r := model.UpdateRequest{Operation: req.Operation, Find: req.Find, Update: req.Update}
+					realtime.SendUpdate(ctx, meta.project, meta.dbType, meta.col, &r, crud)
 
-						idVar := "id"
-						if meta.dbType == string(utils.Mongo) {
-							idVar = "_id"
-						}
-
-						if id, p := req.Find[idVar]; p {
-							// Create the find object
-							find := map[string]interface{}{idVar: id}
-
-							data, err := crud.Read(ctx, meta.dbType, meta.project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
-							if err == nil {
-								realtime.Send(&model.FeedData{
-									Group:     req.Col,
-									Type:      utils.RealtimeWrite,
-									TimeStamp: time.Now().Unix(),
-									DocID:     id.(string),
-									DBType:    meta.dbType,
-									Payload:   data.(map[string]interface{}),
-								})
-							}
-						}
-					}
+				case string(utils.Delete):
+					// Send realtime message in dev mode
+					r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
+					realtime.SendDelete(meta.dbType, meta.col, &r)
 				}
 			}
 		}
