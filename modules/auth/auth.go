@@ -9,7 +9,6 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
-	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // Module is responsible for authentication and authorisation
@@ -54,21 +53,6 @@ func (m *Module) SetSecret(secret string) {
 	m.Lock()
 	defer m.Unlock()
 	m.secret = secret
-}
-
-func (m *Module) getRule(dbType, col string, query utils.OperationType) (*config.Rule, error) {
-	if dbRules, p1 := m.rules[dbType]; p1 {
-		if collection, p2 := dbRules.Collections[col]; p2 {
-			if rule, p3 := collection.Rules[string(query)]; p3 {
-				return rule, nil
-			}
-		} else if defaultCol, p2 := dbRules.Collections["default"]; p2 {
-			if rule, p3 := defaultCol.Rules[string(query)]; p3 {
-				return rule, nil
-			}
-		}
-	}
-	return nil, ErrRuleNotFound
 }
 
 // CreateToken generates a new JWT Token
