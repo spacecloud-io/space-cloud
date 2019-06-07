@@ -34,7 +34,7 @@ func (c *GRPCServiceClient) RoutineWrite() {
 			paramsData, _ := json.Marshal(reqMsg.Params)
 			c.streamServer.Send(&proto.FunctionsPayload{
 				Id:       reqMsg.ID,
-				Type: utils.TypeServiceRequest,
+				Type:     utils.TypeServiceRequest,
 				Auth:     authData,
 				Params:   paramsData,
 				Function: reqMsg.Func,
@@ -48,8 +48,8 @@ func (c *GRPCServiceClient) RoutineWrite() {
 			}
 			paramsData, _ := json.Marshal(reqMsg)
 			c.streamServer.Send(&proto.FunctionsPayload{
-				Id: res.ID,
-				Type: utils.TypeServiceRegister,
+				Id:     res.ID,
+				Type:   utils.TypeServiceRegister,
 				Params: paramsData,
 			})
 
