@@ -51,7 +51,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 	}
 
 	// Add the live query
-	m.AddLiveQuery(data.ID, data.Group, clientID, data.Where, sendFeed)
+	m.AddLiveQuery(data.ID, data.Project, data.Group, clientID, data.Where, sendFeed)
 	return feedData, nil
 }
 

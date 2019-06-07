@@ -30,14 +30,21 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
 
+	// Send realtime message intent
+	msgID := s.realtime.SendCreateIntent(in.Meta.Project, in.Meta.DbType, in.Meta.Col, &req)
+
 	// Perform the write operation
 	err = s.crud.Create(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
+		// Send realtime nack
+		s.realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
+
+		// Send gRPC Response
 		return &pb.Response{Status: 500, Error: err.Error()}, nil
 	}
 
-	// Send realtime message in dev mode
-	s.realtime.SendCreate(in.Meta.DbType, in.Meta.Col, &req)
+	// Send realtime ack
+	s.realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
 	return &pb.Response{Status: 200}, nil
@@ -108,13 +115,20 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
 
+	// Send realtime message intent
+	msgID := s.realtime.SendUpdateIntent(in.Meta.Project, in.Meta.DbType, in.Meta.Col, &req)
+
 	err = s.crud.Update(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
+		// Send realtime nack
+		s.realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
+
+		// Send gRPC Response
 		return &pb.Response{Status: 500, Error: err.Error()}, nil
 	}
 
-	// Send realtime message in dev mode
-	s.realtime.SendUpdate(ctx, in.Meta.Project, in.Meta.DbType, in.Meta.Col, &req, s.crud)
+	// Send realtime ack
+	s.realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
 	return &pb.Response{Status: 200}, nil
@@ -138,14 +152,21 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
 
+	// Send realtime message intent
+	msgID := s.realtime.SendDeleteIntent(in.Meta.Project, in.Meta.DbType, in.Meta.Col, &req)
+
 	// Perform the delete operation
 	err = s.crud.Delete(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
+		// Send realtime nack
+		s.realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
+
+		// Send gRPC Response
 		return &pb.Response{Status: 500, Error: err.Error()}, nil
 	}
 
-	// Send realtime message in dev mode
-	s.realtime.SendDelete(in.Meta.DbType, in.Meta.Col, &req)
+	// Send realtime ack
+	s.realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
 	return &pb.Response{Status: 200}, nil
@@ -184,8 +205,14 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 
 func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
 
+	type msg struct {
+		id, col string
+	}
+
+	msgIDs := make([]*msg, len(in.Batchrequest))
+
 	allRequests := []model.AllRequest{}
-	for _, req := range in.Batchrequest {
+	for i, req := range in.Batchrequest {
 		switch req.Type {
 		case string(utils.Create):
 			eachReq := model.AllRequest{}
@@ -206,10 +233,15 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsCreateOpAuthorised(in.Meta.Project, in.Meta.DbType, in.Meta.Col, in.Meta.Token, &r)
+			status, err := s.auth.IsCreateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
 			if err != nil {
 				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 			}
+
+			// Send realtime message intent
+			msgID := s.realtime.SendCreateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+			msgIDs[i] = &msg{id: msgID, col: req.Col}
+
 		case string(utils.Update):
 			eachReq := model.AllRequest{}
 			eachReq.Type = req.Type
@@ -236,10 +268,14 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsUpdateOpAuthorised(in.Meta.Project, in.Meta.DbType, in.Meta.Col, in.Meta.Token, &r)
+			status, err := s.auth.IsUpdateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
 			if err != nil {
 				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 			}
+
+			// Send realtime message intent
+			msgID := s.realtime.SendUpdateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+			msgIDs[i] = &msg{id: msgID, col: req.Col}
 
 		case string(utils.Delete):
 			eachReq := model.AllRequest{}
@@ -260,10 +296,14 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsDeleteOpAuthorised(in.Meta.Project, in.Meta.DbType, in.Meta.Col, in.Meta.Token, &r)
+			status, err := s.auth.IsDeleteOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
 			if err != nil {
 				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 			}
+
+			// Send realtime message intent
+			msgID := s.realtime.SendDeleteIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+			msgIDs[i] = &msg{id: msgID, col: req.Col}
 		}
 	}
 	// Perform the Batch operation
@@ -271,29 +311,20 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	batch.Requests = allRequests
 	err := s.crud.Batch(ctx, in.Meta.DbType, in.Meta.Project, &batch)
 	if err != nil {
+		// Send realtime nack
+		for _, m := range msgIDs {
+			s.realtime.SendAck(m.id, in.Meta.Project, m.col, false)
+		}
+
+		// Send gRPC Response
 		return &pb.Response{Status: 500, Error: err.Error()}, nil
 	}
 
-	if !s.isProd {
-		for _, req := range batch.Requests {
-			switch req.Type {
-			case string(utils.Create):
-				// Send realtime message in dev mode
-				r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
-				s.realtime.SendCreate(in.Meta.DbType, in.Meta.Col, &r)
-
-			case string(utils.Delete):
-				// Send realtime message in dev mode
-				r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
-				s.realtime.SendDelete(in.Meta.DbType, in.Meta.Col, &r)
-
-			case string(utils.Update):
-				// Send realtime message in dev mode
-				r := model.UpdateRequest{Operation: req.Operation, Find: req.Find, Update: req.Update}
-				s.realtime.SendUpdate(ctx, in.Meta.Project, in.Meta.DbType, in.Meta.Col, &r, s.crud)
-			}
-		}
+	// Send realtime nack
+	for _, m := range msgIDs {
+		s.realtime.SendAck(m.id, in.Meta.Project, m.col, true)
 	}
+
 	// Give positive acknowledgement
 	return &pb.Response{Status: 200}, nil
 }
