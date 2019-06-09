@@ -1,0 +1,10 @@
+.drop-icon {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.ant-select-selection--single{
+  border-radius: 30px !important;
+  font-size: 12px;
+  width: 170px;
+}

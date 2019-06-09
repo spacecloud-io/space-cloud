@@ -1,0 +1,14 @@
+.flex-blox {
+  display: flex;
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+}
+
+.db-desc {
+  color: #000;
+  font-size: 14px;
+  margin-bottom: 32px;
+}

@@ -3,20 +3,23 @@ import logo from '../../assets/logo-black.svg';
 import { connect } from 'react-redux';
 import './topbar.css'
 import { Button } from 'antd';
+import DbSelector from '../../components/db-selector/DbSelector'
 
-function Topbar(props){
- return (
-     <div className="topbar">
-       <img className="logo-black" src={logo} />
-       <span>{props.title}</span>
-       <Button type="primary" className="save-button" onClick={props.handleSave}>SAVE</Button>
-     </div>
- )
+
+function Topbar(props) {
+  return (
+    <div className="topbar">
+      <img className="logo-black" src={logo} alt="logo" />
+      <span>{props.title}</span>
+      <DbSelector handleSelect={props.handleSelect} selectedDb={props.selectedDb} />
+      <Button type="primary" className="save-button" onClick={props.handleSave}>SAVE</Button>
+    </div>
+  )
 }
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    title: "User-management"
+    selectedDb: ownProps.value,
   }
 }
 
@@ -24,6 +27,10 @@ const mapDispatchToProps = (dispatch) => {
   return {
     handleSave: () => {
       console.log('Saved')
+    },
+
+    handleSelect(value) {
+      console.log(`selected ${value}`);
     }
   }
 }

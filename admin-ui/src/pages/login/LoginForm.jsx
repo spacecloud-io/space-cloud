@@ -17,7 +17,7 @@ function LoginForm(props) {
   return (
     <div className="card">
       <div className="content">
-        <img className="logo" src={logo} /><br />
+        <img className="logo" src={logo} alt="logo"/><br />
         <p className="about">If you've got an idea, let's space it up !</p>
 
         <Form onSubmit={handleSubmit} className="login-form">

@@ -8,7 +8,7 @@
   float: right;
 }
 
-.rText {
+.r-text {
   position: absolute;
   top: 20vw;
   right: 15vw;
@@ -46,7 +46,6 @@
 .logo {
   padding-bottom: 8px; 
 }
-
 
  @media screen and (max-width: 480px) {
   .background {

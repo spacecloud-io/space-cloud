@@ -49,7 +49,7 @@ function EditItemModal(props) {
           </div>
 
           <div className="graphics">
-            <img className="vector" src={props.graphics} /><br />
+            <img className="vector" src={props.graphics} alt="vector"/><br />
           </div>
         </div>
       </Modal>

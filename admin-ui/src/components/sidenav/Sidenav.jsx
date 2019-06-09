@@ -43,7 +43,7 @@ class Sidenav extends Component {
 const mapStateToProps = (state, ownProps) => {
   return {
     projectId: "Todo-App",
-    selectedItem: "overview",
+    selectedItem: ownProps.selectedItem,
   }
 }
 

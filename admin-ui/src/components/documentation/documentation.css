@@ -1,0 +1,10 @@
+.docs > a{
+  color: #6F6F6F !important;
+  font-weight: 600;
+}
+
+.docs .material-icons {
+  font-size: 16px !important; 
+  padding-left: 6px;
+}
+
