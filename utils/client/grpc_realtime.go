@@ -49,7 +49,7 @@ func (c *GRPCRealtimeClient) RoutineWrite() {
 			}
 			feedData[0] = &proto.FeedData{
 				QueryId: feed.QueryID, DocId: feed.DocID, Type: feed.Type, Group: feed.Group, DbType: feed.DBType, Payload: payload, TimeStamp: feed.TimeStamp}
-			grpcResponse := proto.RealTimeResponse{Id: res.ID, Group: res.Data.(model.FeedData).Group, FeedData: feedData}
+			grpcResponse := proto.RealTimeResponse{Id: res.ID, Group: res.Data.(model.FeedData).Group, FeedData: feedData, Ack: true}
 			c.stream.Send(&grpcResponse)
 		}
 	}
