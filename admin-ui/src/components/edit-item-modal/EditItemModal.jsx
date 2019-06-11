@@ -1,7 +1,7 @@
 import React from 'react'
 import { Modal } from 'antd';
 import Header from '../header/Header';
-import './editItemModal.css'
+import './edit-item-modal.css'
 import { Form, Input, Button } from 'antd';
 
 function EditItemModal(props) {
@@ -27,7 +27,7 @@ function EditItemModal(props) {
 
         <div className="modal-flex">
           <div className="content">
-            <Header name={props.name} color="#000" fontSize="16px" /><br />
+            <Header name={props.name} color="#000" fontSize="18px" />
             <span className="desc">{props.desc}</span>
             <Form onSubmit={handleSubmit} className="login-form">
               <Form.Item>

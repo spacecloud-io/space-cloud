@@ -3,8 +3,8 @@ import SidenavItemList from './SidenavItemList'
 import './sidenav.css'
 import Header from '../header/Header'
 import EditItemModal from '../edit-item-modal/EditItemModal'
-import { connect } from 'react-redux';
-import projectId from '../../assets/projectId.svg';
+import { connect } from 'react-redux'
+import projectId from '../../assets/projectId.svg'
 
 const items = [{ name: "Project Overview", key: "overview", icon: "home" },
 { name: "User management", key: "user-management", icon: "people" },
@@ -34,7 +34,7 @@ class Sidenav extends Component {
         </div>
         
         <SidenavItemList items={items} selectedItem={this.props.selectedItem} />
-        <EditItemModal graphics={projectId} heading="Project Id" name="Give a project Id" desc="You need to use the same project ID to initialize the client." placeholder="Enter a project ID" initialValue={this.props.projectId} visible={this.state.modalVisible} handleCancel={() => this.handleModalVisiblity(false)} handleSubmit={this.props.handleSubmit}/>
+        <EditItemModal graphics={projectId} heading="Project ID" name="Give a project ID" desc="You need to use the same project ID to initialize the client." placeholder="Enter a project ID" initialValue={this.props.projectId} visible={this.state.modalVisible} handleCancel={() => this.handleModalVisiblity(false)} handleSubmit={this.props.handleSubmit}/>
       </div>
     )
   }

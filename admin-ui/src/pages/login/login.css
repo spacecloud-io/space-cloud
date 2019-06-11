@@ -3,23 +3,23 @@
   height: 100vh;
 }
 
-.background {
+.wrapper .background {
   height: 100vh;
   float: right;
 }
 
-.r-text {
+.wrapper .r-text {
   position: absolute;
   top: 20vw;
   right: 15vw;
   width: 350px;
 }
 
-.text {
+.wrapper .text {
   color: #FFF;
 }
 
-.image {
+.wrapper .image {
   position: relative;
 }
 
@@ -35,7 +35,7 @@
   transform: translate(-100%, -50%);
 }
 
-.about {
+.card .about {
   color: #BDBDBD;
   font-size: 12px;
   padding-bottom: 32px;
@@ -43,16 +43,16 @@
   font-weight: 600;
 }
 
-.logo {
+.card .logo {
   padding-bottom: 8px; 
 }
 
  @media screen and (max-width: 480px) {
-  .background {
+  .wrapper .background {
     display: none;
   }
 
-  .rText {
+  .wrapper .r-text {
     display: none;
   }
 
@@ -62,7 +62,7 @@
     height: 100vh;
   }
 
-  .content {
+  .card .content {
     position: relative;
     top: 25%;
   }

@@ -11,13 +11,13 @@
   display: flex;
 }
 
-.logo-black {
+.topbar .logo-black {
   height: 28px;
   padding-left: 24px;
   margin-top: 12px;
 }
 
-.save-button {
+.topbar .save-button {
   float: right;
   height: 28px;
   font-size: 14px;
