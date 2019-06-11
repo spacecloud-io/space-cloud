@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button, Col } from 'antd'
-import './databaseCard.css'
+import './database-card.css'
 
 function DatabaseCard(props) {
   return (

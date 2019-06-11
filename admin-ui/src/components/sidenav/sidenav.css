@@ -17,6 +17,7 @@
   color: #000;
   font-size: 14px;
   cursor: pointer;
+  width: 85%;
 }
 
 .item>i {
@@ -51,14 +52,14 @@
   margin-bottom: 0;
 }
 
-.flex-container {
+.sidenav .flex-container {
   display: flex;
   align-items: center;
   justify-content: space-around;
   padding: 40px 0;
 }
 
-.edit {
+.sidenav .edit {
   height: 22px;
   width: 48px;
   border: 2px solid #eee;
@@ -70,6 +71,6 @@
   cursor: pointer;
 }
 
-.edit:hover {
+.sidenav .edit:hover {
   background: #eee;
 }

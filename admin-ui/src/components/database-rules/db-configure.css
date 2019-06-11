@@ -1,0 +1,29 @@
+.configuration {
+  display: flex;
+}
+
+.configuration .conn-string {
+  color: #000;
+  height: 31px;
+  width: 120px;
+  background: #EEE;
+  text-align: center;
+  line-height: 31px;
+  font-size: 12px;
+}
+
+.configuration .conn-form{
+  padding-top: 0;
+  position: relative;
+  top: -0.4vw;
+}
+
+.configuration .help {
+  color: #BDBDBD;
+  font-size: 20px;
+}
+
+.configuration .switch {
+  position: relative;
+  left: 14.5vw;
+}
