@@ -3,7 +3,7 @@ import './heading.css'
 
 function Header(props) {
   return (
-    <div>
+    <div className="header">
       <p className="heading" style={{color: props.color, fontSize: props.fontSize}}>{props.name}</p>
       <div className="line"></div>
     </div>

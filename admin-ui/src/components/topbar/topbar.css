@@ -2,12 +2,19 @@
   background: #FFFFFF;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
   height: 50px;
-  /* padding: 10px 32px 10px 24px; */
+  line-height: 50px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 99 ;
+  display: flex;
 }
 
 .logo-black {
   height: 28px;
   padding-left: 24px;
+  margin-top: 12px;
 }
 
 .save-button {
@@ -15,11 +22,14 @@
   height: 28px;
   font-size: 14px;
   margin: 11px 32px;
+  position: absolute;
+  right: 1.5vw;
 }
 
 .topbar > span {
   color: #000;
-  padding-left: 48px;
+  padding-left: 120px;
+  padding-right: 10px;
   font-size: 14px;
   font-weight: 600;
   line-height: 50px;

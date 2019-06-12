@@ -2,3 +2,11 @@ body{
   font-family: 'Raleway', sans-serif;
   margin: 0;
 }
+
+.page-content {
+  padding: 32px 48px 0 48px;
+  position: absolute;
+  top: 51px;
+  left: 250px;
+  right: 0;
+}

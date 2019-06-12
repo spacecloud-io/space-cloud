@@ -4,14 +4,14 @@ import background from '../../assets/Background.svg';
 import Header from '../../components/header/Header'
 import './login.css';
 import LoginForm from './LoginForm';
-import { set, get } from "automate-redux";
+import { set } from "automate-redux";
 
 function Login(props) {
   return (
     <div className="wrapper" >
       <div className="image">
-        <img className="background" src={background} />
-        <div className="rText">
+        <img className="background" src={background} alt="background" />
+        <div className="r-text">
           <Header name="Welcome to Space Cloud !" color="#FFF" fontSize="28px" />
           <p className="text">Develop great applications without having to write backend code.
               Focus more on business and less on technology.</p>
