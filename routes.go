@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
 func (s *server) routes() {
@@ -9,33 +10,34 @@ func (s *server) routes() {
 	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
 
 	// Initialize the route for websocket
-	s.router.HandleFunc("/v1/api/socket/json", handleWebsocket(s.realtime, s.auth, s.crud))
+	s.router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
 
-	// Initialize the routes for functions engine
-	s.router.Methods("POST").Path("/v1/api/functions/{engine}/{func}").HandlerFunc(s.functions.HandleRequest(s.auth))
+	// Initialize the routes for functions service
+	s.router.Methods("POST").Path("/v1/api/{project}/functions/{service}/{func}").HandlerFunc(handlers.HandleFunctionCall(s.functions, s.auth))
 
 	// Initialize the routes for the crud operations
-	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(s.handleBatch())
+	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.isProd, s.auth, s.crud, s.realtime))
 
 	crudRouter := s.router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
-	crudRouter.HandleFunc("/create", s.handleCreate())
-	crudRouter.HandleFunc("/read", s.handleRead())
-	crudRouter.HandleFunc("/update", s.handleUpdate())
-	crudRouter.HandleFunc("/delete", s.handleDelete())
-	crudRouter.HandleFunc("/aggr", s.handleAggregate())
+	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.isProd, s.auth, s.crud, s.realtime))
+	crudRouter.HandleFunc("/read", handlers.HandleCrudRead(s.auth, s.crud))
+	crudRouter.HandleFunc("/update", handlers.HandleCrudUpdate(s.isProd, s.auth, s.crud, s.realtime))
+	crudRouter.HandleFunc("/delete", handlers.HandleCrudDelete(s.isProd, s.auth, s.crud, s.realtime))
+	crudRouter.HandleFunc("/aggr", handlers.HandleCrudAggregate(s.auth, s.crud))
 
 	// Initialize the routes for the user management operations
 	userRouter := s.router.PathPrefix("/v1/api/{project}/auth/{dbType}").Subrouter()
-	userRouter.Methods("POST").Path("/email/signin").HandlerFunc(s.user.HandleEmailSignIn())
-	userRouter.Methods("POST").Path("/email/signup").HandlerFunc(s.user.HandleEmailSignUp())
-	userRouter.Methods("GET").Path("/profile/{id}").HandlerFunc(s.user.HandleProfile())
-	userRouter.Methods("GET").Path("/profiles").HandlerFunc(s.user.HandleProfiles())
+	userRouter.Methods("POST").Path("/email/signin").HandlerFunc(handlers.HandleEmailSignIn(s.user))
+	userRouter.Methods("POST").Path("/email/signup").HandlerFunc(handlers.HandleEmailSignUp(s.user))
+	userRouter.Methods("GET").Path("/profile/{id}").HandlerFunc(handlers.HandleProfile(s.user))
+	userRouter.Methods("GET").Path("/profiles").HandlerFunc(handlers.HandleProfiles(s.user))
+	userRouter.Methods("GET").Path("/edit_profile/{id}").HandlerFunc(handlers.HandleEmailEditProfile(s.user))
 
 	// Initialize the routes for the file management operations
-	s.router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(s.file.HandleCreateFile(s.auth))
-	s.router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleRead(s.auth))
-	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(s.file.HandleDelete(s.auth))
+	s.router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.auth, s.file))
+	s.router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.auth, s.file))
+	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.auth, s.file))
 
 	// Initialize the route for handling static files
-	s.static.HandleRequest(s.router)
+	s.router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.static))
 }

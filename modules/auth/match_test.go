@@ -7,6 +7,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
 func TestMatch(t *testing.T) {
@@ -207,10 +208,11 @@ func TestMatchRule(t *testing.T) {
 		{testName: "Error Match bool !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
 	}
 	testcases := 24
-	authModule := Init(&crud.Module{})
+	authModule := Init(&crud.Module{}, &functions.Module{})
+	authModule.project = "project"
 	for i, test := range authMatchRule {
 		t.Run(test.testName, func(t *testing.T) {
-			err := authModule.matchRule(test.rule, test.args)
+			err := authModule.matchRule("project", test.rule, test.args)
 			if i <= testcases {
 				if !reflect.DeepEqual(err, test.err) {
 					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
@@ -237,7 +239,7 @@ func TestMatchQuery(t *testing.T) {
 	testcases := 4
 	for i, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			err := matchQuery(test.rule, test.crud, test.args)
+			err := matchQuery("project", test.rule, test.crud, test.args)
 			if i <= testcases {
 				if err != test.err {
 					t.Error("Success Got Err", err, "Want Error", test.err)

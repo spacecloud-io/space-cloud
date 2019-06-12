@@ -88,9 +88,7 @@ func mysqlTypeCheck(types []*sql.ColumnType, mapping map[string]interface{}) {
 		typeName := colType.DatabaseTypeName()
 		if typeName == "VARCHAR" || typeName == "TEXT" {
 			val, ok := mapping[colType.Name()].([]byte)
-			if !ok {
-				mapping[colType.Name()] = ""
-			} else {
+			if ok {
 				mapping[colType.Name()] = string(val)
 			}
 		}
@@ -101,7 +99,7 @@ func mysqlTypeCheck(types []*sql.ColumnType, mapping map[string]interface{}) {
 				log.Println("Error:", err)
 			}
 		}
-		if data, ok := mapping[colType.Name()].([]byte); (typeName == "DECIMAL") && ok {
+		if data, ok := mapping[colType.Name()].([]byte); (typeName == "DECIMAL" || typeName == "NUMERIC") && ok {
 			var err error
 			mapping[colType.Name()], err = strconv.ParseFloat(string(data), 64)
 			if err != nil {
