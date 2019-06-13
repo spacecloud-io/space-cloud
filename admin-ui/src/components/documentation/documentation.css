@@ -6,5 +6,7 @@
 .docs .material-icons {
   font-size: 16px !important; 
   padding-left: 6px;
+  position: relative;
+  top: 0.5vw;
 }
 

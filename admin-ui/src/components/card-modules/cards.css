@@ -1,0 +1,97 @@
+.user-management {
+  background-image: url("../../assets/card1.svg");
+}
+
+.database {
+  background-image: url("../../assets/card2.svg");
+}
+
+.functions {
+  background-image: url("../../assets/card3.svg");
+}
+
+.configure {
+  background-image: url("../../assets/card4.svg");
+}
+
+.card-style{
+  padding: 18px 22px;
+  margin: 16px 0px 24px 0;
+  color: #FFF;
+}
+
+.card-style .heading {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  margin-top: 4px;
+}
+
+.card-style .underline {
+  margin-bottom: 6px;
+  border-bottom: 3px solid #FFF;
+  width: 48px;
+}
+
+.card-style .desc {
+  font-size: 11px;
+  color: #FFF;
+  font-weight: 600;
+}
+
+.card-style .footer > a{
+  font-weight: 600;
+  color: #FFF;
+}
+
+.card-style .footer {
+  margin-top: 16px;
+}
+
+.card-style .book {
+  position: relative;
+  top: 0.1vw;
+  padding-left: 4px;
+  font-size: 16px;
+}
+
+.card-style .enabled-button{
+  border-radius: 20px;
+  color: #000;
+  font-weight: 600;
+  font-size: 8px;
+  border: none;
+  background: #FFF;
+  float: right;
+  height: 20px;
+  line-height: 20px;
+}
+
+.card-style .disabled-button{
+  border-radius: 20px;
+  color: #000;
+  font-weight: 600;
+  font-size: 8px;
+  border: none;
+  background: #CCC;
+  float: right;
+  height: 20px;
+  line-height: 20px;
+}
+
+.card-style .module {
+  color: #FFF;
+  font-size: 34px;
+}
+
+.card-style .logos {
+  float: right;
+}
+
+.card-style .logos > img {
+  padding-right: 8px;
+}
+
+.card-style .docs {
+  font-size: 12px;
+}
