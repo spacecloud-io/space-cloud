@@ -1,0 +1,12 @@
+.overview .flex-blox {
+  display: flex;
+}
+
+.overview .header-flex {
+  display: flex;
+  justify-content: space-between;
+}
+
+.overview .heading {
+  width: 60%;
+}
