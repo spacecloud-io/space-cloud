@@ -7,7 +7,8 @@ import Header from '../../../components/header/Header'
 import Documentation from '../../../components/documentation/Documentation'
 import DbConfigure from '../../../components/database-rules/DbConfigure'
 import EmptyState from '../../../components/rules/EmptyState'
-import rules from '../../../assets/rules.svg'
+import rulesImg from '../../../assets/rules.svg'
+import RulesTable  from '../../../components/rules/rules'
 
 function Rules(props) {
   return (
@@ -21,7 +22,8 @@ function Rules(props) {
             <Documentation url="https://spaceuptech.com/docs/database" />
           </div>
           <DbConfigure updateFormState={props.updateFormState} formState={props.formState} />
-          <EmptyState graphics={rules} desc="Guard your data with rules that define who has access to it and how it is structured." buttonText="Add a table" handleClick={props.handleClick} />
+          {/* <EmptyState graphics={rulesImg} desc="Guard your data with rules that define who has access to it and how it is structured." buttonText="Add a table" handleClick={props.handleClick} /> */}
+          <RulesTable rules={props.rules}/>
         </div>
       </div>
     </div>
@@ -34,6 +36,11 @@ const mapStateToProps = (state, ownProps) => {
       enabled: true,
       conn: "http://localhost/8080"
     },
+    rules:{
+      Books:'',
+      Todos:'',
+      Users:''
+    }
   }
 }
 
