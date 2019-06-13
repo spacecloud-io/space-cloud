@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -9,7 +8,7 @@ import (
 )
 
 // IsFileOpAuthorised checks if the caller is authorized to make the request
-func (m *Module) IsFileOpAuthorised(token, path string, op utils.FileOpType, args map[string]interface{}) error {
+func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOpType, args map[string]interface{}) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -33,7 +32,7 @@ func (m *Module) IsFileOpAuthorised(token, path string, op utils.FileOpType, arg
 	args["auth"] = auth
 
 	// Match the rule
-	return m.matchRule(rule, args)
+	return m.matchRule(project, rule, map[string]interface{}{"args": args})
 }
 
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
@@ -81,5 +80,5 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 		}
 	}
 
-	return nil, nil, errors.New("Auth: File Rule could not be found")
+	return nil, nil, ErrRuleNotFound
 }

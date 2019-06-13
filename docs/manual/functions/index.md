@@ -6,9 +6,9 @@ The functions module is a means to extend the functionality provided by Space Cl
 
 ## How it works
 
-As an user, you need to write functions on the backend. In a single project you can write multiple functions. A collection of functions is called an `engine`. So in other words, you can write engines in the language of your choice which will have multiple functions registered to it.
+As an user, you need to write functions on the backend. In a single project you can write multiple functions. A collection of functions is called an `service`. So in other words, you can write services in the language of your choice which will have multiple functions registered to it.
 
-All engines connect to [nats](https://nats.io) and subscribe to a subject name which is a derivative of the engine name. Nats is a pub-sub network which load balances requests between the engines.
+All services connect to [nats](https://nats.io) and subscribe to a subject name which is a derivative of the service name. Nats is a pub-sub network which load balances requests between the services.
 
 The `space-cloud` server acts as an api-gateway which connects to nats as well. The request from the front end will be received by Space Cloud. Space Cloud would then publish it on nats, receive the response, and send it to the client.
 
@@ -28,13 +28,13 @@ All you need to do is set the `enabled` field to true and provide the connection
 
 ## Next steps
 
-You can now see how to write the engines on the backend and invoke them from the frontend.
+You can now see how to write the services on the backend and invoke them from the frontend.
 
 <div class="btns-wrapper">
   <a href="/docs/file-storage/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/functions/engine" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/functions/service" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

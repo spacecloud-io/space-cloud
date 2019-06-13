@@ -47,7 +47,20 @@ db.signUp('demo@example.com', 'User1', '1234', 'default').then(res => {
  <div id="signup-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+// Initialize api with the project name and url of the space cloud
+api = API("books-app", "localhost:8081")
+
+// Initialize database(s) you intend to use
+db = api.my_sql()
+
+// Sign Up
+response = db.sign_up("user_email", "user_name", "user_password", "user_role")
+if response.status == 200:
+    print(response.result)
+else:
+    print(response.error)
       </code>
     </pre>
   </div>

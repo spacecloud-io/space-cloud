@@ -31,6 +31,14 @@ const (
 	Postgres DBType = "sql-postgres"
 )
 
+// Broker is the type of broker used by Space Cloud
+type Broker string
+
+const (
+	// Nats is the type used for Nats
+	Nats Broker = "nats"
+)
+
 // FileStoreType is the type of file store used
 type FileStoreType string
 
@@ -80,6 +88,9 @@ const (
 	// RealtimeWorkerCount are the number of goroutines to process realtime data
 	RealtimeWorkerCount int = 10
 
+	// FunctionsWorkerCount are the number of goroutines to process functions data
+	FunctionsWorkerCount int = 10
+
 	// RealtimeWrite is for create and update operations
 	RealtimeWrite string = "write"
 
@@ -95,6 +106,15 @@ const (
 
 	// TypeRealtimeFeed is the response type for realtime feed
 	TypeRealtimeFeed string = "realtime-feed"
+
+	// TypeServiceRegister is the request type for service registration
+	TypeServiceRegister string = "service-register"
+
+	// TypeServiceUnregister is the request type for service removal
+	TypeServiceUnregister string = "service-unregister"
+
+	// TypeServiceRequest is type triggering a service's function
+	TypeServiceRequest string = "service-request"
 )
 
 // RealTimeProtocol is the type of protocol requested for Realtime.
@@ -106,4 +126,7 @@ const (
 
 	// GRPC for Realtime implementation.
 	GRPC RealTimeProtocol = "GRPC"
+
+	// GRPCService for Service implementation.
+	GRPCService RealTimeProtocol = "GRPC-Service"
 )

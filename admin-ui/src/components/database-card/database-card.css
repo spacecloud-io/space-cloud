@@ -10,32 +10,32 @@
   animation-duration: 4s;
 }
 
-.db-name {
+.db-card .db-name {
   text-align: center;
   font-weight: 600;
 }
 
-.db-image {
+.db-card .db-image {
   border-bottom: 1px solid #EEE;
   height: 140px;
   text-align: center;
 }
 
-.db-image > img{
+.db-card .db-image > img{
   position: relative;
   top: 3.5vw;
 }
 
-.db-details {
+.db-card .db-details {
   padding: 16px;
   color: #000;
 }
 
-.db-enable {
+.db-card .db-enable {
   text-align: center;
 }
 
-.enable-btn {
+.db-card .enable-btn {
   height: 28px;
   width: 68px;
   border-radius: 25px;
