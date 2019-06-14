@@ -7,11 +7,14 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/server"
 )
+
 
 func main() {
 	app := cli.NewApp()
-	app.Version = buildVersion
+	app.Version = utils.BuildVersion
 	app.Name = "space-cloud"
 	app.Usage = "core binary to run space cloud"
 
@@ -70,14 +73,14 @@ func actionRun(c *cli.Context) error {
 	disableMetrics := c.Bool("disable-metrics")
 
 	// Project and env cannot be changed once space cloud has started
-	s := initServer(isProd)
+	s := server.InitServer(isProd)
 
 	if configPath != "none" {
 		conf, err := config.LoadConfigFromFile(configPath)
 		if err != nil {
 			return err
 		}
-		err = s.loadConfig(conf)
+		err = s.LoadConfig(conf)
 		if err != nil {
 			return err
 		}
@@ -85,11 +88,11 @@ func actionRun(c *cli.Context) error {
 
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
-		go s.routineMetrics()
+		go s.RoutineMetrics()
 	}
 
-	s.routes()
-	return s.start(port, grpcPort)
+	s.Routes()
+	return s.Start(port, grpcPort)
 }
 
 func actionInit(*cli.Context) error {

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -17,9 +17,8 @@ type requestMetaData struct {
 	project, dbType, col, token string
 }
 
-func (s *server) handleCreate() http.HandlerFunc {
+func (s *Server) handleCreate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -28,7 +27,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authenticated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Create)
+		authObj, err := s.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Create)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -47,7 +46,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Create, args)
+		err = s.Auth.IsAuthorized(meta.dbType, meta.col, utils.Create, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -55,7 +54,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		}
 
 		// Perform the write operation
-		err = s.crud.Create(ctx, meta.dbType, meta.project, meta.col, &req)
+		err = s.Crud.Create(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -63,7 +62,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 		}
 
 		// Send realtime message in dev mode
-		if !s.isProd {
+		if !s.IsProd {
 			var rows []interface{}
 			switch req.Operation {
 			case utils.One:
@@ -85,7 +84,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 				// Send realtime message if id fields exists
 				if idTemp, p := data[idVar]; p {
 					if id, ok := idTemp.(string); ok {
-						s.realtime.Send(&model.FeedData{
+						s.Realtime.Send(&model.FeedData{
 							Group:     meta.col,
 							DBType:    meta.dbType,
 							Type:      utils.RealtimeWrite,
@@ -104,7 +103,7 @@ func (s *server) handleCreate() http.HandlerFunc {
 	}
 }
 
-func (s *server) handleRead() http.HandlerFunc {
+func (s *Server) handleRead() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -115,7 +114,7 @@ func (s *server) handleRead() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authenticated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Read)
+		authObj, err := s.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Read)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -139,7 +138,7 @@ func (s *server) handleRead() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Read, args)
+		err = s.Auth.IsAuthorized(meta.dbType, meta.col, utils.Read, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -147,7 +146,7 @@ func (s *server) handleRead() http.HandlerFunc {
 		}
 
 		// Perform the read operation
-		result, err := s.crud.Read(ctx, meta.dbType, meta.project, meta.col, &req)
+		result, err := s.Crud.Read(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -160,7 +159,7 @@ func (s *server) handleRead() http.HandlerFunc {
 	}
 }
 
-func (s *server) handleUpdate() http.HandlerFunc {
+func (s *Server) handleUpdate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -171,7 +170,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authenticated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Update)
+		authObj, err := s.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Update)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -190,7 +189,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Update, args)
+		err = s.Auth.IsAuthorized(meta.dbType, meta.col, utils.Update, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -198,7 +197,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		}
 
 		// Perform the update operation
-		err = s.crud.Update(ctx, meta.dbType, meta.project, meta.col, &req)
+		err = s.Crud.Update(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -206,7 +205,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 		}
 
 		// Send realtime message in dev mode
-		if !s.isProd && req.Operation == utils.One {
+		if !s.IsProd && req.Operation == utils.One {
 
 			idVar := "id"
 			if meta.dbType == string(utils.Mongo) {
@@ -218,9 +217,9 @@ func (s *server) handleUpdate() http.HandlerFunc {
 					// Create the find object
 					find := map[string]interface{}{idVar: id}
 
-					data, err := s.crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
+					data, err := s.Crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
 					if err == nil {
-						s.realtime.Send(&model.FeedData{
+						s.Realtime.Send(&model.FeedData{
 							Group:     meta.col,
 							Type:      utils.RealtimeWrite,
 							TimeStamp: time.Now().Unix(),
@@ -239,7 +238,7 @@ func (s *server) handleUpdate() http.HandlerFunc {
 	}
 }
 
-func (s *server) handleDelete() http.HandlerFunc {
+func (s *Server) handleDelete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -250,7 +249,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authenticated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Delete)
+		authObj, err := s.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Delete)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -269,7 +268,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Delete, args)
+		err = s.Auth.IsAuthorized(meta.dbType, meta.col, utils.Delete, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -277,7 +276,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		}
 
 		// Perform the delete operation
-		err = s.crud.Delete(ctx, meta.dbType, meta.project, meta.col, &req)
+		err = s.Crud.Delete(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -285,7 +284,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 		}
 
 		// Send realtime message in dev mode
-		if !s.isProd && req.Operation == utils.One {
+		if !s.IsProd && req.Operation == utils.One {
 			idVar := "id"
 			if meta.dbType == string(utils.Mongo) {
 				idVar = "_id"
@@ -293,7 +292,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 
 			if idTemp, p := req.Find[idVar]; p {
 				if id, ok := idTemp.(string); ok {
-					s.realtime.Send(&model.FeedData{
+					s.Realtime.Send(&model.FeedData{
 						Group:     meta.col,
 						Type:      utils.RealtimeDelete,
 						TimeStamp: time.Now().Unix(),
@@ -310,7 +309,7 @@ func (s *server) handleDelete() http.HandlerFunc {
 	}
 }
 
-func (s *server) handleAggregate() http.HandlerFunc {
+func (s *Server) handleAggregate() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -321,7 +320,7 @@ func (s *server) handleAggregate() http.HandlerFunc {
 		meta := getRequestMetaData(r)
 
 		// Check if the user is authicated
-		authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Aggregation)
+		authObj, err := s.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Aggregation)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -340,7 +339,7 @@ func (s *server) handleAggregate() http.HandlerFunc {
 		}
 
 		// Check if user is authorized to make this request
-		err = s.auth.IsAuthorized(meta.dbType, meta.col, utils.Aggregation, args)
+		err = s.Auth.IsAuthorized(meta.dbType, meta.col, utils.Aggregation, args)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -348,7 +347,7 @@ func (s *server) handleAggregate() http.HandlerFunc {
 		}
 
 		// Perform the read operation
-		result, err := s.crud.Aggregate(ctx, meta.dbType, meta.project, meta.col, &req)
+		result, err := s.Crud.Aggregate(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -379,7 +378,7 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 	return &requestMetaData{project: project, dbType: dbType, col: col, token: token}
 }
 
-func (s *server) handleBatch() http.HandlerFunc {
+func (s *Server) handleBatch() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -398,7 +397,7 @@ func (s *server) handleBatch() http.HandlerFunc {
 
 			switch req.Type {
 			case string(utils.Update):
-				authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Update)
+				authObj, err := s.Auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Update)
 				if err != nil {
 					w.WriteHeader(http.StatusUnauthorized)
 					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -410,7 +409,7 @@ func (s *server) handleBatch() http.HandlerFunc {
 				}
 
 				// Check if user is authorized to make this request
-				err = s.auth.IsAuthorized(meta.dbType, req.Col, utils.Update, args)
+				err = s.Auth.IsAuthorized(meta.dbType, req.Col, utils.Update, args)
 				if err != nil {
 					w.WriteHeader(http.StatusForbidden)
 					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -418,7 +417,7 @@ func (s *server) handleBatch() http.HandlerFunc {
 				}
 
 			case string(utils.Create):
-				authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Create)
+				authObj, err := s.Auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Create)
 				if err != nil {
 					w.WriteHeader(http.StatusUnauthorized)
 					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -431,7 +430,7 @@ func (s *server) handleBatch() http.HandlerFunc {
 				}
 
 				// Check if user is authorized to make this request
-				err = s.auth.IsAuthorized(meta.dbType, req.Col, utils.Create, args)
+				err = s.Auth.IsAuthorized(meta.dbType, req.Col, utils.Create, args)
 				if err != nil {
 					w.WriteHeader(http.StatusForbidden)
 					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -440,7 +439,7 @@ func (s *server) handleBatch() http.HandlerFunc {
 
 			case string(utils.Delete):
 
-				authObj, err := s.auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Delete)
+				authObj, err := s.Auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Delete)
 				if err != nil {
 					w.WriteHeader(http.StatusUnauthorized)
 					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
@@ -453,7 +452,7 @@ func (s *server) handleBatch() http.HandlerFunc {
 				}
 
 				// Check if user is authorized to make this request
-				err = s.auth.IsAuthorized(meta.dbType, req.Col, utils.Delete, args)
+				err = s.Auth.IsAuthorized(meta.dbType, req.Col, utils.Delete, args)
 				if err != nil {
 					w.WriteHeader(http.StatusForbidden)
 					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
@@ -464,14 +463,14 @@ func (s *server) handleBatch() http.HandlerFunc {
 		}
 
 		// Perform the batch operation
-		err := s.crud.Batch(ctx, meta.dbType, meta.project, &txRequest)
+		err := s.Crud.Batch(ctx, meta.dbType, meta.project, &txRequest)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		if !s.isProd {
+		if !s.IsProd {
 
 			for _, req := range txRequest.Requests {
 				switch req.Type {
@@ -496,7 +495,7 @@ func (s *server) handleBatch() http.HandlerFunc {
 
 						// Send realtime message if id fields exists
 						if id, p := data[idVar]; p {
-							s.realtime.Send(&model.FeedData{
+							s.Realtime.Send(&model.FeedData{
 								Group:     req.Col,
 								DBType:    meta.dbType,
 								Type:      utils.RealtimeWrite,
@@ -516,7 +515,7 @@ func (s *server) handleBatch() http.HandlerFunc {
 
 						if id, p := req.Find[idVar]; p {
 							if err != nil {
-								s.realtime.Send(&model.FeedData{
+								s.Realtime.Send(&model.FeedData{
 									Group:     req.Col,
 									Type:      utils.RealtimeDelete,
 									TimeStamp: time.Now().Unix(),
@@ -540,9 +539,9 @@ func (s *server) handleBatch() http.HandlerFunc {
 							// Create the find object
 							find := map[string]interface{}{idVar: id}
 
-							data, err := s.crud.Read(ctx, meta.dbType, meta.project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
+							data, err := s.Crud.Read(ctx, meta.dbType, meta.project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
 							if err == nil {
-								s.realtime.Send(&model.FeedData{
+								s.Realtime.Send(&model.FeedData{
 									Group:     req.Col,
 									Type:      utils.RealtimeWrite,
 									TimeStamp: time.Now().Unix(),

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
+func (s Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
 
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Create)
+	authObj, err := s.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Create)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -31,7 +31,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 		}
 		req.Document = temp
 	} else if in.Operation == utils.All {
-		temp := []interface{}{}
+		var temp []interface{}
 		if err = json.Unmarshal(in.Document, &temp); err != nil {
 			out := pb.Response{}
 			out.Status = 500
@@ -44,12 +44,12 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 
 	// Create an args object
 	args := map[string]interface{}{
-		"args":    map[string]interface{}{"doc": req.Document, "op": req.Operation, "auth": authObj},
+		"args":    map[string]interface{}{"doc": req.Document, "op": req.Operation, "Auth": authObj},
 		"project": in.Meta.Project, // Don't forget to do this for every request
 	}
 
-	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Create, args)
+	// Check if User is authorized to make this request
+	err = s.Auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Create, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -58,7 +58,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	}
 
 	// Perform the write operation
-	err = s.crud.Create(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	err = s.Crud.Create(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -66,8 +66,8 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 		return &out, nil
 	}
 
-	// Send realtime message in dev mode
-	if !s.isProd {
+	// Send Realtime message in dev mode
+	if !s.IsProd {
 		var rows []interface{}
 		switch req.Operation {
 		case utils.One:
@@ -86,9 +86,9 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 				idVar = "_id"
 			}
 
-			// Send realtime message if id fields exists
+			// Send Realtime message if id fields exists
 			if id, p := data[idVar]; p {
-				s.realtime.Send(&model.FeedData{
+				s.Realtime.Send(&model.FeedData{
 					Group:     in.Meta.Col,
 					DBType:    in.Meta.DbType,
 					Type:      utils.RealtimeWrite,
@@ -106,9 +106,9 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	return &out, nil
 }
 
-func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
+func (s Server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
 
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Read)
+	authObj, err := s.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Read)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -141,12 +141,12 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 
 	// Create an args object
 	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
+		"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "Auth": authObj},
 		"project": in.Meta.Project, // Don't forget to do this for every request
 	}
 
-	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Read, args)
+	// Check if User is authorized to make this request
+	err = s.Auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Read, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -155,7 +155,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	}
 
 	// Perform the read operation
-	result, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	result, err := s.Crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -178,10 +178,10 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	return &out, nil
 }
 
-func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
+func (s Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
 
-	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Update)
+	// Check if the User is authenticated
+	authObj, err := s.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Update)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -211,12 +211,12 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 
 	// Create an args object
 	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
+		"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "Auth": authObj},
 		"project": in.Meta.Project, // Don't forget to do this for every request
 	}
 
-	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Read, args)
+	// Check if User is authorized to make this request
+	err = s.Auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Read, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -224,7 +224,7 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &out, nil
 	}
 
-	err = s.crud.Update(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	err = s.Crud.Update(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -232,8 +232,8 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &out, nil
 	}
 
-	// Send realtime message in dev mode
-	if !s.isProd && req.Operation == utils.One {
+	// Send Realtime message in dev mode
+	if !s.IsProd && req.Operation == utils.One {
 		idVar := "id"
 		if in.Meta.DbType == string(utils.Mongo) {
 			idVar = "_id"
@@ -251,9 +251,9 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 				find["id"] = id
 			}
 
-			data, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &model.ReadRequest{Find: find, Operation: utils.One})
+			data, err := s.Crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &model.ReadRequest{Find: find, Operation: utils.One})
 			if err == nil {
-				s.realtime.Send(&model.FeedData{
+				s.Realtime.Send(&model.FeedData{
 					Group:     in.Meta.Col,
 					Type:      utils.RealtimeWrite,
 					TimeStamp: time.Now().Unix(),
@@ -272,10 +272,10 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 
 }
 
-func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
+func (s Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
 
-	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
+	// Check if the User is authenticated
+	authObj, err := s.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -297,12 +297,12 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 
 	// Create an args object
 	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
+		"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "Auth": authObj},
 		"project": in.Meta.Project, // Don't forget to do this for every request
 	}
 
-	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Delete, args)
+	// Check if User is authorized to make this request
+	err = s.Auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Delete, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -311,7 +311,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	}
 
 	// Perform the delete operation
-	err = s.crud.Delete(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	err = s.Crud.Delete(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -319,15 +319,15 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 		return &out, nil
 	}
 
-	// Send realtime message in dev mode
-	if !s.isProd && req.Operation == utils.One {
+	// Send Realtime message in dev mode
+	if !s.IsProd && req.Operation == utils.One {
 		idVar := "id"
 		if in.Meta.DbType == string(utils.Mongo) {
 			idVar = "_id"
 		}
 
 		if id, p := req.Find[idVar]; p {
-			s.realtime.Send(&model.FeedData{
+			s.Realtime.Send(&model.FeedData{
 				Group:     in.Meta.Col,
 				Type:      utils.RealtimeDelete,
 				TimeStamp: time.Now().Unix(),
@@ -343,10 +343,10 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	return &out, nil
 }
 
-func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
+func (s Server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
 
-	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
+	// Check if the User is authicated
+	authObj, err := s.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -355,7 +355,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	}
 
 	req := model.AggregateRequest{}
-	temp := []map[string]interface{}{}
+	var temp []map[string]interface{}
 	if err = json.Unmarshal(in.Pipeline, &temp); err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -367,12 +367,12 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 
 	// Create an args object
 	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": req.Pipeline, "op": req.Operation, "auth": authObj},
+		"args":    map[string]interface{}{"find": req.Pipeline, "op": req.Operation, "Auth": authObj},
 		"project": in.Meta.Project, // Don't forget to do this for every request
 	}
 
-	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Aggregation, args)
+	// Check if User is authorized to make this request
+	err = s.Auth.IsAuthorized(in.Meta.DbType, in.Meta.Col, utils.Aggregation, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -381,7 +381,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	}
 
 	// Perform the read operation
-	result, err := s.crud.Aggregate(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	result, err := s.Crud.Aggregate(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -404,9 +404,9 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	return &out, nil
 }
 
-func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
+func (s Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
 
-	allRequests := []model.AllRequest{}
+	var allRequests []model.AllRequest
 	for _, req := range in.Batchrequest {
 		switch req.Type {
 
@@ -442,7 +442,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			allRequests = append(allRequests, eachReq)
 
-			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Update)
+			authObj, err := s.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Update)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 401
@@ -450,12 +450,12 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 				return &out, nil
 			}
 			args := map[string]interface{}{
-				"args":    map[string]interface{}{"find": eachReq.Find, "update": eachReq.Update, "op": eachReq.Operation, "auth": authObj},
+				"args":    map[string]interface{}{"find": eachReq.Find, "update": eachReq.Update, "op": eachReq.Operation, "Auth": authObj},
 				"project": in.Meta.Project, // Don't forget to do this for every request
 			}
 
-			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Update, args)
+			// Check if User is authorized to make this request
+			err = s.Auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Update, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403
@@ -495,7 +495,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			allRequests = append(allRequests, eachReq)
 
-			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Create)
+			authObj, err := s.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Create)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 401
@@ -504,12 +504,12 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 			// Create an args object
 			args := map[string]interface{}{
-				"args":    map[string]interface{}{"doc": eachReq.Document, "op": eachReq.Operation, "auth": authObj},
+				"args":    map[string]interface{}{"doc": eachReq.Document, "op": eachReq.Operation, "Auth": authObj},
 				"project": in.Meta.Project, // Don't forget to do this for every request
 			}
 
-			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Create, args)
+			// Check if User is authorized to make this request
+			err = s.Auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Create, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403
@@ -549,7 +549,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			allRequests = append(allRequests, eachReq)
 
-			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Delete)
+			authObj, err := s.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Delete)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 401
@@ -558,12 +558,12 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 			// Create an args object
 			args := map[string]interface{}{
-				"args":    map[string]interface{}{"find": eachReq.Find, "op": eachReq.Operation, "auth": authObj},
+				"args":    map[string]interface{}{"find": eachReq.Find, "op": eachReq.Operation, "Auth": authObj},
 				"project": in.Meta.Project, // Don't forget to do this for every request
 			}
 
-			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Delete, args)
+			// Check if User is authorized to make this request
+			err = s.Auth.IsAuthorized(in.Meta.DbType, eachReq.Col, utils.Delete, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403
@@ -575,14 +575,14 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	// Perform the Batch operation
 	batch := model.BatchRequest{}
 	batch.Requests = allRequests
-	err := s.crud.Batch(ctx, in.Meta.DbType, in.Meta.Project, &batch)
+	err := s.Crud.Batch(ctx, in.Meta.DbType, in.Meta.Project, &batch)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
 		out.Error = err.Error()
 		return &out, nil
 	}
-	if !s.isProd {
+	if !s.IsProd {
 
 		for _, req := range batch.Requests {
 			switch req.Type {
@@ -605,9 +605,9 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 						idVar = "_id"
 					}
 
-					// Send realtime message if id fields exists
+					// Send Realtime message if id fields exists
 					if id, p := data[idVar]; p {
-						s.realtime.Send(&model.FeedData{
+						s.Realtime.Send(&model.FeedData{
 							Group:     req.Col,
 							DBType:    in.Meta.DbType,
 							Type:      utils.RealtimeWrite,
@@ -627,7 +627,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 					if id, p := req.Find[idVar]; p {
 						if err != nil {
-							s.realtime.Send(&model.FeedData{
+							s.Realtime.Send(&model.FeedData{
 								Group:     req.Col,
 								Type:      utils.RealtimeDelete,
 								TimeStamp: time.Now().Unix(),
@@ -639,7 +639,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 				}
 
 			case string(utils.Update):
-				// Send realtime message in dev mode
+				// Send Realtime message in dev mode
 				if req.Operation == utils.One {
 
 					idVar := "id"
@@ -651,9 +651,9 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 						// Create the find object
 						find := map[string]interface{}{idVar: id}
 
-						data, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
+						data, err := s.Crud.Read(ctx, in.Meta.DbType, in.Meta.Project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
 						if err == nil {
-							s.realtime.Send(&model.FeedData{
+							s.Realtime.Send(&model.FeedData{
 								Group:     req.Col,
 								Type:      utils.RealtimeWrite,
 								TimeStamp: time.Now().Unix(),
@@ -672,7 +672,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	out.Status = 200
 	return &out, nil
 }
-func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
+func (s Server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
 	var params interface{}
 	if err := json.Unmarshal(in.Params, &params); err != nil {
 		out := pb.Response{}
@@ -681,7 +681,7 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 		return &out, nil
 	}
 
-	resultBytes, err := s.functions.Operation(s.auth, in.Token, in.Engine, in.Function, int(in.Timeout))
+	resultBytes, err := s.Functions.Operation(s.Auth, in.Token, in.Engine, in.Function, int(in.Timeout))
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -694,8 +694,8 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 	return &out, nil
 }
 
-func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
+func (s Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	client := utils.CreateGRPCClient(stream)
-	s.realtime.Operation(client, s.auth, s.crud)
+	s.Realtime.Operation(client, s.Auth, s.Crud)
 	return nil
 }

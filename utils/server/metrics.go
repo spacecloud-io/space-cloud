@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/proto"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type transport struct {
@@ -67,7 +68,7 @@ func (t *transport) update(ctx context.Context, meta *proto.Meta, op string, fin
 
 // Init initialises a new transport
 func newTransport(host, port string, sslEnabled bool) (*transport, error) {
-	dialOptions := []grpc.DialOption{}
+	var dialOptions []grpc.DialOption
 
 	if sslEnabled {
 		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
@@ -84,7 +85,7 @@ func newTransport(host, port string, sslEnabled bool) (*transport, error) {
 	return &transport{conn, stub}, nil
 }
 
-func (s *server) routineMetrics() {
+func (s *Server) RoutineMetrics() {
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 
@@ -103,8 +104,8 @@ func (s *server) routineMetrics() {
 	}
 	set := map[string]interface{}{
 		"os":      runtime.GOOS,
-		"isProd":  s.isProd,
-		"version": buildVersion,
+		"IsProd":  s.IsProd,
+		"version": utils.BuildVersion,
 	}
 
 	// Connect to metrics server
@@ -114,13 +115,13 @@ func (s *server) routineMetrics() {
 		return
 	}
 
-	s.lock.Lock()
-	if s.config != nil && s.config.Modules != nil {
-		set["project"] = getProjectInfo(s.config.Modules)
-		set["projectId"] = s.config.ID
-		set["sslEnabled"] = s.config.SSL != nil
+	s.Lock.Lock()
+	if s.Config != nil && s.Config.Modules != nil {
+		set["project"] = getProjectInfo(s.Config.Modules)
+		set["projectId"] = s.Config.ID
+		set["sslEnabled"] = s.Config.SSL != nil
 	}
-	s.lock.Unlock()
+	s.Lock.Unlock()
 
 	update["$set"] = set
 	status, err := trans.update(context.TODO(), m, "upsert", find, update)
@@ -139,13 +140,13 @@ func (s *server) routineMetrics() {
 			"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "date"}},
 		}
 
-		s.lock.Lock()
-		if s.config != nil && s.config.Modules != nil {
-			set["project"] = getProjectInfo(s.config.Modules)
-			set["projectId"] = s.config.ID
-			set["sslEnabled"] = s.config.SSL != nil
+		s.Lock.Lock()
+		if s.Config != nil && s.Config.Modules != nil {
+			set["project"] = getProjectInfo(s.Config.Modules)
+			set["projectId"] = s.Config.ID
+			set["sslEnabled"] = s.Config.SSL != nil
 		}
-		s.lock.Unlock()
+		s.Lock.Unlock()
 
 		update["$set"] = set
 		status, err := trans.update(context.TODO(), m, "one", find, update)
@@ -161,37 +162,37 @@ func (s *server) routineMetrics() {
 
 func getProjectInfo(config *config.Modules) map[string]interface{} {
 	project := map[string]interface{}{
-		"crud":      []string{},
-		"functions":      map[string]interface{}{"enabled": false},
-		"realtime":  map[string]interface{}{"enabled": false},
+		"Crud":      []string{},
+		"Functions": map[string]interface{}{"enabled": false},
+		"Realtime":  map[string]interface{}{"enabled": false},
 		"fileStore": map[string]interface{}{"enabled": false},
-		"auth":      []string{},
+		"Auth":      []string{},
 	}
 
 	if config.Crud != nil {
-		crud := []string{}
+		var crud []string
 		for k := range config.Crud {
 			crud = append(crud, k)
 		}
-		project["crud"] = crud
+		project["Crud"] = crud
 	}
 
 	if config.Auth != nil {
-		auth := []string{}
+		var auth []string
 		for k, v := range config.Auth {
 			if v.Enabled {
 				auth = append(auth, k)
 			}
 		}
-		project["auth"] = auth
+		project["Auth"] = auth
 	}
 
 	if config.Functions != nil {
-		project["functions"] = map[string]interface{}{"enabled": config.Functions.Enabled}
+		project["Functions"] = map[string]interface{}{"enabled": config.Functions.Enabled}
 	}
 
 	if config.Realtime != nil {
-		project["realtime"] = map[string]interface{}{"enabled": config.Realtime.Enabled}
+		project["Realtime"] = map[string]interface{}{"enabled": config.Realtime.Enabled}
 	}
 
 	if config.FileStore != nil {
