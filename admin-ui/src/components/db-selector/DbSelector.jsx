@@ -3,7 +3,7 @@ import { Select } from 'antd';
 import mysqlSmall from '../../assets/mysqlSmall.svg'
 import postgresqlSmall from '../../assets/postgresSmall.svg'
 import mongodbSmall from '../../assets/mongoSmall.svg'
-import './dbSelector.css'
+import './db-selector.css'
 
 const { Option } = Select;
 

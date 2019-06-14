@@ -39,6 +39,7 @@ function Database(props) {
 }
 
 const mapStateToProps = (state, ownProps) => {
+  console.log("OwnProps", ownProps)
   return {
     projectId: "ToDo-App",
     selectedDb: undefined,

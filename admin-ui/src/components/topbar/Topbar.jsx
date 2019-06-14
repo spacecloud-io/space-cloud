@@ -19,7 +19,7 @@ function Topbar(props) {
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    selectedDb: ownProps.value,
+    selectedDb: 'sql-mysql',
   }
 }
 
