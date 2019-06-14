@@ -40,7 +40,7 @@ func (c *GRPCRealtimeClient) RoutineWrite() {
 			c.stream.Send(&grpcResponse)
 
 		case utils.TypeRealtimeFeed:
-			feed := res.Data.(model.FeedData)
+			feed := res.Data.(*model.FeedData)
 			feedData := make([]*proto.FeedData, 1)
 			payload, err := json.Marshal(feed.Payload)
 			if err != nil {
@@ -49,7 +49,7 @@ func (c *GRPCRealtimeClient) RoutineWrite() {
 			}
 			feedData[0] = &proto.FeedData{
 				QueryId: feed.QueryID, DocId: feed.DocID, Type: feed.Type, Group: feed.Group, DbType: feed.DBType, Payload: payload, TimeStamp: feed.TimeStamp}
-			grpcResponse := proto.RealTimeResponse{Id: res.ID, Group: res.Data.(model.FeedData).Group, FeedData: feedData, Ack: true}
+			grpcResponse := proto.RealTimeResponse{Id: res.ID, Group: res.Data.(*model.FeedData).Group, FeedData: feedData, Ack: true}
 			c.stream.Send(&grpcResponse)
 		}
 	}
@@ -77,7 +77,7 @@ func (c *GRPCRealtimeClient) Read(cb DataCallback) {
 			log.Println("GRPC Error -", err)
 			return
 		}
-		var data map[string]interface{}
+		data := make(map[string]interface{})
 		data["Token"] = in.Token
 		data["DBType"] = in.DbType
 		data["Project"] = in.Project
