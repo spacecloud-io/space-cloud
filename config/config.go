@@ -13,6 +13,14 @@ type Project struct {
 	Secret  string   `json:"secret" yaml:"secret"`
 	Modules *Modules `json:"modules" yaml:"modules"`
 	SSL     *SSL     `json:"ssl" yaml:"ssl"`
+	Admin   *Admin   `json:"admin" yaml:"admin"`
+}
+
+// Admin stores the admin credentials
+type Admin struct {
+	User string `json:"user" yaml:"user"`
+	Pass string `json:"pass" yaml:"pass"`
+	Role string `json:"role" yaml:"role"`
 }
 
 // SSL holds the certificate and key file locations

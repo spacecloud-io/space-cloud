@@ -130,3 +130,6 @@ const (
 	// GRPCService for Service implementation.
 	GRPCService RealTimeProtocol = "GRPC-Service"
 )
+
+// DefaultConfigFilePath is the default path to load / store the config file
+const DefaultConfigFilePath string = "config.yaml"

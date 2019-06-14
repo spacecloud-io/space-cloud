@@ -24,6 +24,7 @@ type Module struct {
 	fileRules map[string]*config.FileRule
 	funcRules config.FuncRules
 	project   string
+	admin     *config.Admin
 }
 
 // Init creates a new instance of the auth object

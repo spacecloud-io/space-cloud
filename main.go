@@ -86,10 +86,16 @@ func actionRun(c *cli.Context) error {
 	}
 
 	if configPath != "none" {
+		// Load the configFile from path if provided
 		conf, err := config.LoadConfigFromFile(configPath)
 		if err != nil {
 			return err
 		}
+
+		// Save the config file path for future use
+		s.configFilePath = configPath
+
+		// Configure all modules
 		err = s.loadConfig(conf)
 		if err != nil {
 			return err
