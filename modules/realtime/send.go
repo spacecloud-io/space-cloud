@@ -31,7 +31,7 @@ func (m *Module) SendCreate(dbType string, col string, req *model.CreateRequest)
 
 		// Send realtime message if id fields exists
 		if idTemp, p := data[idVar]; p {
-			if id, ok := idTemp.(string); ok {
+			if id, ok := AcceptableIdType(idTemp); ok {
 				m.send(&model.FeedData{
 					Group:     col,
 					DBType:    dbType,
@@ -53,7 +53,7 @@ func (m *Module) SendUpdate(ctx context.Context, project, dbType, col string, re
 	}
 
 	if idTemp, p := req.Find[idVar]; p {
-		if id, ok := idTemp.(string); ok {
+		if id, ok := AcceptableIdType(idTemp); ok {
 			// Create the find object
 			find := map[string]interface{}{idVar: id}
 
@@ -80,7 +80,7 @@ func (m *Module) SendDelete(dbType string, col string, req *model.DeleteRequest)
 	}
 
 	if idTemp, p := req.Find[idVar]; p {
-		if id, ok := idTemp.(string); ok {
+		if id, ok := AcceptableIdType(idTemp); ok {
 			m.send(&model.FeedData{
 				Group:     col,
 				Type:      utils.RealtimeDelete,
