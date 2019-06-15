@@ -102,6 +102,6 @@ func (m *Module) send(project, col string, msg *Message) {
 	bytes, _ := json.Marshal(msg)
 	err := m.nc.Publish(getSubjectName(project, col), bytes)
 	if err != nil {
-		log.Println("Realtime Error:", err)
+		log.Println("realtime Error:", err)
 	}
 }

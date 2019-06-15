@@ -11,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// Module is responsible for Functions
+// Module is responsible for functions
 type Module struct {
 	sync.RWMutex
 	nc              *nats.Conn
@@ -24,14 +24,14 @@ type Module struct {
 // SendPayload is the function called whenever a data point (payload) is to be sent
 type SendPayload func(*model.FunctionsPayload)
 
-// Init returns a new instance of the Functions module
+// Init returns a new instance of the functions module
 func Init() *Module {
 	m := new(Module)
 	go m.removeStaleRequests()
 	return m
 }
 
-// SetConfig set the config required by the Functions module
+// SetConfig set the config required by the functions module
 func (m *Module) SetConfig(functions *config.Functions) error {
 	m.Lock()
 	defer m.Unlock()
@@ -53,7 +53,7 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 
 	// Conect and create a new nats client
 	if functions.Broker != utils.Nats {
-		return errors.New("Functions Error: Broker is not supported")
+		return errors.New("functions Error: Broker is not supported")
 	}
 
 	nc, err := nats.Connect(functions.Conn)

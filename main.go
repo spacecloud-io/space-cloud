@@ -10,11 +10,13 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/server"
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Version = buildVersion
+	app.Version = utils.BuildVersion
 	app.Name = "space-cloud"
 	app.Usage = "core binary to run space cloud"
 
@@ -98,13 +100,13 @@ func actionRun(c *cli.Context) error {
 	seeds := c.String("seeds")
 
 	// Project and env cannot be changed once space cloud has started
-	s := initServer(isProd)
+	s := server.InitServer(isProd)
 
 	if !disableNats {
 		// TODO read nats config from the yaml file if it exists
 		if seeds != "" {
 			array := strings.Split(seeds, ",")
-			urls := []*url.URL{}
+			var urls []*url.URL
 			for _, v := range array {
 				if v != "" {
 					u, err := url.Parse("nats://" + v)
@@ -114,12 +116,12 @@ func actionRun(c *cli.Context) error {
 					urls = append(urls, u)
 				}
 			}
-			defaultNatsOptions.Routes = urls
+			server.DefaultNatsOptions.Routes = urls
 		}
-		defaultNatsOptions.Port = natsPort
-		defaultNatsOptions.Cluster.Port = clusterPort
-		s.runNatsServer(defaultNatsOptions)
-		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
+		server.DefaultNatsOptions.Port = natsPort
+		server.DefaultNatsOptions.Cluster.Port = clusterPort
+		s.RunNatsServer(server.DefaultNatsOptions)
+		fmt.Println("Started NATS server on port ", server.DefaultNatsOptions.Port)
 	}
 
 	if configPath != "none" {
@@ -127,7 +129,7 @@ func actionRun(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		err = s.loadConfig(conf)
+		err = s.LoadConfig(conf)
 		if err != nil {
 			return err
 		}
@@ -135,11 +137,11 @@ func actionRun(c *cli.Context) error {
 
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
-		go s.routineMetrics()
+		go s.RoutineMetrics()
 	}
 
-	s.routes()
-	return s.start(port, grpcPort)
+	s.Routes()
+	return s.Start(port, grpcPort)
 }
 
 func actionInit(*cli.Context) error {

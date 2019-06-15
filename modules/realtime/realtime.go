@@ -78,7 +78,7 @@ func (m *Module) SetConfig(project string, conf *config.Realtime) error {
 
 	// Conect and create a new nats client
 	if conf.Broker != utils.Nats {
-		return errors.New("Realtime Error: Broker is not supported")
+		return errors.New("realtime Error: Broker is not supported")
 	}
 
 	nc, err := nats.Connect(conf.Conn)

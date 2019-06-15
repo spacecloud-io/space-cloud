@@ -2,7 +2,7 @@ package model
 
 import "io"
 
-// File is the struct returned for file reads
+// file is the struct returned for file reads
 type File struct {
 	File  io.Reader
 	Close func() error

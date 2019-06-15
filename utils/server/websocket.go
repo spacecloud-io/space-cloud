@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -18,7 +18,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (s *server) handleWebsocket() http.HandlerFunc {
+func (s *Server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -26,37 +26,37 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 			return
 		}
 
-		client := client.CreateWebsocketClient(c)
-		defer s.realtime.RemoveClient(client.ClientID())
-		defer s.functions.UnregisterService(client.ClientID())
+		wsClient := client.CreateWebsocketClient(c)
+		defer s.realtime.RemoveClient(wsClient.ClientID())
+		defer s.functions.UnregisterService(wsClient.ClientID())
 
-		defer client.Close()
-		go client.RoutineWrite()
+		defer wsClient.Close()
+		go wsClient.RoutineWrite()
 
-		// Get client details
-		ctx := client.Context()
-		clientID := client.ClientID()
+		// Get wsClient details
+		ctx := wsClient.Context()
+		clientID := wsClient.ClientID()
 
-		client.Read(func(req *model.Message) {
+		wsClient.Read(func(req *model.Message) {
 			switch req.Type {
 			case utils.TypeRealtimeSubscribe:
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				mapstructure.Decode(req.Data, data)
 
-				// Subscribe to relaitme feed
+				// Subscribe to realttme feed
 				feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
-					client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
+					wsClient.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
 				if err != nil {
 					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-					client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+					wsClient.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 					return
 				}
 
-				// Send response to client
+				// Send response to wsClient
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData}
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				wsClient.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
 			case utils.TypeRealtimeUnsubscribe:
 				// For realtime subscribe event
@@ -65,9 +65,9 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 
 				s.realtime.Unsubscribe(clientID, data)
 
-				// Send response to client
+				// Send response to wsClient
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				wsClient.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
 			case utils.TypeServiceRegister:
 				// TODO add security rule for functions registered as well
@@ -75,10 +75,10 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 				mapstructure.Decode(req.Data, data)
 
 				s.functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
-					client.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
+					wsClient.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
 				})
 
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
+				wsClient.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
 
 			case utils.TypeServiceRequest:
 				data := new(model.FunctionsPayload)

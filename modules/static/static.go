@@ -7,7 +7,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 )
 
-// Module is responsible for Static
+// Module is responsible for static
 type Module struct {
 	sync.RWMutex
 	Enabled bool
@@ -15,12 +15,12 @@ type Module struct {
 	Gzip    bool
 }
 
-// Init returns a new instance of the Static module wit default values
+// Init returns a new instance of the static module wit default values
 func Init() *Module {
 	return &Module{Enabled: false, Gzip: false}
 }
 
-// SetConfig set the config required by the Static module
+// SetConfig set the config required by the static module
 func (m *Module) SetConfig(s *config.Static) error {
 	m.Lock()
 	defer m.Unlock()

@@ -27,7 +27,7 @@ func (m *Module) worker() {
 		msg := new(Message)
 		err := json.Unmarshal(rawMsg.Data, msg)
 		if err != nil {
-			log.Println("Realtime Worker Error:", err)
+			log.Println("realtime Worker Error:", err)
 			continue
 		}
 
