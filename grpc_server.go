@@ -404,7 +404,7 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 
 			// Subscribe to relaitme feed
 			feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
-				client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
+				client.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeFeed, Data: feed})
 			})
 			if err != nil {
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}

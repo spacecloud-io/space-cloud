@@ -11,6 +11,9 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
+// TokenClaims holds the JWT token claims
+type TokenClaims map[string]interface{}
+
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
@@ -52,13 +55,13 @@ func (m *Module) SetSecret(secret string) {
 	m.secret = secret
 }
 
-// CreateToken generates a new JWT Token
-func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
+// CreateToken generates a new JWT Token with the token claims
+func (m *Module) CreateToken(tokenClaims TokenClaims) (string, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	claims := jwt.MapClaims{}
-	for k, v := range obj {
+	for k, v := range tokenClaims {
 		claims[k] = v
 	}
 
@@ -71,7 +74,7 @@ func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
 	return tokenString, nil
 }
 
-func (m *Module) parseToken(token string) (map[string]interface{}, error) {
+func (m *Module) parseToken(token string) (TokenClaims, error) {
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
@@ -87,7 +90,7 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 
 	// Get the claims
 	if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
-		obj := make(map[string]interface{}, len(claims))
+		obj := make(TokenClaims, len(claims))
 		for key, val := range claims {
 			obj[key] = val
 		}

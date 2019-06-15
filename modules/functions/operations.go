@@ -76,7 +76,7 @@ func (m *Module) Call(service, function string, auth map[string]interface{}, par
 		return nil, err
 	}
 
-	// Return an error if response recieved has an error
+	// Return an error if response received has an error
 	if len(res.Error) > 0 {
 		return nil, errors.New(res.Error)
 	}

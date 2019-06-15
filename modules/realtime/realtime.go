@@ -2,6 +2,7 @@ package realtime
 
 import (
 	"errors"
+	"strconv"
 	"sync"
 	"time"
 
@@ -94,4 +95,25 @@ func (m *Module) SetConfig(project string, conf *config.Realtime) error {
 
 func getSubjectName(project, col string) string {
 	return "realtime:" + project + ":" + col
+}
+
+func acceptableIDType(id interface{}) (string, bool) {
+	switch v := id.(type) {
+	case string:
+		return v, true
+	case int:
+		return strconv.Itoa(v), true
+	case int32:
+		return strconv.FormatInt(int64(v), 10), true
+	case int64:
+		return strconv.FormatInt(v, 10), true
+	case float64:
+		// json.Unmarshal converts all numbers to float64
+		if float64(int64(v)) == v { // v is actually an int
+			return strconv.FormatInt(int64(v), 10), true
+		}
+		return "", false
+	default:
+		return "", false
+	}
 }

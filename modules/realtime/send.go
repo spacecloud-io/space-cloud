@@ -33,7 +33,7 @@ func (m *Module) SendCreateIntent(project, dbType, col string, req *model.Create
 
 		// Send realtime message if id fields exists
 		if idTemp, p := data[idVar]; p {
-			if id, ok := idTemp.(string); ok {
+			if id, ok := acceptableIDType(idTemp); ok {
 				msgID := uuid.NewV1().String()
 				feed := &model.FeedData{Group: col, DBType: dbType, Type: utils.RealtimeWrite, TimeStamp: time.Now().Unix(), DocID: id, Payload: data}
 				m.send(project, col, &Message{ID: msgID, Data: feed, Type: typeIntent})
@@ -52,7 +52,7 @@ func (m *Module) SendUpdateIntent(project, dbType, col string, req *model.Update
 	}
 
 	if idTemp, p := req.Find[idVar]; p {
-		if id, ok := idTemp.(string); ok {
+		if id, ok := acceptableIDType(idTemp); ok {
 			msgID := uuid.NewV1().String()
 			feed := &model.FeedData{Group: col, DBType: dbType, Type: utils.RealtimeUpdate, TimeStamp: time.Now().Unix(), DocID: id}
 			m.send(project, col, &Message{ID: msgID, Data: feed, Type: typeIntent})
@@ -70,7 +70,7 @@ func (m *Module) SendDeleteIntent(project, dbType, col string, req *model.Delete
 	}
 
 	if idTemp, p := req.Find[idVar]; p {
-		if id, ok := idTemp.(string); ok {
+		if id, ok := acceptableIDType(idTemp); ok {
 			msgID := uuid.NewV1().String()
 			feed := &model.FeedData{Group: col, Type: utils.RealtimeDelete, TimeStamp: time.Now().Unix(), DocID: id, DBType: dbType}
 			m.send(project, col, &Message{ID: msgID, Data: feed, Type: typeIntent})
