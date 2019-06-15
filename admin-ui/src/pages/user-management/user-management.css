@@ -1,0 +1,63 @@
+.user-management .header>img {
+  margin-right: 16px;
+}
+
+.user-management .email {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #000;
+  padding-left: 5%; 
+}
+
+.user-management .switch  {
+  position: relative;
+  top: -0.8vw;
+  left: 1vw;
+}
+
+.user-management .email-collapse {
+  display: flex;
+  padding-right: 10%;
+  padding-top: 7%;
+}
+
+.user-management .oauth-enable {
+  float: right;
+  display: flex;
+  padding-right: 5%;
+}
+
+.user-management .en-switch {
+  position: relative;
+  top: -2.5vw;
+  left: 5vw;
+}
+
+.user-management .details {
+  position: relative;
+  right: 8vw;
+  top: -4vw;
+}
+
+.user-management .en-button {
+  position: relative;
+  right: -36vw;
+  top: 4%;
+}
+
+.user-management .oauth .copy {
+  cursor: pointer;
+  font-size: 18px;
+  float: right;
+}
+
+.oauth .url {
+  height: 36px;
+  align-items: center;
+  width: 360px;
+  background: #EEE;
+  border-radius: 4px;
+  margin-top: 8px;
+  padding: 10px 16px 0 16px;
+}
