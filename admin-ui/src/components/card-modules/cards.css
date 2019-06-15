@@ -55,28 +55,20 @@
   font-size: 16px;
 }
 
-.card-style .enabled-button{
+.card-style .button {
   border-radius: 20px;
   color: #000;
   font-weight: 600;
   font-size: 8px;
   border: none;
-  background: #FFF;
   float: right;
   height: 20px;
   line-height: 20px;
+  background: #FFF;
 }
 
-.card-style .disabled-button{
-  border-radius: 20px;
-  color: #000;
-  font-weight: 600;
-  font-size: 8px;
-  border: none;
+.card-style .disabled{
   background: #CCC;
-  float: right;
-  height: 20px;
-  line-height: 20px;
 }
 
 .card-style .module {

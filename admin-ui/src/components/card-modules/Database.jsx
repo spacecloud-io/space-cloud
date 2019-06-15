@@ -30,8 +30,8 @@ function Database(props) {
           <i className="material-icons book">import_contacts</i>
         </a>
         {props.modules.enabled ?
-          <button className="enabled-button">Enabled</button> :
-          <button className="disabled-button">Disabled</button>
+          <button className="button">Enabled</button> :
+          <button className="disabled button">Disabled</button>
         }
       </div>
     </div>
