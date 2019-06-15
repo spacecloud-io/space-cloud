@@ -1,16 +1,18 @@
 package realtime
 
 import (
-	"context"
+	"encoding/json"
+	"log"
 	"time"
 
+	uuid "github.com/satori/go.uuid"
+
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// SendCreate broadcasts a realtime create datapoint to the concerned clients
-func (m *Module) SendCreate(dbType string, col string, req *model.CreateRequest) {
+// SendCreateIntent broadcasts a realtime create datapoint to the concerned clients
+func (m *Module) SendCreateIntent(project, dbType, col string, req *model.CreateRequest) string {
 	var rows []interface{}
 	switch req.Operation {
 	case utils.One:
@@ -31,72 +33,75 @@ func (m *Module) SendCreate(dbType string, col string, req *model.CreateRequest)
 
 		// Send realtime message if id fields exists
 		if idTemp, p := data[idVar]; p {
-			if id, ok := AcceptableIdType(idTemp); ok {
-				m.send(&model.FeedData{
-					Group:     col,
-					DBType:    dbType,
-					Type:      utils.RealtimeWrite,
-					TimeStamp: time.Now().Unix(),
-					DocID:     id,
-					Payload:   data,
-				})
+			if id, ok := acceptableIDType(idTemp); ok {
+				msgID := uuid.NewV1().String()
+				feed := &model.FeedData{Group: col, DBType: dbType, Type: utils.RealtimeWrite, TimeStamp: time.Now().Unix(), DocID: id, Payload: data}
+				m.send(project, col, &Message{ID: msgID, Data: feed, Type: typeIntent})
+				return msgID
 			}
 		}
 	}
+	return ""
 }
 
-// SendUpdate broadcasts a realtime update datapoint to the concerned clients
-func (m *Module) SendUpdate(ctx context.Context, project, dbType, col string, req *model.UpdateRequest, crud *crud.Module) {
+// SendUpdateIntent broadcasts a realtime update datapoint to the concerned clients
+func (m *Module) SendUpdateIntent(project, dbType, col string, req *model.UpdateRequest) string {
 	idVar := "id"
 	if dbType == string(utils.Mongo) {
 		idVar = "_id"
 	}
 
 	if idTemp, p := req.Find[idVar]; p {
-		if id, ok := AcceptableIdType(idTemp); ok {
-			// Create the find object
-			find := map[string]interface{}{idVar: id}
-
-			data, err := crud.Read(ctx, dbType, project, col, &model.ReadRequest{Find: find, Operation: utils.One})
-			if err == nil {
-				m.send(&model.FeedData{
-					Group:     col,
-					Type:      utils.RealtimeWrite,
-					TimeStamp: time.Now().Unix(),
-					DocID:     id,
-					DBType:    dbType,
-					Payload:   data.(map[string]interface{}),
-				})
-			}
+		if id, ok := acceptableIDType(idTemp); ok {
+			msgID := uuid.NewV1().String()
+			feed := &model.FeedData{Group: col, DBType: dbType, Type: utils.RealtimeUpdate, TimeStamp: time.Now().Unix(), DocID: id}
+			m.send(project, col, &Message{ID: msgID, Data: feed, Type: typeIntent})
+			return msgID
 		}
 	}
+	return ""
 }
 
-// SendDelete broadcasts a realtime delete datapoint to the concerned clients
-func (m *Module) SendDelete(dbType string, col string, req *model.DeleteRequest) {
+// SendDeleteIntent broadcasts a realtime delete datapoint to the concerned clients
+func (m *Module) SendDeleteIntent(project, dbType, col string, req *model.DeleteRequest) string {
 	idVar := "id"
 	if dbType == string(utils.Mongo) {
 		idVar = "_id"
 	}
 
 	if idTemp, p := req.Find[idVar]; p {
-		if id, ok := AcceptableIdType(idTemp); ok {
-			m.send(&model.FeedData{
-				Group:     col,
-				Type:      utils.RealtimeDelete,
-				TimeStamp: time.Now().Unix(),
-				DocID:     id,
-				DBType:    dbType,
-			})
+		if id, ok := acceptableIDType(idTemp); ok {
+			msgID := uuid.NewV1().String()
+			feed := &model.FeedData{Group: col, Type: utils.RealtimeDelete, TimeStamp: time.Now().Unix(), DocID: id, DBType: dbType}
+			m.send(project, col, &Message{ID: msgID, Data: feed, Type: typeIntent})
+			return msgID
 		}
 	}
+	return ""
 }
 
-func (m *Module) send(data *model.FeedData) {
+// SendAck send an ack for the intent
+func (m *Module) SendAck(msgID, project, col string, ack bool) {
+
+	// Don't do anything if the msgID is empty
+	if msgID == "" {
+		return
+	}
+
+	m.send(project, col, &Message{ID: msgID, Type: typeAck, Ack: ack})
+}
+
+func (m *Module) send(project, col string, msg *Message) {
 	m.RLock()
 	defer m.RUnlock()
 
-	if m.enabled {
-		m.feed <- data
+	if !m.enabled {
+		return
+	}
+
+	bytes, _ := json.Marshal(msg)
+	err := m.nc.Publish(getSubjectName(project, col), bytes)
+	if err != nil {
+		log.Println("Realtime Error:", err)
 	}
 }

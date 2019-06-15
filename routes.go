@@ -16,13 +16,13 @@ func (s *server) routes() {
 	s.router.Methods("POST").Path("/v1/api/{project}/functions/{service}/{func}").HandlerFunc(handlers.HandleFunctionCall(s.functions, s.auth))
 
 	// Initialize the routes for the crud operations
-	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.isProd, s.auth, s.crud, s.realtime))
+	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.auth, s.crud, s.realtime))
 
 	crudRouter := s.router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
-	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.isProd, s.auth, s.crud, s.realtime))
+	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.auth, s.crud, s.realtime))
 	crudRouter.HandleFunc("/read", handlers.HandleCrudRead(s.auth, s.crud))
-	crudRouter.HandleFunc("/update", handlers.HandleCrudUpdate(s.isProd, s.auth, s.crud, s.realtime))
-	crudRouter.HandleFunc("/delete", handlers.HandleCrudDelete(s.isProd, s.auth, s.crud, s.realtime))
+	crudRouter.HandleFunc("/update", handlers.HandleCrudUpdate(s.auth, s.crud, s.realtime))
+	crudRouter.HandleFunc("/delete", handlers.HandleCrudDelete(s.auth, s.crud, s.realtime))
 	crudRouter.HandleFunc("/aggr", handlers.HandleCrudAggregate(s.auth, s.crud))
 
 	// Initialize the routes for the user management operations
