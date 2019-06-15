@@ -14,13 +14,10 @@ class Rules extends Component {
 			selectedRule = rules[0];
 		}
 		this.state = { selectedRule: selectedRule };
-		this.handleChange = this.handleChange.bind(this);
+
 		this.handleClick = this.handleClick.bind(this);
 	}
-	handleChange(editor, data, value) {
-		console.log(value);
-		this.props.handleRuleChange(value);
-	}
+
 	handleClick(rule) {
 		this.setState({ selectedRule: rule });
 	}
@@ -33,7 +30,7 @@ class Rules extends Component {
 			<div className="rules-main-wrapper">
 				<Row>
 					<Col span={6}>
-						<div className="addaRule" onClick={this.props.handleAddTextClick}>
+						<div className="addaRule" onClick={this.props.handleAddTableClick}>
 							<Icon className="addIcon" type="plus" /> {this.props.addText}
 						</div>
 						<div className="rulesTable">
@@ -67,7 +64,7 @@ class Rules extends Component {
 										lineNumbers: true
 									}}
 									onBeforeChange={(editor, data, value) => {
-										this.handleChange(editor, data, value);
+										this.props.handleRuleChange(value);
 									}}
 								/>
 							</div>

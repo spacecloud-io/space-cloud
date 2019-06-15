@@ -26,8 +26,8 @@ function Rules(props) {
 					<RulesTable
 						rules={props.rules}
 						handleRuleChange={props.handleRuleChange}
-						addText={props.addText}
-						handleAddTextClick={props.handleAddTextClick}
+						addText= {'Add a table rule'}
+						handleAddTableClick={props.handleAddTableClick}
 					/>
 				</div>
 			</div>
@@ -50,7 +50,7 @@ const mapStateToProps = (state, ownProps) => {
 			qwqw: 'f',
 			rewwr: 'g'
 		},
-		addText: 'Add a table rule'
+		
 	};
 };
 
@@ -62,7 +62,7 @@ const mapDispatchToProps = (dispatch) => {
 		handleRuleChange: (value) => {
 			console.log('Rule Changed', value);
     },
-    handleAddTextClick:()=>{
+    handleAddTableClick:()=>{
 			console.log('Table Added');
     },
 		updateFormState: (fields) => {
