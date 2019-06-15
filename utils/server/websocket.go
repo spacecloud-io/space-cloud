@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -18,7 +18,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (s *server) handleWebsocket() http.HandlerFunc {
+func (s *Server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -6,13 +6,14 @@ import (
 	"net/http"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/spaceuptech/space-cloud/model"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
-func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
+func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
 
 	// Create a create request
 	req := model.CreateRequest{}
@@ -43,7 +44,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	return &pb.Response{Status: 200}, nil
 }
 
-func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
+func (s *Server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
 
 	req := model.ReadRequest{}
 	temp := map[string]interface{}{}
@@ -86,7 +87,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	return &pb.Response{Status: 200, Result: resultBytes}, nil
 }
 
-func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
+func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
 
 	req := model.UpdateRequest{}
 	temp := map[string]interface{}{}
@@ -121,7 +122,7 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 
 }
 
-func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
+func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
 
 	// Load the request from the body
 	req := model.DeleteRequest{}
@@ -151,10 +152,10 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	return &pb.Response{Status: 200}, nil
 }
 
-func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
+func (s *Server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
 
 	req := model.AggregateRequest{}
-	temp := []map[string]interface{}{}
+	var temp []map[string]interface{}
 	if err := json.Unmarshal(in.Pipeline, &temp); err != nil {
 		return &pb.Response{Status: 500, Error: err.Error()}, nil
 	}
@@ -182,9 +183,9 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	return &pb.Response{Status: 200, Result: resultBytes}, nil
 }
 
-func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
+func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
 
-	allRequests := []model.AllRequest{}
+	var allRequests []model.AllRequest
 	for _, req := range in.Batchrequest {
 		switch req.Type {
 		case string(utils.Create):
@@ -298,7 +299,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	return &pb.Response{Status: 200}, nil
 }
 
-func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
+func (s *Server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
 	var params interface{}
 	if err := json.Unmarshal(in.Params, &params); err != nil {
 		out := pb.Response{}
@@ -321,7 +322,7 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 	return &pb.Response{Result: data, Status: 200}, nil
 }
 
-func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
+func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	client := client.CreateGRPCServiceClient(stream)
 	defer s.functions.UnregisterService(client.ClientID())
 	defer client.Close()
@@ -354,7 +355,7 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	return nil
 }
 
-func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
+func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	client := client.CreateGRPCRealtimeClient(stream)
 	defer s.realtime.RemoveClient(client.ClientID())
 	defer client.Close()
@@ -371,7 +372,7 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			data := new(model.RealtimeRequest)
 			mapstructure.Decode(req.Data, data)
 
-			// Subscribe to relaitme feed
+			// Subscribe to realtime feed
 			feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
 				client.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeFeed, Data: feed})
 			})
@@ -400,7 +401,7 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	return nil
 }
 
-func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
+func (s *Server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
 	status, result, err := s.user.Profile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id)
 	out := pb.Response{}
 	out.Status = int32(status)
@@ -418,7 +419,7 @@ func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Respon
 	return &out, nil
 }
 
-func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
+func (s *Server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
 	status, result, err := s.user.Profiles(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project)
 	out := pb.Response{}
 	out.Status = int32(status)
@@ -436,7 +437,7 @@ func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Resp
 	return &out, nil
 }
 
-func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
+func (s *Server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
 	status, result, err := s.user.EmailEditProfile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id, in.Email, in.Name, in.Password)
 	out := pb.Response{}
 	out.Status = int32(status)
@@ -454,7 +455,7 @@ func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*p
 	return &out, nil
 }
 
-func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
+func (s *Server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
 	status, result, err := s.user.EmailSignIn(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Password)
 	out := pb.Response{}
 	out.Status = int32(status)
@@ -472,7 +473,7 @@ func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response
 	return &out, nil
 }
 
-func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
+func (s *Server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
 	status, result, err := s.user.EmailSignUp(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Name, in.Password, in.Role)
 	out := pb.Response{}
 	out.Status = int32(status)

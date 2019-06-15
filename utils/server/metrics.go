@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/proto"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type transport struct {
@@ -67,7 +68,7 @@ func (t *transport) update(ctx context.Context, meta *proto.Meta, op string, fin
 
 // Init initialises a new transport
 func newTransport(host, port string, sslEnabled bool) (*transport, error) {
-	dialOptions := []grpc.DialOption{}
+	var dialOptions []grpc.DialOption
 
 	if sslEnabled {
 		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
@@ -84,7 +85,7 @@ func newTransport(host, port string, sslEnabled bool) (*transport, error) {
 	return &transport{conn, stub}, nil
 }
 
-func (s *server) routineMetrics() {
+func (s *Server) RoutineMetrics() {
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 
@@ -104,10 +105,10 @@ func (s *server) routineMetrics() {
 	set := map[string]interface{}{
 		"os":      runtime.GOOS,
 		"isProd":  s.isProd,
-		"version": buildVersion,
+		"version": utils.BuildVersion,
 	}
 
-	// Connect to metrics server
+	// Connect to metrics Server
 	trans, err := newTransport("spaceuptech.com", "11001", true)
 	if err != nil {
 		fmt.Println("Metrics Error -", err)
@@ -169,7 +170,7 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 	}
 
 	if config.Crud != nil {
-		crud := []string{}
+		var crud []string
 		for k := range config.Crud {
 			crud = append(crud, k)
 		}
@@ -177,7 +178,7 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 	}
 
 	if config.Auth != nil {
-		auth := []string{}
+		var auth []string
 		for k, v := range config.Auth {
 			if v.Enabled {
 				auth = append(auth, k)

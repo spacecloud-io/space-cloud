@@ -8,11 +8,13 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/server"
 )
 
 func main() {
 	app := cli.NewApp()
-	app.Version = buildVersion
+	app.Version = utils.BuildVersion
 	app.Name = "space-cloud"
 	app.Usage = "core binary to run space cloud"
 
@@ -77,12 +79,12 @@ func actionRun(c *cli.Context) error {
 	disableNats := c.Bool("disable-nats")
 
 	// Project and env cannot be changed once space cloud has started
-	s := initServer(isProd)
+	s := server.InitServer(isProd)
 
 	if !disableNats {
 		// TODO read nats config from the yaml file if it exists
-		s.runNatsServer(defaultNatsOptions)
-		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
+		s.RunNatsServer(server.DefaultNatsOptions)
+		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
 	}
 
 	if configPath != "none" {
@@ -90,7 +92,7 @@ func actionRun(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		err = s.loadConfig(conf)
+		err = s.LoadConfig(conf)
 		if err != nil {
 			return err
 		}
@@ -98,11 +100,11 @@ func actionRun(c *cli.Context) error {
 
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
-		go s.routineMetrics()
+		go s.RoutineMetrics()
 	}
 
-	s.routes()
-	return s.start(port, grpcPort)
+	s.Routes()
+	return s.Start(port, grpcPort)
 }
 
 func actionInit(*cli.Context) error {

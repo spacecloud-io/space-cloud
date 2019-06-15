@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ import (
 	pb "github.com/spaceuptech/space-cloud/proto"
 )
 
-type server struct {
+type Server struct {
 	lock      sync.Mutex
 	router    *mux.Router
 	auth      *auth.Module
@@ -39,21 +39,22 @@ type server struct {
 	nats      *nats.Server
 }
 
-func initServer(isProd bool) *server {
+func InitServer(isProd bool) *Server {
 	r := mux.NewRouter()
 	c := crud.Init()
 	f := filestore.Init()
-	realtime := realtime.Init()
+	rl := realtime.Init()
 	s := static.Init()
-	functions := functions.Init()
-	a := auth.Init(c, functions)
+	fn := functions.Init()
+	a := auth.Init(c, fn)
 	u := userman.Init(c, a)
-	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd}
+
+	return &Server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: fn, realtime: rl, isProd: isProd}
 }
 
-func (s *server) start(port, grpcPort string) error {
+func (s *Server) Start(port, grpcPort string) error {
 
-	go s.initGRPCServer(grpcPort)
+	go s.InitGRPCServer(grpcPort)
 
 	// Allow cors
 	corsObj := cors.New(cors.Options{
@@ -68,7 +69,7 @@ func (s *server) start(port, grpcPort string) error {
 
 	handler := corsObj.Handler(s.router)
 
-	fmt.Println("Starting http server on port " + port)
+	fmt.Println("Starting http Server on port " + port)
 
 	if s.config.SSL != nil {
 		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
@@ -77,7 +78,7 @@ func (s *server) start(port, grpcPort string) error {
 	return http.ListenAndServe(":"+port, handler)
 }
 
-func (s *server) loadConfig(config *config.Project) error {
+func (s *Server) LoadConfig(config *config.Project) error {
 	s.lock.Lock()
 	s.config = config
 	s.lock.Unlock()
@@ -112,13 +113,13 @@ func (s *server) loadConfig(config *config.Project) error {
 	return s.crud.SetConfig(config.Modules.Crud)
 }
 
-func (s *server) initGRPCServer(port string) {
+func (s *Server) InitGRPCServer(port string) {
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
 	}
 
-	options := []grpc.ServerOption{}
+	var options []grpc.ServerOption
 	if s.config.SSL != nil {
 		creds, err := credentials.NewServerTLSFromFile(s.config.SSL.Crt, s.config.SSL.Key)
 		if err != nil {
@@ -130,7 +131,7 @@ func (s *server) initGRPCServer(port string) {
 	grpcServer := grpc.NewServer(options...)
 	pb.RegisterSpaceCloudServer(grpcServer, s)
 
-	fmt.Println("Starting gRPC server on port " + port)
+	fmt.Println("Starting gRPC Server on port " + port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
 	}

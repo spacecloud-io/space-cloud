@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 	nats "github.com/nats-io/nats-server/server"
 )
 
-var defaultNatsOptions = &nats.Options{
+var DefaultNatsOptions = &nats.Options{
 	Host:   "0.0.0.0",
 	Port:   4222,
 	NoLog:  true,
@@ -18,7 +18,7 @@ var defaultNatsOptions = &nats.Options{
 	},
 }
 
-func (s *server) runNatsServer(opts *nats.Options) {
+func (s *Server) RunNatsServer(opts *nats.Options) {
 	s.nats = nats.New(opts)
 	go s.nats.Start()
 	// Wait for accept loop(s) to be started

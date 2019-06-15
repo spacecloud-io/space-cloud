@@ -1,13 +1,13 @@
-package main
+package server
 
 import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
-func (s *server) routes() {
+func (s *Server) Routes() {
 	// Initialize the routes for config management
-	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
+	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.LoadConfig))
 
 	// Initialize the route for websocket
 	s.router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
@@ -18,6 +18,7 @@ func (s *server) routes() {
 	// Initialize the routes for the crud operations
 	s.router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.isProd, s.auth, s.crud, s.realtime))
 
+	// Initialize the routes for the CRUD operations
 	crudRouter := s.router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
 	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.isProd, s.auth, s.crud, s.realtime))
 	crudRouter.HandleFunc("/read", handlers.HandleCrudRead(s.auth, s.crud))
