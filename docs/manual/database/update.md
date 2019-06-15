@@ -58,6 +58,7 @@ db.update("todos")
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -71,6 +72,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -112,6 +115,7 @@ db.updateOne('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -125,6 +129,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -162,6 +168,7 @@ db.upsert('todos').where(cond('_id', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -175,6 +182,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -227,6 +236,7 @@ db.update('todos').where(condition)
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -240,6 +250,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -302,6 +314,7 @@ db.update('todos').where(condition)
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -315,6 +328,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -358,6 +373,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -371,6 +387,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -411,6 +429,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -424,6 +443,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -463,6 +484,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -476,6 +498,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -515,6 +539,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -528,6 +553,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -571,6 +598,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -584,6 +612,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -623,6 +653,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -636,6 +667,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -675,6 +708,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -688,6 +722,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -725,6 +761,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -738,6 +775,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -775,6 +814,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -788,6 +828,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -827,6 +869,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -840,6 +883,8 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
