@@ -36,7 +36,7 @@ func (m *Module) worker() {
 						QueryID: id.(string), DocID: data.DocID, Group: data.Group, Payload: data.Payload,
 						TimeStamp: data.TimeStamp, Type: data.Type, DBType: data.DBType,
 					}
-					query.client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: dataPoint})
+					query.sendFeed(dataPoint)
 				}
 				return true
 			})

@@ -8,8 +8,11 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 )
+
+// TokenClaims holds the JWT token claims
+type TokenClaims map[string]interface{}
 
 // Module is responsible for authentication and authorisation
 type Module struct {
@@ -17,23 +20,32 @@ type Module struct {
 	rules     config.Crud
 	secret    string
 	crud      *crud.Module
+	functions *functions.Module
 	fileRules map[string]*config.FileRule
+	funcRules config.FuncRules
+	project   string
+	admin     *config.Admin
 }
 
 // Init creates a new instance of the auth object
-func Init(crud *crud.Module) *Module {
-	return &Module{rules: make(config.Crud), crud: crud}
+func Init(crud *crud.Module, functions *functions.Module) *Module {
+	return &Module{rules: make(config.Crud), crud: crud, functions: functions}
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(secret string, rules config.Crud, fileStore *config.FileStore) {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions) {
 	m.Lock()
 	defer m.Unlock()
 
+	m.project = project
 	m.rules = rules
 	m.secret = secret
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
+	}
+
+	if functions != nil && functions.Enabled {
+		m.funcRules = functions.Rules
 	}
 }
 
@@ -44,28 +56,13 @@ func (m *Module) SetSecret(secret string) {
 	m.secret = secret
 }
 
-func (m *Module) getRule(dbType, col string, query utils.OperationType) (*config.Rule, error) {
-	if dbRules, p1 := m.rules[dbType]; p1 {
-		if collection, p2 := dbRules.Collections[col]; p2 {
-			if rule, p3 := collection.Rules[string(query)]; p3 {
-				return rule, nil
-			}
-		} else if defaultCol, p2 := dbRules.Collections["default"]; p2 {
-			if rule, p3 := defaultCol.Rules[string(query)]; p3 {
-				return rule, nil
-			}
-		}
-	}
-	return nil, ErrRuleNotFound
-}
-
-// CreateToken generates a new JWT Token
-func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
+// CreateToken generates a new JWT Token with the token claims
+func (m *Module) CreateToken(tokenClaims TokenClaims) (string, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	claims := jwt.MapClaims{}
-	for k, v := range obj {
+	for k, v := range tokenClaims {
 		claims[k] = v
 	}
 
@@ -78,15 +75,7 @@ func (m *Module) CreateToken(obj map[string]interface{}) (string, error) {
 	return tokenString, nil
 }
 
-// GetAuthObj returns the auth object from a token string
-func (m *Module) GetAuthObj(token string) (map[string]interface{}, error) {
-	m.RLock()
-	defer m.RUnlock()
-
-	return m.parseToken(token)
-}
-
-func (m *Module) parseToken(token string) (map[string]interface{}, error) {
+func (m *Module) parseToken(token string) (TokenClaims, error) {
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
@@ -102,7 +91,7 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 
 	// Get the claims
 	if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
-		obj := make(map[string]interface{}, len(claims))
+		obj := make(TokenClaims, len(claims))
 		for key, val := range claims {
 			obj[key] = val
 		}
@@ -111,33 +100,4 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 	}
 
 	return nil, errors.New("AUTH: JWT token could not be verified")
-}
-
-// IsAuthenticated checks if the caller is authentic
-func (m *Module) IsAuthenticated(token, dbType, col string, query utils.OperationType) (map[string]interface{}, error) {
-	m.RLock()
-	defer m.RUnlock()
-
-	rule, err := m.getRule(dbType, col, query)
-	if err != nil {
-		return nil, err
-	}
-
-	if rule.Rule == "allow" {
-		return map[string]interface{}{}, nil
-	}
-	return m.parseToken(token)
-}
-
-// IsAuthorized checks if the caller is authorized to make the request
-func (m *Module) IsAuthorized(dbType, col string, query utils.OperationType, args map[string]interface{}) error {
-	m.RLock()
-	defer m.RUnlock()
-
-	rule, err := m.getRule(dbType, col, query)
-	if err != nil {
-		return err
-	}
-
-	return m.matchRule(rule, args)
 }

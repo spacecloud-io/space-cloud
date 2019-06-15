@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	nats "github.com/nats-io/nats-server/server"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -21,32 +22,35 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	pb "github.com/spaceuptech/space-cloud/proto"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type server struct {
-	lock      sync.Mutex
-	router    *mux.Router
-	auth      *auth.Module
-	crud      *crud.Module
-	user      *userman.Module
-	file      *filestore.Module
-	functions *functions.Module
-	realtime  *realtime.Module
-	static    *static.Module
-	isProd    bool
-	config    *config.Project
+	lock           sync.Mutex
+	router         *mux.Router
+	auth           *auth.Module
+	crud           *crud.Module
+	user           *userman.Module
+	file           *filestore.Module
+	functions      *functions.Module
+	realtime       *realtime.Module
+	static         *static.Module
+	isProd         bool
+	config         *config.Project
+	nats           *nats.Server
+	configFilePath string
 }
 
 func initServer(isProd bool) *server {
 	r := mux.NewRouter()
 	c := crud.Init()
-	a := auth.Init(c)
-	u := userman.Init(c, a)
 	f := filestore.Init()
 	realtime := realtime.Init()
 	s := static.Init()
 	functions := functions.Init()
-	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd}
+	a := auth.Init(c, functions)
+	u := userman.Init(c, a)
+	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }
 
 func (s *server) start(port, grpcPort string) error {
@@ -81,7 +85,7 @@ func (s *server) loadConfig(config *config.Project) error {
 	s.lock.Unlock()
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.Secret, config.Modules.Crud, config.Modules.FileStore)
+	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(config.Modules.Auth)

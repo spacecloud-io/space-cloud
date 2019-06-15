@@ -47,7 +47,20 @@ db.profile(userId).then(res => {
  <div id="profile-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+// Initialize api with the project name and url of the space cloud
+api = API("books-app", "localhost:8081")
+
+// Initialize database(s) you intend to use
+db = api.my_sql()
+
+// Read profile of an user
+response = db.profile("user_id")
+if response.status == 200:
+    print(response.result)
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
@@ -99,7 +112,20 @@ db.profiles().then(res => {
  <div id="profiles-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+// Initialize api with the project name and url of the space cloud
+api = API("books-app", "localhost:8081")
+
+// Initialize database(s) you intend to use
+db = api.my_sql()
+
+// Read profiles of all users
+response = db.profiles()
+if response.status == 200:
+    print(response.result)
+else:
+    print(response.error)
       </code>
     </pre>
   </div>

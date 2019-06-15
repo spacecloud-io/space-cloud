@@ -21,7 +21,7 @@ function DbConfigure(props) {
         <Tooltip placement="bottomLeft" title="Lorem ipsum dolor sit amet, consectetur adipiscing elit. ">
           <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
         </Tooltip>
-        <Form.Item label="Enabed" className="switch">
+        <Form.Item label="Enabled" className="switch">
           {getFieldDecorator('enabled', { valuePropName: 'checked' })(
             <Switch size="small" />
           )}
@@ -31,7 +31,7 @@ function DbConfigure(props) {
   )
 }
 
-const WrappedHorizontalLoginForm = Form.create({
+const WrappedDbConfigureForm = Form.create({
   mapPropsToFields(props) {
     return {
       conn: createFormField({ value: props.formState.conn }),
@@ -43,4 +43,4 @@ const WrappedHorizontalLoginForm = Form.create({
   },
 })(DbConfigure);
 
-export default WrappedHorizontalLoginForm
+export default WrappedDbConfigureForm

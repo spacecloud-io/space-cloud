@@ -11,8 +11,8 @@ export default () => {
     <Router history={history}>
       <Route exact path="/" component={Login} />
       <Route exact path="/:projectId/database" component={Database} />
-      <Route exact path="/:projectId/database/rules" component={Rules} />
       <Route exact path="/:projectId/overview" component={Overview} />
+      <Route exact path="/:projectId/database/rules/:database" component={Rules} />
     </Router>
   )
 }

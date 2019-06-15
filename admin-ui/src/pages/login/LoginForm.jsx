@@ -8,7 +8,7 @@ function LoginForm(props) {
     e.preventDefault();
     props.form.validateFields((err, values) => {
       if (!err) {
-        props.handleSubmit();
+        props.handleSubmit(values.userName, values.password);
       }
     });
   }

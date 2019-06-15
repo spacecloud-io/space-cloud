@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 
-	"github.com/spaceuptech/space-cloud/modules/auth"
-	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/realtime"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
 var upgrader = websocket.Upgrader{
@@ -18,7 +18,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Module) http.HandlerFunc {
+func (s *server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -26,7 +26,66 @@ func handleWebsocket(realtime *realtime.Module, auth *auth.Module, crud *crud.Mo
 			return
 		}
 
-		client := utils.CreateWebsocketClient(c)
-		realtime.Operation(client, auth, crud)
+		client := client.CreateWebsocketClient(c)
+		defer s.realtime.RemoveClient(client.ClientID())
+		defer s.functions.UnregisterService(client.ClientID())
+
+		defer client.Close()
+		go client.RoutineWrite()
+
+		// Get client details
+		ctx := client.Context()
+		clientID := client.ClientID()
+
+		client.Read(func(req *model.Message) {
+			switch req.Type {
+			case utils.TypeRealtimeSubscribe:
+				// For realtime subscribe event
+				data := new(model.RealtimeRequest)
+				mapstructure.Decode(req.Data, data)
+
+				// Subscribe to relaitme feed
+				feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
+					client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
+				})
+				if err != nil {
+					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
+					client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+					return
+				}
+
+				// Send response to client
+				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData}
+				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+
+			case utils.TypeRealtimeUnsubscribe:
+				// For realtime subscribe event
+				data := new(model.RealtimeRequest)
+				mapstructure.Decode(req.Data, data)
+
+				s.realtime.Unsubscribe(clientID, data)
+
+				// Send response to client
+				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
+				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+
+			case utils.TypeServiceRegister:
+				// TODO add security rule for functions registered as well
+				data := new(model.ServiceRegisterRequest)
+				mapstructure.Decode(req.Data, data)
+
+				s.functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
+					client.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
+				})
+
+				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
+
+			case utils.TypeServiceRequest:
+				data := new(model.FunctionsPayload)
+				mapstructure.Decode(req.Data, data)
+
+				s.functions.HandleServiceResponse(data)
+			}
+		})
 	}
 }
