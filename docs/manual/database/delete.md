@@ -275,13 +275,13 @@ On response from the server, the callback passed to the `then` method is called 
 
 ## Next steps
 
-Now you know all the operations of CRUD module. So let's take a deeper dive into configuring the database module of Space Cloud.
+Now you know how to perform all the basic operations of CRUD module. Now let's see how to perform batched operations and transactions.
 
 <div class="btns-wrapper">
   <a href="/docs/database/update" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/database/config" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/database/transactions" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

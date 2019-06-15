@@ -66,6 +66,10 @@
         "Read Data"
       ],
       [
+        "live-query",
+        "Listening to real-time updates"
+      ],
+      [
         "update",
         "Update Data"
       ],
@@ -74,18 +78,12 @@
         "Delete Data"
       ],
       [
+        "transactions", 
+        "Transactions and batched mutations"
+      ],
+      [
         "config",
         "Configuration"
-      ]
-    ]
-  },
-  {
-    "name": "Realtime",
-    "url": "realtime",
-    "pages": [
-      [
-        "live-query",
-        "Listening to real-time updates"
       ]
     ]
   },
@@ -121,11 +119,11 @@
     "pages": [
       [
         "service",
-        "Writing custom logic"
+        "Write functions"
       ],
       [
         "client",
-        "Accessing custom logic"
+        "Call functions"
       ]
     ]
   },
