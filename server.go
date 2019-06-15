@@ -22,21 +22,23 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	pb "github.com/spaceuptech/space-cloud/proto"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type server struct {
-	lock      sync.Mutex
-	router    *mux.Router
-	auth      *auth.Module
-	crud      *crud.Module
-	user      *userman.Module
-	file      *filestore.Module
-	functions *functions.Module
-	realtime  *realtime.Module
-	static    *static.Module
-	isProd    bool
-	config    *config.Project
-	nats      *nats.Server
+	lock           sync.Mutex
+	router         *mux.Router
+	auth           *auth.Module
+	crud           *crud.Module
+	user           *userman.Module
+	file           *filestore.Module
+	functions      *functions.Module
+	realtime       *realtime.Module
+	static         *static.Module
+	isProd         bool
+	config         *config.Project
+	nats           *nats.Server
+	configFilePath string
 }
 
 func initServer(isProd bool) *server {
@@ -48,7 +50,7 @@ func initServer(isProd bool) *server {
 	functions := functions.Init()
 	a := auth.Init(c, functions)
 	u := userman.Init(c, a)
-	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd}
+	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }
 
 func (s *server) start(port, grpcPort string) error {

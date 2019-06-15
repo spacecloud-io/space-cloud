@@ -32,11 +32,9 @@ const mapStateToProps = (state) => {
 const mapDispatchToProps = (dispatch) => {
   return {
     updateFormState: (fields) => {
-      console.log(fields)
       dispatch(set("uiState.login.formState", fields))
     },
-    handleSubmit: () => {
-      console.log('Submitted')
+    handleSubmit: (user, pass) => {
     }
   }
 }
