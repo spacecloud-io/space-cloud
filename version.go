@@ -1,3 +1,3 @@
 package main
 
-const buildVersion = "0.8.0"
+const buildVersion = "0.9.0"
