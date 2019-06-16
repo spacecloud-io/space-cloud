@@ -87,7 +87,7 @@ type FuncRules map[string]map[string]*Rule // service -> function -> rule
 type Realtime struct {
 	Enabled bool         `json:"enabled" yaml:"enabled"`
 	Broker  utils.Broker `json:"broker" yaml:"broker"`
-	Conn    string       `json:"Conn" yaml:"Conn"`
+	Conn    string       `json:"conn" yaml:"conn"`
 }
 
 // FileStore holds the config for the file store module

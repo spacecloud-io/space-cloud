@@ -73,6 +73,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -128,6 +130,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -182,6 +186,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -236,6 +242,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -303,6 +311,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -379,6 +389,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -436,7 +448,9 @@ response = db.get("books").where(condition).select({"name":1}).apply()
 if response.status == 200:
     print(response.result)
 else:
-    print(response.error)  
+    print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -495,6 +509,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -553,6 +569,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -609,6 +627,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>

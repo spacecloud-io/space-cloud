@@ -48,6 +48,8 @@ if response.status == 200:
     print(response.result)
 else:
     print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>

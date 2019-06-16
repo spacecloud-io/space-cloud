@@ -2,9 +2,9 @@ package userman
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
-	"errors"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -14,19 +14,14 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
+// Profile fetches the profile of the user
 func (m *Module) Profile(ctx context.Context, token, dbType, project, id string) (int, map[string]interface{}, error) {
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
-	
-	authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Read)
-	if err != nil {
-		return http.StatusUnauthorized, nil, err
-	}
 
 	// Create the find object
 	find := map[string]interface{}{}
-
 	switch utils.DBType(dbType) {
 	case utils.Mongo:
 		find["_id"] = id
@@ -34,19 +29,16 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 		find["id"] = id
 	}
 
-	// Create an args object
-	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": find, "op": utils.One, "auth": authObj},
-		"project": project, // Don't forget to do this for every request
+	// Create a read request
+	req := &model.ReadRequest{Find: find, Operation: utils.One}
+
+	// Check if the user is authenticated
+	status, err := m.auth.IsReadOpAuthorised(project, dbType, "users", token, req)
+	if err != nil {
+		return status, nil, err
 	}
 
-	// Check if user is authorized to make this request
-	err = m.auth.IsAuthorized(project, dbType, "users", utils.Read, args)
-	if err != nil {
-		return http.StatusForbidden, nil, err
-	}
-	
-	req := &model.ReadRequest{Find: find, Operation: utils.One}
+	// Perform database read operation
 	res, err := m.crud.Read(ctx, dbType, project, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
@@ -54,36 +46,27 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 
 	// Delete password from user object
 	delete(res.(map[string]interface{}), "pass")
-	
+
 	return http.StatusOK, res.(map[string]interface{}), nil
 }
 
+// Profiles fetches all the user profiles
 func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (int, map[string]interface{}, error) {
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
-	
-	authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Read)
-	if err != nil {
-		return http.StatusUnauthorized, nil, err
-	}
-
 	// Create the find object
 	find := map[string]interface{}{}
 
-	// Create an args object
-	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": find, "op": utils.All, "auth": authObj},
-		"project": project, // Don't forget to do this for every request
+	// Creata a read request
+	req := &model.ReadRequest{Find: find, Operation: utils.All}
+
+	// Check if the user is authenticated
+	status, err := m.auth.IsReadOpAuthorised(project, dbType, "users", token, req)
+	if err != nil {
+		return status, nil, err
 	}
 
-	// Check if user is authorized to make this request
-	err = m.auth.IsAuthorized(project, dbType, "users", utils.Read, args)
-	if err != nil {
-		return http.StatusForbidden, nil, err
-	}
-	
-	req := &model.ReadRequest{Find: find, Operation: utils.All}
 	res, err := m.crud.Read(ctx, dbType, project, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
@@ -96,10 +79,11 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 			delete(userObj, "pass")
 		}
 	}
-	
+
 	return http.StatusOK, map[string]interface{}{"users": res}, nil
 }
 
+// EmailSignIn signins the user and returns a JWT token
 func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, password string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
 	if !m.IsEnabled() {
@@ -143,6 +127,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 	return http.StatusOK, map[string]interface{}{"user": user, "token": token}, nil
 }
 
+// EmailSignUp signs up a user and return a JWT token
 func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, password, role string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
 	if !m.IsEnabled() {
@@ -189,8 +174,8 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	tokenObj := map[string]interface{}{
 		"email": email,
 		"role":  role,
-		"id":    id.String() }
-	
+		"id":    id.String()}
+
 	token, err := m.auth.CreateToken(tokenObj)
 	if err != nil {
 		return http.StatusInternalServerError, nil, errors.New("Failed to create a JWT token")
@@ -198,18 +183,14 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	return http.StatusOK, map[string]interface{}{"user": req, "token": token}, nil
 }
 
+// EmailEditProfile allows the user to edit a profile
 func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, id, email, name, password string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
 	}
 
-	authObj, err := m.auth.IsAuthenticated(token, dbType, "users", utils.Update)
-	if err != nil {
-		return http.StatusUnauthorized, nil, err
-	}
-
-	req := model.UpdateRequest{}
+	req := &model.UpdateRequest{}
 	find := map[string]interface{}{}
 	var idString string
 	if dbType == string(utils.Mongo) {
@@ -241,19 +222,12 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 	req.Update = update
 	req.Operation = utils.One
 
-	// Create an args object
-	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
-		"project": project, // Don't forget to do this for every request
-	}
-
-	// Check if user is authorized to make this request
-	err = m.auth.IsAuthorized(project, dbType, "users", utils.Update, args)
+	status, err := m.auth.IsUpdateOpAuthorised(project, dbType, "users", token, req)
 	if err != nil {
-		return http.StatusForbidden, nil, err
+		return status, nil, err
 	}
 
-	err = m.crud.Update(ctx, dbType, project, "users", &req)
+	err = m.crud.Update(ctx, dbType, project, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}

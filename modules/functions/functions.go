@@ -46,14 +46,14 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 		m.nc.Close()
 	}
 
-	// Close the channel of exists
+	// Close the channel if exists
 	if m.channel != nil {
 		close(m.channel)
 	}
 
 	// Conect and create a new nats client
 	if functions.Broker != utils.Nats {
-		return errors.New("borker is not supported")
+		return errors.New("Functions Error: Broker is not supported")
 	}
 
 	nc, err := nats.Connect(functions.Conn)

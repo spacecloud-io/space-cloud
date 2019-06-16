@@ -13,20 +13,10 @@ import (
 // Subscribe performs the realtime subscribe operation.
 func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Module, crud *crud.Module, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
 
-	// Check if the user is authenticated
-	authObj, err := auth.IsAuthenticated(data.Token, data.DBType, data.Group, utils.Read)
-	if err != nil {
-		return nil, err
-	}
+	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 
-	// Create an args object
-	args := map[string]interface{}{
-		"args":    map[string]interface{}{"find": data.Where, "op": utils.All, "auth": authObj},
-		"project": data.Project, // Don't forget to do this for every request
-	}
-
-	// Check if user is authorized to make this request
-	err = auth.IsAuthorized(data.Project, data.DBType, data.Group, utils.Read, args)
+	// Check if the user is authenthorised to make the request
+	_, err := auth.IsReadOpAuthorised(data.Project, data.DBType, data.Group, data.Token, readReq)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +42,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, crud 
 			if data.DBType == string(utils.Mongo) {
 				idVar = "_id"
 			}
-			if docID, ok := payload[idVar].(string); ok {
+			if docID, ok := acceptableIDType(payload[idVar]); ok {
 				feedData = append(feedData, &model.FeedData{
 					Group:     data.Group,
 					Type:      utils.RealtimeWrite,
@@ -67,7 +57,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, crud 
 	}
 
 	// Add the live query
-	m.AddLiveQuery(data.ID, data.Group, clientID, data.Where, sendFeed)
+	m.AddLiveQuery(data.ID, data.Project, data.Group, clientID, data.Where, sendFeed)
 	return feedData, nil
 }
 

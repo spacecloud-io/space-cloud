@@ -70,7 +70,23 @@ res, err := myservice.Call("some-service", "some-func", service.M{"msg": "space-
  <div id="service-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+api = API('books-app', 'localhost:8081')
+
+
+def my_func(params, auth, cb):  # Function to be registered
+    print("Params", params, "Auth", auth)
+
+    # Do Something
+    cb('response', {"ack": True})
+
+
+service = api.service('service')  # Create an instance of service
+service.register_func('my_func', my_func)  # Register function
+service.start()  # Start service (This is a blocking call)
+
+api.close()
       </code>
     </pre>
   </div>

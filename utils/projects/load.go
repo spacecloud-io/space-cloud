@@ -24,7 +24,7 @@ func (p *Projects) LoadConfigFromDB(account, dbType, conn string) error {
 		return err
 	}
 
-	if err := state.Realtime.SetConfig(&config.Realtime{Enabled: true, Broker: utils.Nats, Conn: "nats://localhost:4222"}); err != nil {
+	if err := state.Realtime.SetConfig(utils.SpaceCloudProject, &config.Realtime{Enabled: true, Broker: utils.Nats, Conn: "nats://localhost:4222"}); err != nil {
 		return err
 	}
 
@@ -105,7 +105,7 @@ func (p *Projects) setConfig(action, project string, data string) error {
 	}
 
 	// Set the configuration for the Realtime module
-	if err := state.Realtime.SetConfig(config.Modules.Realtime); err != nil {
+	if err := state.Realtime.SetConfig(project, config.Modules.Realtime); err != nil {
 		return err
 	}
 
