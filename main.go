@@ -100,13 +100,13 @@ func actionRun(c *cli.Context) error {
 	seeds := c.String("seeds")
 
 	// Project and env cannot be changed once space cloud has started
-	s := server.InitServer(isProd)
+	s := server.New(isProd)
 
 	if !disableNats {
 		// TODO read nats config from the yaml file if it exists
 		if seeds != "" {
 			array := strings.Split(seeds, ",")
-			var urls []*url.URL
+			urls := []*url.URL{}
 			for _, v := range array {
 				if v != "" {
 					u, err := url.Parse("nats://" + v)

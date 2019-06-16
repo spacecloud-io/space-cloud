@@ -20,7 +20,7 @@ type Module struct {
 	primaryDB string
 }
 
-// crud abstracts the implementation crud operations of databases
+// Crud abstracts the implementation crud operations of databases
 type Crud interface {
 	Create(ctx context.Context, project, col string, req *model.CreateRequest) error
 	Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error)

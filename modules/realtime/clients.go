@@ -29,7 +29,7 @@ func (m *Module) AddLiveQuery(id, project, group, clientID string, whereObj map[
 		clients.Lock()
 		sub, err := m.nc.ChanSubscribe(getSubjectName(project, group), m.feed)
 		if err != nil {
-			log.Println("realtime Subscription Error:", err)
+			log.Println("Realtime Subscription Error:", err)
 			return
 		}
 		clients.subscription = sub

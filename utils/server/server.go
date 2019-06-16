@@ -39,7 +39,7 @@ type Server struct {
 	nats      *nats.Server
 }
 
-func InitServer(isProd bool) *Server {
+func New(isProd bool) *Server {
 	r := mux.NewRouter()
 	c := crud.Init()
 	f := filestore.Init()

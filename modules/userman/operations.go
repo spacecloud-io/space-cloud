@@ -95,7 +95,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 
 	user, err := m.crud.Read(ctx, dbType, project, "users", readReq)
 	if err != nil {
-		return http.StatusNotFound, nil, errors.New("user not found")
+		return http.StatusNotFound, nil, errors.New("User not found")
 	}
 
 	userObj := user.(map[string]interface{})
@@ -146,7 +146,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
 	_, err = m.crud.Read(ctx, dbType, project, "users", readReq)
 	if err == nil {
-		return http.StatusConflict, nil, errors.New("user with provided email already exists")
+		return http.StatusConflict, nil, errors.New("User with provided email already exists")
 	}
 
 	req := map[string]interface{}{}
@@ -235,7 +235,7 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 	readReq := &model.ReadRequest{Find: map[string]interface{}{idString: id}, Operation: utils.One}
 	user, err1 := m.crud.Read(ctx, dbType, project, "users", readReq)
 	if err1 != nil {
-		return http.StatusNotFound, nil, errors.New("user not found")
+		return http.StatusNotFound, nil, errors.New("User not found")
 	}
 
 	userObj := user.(map[string]interface{})

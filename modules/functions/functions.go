@@ -24,14 +24,14 @@ type Module struct {
 // SendPayload is the function called whenever a data point (payload) is to be sent
 type SendPayload func(*model.FunctionsPayload)
 
-// Init returns a new instance of the functions module
+// Init returns a new instance of the Functions module
 func Init() *Module {
 	m := new(Module)
 	go m.removeStaleRequests()
 	return m
 }
 
-// SetConfig set the config required by the functions module
+// SetConfig set the config required by the Functions module
 func (m *Module) SetConfig(functions *config.Functions) error {
 	m.Lock()
 	defer m.Unlock()
@@ -51,9 +51,9 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 		close(m.channel)
 	}
 
-	// Conect and create a new nats client
+	// Connect and create a new nats client
 	if functions.Broker != utils.Nats {
-		return errors.New("functions Error: Broker is not supported")
+		return errors.New("Functions Error: Broker is not supported")
 	}
 
 	nc, err := nats.Connect(functions.Conn)
@@ -70,7 +70,7 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 	return nil
 }
 
-// IsEnabled checks if the functions module is enabled
+// IsEnabled checks if the Functions module is enabled
 func (m *Module) IsEnabled() bool {
 	m.RLock()
 	defer m.RUnlock()

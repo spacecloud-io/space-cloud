@@ -36,7 +36,7 @@ func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	// Perform the write operation
 	err = s.crud.Create(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
-		// Send realtime ack
+		// Send realtime nack
 		s.realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
 
 		// Send gRPC Response

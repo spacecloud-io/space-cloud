@@ -38,7 +38,7 @@ const (
 type Broker string
 
 const (
-	// nats is the type used for nats
+	// Nats is the type used for Nats
 	Nats Broker = "nats"
 )
 

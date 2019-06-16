@@ -2,7 +2,7 @@ package config
 
 import "github.com/spaceuptech/space-cloud/utils"
 
-// config holds the entire configuration
+// Config holds the entire configuration
 type Config struct {
 	Projects map[string]*Project `json:"projects" yaml:"projects"` // The key here is the project id
 }
@@ -31,7 +31,7 @@ type Modules struct {
 	Static    *Static    `json:"static" yaml:"static"`
 }
 
-// crud holds the mapping of database level configuration
+// Crud holds the mapping of database level configuration
 type Crud map[string]*CrudStub // The key here is the database type
 
 // CrudStub holds the config at the database level
@@ -62,7 +62,7 @@ type Rule struct {
 	Func    string                 `json:"func" yaml:"func"`
 }
 
-// auth holds the mapping of the sign in method
+// Auth holds the mapping of the sign in method
 type Auth map[string]*AuthStub // The key here is the sign in method
 
 // AuthStub holds the config at a single sign in level
@@ -72,7 +72,7 @@ type AuthStub struct {
 	Secret  string `json:"secret" yaml:"secret"`
 }
 
-// functions holds the config for the functions module
+// Functions holds the config for the functions module
 type Functions struct {
 	Enabled bool         `json:"enabled" yaml:"enabled"`
 	Broker  utils.Broker `json:"broker" yaml:"broker"`
@@ -83,7 +83,7 @@ type Functions struct {
 // FuncRules is the rules for the functions module
 type FuncRules map[string]map[string]*Rule // service -> function -> rule
 
-// realtime holds the config for the realtime module
+// Realtime holds the config for the realtime module
 type Realtime struct {
 	Enabled bool         `json:"enabled" yaml:"enabled"`
 	Broker  utils.Broker `json:"broker" yaml:"broker"`
@@ -104,7 +104,7 @@ type FileRule struct {
 	Rule   map[string]*Rule `json:"rule" yaml:"rule"` // The key can be create, read, delete
 }
 
-// static holds the config for the static files module
+// Static holds the config for the static files module
 type Static struct {
 	Enabled bool           `json:"enabled" yaml:"enabled"`
 	Gzip    bool           `json:"gzip" yaml:"gzip"`
