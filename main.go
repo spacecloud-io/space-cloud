@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -13,7 +14,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Version = buildVersion
-	app.Name = "space-cloud"
+	app.Name = "space-cloud-ee"
 	app.Usage = "core binary to run space cloud"
 
 	app.Commands = []cli.Command{
@@ -33,9 +34,22 @@ func main() {
 					Usage: "Start grpc on port `GRPC_PORT`",
 				},
 				cli.StringFlag{
-					Name:  "config",
-					Value: "none",
-					Usage: "Load space cloud config from `FILE`",
+					Name:   "db",
+					Value:  "mongo",
+					Usage:  "Load space cloud config from `DB`",
+					EnvVar: "DB",
+				},
+				cli.StringFlag{
+					Name:   "conn",
+					Value:  "mongodb://localhost:27017",
+					Usage:  "The connection string to connect to config db",
+					EnvVar: "CONN",
+				},
+				cli.StringFlag{
+					Name:   "account",
+					Value:  "none",
+					Usage:  "Start space-cloud with `ACCOUNT`",
+					EnvVar: "ACCOUNT",
 				},
 				cli.BoolFlag{
 					Name:   "prod",
@@ -71,10 +85,16 @@ func actionRun(c *cli.Context) error {
 	// Load cli flags
 	port := c.String("port")
 	grpcPort := c.String("grpc-port")
-	configPath := c.String("config")
+	conn := c.String("conn")
+	db := c.String("db")
+	account := c.String("account")
 	isProd := c.Bool("prod")
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
+
+	if account == "none" {
+		return errors.New("Cannot start space-cloud with no account")
+	}
 
 	// Project and env cannot be changed once space cloud has started
 	s := initServer(isProd)
@@ -85,15 +105,9 @@ func actionRun(c *cli.Context) error {
 		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
 	}
 
-	if configPath != "none" {
-		conf, err := config.LoadConfigFromFile(configPath)
-		if err != nil {
-			return err
-		}
-		err = s.loadConfig(conf)
-		if err != nil {
-			return err
-		}
+	err := s.projects.LoadConfigFromDB(account, db, conn)
+	if err != nil {
+		return err
 	}
 
 	// Anonymously collect usage metrics if not explicitly disabled

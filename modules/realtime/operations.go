@@ -31,6 +31,11 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 		return nil, err
 	}
 
+	return m.DoRealtimeSubscribe(ctx, clientID, crud, data, sendFeed)
+}
+
+// DoRealtimeSubscribe makes the realtime query
+func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, crud *crud.Module, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
 	readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
 	result, err := crud.Read(ctx, data.DBType, data.Project, data.Group, &readReq)
 	if err != nil {

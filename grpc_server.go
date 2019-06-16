@@ -14,8 +14,13 @@ import (
 )
 
 func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
 
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Create)
+	authObj, err := state.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Create)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -52,7 +57,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Create, args)
+	err = state.Auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Create, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -61,7 +66,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	}
 
 	// Perform the write operation
-	err = s.crud.Create(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	err = state.Crud.Create(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -91,7 +96,7 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 
 			// Send realtime message if id fields exists
 			if id, p := data[idVar]; p {
-				s.realtime.Send(&model.FeedData{
+				state.Realtime.Send(&model.FeedData{
 					Group:     in.Meta.Col,
 					DBType:    in.Meta.DbType,
 					Type:      utils.RealtimeWrite,
@@ -110,8 +115,13 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 }
 
 func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
 
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Read)
+	authObj, err := state.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Read)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -149,7 +159,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Read, args)
+	err = state.Auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Read, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -158,7 +168,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	}
 
 	// Perform the read operation
-	result, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	result, err := state.Crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -182,9 +192,14 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 }
 
 func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
 
 	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Update)
+	authObj, err := state.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Update)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -219,7 +234,7 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Read, args)
+	err = state.Auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Read, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -227,7 +242,7 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &out, nil
 	}
 
-	err = s.crud.Update(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	err = state.Crud.Update(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -254,9 +269,9 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 				find["id"] = id
 			}
 
-			data, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &model.ReadRequest{Find: find, Operation: utils.One})
+			data, err := state.Crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &model.ReadRequest{Find: find, Operation: utils.One})
 			if err == nil {
-				s.realtime.Send(&model.FeedData{
+				state.Realtime.Send(&model.FeedData{
 					Group:     in.Meta.Col,
 					Type:      utils.RealtimeWrite,
 					TimeStamp: time.Now().Unix(),
@@ -276,9 +291,14 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 }
 
 func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
 
 	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
+	authObj, err := state.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -305,7 +325,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Delete, args)
+	err = state.Auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Delete, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -314,7 +334,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	}
 
 	// Perform the delete operation
-	err = s.crud.Delete(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	err = state.Crud.Delete(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -330,7 +350,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 		}
 
 		if id, p := req.Find[idVar]; p {
-			s.realtime.Send(&model.FeedData{
+			state.Realtime.Send(&model.FeedData{
 				Group:     in.Meta.Col,
 				Type:      utils.RealtimeDelete,
 				TimeStamp: time.Now().Unix(),
@@ -347,9 +367,14 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 }
 
 func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
 
 	// Check if the user is authicated
-	authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
+	authObj, err := state.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, in.Meta.Col, utils.Delete)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 401
@@ -375,7 +400,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	}
 
 	// Check if user is authorized to make this request
-	err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Aggregation, args)
+	err = state.Auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, in.Meta.Col, utils.Aggregation, args)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 403
@@ -384,7 +409,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	}
 
 	// Perform the read operation
-	result, err := s.crud.Aggregate(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
+	result, err := state.Crud.Aggregate(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -408,6 +433,11 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 }
 
 func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
 
 	allRequests := []model.AllRequest{}
 	for _, req := range in.Batchrequest {
@@ -445,7 +475,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			allRequests = append(allRequests, eachReq)
 
-			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Update)
+			authObj, err := state.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Update)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 401
@@ -458,7 +488,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 
 			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Update, args)
+			err = state.Auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Update, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403
@@ -498,7 +528,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			allRequests = append(allRequests, eachReq)
 
-			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Create)
+			authObj, err := state.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Create)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 401
@@ -512,7 +542,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 
 			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Create, args)
+			err = state.Auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Create, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403
@@ -552,7 +582,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			allRequests = append(allRequests, eachReq)
 
-			authObj, err := s.auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Delete)
+			authObj, err := state.Auth.IsAuthenticated(in.Meta.Token, in.Meta.DbType, eachReq.Col, utils.Delete)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 401
@@ -566,7 +596,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			}
 
 			// Check if user is authorized to make this request
-			err = s.auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Delete, args)
+			err = state.Auth.IsAuthorized(in.Meta.Project, in.Meta.DbType, eachReq.Col, utils.Delete, args)
 			if err != nil {
 				out := pb.Response{}
 				out.Status = 403
@@ -578,7 +608,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	// Perform the Batch operation
 	batch := model.BatchRequest{}
 	batch.Requests = allRequests
-	err := s.crud.Batch(ctx, in.Meta.DbType, in.Meta.Project, &batch)
+	err = state.Crud.Batch(ctx, in.Meta.DbType, in.Meta.Project, &batch)
 	if err != nil {
 		out := pb.Response{}
 		out.Status = 500
@@ -610,7 +640,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 					// Send realtime message if id fields exists
 					if id, p := data[idVar]; p {
-						s.realtime.Send(&model.FeedData{
+						state.Realtime.Send(&model.FeedData{
 							Group:     req.Col,
 							DBType:    in.Meta.DbType,
 							Type:      utils.RealtimeWrite,
@@ -630,7 +660,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 					if id, p := req.Find[idVar]; p {
 						if err != nil {
-							s.realtime.Send(&model.FeedData{
+							state.Realtime.Send(&model.FeedData{
 								Group:     req.Col,
 								Type:      utils.RealtimeDelete,
 								TimeStamp: time.Now().Unix(),
@@ -654,9 +684,9 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 						// Create the find object
 						find := map[string]interface{}{idVar: id}
 
-						data, err := s.crud.Read(ctx, in.Meta.DbType, in.Meta.Project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
+						data, err := state.Crud.Read(ctx, in.Meta.DbType, in.Meta.Project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
 						if err == nil {
-							s.realtime.Send(&model.FeedData{
+							state.Realtime.Send(&model.FeedData{
 								Group:     req.Col,
 								Type:      utils.RealtimeWrite,
 								TimeStamp: time.Now().Unix(),
@@ -677,6 +707,12 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 }
 
 func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
 	var params interface{}
 	if err := json.Unmarshal(in.Params, &params); err != nil {
 		out := pb.Response{}
@@ -685,12 +721,12 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 		return &out, nil
 	}
 
-	auth, err := s.auth.IsFuncCallAuthorised(in.Project, in.Service, in.Function, in.Token, params)
+	auth, err := state.Auth.IsFuncCallAuthorised(in.Project, in.Service, in.Function, in.Token, params)
 	if err != nil {
 		return &pb.Response{Status: 403, Error: err.Error()}, nil
 	}
 
-	result, err := s.functions.Call(in.Service, in.Function, auth, params, int(in.Timeout))
+	result, err := state.Functions.Call(in.Service, in.Function, auth, params, int(in.Timeout))
 	if err != nil {
 		return &pb.Response{Status: 500, Error: err.Error()}, nil
 	}
@@ -700,9 +736,25 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 }
 
 func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
+	// Create an empty project variable
+	var project string
+
+	// Create a new client
 	client := client.CreateGRPCServiceClient(stream)
-	defer s.functions.UnregisterService(client.ClientID())
+
+	defer func() {
+		// Unregister service if project could be loaded
+		state, err := s.projects.LoadProject(project)
+		if err == nil {
+			// Unregister the service
+			state.Functions.UnregisterService(client.ClientID())
+		}
+	}()
+
+	// Close the client to free up resources
 	defer client.Close()
+
+	// Start the writer routine
 	go client.RoutineWrite()
 
 	// Get client details
@@ -715,7 +767,15 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 			data := new(model.ServiceRegisterRequest)
 			mapstructure.Decode(req.Data, data)
 
-			s.functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
+			// Set the clients project
+			project = data.Project
+
+			state, err := s.projects.LoadProject(project)
+			if err != nil {
+				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": false}})
+				return
+			}
+			state.Functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
 				client.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
 			})
 
@@ -725,17 +785,36 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 			data := new(model.FunctionsPayload)
 			mapstructure.Decode(req.Data, data)
 
-			s.functions.HandleServiceResponse(data)
-
+			// Handle response if project could be loaded
+			state, err := s.projects.LoadProject(project)
+			if err == nil {
+				state.Functions.HandleServiceResponse(data)
+			}
 		}
 	})
 	return nil
 }
 
 func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
+	// Create an empty project variable
+	var project string
+
+	// Create a new client
 	client := client.CreateGRPCRealtimeClient(stream)
-	defer s.realtime.RemoveClient(client.ClientID())
+
+	defer func() {
+		// Unregister service if project could be loaded
+		state, err := s.projects.LoadProject(project)
+		if err == nil {
+			// Unregister the service
+			state.Realtime.RemoveClient(client.ClientID())
+		}
+	}()
+
+	// Close the client to free up resources
 	defer client.Close()
+
+	// Start the writer routine
 	go client.RoutineWrite()
 
 	// Get client details
@@ -745,12 +824,23 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	client.Read(func(req *model.Message) {
 		switch req.Type {
 		case utils.TypeRealtimeSubscribe:
+
 			// For realtime subscribe event
 			data := new(model.RealtimeRequest)
 			mapstructure.Decode(req.Data, data)
 
-			// Subscribe to relaitme feed
-			feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
+			// Set the clients project
+			project = data.Project
+
+			// Load the project state
+			state, err := s.projects.LoadProject(project)
+			if err != nil {
+				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
+				client.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeSubscribe, Data: res})
+				return
+			}
+			// Subscribe to the realtime feed
+			feedData, err := state.Realtime.Subscribe(ctx, clientID, state.Auth, state.Crud, data, func(feed *model.FeedData) {
 				client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 			})
 			if err != nil {
@@ -768,7 +858,15 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			data := new(model.RealtimeRequest)
 			mapstructure.Decode(req.Data, data)
 
-			s.realtime.Unsubscribe(clientID, data)
+			// Load the project state
+			state, err := s.projects.LoadProject(project)
+			if err != nil {
+				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
+				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				return
+			}
+
+			state.Realtime.Unsubscribe(clientID, data)
 
 			// Send response to client
 			res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
@@ -779,7 +877,13 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 }
 
 func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
-	status, result, err := s.user.Profile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id)
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
+	status, result, err := state.UserManagement.Profile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id)
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -797,7 +901,13 @@ func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Respon
 }
 
 func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
-	status, result, err := s.user.Profiles(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project)
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
+	status, result, err := state.UserManagement.Profiles(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project)
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -815,7 +925,13 @@ func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Resp
 }
 
 func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
-	status, result, err := s.user.EmailEditProfile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id, in.Email, in.Name, in.Password)
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
+	status, result, err := state.UserManagement.EmailEditProfile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id, in.Email, in.Name, in.Password)
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -833,7 +949,13 @@ func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*p
 }
 
 func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
-	status, result, err := s.user.EmailSignIn(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Password)
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
+	status, result, err := state.UserManagement.EmailSignIn(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Password)
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -851,7 +973,13 @@ func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response
 }
 
 func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
-	status, result, err := s.user.EmailSignUp(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Name, in.Password, in.Role)
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
+	status, result, err := state.UserManagement.EmailSignUp(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Name, in.Password, in.Role)
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {

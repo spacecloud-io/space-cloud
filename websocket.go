@@ -26,11 +26,26 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 			return
 		}
 
-		client := client.CreateWebsocketClient(c)
-		defer s.realtime.RemoveClient(client.ClientID())
-		defer s.functions.UnregisterService(client.ClientID())
+		// Create an empty project variable
+		var project string
 
+		// Create a new client
+		client := client.CreateWebsocketClient(c)
+
+		defer func() {
+			// Unregister service if project could be loaded
+			state, err := s.projects.LoadProject(project)
+			if err == nil {
+				// Unregister the service
+				state.Realtime.RemoveClient(client.ClientID())
+				state.Functions.UnregisterService(client.ClientID())
+			}
+		}()
+
+		// Close the client to free up resources
 		defer client.Close()
+
+		// Start the writer routine
 		go client.RoutineWrite()
 
 		// Get client details
@@ -40,12 +55,23 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 		client.Read(func(req *model.Message) {
 			switch req.Type {
 			case utils.TypeRealtimeSubscribe:
+
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				mapstructure.Decode(req.Data, data)
 
-				// Subscribe to relaitme feed
-				feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
+				// Set the clients project
+				project = data.Project
+
+				// Load the project state
+				state, err := s.projects.LoadProject(project)
+				if err != nil {
+					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
+					client.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeSubscribe, Data: res})
+					return
+				}
+				// Subscribe to the realtime feed
+				feedData, err := state.Realtime.Subscribe(ctx, clientID, state.Auth, state.Crud, data, func(feed *model.FeedData) {
 					client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
 				if err != nil {
@@ -63,7 +89,15 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 				data := new(model.RealtimeRequest)
 				mapstructure.Decode(req.Data, data)
 
-				s.realtime.Unsubscribe(clientID, data)
+				// Load the project state
+				state, err := s.projects.LoadProject(project)
+				if err != nil {
+					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
+					client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+					return
+				}
+
+				state.Realtime.Unsubscribe(clientID, data)
 
 				// Send response to client
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
@@ -74,7 +108,15 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 				data := new(model.ServiceRegisterRequest)
 				mapstructure.Decode(req.Data, data)
 
-				s.functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
+				// Set the clients project
+				project = data.Project
+
+				state, err := s.projects.LoadProject(project)
+				if err != nil {
+					client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": false}})
+					return
+				}
+				state.Functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
 					client.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
 				})
 
@@ -84,7 +126,11 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 				data := new(model.FunctionsPayload)
 				mapstructure.Decode(req.Data, data)
 
-				s.functions.HandleServiceResponse(data)
+				// Handle response if project could be loaded
+				state, err := s.projects.LoadProject(project)
+				if err == nil {
+					state.Functions.HandleServiceResponse(data)
+				}
 			}
 		})
 	}
