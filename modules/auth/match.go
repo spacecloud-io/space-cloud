@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -12,6 +13,10 @@ import (
 )
 
 func (m *Module) matchRule(project string, rule *config.Rule, args map[string]interface{}) error {
+	if project != m.project {
+		return errors.New("invalid project details provided")
+	}
+
 	switch rule.Rule {
 	case "allow", "authenticated":
 		return nil

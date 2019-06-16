@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli"
 
@@ -32,6 +34,16 @@ func main() {
 					Name:  "grpc-port",
 					Value: "8081",
 					Usage: "Start grpc on port `GRPC_PORT`",
+				},
+				cli.IntFlag{
+					Name:  "nats-port",
+					Value: 4222,
+					Usage: "Start nats on port `NATS_PORT`",
+				},
+				cli.IntFlag{
+					Name:  "cluster-port",
+					Value: 4248,
+					Usage: "Start nats on port `NATS_PORT`",
 				},
 				cli.StringFlag{
 					Name:   "db",
@@ -66,6 +78,12 @@ func main() {
 					Usage:  "Disable embedded nats server",
 					EnvVar: "DISABLE_NATS",
 				},
+				cli.StringFlag{
+					Name:   "seeds",
+					Value:  "none",
+					Usage:  "Seed nodes to cluster with",
+					EnvVar: "SEEDS",
+				},
 			},
 		},
 		{
@@ -88,9 +106,12 @@ func actionRun(c *cli.Context) error {
 	conn := c.String("conn")
 	db := c.String("db")
 	account := c.String("account")
+	natsPort := c.Int("nats-port")
+	clusterPort := c.Int("cluster-port")
 	isProd := c.Bool("prod")
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
+	seeds := c.String("seeds")
 
 	if account == "none" {
 		return errors.New("Cannot start space-cloud with no account")
@@ -101,6 +122,22 @@ func actionRun(c *cli.Context) error {
 
 	if !disableNats {
 		// TODO read nats config from the yaml file if it exists
+		if seeds != "" {
+			array := strings.Split(seeds, ",")
+			urls := []*url.URL{}
+			for _, v := range array {
+				if v != "" {
+					u, err := url.Parse("nats://" + v)
+					if err != nil {
+						return err
+					}
+					urls = append(urls, u)
+				}
+			}
+			defaultNatsOptions.Routes = urls
+		}
+		defaultNatsOptions.Port = natsPort
+		defaultNatsOptions.Cluster.Port = clusterPort
 		s.runNatsServer(defaultNatsOptions)
 		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
 	}

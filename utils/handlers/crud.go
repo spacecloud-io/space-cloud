@@ -28,6 +28,11 @@ func HandleCrudCreate(isProd bool, projects *projects.Projects) http.HandlerFunc
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
+		// Load the request from the body
+		req := model.CreateRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(meta.project)
 		if err != nil {
@@ -37,75 +42,30 @@ func HandleCrudCreate(isProd bool, projects *projects.Projects) http.HandlerFunc
 		}
 
 		// Check if the user is authenticated
-		authObj, err := state.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Create)
+		status, err := state.Auth.IsCreateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Load the request from the body
-		req := model.CreateRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		// Create an args object
-		args := map[string]interface{}{
-			"args":    map[string]interface{}{"doc": &req.Document, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
-		}
-
-		// Check if user is authorized to make this request
-		err = state.Auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Create, args)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
+		// Send realtime message intent
+		msgID := state.Realtime.SendCreateIntent(meta.project, meta.dbType, meta.col, &req)
 
 		// Perform the write operation
 		err = state.Crud.Create(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
+			// Send realtime nack
+			state.Realtime.SendAck(msgID, meta.project, meta.col, false)
+
+			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Send realtime message in dev mode
-		if !isProd {
-			var rows []interface{}
-			switch req.Operation {
-			case utils.One:
-				rows = []interface{}{req.Document}
-			case utils.All:
-				rows = req.Document.([]interface{})
-			default:
-				rows = []interface{}{}
-			}
-
-			for _, t := range rows {
-				data := t.(map[string]interface{})
-
-				idVar := "id"
-				if meta.dbType == string(utils.Mongo) {
-					idVar = "_id"
-				}
-
-				// Send realtime message if id fields exists
-				if idTemp, p := data[idVar]; p {
-					if id, ok := idTemp.(string); ok {
-						state.Realtime.Send(&model.FeedData{
-							Group:     meta.col,
-							DBType:    meta.dbType,
-							Type:      utils.RealtimeWrite,
-							TimeStamp: time.Now().Unix(),
-							DocID:     id,
-							Payload:   data,
-						})
-					}
-				}
-			}
-		}
+		// Send realtime message ack
+		state.Realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -124,22 +84,6 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
-		// Load the project state
-		state, err := projects.LoadProject(meta.project)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		// Check if the user is authenticated
-		authObj, err := state.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Read)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the request from the body
 		req := model.ReadRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
@@ -150,15 +94,18 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 			req.Options = new(model.ReadOptions)
 		}
 
-		// Create an args object
-		args := map[string]interface{}{
-			"args": map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
+		// Load the project state
+		state, err := projects.LoadProject(meta.project)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
 
-		// Check if user is authorized to make this request
-		err = state.Auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Read, args)
+		// Check if the user is authenticated
+		status, err := state.Auth.IsReadOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -188,6 +135,11 @@ func HandleCrudUpdate(isProd bool, projects *projects.Projects) http.HandlerFunc
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
+		// Load the request from the body
+		req := model.UpdateRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(meta.project)
 		if err != nil {
@@ -196,68 +148,30 @@ func HandleCrudUpdate(isProd bool, projects *projects.Projects) http.HandlerFunc
 			return
 		}
 
-		// Check if the user is authenticated
-		authObj, err := state.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Update)
+		status, err := state.Auth.IsUpdateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Load the request from the body
-		req := model.UpdateRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		// Create an args object
-		args := map[string]interface{}{
-			"args":    map[string]interface{}{"find": req.Find, "update": req.Update, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
-		}
-
-		// Check if user is authorized to make this request
-		err = state.Auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Update, args)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
+		// Send realtime message intent
+		msgID := state.Realtime.SendUpdateIntent(meta.project, meta.dbType, meta.col, &req)
 
 		// Perform the update operation
 		err = state.Crud.Update(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
+			// Send realtime nack
+			state.Realtime.SendAck(msgID, meta.project, meta.col, false)
+
+			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Send realtime message in dev mode
-		if !isProd && req.Operation == utils.One {
-
-			idVar := "id"
-			if meta.dbType == string(utils.Mongo) {
-				idVar = "_id"
-			}
-
-			if idTemp, p := req.Find[idVar]; p {
-				if id, ok := idTemp.(string); ok {
-					// Create the find object
-					find := map[string]interface{}{idVar: id}
-
-					data, err := state.Crud.Read(ctx, meta.dbType, meta.project, meta.col, &model.ReadRequest{Find: find, Operation: utils.One})
-					if err == nil {
-						state.Realtime.Send(&model.FeedData{
-							Group:     meta.col,
-							Type:      utils.RealtimeWrite,
-							TimeStamp: time.Now().Unix(),
-							DocID:     id,
-							DBType:    meta.dbType,
-							Payload:   data.(map[string]interface{}),
-						})
-					}
-				}
-			}
-		}
+		// Send realtime message ack
+		state.Realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -276,6 +190,11 @@ func HandleCrudDelete(isProd bool, projects *projects.Projects) http.HandlerFunc
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
+		// Load the request from the body
+		req := model.DeleteRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(meta.project)
 		if err != nil {
@@ -284,60 +203,30 @@ func HandleCrudDelete(isProd bool, projects *projects.Projects) http.HandlerFunc
 			return
 		}
 
-		// Check if the user is authenticated
-		authObj, err := state.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Delete)
+		status, err := state.Auth.IsDeleteOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Load the request from the body
-		req := model.DeleteRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		// Create an args object
-		args := map[string]interface{}{
-			"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
-		}
-
-		// Check if user is authorized to make this request
-		err = state.Auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Delete, args)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
+		// Send realtime message intent
+		msgID := state.Realtime.SendDeleteIntent(meta.project, meta.dbType, meta.col, &req)
 
 		// Perform the delete operation
 		err = state.Crud.Delete(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
+			// Send realtime nack
+			state.Realtime.SendAck(msgID, meta.project, meta.col, false)
+
+			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Send realtime message in dev mode
-		if !isProd && req.Operation == utils.One {
-			idVar := "id"
-			if meta.dbType == string(utils.Mongo) {
-				idVar = "_id"
-			}
-
-			if idTemp, p := req.Find[idVar]; p {
-				if id, ok := idTemp.(string); ok {
-					state.Realtime.Send(&model.FeedData{
-						Group:     meta.col,
-						Type:      utils.RealtimeDelete,
-						TimeStamp: time.Now().Unix(),
-						DocID:     id,
-						DBType:    meta.dbType,
-					})
-				}
-			}
-		}
+		// Send realtime message ack
+		state.Realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -356,6 +245,11 @@ func HandleCrudAggregate(projects *projects.Projects) http.HandlerFunc {
 		// Get the path parameters
 		meta := getRequestMetaData(r)
 
+		// Load the request from the body
+		req := model.AggregateRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(meta.project)
 		if err != nil {
@@ -364,29 +258,9 @@ func HandleCrudAggregate(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Check if the user is authicated
-		authObj, err := state.Auth.IsAuthenticated(meta.token, meta.dbType, meta.col, utils.Aggregation)
+		status, err := state.Auth.IsAggregateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		// Load the request from the body
-		req := model.AggregateRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		// Create an args object
-		args := map[string]interface{}{
-			"args":    map[string]interface{}{"find": req.Pipeline, "op": req.Operation, "auth": authObj},
-			"project": meta.project, // Don't forget to do this for every request
-		}
-
-		// Check if user is authorized to make this request
-		err = state.Auth.IsAuthorized(meta.project, meta.dbType, meta.col, utils.Aggregation, args)
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -446,73 +320,58 @@ func HandleCrudBatch(isProd bool, projects *projects.Projects) http.HandlerFunc 
 		json.NewDecoder(r.Body).Decode(&txRequest)
 		defer r.Body.Close()
 
-		args := map[string]interface{}{}
-		for _, req := range txRequest.Requests {
+		type msg struct {
+			id, col string
+		}
+
+		msgIDs := make([]*msg, len(txRequest.Requests))
+
+		for i, req := range txRequest.Requests {
+
+			// Make status and error variables
+			var status int
+			var err error
 
 			switch req.Type {
-			case string(utils.Update):
-				authObj, err := state.Auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Update)
-				if err != nil {
-					w.WriteHeader(http.StatusUnauthorized)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
-					return
-				}
-				args = map[string]interface{}{
-					"args":    map[string]interface{}{"find": req.Find, "update": req.Update, "op": req.Operation, "auth": authObj},
-					"project": meta.project, // Don't forget to do this for every request
-				}
-
-				// Check if user is authorized to make this request
-				err = state.Auth.IsAuthorized(meta.project, meta.dbType, req.Col, utils.Update, args)
-				if err != nil {
-					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-					return
-				}
-
 			case string(utils.Create):
-				authObj, err := state.Auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Create)
-				if err != nil {
-					w.WriteHeader(http.StatusUnauthorized)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
-					return
-				}
-				// Create an args object
-				args = map[string]interface{}{
-					"args":    map[string]interface{}{"doc": &req.Document, "op": req.Operation, "auth": authObj},
-					"project": meta.project, // Don't forget to do this for every request
+				r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
+				status, err = state.Auth.IsCreateOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				if err == nil {
+					// Send realtime message intent if user is authorised (no error)
+					msgID := state.Realtime.SendCreateIntent(meta.project, meta.dbType, req.Col, &r)
+					msgIDs[i] = &msg{id: msgID, col: req.Col}
 				}
 
-				// Check if user is authorized to make this request
-				err = state.Auth.IsAuthorized(meta.project, meta.dbType, req.Col, utils.Create, args)
-				if err != nil {
-					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-					return
+			case string(utils.Update):
+				r := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
+				status, err = state.Auth.IsUpdateOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				if err == nil {
+					// Send realtime message intent if user is authorised (no error)
+					msgID := state.Realtime.SendUpdateIntent(meta.project, meta.dbType, req.Col, &r)
+					msgIDs[i] = &msg{id: msgID, col: req.Col}
 				}
 
 			case string(utils.Delete):
-
-				authObj, err := state.Auth.IsAuthenticated(meta.token, meta.dbType, req.Col, utils.Delete)
-				if err != nil {
-					w.WriteHeader(http.StatusUnauthorized)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authenticated"})
-					return
+				r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
+				status, err = state.Auth.IsDeleteOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				if err == nil {
+					// Send realtime message intent if user is authorised (no error)
+					msgID := state.Realtime.SendDeleteIntent(meta.project, meta.dbType, req.Col, &r)
+					msgIDs[i] = &msg{id: msgID, col: req.Col}
 				}
-				// Create an args object
-				args = map[string]interface{}{
-					"args":    map[string]interface{}{"find": req.Find, "op": req.Operation, "auth": authObj},
-					"project": meta.project, // Don't forget to do this for every request
-				}
+			}
 
-				// Check if user is authorized to make this request
-				err = state.Auth.IsAuthorized(meta.project, meta.dbType, req.Col, utils.Delete, args)
-				if err != nil {
-					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-					return
+			// Send error response
+			if err != nil {
+				// Send realtime nack
+				for _, m := range msgIDs {
+					state.Realtime.SendAck(m.id, meta.project, m.col, false)
 				}
 
+				// Send http response
+				w.WriteHeader(status)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
 			}
 		}
 
@@ -524,89 +383,9 @@ func HandleCrudBatch(isProd bool, projects *projects.Projects) http.HandlerFunc 
 			return
 		}
 
-		if !isProd {
-			for _, req := range txRequest.Requests {
-				switch req.Type {
-				case string(utils.Create):
-					var rows []interface{}
-					switch req.Operation {
-					case utils.One:
-						rows = []interface{}{req.Document}
-					case utils.All:
-						rows = req.Document.([]interface{})
-					default:
-						rows = []interface{}{}
-					}
-
-					for _, t := range rows {
-						data := t.(map[string]interface{})
-
-						idVar := "id"
-						if meta.dbType == string(utils.Mongo) {
-							idVar = "_id"
-						}
-
-						// Send realtime message if id fields exists
-						if id, p := data[idVar]; p {
-							state.Realtime.Send(&model.FeedData{
-								Group:     req.Col,
-								DBType:    meta.dbType,
-								Type:      utils.RealtimeWrite,
-								TimeStamp: time.Now().Unix(),
-								DocID:     id.(string),
-								Payload:   data,
-							})
-						}
-					}
-
-				case string(utils.Delete):
-					if req.Operation == utils.One {
-						idVar := "id"
-						if meta.dbType == string(utils.Mongo) {
-							idVar = "_id"
-						}
-
-						if id, p := req.Find[idVar]; p {
-							if err != nil {
-								state.Realtime.Send(&model.FeedData{
-									Group:     req.Col,
-									Type:      utils.RealtimeDelete,
-									TimeStamp: time.Now().Unix(),
-									DocID:     id.(string),
-									DBType:    meta.dbType,
-								})
-							}
-						}
-					}
-
-				case string(utils.Update):
-					// Send realtime message in dev mode
-					if req.Operation == utils.One {
-
-						idVar := "id"
-						if meta.dbType == string(utils.Mongo) {
-							idVar = "_id"
-						}
-
-						if id, p := req.Find[idVar]; p {
-							// Create the find object
-							find := map[string]interface{}{idVar: id}
-
-							data, err := state.Crud.Read(ctx, meta.dbType, meta.project, req.Col, &model.ReadRequest{Find: find, Operation: utils.One})
-							if err == nil {
-								state.Realtime.Send(&model.FeedData{
-									Group:     req.Col,
-									Type:      utils.RealtimeWrite,
-									TimeStamp: time.Now().Unix(),
-									DocID:     id.(string),
-									DBType:    meta.dbType,
-									Payload:   data.(map[string]interface{}),
-								})
-							}
-						}
-					}
-				}
-			}
+		// Send realtime nack
+		for _, m := range msgIDs {
+			state.Realtime.SendAck(m.id, meta.project, m.col, false)
 		}
 
 		// Give positive acknowledgement
