@@ -91,8 +91,11 @@ const (
 	// FunctionsWorkerCount are the number of goroutines to process functions data
 	FunctionsWorkerCount int = 10
 
-	// RealtimeWrite is for create and update operations
+	// RealtimeWrite is for create operations
 	RealtimeWrite string = "write"
+
+	// RealtimeUpdate is for update operations
+	RealtimeUpdate string = "update"
 
 	// RealtimeDelete is for delete operations
 	RealtimeDelete string = "delete"
