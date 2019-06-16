@@ -2,7 +2,7 @@
 
 The crud module supports atomic CRUD operations. In a set of atomic operations, either all of the operations succeed, or none of them are applied. There are two types of atomic operations in the crud module of Space Cloud:
 
-- Transactions (coming soon): A set of read, insert, update and delete operations on one or more documents.
+- Transactions (coming soon): A set of read, insert, update and delete operations on snapshot of a database.
 - Batched Mutations: A set of inserts, updates and deletes on one or more documents.
 
 ## Batched mutations

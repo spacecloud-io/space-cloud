@@ -5,6 +5,7 @@ There are 4 ways of reading data in your app:
 - [getOne](/docs/database/read#reading-a-single-document) - Reading a single document
 - [distinct](/docs/database/read#reading-only-distinct-values) - Reading the unique values of a field  
 - [count](/docs/database/read#reading-count-of-number-of-documents) - Reading the count of documents matching a specific condition
+- [aggregate](/docs/database/read#aggregate) - Read aggregated result of documents in a single document
 
 ## Reading all documents
 
@@ -252,6 +253,57 @@ api.close()
 > Note: `count` is only available in Mongo DB.
 
 As you would have noticed, the `count` method is asynchronous in nature. It takes the name of the concerned collection/table. The `apply` method actually triggers the given request to `space-cloud` and returns a promise where `res.data.result` is an integer specifying the number of documents matching the given condition.
+
+## <a name="aggregate"></a>Aggregate documents:
+Here's how you can aggregate documents in a single document by using `aggr`:
+
+<div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a href="#aggr-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#aggr-java">Java</a></li>
+      <li class="tab col s2"><a href="#aggr-python">Python</a></li>
+    </ul>
+  </div>
+  <div id="aggr-js" class="col s12" style="padding:0">
+    <pre>
+      <code class="javascript">
+const pipe = [
+    $match: { status: 'A' } },
+    { $group: { _id: '$cust_id', total: { $sum: '$amount' } } }
+  ]
+  
+db.aggr('posts').pipe(pipe).apply().then(res => {
+  if (res.status === 200) {
+    // res.data contains the documents returned by the database
+    console.log('Response:', res.data);
+    return
+  }
+}).catch(ex => {
+    // Exception occured while processing request
+});
+      </code>
+    </pre>
+  </div>
+   <div id="aggr-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+// Coming soon!      
+      </code>
+    </pre>
+  </div>
+  <div id="aggr-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+# Coming soon!
+      </code>
+    </pre>
+  </div>
+</div>
+
+The `aggr` method takes a collection name and `pipe` method takes a [MongoDB pipeline](https://docs.mongodb.com/manual/core/aggregation-pipeline/). The `apply` methods triggers the request and result is received in `res.data.result`. 
+
+> Note: Aggregate functionality is only available in MongoDB
 
 ## Read documents selectively
 
@@ -651,13 +703,13 @@ The type of `data.result` depends on the operation. Its an array of objects for 
 
 ## Next steps
 
-So you know how to read data from a database using Space Cloud. Now let's check how to update it.
+So you know how to read data from a database using Space Cloud. Now let's check how to subscribe to changes in data in realtime.
 
 <div class="btns-wrapper">
   <a href="/docs/database/create" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/database/update" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/database/live-query" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

@@ -1,6 +1,6 @@
 # Writing custom logic
 
-You can easily extend Space Cloud by writing your custom logic on the backend in the form of simple functions. These functions run as a microservice on the backend. This is how you write a simple function using the `service-api` -
+You can easily extend Space Cloud by writing your custom logic on the backend in the form of simple functions. These functions run as a microservice on the backend. This is how you write a simple service -
 
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
@@ -14,24 +14,28 @@ You can easily extend Space Cloud by writing your custom logic on the backend in
   <div id="service-js" class="col s12" style="padding:0">
     <pre>
       <code>
-const service = require('space-service-node');
+const { API, cond } = require('space-api');
 
-const service = new service('my-service');
+const api = new API('my-app', 'http://localhost:8080');
 
-service.registerFunc('my-func', (params, auth, cb) => {
-  console.log('Params:', params, 'Auth', auth)
-  // Do something
+// Make a service
+const service = api.Service('service-name');
 
-  const res = { ack: true, message: 'Function as a Service is Awesome!' }
+// Register function to a service
+service.registerFunc('function-name', (params, auth, cb) => {
+  // Your custom logic goes here
+
+  // Response to be returned to client
+  const res = { ack: true, message: 'Functions mesh is amazing!' }
   cb('response', res)
-})
+})      
       </code>
     </pre>
   </div>
   <div id="service-go" class="col s12" style="padding:0">
     <pre>
       <code>
-import "spaceuptech.com/space-service-go/service"
+import "spaceuptech.com/space-api-go/service"
 
 // Function to be registered
 func myFunc(params service.M, auth service.M, cb service.CallBack) {
@@ -93,22 +97,34 @@ api.close()
   </div>
 </div>
 
-Use `service.Init` to initialize an instance of an `service`. An `service` can harbour multiple functions which can be invoked by frontend. The `service.Init` function takes two parameters **serviceName** and **url** which are as follows:
-- **serviceName:** Name of the service. Uniquely identifies an service
-- **url:** Connection string of nats. Pass "" to use the default nats connection string
+Use `api.Service` to initialize an instance of an `service`. The `api.Service` function takes only one parameter - **serviceName** which uniquely identifies the service. 
 
-You can register a function that you have written to an `service` by calling `RegisterFunc` on an `service`. `RegisterFunc` takes a **name** and a **func** which are as follows:
-- **name:** Name of the function. Uniquely identifies a function within an service
-- **func:** Function that comprises of the custom logic
+A `service` can harbour multiple functions which can be invoked by client. `service.registerFunc` is used to register a function to a service. The `registerFunc` method takes two parameters:
+- **funcName:** Name of the function which uniquely identifies a function within a service
+- **func:** The function to be executed
 
-`func` is the function that will comprise of the custome logic that you want. It can be invoked by the client as and when required. The function takes 3 parameters as decsribed below:
-- **params:** The params sent by the client
-- **auth:** Auth object
+## Writing a function
+
+Any registered function gets three arguments during execution when triggered by client as follows:   
+
+- **params:** The params object sent by the client.
+- **auth:** Auth object (consists the claims of JWT Token)
 - **cb:** Callback function used to return the response back to the client
+
+### Send JSON object back to client
+To send JSON object as a response back to client, call the `cb` function with type as `response` and the second parameter being the response object: 
+```js
+// Any object that you want to send as response
+const response = { ack: true, message: 'I love functions mesh!' } 
+cb('response', response)
+```
+
+### Render HTML page back to client
+Coming soon!
 
 ## Next steps
 
-Great! So now you know how to write custom logic on backend . Let's checkout how to invoke it from the frontend.
+Great! So now you know how to write custom logic on backend. Let's checkout how to invoke it from the frontend.
 
 <div class="btns-wrapper">
   <a href="/docs/functions/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
