@@ -43,7 +43,7 @@ func initServer(isProd bool) *server {
 	r := mux.NewRouter()
 	c := crud.Init()
 	f := filestore.Init()
-	realtime := realtime.Init()
+	realtime := realtime.Init(c)
 	s := static.Init()
 	functions := functions.Init()
 	a := auth.Init(c, functions)
@@ -99,7 +99,7 @@ func (s *server) loadConfig(config *config.Project) error {
 	}
 
 	// Set the configuration for the Realtime module
-	if err := s.realtime.SetConfig(config.Modules.Realtime); err != nil {
+	if err := s.realtime.SetConfig(config.ID, config.Modules.Realtime); err != nil {
 		return err
 	}
 

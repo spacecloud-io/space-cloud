@@ -10,7 +10,7 @@ import (
 var defaultNatsOptions = &nats.Options{
 	Host:   "0.0.0.0",
 	Port:   4222,
-	NoLog:  true,
+	NoLog:  false,
 	NoSigs: true,
 	Cluster: nats.ClusterOpts{
 		Host: "0.0.0.0",
