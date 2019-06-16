@@ -4,7 +4,7 @@ import history from './history';
 import Login from './pages/login/Login'
 import Database from './pages/database/Database'
 import Rules from './pages/database/rules/Rules'
-
+import Configure from './pages/configure/configure'
 
 export default () => {
   return (
@@ -12,6 +12,8 @@ export default () => {
       <Route exact path="/" component={Login} />
       <Route exact path="/:projectId/database" component={Database} />
       <Route exact path="/:projectId/database/rules/:database" component={Rules} />
+      <Route exact path="/:projectId/Configure" component={Configure} />
+
     </Router>
   )
 }

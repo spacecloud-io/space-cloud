@@ -3,7 +3,7 @@
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
   height: 50px;
   line-height: 50px;
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   top: 0;

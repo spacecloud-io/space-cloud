@@ -1,0 +1,33 @@
+.realtime-configuration {
+  display: flex;
+}
+
+.realtime-configuration .conn-string {
+  color: #000;
+  height: 31px;
+  width: 120px;
+  text-align: center;
+  line-height: 31px;
+  font-size: 12px;
+}
+
+.realtime-configuration .conn-form {
+  padding-top: 0;
+  position: relative;
+  top: -0.4vw;
+  width: 100%;
+}
+
+.realtime-configuration .conn-form .conn-form-cert {
+  display: flex;
+  justify-content: flex-end
+}
+
+.realtime-configuration .conn-form .conn-form-options {
+  display: flex;
+  justify-content: space-between
+}
+
+.realtime-configuration .conn-form .conn-form-options .select  {
+  width: 100px;
+}

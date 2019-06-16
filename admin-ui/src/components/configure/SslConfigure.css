@@ -1,0 +1,24 @@
+.ssl-configuration {
+  display: flex;
+}
+
+.ssl-configuration .conn-string {
+  color: #000;
+  height: 31px;
+  width: 120px;
+  text-align: center;
+  line-height: 31px;
+  font-size: 12px;
+}
+
+.ssl-configuration .conn-form {
+  padding-top: 0;
+  position: relative;
+  top: -0.4vw;
+  width: 100%;
+}
+
+.ssl-configuration .conn-form .conn-form-cert ,.ssl-configuration .conn-form .conn-form-switch,.ssl-configuration .conn-form .conn-form-key{
+  display: flex;
+  justify-content: flex-end
+}
