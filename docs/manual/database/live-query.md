@@ -56,7 +56,6 @@ if (on some logic) {
 from space_api import API
 
 api = API('books-app', 'localhost:8081')
-api.set_token('my_secret')
 db = api.my_sql()
 
 

@@ -73,7 +73,6 @@ res, err := myservice.Call("some-service", "some-func", service.M{"msg": "space-
 from space_api import API
 
 api = API('books-app', 'localhost:8081')
-api.set_token('my_secret')
 
 
 def my_func(params, auth, cb):  # Function to be registered
