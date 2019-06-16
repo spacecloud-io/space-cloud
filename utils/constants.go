@@ -1,6 +1,13 @@
 package utils
 
 const (
+	// SpaceCloudProject is the default project to store the config in
+	SpaceCloudProject string = "space_cloud"
+
+	// SpaceCloudConfigTable is the table which holds the database config
+	SpaceCloudConfigTable string = "config"
+)
+const (
 	// One operation returns a single document from the database
 	One string = "one"
 
@@ -91,8 +98,11 @@ const (
 	// FunctionsWorkerCount are the number of goroutines to process functions data
 	FunctionsWorkerCount int = 10
 
-	// RealtimeWrite is for create and update operations
+	// RealtimeWrite is for create operations
 	RealtimeWrite string = "write"
+
+	// RealtimeUpdate is for update operations
+	RealtimeUpdate string = "update"
 
 	// RealtimeDelete is for delete operations
 	RealtimeDelete string = "delete"

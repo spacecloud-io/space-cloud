@@ -9,11 +9,11 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/spaceuptech/space-cloud/modules/userman"
+	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
 // HandleProfile returns the handler for fetching single user profile
-func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
+func HandleProfile(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -25,6 +25,14 @@ func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
 		dbType := vars["dbType"]
 		id := vars["id"]
 
+		// Load the project state
+		state, err := projects.LoadProject(project)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
 		if !ok {
@@ -32,19 +40,17 @@ func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		status, result, err := userManagement.Profile(ctx, token, dbType, project, id)
+		status, result, err := state.UserManagement.Profile(ctx, token, dbType, project, id)
 
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
+			json.NewEncoder(w).Encode(map[string]interface{}{"user": result})
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{"user": result})
 	}
 }
 
 // HandleProfiles returns the handler for fetching all user profiles
-func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
+func HandleProfiles(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -55,6 +61,14 @@ func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
 		project := vars["project"]
 		dbType := vars["dbType"]
 
+		// Load the project state
+		state, err := projects.LoadProject(project)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
 		if !ok {
@@ -62,35 +76,40 @@ func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		status, result, err := userManagement.Profiles(ctx, token, dbType, project)
-
-		w.WriteHeader(status)
+		status, result, err := state.UserManagement.Profiles(ctx, token, dbType, project)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		w.WriteHeader(status)
 		json.NewEncoder(w).Encode(map[string]interface{}{"users": result})
 	}
 }
 
 // HandleEmailSignIn returns the handler for email sign in
-func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailSignIn(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
 		dbType := vars["dbType"]
+		project := vars["project"]
+
+		// Load the project state
+		state, err := projects.LoadProject(project)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Load the request from the body
 		req := map[string]interface{}{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := userManagement.EmailSignIn(ctx, dbType, project, req["email"].(string), req["pass"].(string))
+		status, result, err := state.UserManagement.EmailSignIn(ctx, dbType, project, req["email"].(string), req["pass"].(string))
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -102,7 +121,7 @@ func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
 }
 
 // HandleEmailSignUp returns the handler for email sign up
-func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailSignUp(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -112,25 +131,31 @@ func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
 		vars := mux.Vars(r)
 		project := vars["project"]
 		dbType := vars["dbType"]
+
+		// Load the project state
+		state, err := projects.LoadProject(project)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Load the request from the body
 		req := map[string]interface{}{}
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := userManagement.EmailSignUp(ctx, dbType, project, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
-
-		w.WriteHeader(status)
+		status, result, err := state.UserManagement.EmailSignUp(ctx, dbType, project, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		w.WriteHeader(status)
 		json.NewEncoder(w).Encode(result)
 	}
 }
 
 // HandleEmailEditProfile returns the handler for edit profile
-func HandleEmailEditProfile(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailEditProfile(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -138,9 +163,17 @@ func HandleEmailEditProfile(userManagement *userman.Module) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
-		dbType := vars["dbType"]
 		id := vars["id"]
+		dbType := vars["dbType"]
+		project := vars["project"]
+
+		// Load the project state
+		state, err := projects.LoadProject(project)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
@@ -154,7 +187,7 @@ func HandleEmailEditProfile(userManagement *userman.Module) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := userManagement.EmailEditProfile(ctx, token, dbType, project, id, req["email"].(string), req["name"].(string), req["pass"].(string))
+		status, result, err := state.UserManagement.EmailEditProfile(ctx, token, dbType, project, id, req["email"].(string), req["name"].(string), req["pass"].(string))
 
 		w.WriteHeader(status)
 		if err != nil {

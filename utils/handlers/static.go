@@ -11,7 +11,6 @@ import (
 // HandleStaticRequest creates a static request endpoint
 func HandleStaticRequest(static *static.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		url := r.URL.Path
 		host := strings.Split(r.Host, ":")[0]
 
