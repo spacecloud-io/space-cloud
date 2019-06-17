@@ -1,5 +1,5 @@
 import React from 'react';
-import './FileStorageConfigure.css';
+import './configure.css';
 import { Form, Input, Select, Switch } from 'antd';
 import { createFormField } from 'rc-form';
 const { Option } = Select;
@@ -7,7 +7,7 @@ const { Option } = Select;
 function FileStorageConfigure(props) {
 	const { getFieldDecorator } = props.form;
 	return (
-		<div className="fileStorage-configuration">
+		<div className="configure">
 			<div className="conn-string">FileStorage</div>
 
 			<Form className="conn-form" layout="inline">

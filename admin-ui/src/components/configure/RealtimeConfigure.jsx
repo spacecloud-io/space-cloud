@@ -1,5 +1,5 @@
 import React from 'react';
-import './RealtimeConfigure.css';
+import './configure.css';
 import { Form, Input, Select, Switch } from 'antd';
 import { createFormField } from 'rc-form';
 const { Option } = Select;
@@ -7,7 +7,7 @@ const { Option } = Select;
 function RealtimeConfigure(props) {
 	const { getFieldDecorator } = props.form;
 	return (
-		<div className="realtime-configuration">
+		<div className="configure">
 			<div className="conn-string">Real-Time</div>
 
 			<Form className="conn-form" layout="inline">

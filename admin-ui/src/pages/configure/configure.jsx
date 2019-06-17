@@ -22,13 +22,13 @@ function Rules(props) {
 					</div>
 					<SecretConfigure formState={props.secret} handleChange={props.handleSecretChange} />
 					<Divider />
-					<SslConfigureForm formState={props.sslFormState} handleChange={props.handleSslChange} />
+					<SslConfigureForm formState={props.ssl} handleChange={props.handleSslChange} />
 					<Divider />
-					<RealtimeConfigure formState={props.realtimeFormState} handleChange={props.handleRealtimeChange} />
+					<RealtimeConfigure formState={props.realtime} handleChange={props.handleRealtimeChange} />
 					<Divider />
-					<FunctionConfigure formState={props.functionFormState} handleChange={props.handleFunctionChange} />
+					<FunctionConfigure formState={props.function} handleChange={props.handleFunctionChange} />
 					<Divider />
-					<FileStorage formState={props.fileStorageFormState} handleChange={props.handleFileStorageChange} />
+					<FileStorage formState={props.fileStorage} handleChange={props.handleFileStorageChange} />
 				</div>
 			</div>
 		</div>
@@ -38,10 +38,10 @@ function Rules(props) {
 const mapStateToProps = (state, ownProps) => {
 	return {
 		secret: '',
-		sslFormState: { cert: '', enabled: false, key: '' },
-		realtimeFormState: { broker: 'nats', enabled: true, conn: 'a' },
-		functionFormState: { broker: 'nats', enabled: true, conn: 'a' },
-		fileStorageFormState: { storage: '', enabled: true, conn: 'a' }
+		ssl: { cert: '', enabled: false, key: '' },
+		realtime: { broker: 'nats', enabled: true, conn: 'a' },
+		function: { broker: 'nats', enabled: true, conn: 'a' },
+		fileStorage: { storage: '', enabled: true, conn: 'a' }
 	};
 };
 

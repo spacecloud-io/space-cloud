@@ -12,7 +12,7 @@ export default () => {
       <Route exact path="/" component={Login} />
       <Route exact path="/:projectId/database" component={Database} />
       <Route exact path="/:projectId/database/rules/:database" component={Rules} />
-      <Route exact path="/:projectId/Configure" component={Configure} />
+      <Route exact path="/:projectId/configure" component={Configure} />
 
     </Router>
   )

@@ -1,12 +1,12 @@
 import React from 'react';
-import './SslConfigure.css';
+import './configure.css';
 import { Form, Input, Tooltip, Switch } from 'antd';
 import { createFormField } from 'rc-form';
 
 function SslConfigure(props) {
 	const { getFieldDecorator } = props.form;
 	return (
-		<div className="ssl-configuration">
+		<div className="configure">
 			<div className="conn-string">SSL</div>
 
 			<Form className="conn-form" layout="inline">

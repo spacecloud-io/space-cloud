@@ -1,12 +1,12 @@
 import React from 'react'
-import './SecretConfigure.css'
+import './configure.css'
 import { Form, Input } from 'antd';
 import { createFormField } from 'rc-form';
 
 function SecretConfigure(props) {
   const { getFieldDecorator } = props.form;
   return (
-    <div className="secret-configuration">
+    <div className="configure">
       <div className="conn-string">App secret</div>
       <Form className="conn-form" layout="inline">
         <Form.Item>
