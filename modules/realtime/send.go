@@ -35,7 +35,7 @@ func (m *Module) SendCreateIntent(project, dbType, col string, req *model.Create
 		if idTemp, p := data[idVar]; p {
 			if id, ok := acceptableIDType(idTemp); ok {
 				msgID := uuid.NewV1().String()
-				feed := &model.FeedData{Group: col, DBType: dbType, Type: utils.RealtimeWrite, TimeStamp: time.Now().Unix(), DocID: id, Payload: data}
+				feed := &model.FeedData{Group: col, DBType: dbType, Type: utils.RealtimeInsert, TimeStamp: time.Now().Unix(), DocID: id, Payload: data}
 				m.send(project, col, &Message{ID: msgID, Data: feed, Type: typeIntent})
 				return msgID
 			}

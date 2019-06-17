@@ -1,0 +1,60 @@
+id: demo
+secret: my_secret
+modules:
+  realtime:
+    enabled: true
+    broker: nats
+    conn: nats://localhost:4222
+  functions:
+    enabled: true
+    broker: nats
+    conn: nats://localhost:4222
+    rules:
+      login_service:
+        login_func:
+          rule: allow
+        register_func:
+          rule: allow
+  crud:
+    sql-mysql:
+      conn: root:root@/test_database
+      isPrimary: true
+      collections:
+        demo:
+          isRealtimeEnabled: true
+          rules:
+            create:
+              rule: match
+              eval: ==
+              type: string
+              f1: "super_secret_password"
+              f2: args.auth.password
+            read:
+              rule: query
+              db:   sql-mysql
+              col:  demo_users
+              find:
+                username: args.auth.username
+                password: args.auth.password
+            update:
+              rule: deny
+            delete:
+              rule: deny
+        demo_users:
+          rules:
+            create:
+              rule: match
+              eval: ==
+              type: string
+              f1: "super_secret_admin_password"
+              f2: args.auth.password
+            read:
+              rule: match
+              eval: ==
+              type: string
+              f1: "super_secret_admin_password"
+              f2: args.auth.password
+            update:
+              rule: deny
+            delete:
+              rule: deny
