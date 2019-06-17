@@ -170,7 +170,7 @@ func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 
 func (s *Server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
 	req := model.AggregateRequest{}
-	var temp []map[string]interface{}
+	temp := []map[string]interface{}{}
 	if err := json.Unmarshal(in.Pipeline, &temp); err != nil {
 		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
@@ -205,7 +205,7 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 	msgIDs := make([]*msg, len(in.Batchrequest))
 
-	var allRequests []model.AllRequest
+	allRequests := []model.AllRequest{}
 	for i, req := range in.Batchrequest {
 		switch req.Type {
 		case string(utils.Create):
@@ -347,15 +347,15 @@ func (s *Server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 }
 
 func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
-	gsClient := client.CreateGRPCServiceClient(stream)
-	defer s.functions.UnregisterService(gsClient.ClientID())
-	defer gsClient.Close()
-	go gsClient.RoutineWrite()
+	c := client.CreateGRPCServiceClient(stream)
+	defer s.functions.UnregisterService(c.ClientID())
+	defer c.Close()
+	go c.RoutineWrite()
 
 	// Get GRPC Service client details
-	clientID := gsClient.ClientID()
+	clientID := c.ClientID()
 
-	gsClient.Read(func(req *model.Message) {
+	c.Read(func(req *model.Message) {
 		switch req.Type {
 		case utils.TypeServiceRegister:
 			// TODO add security rule for functions registered as well
@@ -363,10 +363,10 @@ func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 			mapstructure.Decode(req.Data, data)
 
 			s.functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
-				gsClient.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
+				c.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
 			})
 
-			gsClient.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
+			c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
 
 		case utils.TypeServiceRequest:
 			data := new(model.FunctionsPayload)
@@ -379,16 +379,16 @@ func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 }
 
 func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
-	gsClient := client.CreateGRPCRealtimeClient(stream)
-	defer s.realtime.RemoveClient(gsClient.ClientID())
-	defer gsClient.Close()
-	go gsClient.RoutineWrite()
+	c := client.CreateGRPCRealtimeClient(stream)
+	defer s.realtime.RemoveClient(c.ClientID())
+	defer c.Close()
+	go c.RoutineWrite()
 
 	// Get GRPC Service client details
-	ctx := gsClient.Context()
-	clientID := gsClient.ClientID()
+	ctx := c.Context()
+	clientID := c.ClientID()
 
-	gsClient.Read(func(req *model.Message) {
+	c.Read(func(req *model.Message) {
 		switch req.Type {
 		case utils.TypeRealtimeSubscribe:
 			// For realtime subscribe event
@@ -397,17 +397,17 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 
 			// Subscribe to realtime feed
 			feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
-				gsClient.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeFeed, Data: feed})
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeFeed, Data: feed})
 			})
 			if err != nil {
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-				gsClient.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 				return
 			}
 
-			// Send response to gsClient
+			// Send response to c
 			res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData}
-			gsClient.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+			c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
 		case utils.TypeRealtimeUnsubscribe:
 			// For realtime subscribe event
@@ -416,9 +416,9 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 
 			s.realtime.Unsubscribe(clientID, data)
 
-			// Send response to gsClient
+			// Send response to c
 			res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
-			gsClient.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+			c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 		}
 	})
 

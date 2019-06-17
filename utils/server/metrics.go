@@ -171,7 +171,7 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 	}
 
 	if config.Crud != nil {
-		var crud []string
+		crud := []string{}
 		for k := range config.Crud {
 			crud = append(crud, k)
 		}
@@ -179,7 +179,7 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 	}
 
 	if config.Auth != nil {
-		var auth []string
+		auth := []string{}
 		for k, v := range config.Auth {
 			if v.Enabled {
 				auth = append(auth, k)

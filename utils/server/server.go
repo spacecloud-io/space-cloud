@@ -119,7 +119,7 @@ func (s *Server) initGRPCServer(port string) {
 		log.Fatal("Failed to listen:", err)
 	}
 
-	var options []grpc.ServerOption
+	options := []grpc.ServerOption{}
 	if s.config.SSL != nil {
 		creds, err := credentials.NewServerTLSFromFile(s.config.SSL.Crt, s.config.SSL.Key)
 		if err != nil {
