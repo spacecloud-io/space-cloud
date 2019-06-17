@@ -8,7 +8,7 @@ import Documentation from '../../../components/documentation/Documentation';
 import DbConfigure from '../../../components/database-rules/DbConfigure';
 import EmptyState from '../../../components/rules/EmptyState';
 import rulesImg from '../../../assets/rules.svg';
-import RulesTable from '../../../components/rules/rules';
+import RulesComponent from '../../../components/rules/Rules';
 
 function Rules(props) {
 	return (
@@ -23,7 +23,7 @@ function Rules(props) {
 					</div>
 					<DbConfigure updateFormState={props.updateFormState} formState={props.formState} />
 					{/* <EmptyState graphics={rulesImg} desc="Guard your data with rules that define who has access to it and how it is structured." buttonText="Add a table" handleClick={props.handleClick} /> */}
-					<RulesTable
+					<RulesComponent
 						rules={props.rules}
 						handleRuleChange={props.handleRuleChange}
 						addText= {'Add a table rule'}

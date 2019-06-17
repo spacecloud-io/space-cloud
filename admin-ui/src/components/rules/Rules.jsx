@@ -23,7 +23,6 @@ class Rules extends Component {
 	}
 	render() {
 		var rules = Object.keys(this.props.rules);
-		const values = Object.values(this.props.rules);
 		const index = rules.indexOf(this.state.selectedRule);
 
 		return (
@@ -56,7 +55,7 @@ class Rules extends Component {
 							</div>
 							<div className="code-mirror">
 								<CodeMirror
-									value={values[index]}
+									value={this.props.rules[this.state.selectedRule]}
 									options={{
 										mode: 'xml',
 										// theme: 'material',
