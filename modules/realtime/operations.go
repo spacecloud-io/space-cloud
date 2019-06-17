@@ -36,7 +36,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 			if data.DBType == string(utils.Mongo) {
 				idVar = "_id"
 			}
-			if docID, ok := payload[idVar].(string); ok {
+			if docID, ok := acceptableIDType(payload[idVar]); ok {
 				feedData = append(feedData, &model.FeedData{
 					Group:     data.Group,
 					Type:      utils.RealtimeWrite,
@@ -51,7 +51,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 	}
 
 	// Add the live query
-	m.AddLiveQuery(data.ID, data.Group, clientID, data.Where, sendFeed)
+	m.AddLiveQuery(data.ID, data.Project, data.Group, clientID, data.Where, sendFeed)
 	return feedData, nil
 }
 
