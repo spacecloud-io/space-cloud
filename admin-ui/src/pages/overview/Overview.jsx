@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { connect } from 'react-redux'
 import '../../index.css'
 import './overview.css'
@@ -48,13 +49,20 @@ function Overview(props) {
             </a>
           </div>
           <Header name="Explore Modules" color="#000" fontSize="22px" />
-          <Row gutter={48}>
-            <Col span={11}><UserManagement modules={props.modules.userManagement} /></Col>
-            <Col span={11}><Database modules={props.modules.database} /></Col>
-            <Col span={11}><Functions modules={props.modules.functions} /></Col>
-            <Col span={11}><Configure modules={props.modules.configure} /></Col>
+          <Row>
+            <Link to={`/${props.projectId}/user-management`}>
+              <Col span={11}><UserManagement modules={props.modules.userManagement} /></Col>
+            </Link>
+            <Link to={`/${props.projectId}/database`}>
+              <Col span={11} offset={2}><Database modules={props.modules.database} /></Col>
+            </Link>
+            <Link to={`/${props.projectId}/functions`}>
+              <Col span={11}><Functions modules={props.modules.functions} /></Col>
+            </Link>
+            <Link to={`/${props.projectId}/configure`}>
+              <Col span={11} offset={2}><Configure modules={props.modules.configure} /></Col>
+            </Link>
           </Row>
-
         </div>
       </div>
     </div>
@@ -63,6 +71,7 @@ function Overview(props) {
 
 const mapStateToProps = (state, ownProps) => {
   return {
+    projectId: "my-project",
     modules: {
       userManagement: {
         enabled: false,

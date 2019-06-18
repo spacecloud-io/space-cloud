@@ -2,7 +2,7 @@ import React from 'react'
 
 function Configure(props) {
   return (
-    <div className="configure card-style">
+    <div className="overview-card configure-card">
       <i class="material-icons module">settings</i>
       <p className="heading">Configure</p>
       <div className="underline"></div>
