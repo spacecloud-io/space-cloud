@@ -1,13 +1,13 @@
-package main
+package server
 
 import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
-func (s *server) routes() {
+func (s *Server) Routes() {
 	// Initialize the routes for config management
-	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
+	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.LoadConfig))
 
 	// Initialize the route for websocket
 	s.router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())

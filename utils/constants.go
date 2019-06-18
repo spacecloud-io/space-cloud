@@ -1,5 +1,8 @@
 package utils
 
+// The build version of Space Cloud
+const BuildVersion = "0.9.0"
+
 const (
 	// One operation returns a single document from the database
 	One string = "one"
@@ -120,14 +123,14 @@ const (
 	TypeServiceRequest string = "service-request"
 )
 
-// RealTimeProtocol is the type of protocol requested for Realtime.
+// RealTimeProtocol is the type of protocol requested for realtime.
 type RealTimeProtocol string
 
 const (
-	// Websocket for Realtime implementation.
+	// Websocket for realtime implementation.
 	Websocket RealTimeProtocol = "Websocket"
 
-	// GRPC for Realtime implementation.
+	// GRPC for realtime implementation.
 	GRPC RealTimeProtocol = "GRPC"
 
 	// GRPCService for Service implementation.
