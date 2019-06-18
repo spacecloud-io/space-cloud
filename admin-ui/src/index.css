@@ -10,3 +10,13 @@ body{
   left: 250px;
   right: 0;
 }
+
+.flex-blox {
+  display: flex;
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+}
+

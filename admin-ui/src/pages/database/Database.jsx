@@ -21,7 +21,7 @@ function Database(props) {
     return <Redirect to={`/${props.projectId}/database/rules/${props.selectedDb}`}/>;
   }
     return (
-    <div>
+    <div className="database">
       <Topbar title="Database" />
       <div className="flex-box">
         <Sidenav selectedItem="database" />
