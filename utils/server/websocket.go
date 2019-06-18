@@ -20,13 +20,13 @@ var upgrader = websocket.Upgrader{
 
 func (s *Server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		u, err := upgrader.Upgrade(w, r, nil)
+		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("upgrade:", err)
 			return
 		}
 
-		c := client.CreateWebsocketClient(u)
+		c := client.CreateWebsocketClient(socket)
 		defer s.realtime.RemoveClient(c.ClientID())
 		defer s.functions.UnregisterService(c.ClientID())
 

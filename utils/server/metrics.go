@@ -69,7 +69,7 @@ func (t *transport) update(ctx context.Context, meta *proto.Meta, op string, fin
 
 // Init initialises a new transport
 func newTransport(host, port string, sslEnabled bool) (*transport, error) {
-	var dialOptions []grpc.DialOption
+	dialOptions := []grpc.DialOption{}
 
 	if sslEnabled {
 		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
