@@ -13,6 +13,7 @@
   top: 20vw;
   right: 15vw;
   width: 350px;
+  bottom: 20vw;
 }
 
 .wrapper .text {
@@ -23,19 +24,23 @@
   position: relative;
 }
 
-.card {
+.login-card {
   position: absolute;
-  left: 32vw;
-  width: 300px;
-  padding: 48px 28px;
+  padding: 80px 24px;
   background: #FFF;
   text-align: center;
-  top: 50%;
-  left: 50%;
-  transform: translate(-100%, -50%);
+  top: 23vh;
+  bottom: 20vh;
+  left: 55vh;
+  vertical-align: middle;
+  /* display: table; */
 }
 
-.card .about {
+/* .login-card .content {
+  display: table-cell;
+} */
+
+.login-card .about {
   color: #BDBDBD;
   font-size: 12px;
   padding-bottom: 32px;
@@ -43,27 +48,26 @@
   font-weight: 600;
 }
 
-.card .logo {
-  padding-bottom: 8px; 
+.login-card .logo {
+  padding-bottom: 8px;
 }
 
- @media screen and (max-width: 480px) {
+@media screen and (max-width: 740px) {
   .wrapper .background {
     display: none;
   }
-
   .wrapper .r-text {
     display: none;
   }
-
-  .card {
-    left: 100vw;
-    width: 100%;
+  .login-card {
+    left: 0;
+    right: 0;
+    top: 0;
+    margin: 0;
     height: 100vh;
   }
-
-  .card .content {
+  .login-card .content {
     position: relative;
     top: 25%;
   }
-} 
+}

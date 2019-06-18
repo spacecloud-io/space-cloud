@@ -6,19 +6,17 @@ import mysqlMono from '../../assets/mysqlMono.svg'
 function Database(props) {
   return (
     <div className="database card-style">
-      <div>
-        <i class="material-icons module">dns</i>
-        <div className="logos">
-          {props.modules.mysql &&
-            <img src={mysqlMono} alt="mysqlMono.svg" height="26px" width="26px" />
-          }
-          {props.modules.postgres &&
-            <img src={postgresMono} alt="postgreSQL" height="26px" width="26px" />
-          }
-          {props.modules.mongo &&
-            <img src={mongoMono} alt="mongoMono.svg" height="26px" width="16px" />
-          }
-        </div>
+      <i class="material-icons module">dns</i>
+      <div className="logos">
+        {props.modules.mysql &&
+          <img src={mysqlMono} alt="mysqlMono.svg" height="26px" width="26px" />
+        }
+        {props.modules.postgres &&
+          <img src={postgresMono} alt="postgreSQL" height="26px" width="26px" />
+        }
+        {props.modules.mongo &&
+          <img src={mongoMono} alt="mongoMono.svg" height="26px" width="16px" />
+        }
       </div>
       <p className="heading">Database</p>
       <div className="underline"></div>
