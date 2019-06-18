@@ -2,7 +2,7 @@ import React from 'react'
 
 function Functions(props) {
   return (
-    <div className="functions card-style">
+    <div className="overview-card functions-card">
       <i class="material-icons module">code</i>
       <p className="heading">Functions</p>
       <div className="underline"></div>

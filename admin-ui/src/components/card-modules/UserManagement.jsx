@@ -7,7 +7,7 @@ import github from '../../assets/github.svg'
 
 function UserManagement(props) {
   return (
-    <div className="user-management card-style">
+    <div className="overview-card user-management-card">
       <div>
         <i className="material-icons module">people</i>
         <div className="logos">
