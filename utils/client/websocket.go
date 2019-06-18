@@ -54,7 +54,11 @@ func (c *WebsocketClient) Read(cb DataCallback) {
 			return
 		}
 
-		cb(data)
+		// Close the reader if callback returned false
+		next := cb(data)
+		if !next {
+			return
+		}
 	}
 }
 

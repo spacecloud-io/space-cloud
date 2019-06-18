@@ -355,7 +355,7 @@ func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	// Get GRPC Service client details
 	clientID := c.ClientID()
 
-	c.Read(func(req *model.Message) {
+	c.Read(func(req *model.Message) bool {
 		switch req.Type {
 		case utils.TypeServiceRegister:
 			// TODO add security rule for functions registered as well
@@ -374,6 +374,8 @@ func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 
 			s.functions.HandleServiceResponse(data)
 		}
+
+		return true
 	})
 	return nil
 }
@@ -388,7 +390,7 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	ctx := c.Context()
 	clientID := c.ClientID()
 
-	c.Read(func(req *model.Message) {
+	c.Read(func(req *model.Message) bool {
 		switch req.Type {
 		case utils.TypeRealtimeSubscribe:
 			// For realtime subscribe event
@@ -402,7 +404,7 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			if err != nil {
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
 				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-				return
+				return true
 			}
 
 			// Send response to c
@@ -420,6 +422,8 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
 			c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 		}
+
+		return true
 	})
 
 	return nil

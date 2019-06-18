@@ -37,7 +37,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 		ctx := c.Context()
 		clientID := c.ClientID()
 
-		c.Read(func(req *model.Message) {
+		c.Read(func(req *model.Message) bool {
 			switch req.Type {
 			case utils.TypeRealtimeSubscribe:
 				// For realtime subscribe event
@@ -51,7 +51,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				if err != nil {
 					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
 					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-					return
+					return true
 				}
 
 				// Send response to c
@@ -86,6 +86,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 
 				s.functions.HandleServiceResponse(data)
 			}
+			return true
 		})
 	}
 }
