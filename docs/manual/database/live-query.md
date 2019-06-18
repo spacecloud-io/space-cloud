@@ -93,13 +93,13 @@ As you would have noticed the `subscribe` function returns an `unsubscribe` func
 
 ## Next steps
 
-Now you know the basics of realtime module. The next step would be to have a look at the file storage module so that you can upload and download files directly from your frontend.
+Now you know how to subscribe to realtime changes in data. The next step would be to have a look at how to update data from your frontend.
 
 <div class="btns-wrapper">
   <a href="/docs/realtime/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/file-storage/overview" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/database/update" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

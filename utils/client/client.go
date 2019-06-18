@@ -22,7 +22,7 @@ type Client interface {
 }
 
 // DataCallback is the callback invoked when data is read by the socket
-type DataCallback func(data *model.Message)
+type DataCallback func(data *model.Message) bool
 
 // CreateWebsocketClient makes a client object to manage the socket
 func CreateWebsocketClient(socket *websocket.Conn) *WebsocketClient {

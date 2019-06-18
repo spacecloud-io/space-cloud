@@ -27,7 +27,7 @@ const myFile = document.querySelector("#your-file-input").files[0];
 
 // Upload the file
 api.FileStore()
-  .uploadFile("/some-path", myFile)
+  .uploadFile("/some-path", myFile, "fileName")
   .then(res => {
     if (res.status === 200) {
       // File uploaded successfully
@@ -59,6 +59,7 @@ api.FileStore()
 The `uploadFile` function takes two parameters to upload a file which are as follows:
 - **path** - The path at which to upload the file.
 - **file** - A file of the type HTML5 File API.
+- **name** - Name of the file.
 
 The `path` can be nested as well. For e.g a `path` - /folder1/folder2 would mean to upload the file inside folder2 which is in folder1. If any of the folders mentioned in the `path` were not present, they would be created before uploading the file.
 
@@ -79,12 +80,13 @@ A response object sent by the server contains the **status** fields explained be
 All files uploaded via File Management module are accessible on the following url:
 
 ```
-url = `http://localhost:8080/api/$projectName/files/$path`
+url = `http://localhost:8080/v1/api/$projectName/files/$path/$fileName`
 ```
 
 The url is different for each file and has following variable parts to it:
 - **$projectName** - This is the name of project with which you initialized the API
 - **$path** - This is the path at which the file was uploaded
+- **$fileName** - This is the name with which the file was uploaded
 
 
 ## Next steps

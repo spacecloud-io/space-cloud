@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -6,13 +6,14 @@ import (
 	"net/http"
 
 	"github.com/mitchellh/mapstructure"
+
 	"github.com/spaceuptech/space-cloud/model"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
-func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
+func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -45,17 +46,17 @@ func (s *server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 		state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
 
 		// Send gRPC Response
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 
 	// Send realtime ack
 	state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
-	return &pb.Response{Status: 200}, nil
+	return &pb.Response{Status: http.StatusOK}, nil
 }
 
-func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
+func (s *Server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -65,7 +66,7 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	req := model.ReadRequest{}
 	temp := map[string]interface{}{}
 	if err := json.Unmarshal(in.Find, &temp); err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 	req.Find = temp
 	req.Operation = in.Operation
@@ -91,19 +92,19 @@ func (s *server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	// Perform the read operation
 	result, err := state.Crud.Read(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 
 	resultBytes, err := json.Marshal(result)
 	if err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 
 	// Give positive acknowledgement
-	return &pb.Response{Status: 200, Result: resultBytes}, nil
+	return &pb.Response{Status: http.StatusOK, Result: resultBytes}, nil
 }
 
-func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
+func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -113,13 +114,13 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 	req := model.UpdateRequest{}
 	temp := map[string]interface{}{}
 	if err := json.Unmarshal(in.Find, &temp); err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 	req.Find = temp
 
 	temp = map[string]interface{}{}
 	if err := json.Unmarshal(in.Update, &temp); err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 	req.Update = temp
 	req.Operation = in.Operation
@@ -139,18 +140,17 @@ func (s *server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
 
 		// Send gRPC Response
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 
 	// Send realtime ack
 	state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
-	return &pb.Response{Status: 200}, nil
-
+	return &pb.Response{Status: http.StatusOK}, nil
 }
 
-func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
+func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -161,7 +161,7 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	req := model.DeleteRequest{}
 	temp := map[string]interface{}{}
 	if err := json.Unmarshal(in.Find, &temp); err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 	req.Find = temp
 	req.Operation = in.Operation
@@ -182,17 +182,17 @@ func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 		state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
 
 		// Send gRPC Response
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 
 	// Send realtime ack
 	state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
-	return &pb.Response{Status: 200}, nil
+	return &pb.Response{Status: http.StatusOK}, nil
 }
 
-func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
+func (s *Server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -202,7 +202,7 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	req := model.AggregateRequest{}
 	temp := []map[string]interface{}{}
 	if err := json.Unmarshal(in.Pipeline, &temp); err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 	req.Pipeline = temp
 	req.Operation = in.Operation
@@ -216,19 +216,19 @@ func (s *server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	// Perform the read operation
 	result, err := state.Crud.Aggregate(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 
 	resultBytes, err := json.Marshal(result)
 	if err != nil {
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 
 	// Give positive acknowledgement
-	return &pb.Response{Status: 200, Result: resultBytes}, nil
+	return &pb.Response{Status: http.StatusOK, Result: resultBytes}, nil
 }
 
-func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
+func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -252,7 +252,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			r := model.CreateRequest{}
 			var temp interface{}
 			if err := json.Unmarshal(req.Document, &temp); err != nil {
-				return &pb.Response{Status: 500, Error: err.Error()}, nil
+				return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 			}
 			r.Document = temp
 			eachReq.Document = temp
@@ -280,14 +280,14 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			r := model.UpdateRequest{}
 			temp := map[string]interface{}{}
 			if err := json.Unmarshal(req.Find, &temp); err != nil {
-				return &pb.Response{Status: 500, Error: err.Error()}, nil
+				return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 			}
 			r.Find = temp
 			eachReq.Find = temp
 
 			temp = map[string]interface{}{}
 			if err := json.Unmarshal(req.Update, &temp); err != nil {
-				return &pb.Response{Status: 500, Error: err.Error()}, nil
+				return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 			}
 			r.Update = temp
 			eachReq.Update = temp
@@ -347,7 +347,7 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 		}
 
 		// Send gRPC Response
-		return &pb.Response{Status: 500, Error: err.Error()}, nil
+		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
 
 	// Send realtime nack
@@ -356,10 +356,10 @@ func (s *server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	}
 
 	// Give positive acknowledgement
-	return &pb.Response{Status: 200}, nil
+	return &pb.Response{Status: http.StatusOK}, nil
 }
 
-func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
+func (s *Server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Project)
 	if err != nil {
@@ -388,32 +388,32 @@ func (s *server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 	return &pb.Response{Result: data, Status: 200}, nil
 }
 
-func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
+func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	// Create an empty project variable
 	var project string
 
 	// Create a new client
-	client := client.CreateGRPCServiceClient(stream)
+	c := client.CreateGRPCServiceClient(stream)
 
 	defer func() {
 		// Unregister service if project could be loaded
 		state, err := s.projects.LoadProject(project)
 		if err == nil {
 			// Unregister the service
-			state.Functions.UnregisterService(client.ClientID())
+			state.Functions.UnregisterService(c.ClientID())
 		}
 	}()
 
 	// Close the client to free up resources
-	defer client.Close()
+	defer c.Close()
 
 	// Start the writer routine
-	go client.RoutineWrite()
+	go c.RoutineWrite()
 
-	// Get client details
-	clientID := client.ClientID()
+	// Get GRPC Service client details
+	clientID := c.ClientID()
 
-	client.Read(func(req *model.Message) {
+	c.Read(func(req *model.Message) bool {
 		switch req.Type {
 		case utils.TypeServiceRegister:
 			// TODO add security rule for functions registered as well
@@ -425,14 +425,14 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 
 			state, err := s.projects.LoadProject(project)
 			if err != nil {
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": false}})
-				return
+				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": false}})
+				return true
 			}
 			state.Functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
-				client.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
+				c.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
 			})
 
-			client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
+			c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
 
 		case utils.TypeServiceRequest:
 			data := new(model.FunctionsPayload)
@@ -444,37 +444,39 @@ func (s *server) Service(stream pb.SpaceCloud_ServiceServer) error {
 				state.Functions.HandleServiceResponse(data)
 			}
 		}
+
+		return true
 	})
 	return nil
 }
 
-func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
+func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	// Create an empty project variable
 	var project string
 
 	// Create a new client
-	client := client.CreateGRPCRealtimeClient(stream)
+	c := client.CreateGRPCRealtimeClient(stream)
 
 	defer func() {
 		// Unregister service if project could be loaded
 		state, err := s.projects.LoadProject(project)
 		if err == nil {
 			// Unregister the service
-			state.Realtime.RemoveClient(client.ClientID())
+			state.Realtime.RemoveClient(c.ClientID())
 		}
 	}()
 
 	// Close the client to free up resources
-	defer client.Close()
+	defer c.Close()
 
 	// Start the writer routine
-	go client.RoutineWrite()
+	go c.RoutineWrite()
 
-	// Get client details
-	ctx := client.Context()
-	clientID := client.ClientID()
+	// Get GRPC Service client details
+	ctx := c.Context()
+	clientID := c.ClientID()
 
-	client.Read(func(req *model.Message) {
+	c.Read(func(req *model.Message) bool {
 		switch req.Type {
 		case utils.TypeRealtimeSubscribe:
 
@@ -489,23 +491,23 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			state, err := s.projects.LoadProject(project)
 			if err != nil {
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-				client.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeSubscribe, Data: res})
-				return
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeSubscribe, Data: res})
+				return true
 			}
 
 			// Subscribe to relaitme feed
 			feedData, err := state.Realtime.Subscribe(ctx, clientID, state.Auth, state.Crud, data, func(feed *model.FeedData) {
-				client.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeFeed, Data: feed})
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeFeed, Data: feed})
 			})
 			if err != nil {
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-				return
+				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				return true
 			}
 
-			// Send response to client
+			// Send response to c
 			res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData}
-			client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+			c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
 		case utils.TypeRealtimeUnsubscribe:
 			// For realtime subscribe event
@@ -516,21 +518,24 @@ func (s *server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			state, err := s.projects.LoadProject(project)
 			if err != nil {
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-				return
+				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				return true
 			}
 
 			state.Realtime.Unsubscribe(clientID, data)
 
-			// Send response to client
+			// Send response to c
 			res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
-			client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+			c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 		}
+
+		return true
 	})
+
 	return nil
 }
 
-func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
+func (s *Server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -551,10 +556,11 @@ func (s *server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Respon
 		return &out, nil
 	}
 	out.Result = res
+
 	return &out, nil
 }
 
-func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
+func (s *Server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -575,10 +581,11 @@ func (s *server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Resp
 		return &out, nil
 	}
 	out.Result = res
+
 	return &out, nil
 }
 
-func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
+func (s *Server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -599,10 +606,11 @@ func (s *server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*p
 		return &out, nil
 	}
 	out.Result = res
+
 	return &out, nil
 }
 
-func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
+func (s *Server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -623,10 +631,11 @@ func (s *server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response
 		return &out, nil
 	}
 	out.Result = res
+
 	return &out, nil
 }
 
-func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
+func (s *Server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
 	if err != nil {
@@ -647,5 +656,6 @@ func (s *server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response
 		return &out, nil
 	}
 	out.Result = res
+
 	return &out, nil
 }

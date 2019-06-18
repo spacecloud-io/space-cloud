@@ -23,7 +23,7 @@ The client sends a JSON request (loosely following the MongoDB DSL) to Space Clo
 
 If any clients had subscribed to realtime changes in database, then the realtime module propagates the database changes to the concerned clients in realtime. The realtime module makes sure that whenever there is any change in the result set (results get added, removed or updated), the client will be updated. The realtime module uses a pub-sub broker under the hood to make sure the realtime piece works in a distributed fashion.
 
-> Note: Space Cloud runs a nats server by default in the same process so that you don't have to run a broker. However you can run your own broker and instruct Space Cloud to use that broker instead. 
+> Note: Space Cloud runs a Nats server by default in the same process so that you don't have to run a broker. However, you can run your own broker and configure Space Cloud to use that instead. As of now, only Nats is supported as a broker with RabbitMQ and Kafka coming in future. 
 
 ## Limitations
 
@@ -60,7 +60,7 @@ modules:
   realtime:
     enabled: true
     broker: nats
-    conn: localhost
+    conn: nats://localhost:4222
   # Config for other modules go here
 ```
 

@@ -1,5 +1,5 @@
 # Access custom logic
-You can call a function running on the backend (written via functions module of Space Cloud) on frontend by simply calling `api.call` on frontend. Here's a code snippet showing how to do it:
+You can call a function running on the backend (written via functions module of Space Cloud) from frontend or from some other function on backend by simply calling `api.call` on frontend. Here's a code snippet showing how to do it:
 
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
@@ -59,19 +59,22 @@ The `call` function takes four arguments which are as follows:
 - **serviceName** - Name of the service
 - **funcName** - Name of the function
 - **params** - An object that can contain any data that you want to pass to the function on backend
-- **timeOut** - Timeout in seconds
+- **timeOut** - Timeout in milli seconds
 
-As you would have noticed, the above function is asynchronous in nature. 
+As you would have noticed, the above function is asynchronous in nature. The `call` method triggers the specified function on the backend with the provided params. If the function takes more time to execute than the given `timeout`, an exception is returned 
 
 ## Response
 
-A response object sent by the server contains the **status** and **data** fields explained below:
+On response from the server, the callback passed to the `then` method is called with the response object as described below:
 
-**status:** Number describing the status of the operation. Following values are possible:
-- 200 - Operation was successful
-- 500 - Internal server error
-
-**data:** Object returned by the function.
+```
+{
+  "status": "number", // Status of the operation
+  "data": {
+    "result": "object" // Response returned by the function
+  }
+}
+```
 
 ## Next steps
 

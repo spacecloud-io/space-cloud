@@ -48,7 +48,7 @@ modules:
   realtime:
     enabled: true    # Enable the realtime module globally
     broker: nats     # Broker to be used as pub sub for realtime module
-    conn: localhost  #  Connection string of broker 
+    conn: nats://localhost:4222  #  Connection string of broker 
 ```
 
 The realtime feature also needs to be enabled on a collection level for the collections that you want to sync in realtime. Here's a snippet configuring space cloud to use MongoDB and MySQL. MongoDB will hold the `todos` collection which will be synced in realtime while MySQL has the `users` table (not synced in realtime).
@@ -87,7 +87,7 @@ modules:
   realtime:
     enabled: true
     broker: nats
-    conn: localhost
+    conn: nats://localhost:4222
 ```
 
 For each database, you need to specify the following fields:

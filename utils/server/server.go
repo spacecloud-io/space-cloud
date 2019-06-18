@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
-type server struct {
+type Server struct {
 	lock     sync.RWMutex
 	router   *mux.Router
 	isProd   bool
@@ -29,14 +29,14 @@ type server struct {
 	ssl      *config.SSL
 }
 
-func initServer(isProd bool) *server {
+func New(isProd bool) *Server {
 	r := mux.NewRouter()
 	s := static.Init()
 	projects := projects.New()
-	return &server{router: r, static: s, projects: projects, isProd: isProd}
+	return &Server{router: r, static: s, projects: projects, isProd: isProd}
 }
 
-func (s *server) start(port, grpcPort string) error {
+func (s *Server) Start(port, grpcPort string) error {
 
 	go s.initGRPCServer(grpcPort)
 
@@ -53,7 +53,7 @@ func (s *server) start(port, grpcPort string) error {
 
 	handler := corsObj.Handler(s.router)
 
-	fmt.Println("Starting http server on port " + port)
+	fmt.Println("Starting http Server on port " + port)
 
 	if s.ssl != nil {
 		return http.ListenAndServeTLS(":"+port, s.ssl.Crt, s.ssl.Key, handler)
@@ -62,7 +62,7 @@ func (s *server) start(port, grpcPort string) error {
 	return http.ListenAndServe(":"+port, handler)
 }
 
-func (s *server) initGRPCServer(port string) {
+func (s *Server) initGRPCServer(port string) {
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
@@ -72,7 +72,7 @@ func (s *server) initGRPCServer(port string) {
 	if s.ssl != nil {
 		creds, err := credentials.NewServerTLSFromFile(s.ssl.Crt, s.ssl.Key)
 		if err != nil {
-			log.Fatalln("Error -", err)
+			log.Fatalln("Error: ", err)
 		}
 		options = append(options, grpc.Creds(creds))
 	}
@@ -80,8 +80,13 @@ func (s *server) initGRPCServer(port string) {
 	grpcServer := grpc.NewServer(options...)
 	proto.RegisterSpaceCloudServer(grpcServer, s)
 
-	fmt.Println("Starting gRPC server on port " + port)
+	fmt.Println("Starting gRPC Server on port: " + port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
 	}
+}
+
+// Projects returns a copy of the projects
+func (s *Server) Projects() *projects.Projects {
+	return s.projects
 }

@@ -1,9 +1,10 @@
-package main
+package server
 
 import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"net/http"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -20,13 +21,13 @@ type transport struct {
 func (t *transport) insert(ctx context.Context, meta *proto.Meta, op string, obj interface{}) (int, error) {
 	objJSON, err := json.Marshal(obj)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	req := proto.CreateRequest{Document: objJSON, Meta: meta, Operation: op}
 	res, err := t.stub.Create(ctx, &req)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	if res.Status >= 200 || res.Status < 300 {
@@ -39,18 +40,18 @@ func (t *transport) insert(ctx context.Context, meta *proto.Meta, op string, obj
 func (t *transport) update(ctx context.Context, meta *proto.Meta, op string, find, update map[string]interface{}) (int, error) {
 	updateJSON, err := json.Marshal(update)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	findJSON, err := json.Marshal(find)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	req := proto.UpdateRequest{Find: findJSON, Update: updateJSON, Meta: meta, Operation: op}
 	res, err := t.stub.Update(ctx, &req)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	if res.Status >= 200 || res.Status < 300 {
@@ -79,7 +80,7 @@ func newTransport(host, port string, sslEnabled bool) (*transport, error) {
 	return &transport{conn, stub}, nil
 }
 
-func (s *server) routineMetrics() {
+func (s *Server) RoutineMetrics() {
 	// TODO
 	// ticker := time.NewTicker(time.Minute * 5)
 	// defer ticker.Stop()

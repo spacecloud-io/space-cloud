@@ -22,7 +22,7 @@ func (m *Module) worker() {
 		req := new(model.FunctionsPayload)
 		err := json.Unmarshal(msg.Data, req)
 		if err != nil {
-			log.Println("Functions Error -", err)
+			log.Println("Functions Error:", err)
 			m.publishErrorResponse(msg.Reply, err)
 			continue
 		}
@@ -30,7 +30,7 @@ func (m *Module) worker() {
 		t, p := m.services.Load(req.Service)
 		if !p {
 			err := errors.New("No service available")
-			log.Println("Functions Error -", err)
+			log.Println("Functions Error:", err)
 			m.publishErrorResponse(msg.Reply, err)
 		}
 

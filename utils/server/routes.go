@@ -1,10 +1,10 @@
-package main
+package server
 
 import (
 	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
-func (s *server) routes() {
+func (s *Server) Routes() {
 	// Initialize the routes for config management
 	//s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
 

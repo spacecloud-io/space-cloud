@@ -89,7 +89,12 @@ func (c *GRPCServiceClient) Read(cb DataCallback) {
 		case utils.TypeServiceRegister:
 			data := map[string]interface{}{"service": in.Service, "token": in.Token, "project": in.Project}
 			msg := &model.Message{ID: in.Id, Type: utils.TypeServiceRegister, Data: data}
-			cb(msg)
+
+			// Close the reader if callback returned false
+			next := cb(msg)
+			if !next {
+				return
+			}
 
 		case utils.TypeServiceRequest:
 			var params interface{}
@@ -100,7 +105,12 @@ func (c *GRPCServiceClient) Read(cb DataCallback) {
 				"error":  in.Error,
 			}
 			msg := &model.Message{ID: in.Id, Type: utils.TypeServiceRequest, Data: data}
-			cb(msg)
+
+			// Close the reader if callback returned false
+			next := cb(msg)
+			if !next {
+				return
+			}
 
 		default:
 			log.Println("GRPC Service Error - Invalid request type", in.Type)

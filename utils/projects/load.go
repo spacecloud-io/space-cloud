@@ -41,7 +41,7 @@ func (p *Projects) LoadConfigFromDB(account, dbType, conn string) error {
 			project := data.Payload["project"].(string)
 			p.DeleteProject(project)
 
-		case utils.RealtimeWrite, utils.RealtimeUpdate:
+		case utils.RealtimeInsert, utils.RealtimeUpdate:
 			project := data.Payload["project"].(string)
 			config := data.Payload["config"].(string)
 

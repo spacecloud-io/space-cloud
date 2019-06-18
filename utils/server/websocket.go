@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -18,9 +18,9 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (s *server) handleWebsocket() http.HandlerFunc {
+func (s *Server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		c, err := upgrader.Upgrade(w, r, nil)
+		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("upgrade:", err)
 			return
@@ -30,29 +30,29 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 		var project string
 
 		// Create a new client
-		client := client.CreateWebsocketClient(c)
+		c := client.CreateWebsocketClient(socket)
 
 		defer func() {
 			// Unregister service if project could be loaded
 			state, err := s.projects.LoadProject(project)
 			if err == nil {
 				// Unregister the service
-				state.Realtime.RemoveClient(client.ClientID())
-				state.Functions.UnregisterService(client.ClientID())
+				state.Realtime.RemoveClient(c.ClientID())
+				state.Functions.UnregisterService(c.ClientID())
 			}
 		}()
 
 		// Close the client to free up resources
-		defer client.Close()
+		defer c.Close()
 
 		// Start the writer routine
-		go client.RoutineWrite()
+		go c.RoutineWrite()
 
-		// Get client details
-		ctx := client.Context()
-		clientID := client.ClientID()
+		// Get c details
+		ctx := c.Context()
+		clientID := c.ClientID()
 
-		client.Read(func(req *model.Message) {
+		c.Read(func(req *model.Message) bool {
 			switch req.Type {
 			case utils.TypeRealtimeSubscribe:
 
@@ -67,22 +67,22 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 				state, err := s.projects.LoadProject(project)
 				if err != nil {
 					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-					client.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeSubscribe, Data: res})
-					return
+					c.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeSubscribe, Data: res})
+					return true
 				}
 				// Subscribe to the realtime feed
 				feedData, err := state.Realtime.Subscribe(ctx, clientID, state.Auth, state.Crud, data, func(feed *model.FeedData) {
-					client.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
+					c.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
 				if err != nil {
 					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-					client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-					return
+					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+					return true
 				}
 
-				// Send response to client
+				// Send response to c
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData}
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
 			case utils.TypeRealtimeUnsubscribe:
 				// For realtime subscribe event
@@ -93,15 +93,15 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 				state, err := s.projects.LoadProject(project)
 				if err != nil {
 					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-					client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-					return
+					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+					return true
 				}
 
 				state.Realtime.Unsubscribe(clientID, data)
 
-				// Send response to client
+				// Send response to c
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
 			case utils.TypeServiceRegister:
 				// TODO add security rule for functions registered as well
@@ -113,14 +113,14 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 
 				state, err := s.projects.LoadProject(project)
 				if err != nil {
-					client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": false}})
-					return
+					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": false}})
+					return true
 				}
 				state.Functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
-					client.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
+					c.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
 				})
 
-				client.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
+				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
 
 			case utils.TypeServiceRequest:
 				data := new(model.FunctionsPayload)
@@ -132,6 +132,7 @@ func (s *server) handleWebsocket() http.HandlerFunc {
 					state.Functions.HandleServiceResponse(data)
 				}
 			}
+			return true
 		})
 	}
 }

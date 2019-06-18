@@ -51,7 +51,6 @@ modules:
             rule: allow
   static:
     enabled: false
-    gzip: false
     routes:
     - prefix: /
       path: ./public

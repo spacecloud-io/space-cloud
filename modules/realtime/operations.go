@@ -45,7 +45,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, crud 
 			if docID, ok := acceptableIDType(payload[idVar]); ok {
 				feedData = append(feedData, &model.FeedData{
 					Group:     data.Group,
-					Type:      utils.RealtimeWrite,
+					Type:      utils.RealtimeInsert,
 					TimeStamp: timeStamp,
 					DocID:     docID,
 					DBType:    data.DBType,

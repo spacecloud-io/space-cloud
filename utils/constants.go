@@ -1,5 +1,8 @@
 package utils
 
+// BuildVersion is build version of Space Cloud
+const BuildVersion = "0.9.0"
+
 const (
 	// SpaceCloudProject is the default project to store the config in
 	SpaceCloudProject string = "space_cloud"
@@ -98,8 +101,8 @@ const (
 	// FunctionsWorkerCount are the number of goroutines to process functions data
 	FunctionsWorkerCount int = 10
 
-	// RealtimeWrite is for create operations
-	RealtimeWrite string = "write"
+	// RealtimeInsert is for create operations
+	RealtimeInsert string = "insert"
 
 	// RealtimeUpdate is for update operations
 	RealtimeUpdate string = "update"
@@ -127,14 +130,14 @@ const (
 	TypeServiceRequest string = "service-request"
 )
 
-// RealTimeProtocol is the type of protocol requested for Realtime.
+// RealTimeProtocol is the type of protocol requested for realtime.
 type RealTimeProtocol string
 
 const (
-	// Websocket for Realtime implementation.
+	// Websocket for realtime implementation.
 	Websocket RealTimeProtocol = "Websocket"
 
-	// GRPC for Realtime implementation.
+	// GRPC for realtime implementation.
 	GRPC RealTimeProtocol = "GRPC"
 
 	// GRPCService for Service implementation.
