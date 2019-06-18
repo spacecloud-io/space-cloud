@@ -65,6 +65,7 @@ if result.status == 200:
 else:
     print(result.error)
 
+api.close()
       </code>
     </pre>
   </div>
@@ -119,6 +120,8 @@ if result.status == 200:
     print("Success")
 else:
     print(result.error)
+
+api.close()
       </code>
     </pre>
   </div>

@@ -33,7 +33,8 @@ modules:
           rule: allow
   realtime:
     enabled: false
-    kafka: localhost
+    broker: nats
+    conn: nats://localhost:4222
   fileStore:
     enabled: false
     storeType: local

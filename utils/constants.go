@@ -91,8 +91,11 @@ const (
 	// FunctionsWorkerCount are the number of goroutines to process functions data
 	FunctionsWorkerCount int = 10
 
-	// RealtimeWrite is for create and update operations
+	// RealtimeWrite is for create operations
 	RealtimeWrite string = "write"
+
+	// RealtimeUpdate is for update operations
+	RealtimeUpdate string = "update"
 
 	// RealtimeDelete is for delete operations
 	RealtimeDelete string = "delete"
@@ -130,3 +133,6 @@ const (
 	// GRPCService for Service implementation.
 	GRPCService RealTimeProtocol = "GRPC-Service"
 )
+
+// DefaultConfigFilePath is the default path to load / store the config file
+const DefaultConfigFilePath string = "config.yaml"

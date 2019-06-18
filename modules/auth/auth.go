@@ -11,9 +11,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
-// TokenClaims holds the JWT token claims
-type TokenClaims map[string]interface{}
-
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
@@ -24,6 +21,7 @@ type Module struct {
 	fileRules map[string]*config.FileRule
 	funcRules config.FuncRules
 	project   string
+	admin     *config.Admin
 }
 
 // Init creates a new instance of the auth object

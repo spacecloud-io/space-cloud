@@ -13,6 +13,14 @@ type Project struct {
 	Secret  string   `json:"secret" yaml:"secret"`
 	Modules *Modules `json:"modules" yaml:"modules"`
 	SSL     *SSL     `json:"ssl" yaml:"ssl"`
+	Admin   *Admin   `json:"admin" yaml:"admin"`
+}
+
+// Admin stores the admin credentials
+type Admin struct {
+	User string `json:"user" yaml:"user"`
+	Pass string `json:"pass" yaml:"pass"`
+	Role string `json:"role" yaml:"role"`
 }
 
 // SSL holds the certificate and key file locations
@@ -85,9 +93,9 @@ type FuncRules map[string]map[string]*Rule // service -> function -> rule
 
 // Realtime holds the config for the realtime module
 type Realtime struct {
-	Enabled bool   `json:"enabled" yaml:"enabled"`
-	Broker  string `json:"broker" yaml:"broker"`
-	Conn    string `json:"Conn" yaml:"Conn"`
+	Enabled bool         `json:"enabled" yaml:"enabled"`
+	Broker  utils.Broker `json:"broker" yaml:"broker"`
+	Conn    string       `json:"conn" yaml:"conn"`
 }
 
 // FileStore holds the config for the file store module

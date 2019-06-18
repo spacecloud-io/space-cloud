@@ -119,8 +119,8 @@ You can start `space-cloud` with the following command.
 As you have both the database and the `space-cloud` up and running, the next task is to set up your frontend app to use `space-cloud` and start building an app! Check out the language specific guides below to help you do this:
 
 - [Javascript](/docs/getting-started/javascript) for web and Nodejs projects.
-- [Java](/docs/getting-started/javascript) for Android and Java projects. (coming soon)
-- [Python](/docs/getting-started/javascript) for Python projects. (coming soon)
+- [Java](/docs/getting-started/java) for Android and Java projects. (coming soon)
+- [Python](/docs/getting-started/python) for Python projects.
 
 <div class="btns-wrapper">
   <a href="/docs/quick-start/" class="waves-effect waves-light btn primary-btn-border btn-small">

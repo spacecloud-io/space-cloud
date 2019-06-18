@@ -21,7 +21,7 @@ type requestMetaData struct {
 }
 
 // HandleCrudCreate creates the create operation endpoint
-func HandleCrudCreate(isProd bool, auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -44,16 +44,23 @@ func HandleCrudCreate(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 			return
 		}
 
+		// Send realtime message intent
+		msgID := realtime.SendCreateIntent(meta.project, meta.dbType, meta.col, &req)
+
 		// Perform the write operation
 		err = crud.Create(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
+			// Send realtime nack
+			realtime.SendAck(msgID, meta.project, meta.col, false)
+
+			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Send realtime message in dev mode
-		realtime.SendCreate(meta.dbType, meta.col, &req)
+		// Send realtime message ack
+		realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -105,7 +112,7 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 }
 
 // HandleCrudUpdate creates the update operation endpoint
-func HandleCrudUpdate(isProd bool, auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -127,16 +134,23 @@ func HandleCrudUpdate(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 			return
 		}
 
+		// Send realtime message intent
+		msgID := realtime.SendUpdateIntent(meta.project, meta.dbType, meta.col, &req)
+
 		// Perform the update operation
 		err = crud.Update(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
+			// Send realtime nack
+			realtime.SendAck(msgID, meta.project, meta.col, false)
+
+			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Send realtime message in dev mode
-		realtime.SendUpdate(ctx, meta.project, meta.dbType, meta.col, &req, crud)
+		// Send realtime message ack
+		realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -145,7 +159,7 @@ func HandleCrudUpdate(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 }
 
 // HandleCrudDelete creates the delete operation endpoint
-func HandleCrudDelete(isProd bool, auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -167,16 +181,23 @@ func HandleCrudDelete(isProd bool, auth *auth.Module, crud *crud.Module, realtim
 			return
 		}
 
+		// Send realtime message intent
+		msgID := realtime.SendDeleteIntent(meta.project, meta.dbType, meta.col, &req)
+
 		// Perform the delete operation
 		err = crud.Delete(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
+			// Send realtime nack
+			realtime.SendAck(msgID, meta.project, meta.col, false)
+
+			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Send realtime message in dev mode
-		realtime.SendDelete(meta.dbType, meta.col, &req)
+		// Send realtime message ack
+		realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -240,7 +261,7 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 }
 
 // HandleCrudBatch creates the batch operation endpoint
-func HandleCrudBatch(isProd bool, auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -254,7 +275,13 @@ func HandleCrudBatch(isProd bool, auth *auth.Module, crud *crud.Module, realtime
 		json.NewDecoder(r.Body).Decode(&txRequest)
 		defer r.Body.Close()
 
-		for _, req := range txRequest.Requests {
+		type msg struct {
+			id, col string
+		}
+
+		msgIDs := make([]*msg, len(txRequest.Requests))
+
+		for i, req := range txRequest.Requests {
 
 			// Make status and error variables
 			var status int
@@ -262,20 +289,41 @@ func HandleCrudBatch(isProd bool, auth *auth.Module, crud *crud.Module, realtime
 
 			switch req.Type {
 			case string(utils.Create):
-				req := model.CreateRequest{Document: req.Document, Operation: req.Operation}
-				status, err = auth.IsCreateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+				r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
+				status, err = auth.IsCreateOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				if err == nil {
+					// Send realtime message intent if user is authorised (no error)
+					msgID := realtime.SendCreateIntent(meta.project, meta.dbType, req.Col, &r)
+					msgIDs[i] = &msg{id: msgID, col: req.Col}
+				}
 
 			case string(utils.Update):
-				req := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
-				status, err = auth.IsUpdateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+				r := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
+				status, err = auth.IsUpdateOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				if err == nil {
+					// Send realtime message intent if user is authorised (no error)
+					msgID := realtime.SendUpdateIntent(meta.project, meta.dbType, req.Col, &r)
+					msgIDs[i] = &msg{id: msgID, col: req.Col}
+				}
 
 			case string(utils.Delete):
-				req := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
-				status, err = auth.IsDeleteOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+				r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
+				status, err = auth.IsDeleteOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				if err == nil {
+					// Send realtime message intent if user is authorised (no error)
+					msgID := realtime.SendDeleteIntent(meta.project, meta.dbType, req.Col, &r)
+					msgIDs[i] = &msg{id: msgID, col: req.Col}
+				}
 			}
 
 			// Send error response
 			if err != nil {
+				// Send realtime nack
+				for _, m := range msgIDs {
+					realtime.SendAck(m.id, meta.project, m.col, false)
+				}
+
+				// Send http response
 				w.WriteHeader(status)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
@@ -290,25 +338,9 @@ func HandleCrudBatch(isProd bool, auth *auth.Module, crud *crud.Module, realtime
 			return
 		}
 
-		if !isProd {
-			for _, req := range txRequest.Requests {
-				switch req.Type {
-				case string(utils.Create):
-					// Send realtime message in dev mode
-					r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
-					realtime.SendCreate(meta.dbType, meta.col, &r)
-
-				case string(utils.Update):
-					// Send realtime message in dev mode
-					r := model.UpdateRequest{Operation: req.Operation, Find: req.Find, Update: req.Update}
-					realtime.SendUpdate(ctx, meta.project, meta.dbType, meta.col, &r, crud)
-
-				case string(utils.Delete):
-					// Send realtime message in dev mode
-					r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
-					realtime.SendDelete(meta.dbType, meta.col, &r)
-				}
-			}
+		// Send realtime nack
+		for _, m := range msgIDs {
+			realtime.SendAck(m.id, meta.project, m.col, false)
 		}
 
 		// Give positive acknowledgement

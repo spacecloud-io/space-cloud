@@ -31,7 +31,7 @@ function DbConfigure(props) {
   )
 }
 
-const WrappedDbConfigureFom = Form.create({
+const WrappedDbConfigureForm = Form.create({
   mapPropsToFields(props) {
     return {
       conn: createFormField({ value: props.formState.conn }),
@@ -43,4 +43,4 @@ const WrappedDbConfigureFom = Form.create({
   },
 })(DbConfigure);
 
-export default WrappedDbConfigureFom
+export default WrappedDbConfigureForm
