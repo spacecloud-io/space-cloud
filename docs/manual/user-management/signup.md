@@ -40,7 +40,27 @@ db.signUp('demo@example.com', 'User1', '1234', 'default').then(res => {
   <div id="signup-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.signUp("email", "name", "password", "role", new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                System.out.println("Token: " + response.getResult(Map.class).get("token"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>

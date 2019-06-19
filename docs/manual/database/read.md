@@ -50,7 +50,27 @@ db.get("todos").where(condition).apply().then(res => {
  <div id="get-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!    
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.get("books").where(new Cond("author", "==", "myself")).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -107,7 +127,27 @@ db.getOne('todos').where(cond('_id', '==', 1)).apply().then(res => ...).catch(ex
   <div id="get-one-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!    
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.getOne("books").where(new Cond("id", "==", 1)).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Book b = response.getResult(Book.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -163,7 +203,27 @@ db.distinct('todos').distinctKey('category').apply().then(res => ...).catch(ex =
   <div id="distinct-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!    
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+db.distinct("books").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if(statusCode==200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -219,7 +279,27 @@ db.count('todos').where(cond('categories', '==', 'some-category')).apply().then(
   <div id="count-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!    
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+db.count("books").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if(statusCode==200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -339,7 +419,27 @@ db.get('todos').where(condition).apply().then(res => ...)
    <div id="cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.get("books").where(new Cond("author", "==", "myself")).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -417,7 +517,27 @@ db.get('todos').where(condition).apply().then(res => ...);
    <div id="multiple-cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.get("books").where(Or.create(new Cond("author", "==", "myself"), new Cond("author", "==", "someAuthor"))).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -477,7 +597,29 @@ db.get('posts').where(cond('category', '==', 'some-category'))
   <div id="select-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Integer> select = new HashMap<>();
+select.put("name", 1);
+db.get("books").select(select).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -535,7 +677,27 @@ db.get('posts').where(cond('category', '==', 'some-category'))
   <div id="sort-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.get("books").sort("id", "-name").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -597,7 +759,27 @@ db.get('posts').where(cond('category', '==', 'some-category'))
   <div id="skip-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.get("books").skip(2).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -655,7 +837,28 @@ db.get('posts').where(cond('category', '==', 'some-category'))
   <div id="limit-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.get("books").limit(2).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Book[] books = response.getResults(Book[].class);
+                System.out.println(books);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>

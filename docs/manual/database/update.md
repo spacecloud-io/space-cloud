@@ -50,7 +50,25 @@ db.update("todos")
  <div id="update-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!    
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -107,7 +125,25 @@ db.updateOne('todos').where(cond('_id_', '==', 1))
   <div id="update-one-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.updateOne("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -160,7 +196,25 @@ db.upsert('todos').where(cond('_id', '==', 1))
   <div id="upsert-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.upsert("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -228,7 +282,25 @@ db.update('todos').where(condition)
    <div id="cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -306,7 +378,25 @@ db.update('todos').where(condition)
    <div id="multiple-cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.update("books").where(Or.create(new Cond("id", "==", 1), new Cond("name", "==", "aBook"))).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -365,7 +455,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="set-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -421,7 +529,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="push-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> push = new HashMap<>();
+push.put("name", "Book1");
+db.update("books").where(new Cond("id", "==", 1)).push(push).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -476,7 +602,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="remove-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+db.update("books").where(new Cond("id", "==", 1)).remove("author").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -531,7 +673,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="rename-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> rename = new HashMap<>();
+rename.put("name", "bookName");
+db.update("books").where(new Cond("id", "==", 1)).rename(rename).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -590,7 +750,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="inc-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> increment = new HashMap<>();
+increment.put("likes", 1);
+db.update("books").where(new Cond("id", "==", 1)).inc(increment).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -645,7 +823,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="mul-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> mul = new HashMap<>();
+mul.put("likes", 2);
+db.update("books").where(new Cond("id", "==", 1)).mul(mul).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -700,7 +896,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="max-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> max = new HashMap<>();
+max.put("likes", 100);
+db.update("books").where(new Cond("id", "==", 1)).max(max).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -753,7 +967,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="min-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> min = new HashMap<>();
+min.put("likes", 100);
+db.update("books").where(new Cond("id", "==", 1)).min(min).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -806,7 +1038,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="current-timestamp-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+db.update("books").where(new Cond("id", "==", 1)).currentTimestamp("last_read").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -861,7 +1109,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="current-date-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+db.update("books").where(new Cond("id", "==", 1)).currentDate("last_read").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>

@@ -67,7 +67,15 @@ res, err := myservice.Call("some-service", "some-func", service.M{"msg": "space-
   <div id="service-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Service service = api.service("service");
+service.registerFunc("echo_func", new ServiceFunction() {
+    @Override
+    public void onInvocation(Message params, Message auth, ReturnCallback cb) {
+        cb.send("response", params.getValue(Object.class));
+    }
+});
+service.start(); // Is blocking
       </code>
     </pre>
   </div>

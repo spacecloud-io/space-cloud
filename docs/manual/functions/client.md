@@ -32,7 +32,23 @@ api.call('my-service', 'my-func', { msg: 'Space Cloud is awesome!' }, 1000)
   <div id="client-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Utils.ResponseListener responseListener = new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        try {
+            System.out.println("Functions Response: " + response.getResult(Object.class));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println("Error: " + e.toString());
+    }
+};
+api.call("service", "echo_func", 5000, "FaaS is awesome!", responseListener);
       </code>
     </pre>
   </div>

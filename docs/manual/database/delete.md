@@ -41,7 +41,23 @@ db.delete("todos").where(condition).apply()
    <div id="delete-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.delete("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -96,7 +112,23 @@ db.deleteOne('todos').where(cond('_id', '==', 1)).apply().then(res => ...).catch
    <div id="delete-one-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.deleteOne("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -162,7 +194,23 @@ db.delete('todos').where(condition).apply().then(res => ...);
    <div id="cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.delete("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -240,7 +288,23 @@ db.delete('todos').where(condition).apply().then(res => ...);
    <div id="multiple-cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.delete("books").where(And.create(new Cond("name", "==", "aBook"), new Cond("author", "==", "myelf"))).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>

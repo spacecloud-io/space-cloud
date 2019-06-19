@@ -456,7 +456,7 @@ func (s *Server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Resp
 		out.Error = err.Error()
 		return &out, nil
 	}
-	res, err1 := json.Marshal(result)
+	res, err1 := json.Marshal(result["users"])
 	if err1 != nil {
 		out.Status = http.StatusInternalServerError
 		out.Error = err1.Error()

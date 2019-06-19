@@ -40,7 +40,27 @@ db.profile(userId).then(res => {
   <div id="profile-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.profile("userId", new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if(statusCode == 200) {
+            try {
+                System.out.println(response.getResult(Map.class));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -107,7 +127,28 @@ db.profiles().then(res => {
   <div id="profiles-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.profiles(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Gson gson = new Gson();
+                System.out.println(gson.fromJson(response.getResults(Map[].class));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
