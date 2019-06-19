@@ -7,6 +7,7 @@ You can easily allow users to create a new user on your app via email using the 
       <li class="tab col s2"><a class="active" href="#signup-js">Javascript</a></li>
       <li class="tab col s2"><a href="#signup-java">Java</a></li>
       <li class="tab col s2"><a href="#signup-python">Python</a></li>
+      <li class="tab col s2"><a href="#signup-golang">Golang</a></li>
     </ul>
   </div>
   <div id="signup-js" class="col s12" style="padding:0">
@@ -83,6 +84,40 @@ else:
     print(response.error)
 
 api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="signup-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	resp, err := db.SignUp("email", "name", "password", "role")
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			var v map[string]interface{}
+			err:= resp.Unmarshal(&v)
+			if err != nil {
+				fmt.Println("Error Unmarshalling:", err)
+			} else {
+				fmt.Println("Result:", v)
+			}
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>

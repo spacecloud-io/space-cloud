@@ -7,6 +7,7 @@ You can call a function running on the backend (written via functions module of 
       <li class="tab col s2"><a class="active" href="#client-js">Javascript</a></li>
       <li class="tab col s2"><a href="#client-java">Java</a></li>
       <li class="tab col s2"><a href="#client-python">Python</a></li>
+      <li class="tab col s2"><a href="#client-golang">Golang</a></li>
     </ul>
   </div>
   <div id="client-js" class="col s12" style="padding:0">
@@ -66,6 +67,40 @@ else:
     print(response.error)
 
 api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="client-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	v := map[string]interface{}{"params":"params"}
+	resp, err := api.Call("service", "echo_func", v, 5000)
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			var v map[string]interface{}
+			err:= resp.Unmarshal(&v)
+			if err != nil {
+				fmt.Println("Error Unmarshalling:", err)
+			} else {
+				fmt.Println("Result:", v)
+			}
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}	
+}
       </code>
     </pre>
   </div>

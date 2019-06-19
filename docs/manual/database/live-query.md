@@ -7,6 +7,7 @@ You can listen / subscribe to changes happening in your app's data in real time 
       <li class="tab col s2"><a class="active" href="#live-query-js">Javascript</a></li>
       <li class="tab col s2"><a href="#live-query-java">Java</a></li>
       <li class="tab col s2"><a href="#live-query-python">Python</a></li>
+      <li class="tab col s2"><a href="#live-query-golang">Golang</a></li>
     </ul>
   </div>
   <div id="live-query-js" class="col s12" style="padding:0">
@@ -92,6 +93,34 @@ unsubscribe = db.live_query('books').subscribe(on_snapshot, on_error)
 # After some logic/condition
 unsubscribe()
 api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="live-query-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/model"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	db.LiveQuery("books").Subscribe(func(liveData *model.LiveData, changeType string) () {
+		fmt.Println(changeType)
+		var v []interface{}
+		liveData.Unmarshal(&v)
+		fmt.Println(v)
+	}, func(err error) () {
+		fmt.Println(err)
+	})
+	for {}
+}
       </code>
     </pre>
   </div>

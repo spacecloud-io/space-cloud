@@ -12,6 +12,7 @@ Uploading a file via Space Cloud from frontend is as simple as getting the refer
       <li class="tab col s2"><a class="active" href="#upload-js">Javascript</a></li>
       <li class="tab col s2"><a href="#upload-java">Java</a></li>
       <li class="tab col s2"><a href="#upload-python">Python</a></li>
+      <li class="tab col s2"><a href="#upload-golang">Golang</a></li>
     </ul>
   </div>
   <div id="upload-js" class="col s12" style="padding:0">
@@ -51,6 +52,13 @@ api.FileStore()
     <pre>
       <code class="python">
 # Python client coming soon!
+      </code>
+    </pre>
+  </div>
+  <div id="upload-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+// Golang client coming soon!
       </code>
     </pre>
   </div>

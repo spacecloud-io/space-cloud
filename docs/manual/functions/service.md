@@ -6,9 +6,9 @@ You can easily extend Space Cloud by writing your custom logic on the backend in
   <div class="col s12" style="padding:0">
     <ul class="tabs">
       <li class="tab col s2"><a class="active" href="#service-js">Javascript</a></li>
-      <li class="tab col s2"><a href="#service-go">Go</a></li>
       <li class="tab col s2"><a href="#service-java">Java</a></li>
       <li class="tab col s2"><a href="#service-python">Python</a></li>
+      <li class="tab col s2"><a href="#service-golang">Golang</a></li>
     </ul>
   </div>
   <div id="service-js" class="col s12" style="padding:0">
@@ -32,35 +32,32 @@ service.registerFunc('function-name', (params, auth, cb) => {
       </code>
     </pre>
   </div>
-  <div id="service-go" class="col s12" style="padding:0">
+  <div id="service-golang" class="col s12" style="padding:0">
     <pre>
       <code>
-import "spaceuptech.com/space-api-go/service"
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/model"
+	"github.com/spaceuptech/space-api-go/api/service"
+	"fmt"
+)
 
-// Function to be registered
-func myFunc(params service.M, auth service.M, cb service.CallBack) {
-    log.Println("Params", params, "Auth", auth)
-    // Do something
-
-    // Call the callback
-    cb(service.TypeResponse, service.M{"ack": true})
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	service := api.Service("service")
+	service.RegisterFunc("echo_func", Echo)
+	service.Start()
+	
 }
 
-// Create an instance of service
-myservice, err := service.Init("my-service", "")
-if err != nil {
-    log.Println("Err", err)
-    return
+func Echo(params, auth *model.Message, fn service.CallBackFunction) {
+	var i interface{}
+	params.Unmarshal(&i)
+	fn("response", i)
 }
-
-// Register function
-myservice.RegisterFunc("my-func", myFunc)
-
-// Start service
-myservice.Start()
-
-// Call function of some other service
-res, err := myservice.Call("some-service", "some-func", service.M{"msg": "space-service-go is awesome!"}, 1000)
       </code>
     </pre>
   </div>

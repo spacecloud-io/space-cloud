@@ -8,6 +8,7 @@ You can add data to your app by simply calling `db.insert` on the frontend. Here
       <li class="tab col s2"><a class="active" href="#insert-js">Javascript</a></li>
       <li class="tab col s2"><a href="#insert-java">Java</a></li>
       <li class="tab col s2"><a href="#insert-python">Python</a></li>
+      <li class="tab col s2"><a href="#insert-golang">Golang</a></li>
     </ul>
   </div>
   <div id="insert-js" class="col s12" style="padding:0">
@@ -87,6 +88,35 @@ api.close()
       </code>
     </pre>
   </div>
+  <div id="insert-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	doc := map[string]interface{}{"name":"SomeBook"}
+	resp, err := db.Insert("books").Doc(doc).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
+      </code>
+    </pre>
+  </div>
 </div>
 
 As you would have noticed, the `insert` method is asynchronous in nature. It takes the name of the concerned collection/table. The `doc` method takes an object to be inserted. The `apply` method actually triggers the given request to `space-cloud` and returns a promise.
@@ -99,6 +129,7 @@ As you would have noticed, the `insert` method is asynchronous in nature. It tak
       <li class="tab col s2"><a class="active" href="#insertmany-js">Javascript</a></li>
       <li class="tab col s2"><a href="#insertmany-java">Java</a></li>
       <li class="tab col s2"><a href="#insertmany-python">Python</a></li>
+      <li class="tab col s2"><a href="#insertmany-golang">Golang</a></li>
     </ul>
   </div>
   <div id="insertmany-js" class="col s12" style="padding:0">
@@ -163,6 +194,37 @@ else:
     print(result.error)
 
 api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="insertmany-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	docs := make([]map[string]interface{}, 2)
+	docs[0] = map[string]interface{}{"name": "SomeBook"}
+	docs[1] = map[string]interface{}{"name": "SomeOtherBook"}
+	resp, err := db.Insert("books").Docs(docs).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>

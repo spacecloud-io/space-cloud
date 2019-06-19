@@ -10,6 +10,7 @@ You can read the profile of a single user using `db.profile` function. It takes 
       <li class="tab col s2"><a class="active" href="#profile-js">Javascript</a></li>
       <li class="tab col s2"><a href="#profile-java">Java</a></li>
       <li class="tab col s2"><a href="#profile-python">Python</a></li>
+      <li class="tab col s2"><a href="#profile-golang">Golang</a></li>
     </ul>
   </div>
   <div id="profile-js" class="col s12" style="padding:0">
@@ -86,6 +87,40 @@ api.close()
       </code>
     </pre>
   </div>
+  <div id="profile-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	resp, err := db.Profile("97f1731b-91c7-11e9-a806-8c1645ce9567")
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			var v map[string]interface{}
+			err:= resp.Unmarshal(&v)
+			if err != nil {
+				fmt.Println("Error Unmarshalling:", err)
+			} else {
+				fmt.Println("Result:", v)
+			}
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
+      </code>
+    </pre>
+  </div>
 </div>
 
 ## Fetch profiles of all users
@@ -98,6 +133,7 @@ You can read the profiles of all users with the help of `profiles` function as s
       <li class="tab col s2"><a class="active" href="#profiles-js">Javascript</a></li>
       <li class="tab col s2"><a href="#profiles-java">Java</a></li>
       <li class="tab col s2"><a href="#profiles-python">Python</a></li>
+      <li class="tab col s2"><a href="#profiles-golang">Golang</a></li>
     </ul>
   </div>
   <div id="profiles-js" class="col s12" style="padding:0">
@@ -171,6 +207,40 @@ else:
     print(response.error)
 
 api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="profiles-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	resp, err := db.Profiles()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			var v []map[string]interface{}
+			err:= resp.Unmarshal(&v)
+			if err != nil {
+				fmt.Println("Error Unmarshalling:", err)
+			} else {
+				fmt.Println("Result:", v)
+			}
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>

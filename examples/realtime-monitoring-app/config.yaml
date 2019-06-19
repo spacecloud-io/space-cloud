@@ -17,7 +17,7 @@ modules:
           rule: allow
   crud:
     sql-mysql:
-      conn: root:root@/test_database
+      conn: root:my-secret-pw@/test_database
       isPrimary: true
       collections:
         demo:
