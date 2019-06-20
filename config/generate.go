@@ -15,10 +15,13 @@ type input struct {
 	Conn      string
 	PrimaryDB string
 	ID        string
+	AdminName string
+	AdminPass string
+	AdminRole string
 }
 
 // GenerateConfig started the interactive cli to generate config file
-func GenerateConfig() error {
+func GenerateConfig(askAdminCredentials bool, configFilePath string) (string, error) {
 	fmt.Println()
 	fmt.Println("This utility walks you through creating a config.yaml file for your space-cloud project.")
 	fmt.Println("It only covers the most essential configurations and suggests sensible defaults.")
@@ -33,7 +36,7 @@ func GenerateConfig() error {
 	dir = array[len(array)-1]
 	err := survey.AskOne(&survey.Input{Message: "project name:", Default: formatProjectID(dir)}, &i.ID, survey.Required)
 	if err != nil {
-		return err
+		return "", err
 	}
 	i.ID = formatProjectID(i.ID)
 
@@ -44,7 +47,7 @@ func GenerateConfig() error {
 		Default: "mongo",
 	}, &i.PrimaryDB, survey.Required)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if i.PrimaryDB == "mysql" || i.PrimaryDB == "postgres" {
 		i.PrimaryDB = "sql-" + i.PrimaryDB
@@ -53,14 +56,38 @@ func GenerateConfig() error {
 	// Ask for the connection string
 	err = survey.AskOne(&survey.Input{Message: "connection string (" + i.PrimaryDB + ")", Default: getConnectionString(i.PrimaryDB)}, &i.Conn, survey.Required)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return writeConfig(i)
+	if askAdminCredentials {
+		// Ask for the admin username
+		err = survey.AskOne(&survey.Input{Message: "Mission Control (UserName)", Default: "admin"}, &i.AdminName, survey.Required)
+		if err != nil {
+			return "", err
+		}
+
+		// Ask for the admin password
+		err = survey.AskOne(&survey.Input{Message: "Mission Control (Password)", Default: "admin123"}, &i.AdminPass, survey.Required)
+		if err != nil {
+			return "", err
+		}
+
+		// Ask for the admin role
+		err = survey.AskOne(&survey.Input{Message: "Mission Control (Role)", Default: "super-admin"}, &i.AdminRole, survey.Required)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if configFilePath == "none" {
+		configFilePath = "./" + i.ID + ".yaml"
+	}
+
+	return configFilePath, writeConfig(i, configFilePath)
 }
 
-func writeConfig(i *input) error {
-	f, err := os.Create("./" + i.ID + ".yaml")
+func writeConfig(i *input, configFilePath string) error {
+	f, err := os.Create(configFilePath)
 	if err != nil {
 		return err
 	}

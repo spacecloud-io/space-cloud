@@ -3,6 +3,10 @@ package config
 var templateString = `---
 id: {{.ID}}
 secret: some-secret
+admin:
+  user: {{.AdminName}}
+  pass: {{.AdminPass}}
+  role: {{.AdminRole}}
 modules:
   crud:
     {{.PrimaryDB}}:
