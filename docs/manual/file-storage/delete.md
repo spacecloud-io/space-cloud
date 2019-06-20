@@ -7,6 +7,7 @@ You can easily allow users to delete a file or folder via the File Management mo
       <li class="tab col s2"><a class="active" href="#delete-js">Javascript</a></li>
       <li class="tab col s2"><a href="#delete-java">Java</a></li>
       <li class="tab col s2"><a href="#delete-python">Python</a></li>
+      <li class="tab col s2"><a href="#delete-golang">Golang</a></li>
     </ul>
   </div>
   <div id="delete-js" class="col s12" style="padding:0">
@@ -43,6 +44,13 @@ api.FileStore()
     <pre>
       <code class="python">
 # Python client coming soon!
+      </code>
+    </pre>
+  </div>
+  <div id="delete-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+// Golang client coming soon!
       </code>
     </pre>
   </div>
