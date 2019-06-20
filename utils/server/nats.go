@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -9,7 +9,7 @@ import (
 	nats "github.com/nats-io/nats-server/server"
 )
 
-var defaultNatsOptions = &nats.Options{
+var DefaultNatsOptions = &nats.Options{
 	Host:   "0.0.0.0",
 	Port:   4222,
 	NoLog:  false,

@@ -11,6 +11,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/server"
 )
 
 var essentialFlags = []cli.Flag{
@@ -64,7 +65,7 @@ var essentialFlags = []cli.Flag{
 
 func main() {
 	app := cli.NewApp()
-	app.Version = buildVersion
+	app.Version = utils.BuildVersion
 	app.Name = "space-cloud"
 	app.Usage = "core binary to run space cloud"
 
@@ -107,7 +108,7 @@ func actionRun(c *cli.Context) error {
 	seeds := c.String("seeds")
 
 	// Project and env cannot be changed once space cloud has started
-	s := initServer(isProd)
+	s := server.New(isProd)
 
 	if !disableNats {
 		err := s.runNatsServer(seeds, natsPort, clusterPort)
@@ -136,11 +137,11 @@ func actionRun(c *cli.Context) error {
 
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
-		go s.routineMetrics()
+		go s.RoutineMetrics()
 	}
 
-	s.routes()
-	return s.start(port, grpcPort)
+	s.Routes()
+	return s.Start(port, grpcPort)
 }
 
 func actionStart(c *cli.Context) error {
