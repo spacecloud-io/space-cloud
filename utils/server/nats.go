@@ -20,7 +20,7 @@ var DefaultNatsOptions = &nats.Options{
 	},
 }
 
-func (s *server) runNatsServer(seeds string, port, clusterPort int) error {
+func (s *Server) RunNatsServer(seeds string, port, clusterPort int) error {
 	// TODO read nats config from the yaml file if it exists
 	if seeds != "" {
 		array := strings.Split(seeds, ",")
@@ -34,12 +34,12 @@ func (s *server) runNatsServer(seeds string, port, clusterPort int) error {
 				urls = append(urls, u)
 			}
 		}
-		defaultNatsOptions.Routes = urls
+		DefaultNatsOptions.Routes = urls
 	}
-	defaultNatsOptions.Port = port
-	defaultNatsOptions.Cluster.Port = clusterPort
+	DefaultNatsOptions.Port = port
+	DefaultNatsOptions.Cluster.Port = clusterPort
 
-	s.nats = nats.New(defaultNatsOptions)
+	s.nats = nats.New(DefaultNatsOptions)
 
 	go s.nats.Start()
 	// Wait for accept loop(s) to be started

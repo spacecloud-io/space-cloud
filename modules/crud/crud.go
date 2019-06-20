@@ -86,7 +86,7 @@ func (m *Module) SetConfig(crud config.Crud) error {
 	for k, v := range crud {
 		c, err := initBlock(utils.DBType(k), v.Conn)
 		if err != nil {
-			return errors.New("CURD: Error - " + k + " could not be initialised")
+			return errors.New("CRUD: Error - " + k + " could not be initialised")
 		}
 		if v.IsPrimary {
 			m.primaryDB = k

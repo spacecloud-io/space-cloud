@@ -12,16 +12,18 @@ import (
 )
 
 type input struct {
-	Conn      string
-	PrimaryDB string
-	ID        string
-	AdminName string
-	AdminPass string
-	AdminRole string
+	Conn         string
+	PrimaryDB    string
+	ID           string
+	AdminName    string
+	AdminPass    string
+	AdminRole    string
+	HomeDir      string
+	BuildVersion string
 }
 
 // GenerateConfig started the interactive cli to generate config file
-func GenerateConfig(askAdminCredentials bool, configFilePath string) (string, error) {
+func GenerateConfig(configFilePath string, isMissionControlUIPresent bool) error {
 	fmt.Println()
 	fmt.Println("This utility walks you through creating a config.yaml file for your space-cloud project.")
 	fmt.Println("It only covers the most essential configurations and suggests sensible defaults.")
@@ -36,7 +38,7 @@ func GenerateConfig(askAdminCredentials bool, configFilePath string) (string, er
 	dir = array[len(array)-1]
 	err := survey.AskOne(&survey.Input{Message: "project name:", Default: formatProjectID(dir)}, &i.ID, survey.Required)
 	if err != nil {
-		return "", err
+		return err
 	}
 	i.ID = formatProjectID(i.ID)
 
@@ -47,7 +49,7 @@ func GenerateConfig(askAdminCredentials bool, configFilePath string) (string, er
 		Default: "mongo",
 	}, &i.PrimaryDB, survey.Required)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if i.PrimaryDB == "mysql" || i.PrimaryDB == "postgres" {
 		i.PrimaryDB = "sql-" + i.PrimaryDB
@@ -56,44 +58,52 @@ func GenerateConfig(askAdminCredentials bool, configFilePath string) (string, er
 	// Ask for the connection string
 	err = survey.AskOne(&survey.Input{Message: "connection string (" + i.PrimaryDB + ")", Default: getConnectionString(i.PrimaryDB)}, &i.Conn, survey.Required)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	if askAdminCredentials {
+	if isMissionControlUIPresent {
 		// Ask for the admin username
 		err = survey.AskOne(&survey.Input{Message: "Mission Control (UserName)", Default: "admin"}, &i.AdminName, survey.Required)
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		// Ask for the admin password
 		err = survey.AskOne(&survey.Input{Message: "Mission Control (Password)", Default: "admin123"}, &i.AdminPass, survey.Required)
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		// Ask for the admin role
 		err = survey.AskOne(&survey.Input{Message: "Mission Control (Role)", Default: "super-admin"}, &i.AdminRole, survey.Required)
 		if err != nil {
-			return "", err
+			return err
 		}
+
+		i.HomeDir = utils.UserHomeDir()
+		i.BuildVersion = utils.BuildVersion
 	}
 
 	if configFilePath == "none" {
 		configFilePath = "./" + i.ID + ".yaml"
 	}
 
-	return configFilePath, writeConfig(i, configFilePath)
+	return writeConfig(i, configFilePath, isMissionControlUIPresent)
 }
 
-func writeConfig(i *input, configFilePath string) error {
+func writeConfig(i *input, configFilePath string, isMissionControlUIPresent bool) error {
 	f, err := os.Create(configFilePath)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	tmpl, err := template.New("config").Parse(templateString)
+	tmplString := templateString
+	if isMissionControlUIPresent {
+		tmplString = templateStringMissionControl
+	}
+
+	tmpl, err := template.New("config").Parse(tmplString)
 	if err != nil {
 		return err
 	}

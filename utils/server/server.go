@@ -25,7 +25,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-type server struct {
+type Server struct {
 	lock           sync.Mutex
 	router         *mux.Router
 	auth           *auth.Module
@@ -50,7 +50,7 @@ func New(isProd bool) *Server {
 	fn := functions.Init()
 	a := auth.Init(c, fn)
 	u := userman.Init(c, a)
-	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
+	return &Server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: fn, realtime: rt, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }
 
 func (s *Server) Start(port, grpcPort string) error {
@@ -136,4 +136,8 @@ func (s *Server) initGRPCServer(port string) {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
 	}
+}
+
+func (s *Server) SetConfigFilePath(configFilePath string) {
+	s.configFilePath = configFilePath
 }

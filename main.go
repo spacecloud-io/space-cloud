@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/urfave/cli"
@@ -111,11 +109,11 @@ func actionRun(c *cli.Context) error {
 	s := server.New(isProd)
 
 	if !disableNats {
-		err := s.runNatsServer(seeds, natsPort, clusterPort)
+		err := s.RunNatsServer(seeds, natsPort, clusterPort)
 		if err != nil {
 			return err
 		}
-		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
+		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
 	}
 
 	if configPath != "none" {
@@ -126,10 +124,10 @@ func actionRun(c *cli.Context) error {
 		}
 
 		// Save the config file path for future use
-		s.configFilePath = configPath
+		s.SetConfigFilePath(configPath)
 
 		// Configure all modules
-		err = s.loadConfig(conf)
+		err = s.LoadConfig(conf)
 		if err != nil {
 			return err
 		}
@@ -157,81 +155,73 @@ func actionStart(c *cli.Context) error {
 	seeds := c.String("seeds")
 
 	// Project and env cannot be changed once space cloud has started
-	s := initServer(isProd)
+	s := server.New(isProd)
 
-	if !disableNats {
-		err := s.runNatsServer(seeds, natsPort, clusterPort)
-		if err != nil {
-			return err
-		}
-		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
+	if configPath == "none" {
+		configPath = "./config.yaml"
 	}
-
-	var conf *config.Project
-	if configPath != "none" {
-		// Load the configFile from path if provided
-		config, err := config.LoadConfigFromFile(configPath)
-		if err != nil {
-			return err
-		}
-
-		conf = config
-	} else {
-		// Generate the config
-		path, err := config.GenerateConfig(true, configPath)
+	// Load config file
+	conf, err := config.LoadConfigFromFile(configPath)
+	// If config file does not exists then trigger the generate config flow
+	if err != nil {
+		err := config.GenerateConfig(configPath, true)
 		if err != nil {
 			return nil
 		}
-		config, err := config.LoadConfigFromFile(path)
+		temp, err := config.LoadConfigFromFile(configPath)
 		if err != nil {
 			return err
 		}
 
-		conf = config
-		configPath = path
+		conf = temp
 	}
 
 	// Save the config file path for future use
-	s.configFilePath = configPath
+	s.SetConfigFilePath(configPath)
 
 	// Configure all modules
-	err := s.loadConfig(conf)
+	err = s.LoadConfig(conf)
 	if err != nil {
 		return err
 	}
+
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
-		go s.routineMetrics()
+		go s.RoutineMetrics()
 	}
-	initMissionContol()
-	s.routes()
-	return s.start(port, grpcPort)
+
+	err = initMissionContol()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Started Mission Control UI at http://localhost:" + port + "/mission-control")
+
+	if !disableNats {
+		err := s.RunNatsServer(seeds, natsPort, clusterPort)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
+	}
+
+	s.Routes()
+	return s.Start(port, grpcPort)
 }
 
 func actionInit(*cli.Context) error {
-	_, err := config.GenerateConfig(false, "none")
-	return err
+	return config.GenerateConfig("none", false)
 }
 
 func initMissionContol() error {
 	homeDir := utils.UserHomeDir()
-	uiPath := homeDir + "/space-cloud/mission-control-v" + buildVersion
+	uiPath := homeDir + "/space-cloud/mission-control-v" + utils.BuildVersion
 	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
-		resp, err := http.Get("https://spaceuptech.com/downloads/mission-control/mission-control-v" + buildVersion + ".zip")
-		if err != nil {
-			return err
+		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
+			os.Mkdir(homeDir+"/space-cloud", os.ModePerm)
 		}
-		defer resp.Body.Close()
-
-		// Create the file
-		out, err := os.Create(uiPath + ".zip")
-		if err != nil {
-			return err
-		}
-		defer out.Close()
-
-		// Write the body to file
-		_, err = io.Copy(out, resp.Body)
+		fmt.Println("Downloading Mission Control UI...")
+		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+utils.BuildVersion+".zip", uiPath+".zip")
 		if err != nil {
 			return err
 		}
