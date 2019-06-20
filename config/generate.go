@@ -75,7 +75,7 @@ func GenerateConfig(configFilePath string, isMissionControlUIPresent bool) error
 		}
 
 		// Ask for the admin role
-		err = survey.AskOne(&survey.Input{Message: "Mission Control (Role)", Default: "super-admin"}, &i.AdminRole, survey.Required)
+		err = survey.AskOne(&survey.Input{Message: "Mission Control (Role)", Default: "captain-cloud"}, &i.AdminRole, survey.Required)
 		if err != nil {
 			return err
 		}
