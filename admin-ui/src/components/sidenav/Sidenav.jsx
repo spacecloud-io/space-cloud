@@ -1,18 +1,11 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom';
-
 import SidenavItem from './SidenavItem'
 import './sidenav.css'
 import Header from '../header/Header'
 import EditItemModal from '../edit-item-modal/EditItemModal'
 import { connect } from 'react-redux'
 import projectId from '../../assets/projectId.svg'
-
-const items = [{ name: "Project Overview", key: "overview", icon: "home" },
-{ name: "User management", key: "user-management", icon: "people" },
-{ name: "Database", key: "database", icon: "dns" },
-{ name: "Functions", key: "functions", icon: "code" },
-{ name: "Configure", key: "configure", icon: "settings" }]
 
 class Sidenav extends Component {
   constructor(props) {

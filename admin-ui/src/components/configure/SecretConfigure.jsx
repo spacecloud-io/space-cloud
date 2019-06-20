@@ -7,13 +7,13 @@ function SecretConfigure(props) {
   const { getFieldDecorator } = props.form;
   return (
     <div className="configure">
-      <div className="conn-string">App secret</div>
+      <div className="conn-string">App secret : </div>
       <Form className="conn-form" layout="inline">
         <Form.Item>
           {getFieldDecorator('conn', {
             rules: [{ required: true, message: 'Please input a secret !' }],
           })(
-            <Input.Password style={{ width: 350 }}
+            <Input.Password style={{ width: 600 }}
               placeholder="Enter App Secret"
             />,
           )}

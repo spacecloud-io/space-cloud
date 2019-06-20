@@ -16,14 +16,14 @@ function Database(props) {
             <img src={postgresMono} alt="postgreSQL" height="26px" width="26px" />
           }
           {props.modules.mongo &&
-            <img src={mongoMono} alt="mongoMono.svg" height="26px" width="16px" />
+            <img src={mongoMono} alt="mongoMono.svg" height="30px" width="20px" />
           }
         </div>
       </div>
       <p className="heading">Database</p>
       <div className="underline"></div>
       <span className="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-        sed do eiusmod tempor incididunt ut labore. Lorem ipsum dolor sit amet consectetur adipisicing elit. Veniam perferendis error mollitia saepe tenetur pariatur labore, asperiores harum aperiam dolores explicabo. Qui mollitia, aliquid tempora deserunt maxime velit omnis enim. </span>
+        sed do eiusmod tempor incididunt ut </span>
       <div className="footer">
         <a href="https://spaceuptech.com/docs/database/overview" target="blank" >
           <span className="docs">Documentation</span>

@@ -3,10 +3,12 @@
   font-weight: 600;
 }
 
-.docs .material-icons {
+.docs .material-icons{
   font-size: 16px !important; 
-  padding-left: 6px;
   position: relative;
-  top: 0.5vw;
+  top: 0.2vw;
+  padding-left: 4px;
+  font-size: 16px;
 }
+
 

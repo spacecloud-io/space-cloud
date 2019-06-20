@@ -26,19 +26,14 @@
 
 .login-card {
   position: absolute;
-  padding: 80px 24px;
+  padding: 80px 64px;
   background: #FFF;
   text-align: center;
   top: 23vh;
   bottom: 20vh;
   left: 55vh;
   vertical-align: middle;
-  /* display: table; */
 }
-
-/* .login-card .content {
-  display: table-cell;
-} */
 
 .login-card .about {
   color: #BDBDBD;

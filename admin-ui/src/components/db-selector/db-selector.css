@@ -1,6 +1,6 @@
 .db-dropdown .drop-icon {
   margin-left: 16px;
-  margin-right: 16px;
+  margin-right: 16px !important;
 }
 
 .db-dropdown .ant-select-selection--single{
