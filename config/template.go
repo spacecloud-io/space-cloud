@@ -112,5 +112,5 @@ modules:
     enabled: true
     routes:
     - prefix: /mission-control
-      path: {{.HomeDir}}/space-cloud/mission-control-v{{.BuildVersion}}/build
+      path: {{.HomeDir}}/.space-cloud/mission-control-v{{.BuildVersion}}/build
 `

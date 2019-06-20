@@ -168,12 +168,10 @@ func actionStart(c *cli.Context) error {
 		if err != nil {
 			return nil
 		}
-		temp, err := config.LoadConfigFromFile(configPath)
+		conf, err = config.LoadConfigFromFile(configPath)
 		if err != nil {
 			return err
 		}
-
-		conf = temp
 	}
 
 	// Save the config file path for future use
@@ -215,10 +213,10 @@ func actionInit(*cli.Context) error {
 
 func initMissionContol() error {
 	homeDir := utils.UserHomeDir()
-	uiPath := homeDir + "/space-cloud/mission-control-v" + utils.BuildVersion
+	uiPath := homeDir + "/.space-cloud/mission-control-v" + utils.BuildVersion
 	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
 		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
-			os.Mkdir(homeDir+"/space-cloud", os.ModePerm)
+			os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
 		}
 		fmt.Println("Downloading Mission Control UI...")
 		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+utils.BuildVersion+".zip", uiPath+".zip")

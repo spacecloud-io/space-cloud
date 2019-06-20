@@ -33,9 +33,9 @@ func GenerateConfig(configFilePath string, isMissionControlUIPresent bool) error
 	i := new(input)
 
 	// Ask the project id
-	dir, _ := os.Getwd()
-	array := strings.Split(dir, string(os.PathSeparator))
-	dir = array[len(array)-1]
+	workingDir, _ := os.Getwd()
+	array := strings.Split(workingDir, string(os.PathSeparator))
+	dir := array[len(array)-1]
 	err := survey.AskOne(&survey.Input{Message: "project name:", Default: formatProjectID(dir)}, &i.ID, survey.Required)
 	if err != nil {
 		return err
@@ -85,7 +85,7 @@ func GenerateConfig(configFilePath string, isMissionControlUIPresent bool) error
 	}
 
 	if configFilePath == "none" {
-		configFilePath = "./" + i.ID + ".yaml"
+		configFilePath = workingDir + string(os.PathSeparator) + i.ID + ".yaml"
 	}
 
 	return writeConfig(i, configFilePath, isMissionControlUIPresent)
