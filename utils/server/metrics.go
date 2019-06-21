@@ -80,6 +80,7 @@ func newTransport(host, port string, sslEnabled bool) (*transport, error) {
 	return &transport{conn, stub}, nil
 }
 
+// RoutineMetrics collects some metrics from SC
 func (s *Server) RoutineMetrics() {
 	// TODO
 	// ticker := time.NewTicker(time.Minute * 5)
