@@ -25,10 +25,16 @@ modules:
       enabled: false
   functions:
     enabled: false
-    nats: nats://localhost:4222
+    broker: nats
+    conn: nats://localhost:4222
+    rules:
+      service1:
+        function1:
+          rule: allow
   realtime:
     enabled: false
-    kafka: localhost
+    broker: nats
+    conn: nats://localhost:4222
   fileStore:
     enabled: false
     storeType: local
@@ -45,7 +51,7 @@ modules:
             rule: allow
   static:
     enabled: false
-    path: ./public
-    prefix: /
-    gzip: false
+    routes:
+    - prefix: /
+      path: ./public
 `

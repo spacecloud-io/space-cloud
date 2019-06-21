@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
+	nats "github.com/nats-io/nats-server/server"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -23,7 +24,7 @@ import (
 	pb "github.com/spaceuptech/space-cloud/proto"
 )
 
-type server struct {
+type Server struct {
 	lock      sync.Mutex
 	router    *mux.Router
 	auth      *auth.Module
@@ -35,21 +36,23 @@ type server struct {
 	static    *static.Module
 	isProd    bool
 	config    *config.Project
+	nats      *nats.Server
 }
 
-func initServer(isProd bool) *server {
+func New(isProd bool) *Server {
 	r := mux.NewRouter()
 	c := crud.Init()
-	a := auth.Init(c)
-	u := userman.Init(c, a)
-	f := filestore.Init()
-	realtime := realtime.Init()
+	rt := realtime.Init(c)
 	s := static.Init()
-	functions := functions.Init()
-	return &server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: functions, realtime: realtime, isProd: isProd}
+	fn := functions.Init()
+	a := auth.Init(c, fn)
+	u := userman.Init(c, a)
+	f := filestore.Init(a)
+
+	return &Server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: fn, realtime: rt, isProd: isProd}
 }
 
-func (s *server) start(port, grpcPort string) error {
+func (s *Server) Start(port, grpcPort string) error {
 
 	go s.initGRPCServer(grpcPort)
 
@@ -66,7 +69,7 @@ func (s *server) start(port, grpcPort string) error {
 
 	handler := corsObj.Handler(s.router)
 
-	fmt.Println("Starting http server on port " + port)
+	fmt.Println("Starting http Server on port " + port)
 
 	if s.config.SSL != nil {
 		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
@@ -75,13 +78,13 @@ func (s *server) start(port, grpcPort string) error {
 	return http.ListenAndServe(":"+port, handler)
 }
 
-func (s *server) loadConfig(config *config.Project) error {
+func (s *Server) LoadConfig(config *config.Project) error {
 	s.lock.Lock()
 	s.config = config
 	s.lock.Unlock()
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.Secret, config.Modules.Crud, config.Modules.FileStore)
+	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(config.Modules.Auth)
@@ -96,12 +99,12 @@ func (s *server) loadConfig(config *config.Project) error {
 		return err
 	}
 
-	// Set the configuration for the Realtime module
-	if err := s.realtime.SetConfig(config.Modules.Realtime); err != nil {
+	// Set the configuration for the realtime module
+	if err := s.realtime.SetConfig(config.ID, config.Modules.Realtime); err != nil {
 		return err
 	}
 
-	// Set the configuration for Static module
+	// Set the configuration for static module
 	if err := s.static.SetConfig(config.Modules.Static); err != nil {
 		return err
 	}
@@ -110,7 +113,7 @@ func (s *server) loadConfig(config *config.Project) error {
 	return s.crud.SetConfig(config.Modules.Crud)
 }
 
-func (s *server) initGRPCServer(port string) {
+func (s *Server) initGRPCServer(port string) {
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
@@ -120,7 +123,7 @@ func (s *server) initGRPCServer(port string) {
 	if s.config.SSL != nil {
 		creds, err := credentials.NewServerTLSFromFile(s.config.SSL.Crt, s.config.SSL.Key)
 		if err != nil {
-			log.Fatalln("Error -", err)
+			log.Fatalln("Error: ", err)
 		}
 		options = append(options, grpc.Creds(creds))
 	}
@@ -128,7 +131,7 @@ func (s *server) initGRPCServer(port string) {
 	grpcServer := grpc.NewServer(options...)
 	pb.RegisterSpaceCloudServer(grpcServer, s)
 
-	fmt.Println("Starting gRPC server on port " + port)
+	fmt.Println("Starting gRPC Server on port: " + port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
 	}

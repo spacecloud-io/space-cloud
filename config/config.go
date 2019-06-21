@@ -1,5 +1,7 @@
 package config
 
+import "github.com/spaceuptech/space-cloud/utils"
+
 // Config holds the entire configuration
 type Config struct {
 	Projects map[string]*Project `json:"projects" yaml:"projects"` // The key here is the project id
@@ -56,6 +58,8 @@ type Rule struct {
 	DB      string                 `json:"db" yaml:"db"`
 	Col     string                 `json:"col" yaml:"col"`
 	Find    map[string]interface{} `json:"find" yaml:"find"`
+	Service string                 `json:"service" yaml:"service"`
+	Func    string                 `json:"func" yaml:"func"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -68,17 +72,22 @@ type AuthStub struct {
 	Secret  string `json:"secret" yaml:"secret"`
 }
 
-// Functions holds the config for the Functions module
+// Functions holds the config for the functions module
 type Functions struct {
-	Enabled bool   `json:"enabled" yaml:"enabled"`
-	Nats    string `json:"nats" yaml:"nats"`
+	Enabled bool         `json:"enabled" yaml:"enabled"`
+	Broker  utils.Broker `json:"broker" yaml:"broker"`
+	Conn    string       `json:"conn" yaml:"conn"`
+	Rules   FuncRules    `json:"rules" yaml:"rules"`
 }
+
+// FuncRules is the rules for the functions module
+type FuncRules map[string]map[string]*Rule // service -> function -> rule
 
 // Realtime holds the config for the realtime module
 type Realtime struct {
-	Enabled bool   `json:"enabled" yaml:"enabled"`
-	Broker  string `json:"broker" yaml:"broker"`
-	Conn    string `json:"Conn" yaml:"Conn"`
+	Enabled bool         `json:"enabled" yaml:"enabled"`
+	Broker  utils.Broker `json:"broker" yaml:"broker"`
+	Conn    string       `json:"conn" yaml:"conn"`
 }
 
 // FileStore holds the config for the file store module
@@ -97,8 +106,14 @@ type FileRule struct {
 
 // Static holds the config for the static files module
 type Static struct {
-	Enabled   bool   `json:"enabled" yaml:"enabled"`
+	Enabled bool           `json:"enabled" yaml:"enabled"`
+	Routes  []*StaticRoute `json:"routes" yaml:"routes"`
+}
+
+// StaticRoute holds the config for each route
+type StaticRoute struct {
 	Path      string `json:"path" yaml:"path"`
 	URLPrefix string `json:"prefix" yaml:"prefix"`
-	Gzip      bool   `json:"gzip" yaml:"gzip"`
+	Host      string `json:"host" yaml:"host"`
+	Proxy     string `json:"proxy" yaml:"proxy"`
 }

@@ -22,5 +22,8 @@ css
 space-cloud
 publish.sh
 
+test_config.yaml
+
 #IDEs
 .idea
+.vscode

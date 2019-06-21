@@ -1,5 +1,8 @@
 package utils
 
+// The build version of Space Cloud
+const BuildVersion = "0.9.0"
+
 const (
 	// One operation returns a single document from the database
 	One string = "one"
@@ -31,6 +34,14 @@ const (
 	Postgres DBType = "sql-postgres"
 )
 
+// Broker is the type of broker used by Space Cloud
+type Broker string
+
+const (
+	// Nats is the type used for Nats
+	Nats Broker = "nats"
+)
+
 // FileStoreType is the type of file store used
 type FileStoreType string
 
@@ -44,6 +55,11 @@ const (
 
 // FileOpType is the type of file operation being performed on the file store
 type FileOpType string
+
+const (
+	// PayloadSize is the size of the payload(in bytes) in file upload and download
+	PayloadSize int = 256*1024 // 256 kB
+)
 
 const (
 	// FileRead is the type used for read operations
@@ -80,8 +96,14 @@ const (
 	// RealtimeWorkerCount are the number of goroutines to process realtime data
 	RealtimeWorkerCount int = 10
 
-	// RealtimeWrite is for create and update operations
-	RealtimeWrite string = "write"
+	// FunctionsWorkerCount are the number of goroutines to process functions data
+	FunctionsWorkerCount int = 10
+
+	// RealtimeInsert is for create operations
+	RealtimeInsert string = "insert"
+
+	// RealtimeUpdate is for update operations
+	RealtimeUpdate string = "update"
 
 	// RealtimeDelete is for delete operations
 	RealtimeDelete string = "delete"
@@ -95,15 +117,27 @@ const (
 
 	// TypeRealtimeFeed is the response type for realtime feed
 	TypeRealtimeFeed string = "realtime-feed"
+
+	// TypeServiceRegister is the request type for service registration
+	TypeServiceRegister string = "service-register"
+
+	// TypeServiceUnregister is the request type for service removal
+	TypeServiceUnregister string = "service-unregister"
+
+	// TypeServiceRequest is type triggering a service's function
+	TypeServiceRequest string = "service-request"
 )
 
-// RealTimeProtocol is the type of protocol requested for Realtime.
+// RealTimeProtocol is the type of protocol requested for realtime.
 type RealTimeProtocol string
 
 const (
-	// Websocket for Realtime implementation.
+	// Websocket for realtime implementation.
 	Websocket RealTimeProtocol = "Websocket"
 
-	// GRPC for Realtime implementation.
+	// GRPC for realtime implementation.
 	GRPC RealTimeProtocol = "GRPC"
+
+	// GRPCService for Service implementation.
+	GRPCService RealTimeProtocol = "GRPC-Service"
 )

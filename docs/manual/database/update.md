@@ -15,6 +15,7 @@ You can update / modify all documents in your app matching a specific condition 
       <li class="tab col s2"><a class="active" href="#update-js">Javascript</a></li>
       <li class="tab col s2"><a href="#update-java">Java</a></li>
       <li class="tab col s2"><a href="#update-python">Python</a></li>
+      <li class="tab col s2"><a href="#update-golang">Golang</a></li>
     </ul>
   </div>
   <div id="update-js" class="col s12" style="padding:0">
@@ -50,7 +51,25 @@ db.update("todos")
  <div id="update-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!    
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -71,6 +90,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="update-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition := utils.Cond("id", "==", 1)
+	set := map[string]interface{}{"name":"ABook"}
+	resp, err := db.Update("books").Where(condition).Set(set).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -90,6 +142,7 @@ As you would have noticed, the `update` method is asynchronous in nature. It tak
       <li class="tab col s2"><a class="active" href="#update-one-js">Javascript</a></li>
       <li class="tab col s2"><a href="#update-one-java">Java</a></li>
       <li class="tab col s2"><a href="#update-one-python">Python</a></li>
+      <li class="tab col s2"><a href="#update-one-golang">Golang</a></li>
     </ul>
   </div>
   <div id="update-one-js" class="col s12" style="padding:0">
@@ -104,7 +157,25 @@ db.updateOne('todos').where(cond('_id_', '==', 1))
   <div id="update-one-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.updateOne("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -112,6 +183,7 @@ db.updateOne('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -125,6 +197,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="update-one-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition := utils.Cond("id", "==", 1)
+	set := map[string]interface{}{"name":"ABook"}
+	resp, err := db.UpdateOne("books").Where(condition).Set(set).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -140,6 +245,7 @@ Sometimes you might want to create a document or update it if it already exists.
       <li class="tab col s2"><a class="active" href="#upsert-js">Javascript</a></li>
       <li class="tab col s2"><a href="#upsert-java">Java</a></li>
       <li class="tab col s2"><a href="#upsert-python">Python</a></li>
+      <li class="tab col s2"><a href="#upsert-golang">Golang</a></li>
     </ul>
   </div>
   <div id="upsert-js" class="col s12" style="padding:0">
@@ -154,7 +260,25 @@ db.upsert('todos').where(cond('_id', '==', 1))
   <div id="upsert-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.upsert("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -162,6 +286,7 @@ db.upsert('todos').where(cond('_id', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -175,6 +300,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="upsert-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	set := map[string]interface{}{"name":"ABook"}
+	resp, err := db.Upsert("books").Where(condition).Set(set).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -198,6 +356,7 @@ The `cond` function is used to specify a single condition as shown below:
       <li class="tab col s2"><a href="#cond-js">Javascript</a></li>
       <li class="tab col s2"><a href="#cond-java">Java</a></li>
       <li class="tab col s2"><a href="#cond-python">Python</a></li>
+      <li class="tab col s2"><a href="#cond-golang">Golang</a></li>
     </ul>
   </div>
   <div id="cond-js" class="col s12" style="padding:0">
@@ -219,7 +378,25 @@ db.update('todos').where(condition)
    <div id="cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -227,6 +404,7 @@ db.update('todos').where(condition)
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -240,6 +418,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="cond-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition := utils.Cond("id", "==", 1)
+	set := map[string]interface{}{"name":"ABook"}
+	resp, err := db.Update("books").Where(condition).Set(set).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -268,6 +479,7 @@ A single condition is often not enough to update the data you desire. You might 
       <li class="tab col s2"><a href="#multiple-cond-js">Javascript</a></li>
       <li class="tab col s2"><a href="#multiple-cond-java">Java</a></li>
       <li class="tab col s2"><a href="#multiple-cond-python">Python</a></li>
+      <li class="tab col s2"><a href="#multiple-cond-golang">Golang</a></li>
     </ul>
   </div>
   <div id="multiple-cond-js" class="col s12" style="padding:0">
@@ -294,7 +506,25 @@ db.update('todos').where(condition)
    <div id="multiple-cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.update("books").where(Or.create(new Cond("id", "==", 1), new Cond("name", "==", "aBook"))).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -302,6 +532,7 @@ db.update('todos').where(condition)
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -315,6 +546,41 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="multiple-cond-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition1 := utils.Cond("id", "==", 1)
+	condition2 := utils.Cond("id", "==", 2)
+	condition := utils.Or(condition1, condition2)
+	set := map[string]interface{}{"name":"ABook"}
+	resp, err := db.Update("books").Where(condition).Set(set).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -336,6 +602,7 @@ You can set the value of any field / column in your data by using `set` method l
       <li class="tab col s2"><a class="active" href="#set-js">Javascript</a></li>
       <li class="tab col s2"><a href="#set-java">Java</a></li>
       <li class="tab col s2"><a href="#set-python">Python</a></li>
+      <li class="tab col s2"><a href="#set-golang">Golang</a></li>
     </ul>
   </div>
   <div id="set-js" class="col s12" style="padding:0">
@@ -350,7 +617,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="set-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -358,6 +643,7 @@ db.update('todos').where(cond('_id_', '==', 1))
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -371,6 +657,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="set-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition := utils.Cond("id", "==", 1)
+	set := map[string]interface{}{"name":"ABook"}
+	resp, err := db.Update("books").Where(condition).Set(set).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -389,6 +708,7 @@ You can push an element to an array in a document by using the `push` method lik
       <li class="tab col s2"><a class="active" href="#push-js">Javascript</a></li>
       <li class="tab col s2"><a href="#push-java">Java</a></li>
       <li class="tab col s2"><a href="#push-python">Python</a></li>
+      <li class="tab col s2"><a href="#push-golang">Golang</a></li>
     </ul>
   </div>
   <div id="push-js" class="col s12" style="padding:0">
@@ -403,7 +723,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="push-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> push = new HashMap<>();
+push.put("name", "Book1");
+db.update("books").where(new Cond("id", "==", 1)).push(push).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -424,6 +762,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="push-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	push := map[string]interface{}{"name":"ABook"}
+	resp, err := db.Update("books").Where(condition).Push(push).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -441,6 +812,7 @@ You can remove / delete a field in a document by using `remove` method like belo
       <li class="tab col s2"><a class="active" href="#remove-js">Javascript</a></li>
       <li class="tab col s2"><a href="#remove-java">Java</a></li>
       <li class="tab col s2"><a href="#remove-python">Python</a></li>
+      <li class="tab col s2"><a href="#remove-golang">Golang</a></li>
     </ul>
   </div>
   <div id="remove-js" class="col s12" style="padding:0">
@@ -455,7 +827,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="remove-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+db.update("books").where(new Cond("id", "==", 1)).remove("author").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -476,6 +864,38 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="remove-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	resp, err := db.Update("books").Where(condition).Remove("author").Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -493,6 +913,7 @@ You can rename the name of a field in a document by using `rename` method like b
       <li class="tab col s2"><a class="active" href="#rename-js">Javascript</a></li>
       <li class="tab col s2"><a href="#rename-java">Java</a></li>
       <li class="tab col s2"><a href="#rename-python">Python</a></li>
+      <li class="tab col s2"><a href="#rename-golang">Golang</a></li>
     </ul>
   </div>
   <div id="rename-js" class="col s12" style="padding:0">
@@ -507,7 +928,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="rename-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> rename = new HashMap<>();
+rename.put("name", "bookName");
+db.update("books").where(new Cond("id", "==", 1)).rename(rename).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -528,6 +967,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="rename-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	rename := map[string]interface{}{"writer": "author"}
+	resp, err := db.Update("books").Where(condition).Rename(rename).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -545,6 +1017,7 @@ You can increment / decrement the value of a integer field in your data by using
       <li class="tab col s2"><a class="active" href="#inc-js">Javascript</a></li>
       <li class="tab col s2"><a href="#inc-java">Java</a></li>
       <li class="tab col s2"><a href="#inc-python">Python</a></li>
+      <li class="tab col s2"><a href="#inc-golang">Golang</a></li>
     </ul>
   </div>
   <div id="inc-js" class="col s12" style="padding:0">
@@ -563,7 +1036,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="inc-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> increment = new HashMap<>();
+increment.put("likes", 1);
+db.update("books").where(new Cond("id", "==", 1)).inc(increment).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -584,6 +1075,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="inc-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	inc := map[string]interface{}{"likes": 1}
+	resp, err := db.Update("books").Where(condition).Inc(inc).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -601,6 +1125,7 @@ You can multiply the value of a integer field in your data by using the `mul` me
       <li class="tab col s2"><a class="active" href="#mul-js">Javascript</a></li>
       <li class="tab col s2"><a href="#mul-java">Java</a></li>
       <li class="tab col s2"><a href="#mul-python">Python</a></li>
+      <li class="tab col s2"><a href="#mul-golang">Golang</a></li>
     </ul>
   </div>
   <div id="mul-js" class="col s12" style="padding:0">
@@ -615,7 +1140,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="mul-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> mul = new HashMap<>();
+mul.put("likes", 2);
+db.update("books").where(new Cond("id", "==", 1)).mul(mul).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -636,6 +1179,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="mul-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	mul := map[string]interface{}{"likes": 10}
+	resp, err := db.Update("books").Where(condition).Mul(mul).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -653,6 +1229,7 @@ Sometimes you might want to update a number in your document with a new value on
       <li class="tab col s2"><a class="active" href="#max-js">Javascript</a></li>
       <li class="tab col s2"><a href="#max-java">Java</a></li>
       <li class="tab col s2"><a href="#max-python">Python</a></li>
+      <li class="tab col s2"><a href="#max-golang">Golang</a></li>
     </ul>
   </div>
   <div id="max-js" class="col s12" style="padding:0">
@@ -667,7 +1244,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="max-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> max = new HashMap<>();
+max.put("likes", 100);
+db.update("books").where(new Cond("id", "==", 1)).max(max).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -688,6 +1283,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="max-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	max := map[string]interface{}{"likes": 100}
+	resp, err := db.Update("books").Where(condition).Max(max).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -703,6 +1331,7 @@ Sometimes you might want to update a number in your document with a new value on
       <li class="tab col s2"><a class="active" href="#min-js">Javascript</a></li>
       <li class="tab col s2"><a href="#min-java">Java</a></li>
       <li class="tab col s2"><a href="#min-python">Python</a></li>
+      <li class="tab col s2"><a href="#min-golang">Golang</a></li>
     </ul>
   </div>
   <div id="min-js" class="col s12" style="padding:0">
@@ -717,7 +1346,25 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="min-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+HashMap<String, Object> min = new HashMap<>();
+min.put("likes", 100);
+db.update("books").where(new Cond("id", "==", 1)).min(min).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -738,6 +1385,39 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="min-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	min := map[string]interface{}{"likes": 100}
+	resp, err := db.Update("books").Where(condition).Min(min).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -753,6 +1433,7 @@ You can update a field with the value of current timestamp by using the `current
       <li class="tab col s2"><a class="active" href="#current-timestamp-js">Javascript</a></li>
       <li class="tab col s2"><a href="#current-timestamp-java">Java</a></li>
       <li class="tab col s2"><a href="#current-timestamp-python">Python</a></li>
+      <li class="tab col s2"><a href="#current-timestamp-golang">Golang</a></li>
     </ul>
   </div>
   <div id="current-timestamp-js" class="col s12" style="padding:0">
@@ -767,7 +1448,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="current-timestamp-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+db.update("books").where(new Cond("id", "==", 1)).currentTimestamp("last_read").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -788,6 +1485,38 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="current-timestamp-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	resp, err := db.Update("books").Where(condition).CurrentTimestamp("lastRead").Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -805,6 +1534,7 @@ You can update a field with the value of current date by using the `currentDate`
       <li class="tab col s2"><a class="active" href="#current-date-js">Javascript</a></li>
       <li class="tab col s2"><a href="#current-date-java">Java</a></li>
       <li class="tab col s2"><a href="#current-date-python">Python</a></li>
+      <li class="tab col s2"><a href="#current-date-golang">Golang</a></li>
     </ul>
   </div>
   <div id="current-date-js" class="col s12" style="padding:0">
@@ -819,7 +1549,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="current-date-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+Mongo db = api.Mongo();
+db.update("books").where(new Cond("id", "==", 1)).currentDate("last_read").apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -840,6 +1586,38 @@ if response.status == 200:
     print("Success")
 else:
     print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="current-date-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.Mongo()
+	condition := utils.Cond("id", "==", 1)
+	resp, err := db.Update("books").Where(condition).CurrentDate("lastRead").Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>

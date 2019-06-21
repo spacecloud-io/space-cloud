@@ -10,6 +10,7 @@ You can read the profile of a single user using `db.profile` function. It takes 
       <li class="tab col s2"><a class="active" href="#profile-js">Javascript</a></li>
       <li class="tab col s2"><a href="#profile-java">Java</a></li>
       <li class="tab col s2"><a href="#profile-python">Python</a></li>
+      <li class="tab col s2"><a href="#profile-golang">Golang</a></li>
     </ul>
   </div>
   <div id="profile-js" class="col s12" style="padding:0">
@@ -40,14 +41,83 @@ db.profile(userId).then(res => {
   <div id="profile-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.profile("userId", new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if(statusCode == 200) {
+            try {
+                System.out.println(response.getResult(Map.class));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
  <div id="profile-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+// Initialize api with the project name and url of the space cloud
+api = API("books-app", "localhost:8081")
+
+// Initialize database(s) you intend to use
+db = api.my_sql()
+
+// Read profile of an user
+response = db.profile("user_id")
+if response.status == 200:
+    print(response.result)
+else:
+    print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="profile-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	resp, err := db.Profile("97f1731b-91c7-11e9-a806-8c1645ce9567")
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			var v map[string]interface{}
+			err:= resp.Unmarshal(&v)
+			if err != nil {
+				fmt.Println("Error Unmarshalling:", err)
+			} else {
+				fmt.Println("Result:", v)
+			}
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>
@@ -63,6 +133,7 @@ You can read the profiles of all users with the help of `profiles` function as s
       <li class="tab col s2"><a class="active" href="#profiles-js">Javascript</a></li>
       <li class="tab col s2"><a href="#profiles-java">Java</a></li>
       <li class="tab col s2"><a href="#profiles-python">Python</a></li>
+      <li class="tab col s2"><a href="#profiles-golang">Golang</a></li>
     </ul>
   </div>
   <div id="profiles-js" class="col s12" style="padding:0">
@@ -92,14 +163,84 @@ db.profiles().then(res => {
   <div id="profiles-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.profiles(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                Gson gson = new Gson();
+                System.out.println(gson.fromJson(response.getResults(Map[].class));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
  <div id="profiles-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+// Initialize api with the project name and url of the space cloud
+api = API("books-app", "localhost:8081")
+
+// Initialize database(s) you intend to use
+db = api.my_sql()
+
+// Read profiles of all users
+response = db.profiles()
+if response.status == 200:
+    print(response.result)
+else:
+    print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="profiles-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	resp, err := db.Profiles()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			var v []map[string]interface{}
+			err:= resp.Unmarshal(&v)
+			if err != nil {
+				fmt.Println("Error Unmarshalling:", err)
+			} else {
+				fmt.Println("Result:", v)
+			}
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>

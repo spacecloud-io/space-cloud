@@ -8,6 +8,7 @@ You can easily allow users to create a folder via the File Management module of 
       <li class="tab col s2"><a class="active" href="#create-folder-js">Javascript</a></li>
       <li class="tab col s2"><a href="#create-folder-java">Java</a></li>
       <li class="tab col s2"><a href="#create-folder-python">Python</a></li>
+      <li class="tab col s2"><a href="#create-folder-golang">Golang</a></li>
     </ul>
   </div>
   <div id="create-folder-js" class="col s12" style="padding:0">
@@ -44,6 +45,13 @@ api.FileStore()
     <pre>
       <code class="python">
 # Python client coming soon!
+      </code>
+    </pre>
+  </div>
+  <div id="create-folder-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+// Golang client coming soon!
       </code>
     </pre>
   </div>

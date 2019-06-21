@@ -7,6 +7,7 @@ You can easily allow users to create a new user on your app via email using the 
       <li class="tab col s2"><a class="active" href="#signup-js">Javascript</a></li>
       <li class="tab col s2"><a href="#signup-java">Java</a></li>
       <li class="tab col s2"><a href="#signup-python">Python</a></li>
+      <li class="tab col s2"><a href="#signup-golang">Golang</a></li>
     </ul>
   </div>
   <div id="signup-js" class="col s12" style="padding:0">
@@ -40,14 +41,83 @@ db.signUp('demo@example.com', 'User1', '1234', 'default').then(res => {
   <div id="signup-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.signUp("email", "name", "password", "role", new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            try {
+                System.out.println("Token: " + response.getResult(Map.class).get("token"));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
  <div id="signup-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+// Initialize api with the project name and url of the space cloud
+api = API("books-app", "localhost:8081")
+
+// Initialize database(s) you intend to use
+db = api.my_sql()
+
+// Sign Up
+response = db.sign_up("user_email", "user_name", "user_password", "user_role")
+if response.status == 200:
+    print(response.result)
+else:
+    print(response.error)
+
+api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="signup-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	resp, err := db.SignUp("email", "name", "password", "role")
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			var v map[string]interface{}
+			err:= resp.Unmarshal(&v)
+			if err != nil {
+				fmt.Println("Error Unmarshalling:", err)
+			} else {
+				fmt.Println("Result:", v)
+			}
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>

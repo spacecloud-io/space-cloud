@@ -1,4 +1,5 @@
 ---
+id: basic-todo-app
 secret: some-secret
 modules:
   crud:

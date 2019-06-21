@@ -34,7 +34,8 @@ func (m *Module) SetConfig(auth config.Auth) {
 	}
 }
 
-func (m *Module) isActive(method string) bool {
+// IsActive shows if a given method is active
+func (m *Module) IsActive(method string) bool {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -42,7 +43,8 @@ func (m *Module) isActive(method string) bool {
 	return p
 }
 
-func (m *Module) isEnabled() bool {
+// IsEnabled shows if the user management module is enabled
+func (m *Module) IsEnabled() bool {
 	m.RLock()
 	defer m.RUnlock()
 
