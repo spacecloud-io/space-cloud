@@ -161,13 +161,11 @@ message UploadFileRequest {
   string path = 1;
   string name = 2;
   bytes payload = 3;
-  int64 size = 4; // Size of the whole file in bytes
-  string hash = 5; // Hash for the whole file
-  Meta meta = 6;
+  Meta meta = 4;
 }
 message FilePayload {
-  int64 size = 1; // Size of the whole file in bytes
-  string hash = 2; // Hash for the whole file
+  int32 status = 1;
+  string error = 2;
   bytes payload = 3;
 }
 

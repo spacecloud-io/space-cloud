@@ -27,3 +27,5 @@ type ListFilesResponse struct {
 	Name string `json:"name"`
 	Type string `json:"type"` // Type could be dir or file
 }
+
+type FileReader func(io.Reader)(int, error)

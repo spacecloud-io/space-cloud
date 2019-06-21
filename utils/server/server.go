@@ -42,12 +42,12 @@ type Server struct {
 func New(isProd bool) *Server {
 	r := mux.NewRouter()
 	c := crud.Init()
-	f := filestore.Init()
 	rt := realtime.Init(c)
 	s := static.Init()
 	fn := functions.Init()
 	a := auth.Init(c, fn)
 	u := userman.Init(c, a)
+	f := filestore.Init(a)
 
 	return &Server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: fn, realtime: rt, isProd: isProd}
 }
