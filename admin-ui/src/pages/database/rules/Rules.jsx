@@ -11,6 +11,7 @@ import rulesImg from '../../../assets/rules.svg';
 import RulesComponent from '../../../components/rules/Rules';
 
 function Rules(props) {
+	const noOfRules = Object.keys(props.rules).length
 	return (
 		<div>
 			<Topbar title="Database" />
@@ -22,13 +23,18 @@ function Rules(props) {
 						<Documentation url="https://spaceuptech.com/docs/database" />
 					</div>
 					<DbConfigure updateFormState={props.updateFormState} formState={props.formState} />
-					{/* <EmptyState graphics={rulesImg} desc="Guard your data with rules that define who has access to it and how it is structured." buttonText="Add a table" handleClick={props.handleClick} /> */}
-					<RulesComponent
+					{noOfRules && <RulesComponent
 						rules={props.rules}
 						handleRuleChange={props.handleRuleChange}
-						addText= {'Add a table rule'}
-						handleAddTableClick={props.handleAddTableClick}
-					/>
+						addText={'Add a table rule'}
+						handleAddRuleClick={props.handleAddRuleClick}
+					/>}
+					{!noOfRules && <EmptyState
+						graphics={rulesImg} desc="Guard your data with rules that define who has access to it and how it is structured."
+						buttonText="Add a table"
+						handleClick={props.handleAddRuleClick} />}
+
+
 				</div>
 			</div>
 		</div>
@@ -50,21 +56,18 @@ const mapStateToProps = (state, ownProps) => {
 			qwqw: 'f',
 			rewwr: 'g'
 		},
-		
+
 	};
 };
 
 const mapDispatchToProps = (dispatch) => {
 	return {
-		handleClick: () => {
-			console.log('Checked');
-		},
 		handleRuleChange: (value) => {
 			console.log('Rule Changed', value);
-    },
-    handleAddTableClick:()=>{
-			console.log('Table Added');
-    },
+		},
+		handleAddRuleClick: () => {
+			console.log('Clicked Add rule');
+		},
 		updateFormState: (fields) => {
 			console.log(fields);
 		}

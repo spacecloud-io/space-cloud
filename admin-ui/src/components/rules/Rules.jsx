@@ -29,7 +29,7 @@ class Rules extends Component {
 			<div className="rules-main-wrapper">
 				<Row>
 					<Col span={6}>
-						<div className="addaRule" onClick={this.props.handleAddTableClick}>
+						<div className="addaRule" onClick={this.props.handleAddRuleClick}>
 							<Icon className="addIcon" type="plus" /> {this.props.addText}
 						</div>
 						<div className="rulesTable">

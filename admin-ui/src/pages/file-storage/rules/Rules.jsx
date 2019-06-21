@@ -13,13 +13,13 @@ function Rules(props) {
 	const noOfRules = Object.keys(props.rules).length
 	return (
 		<div>
-			<Topbar title="Functions" />
+			<Topbar title="File Storage" />
 			<div className="flex-box">
-				<Sidenav selectedItem="functions" />
+				<Sidenav selectedItem="file-storage" />
 				<div className="page-content">
 					<div className="header-flex">
 						<Header name="Rules" color="#000" fontSize="22px" />
-						<Documentation url="https://spaceuptech.com/docs/functions" />
+						<Documentation url="https://spaceuptech.com/docs/file-storage" />
 					</div>
 					{noOfRules && <RulesComponent
 						rules={props.rules}
