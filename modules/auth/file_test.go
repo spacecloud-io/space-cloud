@@ -2,6 +2,7 @@ package auth
 
 import (
 	"testing"
+	"os"
 
 	"github.com/spaceuptech/space-cloud/config"
 )
@@ -9,12 +10,12 @@ import (
 func TestGetFileRule(t *testing.T) {
 
 	fileRule := &config.FileRule{
-		Prefix: "/",
+		Prefix: string(os.PathSeparator),
 		Rule:   map[string]*config.Rule{"rule": &config.Rule{Rule: "allow"}},
 	}
 
 	fileRule1 := &config.FileRule{
-		Prefix: "/folder",
+		Prefix: string(os.PathSeparator)+"folder",
 		Rule:   map[string]*config.Rule{"rule": &config.Rule{Rule: "allow"}},
 	}
 

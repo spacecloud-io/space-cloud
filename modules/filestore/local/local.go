@@ -14,8 +14,8 @@ type Local struct {
 
 // Init initialises the local filestore driver
 func Init(path string) (*Local, error) {
-	if !strings.HasSuffix(path, "/") {
-		path = path + "/"
+	if !strings.HasSuffix(path, string(os.PathSeparator)) {
+		path = path + string(os.PathSeparator)
 	}
 	return &Local{path}, nil
 }
