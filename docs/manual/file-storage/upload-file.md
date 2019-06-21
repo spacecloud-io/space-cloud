@@ -12,6 +12,7 @@ Uploading a file via Space Cloud from frontend is as simple as getting the refer
       <li class="tab col s2"><a class="active" href="#upload-js">Javascript</a></li>
       <li class="tab col s2"><a href="#upload-java">Java</a></li>
       <li class="tab col s2"><a href="#upload-python">Python</a></li>
+      <li class="tab col s2"><a href="#upload-golang">Golang</a></li>
     </ul>
   </div>
   <div id="upload-js" class="col s12" style="padding:0">
@@ -27,7 +28,7 @@ const myFile = document.querySelector("#your-file-input").files[0];
 
 // Upload the file
 api.FileStore()
-  .uploadFile("/some-path", myFile)
+  .uploadFile("/some-path", myFile, "fileName")
   .then(res => {
     if (res.status === 200) {
       // File uploaded successfully
@@ -54,11 +55,19 @@ api.FileStore()
       </code>
     </pre>
   </div>
+  <div id="upload-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+// Golang client coming soon!
+      </code>
+    </pre>
+  </div>
 </div>
 
 The `uploadFile` function takes two parameters to upload a file which are as follows:
 - **path** - The path at which to upload the file.
 - **file** - A file of the type HTML5 File API.
+- **name** - Name of the file.
 
 The `path` can be nested as well. For e.g a `path` - /folder1/folder2 would mean to upload the file inside folder2 which is in folder1. If any of the folders mentioned in the `path` were not present, they would be created before uploading the file.
 
@@ -79,12 +88,13 @@ A response object sent by the server contains the **status** fields explained be
 All files uploaded via File Management module are accessible on the following url:
 
 ```
-url = `http://localhost:8080/api/$projectName/files/$path`
+url = `http://localhost:8080/v1/api/$projectName/files/$path/$fileName`
 ```
 
 The url is different for each file and has following variable parts to it:
 - **$projectName** - This is the name of project with which you initialized the API
 - **$path** - This is the path at which the file was uploaded
+- **$fileName** - This is the name with which the file was uploaded
 
 
 ## Next steps

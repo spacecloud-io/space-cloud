@@ -93,7 +93,12 @@ func (c *GRPCRealtimeClient) Read(cb DataCallback) {
 		data["Where"] = temp
 
 		msg := &model.Message{Type: in.Type, ID: in.Id, Data: data}
-		cb(msg)
+
+		// Close the reader if callback returned false
+		next := cb(msg)
+		if !next {
+			return
+		}
 	}
 }
 

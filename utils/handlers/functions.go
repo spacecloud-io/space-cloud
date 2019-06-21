@@ -12,7 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
-// HandleFunctionCall creates a Functions request endpoint
+// HandleFunctionCall creates a functions request endpoint
 func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

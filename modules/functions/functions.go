@@ -11,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// Module is responsible for Functions
+// Module is responsible for functions
 type Module struct {
 	sync.RWMutex
 	nc              *nats.Conn
@@ -51,7 +51,7 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 		close(m.channel)
 	}
 
-	// Conect and create a new nats client
+	// Connect and create a new nats client
 	if functions.Broker != utils.Nats {
 		return errors.New("Functions Error: Broker is not supported")
 	}
@@ -70,7 +70,7 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 	return nil
 }
 
-// IsEnabled checks if the functions module is enabled
+// IsEnabled checks if the Functions module is enabled
 func (m *Module) IsEnabled() bool {
 	m.RLock()
 	defer m.RUnlock()

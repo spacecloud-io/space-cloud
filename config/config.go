@@ -80,7 +80,7 @@ type AuthStub struct {
 	Secret  string `json:"secret" yaml:"secret"`
 }
 
-// Functions holds the config for the Functions module
+// Functions holds the config for the functions module
 type Functions struct {
 	Enabled bool         `json:"enabled" yaml:"enabled"`
 	Broker  utils.Broker `json:"broker" yaml:"broker"`
@@ -115,7 +115,6 @@ type FileRule struct {
 // Static holds the config for the static files module
 type Static struct {
 	Enabled bool           `json:"enabled" yaml:"enabled"`
-	Gzip    bool           `json:"gzip" yaml:"gzip"`
 	Routes  []*StaticRoute `json:"routes" yaml:"routes"`
 }
 
