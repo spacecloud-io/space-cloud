@@ -51,17 +51,17 @@ function Overview(props) {
             </div>
           </div>
           <Header name="Explore Modules" color="#000" fontSize="22px" />
-          <Row className ="overview-padding">
-            <Link to={`/${props.projectId}/user-management`}>
+          <Row  className ="overview-padding">
+            <Link to={`/mission-control/${props.projectId}/user-management`}>
               <Col span={11}><UserManagement modules={props.modules.userManagement} /></Col>
             </Link>
-            <Link to={`/${props.projectId}/database`}>
+            <Link to={`/mission-control/${props.projectId}/database`}>
               <Col span={11} offset={1}><Database modules={props.modules.database} /></Col>
             </Link>
-            <Link to={`/${props.projectId}/functions`}>
+            <Link to={`/mission-control/${props.projectId}/functions`}>
               <Col span={11}><Functions modules={props.modules.functions} /></Col>
             </Link>
-            <Link to={`/${props.projectId}/configure`}>
+            <Link to={`/mission-control/${props.projectId}/configure`}>
               <Col span={11} offset={1}><Configure modules={props.modules.configure} /></Col>
             </Link>
           </Row>

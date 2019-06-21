@@ -20,6 +20,7 @@
     "react-scripts": "3.0.1",
     "redux": "^4.0.1"
   },
+  "homepage": "https://spaceuptech.com/mission-control",
   "scripts": {
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",

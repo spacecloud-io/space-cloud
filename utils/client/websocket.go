@@ -29,7 +29,7 @@ func (c *WebsocketClient) RoutineWrite() {
 	}
 }
 
-// Write wrties the object to the client
+// Write writes the object to the client
 func (c *WebsocketClient) Write(res *model.Message) {
 	select {
 	case <-c.ctx.Done():
@@ -44,7 +44,7 @@ func (c *WebsocketClient) Close() {
 	c.socket.Close()
 }
 
-// Read startes a blocking reader routine
+// Read starts a blocking reader routine
 func (c *WebsocketClient) Read(cb DataCallback) {
 	for {
 		data := &model.Message{}
@@ -54,7 +54,11 @@ func (c *WebsocketClient) Read(cb DataCallback) {
 			return
 		}
 
-		cb(data)
+		// Close the reader if callback returned false
+		next := cb(data)
+		if !next {
+			return
+		}
 	}
 }
 

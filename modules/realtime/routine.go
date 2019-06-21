@@ -70,7 +70,7 @@ func (m *Module) removeStaleRequests() {
 					idVar = "_id"
 				}
 				switch req.data.Type {
-				case utils.RealtimeWrite, utils.RealtimeUpdate:
+				case utils.RealtimeInsert, utils.RealtimeUpdate:
 					find := map[string]interface{}{idVar: req.data.DocID}
 					data, err := m.crud.Read(context.TODO(), req.data.DBType, m.project, req.data.Group, &model.ReadRequest{Find: find, Operation: utils.One})
 					if err == nil {
@@ -119,7 +119,7 @@ func (m *Module) helperSendFeed(data *model.FeedData) {
 			case utils.RealtimeDelete:
 				query.sendFeed(dataPoint)
 
-			case utils.RealtimeWrite:
+			case utils.RealtimeInsert:
 				if validate(query.whereObj, data.Payload) {
 					query.sendFeed(dataPoint)
 				}

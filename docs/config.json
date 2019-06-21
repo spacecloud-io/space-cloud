@@ -114,7 +114,7 @@
     ]
   },
   {
-    "name": "Functions",
+    "name": "Functions Mesh",
     "url": "functions",
     "pages": [
       [
@@ -133,13 +133,22 @@
     "pages": [
       [
         "database",
-        "Database"
+        "Securing data"
       ],
       [
         "file-storage",
-        "File Storage"
+        "Securing files"
+      ],
+      [
+        "functions",
+        "Securing functions"
       ]
     ]
+  },
+  {
+    "name": "Static hosting",
+    "url": "static",
+    "pages": []
   },
   {
     "name": "Deploy",

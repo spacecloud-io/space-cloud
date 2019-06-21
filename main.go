@@ -3,18 +3,67 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/url"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/server"
 )
+
+var essentialFlags = []cli.Flag{
+	cli.StringFlag{
+		Name:  "port",
+		Value: "8080",
+		Usage: "Start HTTP server on port `PORT`",
+	},
+	cli.StringFlag{
+		Name:  "grpc-port",
+		Value: "8081",
+		Usage: "Start grpc on port `GRPC_PORT`",
+	},
+	cli.IntFlag{
+		Name:  "nats-port",
+		Value: 4222,
+		Usage: "Start nats on port `NATS_PORT`",
+	},
+	cli.IntFlag{
+		Name:  "cluster-port",
+		Value: 4248,
+		Usage: "Start nats on port `NATS_PORT`",
+	},
+	cli.StringFlag{
+		Name:  "config",
+		Value: "none",
+		Usage: "Load space cloud config from `FILE`",
+	},
+	cli.BoolFlag{
+		Name:   "prod",
+		Usage:  "Run space-cloud in production mode",
+		EnvVar: "PROD",
+	},
+	cli.BoolFlag{
+		Name:   "disable-metrics",
+		Usage:  "Disable anonymous metric collection",
+		EnvVar: "DISABLE_METRICS",
+	},
+	cli.BoolFlag{
+		Name:   "disable-nats",
+		Usage:  "Disable embedded nats server",
+		EnvVar: "DISABLE_NATS",
+	},
+	cli.StringFlag{
+		Name:   "seeds",
+		Value:  "none",
+		Usage:  "Seed nodes to cluster with",
+		EnvVar: "SEEDS",
+	},
+}
 
 func main() {
 	app := cli.NewApp()
-	app.Version = buildVersion
+	app.Version = utils.BuildVersion
 	app.Name = "space-cloud"
 	app.Usage = "core binary to run space cloud"
 
@@ -23,54 +72,13 @@ func main() {
 			Name:   "run",
 			Usage:  "runs the space cloud instance",
 			Action: actionRun,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "port",
-					Value: "8080",
-					Usage: "Start HTTP server on port `PORT`",
-				},
-				cli.StringFlag{
-					Name:  "grpc-port",
-					Value: "8081",
-					Usage: "Start grpc on port `GRPC_PORT`",
-				},
-				cli.IntFlag{
-					Name:  "nats-port",
-					Value: 4222,
-					Usage: "Start nats on port `NATS_PORT`",
-				},
-				cli.IntFlag{
-					Name:  "cluster-port",
-					Value: 4248,
-					Usage: "Start nats on port `NATS_PORT`",
-				},
-				cli.StringFlag{
-					Name:  "config",
-					Value: "none",
-					Usage: "Load space cloud config from `FILE`",
-				},
-				cli.BoolFlag{
-					Name:   "prod",
-					Usage:  "Run space-cloud in production mode",
-					EnvVar: "PROD",
-				},
-				cli.BoolFlag{
-					Name:   "disable-metrics",
-					Usage:  "Disable anonymous metric collection",
-					EnvVar: "DISABLE_METRICS",
-				},
-				cli.BoolFlag{
-					Name:   "disable-nats",
-					Usage:  "Disable embedded nats server",
-					EnvVar: "DISABLE_NATS",
-				},
-				cli.StringFlag{
-					Name:   "seeds",
-					Value:  "none",
-					Usage:  "Seed nodes to cluster with",
-					EnvVar: "SEEDS",
-				},
-			},
+			Flags:  essentialFlags,
+		},
+		{
+			Name:   "start",
+			Usage:  "runs the space cloud instance with mission control ui",
+			Action: actionStart,
+			Flags:  essentialFlags,
 		},
 		{
 			Name:   "init",
@@ -98,28 +106,14 @@ func actionRun(c *cli.Context) error {
 	seeds := c.String("seeds")
 
 	// Project and env cannot be changed once space cloud has started
-	s := initServer(isProd)
+	s := server.New(isProd)
 
 	if !disableNats {
-		// TODO read nats config from the yaml file if it exists
-		if seeds != "" {
-			array := strings.Split(seeds, ",")
-			urls := []*url.URL{}
-			for _, v := range array {
-				if v != "" {
-					u, err := url.Parse("nats://" + v)
-					if err != nil {
-						return err
-					}
-					urls = append(urls, u)
-				}
-			}
-			defaultNatsOptions.Routes = urls
+		err := s.RunNatsServer(seeds, natsPort, clusterPort)
+		if err != nil {
+			return err
 		}
-		defaultNatsOptions.Port = natsPort
-		defaultNatsOptions.Cluster.Port = clusterPort
-		s.runNatsServer(defaultNatsOptions)
-		fmt.Println("Started nats server on port ", defaultNatsOptions.Port)
+		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
 	}
 
 	if configPath != "none" {
@@ -130,10 +124,10 @@ func actionRun(c *cli.Context) error {
 		}
 
 		// Save the config file path for future use
-		s.configFilePath = configPath
+		s.SetConfigFilePath(configPath)
 
 		// Configure all modules
-		err = s.loadConfig(conf)
+		err = s.LoadConfig(conf)
 		if err != nil {
 			return err
 		}
@@ -141,13 +135,102 @@ func actionRun(c *cli.Context) error {
 
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
-		go s.routineMetrics()
+		go s.RoutineMetrics()
 	}
 
-	s.routes()
-	return s.start(port, grpcPort)
+	s.Routes()
+	return s.Start(port, grpcPort)
+}
+
+func actionStart(c *cli.Context) error {
+	// Load cli flags
+	port := c.String("port")
+	grpcPort := c.String("grpc-port")
+	natsPort := c.Int("nats-port")
+	clusterPort := c.Int("cluster-port")
+	configPath := c.String("config")
+	isProd := c.Bool("prod")
+	disableMetrics := c.Bool("disable-metrics")
+	disableNats := c.Bool("disable-nats")
+	seeds := c.String("seeds")
+
+	// Project and env cannot be changed once space cloud has started
+	s := server.New(isProd)
+
+	if configPath == "none" {
+		configPath = "./config.yaml"
+	}
+	// Load config file
+	conf, err := config.LoadConfigFromFile(configPath)
+	// If config file does not exists then trigger the generate config flow
+	if err != nil {
+		err := config.GenerateConfig(configPath, true)
+		if err != nil {
+			return nil
+		}
+		conf, err = config.LoadConfigFromFile(configPath)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Save the config file path for future use
+	s.SetConfigFilePath(configPath)
+
+	// Configure all modules
+	err = s.LoadConfig(conf)
+	if err != nil {
+		return err
+	}
+
+	// Anonymously collect usage metrics if not explicitly disabled
+	if !disableMetrics {
+		go s.RoutineMetrics()
+	}
+
+	err = initMissionContol()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Started Mission Control UI at http://localhost:" + port + "/mission-control")
+
+	if !disableNats {
+		err := s.RunNatsServer(seeds, natsPort, clusterPort)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
+	}
+
+	s.Routes()
+	return s.Start(port, grpcPort)
 }
 
 func actionInit(*cli.Context) error {
-	return config.GenerateConfig()
+	return config.GenerateConfig("none", false)
+}
+
+func initMissionContol() error {
+	homeDir := utils.UserHomeDir()
+	uiPath := homeDir + "/.space-cloud/mission-control-v" + utils.BuildVersion
+	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
+		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
+			os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
+		}
+		fmt.Println("Downloading Mission Control UI...")
+		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+utils.BuildVersion+".zip", uiPath+".zip")
+		if err != nil {
+			return err
+		}
+		err = utils.Unzip(uiPath+".zip", uiPath)
+		if err != nil {
+			return err
+		}
+		err = os.Remove(uiPath + ".zip")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
