@@ -1171,7 +1171,6 @@ db.update("books").where(new Cond("id", "==", 1)).mul(mul).apply(new Utils.Respo
     <pre>
       <code class="python">
 from space_api import API, COND
-
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 

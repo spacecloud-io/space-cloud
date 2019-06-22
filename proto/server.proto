@@ -140,6 +140,35 @@ message SignUpRequest {
   Meta meta = 5;
 }
 
+message CreateFolderRequest {
+  string path = 1;
+  string name = 2;
+  Meta meta = 3;
+}
+message ListFilesRequest {
+  string path = 1;
+  Meta meta = 2;
+}
+message DeleteFileRequest {
+  string path = 1; // Full path, including the file name and extension
+  Meta meta = 2;
+}
+message DownloadFileRequest {
+  string path = 1; // Full path, including the file name and extension
+  Meta meta = 2;
+}
+message UploadFileRequest {
+  string path = 1;
+  string name = 2;
+  bytes payload = 3;
+  Meta meta = 4;
+}
+message FilePayload {
+  int32 status = 1;
+  string error = 2;
+  bytes payload = 3;
+}
+
 service SpaceCloud {
   rpc Create(CreateRequest) returns (Response) {}
   rpc Read(ReadRequest) returns (Response) {}
@@ -157,4 +186,10 @@ service SpaceCloud {
   rpc EditProfile(EditProfileRequest) returns (Response) {}
   rpc SignIn(SignInRequest) returns (Response) {}
   rpc SignUp(SignUpRequest) returns (Response) {}
+
+  rpc CreateFolder(CreateFolderRequest) returns (Response) {}
+  rpc ListFiles(ListFilesRequest) returns (Response) {}
+  rpc DeleteFile(DeleteFileRequest) returns (Response) {}
+  rpc UploadFile(stream UploadFileRequest) returns (Response) {}
+  rpc DownloadFile(DownloadFileRequest) returns (stream FilePayload) {}
 }

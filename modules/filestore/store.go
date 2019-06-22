@@ -11,6 +11,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/modules/filestore/amazons3"
 	"github.com/spaceuptech/space-cloud/modules/filestore/local"
+	"github.com/spaceuptech/space-cloud/modules/auth"
 )
 
 // Module is responsible for managing the file storage module
@@ -18,11 +19,12 @@ type Module struct {
 	sync.RWMutex
 	store   FileStore
 	enabled bool
+	auth    *auth.Module
 }
 
 // Init creates a new instance of the file store object
-func Init() *Module {
-	return &Module{enabled: false, store: nil}
+func Init(auth *auth.Module) *Module {
+	return &Module{enabled: false, store: nil, auth: auth}
 }
 
 // FileStore abstracts the implementation file storage operations
