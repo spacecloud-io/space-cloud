@@ -66,6 +66,10 @@
         "Read Data"
       ],
       [
+        "live-query",
+        "Listening to real-time updates"
+      ],
+      [
         "update",
         "Update Data"
       ],
@@ -74,18 +78,12 @@
         "Delete Data"
       ],
       [
+        "transactions", 
+        "Transactions and batched mutations"
+      ],
+      [
         "config",
         "Configuration"
-      ]
-    ]
-  },
-  {
-    "name": "Realtime",
-    "url": "realtime",
-    "pages": [
-      [
-        "live-query",
-        "Listening to real-time updates"
       ]
     ]
   },
@@ -116,16 +114,16 @@
     ]
   },
   {
-    "name": "Functions",
+    "name": "Functions Mesh",
     "url": "functions",
     "pages": [
       [
-        "engine",
-        "Writing custom logic"
+        "service",
+        "Write functions"
       ],
       [
         "client",
-        "Accessing custom logic"
+        "Call functions"
       ]
     ]
   },
@@ -135,13 +133,22 @@
     "pages": [
       [
         "database",
-        "Database"
+        "Securing data"
       ],
       [
         "file-storage",
-        "File Storage"
+        "Securing files"
+      ],
+      [
+        "functions",
+        "Securing functions"
       ]
     ]
+  },
+  {
+    "name": "Static hosting",
+    "url": "static",
+    "pages": []
   },
   {
     "name": "Deploy",

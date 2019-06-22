@@ -3,10 +3,33 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"gopkg.in/yaml.v2"
 )
+
+func loadEnvironmentVariable(p *Project) {
+	if strings.HasPrefix(p.Secret, "$") {
+		tempString := strings.TrimPrefix(p.Secret, "$")
+		tempEnvVar, present := os.LookupEnv(tempString)
+
+		if present {
+			p.Secret = tempEnvVar
+		}
+	}
+
+	for _, value := range p.Modules.Crud {
+		if strings.HasPrefix(value.Conn, "$") {
+			tempStringC := strings.TrimPrefix(value.Conn, "$")
+			tempEnvVarC, presentC := os.LookupEnv(tempStringC)
+
+			if presentC {
+				value.Conn = tempEnvVarC
+			}
+		}
+	}
+}
 
 // LoadConfigFromFile loads the config from the provided file path
 func LoadConfigFromFile(path string) (*Project, error) {
@@ -27,5 +50,6 @@ func LoadConfigFromFile(path string) (*Project, error) {
 		return nil, err
 	}
 
+	loadEnvironmentVariable(conf)
 	return conf, nil
 }

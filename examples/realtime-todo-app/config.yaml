@@ -27,10 +27,12 @@ modules:
       enabled: true
   functions:
     enabled: false
-    nats: nats://localhost:4222
+    broker: nats
+    conn: nats://localhost:4222
   realtime:
     enabled: true
-    kafka: localhost
+    broker: nats
+    conn: nats://localhost:4222
   fileStore:
     enabled: false
     storeType: local

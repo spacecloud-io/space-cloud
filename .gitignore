@@ -1,3 +1,6 @@
+.idea
+.vscode
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -19,5 +22,8 @@ css
 space-cloud
 publish.sh
 
+test_config.yaml
+
 #IDEs
 .idea
+.vscode

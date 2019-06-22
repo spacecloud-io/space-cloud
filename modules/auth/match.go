@@ -2,15 +2,21 @@ package auth
 
 import (
 	"context"
+	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
-func (m *Module) matchRule(rule *config.Rule, args map[string]interface{}) error {
+func (m *Module) matchRule(project string, rule *config.Rule, args map[string]interface{}) error {
+	if project != m.project {
+		return errors.New("invalid project details provided")
+	}
+
 	switch rule.Rule {
 	case "allow", "authenticated":
 		return nil
@@ -27,15 +33,38 @@ func (m *Module) matchRule(rule *config.Rule, args map[string]interface{}) error
 	case "or":
 		return matchOr(rule, args)
 
+	case "func":
+		return matchFunc(rule, m.functions, args)
+
 	case "query":
-		return matchQuery(rule, m.crud, args)
+		return matchQuery(project, rule, m.crud, args)
 
 	default:
 		return ErrIncorrectMatch
 	}
 }
 
-func matchQuery(rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
+func matchFunc(rule *config.Rule, functions *functions.Module, args map[string]interface{}) error {
+	obj := args["args"].(map[string]interface{})
+	auth := obj["auth"].(map[string]interface{})
+	delete(obj, "auth")
+
+	res, err := functions.Call(rule.Service, rule.Func, auth, obj, 5)
+	if err != nil {
+		return err
+	}
+
+	if resObj, ok := res.(map[string]interface{}); ok {
+		if ackTemp, p := resObj["ack"]; p {
+			if ack, ok := ackTemp.(bool); ok && ack {
+				return nil
+			}
+		}
+	}
+	return ErrIncorrectMatch
+}
+
+func matchQuery(project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
 	// Adjust the find object to load any variables referenced from state
 	rule.Find = utils.Adjust(rule.Find, args).(map[string]interface{})
 
@@ -43,7 +72,7 @@ func matchQuery(rule *config.Rule, crud *crud.Module, args map[string]interface{
 	req := &model.ReadRequest{Find: rule.Find, Operation: utils.One}
 
 	// Execute the read request
-	_, err := crud.Read(context.TODO(), rule.DB, args["project"].(string), rule.Col, req)
+	_, err := crud.Read(context.TODO(), rule.DB, project, rule.Col, req)
 	return err
 }
 

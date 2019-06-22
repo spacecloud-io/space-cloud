@@ -1,18 +1,33 @@
-# Functions
+# Functions Mesh
 
-The functions module is a means to extend the functionality provided by Space Cloud. Using this module you can write your own custom logic on the backend in the form of functions. The clients can call this function directly from the frontend.
+The functions module is a means to extend the functionality provided by Space Cloud. Using this module you can write your own custom logic on the backend in the form of functions in any language. These functions can be called in a secure manner either directly from the frontend or from any other backend function you have written.
 
-> **Note:** The functions you write on the backend run as microservices on the backend.
+> **Note:** The functions you write run as long lived processes on the backend.
+
+## Service mesh redefined!
+The functions module redefines the traditional service mesh by asbtracting away service discovery, load balancing and all networking under the hood. It allows you to architect your microservices in the form of simple functions rather than end to end service. Thus, the functions module brings all the advantages of a microservice architecture at the ease of writing simple functions!
+
+## What can I do with functions?
+
+Since the functions module can technically allow you to write your own custom logic, the possibilities with it are endless. Here are a few ways in which you can use the functions module: 
+
+- Integrate with third party services and APIs.
+- Trigger custom logic on changes in database (For example, send a welcome email when a user completes signup).
+- Extend security module of Space Cloud by providing custom validations (For example, allow a particular crud operation only if the current day is Sunday).
+- Add a database support to Space Cloud.
+- Run some ML algorithm periodically on data to update the model.
 
 ## How it works
 
-As an user, you need to write functions on the backend. In a single project you can write multiple functions. A collection of functions is called an `engine`. So in other words, you can write engines in the language of your choice which will have multiple functions registered to it.
+As an user, you need to write functions on the backend. You can group related functions together as a `service`. Each service runs as a long lived process on the backend. In a single project, you can have multiple services in the language of your choice. Each service connects and subscribes to Space Cloud with its service name.
 
-All engines connect to [nats](https://nats.io) and subscribe to a subject name which is a derivative of the engine name. Nats is a pub-sub network which load balances requests between the engines.
+> **Note:** A service acts as a client to Space Cloud and not an upstream server.
 
-The `space-cloud` server acts as an api-gateway which connects to nats as well. The request from the front end will be received by Space Cloud. Space Cloud would then publish it on nats, receive the response, and send it to the client.
+The frontend or some other function can request to trigger a specific function by providing a service name, function name and params for that function. On receiving the request, Space Cloud first validates the request via the [security module](/docs/security). If the request can be made, it then makes an RPC (remote procedural call) on behalf of the client to the requested function. The function is executed with the params and returns a response to Space Cloud which is then returned to the client.
 
-## Enable the functions module
+Space Cloud uses a broker with RPC semantics under the hood to heavy lift the scaling, networking and load balancing of RPC calls. Space Cloud runs a Nats server by default in the same process so that you don't have to run a broker. However you can run your own broker and configure Space Cloud to use that broker instead. As of now, only Nats is supported as a broker with the support of RabbitMQ and Kafka coming soon.
+
+## Configure the functions module
 
 The config pertaining to functions module can be found inside the `functions` key under the `modules` object. Here's the snippet:
 
@@ -20,21 +35,24 @@ The config pertaining to functions module can be found inside the `functions` ke
 modules:
   functions:
     enabled: true
-    nats: nats://localhost:4222
-  # Config for other modules go here
+    broker: nats
+    conn: nats://localhost:4222
+    rules:
+      service-name:
+        func-name:
+          rule: allow
 ```
 
-All you need to do is set the `enabled` field to true and provide the connection string to nats.
-
+All you need to do is set the `enabled` field to true and provide the connection string of the broker. You can configure the security rules of a function under the `rules` section as shown above. You can learn more about securing the functions module in depth over [here](/docs/security/functions)
 ## Next steps
 
-You can now see how to write the engines on the backend and invoke them from the frontend.
+You can now see how to write the services on the backend and invoke them from the frontend.
 
 <div class="btns-wrapper">
   <a href="/docs/file-storage/overview" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/functions/engine" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/functions/service" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

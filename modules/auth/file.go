@@ -1,15 +1,15 @@
 package auth
 
 import (
-	"errors"
 	"strings"
+	"os"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // IsFileOpAuthorised checks if the caller is authorized to make the request
-func (m *Module) IsFileOpAuthorised(token, path string, op utils.FileOpType, args map[string]interface{}) error {
+func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOpType, args map[string]interface{}) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -33,13 +33,13 @@ func (m *Module) IsFileOpAuthorised(token, path string, op utils.FileOpType, arg
 	args["auth"] = auth
 
 	// Match the rule
-	return m.matchRule(rule, args)
+	return m.matchRule(project, rule, map[string]interface{}{"args": args})
 }
 
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
 	pathParams := make(map[string]interface{})
 
-	in1 := strings.Split(path, "/")
+	in1 := strings.Split(path, string(os.PathSeparator))
 	// Remove last element if it is  Empty
 	if in1[len(in1)-1] == "" {
 		in1 = in1[:len(in1)-1]
@@ -47,7 +47,7 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 
 	for _, r := range m.fileRules {
 
-		rulePath := strings.Split(r.Prefix, "/")
+		rulePath := strings.Split(r.Prefix, string(os.PathSeparator))
 
 		if rulePath[len(rulePath)-1] == "" {
 			rulePath = rulePath[:len(rulePath)-1]
@@ -81,5 +81,5 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 		}
 	}
 
-	return nil, nil, errors.New("Auth: File Rule could not be found")
+	return nil, nil, ErrRuleNotFound
 }

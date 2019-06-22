@@ -1,15 +1,11 @@
-package main
+package server
 
 import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
-	"log"
-	"runtime"
-	"time"
+	"net/http"
 
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -25,13 +21,13 @@ type transport struct {
 func (t *transport) insert(ctx context.Context, meta *proto.Meta, op string, obj interface{}) (int, error) {
 	objJSON, err := json.Marshal(obj)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	req := proto.CreateRequest{Document: objJSON, Meta: meta, Operation: op}
 	res, err := t.stub.Create(ctx, &req)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	if res.Status >= 200 || res.Status < 300 {
@@ -44,18 +40,18 @@ func (t *transport) insert(ctx context.Context, meta *proto.Meta, op string, obj
 func (t *transport) update(ctx context.Context, meta *proto.Meta, op string, find, update map[string]interface{}) (int, error) {
 	updateJSON, err := json.Marshal(update)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	findJSON, err := json.Marshal(find)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	req := proto.UpdateRequest{Find: findJSON, Update: updateJSON, Meta: meta, Operation: op}
 	res, err := t.stub.Update(ctx, &req)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	if res.Status >= 200 || res.Status < 300 {
@@ -84,85 +80,87 @@ func newTransport(host, port string, sslEnabled bool) (*transport, error) {
 	return &transport{conn, stub}, nil
 }
 
-func (s *server) routineMetrics() {
-	ticker := time.NewTicker(time.Minute * 5)
-	defer ticker.Stop()
+// RoutineMetrics collects some metrics from SC
+func (s *Server) RoutineMetrics() {
+	// TODO
+	// ticker := time.NewTicker(time.Minute * 5)
+	// defer ticker.Stop()
 
-	id := uuid.NewV1().String()
-	col := "metrics"
-	project := "crm"
-	m := &proto.Meta{Col: col, DbType: "mongo", Project: project}
+	// id := uuid.NewV1().String()
+	// col := "metrics"
+	// project := "crm"
+	// m := &proto.Meta{Col: col, DbType: "mongo", Project: project}
 
-	// Create the find and update clauses
-	find := map[string]interface{}{"_id": id}
-	update := map[string]interface{}{
-		"$currentDate": map[string]interface{}{
-			"lastUpdated": map[string]interface{}{"$type": "date"},
-			"startTime":   map[string]interface{}{"$type": "date"},
-		},
-	}
-	set := map[string]interface{}{
-		"os":      runtime.GOOS,
-		"isProd":  s.isProd,
-		"version": buildVersion,
-	}
+	// // Create the find and update clauses
+	// find := map[string]interface{}{"_id": id}
+	// update := map[string]interface{}{
+	// 	"$currentDate": map[string]interface{}{
+	// 		"lastUpdated": map[string]interface{}{"$type": "date"},
+	// 		"startTime":   map[string]interface{}{"$type": "date"},
+	// 	},
+	// }
+	// set := map[string]interface{}{
+	// 	"os":      runtime.GOOS,
+	// 	"isProd":  s.isProd,
+	// 	"version": buildVersion,
+	// }
 
-	// Connect to metrics server
-	trans, err := newTransport("spaceuptech.com", "11001", true)
-	if err != nil {
-		fmt.Println("Metrics Error -", err)
-		return
-	}
+	// // Connect to metrics server
+	// trans, err := newTransport("spaceuptech.com", "11001", true)
+	// if err != nil {
+	// 	fmt.Println("Metrics Error -", err)
+	// 	return
+	// }
 
-	s.lock.Lock()
-	if s.config != nil && s.config.Modules != nil {
-		set["project"] = getProjectInfo(s.config.Modules)
-		set["projectId"] = s.config.ID
-		set["sslEnabled"] = s.config.SSL != nil
-	}
-	s.lock.Unlock()
+	// s.lock.Lock()
+	// if s.config != nil && s.config.Modules != nil {
+	// 	set["project"] = getProjectInfo(s.config.Modules)
+	// 	set["projectId"] = s.config.ID
+	// 	set["sslEnabled"] = s.config.SSL != nil
+	// }
+	// s.lock.Unlock()
 
-	update["$set"] = set
-	status, err := trans.update(context.TODO(), m, "upsert", find, update)
-	if err != nil {
-		fmt.Println("Metrics Error -", err)
-		return
-	}
+	// update["$set"] = set
+	// status, err := trans.update(context.TODO(), m, "upsert", find, update)
+	// if err != nil {
+	// 	fmt.Println("Metrics Error -", err)
+	// 	return
+	// }
 
-	if status != 200 {
-		fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
-		return
-	}
+	// if status != 200 {
+	// 	fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
+	// 	return
+	// }
 
-	for range ticker.C {
-		update := map[string]interface{}{
-			"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "date"}},
-		}
+	// for range ticker.C {
+	// 	update := map[string]interface{}{
+	// 		"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "date"}},
+	// 	}
 
-		s.lock.Lock()
-		if s.config != nil && s.config.Modules != nil {
-			set["project"] = getProjectInfo(s.config.Modules)
-			set["projectId"] = s.config.ID
-			set["sslEnabled"] = s.config.SSL != nil
-		}
-		s.lock.Unlock()
+	// 	s.lock.Lock()
+	// 	if s.config != nil && s.config.Modules != nil {
+	// 		set["project"] = getProjectInfo(s.config.Modules)
+	// 		set["projectId"] = s.config.ID
+	// 		set["sslEnabled"] = s.config.SSL != nil
+	// 	}
+	// 	s.lock.Unlock()
 
-		update["$set"] = set
-		status, err := trans.update(context.TODO(), m, "one", find, update)
-		if err != nil {
-			log.Println("Metrics Error -", err)
-		}
+	// 	update["$set"] = set
+	// 	status, err := trans.update(context.TODO(), m, "one", find, update)
+	// 	if err != nil {
+	// 		log.Println("Metrics Error -", err)
+	// 	}
 
-		if status != 200 {
-			log.Println("Metrics Error - Invalid status code ", status)
-		}
-	}
+	// 	if status != 200 {
+	// 		log.Println("Metrics Error - Invalid status code ", status)
+	// 	}
+	// }
 }
 
 func getProjectInfo(config *config.Modules) map[string]interface{} {
 	project := map[string]interface{}{
 		"crud":      []string{},
-		"functions":      map[string]interface{}{"enabled": false},
+		"functions": map[string]interface{}{"enabled": false},
 		"realtime":  map[string]interface{}{"enabled": false},
 		"fileStore": map[string]interface{}{"enabled": false},
 		"auth":      []string{},
