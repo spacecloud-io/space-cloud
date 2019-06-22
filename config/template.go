@@ -6,6 +6,7 @@ secret: some-secret
 modules:
   crud:
     {{.PrimaryDB}}:
+      enabled: true
       conn: {{.Conn}}
       isPrimary: true
       collections:

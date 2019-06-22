@@ -26,7 +26,7 @@ func (l *Local) CreateFile(ctx context.Context, project string, req *model.Creat
 		}
 	}
 
-	f, err := os.Create(path + "/" + req.Name)
+	f, err := os.Create(path + string(os.PathSeparator) + req.Name)
 	defer f.Close()
 	if err != nil {
 		return err
@@ -46,5 +46,5 @@ func (l *Local) CreateDir(ctx context.Context, project string, req *model.Create
 		return errors.New("Local: Provided path is not a directory")
 	}
 
-	return os.MkdirAll(path+"/"+req.Name, os.ModePerm)
+	return os.MkdirAll(path+string(os.PathSeparator)+req.Name, os.ModePerm)
 }
