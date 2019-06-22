@@ -39,7 +39,7 @@ func (l *Local) CreateFile(ctx context.Context, project string, req *model.Creat
 	return err
 }
 
-// CreateDir creates a dirctory in the path provided
+// CreateDir creates a directory in the path provided
 func (l *Local) CreateDir(ctx context.Context, project string, req *model.CreateFileRequest) error {
 	path := l.rootPath + project + req.Path
 	if !isPathDir(path) && !req.MakeAll {
