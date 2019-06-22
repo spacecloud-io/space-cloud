@@ -39,6 +39,7 @@ type CrudStub struct {
 	Conn        string                `json:"conn" yaml:"conn"`
 	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
+	Enabled     bool                  `json:"enabled" yaml:"enabled"`
 }
 
 // TableRule contains the config at the collection level
