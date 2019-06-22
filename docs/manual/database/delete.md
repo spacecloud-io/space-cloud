@@ -8,6 +8,7 @@ You can delete data in your app by simply calling `db.delete` on the frontend. H
       <li class="tab col s2"><a href="#delete-js">Javascript</a></li>
       <li class="tab col s2"><a href="#delete-java">Java</a></li>
       <li class="tab col s2"><a href="#delete-python">Python</a></li>
+      <li class="tab col s2"><a href="#delete-golang">Golang</a></li>
     </ul>
   </div>
   <div id="delete-js" class="col s12" style="padding:0">
@@ -41,7 +42,23 @@ db.delete("todos").where(condition).apply()
    <div id="delete-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.delete("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -70,6 +87,36 @@ api.close()
       </code>
     </pre>
   </div>
+  <div id="delete-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition := utils.Cond("id", "==", 1)
+	resp, err := db.Delete("books").Where(condition).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
+      </code>
+    </pre>
+  </div>
 </div>
 
 As you would have noticed, the `delete` method is asynchronous in nature. It takes the name of the concerned collection/table and deletes all the matching documents. The `apply` method actually triggers the given request to `space-cloud` and returns a promise.
@@ -84,6 +131,7 @@ As you would have noticed, the `delete` method is asynchronous in nature. It tak
       <li class="tab col s2"><a href="#delete-one-js">Javascript</a></li>
       <li class="tab col s2"><a href="#delete-one-java">Java</a></li>
       <li class="tab col s2"><a href="#delete-one-python">Python</a></li>
+      <li class="tab col s2"><a href="#delete-one-golang">Golang</a></li>
     </ul>
   </div>
   <div id="delete-one-js" class="col s12" style="padding:0">
@@ -96,7 +144,23 @@ db.deleteOne('todos').where(cond('_id', '==', 1)).apply().then(res => ...).catch
    <div id="delete-one-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.deleteOne("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -125,6 +189,36 @@ api.close()
       </code>
     </pre>
   </div>
+  <div id="delete-one-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition := utils.Cond("author", "==", "anAuthor")
+	resp, err := db.DeleteOne("books").Where(condition).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
+      </code>
+    </pre>
+  </div>
 </div>
 
 The `deleteOne` method takes the name of the concerned table/collection. It deletes a single document matching the condition. If no matching document is found, it returns an error (`res.status` - 400).
@@ -141,7 +235,7 @@ The `cond` function is used to specify a single condition as shown below:
     <ul class="tabs">
       <li class="tab col s2"><a href="#cond-js">Javascript</a></li>
       <li class="tab col s2"><a href="#cond-java">Java</a></li>
-      <li class="tab col s2"><a href="#cond-python">Python</a></li>
+      <li class="tab col s2"><a href="#cond-golang">Golang</a></li>
     </ul>
   </div>
   <div id="cond-js" class="col s12" style="padding:0">
@@ -162,7 +256,23 @@ db.delete('todos').where(condition).apply().then(res => ...);
    <div id="cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.delete("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -191,6 +301,36 @@ api.close()
       </code>
     </pre>
   </div>
+  <div id="cond-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition := utils.Cond("id", "==", 1)
+	resp, err := db.Delete("books").Where(condition).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
+      </code>
+    </pre>
+  </div>
 </div>
 
 The operators allowed are:
@@ -216,6 +356,7 @@ A single condition is often not enough to delete the data you desire. You might 
       <li class="tab col s2"><a href="#multiple-cond-js">Javascript</a></li>
       <li class="tab col s2"><a href="#multiple-cond-java">Java</a></li>
       <li class="tab col s2"><a href="#multiple-cond-python">Python</a></li>
+      <li class="tab col s2"><a href="#multiple-cond-golang">Golang</a></li>
     </ul>
   </div>
   <div id="multiple-cond-js" class="col s12" style="padding:0">
@@ -240,7 +381,23 @@ db.delete('todos').where(condition).apply().then(res => ...);
    <div id="multiple-cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 8081);
+SQL db = api.MySQL();
+db.delete("books").where(And.create(new Cond("name", "==", "aBook"), new Cond("author", "==", "myelf"))).apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -266,6 +423,38 @@ else:
     print(response.error)
 
 api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="multiple-cond-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+import (
+	"github.com/spaceuptech/space-api-go/api"
+	"github.com/spaceuptech/space-api-go/api/utils"
+	"fmt"
+)
+
+func main() {
+	api, err := api.Init("books-app", "localhost", "8081", false)
+	if(err != nil) {
+		fmt.Println(err)
+	}
+	db := api.MySQL()
+	condition1 := utils.Cond("id", "==", 1)
+	condition2 := utils.Cond("id", "==", 2)
+	condition := utils.Or(condition1, condition2)
+	resp, err := db.Delete("books").Where(condition).Apply()
+	if err != nil {
+		fmt.Println("Error:", err)
+	} else {
+		if resp.Status == 200 {
+			fmt.Println("Success")
+		} else {
+			fmt.Println("Error Processing Request:", resp.Error)
+		}
+	}
+}
       </code>
     </pre>
   </div>

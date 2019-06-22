@@ -64,6 +64,11 @@ const (
 type FileOpType string
 
 const (
+	// PayloadSize is the size of the payload(in bytes) in file upload and download
+	PayloadSize int = 256*1024 // 256 kB
+)
+
+const (
 	// FileRead is the type used for read operations
 	FileRead FileOpType = "read"
 

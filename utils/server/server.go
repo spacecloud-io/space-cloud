@@ -29,6 +29,7 @@ type Server struct {
 	ssl      *config.SSL
 }
 
+// New creates a new server instance
 func New(isProd bool) *Server {
 	r := mux.NewRouter()
 	s := static.Init()
@@ -36,6 +37,7 @@ func New(isProd bool) *Server {
 	return &Server{router: r, static: s, projects: projects, isProd: isProd}
 }
 
+// Start begins the server operations
 func (s *Server) Start(port, grpcPort string) error {
 
 	go s.initGRPCServer(grpcPort)

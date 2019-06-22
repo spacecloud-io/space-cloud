@@ -64,7 +64,7 @@ func (p *Projects) NewProject(project string) *ProjectState {
 	f := functions.Init()
 	a := auth.Init(c, nil)
 	u := userman.Init(c, a)
-	file := filestore.Init()
+	file := filestore.Init(a)
 	r := realtime.Init(c)
 
 	state := &ProjectState{Crud: c, Functions: f, Auth: a, UserManagement: u, FileStore: file, Realtime: r}

@@ -8,6 +8,7 @@ You can list all files and folders within a specific folder by simply calling `l
       <li class="tab col s2"><a class="active" href="#list-js">Javascript</a></li>
       <li class="tab col s2"><a href="#list-java">Java</a></li>
       <li class="tab col s2"><a href="#list-python">Python</a></li>
+      <li class="tab col s2"><a href="#list-golang">Golang</a></li>
     </ul>
   </div>
   <div id="list-js" class="col s12" style="padding:0">
@@ -45,6 +46,13 @@ api.FileStore()
     <pre>
       <code class="python">
 # Python client coming soon!
+      </code>
+    </pre>
+  </div>
+  <div id="list-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+// Golang client coming soon!
       </code>
     </pre>
   </div>

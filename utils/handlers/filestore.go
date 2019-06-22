@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
@@ -75,14 +75,6 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Check if the user is authorised to make this request
-		err = state.Auth.IsFileOpAuthorised(project, token, path, utils.FileCreate, map[string]interface{}{})
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-			return
-		}
-
 		if fileType == "file" {
 			file, header, err := r.FormFile("file")
 			defer file.Close()
@@ -93,25 +85,23 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 				fileName = tempName
 			}
 
-			err = state.FileStore.CreateFile(ctx, project, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
+			status, err := state.FileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
+			w.WriteHeader(status)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
+			json.NewEncoder(w).Encode(map[string]string{})
 		} else {
 			name := r.Form.Get("name")
-			err = state.FileStore.CreateDir(ctx, project, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
+			status, err := state.FileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
+			w.WriteHeader(status)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
+			json.NewEncoder(w).Encode(map[string]string{})
 		}
-
-		// Give positive acknowledgement
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{})
 	}
 }
 
@@ -130,13 +120,6 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Exit if file storage is not enabled
-		if !state.FileStore.IsEnabled() {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
-			return
-		}
-
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -144,42 +127,30 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 		// Extract the path from the url
 		token, project, path := getMetaData(r)
 
-		// Check if the user is authorised to make this request
-		err = state.Auth.IsFileOpAuthorised(project, token, path, utils.FileRead, map[string]interface{}{})
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-			return
-		}
-
 		op := r.URL.Query().Get("op")
 
 		// List the specified directory if op type is list
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
-			res, err := state.FileStore.ListDir(ctx, project, &model.ListFilesRequest{Path: path, Type: mode})
+
+			status, res, err := state.FileStore.ListFiles(ctx, project, token, &model.ListFilesRequest{Path: path, Type: mode})
+			w.WriteHeader(status)
 			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
-
-			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
-
 			return
 		}
 
 		// Read the file from file storage
-		file, err := state.FileStore.ReadFile(ctx, project, path)
+		status, file, err := state.FileStore.DownloadFile(ctx, project, token, path)
+		w.WriteHeader(status)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		defer file.Close()
-
-		w.WriteHeader(http.StatusOK)
 		io.Copy(w, file.File)
 	}
 }
@@ -198,14 +169,6 @@ func HandleDelete(projects *projects.Projects) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		// Exit if file storage is not enabled
-		if !state.FileStore.IsEnabled() {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
-			return
-		}
-
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -213,23 +176,13 @@ func HandleDelete(projects *projects.Projects) http.HandlerFunc {
 		// Extract the path from the url
 		token, project, path := getMetaData(r)
 
-		// Check if the user is authorised to make this request
-		err = state.Auth.IsFileOpAuthorised(project, token, path, utils.FileDelete, map[string]interface{}{})
-		if err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": "You are not authorized to make this request"})
-			return
-		}
+		status, err := state.FileStore.DeleteFile(ctx, project, token, path)
 
-		err = state.FileStore.DeleteDir(ctx, project, path)
+		w.WriteHeader(status)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		// Give positive acknowledgement
-		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{})
 	}
 }
@@ -246,6 +199,6 @@ func getMetaData(r *http.Request) (token string, project string, path string) {
 	}
 	token = strings.TrimPrefix(tokens[0], "Bearer ")
 	a := strings.Split(r.URL.Path, "/")[5:]
-	path = "/" + strings.Join(a, "/")
+	path = string(os.PathSeparator) + strings.Join(a, "/")
 	return
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"bufio"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/modules/static"
@@ -57,6 +58,22 @@ func HandleStaticRequest(static *static.Module) http.HandlerFunc {
 			return
 		}
 
-		http.ServeFile(w, r, path)
+		// Check if path exists
+		if fileInfo, err := os.Stat(path); !os.IsNotExist(err) {
+			// If path exists and is of type file then serve that file
+			if !fileInfo.IsDir() {
+				http.ServeFile(w, r, path)
+				return
+			}
+			// Else if a index file exists within that folder serve that index file
+			path = strings.TrimSuffix(path, "/")
+			if _, err := os.Stat(path + "/index.html"); !os.IsNotExist(err) {
+				http.ServeFile(w, r, path+"/index.html")
+				return
+			}
+		}
+
+		// If path does not exists serve the root index file
+		http.ServeFile(w, r, strings.TrimSuffix(route.Path, "/")+"/index.html")
 	}
 }

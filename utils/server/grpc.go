@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/mitchellh/mapstructure"
@@ -574,7 +575,7 @@ func (s *Server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Resp
 		out.Error = err.Error()
 		return &out, nil
 	}
-	res, err1 := json.Marshal(result)
+	res, err1 := json.Marshal(result["users"])
 	if err1 != nil {
 		out.Status = http.StatusInternalServerError
 		out.Error = err1.Error()
@@ -658,4 +659,170 @@ func (s *Server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response
 	out.Result = res
 
 	return &out, nil
+}
+
+func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
+	status, err := state.FileStore.CreateDir(ctx, in.Meta.Project, in.Meta.Token, &model.CreateFileRequest{Name: in.Name, Path: in.Path, Type: "dir", MakeAll: false})
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	out.Result = []byte("")
+
+	return &out, nil
+}
+
+func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
+	status, err := state.FileStore.DeleteFile(ctx, in.Meta.Project, in.Meta.Token, in.Path)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	out.Result = []byte("")
+
+	return &out, nil
+}
+
+func (s *Server) ListFiles(ctx context.Context, in *pb.ListFilesRequest) (*pb.Response, error) {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: 400, Error: err.Error()}, nil
+	}
+
+	status, result, err := state.FileStore.ListFiles(ctx, in.Meta.Project, in.Meta.Token, &model.ListFilesRequest{Path: in.Path, Type: "all"})
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+		return &out, nil
+	}
+	res, err1 := json.Marshal(result)
+	if err1 != nil {
+		out.Status = http.StatusInternalServerError
+		out.Error = err1.Error()
+		return &out, nil
+	}
+	out.Result = res
+
+	return &out, nil
+}
+
+func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
+	req, err := stream.Recv()
+	if err != nil {
+		return stream.SendAndClose(&pb.Response{
+			Status: int32(http.StatusInternalServerError),
+			Error:  err.Error(),
+		})
+	}
+
+	// Load the project state
+	state, err := s.projects.LoadProject(req.Meta.Project)
+	if err != nil {
+		return stream.SendAndClose(&pb.Response{
+			Status: int32(http.StatusBadRequest),
+			Error:  err.Error(),
+		})
+	}
+
+	c := make(chan int)
+	r, w := io.Pipe()
+	// defer r.Close()
+	// defer w.Close()
+
+	go func() {
+		status, err1 := state.FileStore.UploadFile(context.TODO(), req.Meta.Project, req.Meta.Token, &model.CreateFileRequest{req.Path, req.Name, "file", true}, r)
+		c <- status
+		if err1 != nil {
+			err = err1
+		}
+		w.Close()
+	}()
+
+	go func() {
+		for {
+			req, err1 := stream.Recv()
+			if err1 == io.EOF {
+				break
+			}
+			if err1 != nil {
+				err = err1
+				c <- http.StatusInternalServerError
+				break
+			}
+			w.Write(req.Payload)
+		}
+		w.Close()
+	}()
+
+	status := <-c
+	if err != nil {
+		return stream.SendAndClose(&pb.Response{
+			Status: int32(status),
+			Error:  err.Error(),
+		})
+	}
+	return stream.SendAndClose(&pb.Response{
+		Status: int32(status),
+		Result: []byte(""),
+	})
+}
+
+func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_DownloadFileServer) error {
+	// Load the project state
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return stream.Send(&pb.FilePayload{
+			Status: int32(http.StatusBadRequest),
+			Error:  err.Error(),
+		})
+	}
+
+	status, file, err := state.FileStore.DownloadFile(context.TODO(), in.Meta.Project, in.Meta.Token, in.Path)
+	if err != nil {
+		stream.Send(&pb.FilePayload{
+			Status: int32(status),
+			Error:  err.Error(),
+		})
+		return nil
+	}
+	defer file.Close()
+
+	buf := make([]byte, utils.PayloadSize)
+	for {
+		n, err := file.File.Read(buf)
+		if n > 0 {
+			buf = buf[:n]
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			stream.Send(&pb.FilePayload{
+				Status: int32(http.StatusInternalServerError),
+				Error:  err.Error(),
+			})
+			break
+		}
+		req := pb.FilePayload{Payload: buf, Status: int32(http.StatusOK)}
+		stream.Send(&req)
+	}
+	return nil
 }
