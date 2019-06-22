@@ -6,6 +6,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
@@ -29,11 +30,12 @@ type ProjectState struct {
 type Projects struct {
 	lock     sync.RWMutex
 	projects map[string]*ProjectState
+	h        *driver.Handler
 }
 
 // New creates a new Projects instance
-func New() *Projects {
-	return &Projects{projects: map[string]*ProjectState{}}
+func New(h *driver.Handler) *Projects {
+	return &Projects{projects: map[string]*ProjectState{}, h: h}
 }
 
 // LoadProject returns the state of the project specified
@@ -77,7 +79,7 @@ func (p *Projects) NewProject(project string) *ProjectState {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	c := crud.Init()
+	c := crud.Init(p.h)
 	f := functions.Init()
 	a := auth.Init(c, nil)
 	u := userman.Init(c, a)
