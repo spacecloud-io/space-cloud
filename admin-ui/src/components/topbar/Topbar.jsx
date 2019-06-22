@@ -4,6 +4,11 @@ import { connect } from 'react-redux';
 import './topbar.css'
 import { Button } from 'antd';
 import DbSelector from '../../components/db-selector/DbSelector'
+import { isEqual } from "lodash"
+import history from "../../history";
+import store from "../../store";
+import { get } from 'automate-redux';
+import { saveConfig } from '../../actions/index';
 
 
 function Topbar(props) {
@@ -14,25 +19,25 @@ function Topbar(props) {
       {(props.title === "Database") &&
         <DbSelector handleSelect={props.handleSelect} selectedDb={props.selectedDb} />
       }
-      <Button type="primary" className="save-button" onClick={props.handleSave}>SAVE</Button>
+      <Button type="primary" className="save-button" onClick={props.handleSave} disabled={!props.unsavedChanges}>SAVE</Button>
     </div>
   )
 }
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    selectedDb: 'sql-mysql',
+    selectedDb: ownProps.selectedDb,
+    unsavedChanges: !isEqual(state.config, state.savedConfig)
   }
 }
 
-const mapDispatchToProps = (dispatch) => {
+const mapDispatchToProps = (dispatch, ownProps) => {
+  const projectId = get(store.getState(), "config.id", "")
   return {
-    handleSave: () => {
-      console.log('Saved')
-    },
+    handleSave: saveConfig,
 
     handleSelect(value) {
-      console.log(`selected ${value}`);
+      history.push(`/mission-control/${projectId}/database/rules/${value}`)
     }
   }
 }

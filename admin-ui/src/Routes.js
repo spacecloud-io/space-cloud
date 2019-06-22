@@ -14,9 +14,10 @@ export default () => {
   return (
     <Router history={history}>
       <Route exact path="/mission-control" component={Login} />
-      <Route exact path="/mission-control/:projectId/database" component={Database} />
-      <Route exact path="/mission-control/:projectId/user-management" component={UserManagement} />
+      <Route exact path="/mission-control/:projectId" component={(props) => <Redirect to={`/mission-control/${props.match.params.projectId}/overview`}/>} />
       <Route exact path="/mission-control/:projectId/overview" component={Overview} />
+      <Route exact path="/mission-control/:projectId/user-management" component={UserManagement} />
+      <Route exact path="/mission-control/:projectId/database" component={Database} />
       <Route exact path="/mission-control/:projectId/database/rules/:database" component={DBRules} />
       <Route exact path="/mission-control/:projectId/functions" component={(props) => <Redirect to={`/mission-control/${props.match.params.projectId}/functions/rules`} />} />
       <Route exact path="/mission-control/:projectId/functions/rules" component={FunctionRules} />

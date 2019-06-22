@@ -84,6 +84,11 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 	// Create a new crud blocks
 	for k, v := range crud {
+		// Skip this block if it is not enabled
+		if !v.Enabled {
+			continue
+		}
+
 		c, err := initBlock(utils.DBType(k), v.Conn)
 		if err != nil {
 			return errors.New("CRUD: Error - " + k + " could not be initialised")

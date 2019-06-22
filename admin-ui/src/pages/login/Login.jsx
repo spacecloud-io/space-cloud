@@ -5,6 +5,7 @@ import Header from '../../components/header/Header'
 import './login.css';
 import LoginForm from './LoginForm';
 import { set } from "automate-redux";
+import { login } from '../../actions/index';
 
 function Login(props) {
   return (
@@ -34,8 +35,7 @@ const mapDispatchToProps = (dispatch) => {
     updateFormState: (fields) => {
       dispatch(set("uiState.login.formState", fields))
     },
-    handleSubmit: (user, pass) => {
-    }
+    handleSubmit: login
   }
 }
 

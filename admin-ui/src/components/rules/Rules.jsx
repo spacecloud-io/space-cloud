@@ -4,6 +4,10 @@ import { Row, Col, Icon } from 'antd';
 import { Controlled as CodeMirror } from 'react-codemirror2';
 import 'codemirror/theme/material.css';
 import 'codemirror/lib/codemirror.css';
+import 'codemirror/mode/javascript/javascript'
+import 'codemirror/addon/selection/active-line.js'
+import 'codemirror/addon/edit/matchbrackets.js'
+import 'codemirror/addon/edit/closebrackets.js'
 
 class Rules extends Component {
 	constructor(props) {
@@ -23,7 +27,6 @@ class Rules extends Component {
 	}
 	render() {
 		var rules = Object.keys(this.props.rules);
-		const index = rules.indexOf(this.state.selectedRule);
 
 		return (
 			<div className="rules-main-wrapper">
@@ -57,13 +60,16 @@ class Rules extends Component {
 								<CodeMirror
 									value={this.props.rules[this.state.selectedRule]}
 									options={{
-										mode: 'xml',
-										// theme: 'material',
-										autofocus: true,
-										lineNumbers: true
+										mode: { name: "javascript", json: true },
+										lineNumbers: true,
+										styleActiveLine: true,
+										matchBrackets: true,
+										autoCloseBrackets: true,
+										tabSize: 2,
+										autofocus: true
 									}}
 									onBeforeChange={(editor, data, value) => {
-										this.props.handleRuleChange(value);
+										this.props.handleRuleChange(this.state.selectedRule, value);
 									}}
 								/>
 							</div>

@@ -44,12 +44,13 @@ type Server struct {
 func New(isProd bool) *Server {
 	r := mux.NewRouter()
 	c := crud.Init()
-	f := filestore.Init()
 	rt := realtime.Init(c)
 	s := static.Init()
 	fn := functions.Init()
 	a := auth.Init(c, fn)
 	u := userman.Init(c, a)
+	f := filestore.Init(a)
+
 	return &Server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: fn, realtime: rt, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }
 
@@ -72,7 +73,7 @@ func (s *Server) Start(port, grpcPort string) error {
 
 	fmt.Println("Starting http Server on port " + port)
 
-	if s.config.SSL != nil {
+	if s.config.SSL != nil && s.config.SSL.Enabled {
 		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
 	}
 
@@ -85,7 +86,7 @@ func (s *Server) LoadConfig(config *config.Project) error {
 	s.lock.Unlock()
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions)
+	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions, config.Admin)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(config.Modules.Auth)
@@ -121,7 +122,7 @@ func (s *Server) initGRPCServer(port string) {
 	}
 
 	options := []grpc.ServerOption{}
-	if s.config.SSL != nil {
+	if s.config.SSL != nil && s.config.SSL.Enabled {
 		creds, err := credentials.NewServerTLSFromFile(s.config.SSL.Crt, s.config.SSL.Key)
 		if err != nil {
 			log.Fatalln("Error: ", err)

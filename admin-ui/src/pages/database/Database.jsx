@@ -10,17 +10,18 @@ import Sidenav from '../../components/sidenav/Sidenav'
 import Topbar from '../../components/topbar/Topbar'
 import Documentation from '../../components/documentation/Documentation'
 import DatabaseCardList from '../../components/database-card/DatabaseCardList'
-import { Redirect} from "react-router-dom";
+import { Redirect } from "react-router-dom";
+import { get } from "automate-redux";
 
 function Database(props) {
-  const cards = [{ graphics: mysql, name: "MySQL", desc: "The world's most popular open source database.", key: "sql-mysql"},
-  { graphics: postgresql, name: "PostgreSQL", desc: "The world's most popular open source database.", key: "sql-postgres"},
-  { graphics: mongodb, name: "MongoDB", desc: "A open-source cross-platform document- oriented database.", key: "mongo"}]
+  const cards = [{ graphics: mysql, name: "MySQL", desc: "The world's most popular open source database.", key: "sql-mysql" },
+  { graphics: postgresql, name: "PostgreSQL", desc: "The world's most popular open source database.", key: "sql-postgres" },
+  { graphics: mongodb, name: "MongoDB", desc: "A open-source cross-platform document- oriented database.", key: "mongo" }]
 
-  if(props.selectedDb){
-    return <Redirect to={`/${props.projectId}/database/rules/${props.selectedDb}`}/>;
+  if (props.selectedDb) {
+    return <Redirect to={`/mission-control/${props.projectId}/database/rules/${props.selectedDb}`} />;
   }
-    return (
+  return (
     <div className="database">
       <Topbar title="Database" />
       <div className="flex-box">
@@ -31,7 +32,7 @@ function Database(props) {
             <Documentation url="https://spaceuptech.com/docs/database" />
           </div>
           <p className="db-desc">Start using crud by enabling one of the following databases.</p>
-          <DatabaseCardList cards={cards} handleEnable={props.handleEnable}/>
+          <DatabaseCardList cards={cards} handleEnable={props.handleEnable} />
         </div>
       </div>
     </div>
@@ -39,10 +40,13 @@ function Database(props) {
 }
 
 const mapStateToProps = (state, ownProps) => {
-  console.log("OwnProps", ownProps)
+  const crudModule = get(state, "config.modules.crud", {})
+  const selectedDb = Object.keys(crudModule).find(db => {
+    return crudModule[db].enabled
+  })
   return {
-    projectId: "ToDo-App",
-    selectedDb: undefined,
+    projectId: ownProps.match.params.projectId,
+    selectedDb: selectedDb,
   }
 }
 

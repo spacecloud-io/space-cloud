@@ -6,7 +6,7 @@ import (
 
 func (s *Server) Routes() {
 	// Initialize the routes for config management
-	s.router.Methods("POST").Path("/v1/api/{project}/config/login").HandlerFunc(handlers.HandleAdminLogin(s.auth))
+	s.router.Methods("POST").Path("/v1/api/config/login").HandlerFunc(handlers.HandleAdminLogin(s.auth))
 	s.router.Methods("GET").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleLoadConfig(s.auth, s.configFilePath))
 	s.router.Methods("POST").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleStoreConfig(s.auth, s.configFilePath, s.LoadConfig))
 

@@ -4,6 +4,7 @@ secret: some-secret
 modules:
   crud:
     mongo:
+      enabled: true
       conn: mongodb://localhost:27017
       collections:
         todos:
@@ -28,7 +29,6 @@ modules:
             delete:
               rule: allow
           isRealtimeEnabled: false
-      isPrimary: true
   auth:
     email:
       enabled: true

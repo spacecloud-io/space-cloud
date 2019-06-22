@@ -17,8 +17,8 @@ modules:
           rule: allow
   crud:
     sql-mysql:
+      enabled: true
       conn: root:my-secret-pw@/test_database
-      isPrimary: true
       collections:
         demo:
           isRealtimeEnabled: true

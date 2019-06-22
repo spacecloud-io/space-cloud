@@ -2,6 +2,7 @@ package auth
 
 import (
 	"strings"
+	"os"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -38,7 +39,7 @@ func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOp
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
 	pathParams := make(map[string]interface{})
 
-	in1 := strings.Split(path, "/")
+	in1 := strings.Split(path, string(os.PathSeparator))
 	// Remove last element if it is  Empty
 	if in1[len(in1)-1] == "" {
 		in1 = in1[:len(in1)-1]
@@ -46,7 +47,7 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 
 	for _, r := range m.fileRules {
 
-		rulePath := strings.Split(r.Prefix, "/")
+		rulePath := strings.Split(r.Prefix, string(os.PathSeparator))
 
 		if rulePath[len(rulePath)-1] == "" {
 			rulePath = rulePath[:len(rulePath)-1]

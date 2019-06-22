@@ -25,12 +25,8 @@ func HandleAdminLogin(auth *auth.Module) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(req)
 		defer r.Body.Close()
 
-		// Get the path parameters
-		vars := mux.Vars(r)
-		project := vars["project"]
-
 		// Check if the request is authorised
-		status, token, err := auth.AdminLogin(project, req.User, req.Pass)
+		status, token, project, err := auth.AdminLogin(req.User, req.Pass)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -38,7 +34,7 @@ func HandleAdminLogin(auth *auth.Module) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"token": token})
+		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "project": project})
 	}
 }
 
