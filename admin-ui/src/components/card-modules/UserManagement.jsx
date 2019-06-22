@@ -11,7 +11,7 @@ function UserManagement(props) {
       <div>
         <i className="material-icons module">people</i>
         <div className="logos">
-          {props.modules.mail &&
+          {props.modules.email &&
             <img src={mail} alt="mail" />
           }
           {props.modules.google &&

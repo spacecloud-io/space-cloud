@@ -7,6 +7,7 @@ import Header from '../header/Header'
 import EditItemModal from '../edit-item-modal/EditItemModal'
 import { connect } from 'react-redux'
 import projectId from '../../assets/projectId.svg'
+import { get } from 'automate-redux';
 
 class Sidenav extends Component {
   constructor(props) {
@@ -54,7 +55,7 @@ class Sidenav extends Component {
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    projectId: "Todo-App",
+    projectId: get(state, "config.id", ""),
     selectedItem: ownProps.selectedItem,
   }
 }

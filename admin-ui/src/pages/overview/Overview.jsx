@@ -16,6 +16,7 @@ import Database from '../../components/card-modules/Database'
 import Functions from '../../components/card-modules/Functions'
 import Configure from '../../components/card-modules/Configure'
 import { Row, Col, Button } from 'antd'
+import { get } from 'automate-redux';
 
 function Overview(props) {
   return (
@@ -71,24 +72,24 @@ function Overview(props) {
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    projectId: "my-project",
+    projectId: ownProps.match.params.projectId,
     modules: {
       userManagement: {
-        enabled: false,
-        mail: true,
-        google: true,
-        fb: true,
-        twitter: true,
-        github: true,
+        enabled: get(state, "config.modules.auth.enabled", false),
+        email: get(state, "config.modules.auth.email.enabled", false),
+        google: get(state, "config.modules.auth.google.enabled", false),
+        fb: get(state, "config.modules.auth.fb.enabled", false),
+        twitter: get(state, "config.modules.twitter.email.enabled", false),
+        github: get(state, "config.modules.auth.github.enabled", false),
       },
       database: {
-        enabled: false,
-        mysql: true,
-        postgres: true,
-        mongo: true,
+        enabled: true,
+        mysql: get(state, `config.modules.crud.sql-mysql.enabled`, false),
+        postgres: get(state, `config.modules.crud.sql-postgres.enabled`, false),
+        mongo: get(state, `config.modules.crud.mongo.enabled`, false),
       },
       functions: {
-        enabled: false,
+        enabled: get(state, `config.modules.functions.enabled`, false),
       },
       configure: {
         enabled: true,

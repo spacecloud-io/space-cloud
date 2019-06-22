@@ -18,7 +18,6 @@ function RealtimeConfigure(props) {
 						})(
 							<Select placeholder="Broker" className="select">
 								<Option value="nats">NATS</Option>
-								{/* <Option value="female">female</Option> */}
 							</Select>
 						)}
 					</Form.Item>
