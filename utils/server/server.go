@@ -10,21 +10,22 @@ import (
 	"github.com/gorilla/mux"
 	nats "github.com/nats-io/nats-server/server"
 	"github.com/rs/cors"
+	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
+// Server is the main server object
 type Server struct {
+	id       string
 	lock     sync.RWMutex
 	router   *mux.Router
 	isProd   bool
 	nats     *nats.Server
-	static   *static.Module
 	projects *projects.Projects
 	ssl      *config.SSL
 }
@@ -32,9 +33,9 @@ type Server struct {
 // New creates a new server instance
 func New(isProd bool) *Server {
 	r := mux.NewRouter()
-	s := static.Init()
 	projects := projects.New()
-	return &Server{router: r, static: s, projects: projects, isProd: isProd}
+	id := uuid.NewV1().String()
+	return &Server{id: id, router: r, projects: projects, isProd: isProd}
 }
 
 // Start begins the server operations
@@ -88,7 +89,12 @@ func (s *Server) initGRPCServer(port string) {
 	}
 }
 
-// Projects returns a copy of the projects
-func (s *Server) Projects() *projects.Projects {
+// GetProjects returns a copy of the projects
+func (s *Server) GetProjects() *projects.Projects {
 	return s.projects
+}
+
+// GetID returns the server id
+func (s *Server) GetID() string {
+	return s.id
 }

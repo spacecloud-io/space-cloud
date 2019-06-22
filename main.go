@@ -13,6 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/server"
+	"github.com/spaceuptech/space-cloud/utils/validate"
 )
 
 func main() {
@@ -48,16 +49,10 @@ func main() {
 					Usage: "Start nats on port `NATS_PORT`",
 				},
 				cli.StringFlag{
-					Name:   "db",
-					Value:  "mongo",
-					Usage:  "Load space cloud config from `DB`",
-					EnvVar: "DB",
-				},
-				cli.StringFlag{
-					Name:   "conn",
-					Value:  "mongodb://localhost:27017",
-					Usage:  "The connection string to connect to config db",
-					EnvVar: "CONN",
+					Name:   "secret",
+					Value:  "none",
+					Usage:  "The secret to use for authentication",
+					EnvVar: "SECRET",
 				},
 				cli.StringFlag{
 					Name:   "account",
@@ -105,8 +100,7 @@ func actionRun(c *cli.Context) error {
 	// Load cli flags
 	port := c.String("port")
 	grpcPort := c.String("grpc-port")
-	conn := c.String("conn")
-	db := c.String("db")
+	secret := c.String("secret")
 	account := c.String("account")
 	natsPort := c.Int("nats-port")
 	clusterPort := c.Int("cluster-port")
@@ -115,7 +109,7 @@ func actionRun(c *cli.Context) error {
 	disableNats := c.Bool("disable-nats")
 	seeds := c.String("seeds")
 
-	if account == "none" {
+	if account == "none" || secret == "none" {
 		return errors.New("Cannot start space-cloud with no account")
 	}
 
@@ -144,15 +138,13 @@ func actionRun(c *cli.Context) error {
 		fmt.Println("Started NATS server on port ", server.DefaultNatsOptions.Port)
 	}
 
-	err := s.Projects().LoadConfigFromDB(account, db, conn)
-	if err != nil {
-		return err
-	}
-
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {
 		go s.RoutineMetrics()
 	}
+
+	// Start the validation process
+	validate.New(s.GetProjects()).Start(s.GetID(), account, secret)
 
 	s.Routes()
 	return s.Start(port, grpcPort)

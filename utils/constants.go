@@ -148,3 +148,11 @@ const (
 	// GRPCService for Service implementation.
 	GRPCService RealTimeProtocol = "GRPC-Service"
 )
+
+const (
+	// TypeRegisterRequest is the space cloud register request
+	TypeRegisterRequest string = "register"
+
+	// TypeProjectFeed is the config push event to space cloud
+	TypeProjectFeed string = "project-feed"
+)
