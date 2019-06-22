@@ -7,6 +7,7 @@ import (
 	nats "github.com/nats-io/nats-server/server"
 )
 
+// DefaultNatsOptions are the default options to be used
 var DefaultNatsOptions = &nats.Options{
 	Host:   "0.0.0.0",
 	Port:   4222,
@@ -18,6 +19,7 @@ var DefaultNatsOptions = &nats.Options{
 	},
 }
 
+// RunNatsServer starts the nats server in a separate goroutine
 func (s *Server) RunNatsServer(opts *nats.Options) {
 	s.nats = nats.New(opts)
 	go s.nats.Start()

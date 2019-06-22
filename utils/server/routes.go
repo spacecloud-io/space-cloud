@@ -4,6 +4,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
+// Routes initialises the http endpoints
 func (s *Server) Routes() {
 	// Initialize the routes for config management
 	//s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
@@ -38,5 +39,5 @@ func (s *Server) Routes() {
 	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.projects))
 
 	// Initialize the route for handling static files
-	s.router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.static))
+	s.router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.projects))
 }
