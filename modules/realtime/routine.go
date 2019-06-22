@@ -52,6 +52,7 @@ func (m *Module) worker() {
 		// Get the feedData
 		req := tempReq.(*pendingRequest)
 		m.helperSendFeed(req.data)
+		m.pendingRequests.Delete(msg.ID)
 	}
 }
 

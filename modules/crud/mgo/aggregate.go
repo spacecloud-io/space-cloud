@@ -17,10 +17,10 @@ func (m *Mongo) Aggregate(ctx context.Context, project, col string, req *model.A
 		var result map[string]interface{}
 
 		cur, err := collection.Aggregate(ctx, req.Pipeline)
-		defer cur.Close(ctx)
 		if err != nil {
 			return nil, err
 		}
+		defer cur.Close(ctx)
 
 		if !cur.Next(ctx) {
 			return nil, errors.New("No result found")
