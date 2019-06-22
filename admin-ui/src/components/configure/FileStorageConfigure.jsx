@@ -13,11 +13,11 @@ function FileStorageConfigure(props) {
 			<Form className="conn-form" layout="inline">
 				<div className="conn-form-options">
 					<Form.Item>
-						{getFieldDecorator('storage', {
+						{getFieldDecorator('storeType', {
 							rules: [ { required: true, message: '' } ]
 						})(
-							<Select placeholder="Broker" className="select">
-								<Option value="localstore">LocalStore</Option>
+							<Select placeholder="Store Type" className="select">
+								<Option value="local">Local</Option>
 								<Option value="s3">S3</Option>
 							</Select>
 						)}
@@ -41,7 +41,7 @@ function FileStorageConfigure(props) {
 const WrappedFileStorageConfigureForm = Form.create({
 	mapPropsToFields(props) {
 		return {
-			storage: createFormField({ value: props.formState.storage }),
+			storeType: createFormField({ value: props.formState.storeType }),
 			enabled: createFormField({ value: props.formState.enabled }),
 			conn: createFormField({ value: props.formState.conn })
 		};

@@ -29,7 +29,6 @@ modules:
             delete:
               rule: allow
           isRealtimeEnabled: false
-      isPrimary: true
   auth:
     email:
       enabled: true

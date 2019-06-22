@@ -25,8 +25,9 @@ type Admin struct {
 
 // SSL holds the certificate and key file locations
 type SSL struct {
-	Crt string `json:"crt" yaml:"crt"`
-	Key string `json:"key" yaml:"key"`
+	Enabled bool   `json:"enabled" yaml:"enabled"`
+	Crt     string `json:"crt" yaml:"crt"`
+	Key     string `json:"key" yaml:"key"`
 }
 
 // Modules holds the config of all the modules of that environment
@@ -59,16 +60,16 @@ type TableRule struct {
 // Rule is the authorisation object at the query level
 type Rule struct {
 	Rule    string                 `json:"rule" yaml:"rule"`
-	Eval    string                 `json:"eval" yaml:"eval"`
-	Type    string                 `json:"type" yaml:"type"`
-	F1      interface{}            `json:"f1" yaml:"f1"`
-	F2      interface{}            `json:"f2" yaml:"f2"`
-	Clauses []*Rule                `json:"clauses" yaml:"clauses"`
-	DB      string                 `json:"db" yaml:"db"`
-	Col     string                 `json:"col" yaml:"col"`
-	Find    map[string]interface{} `json:"find" yaml:"find"`
-	Service string                 `json:"service" yaml:"service"`
-	Func    string                 `json:"func" yaml:"func"`
+	Eval    string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
+	Type    string                 `json:"type,omitempty" yaml:"type,omitempty"`
+	F1      interface{}            `json:"f1,omitempty" yaml:"f1,omitempty"`
+	F2      interface{}            `json:"f2,omitempty" yaml:"f2,omitempty"`
+	Clauses []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty"`
+	DB      string                 `json:"db,omitempty" yaml:"db,omitempty"`
+	Col     string                 `json:"col,omitempty" yaml:"col,omitempty"`
+	Find    map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
+	Service string                 `json:"service,omitempty" yaml:"service,omitempty"`
+	Func    string                 `json:"func,omitempty" yaml:"func,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method

@@ -10,7 +10,7 @@ function SecretConfigure(props) {
       <div className="conn-string">App secret</div>
       <Form className="conn-form" layout="inline">
         <Form.Item>
-          {getFieldDecorator('conn', {
+          {getFieldDecorator('secret', {
             rules: [{ required: true, message: 'Please input a secret !' }],
           })(
             <Input.Password style={{ width: 350 }}
@@ -26,11 +26,11 @@ function SecretConfigure(props) {
 const WrappedSecretConfigureForm = Form.create({
   mapPropsToFields(props) {
     return {
-      conn: createFormField({ value: props.formState }),
+      secret: createFormField({ value: props.formState }),
     };
   },
   onValuesChange(props, changedValues) {
-    props.handleChange(changedValues)
+    props.handleChange(changedValues.secret)
   },
 })(SecretConfigure);
 

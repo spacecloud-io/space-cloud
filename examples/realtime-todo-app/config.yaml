@@ -6,7 +6,6 @@ modules:
     mongo:
       enabled: true
       conn: mongodb://localhost:27017
-      isPrimary: true
       collections:
         todos:
           isRealtimeEnabled: true

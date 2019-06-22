@@ -3,12 +3,13 @@ package config
 var templateString = `---
 id: {{.ID}}
 secret: some-secret
+ssl:
+  enabled: false
 modules:
   crud:
     {{.PrimaryDB}}:
       enabled: true
       conn: {{.Conn}}
-      isPrimary: true
       collections:
         users:
           isRealtimeEnabled: false
@@ -59,6 +60,8 @@ modules:
 var templateStringMissionControl = `---
 id: {{.ID}}
 secret: some-secret
+ssl:
+  enabled: false
 admin:
   user: {{.AdminName}}
   pass: {{.AdminPass}}
@@ -67,7 +70,7 @@ modules:
   crud:
     {{.PrimaryDB}}:
       conn: {{.Conn}}
-      isPrimary: true
+      enabled: true
       collections:
         users:
           isRealtimeEnabled: false
