@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-// import '../../../index.css'
+import '../../index.css'
 import Sidenav from '../../components/sidenav/Sidenav';
 import Topbar from '../../components/topbar/Topbar';
 import Header from '../../components/header/Header';
@@ -20,9 +20,8 @@ function Rules(props) {
 			<div className="flex-box">
 				<Sidenav selectedItem="configure" />
 				<div className="page-content">
-					<div className="header-flex">
-						<Header name="Project Configurations" color="#000" fontSize="22px" />
-					</div>
+					<Header name="Project Configurations" color="#000" fontSize="22px" />
+
 					<SecretConfigure formState={props.secret} handleChange={props.handleSecretChange} />
 					<Divider />
 					<SslConfigureForm formState={props.ssl} handleChange={props.handleSslChange} />

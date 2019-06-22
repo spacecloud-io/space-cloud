@@ -8,7 +8,7 @@ function FunctionConfigure(props) {
 	const { getFieldDecorator } = props.form;
 	return (
 		<div className="configure">
-			<div className="conn-string">Function</div>
+			<div className="conn-string">Function : </div>
 
 			<Form className="conn-form" layout="inline">
 				<div className="conn-form-options">
@@ -29,7 +29,7 @@ function FunctionConfigure(props) {
 					<Form.Item className="conn-form-cert-input">
 						{getFieldDecorator('conn', {
 							rules: [ { required: true, message: '' } ]
-						})(<Input style={{ width: 350 }} placeholder="Enter Connection String" />)}
+						})(<Input style={{ width: 600 }} placeholder="Enter Connection String" />)}
 					</Form.Item>
 				</div>
 			</Form>

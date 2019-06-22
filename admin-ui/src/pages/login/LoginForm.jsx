@@ -15,7 +15,7 @@ function LoginForm(props) {
   const { getFieldDecorator } = props.form;
   
   return (
-    <div className="card">
+    <div className="login-card">
       <div className="content">
         <img className="logo" src={logo} alt="logo"/><br />
         <p className="about">If you've got an idea, let's space it up !</p>

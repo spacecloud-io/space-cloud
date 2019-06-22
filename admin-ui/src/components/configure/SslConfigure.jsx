@@ -1,13 +1,13 @@
 import React from 'react';
 import './configure.css';
-import { Form, Input, Tooltip, Switch } from 'antd';
+import { Form, Input, Switch } from 'antd';
 import { createFormField } from 'rc-form';
 
 function SslConfigure(props) {
 	const { getFieldDecorator } = props.form;
 	return (
 		<div className="configure">
-			<div className="conn-string">SSL</div>
+			<div className="conn-string">SSL : </div>
 
 			<Form className="conn-form" layout="inline">
 				<div className="conn-form-switch">
@@ -19,14 +19,14 @@ function SslConfigure(props) {
 					<Form.Item className="conn-form-cert-input">
 						{getFieldDecorator('cert', {
 							rules: [ { required: true, message: '' } ]
-						})(<Input style={{ width: 350 }} placeholder="Enter Certificate" />)}
+						})(<Input style={{ width: 600 }} placeholder="Enter Certificate" />)}
 					</Form.Item>
 				</div>
         <div className="conn-form-key">
 					<Form.Item className="conn-form-cert-input">
 						{getFieldDecorator('key', {
 							rules: [ { required: true, message: '' } ]
-						})(<Input style={{ width: 350 }} placeholder="Enter Key" />)}
+						})(<Input style={{ width: 600 }} placeholder="Enter Key" />)}
 					</Form.Item>
 				</div>
 			</Form>

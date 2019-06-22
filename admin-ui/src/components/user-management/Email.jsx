@@ -7,17 +7,17 @@ function Email(props) {
   return (
     <div className="email">
       <span>No fields to configure</span>
-      <span className="email-collapse">
-        <span>Enable:  </span>
-        <Form>
+      <Form>
+        <div className="switch">
+          <span>Enable:  </span>
           <Form.Item>
             {getFieldDecorator('enabled', { valuePropName: 'checked' })(
-              <Switch size="small" className="switch" />
+              <Switch size="small" className="email-en-switch" />
             )}
           </Form.Item>
-        </Form>
-      </span>
-    </div>
+        </div>
+      </Form>
+    </div >
   )
 }
 

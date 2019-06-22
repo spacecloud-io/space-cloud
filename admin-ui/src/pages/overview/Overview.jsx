@@ -30,38 +30,40 @@ function Overview(props) {
               <Header name="Get started by adding Space Cloud to your app" color="#000" fontSize="22px" />
             </Col>
           </Row>
-          <div className="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </div>
-          <div className="lang">
-            <a href="https://www.spaceuptech.com" target="_blank" rel="noopener noreferrer">
-              <span class="circle"><img src={python} alt="python" /></span>
-            </a>
-            <a href="https://www.spaceuptech.com" target="_blank" rel="noopener noreferrer">
-              <span class="circle"><img src={js} alt="js" /></span>
-            </a>
-            <a href="https://www.spaceuptech.com" target="_blank" rel="noopener noreferrer">
-              <span class="circle"><img src={java} alt="java" /></span>
-            </a>
-            <a href="https://www.spaceuptech.com" target="_blank" rel="noopener noreferrer">
-              <span class="circle" id="go"><img src={go} alt="go" /></span>
-            </a>
-            <div className="sepration"></div>
-            <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
-              <Button type="primary" shape="round" icon="play-circle" size="large" className="get-started">Getting Started</Button>
-            </a>
+          <div className="overview-padding">
+            <div className="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </div>
+            <div className="lang">
+              <a href="https://www.spaceuptech.com" target="_blank" rel="noopener noreferrer">
+                <span class="circle"><img src={python} alt="python" heg /></span>
+              </a>
+              <a href="https://www.spaceuptech.com" target="_blank" rel="noopener noreferrer">
+                <span class="circle"><img src={js} alt="js" /></span>
+              </a>
+              <a href="https://www.spaceuptech.com" target="_blank" rel="noopener noreferrer">
+                <span class="circle"><img src={java} alt="java" /></span>
+              </a>
+              <a href="https://www.spaceuptech.com" target="_blank" rel="noopener noreferrer">
+                <span class="circle" id="go"><img src={go} alt="go" /></span>
+              </a>
+              <div className="sepration"></div>
+              <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
+                <Button type="primary" shape="round" icon="play-circle" size="large" className="get-started">Getting Started</Button>
+              </a>
+            </div>
           </div>
           <Header name="Explore Modules" color="#000" fontSize="22px" />
-          <Row>
+          <Row  className ="overview-padding">
             <Link to={`/mission-control/${props.projectId}/user-management`}>
               <Col span={11}><UserManagement modules={props.modules.userManagement} /></Col>
             </Link>
             <Link to={`/mission-control/${props.projectId}/database`}>
-              <Col span={11} offset={2}><Database modules={props.modules.database} /></Col>
+              <Col span={11} offset={1}><Database modules={props.modules.database} /></Col>
             </Link>
             <Link to={`/mission-control/${props.projectId}/functions`}>
               <Col span={11}><Functions modules={props.modules.functions} /></Col>
             </Link>
             <Link to={`/mission-control/${props.projectId}/configure`}>
-              <Col span={11} offset={2}><Configure modules={props.modules.configure} /></Col>
+              <Col span={11} offset={1}><Configure modules={props.modules.configure} /></Col>
             </Link>
           </Row>
         </div>

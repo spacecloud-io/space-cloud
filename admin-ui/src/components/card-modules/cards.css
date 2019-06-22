@@ -15,27 +15,27 @@
 }
 
 .overview-card {
-  padding: 18px 22px;
+  padding: 28px;
   margin: 16px 0px 24px 0;
   color: #fff;
   background-size: cover;
 }
 
 .overview-card .heading {
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 600;
   margin-bottom: 2px;
   margin-top: 4px;
 }
 
 .overview-card .underline {
-  margin-bottom: 6px;
+  margin-bottom: 12px;
   border-bottom: 3px solid #fff;
   width: 48px;
 }
 
 .overview-card .desc {
-  font-size: 11px;
+  font-size: 14px;
   color: #fff;
   font-weight: 600;
 }
@@ -46,35 +46,36 @@
 }
 
 .overview-card .footer {
-  margin-top: 16px;
+  margin-top: 28px;
 }
 
 .overview-card .book {
   position: relative;
-  top: 0.1vw;
+  top: 0.2vw;
   padding-left: 4px;
   font-size: 16px;
 }
 
 .overview-card .button {
-  border-radius: 20px;
   color: #000;
+  border-radius: 25px;
   font-weight: 600;
-  font-size: 8px;
+  font-size: 10px;
   border: none;
   float: right;
-  height: 20px;
-  line-height: 20px;
+  height: 22px;
+  line-height: 25px;
   background: #fff;
+  padding: 0 10px;
 }
 
 .overview-card .disabled {
-  background: #ccc;
+  background: #e0e0e0;
 }
 
 .overview-card .module {
   color: #fff;
-  font-size: 34px;
+  font-size: 40px;
 }
 
 .overview-card .logos {
@@ -82,9 +83,9 @@
 }
 
 .overview-card .logos > img {
-  padding-right: 8px;
+  margin-right: 10px;
 }
 
 .overview-card .docs {
-  font-size: 12px;
+  font-size: 14px;
 }

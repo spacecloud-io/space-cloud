@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom';
-
 import SidenavItem from './SidenavItem'
 import './sidenav.css'
 import Header from '../header/Header'

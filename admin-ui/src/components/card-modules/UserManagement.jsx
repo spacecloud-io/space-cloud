@@ -12,19 +12,19 @@ function UserManagement(props) {
         <i className="material-icons module">people</i>
         <div className="logos">
           {props.modules.email &&
-            <img src={mail} alt="mail" />
+            <img src={mail} alt="mail" height="20px" width="20px"/>
           }
           {props.modules.google &&
-            <img src={google} alt="google" />
+            <img src={google} alt="google" height="20px" width="20px"/>
           }
           {props.modules.fb &&
-            <img src={fb} alt="fb" />
+            <img src={fb} alt="fb" height="20px" width="20px"/>
           }
           {props.modules.twitter &&
-            <img src={twitter} alt="twitter" />
+            <img src={twitter} alt="twitter" height="20px" width="20px"/>
           }
           {props.modules.github &&
-            <img src={github} alt="github" />
+            <img src={github} alt="github" height="20px" width="20px"/>
           }
         </div>
       </div>
