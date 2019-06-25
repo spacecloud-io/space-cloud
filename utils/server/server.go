@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
@@ -33,7 +34,7 @@ type Server struct {
 // New creates a new server instance
 func New(isProd bool) *Server {
 	r := mux.NewRouter()
-	projects := projects.New()
+	projects := projects.New(driver.New())
 	id := uuid.NewV1().String()
 	return &Server{id: id, router: r, projects: projects, isProd: isProd}
 }
