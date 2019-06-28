@@ -71,7 +71,7 @@ func (s *Server) Start(port, grpcPort string) error {
 
 	fmt.Println("Starting HTTP Server on port: " + port)
 
-	log.Printf("Space Cloud is running on the specified ports...")
+	log.Printf("Space Cloud is running on the specified ports :D")
 	if s.config.SSL != nil {
 		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
 	}
