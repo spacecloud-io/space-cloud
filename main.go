@@ -126,8 +126,8 @@ func actionRun(c *cli.Context) error {
 		}
 		server.DefaultNatsOptions.Port = natsPort
 		server.DefaultNatsOptions.Cluster.Port = clusterPort
+		fmt.Println("Starting NATS server on port:", server.DefaultNatsOptions.Port)
 		s.RunNatsServer(server.DefaultNatsOptions)
-		fmt.Println("Started NATS server on port ", server.DefaultNatsOptions.Port)
 	}
 
 	if configPath != "none" {
