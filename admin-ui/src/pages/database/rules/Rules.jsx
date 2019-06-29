@@ -37,7 +37,7 @@ class Rules extends React.Component {
 							<Documentation url="https://spaceuptech.com/docs/database" />
 						</div>
 						<DbConfigure updateFormState={this.props.updateFormState} formState={this.props.formState} />
-						{noOfRules && <RulesComponent
+						{noOfRules > 0 && <RulesComponent
 							rules={this.props.rules}
 							handleRuleChange={this.props.handleRuleChange}
 							addText={'Add a table rule'}

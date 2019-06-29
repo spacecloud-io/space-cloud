@@ -34,7 +34,7 @@ function UserManagement(props) {
               <Panel header={(<CollapseHeader icon={mailIcon} desc="Mail" />)} key="1">
                 <Email formState={props.email} handleChange={(values) => props.handleChange("email", values)}/>
               </Panel>
-              <Panel header={(<CollapseHeader icon={googleIcon} desc="Google" />)} key="2">
+              {/* <Panel header={(<CollapseHeader icon={googleIcon} desc="Google" />)} key="2">
                 <Oauth formState={props.google} type="Google" redirectUrl="www.google.com" handleChange={(values) => props.handleChange("google", values)} />
               </Panel >
               <Panel header={(<CollapseHeader icon={fbIcon} desc="Facebook" />)} key="3">
@@ -45,7 +45,7 @@ function UserManagement(props) {
               </Panel>
               <Panel header={(<CollapseHeader icon={githubIcon} desc="Github" />)} key="5">
                 <Oauth formState={props.github} type="Github" redirectUrl="www.github.com" handleChange={(values) => props.handleChange("github", values)} />
-              </Panel>
+              </Panel> */}
             </Collapse><br />
           </div>
         </div>

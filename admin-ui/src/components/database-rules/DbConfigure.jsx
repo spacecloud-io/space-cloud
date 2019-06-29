@@ -18,7 +18,7 @@ function DbConfigure(props) {
             />,
           )}
         </Form.Item>
-        <Tooltip placement="bottomLeft" title="Lorem ipsum dolor sit amet, consectetur adipiscing elit. ">
+        <Tooltip placement="bottomLeft" title="This is the connection string of your database so that Space Cloud can connect to it.">
           <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
         </Tooltip>
         <Form.Item label="Enabled" className="switch">

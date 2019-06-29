@@ -32,7 +32,7 @@ export default service
 if (token) {
   client.setToken(token)
   const urlParams  = window.location.pathname.split("/")
-  if (urlParams.length > 2) {
+  if (urlParams.length > 2 && urlParams[2]) {
     loadConfig(urlParams[2])
   }
 }
