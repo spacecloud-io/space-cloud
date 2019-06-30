@@ -9,8 +9,7 @@ modules:
     storeType: local
     conn: /tmp/data
     rules:                        # `rules` is a map of mutiple rules
-      imageRule: 
-        prefix: /images/:userId   # `prefix` is the path prefix on which the rule applies
+      - prefix: /images/:userId   # `prefix` is the path prefix on which the rule applies
         rule:
           create:                 # `create` is the rule object for file write operations
             rule: allow

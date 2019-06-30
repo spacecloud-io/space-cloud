@@ -67,8 +67,7 @@ modules:
     storeType: local
     conn: ./
     rules:
-      rule1:
-        prefix: /
+      - prefix: /
         rule:
           create:
             rule: allow
