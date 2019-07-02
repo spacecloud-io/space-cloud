@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
+	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
 // HandleAdminLogin creates the admin login endpoint
@@ -39,7 +40,7 @@ func HandleAdminLogin(auth *auth.Module) http.HandlerFunc {
 }
 
 // HandleStoreConfig returns the handler to load the config via a REST endpoint
-func HandleStoreConfig(auth *auth.Module, configPath string, cb func(*config.Project) error) http.HandlerFunc {
+func HandleStoreConfig(auth *auth.Module, syncMan *syncman.SyncManager, configPath string, cb func(*config.Project) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the path parameters
@@ -73,18 +74,10 @@ func HandleStoreConfig(auth *auth.Module, configPath string, cb func(*config.Pro
 			return
 		}
 
-		// Call the callback
-		err = cb(c)
+		// Sync the config
+		err = syncMan.SetConfig(token, c)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		// Write the config to file
-		err = config.StoreConfigToFile(c, configPath)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -96,7 +89,7 @@ func HandleStoreConfig(auth *auth.Module, configPath string, cb func(*config.Pro
 }
 
 // HandleLoadConfig returns the handler to load the config via a REST endpoint
-func HandleLoadConfig(auth *auth.Module, configPath string) http.HandlerFunc {
+func HandleLoadConfig(auth *auth.Module, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the path parameters
@@ -119,7 +112,7 @@ func HandleLoadConfig(auth *auth.Module, configPath string) http.HandlerFunc {
 		}
 
 		// Load config from file
-		c, err := config.LoadConfigFromFile(configPath)
+		c, err := syncMan.GetConfig(project)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

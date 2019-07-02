@@ -1,14 +1,17 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
 	nats "github.com/nats-io/nats-server/server"
 )
 
+// DefaultNatsOptions are the default setting to start nats with
 var DefaultNatsOptions = &nats.Options{
 	Host:   "0.0.0.0",
 	Port:   4222,
@@ -20,6 +23,7 @@ var DefaultNatsOptions = &nats.Options{
 	},
 }
 
+// RunNatsServer starts a nats server in a separate goroutine
 func (s *Server) RunNatsServer(seeds string, port, clusterPort int) error {
 	// TODO read nats config from the yaml file if it exists
 	if seeds != "" {
@@ -27,7 +31,7 @@ func (s *Server) RunNatsServer(seeds string, port, clusterPort int) error {
 		urls := []*url.URL{}
 		for _, v := range array {
 			if v != "" {
-				u, err := url.Parse("nats://" + v)
+				u, err := url.Parse("nats://" + v + ":" + strconv.Itoa(clusterPort))
 				if err != nil {
 					return err
 				}
@@ -41,6 +45,7 @@ func (s *Server) RunNatsServer(seeds string, port, clusterPort int) error {
 
 	s.nats = nats.New(DefaultNatsOptions)
 
+	fmt.Println("Starting Nats Server")
 	go s.nats.Start()
 	// Wait for accept loop(s) to be started
 	if !s.nats.ReadyForConnections(10 * time.Second) {

@@ -55,7 +55,7 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "seeds",
-		Value:  "none",
+		Value:  "",
 		Usage:  "Seed nodes to cluster with",
 		EnvVar: "SEEDS",
 	},
@@ -144,7 +144,7 @@ func actionRun(c *cli.Context) error {
 	}
 
 	s.Routes(profiler)
-	return s.Start(port, grpcPort)
+	return s.Start(port, grpcPort, seeds)
 }
 
 func actionStart(c *cli.Context) error {
@@ -210,7 +210,7 @@ func actionStart(c *cli.Context) error {
 	}
 
 	s.Routes(profiler)
-	return s.Start(port, grpcPort)
+	return s.Start(port, grpcPort, seeds)
 }
 
 func actionInit(*cli.Context) error {

@@ -86,6 +86,7 @@ func newTransport(host, port string, sslEnabled bool) (*transport, error) {
 	return &transport{conn, stub}, nil
 }
 
+// RoutineMetrics routinely sends anonymous metrics
 func (s *Server) RoutineMetrics() {
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
@@ -164,7 +165,7 @@ func (s *Server) RoutineMetrics() {
 func getProjectInfo(config *config.Modules) map[string]interface{} {
 	project := map[string]interface{}{
 		"crud":      []string{},
-		"functions":      map[string]interface{}{"enabled": false},
+		"functions": map[string]interface{}{"enabled": false},
 		"realtime":  map[string]interface{}{"enabled": false},
 		"fileStore": map[string]interface{}{"enabled": false},
 		"auth":      []string{},
