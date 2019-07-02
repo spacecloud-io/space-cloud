@@ -9,8 +9,7 @@ modules:
     storeType: local
     conn: /tmp/data
     rules:
-      rule1:
-        prefix: /
+      - prefix: /
         rule:
           create:
             rule: allow
@@ -39,8 +38,7 @@ modules:
     storeType: local
     conn: /tmp/data
     rules:
-      imageRule:
-        prefix: /images/:userId
+      - prefix: /images/:userId
         rule:
           create:
             rule: allow
@@ -48,8 +46,7 @@ modules:
             rule: allow
           delete:
             rule: allow
-      musicRule:
-        prefix: /music
+      - prefix: /music
         rule:
           create:
             rule: allow

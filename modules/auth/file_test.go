@@ -27,14 +27,14 @@ func TestGetFileRule(t *testing.T) {
 		path     string
 	}{
 		//Successful Tests
-		{testName: "Success", path: ps, module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule, "delete": fileRule, "read": fileRule}}},
-		{testName: "Success", path: ps + "folder", module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule, "delete": fileRule, "read": fileRule}}},
-		{testName: "Success", path: ps + "folder", module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule1, "delete": fileRule1, "read": fileRule1}}},
-		{testName: "Success", path: ps + "folder" + ps + "file", module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule1, "delete": fileRule1, "read": fileRule1}}},
+		{testName: "Success", path: ps, module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}}},
+		{testName: "Success", path: ps + "folder", module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}}},
+		{testName: "Success", path: ps + "folder", module: &Module{fileRules: []*config.FileRule{fileRule1, fileRule1, fileRule1}}},
+		{testName: "Success", path: ps + "folder" + ps + "file", module: &Module{fileRules: []*config.FileRule{fileRule1, fileRule1, fileRule1}}},
 
 		//Error Tests
-		{testName: "Fail", path: ps + "NewFolder" + ps + "file", module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule1, "delete": fileRule1, "read": fileRule1}}},
-		{testName: "Fail", path: ps + ".." + ps + "folder" + ps + "file", module: &Module{fileRules: map[string]*config.FileRule{"create": fileRule, "delete": fileRule, "read": fileRule}}},
+		{testName: "Fail", path: ps + "NewFolder" + ps + "file", module: &Module{fileRules: []*config.FileRule{fileRule1, fileRule1, fileRule1}}},
+		{testName: "Fail", path: ps + ".." + ps + "folder" + ps + "file", module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}}},
 
 	}
 
