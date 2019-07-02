@@ -1,7 +1,7 @@
 package utils
 
 // The build version of Space Cloud
-const BuildVersion = "0.9.0"
+const BuildVersion = "0.10.0"
 
 const (
 	// One operation returns a single document from the database

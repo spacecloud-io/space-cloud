@@ -105,7 +105,7 @@ type FileStore struct {
 	Enabled   bool                 `json:"enabled" yaml:"enabled"`
 	StoreType string               `json:"storeType" yaml:"storeType"`
 	Conn      string               `json:"conn" yaml:"conn"`
-	Rules     map[string]*FileRule `json:"rules" yaml:"rules"`
+	Rules     []*FileRule          `json:"rules" yaml:"rules"`
 }
 
 // FileRule is the authorization object at the file rule level

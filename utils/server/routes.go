@@ -1,10 +1,13 @@
 package server
 
 import (
+	"net/http/pprof"
+
 	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
-func (s *Server) Routes() {
+// Routes initialises the http routes
+func (s *Server) Routes(profiler bool) {
 	// Initialize the routes for config management
 	s.router.Methods("POST").Path("/v1/api/config/login").HandlerFunc(handlers.HandleAdminLogin(s.auth))
 	s.router.Methods("GET").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleLoadConfig(s.auth, s.configFilePath))
@@ -38,6 +41,18 @@ func (s *Server) Routes() {
 	s.router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.auth, s.file))
 	s.router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.auth, s.file))
 	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.auth, s.file))
+
+	// Register pprof handlers if profiler set to true
+	if profiler {
+		s.router.HandleFunc("/debug/pprof/", pprof.Index)
+		s.router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		s.router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		s.router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		s.router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+		s.router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+		s.router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+		s.router.Handle("/debug/pprof/block", pprof.Handler("block"))
+	}
 
 	// Initialize the route for handling static files
 	s.router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.static))

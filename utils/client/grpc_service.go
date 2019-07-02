@@ -26,7 +26,6 @@ func (c *GRPCServiceClient) RoutineWrite() {
 		case utils.TypeServiceRequest:
 			reqMsg, ok := res.Data.(*model.FunctionsPayload)
 			if !ok {
-				log.Println("GRPC Service Error - Invalid data type", res.Data)
 				break
 			}
 
@@ -63,8 +62,8 @@ func (c *GRPCServiceClient) RoutineWrite() {
 // Write wrties the object to the client
 func (c *GRPCServiceClient) Write(res *model.Message) {
 	select {
-	case c.channel <- res:
 	case <-c.ctx.Done():
+	case c.channel <- res:
 	}
 }
 
@@ -80,7 +79,7 @@ func (c *GRPCServiceClient) Read(cb DataCallback) {
 		in, err := c.streamServer.Recv()
 		if err != nil {
 			if err != nil {
-				log.Println("GRPC Service Error -", err)
+				log.Println("GRPC Service Receive Error -", err)
 				return
 			}
 		}

@@ -59,6 +59,11 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Seed nodes to cluster with",
 		EnvVar: "SEEDS",
 	},
+	cli.BoolFlag{
+		Name:   "profiler",
+		Usage:  "Enable profiler endpoints for profiling",
+		EnvVar: "PROFILER",
+	},
 }
 
 func main() {
@@ -104,6 +109,7 @@ func actionRun(c *cli.Context) error {
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
 	seeds := c.String("seeds")
+	profiler := c.Bool("profiler")
 
 	// Project and env cannot be changed once space cloud has started
 	s := server.New(isProd)
@@ -113,7 +119,6 @@ func actionRun(c *cli.Context) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
 	}
 
 	if configPath != "none" {
@@ -138,7 +143,7 @@ func actionRun(c *cli.Context) error {
 		go s.RoutineMetrics()
 	}
 
-	s.Routes()
+	s.Routes(profiler)
 	return s.Start(port, grpcPort)
 }
 
@@ -153,6 +158,7 @@ func actionStart(c *cli.Context) error {
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
 	seeds := c.String("seeds")
+	profiler := c.Bool("profiler")
 
 	// Project and env cannot be changed once space cloud has started
 	s := server.New(isProd)
@@ -203,7 +209,7 @@ func actionStart(c *cli.Context) error {
 		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
 	}
 
-	s.Routes()
+	s.Routes(profiler)
 	return s.Start(port, grpcPort)
 }
 

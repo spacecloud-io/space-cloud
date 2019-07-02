@@ -18,7 +18,7 @@ type Module struct {
 	secret    string
 	crud      *crud.Module
 	functions *functions.Module
-	fileRules map[string]*config.FileRule
+	fileRules []*config.FileRule
 	funcRules config.FuncRules
 	project   string
 	admin     *config.Admin
