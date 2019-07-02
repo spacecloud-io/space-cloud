@@ -11,9 +11,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
-// TokenClaims holds the JWT token claims
-type TokenClaims map[string]interface{}
-
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
@@ -24,6 +21,7 @@ type Module struct {
 	fileRules []*config.FileRule
 	funcRules config.FuncRules
 	project   string
+	admin     *config.Admin
 }
 
 // Init creates a new instance of the auth object
@@ -32,7 +30,7 @@ func Init(crud *crud.Module, functions *functions.Module) *Module {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions) {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions, admin *config.Admin) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -45,6 +43,10 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 
 	if functions != nil && functions.Enabled {
 		m.funcRules = functions.Rules
+	}
+
+	if admin != nil {
+		m.admin = admin
 	}
 }
 

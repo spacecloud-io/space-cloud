@@ -77,6 +77,7 @@ db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.Respo
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -749,6 +750,7 @@ db.update("books").where(new Cond("id", "==", 1)).push(push).apply(new Utils.Res
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -851,6 +853,7 @@ db.update("books").where(new Cond("id", "==", 1)).remove("author").apply(new Uti
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -954,6 +957,7 @@ db.update("books").where(new Cond("id", "==", 1)).rename(rename).apply(new Utils
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -1062,6 +1066,7 @@ db.update("books").where(new Cond("id", "==", 1)).inc(increment).apply(new Utils
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -1270,6 +1275,7 @@ db.update("books").where(new Cond("id", "==", 1)).max(max).apply(new Utils.Respo
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -1372,6 +1378,7 @@ db.update("books").where(new Cond("id", "==", 1)).min(min).apply(new Utils.Respo
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -1472,6 +1479,7 @@ db.update("books").where(new Cond("id", "==", 1)).currentTimestamp("last_read").
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 
@@ -1573,6 +1581,7 @@ db.update("books").where(new Cond("id", "==", 1)).currentDate("last_read").apply
     <pre>
       <code class="python">
 from space_api import API, COND
+
 api = API("books-app", "localhost:8081")
 db = api.mongo()
 

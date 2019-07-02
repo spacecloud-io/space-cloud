@@ -22,21 +22,23 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	pb "github.com/spaceuptech/space-cloud/proto"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type Server struct {
-	lock      sync.Mutex
-	router    *mux.Router
-	auth      *auth.Module
-	crud      *crud.Module
-	user      *userman.Module
-	file      *filestore.Module
-	functions *functions.Module
-	realtime  *realtime.Module
-	static    *static.Module
-	isProd    bool
-	config    *config.Project
-	nats      *nats.Server
+	lock           sync.Mutex
+	router         *mux.Router
+	auth           *auth.Module
+	crud           *crud.Module
+	user           *userman.Module
+	file           *filestore.Module
+	functions      *functions.Module
+	realtime       *realtime.Module
+	static         *static.Module
+	isProd         bool
+	config         *config.Project
+	nats           *nats.Server
+	configFilePath string
 }
 
 func New(isProd bool) *Server {
@@ -49,7 +51,7 @@ func New(isProd bool) *Server {
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
 
-	return &Server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: fn, realtime: rt, isProd: isProd}
+	return &Server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: fn, realtime: rt, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }
 
 func (s *Server) Start(port, grpcPort string) error {
@@ -72,7 +74,7 @@ func (s *Server) Start(port, grpcPort string) error {
 	fmt.Println("Starting HTTP Server on port: " + port)
 
 	log.Printf("Space Cloud is running on the specified ports :D")
-	if s.config.SSL != nil {
+	if s.config.SSL != nil && s.config.SSL.Enabled {
 		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
 	}
 
@@ -85,7 +87,7 @@ func (s *Server) LoadConfig(config *config.Project) error {
 	s.lock.Unlock()
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions)
+	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions, config.Admin)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(config.Modules.Auth)
@@ -121,7 +123,7 @@ func (s *Server) initGRPCServer(port string) {
 	}
 
 	options := []grpc.ServerOption{}
-	if s.config.SSL != nil {
+	if s.config.SSL != nil && s.config.SSL.Enabled {
 		creds, err := credentials.NewServerTLSFromFile(s.config.SSL.Crt, s.config.SSL.Key)
 		if err != nil {
 			log.Fatalln("Error: ", err)
@@ -136,4 +138,8 @@ func (s *Server) initGRPCServer(port string) {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatal("failed to serve:", err)
 	}
+}
+
+func (s *Server) SetConfigFilePath(configFilePath string) {
+	s.configFilePath = configFilePath
 }
