@@ -73,12 +73,14 @@ func (s *SyncManager) initRaft(seeds []*node) error {
 
 // Apply applies a Raft log entry to the key-value store
 func (s *SyncManager) Apply(l *raft.Log) interface{} {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	var c model.RaftCommand
 	json.Unmarshal(l.Data, &c)
 
 	switch c.Kind {
 	case utils.RaftCommandSet:
-		s.lock.Lock()
 
 		found := false
 		for i, p := range s.projectConfig.Projects {
@@ -92,12 +94,17 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 		}
 		// Write the config to file
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
-		s.lock.Unlock()
 
 		s.cb(s.projectConfig)
 
 	case utils.RaftCommandDelete:
-
+		for i, p := range s.projectConfig.Projects {
+			if p.ID == c.ID {
+				remove(s.projectConfig.Projects, i)
+				break
+			}
+		}
+		config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 	return nil
 }
@@ -152,3 +159,9 @@ func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
 }
 
 func (f *fsmSnapshot) Release() {}
+
+func remove(s []*config.Project, i int) []*config.Project {
+	s[i] = s[len(s)-1]
+	// We do not need to put s[i] at the end, as it will be discarded anyway
+	return s[:len(s)-1]
+}
