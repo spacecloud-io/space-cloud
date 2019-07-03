@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
@@ -42,7 +43,7 @@ func New(isProd bool) *Server {
 	r := mux.NewRouter()
 	syncMan := syncman.New()
 	adminMan := admin.New()
-	projects := projects.New()
+	projects := projects.New(driver.New())
 	return &Server{nodeID: uuid.NewV1().String(), router: r, projects: projects, isProd: isProd,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath}
 }
