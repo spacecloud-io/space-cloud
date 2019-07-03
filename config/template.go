@@ -7,6 +7,7 @@ admin:
   user: {{.AdminName}}
   pass: {{.AdminPass}}
   role: {{.AdminRole}}
+  secret: {{.AdminSecret}}
 projects:
   - id: {{.ID}}
     secret: some-secret

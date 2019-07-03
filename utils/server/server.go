@@ -25,6 +25,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -39,6 +40,7 @@ type Server struct {
 	functions      *functions.Module
 	realtime       *realtime.Module
 	static         *static.Module
+	adminMan       *admin.Manager
 	isProd         bool
 	nats           *nats.Server
 	configFilePath string
@@ -57,8 +59,10 @@ func New(isProd bool) *Server {
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
 	syncMan := syncman.New()
+	adminMan := admin.New()
 
-	return &Server{nodeID: uuid.NewV1().String(), router: r, auth: a, crud: c, user: u, file: f, static: s, syncMan: syncMan,
+	return &Server{nodeID: uuid.NewV1().String(), router: r, auth: a, crud: c,
+		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
 		functions: fn, realtime: rt, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }
 
@@ -115,7 +119,7 @@ func (s *Server) LoadConfig(config *config.Config) error {
 	p := config.Projects[0]
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions, config.Admin)
+	s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions)
 
 	// Set the configuration for the user management module
 	s.user.SetConfig(p.Modules.Auth)

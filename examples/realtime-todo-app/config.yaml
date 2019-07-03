@@ -59,6 +59,10 @@ projects:
         host: ""
         proxy: ""
 ssl: null
-admin: null
+admin: 
+  user: admin
+  pass: 123
+  role: captain-cloud
+  secret: shhhhhhh
 cluster: ""
 nodeId: aefc31ee-9d7e-11e9-865a-60f81dd0a692

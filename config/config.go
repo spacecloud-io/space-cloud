@@ -21,9 +21,10 @@ type Project struct {
 
 // Admin stores the admin credentials
 type Admin struct {
-	User string `json:"user" yaml:"user"`
-	Pass string `json:"pass" yaml:"pass"`
-	Role string `json:"role" yaml:"role"`
+	User   string `json:"user" yaml:"user"`
+	Pass   string `json:"pass" yaml:"pass"`
+	Role   string `json:"role" yaml:"role"`
+	Secret string `json:"secret" yaml:"secret"`
 }
 
 // SSL holds the certificate and key file locations
