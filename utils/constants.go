@@ -1,6 +1,6 @@
 package utils
 
-// The build version of Space Cloud
+// BuildVersion is the current version of Space Cloud
 const BuildVersion = "0.10.0"
 
 const (
@@ -58,7 +58,7 @@ type FileOpType string
 
 const (
 	// PayloadSize is the size of the payload(in bytes) in file upload and download
-	PayloadSize int = 256*1024 // 256 kB
+	PayloadSize int = 256 * 1024 // 256 kB
 )
 
 const (
@@ -144,3 +144,17 @@ const (
 
 // DefaultConfigFilePath is the default path to load / store the config file
 const DefaultConfigFilePath string = "config.yaml"
+
+// RaftCommandType is the type received in the raft commands
+type RaftCommandType string
+
+const (
+	// RaftCommandSet is used to set a projects config
+	RaftCommandSet RaftCommandType = "set"
+
+	// RaftCommandDelete is used to delete a projects config
+	RaftCommandDelete RaftCommandType = "delete"
+)
+
+// RaftSnapshotDirectory is where the snapshot of the log is stored
+const RaftSnapshotDirectory string = "raft-store"

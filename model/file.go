@@ -28,4 +28,5 @@ type ListFilesResponse struct {
 	Type string `json:"type"` // Type could be dir or file
 }
 
-type FileReader func(io.Reader)(int, error)
+// FileReader is a function type used for file streaming
+type FileReader func(io.Reader) (int, error)

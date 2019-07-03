@@ -48,6 +48,6 @@ modules:
             rule: allow
   static:
     enabled: false
-    path: ./public
-    prefix: /
-    gzip: false
+    routes:
+      - path: ./public
+        prefix: /
