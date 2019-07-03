@@ -18,6 +18,7 @@ type input struct {
 	AdminName    string
 	AdminPass    string
 	AdminRole    string
+	AdminSecret  string
 	HomeDir      string
 	BuildVersion string
 }
@@ -26,7 +27,7 @@ type input struct {
 func GenerateEmptyConfig() *Config {
 	return &Config{
 		SSL:      &SSL{Enabled: false},
-		Admin:    &Admin{User: "admin", Pass: "123", Role: "captain-cloud"},
+		Admin:    &Admin{User: "admin", Pass: "123", Role: "captain-cloud", Secret: "some-secret"},
 		Projects: []*Project{},
 	}
 }
@@ -77,13 +78,19 @@ func GenerateConfig(configFilePath string) error {
 	}
 
 	// Ask for the admin password
-	err = survey.AskOne(&survey.Input{Message: "Mission Control (Password)", Default: "admin123"}, &i.AdminPass, survey.Required)
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (Password)", Default: "123"}, &i.AdminPass, survey.Required)
 	if err != nil {
 		return err
 	}
 
 	// Ask for the admin role
 	err = survey.AskOne(&survey.Input{Message: "Mission Control (Role)", Default: "captain-cloud"}, &i.AdminRole, survey.Required)
+	if err != nil {
+		return err
+	}
+
+	// Ask for the admin secret
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (JWT Secret)", Default: "some-secret"}, &i.AdminSecret, survey.Required)
 	if err != nil {
 		return err
 	}

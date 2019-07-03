@@ -9,9 +9,9 @@ import (
 // Routes initialises the http routes
 func (s *Server) Routes(profiler bool, staticPath string) {
 	// Initialize the routes for config management
-	s.router.Methods("POST").Path("/v1/api/config/login").HandlerFunc(handlers.HandleAdminLogin(s.auth))
-	s.router.Methods("GET").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleLoadConfig(s.auth, s.syncMan, s.configFilePath))
-	s.router.Methods("POST").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleStoreConfig(s.auth, s.syncMan, s.configFilePath))
+	s.router.Methods("POST").Path("/v1/api/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan))
+	s.router.Methods("GET").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleLoadConfig(s.adminMan, s.syncMan, s.configFilePath))
+	s.router.Methods("POST").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleStoreConfig(s.adminMan, s.syncMan, s.configFilePath))
 
 	// Initialize the route for websocket
 	s.router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
