@@ -198,11 +198,11 @@ func convert(key string, obj map[string]interface{}) (map[string]interface{}, er
 	if !present {
 		return nil, errors.New("Key not present in state (convert) - " + key)
 	}
-	convert, ok := tempObj.(map[string]interface{})
+	conv, ok := tempObj.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("Incorrect type")
 	}
-	return convert, nil
+	return conv, nil
 }
 
 func splitVariable(key string) []string {
