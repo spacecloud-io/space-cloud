@@ -49,10 +49,16 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 	s.cb = cb
 
 	s.configFile = configFilePath
+	if s.projectConfig.NodeID == "" {
+		s.projectConfig.NodeID = nodeID
+	}
+	// Write the config to file
+	config.StoreConfigToFile(s.projectConfig, s.configFile)
+
 	s.lock.Unlock()
 
 	// Start the membership protocol
-	if err := s.initMembership(nodeID, seeds); err != nil {
+	if err := s.initMembership(seeds); err != nil {
 		return err
 	}
 
@@ -61,7 +67,7 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 		nodes = append(nodes, &node{ID: m.Name, Addr: m.Addr.String() + ":" + raftPort})
 	}
 
-	if err := s.initRaft(nodeID, nodes); err != nil {
+	if err := s.initRaft(nodes); err != nil {
 		return err
 	}
 

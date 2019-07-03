@@ -127,10 +127,6 @@ func actionRun(c *cli.Context) error {
 
 		// Configure all modules
 		s.SetConfig(conf)
-		err = s.LoadConfig(conf)
-		if err != nil {
-			return err
-		}
 	}
 
 	// Anonymously collect usage metrics if not explicitly disabled
@@ -139,11 +135,12 @@ func actionRun(c *cli.Context) error {
 	}
 
 	// Download and host mission control
-	if err := initMissionContol(); err != nil {
+	staticPath, err := initMissionContol("0.9.0")
+	if err != nil {
 		return err
 	}
 
-	s.Routes(profiler)
+	s.Routes(profiler, staticPath)
 	return s.Start(port, grpcPort, seeds)
 }
 
@@ -151,26 +148,26 @@ func actionInit(*cli.Context) error {
 	return config.GenerateConfig("none")
 }
 
-func initMissionContol() error {
+func initMissionContol(version string) (string, error) {
 	homeDir := utils.UserHomeDir()
-	uiPath := homeDir + "/.space-cloud/mission-control-v" + utils.BuildVersion
+	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
 	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
 		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
 			os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
 		}
 		fmt.Println("Downloading Mission Control UI...")
-		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+utils.BuildVersion+".zip", uiPath+".zip")
+		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
-			return err
+			return "", err
 		}
 		err = utils.Unzip(uiPath+".zip", uiPath)
 		if err != nil {
-			return err
+			return "", err
 		}
 		err = os.Remove(uiPath + ".zip")
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
-	return nil
+	return uiPath + "/build", nil
 }

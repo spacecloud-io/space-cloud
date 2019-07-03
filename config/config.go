@@ -8,6 +8,7 @@ type Config struct {
 	SSL      *SSL       `json:"ssl" yaml:"ssl"`
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 	Cluster  string     `json:"cluster" yaml:"cluster"`
+	NodeID   string     `json:"nodeId" yaml:"nodeId"`
 }
 
 // Project holds the project level configuration

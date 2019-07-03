@@ -8,11 +8,11 @@ import (
 	"github.com/hashicorp/raft"
 )
 
-func (s *SyncManager) initMembership(nodeID string, seeds []string) error {
+func (s *SyncManager) initMembership(seeds []string) error {
 
 	// Create a membership config and assign name
 	c := memberlist.DefaultLocalConfig()
-	c.Name = nodeID
+	c.Name = s.projectConfig.NodeID
 	c.LogOutput = ioutil.Discard
 
 	// Assign a custom event delegate

@@ -30,7 +30,6 @@ projects:
                 delete:
                   rule: allow
               isRealtimeEnabled: false
-        auth:
-          email:
-            enabled: true
-
+      auth:
+        email:
+          enabled: true
