@@ -12,11 +12,16 @@ import (
 
 // GRPCRealtimeClient is the object handling all client interactions
 type GRPCRealtimeClient struct {
-	id      string
-	channel chan *model.Message
-	ctx     context.Context
-	cancel  context.CancelFunc
-	stream  proto.SpaceCloud_RealTimeServer
+	id              string
+	channel         chan *model.Message
+	ctx             context.Context
+	cancel          context.CancelFunc
+	stream          proto.SpaceCloud_RealTimeServer
+	neglect_initial bool
+}
+
+func (c *GRPCRealtimeClient) NeglectInitial() {
+	c.neglect_initial = true
 }
 
 // RoutineWrite starts a json writer routine
@@ -27,16 +32,19 @@ func (c *GRPCRealtimeClient) RoutineWrite() {
 		case utils.TypeRealtimeSubscribe, utils.TypeRealtimeUnsubscribe:
 			//Decode the Message
 			responseMsg := res.Data.(model.RealtimeResponse)
-			feedData := make([]*proto.FeedData, len(responseMsg.Docs))
-			for i, feed := range responseMsg.Docs {
-				payload, err := json.Marshal(feed.Payload)
-				if err != nil {
-					log.Println(err)
-					return
+			grpcResponse := proto.RealTimeResponse{Id: res.ID, Group: responseMsg.Group, Ack: responseMsg.Ack, Error: responseMsg.Error}
+			if ! c.neglect_initial {
+				feedData := make([]*proto.FeedData, len(responseMsg.Docs))
+				for i, feed := range responseMsg.Docs {
+					payload, err := json.Marshal(feed.Payload)
+					if err != nil {
+						log.Println(err)
+						return
+					}
+					feedData[i] = &proto.FeedData{QueryId: feed.QueryID, DocId: feed.DocID, Type: utils.RealtimeInitial, Group: feed.Group, DbType: feed.DBType, Payload: payload, TimeStamp: feed.TimeStamp}
 				}
-				feedData[i] = &proto.FeedData{QueryId: feed.QueryID, DocId: feed.DocID, Type: feed.Type, Group: feed.Group, DbType: feed.DBType, Payload: payload, TimeStamp: feed.TimeStamp}
+				grpcResponse.FeedData = feedData
 			}
-			grpcResponse := proto.RealTimeResponse{Id: res.ID, Group: responseMsg.Group, Ack: responseMsg.Ack, Error: responseMsg.Error, FeedData: feedData}
 			c.stream.Send(&grpcResponse)
 
 		case utils.TypeRealtimeFeed:

@@ -393,6 +393,9 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 
 	c.Read(func(req *model.Message) bool {
 		switch req.Type {
+		case utils.TypeRealtimeSubscribeNeglectInitial:
+			c.NeglectInitial()
+			fallthrough
 		case utils.TypeRealtimeSubscribe:
 			// For realtime subscribe event
 			data := new(model.RealtimeRequest)

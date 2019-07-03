@@ -37,7 +37,7 @@ func CreateGRPCRealtimeClient(stream proto.SpaceCloud_RealTimeServer) *GRPCRealt
 	channel := make(chan *model.Message, 5)
 	ctx, cancel := context.WithCancel(context.Background())
 	id := uuid.NewV1().String()
-	return &GRPCRealtimeClient{id, channel, ctx, cancel, stream}
+	return &GRPCRealtimeClient{id, channel, ctx, cancel, stream, false}
 }
 
 // CreateGRPCServiceClient makes a client object to manage the grpc
