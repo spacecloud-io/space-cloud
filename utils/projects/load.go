@@ -82,5 +82,5 @@ func (p *Projects) setConfig(action, project string, data string) error {
 		return err
 	}
 
-	return p.StoreProject(project, config)
+	return p.StoreProject(config)
 }

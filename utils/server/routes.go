@@ -1,13 +1,18 @@
 package server
 
 import (
+	"net/http/pprof"
+
 	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
-// Routes initialises the http endpoints
-func (s *Server) Routes() {
+// Routes initialises the http routes
+func (s *Server) Routes(profiler bool, staticPath string) {
 	// Initialize the routes for config management
-	//s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(config.HandleConfig(s.isProd, s.loadConfig))
+	s.router.Methods("POST").Path("/v1/api/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
+	s.router.Methods("GET").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleLoadConfig(s.adminMan, s.syncMan, s.configFilePath))
+	s.router.Methods("POST").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleStoreConfig(s.adminMan, s.syncMan, s.configFilePath))
+	s.router.Methods("DELETE").Path("/v1/api/{project}/config").HandlerFunc(handlers.HandleDeleteConfig(s.adminMan, s.syncMan, s.configFilePath))
 
 	// Initialize the route for websocket
 	s.router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
@@ -37,6 +42,20 @@ func (s *Server) Routes() {
 	s.router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.projects))
 	s.router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.projects))
 	s.router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.projects))
+
+	// Register pprof handlers if profiler set to true
+	if profiler {
+		s.router.HandleFunc("/debug/pprof/", pprof.Index)
+		s.router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		s.router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		s.router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		s.router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+		s.router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+		s.router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+		s.router.Handle("/debug/pprof/block", pprof.Handler("block"))
+	}
+
+	s.router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
 
 	// Initialize the route for handling static files
 	s.router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.projects))

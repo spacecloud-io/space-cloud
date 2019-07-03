@@ -20,6 +20,7 @@ css
 .sass-cache
 
 space-cloud
+raft-store
 publish.sh
 
 test_config.yaml

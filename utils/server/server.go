@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/mux"
@@ -16,32 +17,49 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/proto"
+	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/projects"
+	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
 // Server is the main server object
 type Server struct {
-	id       string
-	lock     sync.RWMutex
-	router   *mux.Router
-	isProd   bool
-	nats     *nats.Server
-	projects *projects.Projects
-	ssl      *config.SSL
+	nodeID         string
+	lock           sync.RWMutex
+	router         *mux.Router
+	isProd         bool
+	nats           *nats.Server
+	projects       *projects.Projects
+	ssl            *config.SSL
+	syncMan        *syncman.SyncManager
+	configFilePath string
+	adminMan       *admin.Manager
 }
 
 // New creates a new server instance
 func New(isProd bool) *Server {
 	r := mux.NewRouter()
+	syncMan := syncman.New()
+	adminMan := admin.New()
 	projects := projects.New()
-	id := uuid.NewV1().String()
-	return &Server{id: id, router: r, projects: projects, isProd: isProd}
+	return &Server{nodeID: uuid.NewV1().String(), router: r, projects: projects, isProd: isProd,
+		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath}
 }
 
 // Start begins the server operations
-func (s *Server) Start(port, grpcPort string) error {
+func (s *Server) Start(port, grpcPort, seeds string) error {
 
 	go s.initGRPCServer(grpcPort)
+
+	// Start the sync manager
+	if seeds == "" {
+		seeds = "127.0.0.1"
+	}
+	array := strings.Split(seeds, ",")
+	if err := s.syncMan.Start(s.nodeID, s.configFilePath, "4232", "4234", array, s.projects); err != nil {
+		return err
+	}
 
 	// Allow cors
 	corsObj := cors.New(cors.Options{
@@ -56,13 +74,20 @@ func (s *Server) Start(port, grpcPort string) error {
 
 	handler := corsObj.Handler(s.router)
 
-	fmt.Println("Starting http Server on port " + port)
+	fmt.Println("Starting HTTP Server on port: " + port)
 
-	if s.ssl != nil {
+	fmt.Println("Space Cloud is running on the specified ports :D")
+	if s.ssl != nil && s.ssl.Enabled {
 		return http.ListenAndServeTLS(":"+port, s.ssl.Crt, s.ssl.Key, handler)
 	}
 
 	return http.ListenAndServe(":"+port, handler)
+}
+
+// SetConfig sets the config
+func (s *Server) SetConfig(c *config.Config) {
+	s.ssl = c.SSL
+	s.syncMan.SetGlobalConfig(c)
 }
 
 func (s *Server) initGRPCServer(port string) {
@@ -72,7 +97,7 @@ func (s *Server) initGRPCServer(port string) {
 	}
 
 	options := []grpc.ServerOption{}
-	if s.ssl != nil {
+	if s.ssl != nil && s.ssl.Enabled {
 		creds, err := credentials.NewServerTLSFromFile(s.ssl.Crt, s.ssl.Key)
 		if err != nil {
 			log.Fatalln("Error: ", err)
@@ -96,5 +121,10 @@ func (s *Server) GetProjects() *projects.Projects {
 
 // GetID returns the server id
 func (s *Server) GetID() string {
-	return s.id
+	return s.nodeID
+}
+
+// SetConfigFilePath sets the config file path
+func (s *Server) SetConfigFilePath(configFilePath string) {
+	s.configFilePath = configFilePath
 }

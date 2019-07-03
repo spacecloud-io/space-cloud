@@ -3,11 +3,11 @@ package projects
 import "github.com/spaceuptech/space-cloud/config"
 
 // StoreProject stores the provided project config
-func (p *Projects) StoreProject(project string, config *config.Project) error {
+func (p *Projects) StoreProject(config *config.Project) error {
 	// Get the project. Create if not exists
-	state, err := p.LoadProject(project)
+	state, err := p.LoadProject(config.ID)
 	if err != nil {
-		state = p.NewProject(project)
+		state = p.NewProject(config.ID)
 	}
 
 	// Set the configuration for the auth module
@@ -31,7 +31,7 @@ func (p *Projects) StoreProject(project string, config *config.Project) error {
 	}
 
 	// Set the configuration for the Realtime module
-	if err := state.Realtime.SetConfig(project, config.Modules.Realtime); err != nil {
+	if err := state.Realtime.SetConfig(config.ID, config.Modules.Realtime); err != nil {
 		return err
 	}
 

@@ -4,17 +4,68 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
-	"strings"
 
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/server"
-	"github.com/spaceuptech/space-cloud/utils/validate"
 )
+
+var essentialFlags = []cli.Flag{
+	cli.StringFlag{
+		Name:  "port",
+		Value: "8080",
+		Usage: "Start HTTP server on port `PORT`",
+	},
+	cli.StringFlag{
+		Name:  "grpc-port",
+		Value: "8081",
+		Usage: "Start grpc on port `GRPC_PORT`",
+	},
+	cli.IntFlag{
+		Name:  "nats-port",
+		Value: 4222,
+		Usage: "Start nats on port `NATS_PORT`",
+	},
+	cli.IntFlag{
+		Name:  "cluster-port",
+		Value: 4248,
+		Usage: "Start nats on port `NATS_PORT`",
+	},
+	cli.StringFlag{
+		Name:  "config",
+		Value: "config.yaml",
+		Usage: "Load space cloud config from `FILE`",
+	},
+	cli.BoolFlag{
+		Name:   "prod",
+		Usage:  "Run space-cloud in production mode",
+		EnvVar: "PROD",
+	},
+	cli.BoolFlag{
+		Name:   "disable-metrics",
+		Usage:  "Disable anonymous metric collection",
+		EnvVar: "DISABLE_METRICS",
+	},
+	cli.BoolFlag{
+		Name:   "disable-nats",
+		Usage:  "Disable embedded nats server",
+		EnvVar: "DISABLE_NATS",
+	},
+	cli.StringFlag{
+		Name:   "seeds",
+		Value:  "",
+		Usage:  "Seed nodes to cluster with",
+		EnvVar: "SEEDS",
+	},
+	cli.BoolFlag{
+		Name:   "profiler",
+		Usage:  "Enable profiler endpoints for profiling",
+		EnvVar: "PROFILER",
+	},
+}
 
 func main() {
 	app := cli.NewApp()
@@ -27,61 +78,7 @@ func main() {
 			Name:   "run",
 			Usage:  "runs the space cloud instance",
 			Action: actionRun,
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "port",
-					Value: "8080",
-					Usage: "Start HTTP server on port `PORT`",
-				},
-				cli.StringFlag{
-					Name:  "grpc-port",
-					Value: "8081",
-					Usage: "Start grpc on port `GRPC_PORT`",
-				},
-				cli.IntFlag{
-					Name:  "nats-port",
-					Value: 4222,
-					Usage: "Start nats on port `NATS_PORT`",
-				},
-				cli.IntFlag{
-					Name:  "cluster-port",
-					Value: 4248,
-					Usage: "Start nats on port `NATS_PORT`",
-				},
-				cli.StringFlag{
-					Name:   "secret",
-					Value:  "none",
-					Usage:  "The secret to use for authentication",
-					EnvVar: "SECRET",
-				},
-				cli.StringFlag{
-					Name:   "account",
-					Value:  "none",
-					Usage:  "Start space-cloud with `ACCOUNT`",
-					EnvVar: "ACCOUNT",
-				},
-				cli.BoolFlag{
-					Name:   "prod",
-					Usage:  "Run space-cloud in production mode",
-					EnvVar: "PROD",
-				},
-				cli.BoolFlag{
-					Name:   "disable-metrics",
-					Usage:  "Disable anonymous metric collection",
-					EnvVar: "DISABLE_METRICS",
-				},
-				cli.BoolFlag{
-					Name:   "disable-nats",
-					Usage:  "Disable embedded nats server",
-					EnvVar: "DISABLE_NATS",
-				},
-				cli.StringFlag{
-					Name:   "seeds",
-					Value:  "none",
-					Usage:  "Seed nodes to cluster with",
-					EnvVar: "SEEDS",
-				},
-			},
+			Flags:  essentialFlags,
 		},
 		{
 			Name:   "init",
@@ -102,12 +99,14 @@ func actionRun(c *cli.Context) error {
 	grpcPort := c.String("grpc-port")
 	secret := c.String("secret")
 	account := c.String("account")
+	configPath := c.String("config")
 	natsPort := c.Int("nats-port")
 	clusterPort := c.Int("cluster-port")
 	isProd := c.Bool("prod")
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
 	seeds := c.String("seeds")
+	profiler := c.Bool("profiler")
 
 	if account == "none" || secret == "none" {
 		return errors.New("Cannot start space-cloud with no account")
@@ -117,25 +116,24 @@ func actionRun(c *cli.Context) error {
 	s := server.New(isProd)
 
 	if !disableNats {
-		// TODO read nats config from the yaml file if it exists
-		if seeds != "" {
-			array := strings.Split(seeds, ",")
-			urls := []*url.URL{}
-			for _, v := range array {
-				if v != "" {
-					u, err := url.Parse("nats://" + v)
-					if err != nil {
-						return err
-					}
-					urls = append(urls, u)
-				}
-			}
-			server.DefaultNatsOptions.Routes = urls
+		err := s.RunNatsServer(seeds, natsPort, clusterPort)
+		if err != nil {
+			return err
 		}
-		server.DefaultNatsOptions.Port = natsPort
-		server.DefaultNatsOptions.Cluster.Port = clusterPort
-		s.RunNatsServer(server.DefaultNatsOptions)
-		fmt.Println("Started NATS server on port ", server.DefaultNatsOptions.Port)
+	}
+
+	if configPath != "none" {
+		// Load the configFile from path if provided
+		conf, err := config.LoadConfigFromFile(configPath)
+		if err != nil {
+			conf = config.GenerateEmptyConfig()
+		}
+
+		// Save the config file path for future use
+		s.SetConfigFilePath(configPath)
+
+		// Configure all modules
+		s.SetConfig(conf)
 	}
 
 	// Anonymously collect usage metrics if not explicitly disabled
@@ -143,13 +141,40 @@ func actionRun(c *cli.Context) error {
 		go s.RoutineMetrics()
 	}
 
-	// Start the validation process
-	validate.New(s.GetProjects()).Start(s.GetID(), account, secret)
+	// Download and host mission control
+	staticPath, err := initMissionContol("0.9.0")
+	if err != nil {
+		return err
+	}
 
-	s.Routes()
-	return s.Start(port, grpcPort)
+	s.Routes(profiler, staticPath)
+	return s.Start(port, grpcPort, seeds)
 }
 
 func actionInit(*cli.Context) error {
-	return config.GenerateConfig()
+	return config.GenerateConfig("none")
+}
+
+func initMissionContol(version string) (string, error) {
+	homeDir := utils.UserHomeDir()
+	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
+	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
+		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
+			os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
+		}
+		fmt.Println("Downloading Mission Control UI...")
+		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
+		if err != nil {
+			return "", err
+		}
+		err = utils.Unzip(uiPath+".zip", uiPath)
+		if err != nil {
+			return "", err
+		}
+		err = os.Remove(uiPath + ".zip")
+		if err != nil {
+			return "", err
+		}
+	}
+	return uiPath + "/build", nil
 }

@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"strings"
+	"errors"
 	"os"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -39,8 +40,13 @@ func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOp
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
 	pathParams := make(map[string]interface{})
 
+	// Check if its a valid absolute path
+	if strings.Contains(path, string(os.PathSeparator) + "..") {
+		return nil, nil, errors.New("Local: Provided path should be absolute")
+	}
+
 	in1 := strings.Split(path, string(os.PathSeparator))
-	// Remove last element if it is  Empty
+	// Remove last element if it is empty
 	if in1[len(in1)-1] == "" {
 		in1 = in1[:len(in1)-1]
 	}

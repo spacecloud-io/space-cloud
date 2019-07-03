@@ -1,0 +1,68 @@
+.wrapper {
+  background: #EEE;
+  height: 100vh;
+}
+
+.wrapper .background {
+  height: 100vh;
+  float: right;
+}
+
+.wrapper .r-text {
+  position: absolute;
+  top: 20vw;
+  right: 15vw;
+  width: 350px;
+  bottom: 20vw;
+}
+
+.wrapper .text {
+  color: #FFF;
+}
+
+.wrapper .image {
+  position: relative;
+}
+
+.login-card {
+  position: absolute;
+  padding: 80px 64px;
+  background: #FFF;
+  text-align: center;
+  top: 23vh;
+  bottom: 20vh;
+  left: 55vh;
+  vertical-align: middle;
+}
+
+.login-card .about {
+  color: #BDBDBD;
+  font-size: 12px;
+  padding-bottom: 32px;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.login-card .logo {
+  padding-bottom: 8px;
+}
+
+@media screen and (max-width: 740px) {
+  .wrapper .background {
+    display: none;
+  }
+  .wrapper .r-text {
+    display: none;
+  }
+  .login-card {
+    left: 0;
+    right: 0;
+    top: 0;
+    margin: 0;
+    height: 100vh;
+  }
+  .login-card .content {
+    position: relative;
+    top: 25%;
+  }
+}
