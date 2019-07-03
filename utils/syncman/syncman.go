@@ -136,6 +136,48 @@ func (s *SyncManager) SetConfig(token string, project *config.Project) error {
 	return s.raft.Apply(data, 0).Error()
 }
 
+// DeleteConfig applies the config to the raft log
+func (s *SyncManager) DeleteConfig(token, projectID string) error {
+	if s.raft.State() != raft.Leader {
+
+		// Get the raft leader addr
+		addr := s.raft.Leader()
+
+		// Create the http request
+		req, err := http.NewRequest("DELETE", "http://"+string(addr)+"/v1/api/"+projectID+"/config", nil)
+		if err != nil {
+			return err
+		}
+
+		// Add token header
+		req.Header.Add("Authorization", "Bearer "+token)
+
+		// Create a http client and fire the request
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		m := map[string]interface{}{}
+		json.NewDecoder(resp.Body).Decode(&m)
+
+		if resp.StatusCode != http.StatusOK {
+			return errors.New(m["error"].(string))
+		}
+
+		return nil
+	}
+
+	// Create a raft command
+	c := &model.RaftCommand{Kind: utils.RaftCommandDelete, ID: projectID}
+	data, _ := json.Marshal(c)
+
+	// Apply the command to the raft log
+	return s.raft.Apply(data, 0).Error()
+}
+
 // GetConfig returns the config present in the state
 func (s *SyncManager) GetConfig(projectID string) (*config.Project, error) {
 	s.lock.RLock()

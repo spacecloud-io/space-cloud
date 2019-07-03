@@ -12,7 +12,7 @@ import (
 )
 
 // HandleAdminLogin creates the admin login endpoint
-func HandleAdminLogin(adminMan *admin.Manager) http.HandlerFunc {
+func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
 
 	type Request struct {
 		User string `json:"user"`
@@ -34,8 +34,10 @@ func HandleAdminLogin(adminMan *admin.Manager) http.HandlerFunc {
 			return
 		}
 
+		c := syncMan.GetGlobalConfig()
+
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"token": token})
+		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
 	}
 }
 
@@ -122,5 +124,15 @@ func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, con
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"config": c})
+	}
+}
+
+// HandleDeleteConfig returns the handler to load the config via a REST endpoint
+func HandleDeleteConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Give negative acknowledgement
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{"error": "Operation not supported"})
 	}
 }
