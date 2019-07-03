@@ -10,7 +10,7 @@ import (
 )
 
 // StoreConfigToFile stores the config file to disk
-func StoreConfigToFile(conf *Project, path string) error {
+func StoreConfigToFile(conf *Config, path string) error {
 	var data []byte
 	var err error
 

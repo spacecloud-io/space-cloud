@@ -2,7 +2,6 @@ package syncman
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
@@ -18,20 +17,20 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (s *SyncManager) initRaft(nodeID string, seeds []*node) error {
-
-	boltDB, err := raftboltdb.NewBoltStore(filepath.Join(utils.RaftSnapshotDirectory, "raft.db"))
-	if err != nil {
-		return fmt.Errorf("new bolt store: %s", err)
-	}
-	logStore := boltDB
-	stableStore := boltDB
-
+func (s *SyncManager) initRaft(seeds []*node) error {
 	// Create the snapshot store. This allows the Raft to truncate the log.
 	snapshots, err := raft.NewFileSnapshotStore(utils.RaftSnapshotDirectory, 3, os.Stderr)
 	if err != nil {
 		return err
 	}
+
+	// Create a boltdb store
+	boltDB, err := raftboltdb.NewBoltStore(filepath.Join(utils.RaftSnapshotDirectory, "raft.db"))
+	if err != nil {
+		return err
+	}
+	logStore := boltDB
+	stableStore := boltDB
 
 	// Setup Raft communication.
 	addr, err := net.ResolveTCPAddr("tcp", ":"+s.raftPort)
@@ -46,7 +45,7 @@ func (s *SyncManager) initRaft(nodeID string, seeds []*node) error {
 
 	// Setup Raft configuration.
 	config := raft.DefaultConfig()
-	config.LocalID = raft.ServerID(nodeID)
+	config.LocalID = raft.ServerID(s.projectConfig.NodeID)
 	config.LogOutput = ioutil.Discard
 
 	// Instantiate the Raft systems.
@@ -66,8 +65,10 @@ func (s *SyncManager) initRaft(nodeID string, seeds []*node) error {
 		})
 	}
 
-	err = r.BootstrapCluster(raft.Configuration{Servers: servers}).Error()
-	return err
+	if err := r.BootstrapCluster(raft.Configuration{Servers: servers}).Error(); err != nil {
+		//r.AddVoter()
+	}
+	return nil
 }
 
 // Apply applies a Raft log entry to the key-value store
@@ -78,12 +79,20 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 	switch c.Kind {
 	case utils.RaftCommandSet:
 		s.lock.Lock()
-		s.projectConfig = c.Project
-		s.projectID = c.ID
-		s.lock.Unlock()
 
+		found := false
+		for i, p := range s.projectConfig.Projects {
+			if p.ID == c.Project.ID {
+				s.projectConfig.Projects[i] = c.Project
+				found = true
+			}
+		}
+		if !found && len(s.projectConfig.Projects) == 0 {
+			s.projectConfig.Projects = append(s.projectConfig.Projects, c.Project)
+		}
 		// Write the config to file
-		config.StoreConfigToFile(c.Project, s.configFile)
+		config.StoreConfigToFile(s.projectConfig, s.configFile)
+		s.lock.Unlock()
 
 		s.cb(s.projectConfig)
 
@@ -95,7 +104,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 
 // Restore stores the key-value store to a previous state.
 func (s *SyncManager) Restore(rc io.ReadCloser) error {
-	project := new(config.Project)
+	project := new(config.Config)
 	if err := json.NewDecoder(rc).Decode(project); err != nil {
 		return err
 	}
@@ -103,7 +112,6 @@ func (s *SyncManager) Restore(rc io.ReadCloser) error {
 	// Set the state from the snapshot, no lock required according to
 	// Hashicorp docs.
 	s.projectConfig = project
-	s.projectID = project.ID
 	return nil
 }
 
@@ -116,7 +124,7 @@ func (s *SyncManager) Snapshot() (raft.FSMSnapshot, error) {
 }
 
 type fsmSnapshot struct {
-	store *config.Project
+	store *config.Config
 }
 
 func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {

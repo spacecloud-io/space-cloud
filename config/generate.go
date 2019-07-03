@@ -22,8 +22,17 @@ type input struct {
 	BuildVersion string
 }
 
+// GenerateEmptyConfig creates an empty config file
+func GenerateEmptyConfig() *Config {
+	return &Config{
+		SSL:      &SSL{Enabled: false},
+		Admin:    &Admin{User: "admin", Pass: "123", Role: "captain-cloud"},
+		Projects: []*Project{},
+	}
+}
+
 // GenerateConfig started the interactive cli to generate config file
-func GenerateConfig(configFilePath string, isMissionControlUIPresent bool) error {
+func GenerateConfig(configFilePath string) error {
 	fmt.Println()
 	fmt.Println("This utility walks you through creating a config.yaml file for your space-cloud project.")
 	fmt.Println("It only covers the most essential configurations and suggests sensible defaults.")
@@ -61,37 +70,35 @@ func GenerateConfig(configFilePath string, isMissionControlUIPresent bool) error
 		return err
 	}
 
-	if isMissionControlUIPresent {
-		// Ask for the admin username
-		err = survey.AskOne(&survey.Input{Message: "Mission Control (UserName)", Default: "admin"}, &i.AdminName, survey.Required)
-		if err != nil {
-			return err
-		}
-
-		// Ask for the admin password
-		err = survey.AskOne(&survey.Input{Message: "Mission Control (Password)", Default: "admin123"}, &i.AdminPass, survey.Required)
-		if err != nil {
-			return err
-		}
-
-		// Ask for the admin role
-		err = survey.AskOne(&survey.Input{Message: "Mission Control (Role)", Default: "captain-cloud"}, &i.AdminRole, survey.Required)
-		if err != nil {
-			return err
-		}
-
-		i.HomeDir = utils.UserHomeDir()
-		i.BuildVersion = utils.BuildVersion
+	// Ask for the admin username
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (UserName)", Default: "admin"}, &i.AdminName, survey.Required)
+	if err != nil {
+		return err
 	}
+
+	// Ask for the admin password
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (Password)", Default: "admin123"}, &i.AdminPass, survey.Required)
+	if err != nil {
+		return err
+	}
+
+	// Ask for the admin role
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (Role)", Default: "captain-cloud"}, &i.AdminRole, survey.Required)
+	if err != nil {
+		return err
+	}
+
+	i.HomeDir = utils.UserHomeDir()
+	i.BuildVersion = utils.BuildVersion
 
 	if configFilePath == "none" {
 		configFilePath = workingDir + string(os.PathSeparator) + i.ID + ".yaml"
 	}
 
-	return writeConfig(i, configFilePath, isMissionControlUIPresent)
+	return writeConfig(i, configFilePath)
 }
 
-func writeConfig(i *input, configFilePath string, isMissionControlUIPresent bool) error {
+func writeConfig(i *input, configFilePath string) error {
 	f, err := os.Create(configFilePath)
 	if err != nil {
 		return err
@@ -99,9 +106,6 @@ func writeConfig(i *input, configFilePath string, isMissionControlUIPresent bool
 	defer f.Close()
 
 	tmplString := templateString
-	if isMissionControlUIPresent {
-		tmplString = templateStringMissionControl
-	}
 
 	tmpl, err := template.New("config").Parse(tmplString)
 	if err != nil {

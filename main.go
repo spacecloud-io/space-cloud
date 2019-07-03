@@ -35,7 +35,7 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:  "config",
-		Value: "none",
+		Value: "config.yaml",
 		Usage: "Load space cloud config from `FILE`",
 	},
 	cli.BoolFlag{
@@ -80,12 +80,6 @@ func main() {
 			Flags:  essentialFlags,
 		},
 		{
-			Name:   "start",
-			Usage:  "runs the space cloud instance with mission control ui",
-			Action: actionStart,
-			Flags:  essentialFlags,
-		},
-		{
 			Name:   "init",
 			Usage:  "creates a config file with sensible defaults",
 			Action: actionInit,
@@ -125,17 +119,14 @@ func actionRun(c *cli.Context) error {
 		// Load the configFile from path if provided
 		conf, err := config.LoadConfigFromFile(configPath)
 		if err != nil {
-			return err
+			conf = config.GenerateEmptyConfig()
 		}
 
 		// Save the config file path for future use
 		s.SetConfigFilePath(configPath)
 
 		// Configure all modules
-		err = s.LoadConfig(conf)
-		if err != nil {
-			return err
-		}
+		s.SetConfig(conf)
 	}
 
 	// Anonymously collect usage metrics if not explicitly disabled
@@ -143,100 +134,40 @@ func actionRun(c *cli.Context) error {
 		go s.RoutineMetrics()
 	}
 
-	s.Routes(profiler)
-	return s.Start(port, grpcPort, seeds)
-}
-
-func actionStart(c *cli.Context) error {
-	// Load cli flags
-	port := c.String("port")
-	grpcPort := c.String("grpc-port")
-	natsPort := c.Int("nats-port")
-	clusterPort := c.Int("cluster-port")
-	configPath := c.String("config")
-	isProd := c.Bool("prod")
-	disableMetrics := c.Bool("disable-metrics")
-	disableNats := c.Bool("disable-nats")
-	seeds := c.String("seeds")
-	profiler := c.Bool("profiler")
-
-	// Project and env cannot be changed once space cloud has started
-	s := server.New(isProd)
-
-	if configPath == "none" {
-		configPath = "./config.yaml"
-	}
-	// Load config file
-	conf, err := config.LoadConfigFromFile(configPath)
-	// If config file does not exists then trigger the generate config flow
-	if err != nil {
-		err := config.GenerateConfig(configPath, true)
-		if err != nil {
-			return nil
-		}
-		conf, err = config.LoadConfigFromFile(configPath)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Save the config file path for future use
-	s.SetConfigFilePath(configPath)
-
-	// Configure all modules
-	err = s.LoadConfig(conf)
+	// Download and host mission control
+	staticPath, err := initMissionContol("0.9.0")
 	if err != nil {
 		return err
 	}
 
-	// Anonymously collect usage metrics if not explicitly disabled
-	if !disableMetrics {
-		go s.RoutineMetrics()
-	}
-
-	err = initMissionContol()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Started Mission Control UI at http://localhost:" + port + "/mission-control")
-
-	if !disableNats {
-		err := s.RunNatsServer(seeds, natsPort, clusterPort)
-		if err != nil {
-			return err
-		}
-		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
-	}
-
-	s.Routes(profiler)
+	s.Routes(profiler, staticPath)
 	return s.Start(port, grpcPort, seeds)
 }
 
 func actionInit(*cli.Context) error {
-	return config.GenerateConfig("none", false)
+	return config.GenerateConfig("none")
 }
 
-func initMissionContol() error {
+func initMissionContol(version string) (string, error) {
 	homeDir := utils.UserHomeDir()
-	uiPath := homeDir + "/.space-cloud/mission-control-v" + utils.BuildVersion
+	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
 	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
 		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
 			os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
 		}
 		fmt.Println("Downloading Mission Control UI...")
-		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+utils.BuildVersion+".zip", uiPath+".zip")
+		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
-			return err
+			return "", err
 		}
 		err = utils.Unzip(uiPath+".zip", uiPath)
 		if err != nil {
-			return err
+			return "", err
 		}
 		err = os.Remove(uiPath + ".zip")
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
-	return nil
+	return uiPath + "/build", nil
 }
