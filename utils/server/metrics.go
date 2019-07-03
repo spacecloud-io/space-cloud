@@ -117,13 +117,12 @@ func (s *Server) RoutineMetrics() {
 		return
 	}
 
-	s.lock.Lock()
-	if s.config != nil && s.config.Modules != nil {
-		set["project"] = getProjectInfo(s.config.Modules)
-		set["projectId"] = s.config.ID
-		set["sslEnabled"] = s.config.SSL != nil
+	c := s.syncMan.GetGlobalConfig()
+	if c != nil && c.Projects != nil && c.Projects[0].Modules != nil {
+		set["project"] = getProjectInfo(c.Projects[0].Modules)
+		set["projectId"] = c.Projects[0].ID
+		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
 	}
-	s.lock.Unlock()
 
 	update["$set"] = set
 	status, err := trans.update(context.TODO(), m, "upsert", find, update)
@@ -142,13 +141,12 @@ func (s *Server) RoutineMetrics() {
 			"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "date"}},
 		}
 
-		s.lock.Lock()
-		if s.config != nil && s.config.Modules != nil {
-			set["project"] = getProjectInfo(s.config.Modules)
-			set["projectId"] = s.config.ID
-			set["sslEnabled"] = s.config.SSL != nil
+		c := s.syncMan.GetGlobalConfig()
+		if c != nil && c.Projects != nil && c.Projects[0].Modules != nil {
+			set["project"] = getProjectInfo(c.Projects[0].Modules)
+			set["projectId"] = c.Projects[0].ID
+			set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
 		}
-		s.lock.Unlock()
 
 		update["$set"] = set
 		status, err := trans.update(context.TODO(), m, "one", find, update)

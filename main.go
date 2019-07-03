@@ -35,7 +35,7 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:  "config",
-		Value: "none",
+		Value: "config.yaml",
 		Usage: "Load space cloud config from `FILE`",
 	},
 	cli.BoolFlag{
@@ -80,12 +80,6 @@ func main() {
 			Flags:  essentialFlags,
 		},
 		{
-			Name:   "start",
-			Usage:  "runs the space cloud instance with mission control ui",
-			Action: actionStart,
-			Flags:  essentialFlags,
-		},
-		{
 			Name:   "init",
 			Usage:  "creates a config file with sensible defaults",
 			Action: actionInit,
@@ -125,13 +119,14 @@ func actionRun(c *cli.Context) error {
 		// Load the configFile from path if provided
 		conf, err := config.LoadConfigFromFile(configPath)
 		if err != nil {
-			return err
+			conf = config.GenerateEmptyConfig()
 		}
 
 		// Save the config file path for future use
 		s.SetConfigFilePath(configPath)
 
 		// Configure all modules
+		s.SetConfig(conf)
 		err = s.LoadConfig(conf)
 		if err != nil {
 			return err
@@ -143,70 +138,9 @@ func actionRun(c *cli.Context) error {
 		go s.RoutineMetrics()
 	}
 
-	s.Routes(profiler)
-	return s.Start(port, grpcPort, seeds)
-}
-
-func actionStart(c *cli.Context) error {
-	// Load cli flags
-	port := c.String("port")
-	grpcPort := c.String("grpc-port")
-	natsPort := c.Int("nats-port")
-	clusterPort := c.Int("cluster-port")
-	configPath := c.String("config")
-	isProd := c.Bool("prod")
-	disableMetrics := c.Bool("disable-metrics")
-	disableNats := c.Bool("disable-nats")
-	seeds := c.String("seeds")
-	profiler := c.Bool("profiler")
-
-	// Project and env cannot be changed once space cloud has started
-	s := server.New(isProd)
-
-	if configPath == "none" {
-		configPath = "./config.yaml"
-	}
-	// Load config file
-	conf, err := config.LoadConfigFromFile(configPath)
-	// If config file does not exists then trigger the generate config flow
-	if err != nil {
-		err := config.GenerateConfig(configPath, true)
-		if err != nil {
-			return nil
-		}
-		conf, err = config.LoadConfigFromFile(configPath)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Save the config file path for future use
-	s.SetConfigFilePath(configPath)
-
-	// Configure all modules
-	err = s.LoadConfig(conf)
-	if err != nil {
+	// Download and host mission control
+	if err := initMissionContol(); err != nil {
 		return err
-	}
-
-	// Anonymously collect usage metrics if not explicitly disabled
-	if !disableMetrics {
-		go s.RoutineMetrics()
-	}
-
-	err = initMissionContol()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Started Mission Control UI at http://localhost:" + port + "/mission-control")
-
-	if !disableNats {
-		err := s.RunNatsServer(seeds, natsPort, clusterPort)
-		if err != nil {
-			return err
-		}
-		fmt.Println("Started nats server on port ", server.DefaultNatsOptions.Port)
 	}
 
 	s.Routes(profiler)
@@ -214,7 +148,7 @@ func actionStart(c *cli.Context) error {
 }
 
 func actionInit(*cli.Context) error {
-	return config.GenerateConfig("none", false)
+	return config.GenerateConfig("none")
 }
 
 func initMissionContol() error {

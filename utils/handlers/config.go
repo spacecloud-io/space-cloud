@@ -40,7 +40,7 @@ func HandleAdminLogin(auth *auth.Module) http.HandlerFunc {
 }
 
 // HandleStoreConfig returns the handler to load the config via a REST endpoint
-func HandleStoreConfig(auth *auth.Module, syncMan *syncman.SyncManager, configPath string, cb func(*config.Project) error) http.HandlerFunc {
+func HandleStoreConfig(auth *auth.Module, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the path parameters

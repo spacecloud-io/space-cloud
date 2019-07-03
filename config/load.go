@@ -9,30 +9,31 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func loadEnvironmentVariable(p *Project) {
-	if strings.HasPrefix(p.Secret, "$") {
-		tempString := strings.TrimPrefix(p.Secret, "$")
-		tempEnvVar, present := os.LookupEnv(tempString)
+func loadEnvironmentVariable(c *Config) {
+	for _, p := range c.Projects {
+		if strings.HasPrefix(p.Secret, "$") {
+			tempString := strings.TrimPrefix(p.Secret, "$")
+			tempEnvVar, present := os.LookupEnv(tempString)
 
-		if present {
-			p.Secret = tempEnvVar
+			if present {
+				p.Secret = tempEnvVar
+			}
 		}
-	}
+		for _, value := range p.Modules.Crud {
+			if strings.HasPrefix(value.Conn, "$") {
+				tempStringC := strings.TrimPrefix(value.Conn, "$")
+				tempEnvVarC, presentC := os.LookupEnv(tempStringC)
 
-	for _, value := range p.Modules.Crud {
-		if strings.HasPrefix(value.Conn, "$") {
-			tempStringC := strings.TrimPrefix(value.Conn, "$")
-			tempEnvVarC, presentC := os.LookupEnv(tempStringC)
-
-			if presentC {
-				value.Conn = tempEnvVarC
+				if presentC {
+					value.Conn = tempEnvVarC
+				}
 			}
 		}
 	}
 }
 
 // LoadConfigFromFile loads the config from the provided file path
-func LoadConfigFromFile(path string) (*Project, error) {
+func LoadConfigFromFile(path string) (*Config, error) {
 	// Load the file in memory
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -40,7 +41,7 @@ func LoadConfigFromFile(path string) (*Project, error) {
 	}
 
 	// Marshal the configuration
-	conf := new(Project)
+	conf := new(Config)
 	if strings.HasSuffix(path, "json") {
 		err = json.Unmarshal(dat, conf)
 	} else {

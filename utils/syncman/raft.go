@@ -78,12 +78,21 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 	switch c.Kind {
 	case utils.RaftCommandSet:
 		s.lock.Lock()
-		s.projectConfig = c.Project
-		s.projectID = c.ID
+
+		found := false
+		for i, p := range s.projectConfig.Projects {
+			if p.ID == c.Project.ID {
+				s.projectConfig.Projects[i] = c.Project
+				found = true
+			}
+		}
+		if !found && len(s.projectConfig.Projects) == 0 {
+			s.projectConfig.Projects = append(s.projectConfig.Projects, c.Project)
+		}
 		s.lock.Unlock()
 
 		// Write the config to file
-		config.StoreConfigToFile(c.Project, s.configFile)
+		config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 		s.cb(s.projectConfig)
 
@@ -95,7 +104,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 
 // Restore stores the key-value store to a previous state.
 func (s *SyncManager) Restore(rc io.ReadCloser) error {
-	project := new(config.Project)
+	project := new(config.Config)
 	if err := json.NewDecoder(rc).Decode(project); err != nil {
 		return err
 	}
@@ -103,7 +112,6 @@ func (s *SyncManager) Restore(rc io.ReadCloser) error {
 	// Set the state from the snapshot, no lock required according to
 	// Hashicorp docs.
 	s.projectConfig = project
-	s.projectID = project.ID
 	return nil
 }
 
@@ -116,7 +124,7 @@ func (s *SyncManager) Snapshot() (raft.FSMSnapshot, error) {
 }
 
 type fsmSnapshot struct {
-	store *config.Project
+	store *config.Config
 }
 
 func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {

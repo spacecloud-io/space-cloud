@@ -4,16 +4,18 @@ import "github.com/spaceuptech/space-cloud/utils"
 
 // Config holds the entire configuration
 type Config struct {
-	Projects map[string]*Project `json:"projects" yaml:"projects"` // The key here is the project id
+	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
+	SSL      *SSL       `json:"ssl" yaml:"ssl"`
+	Admin    *Admin     `json:"admin" yaml:"admin"`
+	Cluster  string     `json:"cluster" yaml:"cluster"`
 }
 
 // Project holds the project level configuration
 type Project struct {
-	ID      string   `json:"id" yaml:"id"`
 	Secret  string   `json:"secret" yaml:"secret"`
+	ID      string   `json:"id" yaml:"id"`
+	Name    string   `json:"name" yaml:"name"`
 	Modules *Modules `json:"modules" yaml:"modules"`
-	SSL     *SSL     `json:"ssl" yaml:"ssl"`
-	Admin   *Admin   `json:"admin" yaml:"admin"`
 }
 
 // Admin stores the admin credentials
@@ -102,10 +104,10 @@ type Realtime struct {
 
 // FileStore holds the config for the file store module
 type FileStore struct {
-	Enabled   bool                 `json:"enabled" yaml:"enabled"`
-	StoreType string               `json:"storeType" yaml:"storeType"`
-	Conn      string               `json:"conn" yaml:"conn"`
-	Rules     []*FileRule          `json:"rules" yaml:"rules"`
+	Enabled   bool        `json:"enabled" yaml:"enabled"`
+	StoreType string      `json:"storeType" yaml:"storeType"`
+	Conn      string      `json:"conn" yaml:"conn"`
+	Rules     []*FileRule `json:"rules" yaml:"rules"`
 }
 
 // FileRule is the authorization object at the file rule level
