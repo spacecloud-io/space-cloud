@@ -35,3 +35,14 @@
   font-weight: 600;
   line-height: 50px;
 }
+
+.topbar .btn {
+  height: 32px;
+  border-radius: 20px;
+}
+
+.topbar .btn-position {
+  line-height: 50px;
+  margin-left: 120px;
+  margin-right: 10px;
+}

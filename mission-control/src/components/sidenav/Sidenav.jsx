@@ -25,26 +25,29 @@ class Sidenav extends Component {
     return (
       <div className="sidenav">
         <div className="flex-container">
-          <Header name={this.props.projectId} color="#000" fontSize="18px" />
+          <Header name={this.props.projectName} color="#000" fontSize="18px" />
           <button className="edit" onClick={() => this.handleModalVisiblity(true)}><b>Edit</b></button>
         </div>
-        <Link to={`/mission-control/${this.props.projectId}/overview`}>
+        <Link to={`/mission-control/projects/${this.props.projectId}/overview`}>
           <SidenavItem name="Project Overview" icon="home" active={this.props.selectedItem === 'overview'} />
         </Link>
-        <Link to={`/mission-control/${this.props.projectId}/user-management`}>
+        <Link to={`/mission-control/projects/${this.props.projectId}/user-management`}>
           <SidenavItem name="User Management" icon="people" active={this.props.selectedItem === 'user-management'} />
         </Link>
-        <Link to={`/mission-control/${this.props.projectId}/database`}>
+        <Link to={`/mission-control/projects/${this.props.projectId}/database`}>
           <SidenavItem name="Database" icon="dns" active={this.props.selectedItem === 'database'} />
         </Link>
-        <Link to={`/mission-control/${this.props.projectId}/file-storage`}>
+        <Link to={`/mission-control/projects/${this.props.projectId}/file-storage`}>
           <SidenavItem name="File Storage" icon="folder_open" active={this.props.selectedItem === 'file-storage'} />
         </Link>
-        <Link to={`/mission-control/${this.props.projectId}/functions`}>
+        <Link to={`/mission-control/projects/${this.props.projectId}/functions`}>
           <SidenavItem name="Functions" icon="code" active={this.props.selectedItem === 'functions'} />
         </Link>
-        <Link to={`/mission-control/${this.props.projectId}/configure`}>
+        <Link to={`/mission-control/projects/${this.props.projectId}/configure`}>
           <SidenavItem name="Configure" icon="settings" active={this.props.selectedItem === 'configure'} />
+        </Link>
+        <Link to={`/mission-control/projects/${this.props.projectId}/billing`}>
+          <SidenavItem name="Billing" icon="attach_money" active={this.props.selectedItem === 'billing'} />
         </Link>
         <EditItemModal graphics={projectId} heading="Project ID" name="Give a project ID" desc="You need to use the same project ID to initialize the client." placeholder="Enter a project ID" initialValue={this.props.projectId} visible={this.state.modalVisible} handleCancel={() => this.handleModalVisiblity(false)} handleSubmit={this.props.handleSubmit} />
       </div>
@@ -55,6 +58,7 @@ class Sidenav extends Component {
 const mapStateToProps = (state, ownProps) => {
   return {
     projectId: get(state, "config.id", ""),
+    projectName: get(state, "config.name", ""),
     selectedItem: ownProps.selectedItem,
   }
 }

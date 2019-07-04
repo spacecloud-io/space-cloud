@@ -98,7 +98,7 @@ func (s *SyncManager) SetConfig(token string, project *config.Project) error {
 		addr := s.raft.Leader()
 
 		// Create the http request
-		req, err := http.NewRequest("POST", "http://"+string(addr)+"/v1/api/"+project.ID+"/config", bytes.NewBuffer(data))
+		req, err := http.NewRequest("POST", "http://"+string(addr)+"/v1/api/config", bytes.NewBuffer(data))
 		if err != nil {
 			return err
 		}
@@ -144,7 +144,7 @@ func (s *SyncManager) DeleteConfig(token, projectID string) error {
 		addr := s.raft.Leader()
 
 		// Create the http request
-		req, err := http.NewRequest("DELETE", "http://"+string(addr)+"/v1/api/"+projectID+"/config", nil)
+		req, err := http.NewRequest("DELETE", "http://"+string(addr)+"/v1/api/config/"+projectID, nil)
 		if err != nil {
 			return err
 		}

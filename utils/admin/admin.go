@@ -2,6 +2,7 @@ package admin
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
@@ -25,7 +26,7 @@ func (m *Manager) SetConfig(admin *config.Admin) {
 
 // Login handles the admin login operation
 func (m *Manager) Login(user, pass string) (int, string, error) {
-
+	log.Println("Admin", m.admin, m)
 	u, p, r := m.admin.User, m.admin.Pass, m.admin.Role
 
 	if u != user || p != pass {
@@ -41,7 +42,7 @@ func (m *Manager) Login(user, pass string) (int, string, error) {
 }
 
 // IsAdminOpAuthorised checks if the admin operation is authorised
-func (m *Manager) IsAdminOpAuthorised(project, token string) (int, error) {
+func (m *Manager) IsAdminOpAuthorised(token string) (int, error) {
 
 	auth, err := m.parseToken(token)
 	if err != nil {

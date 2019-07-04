@@ -19,11 +19,11 @@ function Database(props) {
   { graphics: mongodb, name: "MongoDB", desc: "A open-source cross-platform document- oriented database.", key: "mongo" }]
 
   if (props.selectedDb) {
-    return <Redirect to={`/mission-control/${props.projectId}/database/rules/${props.selectedDb}`} />;
+    return <Redirect to={`/mission-control/projects/${props.projectId}/database/rules/${props.selectedDb}`} />;
   }
   return (
     <div className="database">
-      <Topbar title="Database" />
+      <Topbar showProjectSelector />
       <div className="flex-box">
         <Sidenav selectedItem="database" />
         <div className="page-content">

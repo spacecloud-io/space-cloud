@@ -21,7 +21,7 @@ const Panel = Collapse.Panel;
 function UserManagement(props) {
   return (
     <div className="user-management">
-      <Topbar title="User-management" />
+      <Topbar showProjectSelector />
       <div className="flex-box">
         <Sidenav selectedItem="user-management" />
         <div className="page-content">
