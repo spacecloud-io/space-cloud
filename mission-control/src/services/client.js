@@ -36,6 +36,10 @@ class Client {
   postJSON(url, obj) {
     return fetchJSON(url, Object.assign({}, this.options, { method: 'POST', body: JSON.stringify(obj) }))
   }
+
+  delete(url) {
+    return fetchJSON(url, Object.assign({}, this.options, { method: 'DELETE' }))
+  }
 }
 
 export default Client

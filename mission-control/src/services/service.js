@@ -11,30 +11,45 @@ class Service {
           return
         }
         this.client.setToken(data.token)
-        resolve({ project: data.project, token: data.token })
+        resolve({ projects: data.projects, token: data.token })
       }).catch(ex => {
         reject({ error: ex })
       })
     })
   }
 
-  loadConfig(project) {
+  fetchProjects() {
     return new Promise((resolve, reject) => {
-      this.client.getJSON(`/v1/api/${project}/config`).then(({ status, data }) => {
+      this.client.getJSON(`/v1/api/config`).then(({ status, data }) => {
         if (status !== 200) {
           reject({ error: data.error })
           return
         }
-        resolve({ config: data.config })
+        resolve({ projects: data.projects })
       }).catch(ex => {
         reject({ error: ex })
       })
     })
   }
 
-  saveConfig(project, config) {
+  // saveProjectConfig upserts a project config
+  saveProjectConfig(projectConfig) {
     return new Promise((resolve, reject) => {
-      this.client.postJSON(`/v1/api/${project}/config`, config).then(({ status, data }) => {
+      this.client.postJSON(`/v1/api/config`, projectConfig).then(({ status, data }) => {
+        if (status !== 200) {
+          reject({ error: data.error })
+          return
+        }
+        resolve()
+      }).catch(ex => {
+        reject({ error: ex })
+      })
+    })
+  }
+
+  deleteProject(projectId) {
+    return new Promise((resolve, reject) => {
+      this.client.delete(`/v1/api/config/${projectId}`).then(({ status, data }) => {
         if (status !== 200) {
           reject({ error: data.error })
           return

@@ -107,6 +107,7 @@ func (s *Server) Start(port, grpcPort string, seeds string) error {
 func (s *Server) SetConfig(c *config.Config) {
 	s.ssl = c.SSL
 	s.syncMan.SetGlobalConfig(c)
+	s.adminMan.SetConfig(c.Admin)
 }
 
 // LoadConfig configures each module to to use the provided config

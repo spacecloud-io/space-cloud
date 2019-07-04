@@ -28,7 +28,7 @@ class Rules extends React.Component {
 		const noOfRules = Object.keys(this.props.rules).length
 		return (
 			<div>
-				<Topbar title="Database" selectedDb={this.props.selectedDb}/>
+				<Topbar showProjectSelector showDbSelector selectedDb={this.props.selectedDb}/>
 				<div className="flex-box">
 					<Sidenav selectedItem="database" />
 					<div className="page-content">

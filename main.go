@@ -115,19 +115,17 @@ func actionRun(c *cli.Context) error {
 		}
 	}
 
-	if configPath != "none" {
-		// Load the configFile from path if provided
-		conf, err := config.LoadConfigFromFile(configPath)
-		if err != nil {
-			conf = config.GenerateEmptyConfig()
-		}
-
-		// Save the config file path for future use
-		s.SetConfigFilePath(configPath)
-
-		// Configure all modules
-		s.SetConfig(conf)
+	// Load the configFile from path if provided
+	conf, err := config.LoadConfigFromFile(configPath)
+	if err != nil {
+		conf = config.GenerateEmptyConfig()
 	}
+
+	// Save the config file path for future use
+	s.SetConfigFilePath(configPath)
+
+	// Configure all modules
+	s.SetConfig(conf)
 
 	// Anonymously collect usage metrics if not explicitly disabled
 	if !disableMetrics {

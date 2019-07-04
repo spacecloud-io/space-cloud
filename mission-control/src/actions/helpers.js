@@ -1,4 +1,5 @@
 import { cloneDeep } from "lodash"
+import { notification } from "antd"
 
 export const adjustConfig = (config) => {
   // Adjust database rules
@@ -74,4 +75,8 @@ export const unAdjustConfig = (c) => {
 
   result.config = config
   return result
+}
+
+export const notify = (type, title, msg, duration) => {
+  notification[type]({ message: title, description: msg, duration: duration });
 }
