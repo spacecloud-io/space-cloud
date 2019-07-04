@@ -55,6 +55,10 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 	// Write the config to file
 	config.StoreConfigToFile(s.projectConfig, s.configFile)
 
+	if len(s.projectConfig.Projects) > 0 {
+		cb(s.projectConfig)
+	}
+
 	s.lock.Unlock()
 
 	// Start the membership protocol
