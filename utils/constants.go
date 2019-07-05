@@ -107,6 +107,9 @@ const (
 
 	// RealtimeDelete is for delete operations
 	RealtimeDelete string = "delete"
+
+	// RealtimeInitial is for the initial data
+	RealtimeInitial string = "initial"
 )
 const (
 	// TypeRealtimeSubscribe is the request type for live query subscription
