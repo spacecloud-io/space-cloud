@@ -21,6 +21,11 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 		return nil, err
 	}
 
+	if data.Options.SkipInitial {
+		m.AddLiveQuery(data.ID, data.Project, data.Group, clientID, data.Where, sendFeed)
+		return []*model.FeedData{}, nil
+	}
+
 	result, err := crud.Read(ctx, data.DBType, data.Project, data.Group, readReq)
 	if err != nil {
 		return nil, err
@@ -39,7 +44,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 			if docID, ok := acceptableIDType(payload[idVar]); ok {
 				feedData = append(feedData, &model.FeedData{
 					Group:     data.Group,
-					Type:      utils.RealtimeInsert,
+					Type:      utils.RealtimeInitial,
 					TimeStamp: timeStamp,
 					DocID:     docID,
 					DBType:    data.DBType,

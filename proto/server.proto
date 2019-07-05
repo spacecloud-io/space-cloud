@@ -103,6 +103,7 @@ message RealTimeRequest {
   string type = 5;
   string id = 6;
   bytes where = 7;
+  bytes options = 8;
 }
 
 message RealTimeResponse {
