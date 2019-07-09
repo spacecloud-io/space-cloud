@@ -89,6 +89,7 @@ func (s *Server) Start(port, grpcPort, seeds string) error {
 func (s *Server) SetConfig(c *config.Config) {
 	s.ssl = c.SSL
 	s.syncMan.SetGlobalConfig(c)
+	s.adminMan.SetConfig(c.Admin)
 }
 
 func (s *Server) initGRPCServer(port string) {

@@ -61,6 +61,6 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(result)
+		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
 }

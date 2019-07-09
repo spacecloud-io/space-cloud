@@ -11,7 +11,9 @@ const initialState = {
       },
       isLoading: false
     }
-  }
+  },
+  config: {},
+  savedConfig: {}
 };
 
 // Generate reducers with the initial state and pass it to the redux store

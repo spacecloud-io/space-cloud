@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
@@ -45,10 +44,6 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.SyncManager) htt
 func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Get the path parameters
-		vars := mux.Vars(r)
-		project := vars["project"]
-
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
 		if !ok {
@@ -57,7 +52,7 @@ func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, co
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(project, token)
+		status, err := adminMan.IsAdminOpAuthorised(token)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -72,7 +67,7 @@ func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, co
 		// Throw error if request was of incorrect type
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type"})
+			json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
 			return
 		}
 
@@ -94,10 +89,6 @@ func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, co
 func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Get the path parameters
-		vars := mux.Vars(r)
-		project := vars["project"]
-
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
 		if !ok {
@@ -106,7 +97,7 @@ func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, con
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(project, token)
+		status, err := adminMan.IsAdminOpAuthorised(token)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -114,16 +105,11 @@ func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, con
 		}
 
 		// Load config from file
-		c, err := syncMan.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
+		c := syncMan.GetGlobalConfig()
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"config": c})
+		json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects})
 	}
 }
 

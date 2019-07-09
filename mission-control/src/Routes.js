@@ -9,22 +9,27 @@ import FunctionRules from './pages/functions/rules/Rules'
 import FileStorageRules from './pages/file-storage/rules/Rules'
 import Configure from './pages/configure/configure'
 import Overview from  './pages/overview/Overview'
+import Welcome from "./pages/welcome/Welcome"
+import CreateProject from "./pages/create-project/CreateProject"
+import Billing from "./pages/billing/Billing"
 
 export default () => {
   return (
     <Router history={history}>
       <Route exact path="/mission-control" component={Login} />
-      <Route exact path="/mission-control/:projectId" component={(props) => <Redirect to={`/mission-control/${props.match.params.projectId}/overview`}/>} />
-      <Route exact path="/mission-control/:projectId/overview" component={Overview} />
-      <Route exact path="/mission-control/:projectId/user-management" component={UserManagement} />
-      <Route exact path="/mission-control/:projectId/database" component={Database} />
-      <Route exact path="/mission-control/:projectId/database/rules/:database" component={DBRules} />
-      <Route exact path="/mission-control/:projectId/functions" component={(props) => <Redirect to={`/mission-control/${props.match.params.projectId}/functions/rules`} />} />
-      <Route exact path="/mission-control/:projectId/functions/rules" component={FunctionRules} />
-      <Route exact path="/mission-control/:projectId/file-storage" component={(props) => <Redirect to={`/mission-control/${props.match.params.projectId}/file-storage/rules`} />} />
-      <Route exact path="/mission-control/:projectId/file-storage/rules" component={FileStorageRules} />
-      <Route exact path="/mission-control/:projectId/configure" component={Configure} />
-
+      <Route exact path="/mission-control/welcome" component={Welcome} />
+      <Route exact path="/mission-control/create-project" component={CreateProject} />
+      <Route exact path="/mission-control/projects/:projectId" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/overview`}/>} />
+      <Route exact path="/mission-control/projects/:projectId/overview" component={Overview} />
+      <Route exact path="/mission-control/projects/:projectId/user-management" component={UserManagement} />
+      <Route exact path="/mission-control/projects/:projectId/database" component={Database} />
+      <Route exact path="/mission-control/projects/:projectId/database/rules/:database" component={DBRules} />
+      <Route exact path="/mission-control/projects/:projectId/functions" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/functions/rules`} />} />
+      <Route exact path="/mission-control/projects/:projectId/functions/rules" component={FunctionRules} />
+      <Route exact path="/mission-control/projects/:projectId/file-storage" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/file-storage/rules`} />} />
+      <Route exact path="/mission-control/projects/:projectId/file-storage/rules" component={FileStorageRules} />
+      <Route exact path="/mission-control/projects/:projectId/configure" component={Configure} />
+      <Route exact path="/mission-control/projects/:projectId/billing" component={Billing} />
     </Router>
   )
 }

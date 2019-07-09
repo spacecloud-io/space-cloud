@@ -118,7 +118,7 @@ func (s *Server) RoutineMetrics() {
 	}
 
 	c := s.syncMan.GetGlobalConfig()
-	if c != nil && c.Projects != nil && c.Projects[0].Modules != nil {
+	if c != nil && c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
 		set["project"] = getProjectInfo(c.Projects[0].Modules)
 		set["projectId"] = c.Projects[0].ID
 		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
@@ -142,7 +142,7 @@ func (s *Server) RoutineMetrics() {
 		}
 
 		c := s.syncMan.GetGlobalConfig()
-		if c != nil && c.Projects != nil && c.Projects[0].Modules != nil {
+		if c != nil && c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
 			set["project"] = getProjectInfo(c.Projects[0].Modules)
 			set["projectId"] = c.Projects[0].ID
 			set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled

@@ -21,7 +21,7 @@ import { get } from 'automate-redux';
 function Overview(props) {
   return (
     <div className="overview">
-      <Topbar title="Project Overview" />
+      <Topbar showProjectSelector />
       <div className="flex-box">
         <Sidenav selectedItem="overview" />
         <div className="page-content ">
@@ -53,16 +53,16 @@ function Overview(props) {
           </div>
           <Header name="Explore Modules" color="#000" fontSize="22px" />
           <Row  className ="overview-padding">
-            <Link to={`/mission-control/${props.projectId}/user-management`}>
+            <Link to={`/mission-control/projects/${props.projectId}/user-management`}>
               <Col span={11}><UserManagement modules={props.modules.userManagement} /></Col>
             </Link>
-            <Link to={`/mission-control/${props.projectId}/database`}>
+            <Link to={`/mission-control/projects/${props.projectId}/database`}>
               <Col span={11} offset={1}><Database modules={props.modules.database} /></Col>
             </Link>
-            <Link to={`/mission-control/${props.projectId}/functions`}>
+            <Link to={`/mission-control/projects/${props.projectId}/functions`}>
               <Col span={11}><Functions modules={props.modules.functions} /></Col>
             </Link>
-            <Link to={`/mission-control/${props.projectId}/configure`}>
+            <Link to={`/mission-control/projects/${props.projectId}/configure`}>
               <Col span={11} offset={1}><Configure modules={props.modules.configure} /></Col>
             </Link>
           </Row>

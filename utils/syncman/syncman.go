@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"sync"
 
@@ -56,6 +57,14 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 	// Write the config to file
 	config.StoreConfigToFile(s.projectConfig, s.configFile)
 
+	if len(s.projectConfig.Projects) > 0 {
+		for _, p := range s.projectConfig.Projects {
+			if err := s.projects.StoreProject(p); err != nil {
+				log.Println("Load Project Error: ", err)
+			}
+		}
+	}
+
 	s.lock.Unlock()
 
 	// Start the membership protocol
@@ -99,7 +108,7 @@ func (s *SyncManager) SetConfig(token string, project *config.Project) error {
 		addr := s.raft.Leader()
 
 		// Create the http request
-		req, err := http.NewRequest("POST", "http://"+string(addr)+"/v1/api/"+project.ID+"/config", bytes.NewBuffer(data))
+		req, err := http.NewRequest("POST", "http://"+string(addr)+"/v1/api/config", bytes.NewBuffer(data))
 		if err != nil {
 			return err
 		}
@@ -145,7 +154,7 @@ func (s *SyncManager) DeleteConfig(token, projectID string) error {
 		addr := s.raft.Leader()
 
 		// Create the http request
-		req, err := http.NewRequest("DELETE", "http://"+string(addr)+"/v1/api/"+projectID+"/config", nil)
+		req, err := http.NewRequest("DELETE", "http://"+string(addr)+"/v1/api/config/"+projectID, nil)
 		if err != nil {
 			return err
 		}

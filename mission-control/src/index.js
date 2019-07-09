@@ -9,7 +9,7 @@ import { Provider } from "react-redux";
 import store from "./store";
 import Client from "./services/client"
 import Service from "./services/service"
-import { loadConfig } from "./actions/index";
+import { fetchProjects, loadProject } from "./actions/index";
 
 const client = new Client()
 const service = new Service(client)
@@ -31,8 +31,10 @@ export default service
 
 if (token) {
   client.setToken(token)
-  const urlParams  = window.location.pathname.split("/")
-  if (urlParams.length > 2 && urlParams[2]) {
-    loadConfig(urlParams[2])
-  }
+  const urlParams = window.location.pathname.split("/")
+  fetchProjects().then(() => {
+    if (urlParams.length > 3 && urlParams[3]) {
+      loadProject(urlParams[3])
+    }
+  })
 }

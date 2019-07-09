@@ -26,7 +26,7 @@ class Rules extends React.Component {
 		const noOfRules = Object.keys(this.props.rules).length
 		return (
 			<div>
-				<Topbar title="File Storage" />
+				<Topbar showProjectSelector />
 				<div className="flex-box">
 					<Sidenav selectedItem="file-storage" />
 					<div className="page-content">
