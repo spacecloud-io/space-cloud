@@ -64,6 +64,30 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Enable profiler endpoints for profiling",
 		EnvVar: "PROFILER",
 	},
+	cli.StringFlag{
+		Name:   "admin-user",
+		Usage:  "Set the admin user name",
+		EnvVar: "ADMIN_USER",
+		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "admin-pass",
+		Usage:  "Set the admin password",
+		EnvVar: "ADMIN_PASS",
+		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "admin-role",
+		Usage:  "Set the admin role",
+		EnvVar: "ADMIN_ROLE",
+		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "admin-sercret",
+		Usage:  "Set the admin secret",
+		EnvVar: "ADMIN_SECRET",
+		Value:  "",
+	},
 }
 
 func main() {
@@ -105,6 +129,12 @@ func actionRun(c *cli.Context) error {
 	seeds := c.String("seeds")
 	profiler := c.Bool("profiler")
 
+	// Flags related to the admin details
+	adminUser := c.String("admin-user")
+	adminPass := c.String("admin-pass")
+	adminRole := c.String("admin-role")
+	adminSecret := c.String("admin-secret")
+
 	// Project and env cannot be changed once space cloud has started
 	s := server.New(isProd)
 
@@ -123,6 +153,20 @@ func actionRun(c *cli.Context) error {
 
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
+
+	// Override the admin config if provided
+	if adminUser != "" {
+		conf.Admin.User = adminUser
+	}
+	if adminPass != "" {
+		conf.Admin.Pass = adminPass
+	}
+	if adminRole != "" {
+		conf.Admin.Role = adminRole
+	}
+	if adminSecret != "" {
+		conf.Admin.Secret = adminSecret
+	}
 
 	// Configure all modules
 	s.SetConfig(conf)
