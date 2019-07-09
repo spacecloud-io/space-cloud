@@ -7,8 +7,16 @@ type Config struct {
 	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
 	SSL      *SSL       `json:"ssl" yaml:"ssl"`
 	Admin    *Admin     `json:"admin" yaml:"admin"`
+	Deploy   *Deploy    `json:"deploy" yaml:"deploy"`
 	Cluster  string     `json:"cluster" yaml:"cluster"`
 	NodeID   string     `json:"nodeId" yaml:"nodeId"`
+}
+
+// Deploy holds the deployment environment config
+type Deploy struct {
+	Orchestrator utils.OrchestratorType `json:"orchestrator" yaml:"orchestrator"`
+	Registry     string                 `json:"registry" yaml:"registry"`
+	Namespace    string                 `json:"namespace" yaml:"namespace"`
 }
 
 // Project holds the project level configuration

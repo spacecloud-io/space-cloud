@@ -111,6 +111,14 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 
 		// Delete the project from config
 		s.projects.DeleteProject(c.ID)
+
+	case utils.RaftCommandSetDeploy:
+		s.projectConfig.Deploy = c.Deploy
+
+		// Write the config to file
+		config.StoreConfigToFile(s.projectConfig, s.configFile)
+
+		// TODO init the orchestrator module
 	}
 	return nil
 }

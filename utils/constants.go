@@ -159,8 +159,11 @@ const DefaultConfigFilePath string = "config.yaml"
 type RaftCommandType string
 
 const (
-	// RaftCommandSet is used to set a projects config
+	// RaftCommandSet is used to set a project's config
 	RaftCommandSet RaftCommandType = "set"
+
+	// RaftCommandSetDeploy is used to set the deploy config
+	RaftCommandSetDeploy RaftCommandType = "set-deploy"
 
 	// RaftCommandDelete is used to delete a projects config
 	RaftCommandDelete RaftCommandType = "delete"
@@ -168,3 +171,11 @@ const (
 
 // RaftSnapshotDirectory is where the snapshot of the log is stored
 const RaftSnapshotDirectory string = "raft-store"
+
+// OrchestratorType is the type of the orchestrator
+type OrchestratorType string
+
+const (
+	// Kubernetes is the type used for a kubernetes deployement
+	Kubernetes OrchestratorType = "kubernetes"
+)

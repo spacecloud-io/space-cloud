@@ -10,4 +10,5 @@ type RaftCommand struct {
 	Kind    utils.RaftCommandType `json:"kind"`
 	ID      string                `json:"projectId"`
 	Project *config.Project       `json:"project"`
+	Deploy  *config.Deploy        `json:"deploy"`
 }

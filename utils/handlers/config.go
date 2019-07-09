@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
@@ -41,15 +42,11 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.SyncManager) htt
 }
 
 // HandleStoreConfig returns the handler to load the config via a REST endpoint
-func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := getToken(r)
 
 		// Check if the request is authorised
 		status, err := adminMan.IsAdminOpAuthorised(token)
@@ -86,15 +83,11 @@ func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, co
 }
 
 // HandleLoadConfig returns the handler to load the config via a REST endpoint
-func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := getToken(r)
 
 		// Check if the request is authorised
 		status, err := adminMan.IsAdminOpAuthorised(token)
@@ -109,16 +102,82 @@ func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, con
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects})
+		json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects, "deploy": c.Deploy})
 	}
 }
 
 // HandleDeleteConfig returns the handler to load the config via a REST endpoint
-func HandleDeleteConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleDeleteConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := getToken(r)
 
-		// Give negative acknowledgement
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{"error": "Operation not supported"})
+		// Get the path parameters
+		vars := mux.Vars(r)
+		project := vars["project"]
+
+		// Check if the request is authorised
+		status, err := adminMan.IsAdminOpAuthorised(token)
+		if err != nil {
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		err = syncMan.DeleteConfig(token, project)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Give positive acknowledgement
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
+}
+
+// HandleStoreDeploymentConfig returns the handler to store the deployment config
+func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := getToken(r)
+
+		// Load the body of the request
+		c := new(config.Deploy)
+		if err := json.NewDecoder(r.Body).Decode(c); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		status, err := adminMan.IsAdminOpAuthorised(token)
+		if err != nil {
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Set the deploy config
+		if err := syncMan.SetDeployConfig(token, c); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Give positive acknowledgement
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+	}
+}
+
+func getToken(r *http.Request) string {
+	// Get the JWT token from header
+	tokens, ok := r.Header["Authorization"]
+	if !ok {
+		tokens = []string{""}
+	}
+	return strings.TrimPrefix(tokens[0], "Bearer ")
 }
