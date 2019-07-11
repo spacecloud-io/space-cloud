@@ -2,7 +2,6 @@ package admin
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
@@ -26,7 +25,6 @@ func (m *Manager) SetConfig(admin *config.Admin) {
 
 // Login handles the admin login operation
 func (m *Manager) Login(user, pass string) (int, string, error) {
-	log.Println("Admin", m.admin, m)
 	u, p, r := m.admin.User, m.admin.Pass, m.admin.Role
 
 	if u != user || p != pass {
@@ -49,10 +47,12 @@ func (m *Manager) IsAdminOpAuthorised(token string) (int, error) {
 		return http.StatusUnauthorized, err
 	}
 
-	role, p := auth["role"]
+	roleTemp, p := auth["role"]
 	if !p {
 		return http.StatusUnauthorized, errors.New("Invalid Token")
 	}
+
+	role := roleTemp.(string)
 
 	if role != m.admin.Role {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")

@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/raft"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/deploy"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
@@ -21,6 +22,7 @@ type SyncManager struct {
 	raftPort      string
 	list          *memberlist.Memberlist
 	projects      *projects.Projects
+	deploy        *deploy.Module
 }
 
 type node struct {
@@ -29,20 +31,20 @@ type node struct {
 }
 
 // New creates a new instance of the sync manager
-func New() *SyncManager {
+func New(projects *projects.Projects, d *deploy.Module) *SyncManager {
 	// Create a SyncManger instance
-	return new(SyncManager)
+	s := new(SyncManager)
+	s.deploy = d
+	s.projects = projects
+	return s
 }
 
 // Start begins the sync manager operations
-func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string, seeds []string, projects *projects.Projects) error {
+func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string, seeds []string) error {
 	// Save the ports
 	s.lock.Lock()
 	s.gossipPort = gossipPort
 	s.raftPort = raftPort
-
-	// Set projects callback
-	s.projects = projects
 
 	s.configFile = configFilePath
 	if s.projectConfig.NodeID == "" {
