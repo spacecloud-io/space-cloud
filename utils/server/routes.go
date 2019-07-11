@@ -15,6 +15,9 @@ func (s *Server) Routes(profiler bool, staticPath string) {
 	s.router.Methods("POST").Path("/v1/api/config/deploy").HandlerFunc(handlers.HandleStoreDeploymentConfig(s.adminMan, s.syncMan))
 	s.router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteConfig(s.adminMan, s.syncMan))
 
+	// Initialize routes for the deployment module
+	s.router.Methods("POST").Path("/v1/api/deploy").HandlerFunc(handlers.HandleUploadAndDeploy(s.adminMan, s.deploy))
+
 	// Initialize the route for websocket
 	s.router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
 

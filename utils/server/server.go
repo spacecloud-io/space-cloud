@@ -17,6 +17,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
+	"github.com/spaceuptech/space-cloud/modules/deploy"
 	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
@@ -36,16 +37,20 @@ type Server struct {
 	syncMan        *syncman.SyncManager
 	configFilePath string
 	adminMan       *admin.Manager
+	deploy         *deploy.Module
 }
 
 // New creates a new server instance
 func New(isProd bool) *Server {
 	r := mux.NewRouter()
-	syncMan := syncman.New()
+	d := deploy.New()
 	adminMan := admin.New()
 	projects := projects.New(driver.New())
+	syncMan := syncman.New(projects, d)
 	return &Server{nodeID: uuid.NewV1().String(), router: r, projects: projects, isProd: isProd,
-		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath}
+		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
+		deploy: d,
+	}
 }
 
 // Start begins the server operations
@@ -58,7 +63,7 @@ func (s *Server) Start(port, grpcPort, seeds string) error {
 		seeds = "127.0.0.1"
 	}
 	array := strings.Split(seeds, ",")
-	if err := s.syncMan.Start(s.nodeID, s.configFilePath, "4232", "4234", array, s.projects); err != nil {
+	if err := s.syncMan.Start(s.nodeID, s.configFilePath, "4232", "4234", array); err != nil {
 		return err
 	}
 
@@ -90,6 +95,7 @@ func (s *Server) SetConfig(c *config.Config) {
 	s.ssl = c.SSL
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetConfig(c.Admin)
+	s.deploy.SetConfig(&c.Deploy)
 }
 
 func (s *Server) initGRPCServer(port string) {

@@ -79,7 +79,7 @@ func HandleStaticRequest(p *projects.Projects) http.HandlerFunc {
 			return false
 		})
 
-		if !completed {
+		if completed {
 			http.Error(w, "Path not found", http.StatusNotFound)
 		}
 	}
