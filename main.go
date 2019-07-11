@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -65,6 +64,30 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Enable profiler endpoints for profiling",
 		EnvVar: "PROFILER",
 	},
+	cli.StringFlag{
+		Name:   "admin-user",
+		Usage:  "Set the admin user name",
+		EnvVar: "ADMIN_USER",
+		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "admin-pass",
+		Usage:  "Set the admin password",
+		EnvVar: "ADMIN_PASS",
+		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "admin-role",
+		Usage:  "Set the admin role",
+		EnvVar: "ADMIN_ROLE",
+		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "admin-sercret",
+		Usage:  "Set the admin secret",
+		EnvVar: "ADMIN_SECRET",
+		Value:  "",
+	},
 }
 
 func main() {
@@ -97,8 +120,6 @@ func actionRun(c *cli.Context) error {
 	// Load cli flags
 	port := c.String("port")
 	grpcPort := c.String("grpc-port")
-	secret := c.String("secret")
-	account := c.String("account")
 	configPath := c.String("config")
 	natsPort := c.Int("nats-port")
 	clusterPort := c.Int("cluster-port")
@@ -108,9 +129,11 @@ func actionRun(c *cli.Context) error {
 	seeds := c.String("seeds")
 	profiler := c.Bool("profiler")
 
-	if account == "none" || secret == "none" {
-		return errors.New("Cannot start space-cloud with no account")
-	}
+	// Flags related to the admin details
+	adminUser := c.String("admin-user")
+	adminPass := c.String("admin-pass")
+	adminRole := c.String("admin-role")
+	adminSecret := c.String("admin-secret")
 
 	// Project and env cannot be changed once space cloud has started
 	s := server.New(isProd)
@@ -130,6 +153,20 @@ func actionRun(c *cli.Context) error {
 
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
+
+	// Override the admin config if provided
+	if adminUser != "" {
+		conf.Admin.User = adminUser
+	}
+	if adminPass != "" {
+		conf.Admin.Pass = adminPass
+	}
+	if adminRole != "" {
+		conf.Admin.Role = adminRole
+	}
+	if adminSecret != "" {
+		conf.Admin.Secret = adminSecret
+	}
 
 	// Configure all modules
 	s.SetConfig(conf)
