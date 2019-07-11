@@ -10,10 +10,11 @@ import (
 func (s *Server) Routes(profiler bool, staticPath string) {
 	// Initialize the routes for config management
 	s.router.Methods("POST").Path("/v1/api/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
-	s.router.Methods("GET").Path("/v1/api/config").HandlerFunc(handlers.HandleLoadConfig(s.adminMan, s.syncMan))
-	s.router.Methods("POST").Path("/v1/api/config").HandlerFunc(handlers.HandleStoreConfig(s.adminMan, s.syncMan))
+	s.router.Methods("GET").Path("/v1/api/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan))
+	s.router.Methods("POST").Path("/v1/api/config/projects").HandlerFunc(handlers.HandleStoreProjectConfig(s.adminMan, s.syncMan))
+	s.router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan))
+	s.router.Methods("GET").Path("/v1/api/config/deploy").HandlerFunc(handlers.HandleLoadDeploymentConfig(s.adminMan, s.syncMan))
 	s.router.Methods("POST").Path("/v1/api/config/deploy").HandlerFunc(handlers.HandleStoreDeploymentConfig(s.adminMan, s.syncMan))
-	s.router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteConfig(s.adminMan, s.syncMan))
 
 	// Initialize routes for the deployment module
 	s.router.Methods("POST").Path("/v1/api/deploy").HandlerFunc(handlers.HandleUploadAndDeploy(s.adminMan, s.deploy))
