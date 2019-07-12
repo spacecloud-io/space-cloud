@@ -15,7 +15,7 @@ import (
 
 // SyncManager syncs the project config between folders
 type SyncManager struct {
-	lock          sync.RWMutex
+	internalLock  sync.Mutex
 	raft          *raft.Raft
 	projectConfig *config.Config
 	configFile    string
@@ -45,7 +45,7 @@ func New(projects *projects.Projects, d *deploy.Module, adminMan *admin.Manager)
 // Start begins the sync manager operations
 func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string, seeds []string) error {
 	// Save the ports
-	s.lock.Lock()
+	s.internalLock.Lock()
 	s.gossipPort = gossipPort
 	s.raftPort = raftPort
 
@@ -64,7 +64,7 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 		}
 	}
 
-	s.lock.Unlock()
+	s.internalLock.Unlock()
 
 	// Start the membership protocol
 	if err := s.initMembership(seeds); err != nil {

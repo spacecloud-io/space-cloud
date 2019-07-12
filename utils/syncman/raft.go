@@ -47,6 +47,13 @@ func (s *SyncManager) initRaft(seeds []*node) error {
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(s.projectConfig.NodeID)
 	config.LogOutput = ioutil.Discard
+	config.SnapshotInterval = time.Hour * 3
+	config.SnapshotThreshold = 3
+
+	// Check if config is valid
+	if err := raft.ValidateConfig(config); err != nil {
+		return err
+	}
 
 	// Instantiate the Raft systems.
 	r, err := raft.NewRaft(config, s, logStore, stableStore, snapshots, transport)
@@ -73,15 +80,14 @@ func (s *SyncManager) initRaft(seeds []*node) error {
 
 // Apply applies a Raft log entry to the key-value store
 func (s *SyncManager) Apply(l *raft.Log) interface{} {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	// s.internalLock.Lock()
+	// defer s.internalLock.Unlock()
 
 	var c model.RaftCommand
 	json.Unmarshal(l.Data, &c)
 
 	switch c.Kind {
 	case utils.RaftCommandSet:
-
 		found := false
 		for i, p := range s.projectConfig.Projects {
 			if p.ID == c.Project.ID {
@@ -126,6 +132,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 		// Write the config to file
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
+
 	return nil
 }
 
@@ -144,8 +151,8 @@ func (s *SyncManager) Restore(rc io.ReadCloser) error {
 
 // Snapshot returns a snapshot of the key-value store.
 func (s *SyncManager) Snapshot() (raft.FSMSnapshot, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.internalLock.Lock()
+	defer s.internalLock.Unlock()
 
 	return &fsmSnapshot{store: s.projectConfig}, nil
 }

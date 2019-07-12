@@ -19,13 +19,15 @@ func loadEnvironmentVariable(c *Config) {
 				p.Secret = tempEnvVar
 			}
 		}
-		for _, value := range p.Modules.Crud {
-			if strings.HasPrefix(value.Conn, "$") {
-				tempStringC := strings.TrimPrefix(value.Conn, "$")
-				tempEnvVarC, presentC := os.LookupEnv(tempStringC)
+		if p.Modules != nil {
+			for _, value := range p.Modules.Crud {
+				if strings.HasPrefix(value.Conn, "$") {
+					tempStringC := strings.TrimPrefix(value.Conn, "$")
+					tempEnvVarC, presentC := os.LookupEnv(tempStringC)
 
-				if presentC {
-					value.Conn = tempEnvVarC
+					if presentC {
+						value.Conn = tempEnvVarC
+					}
 				}
 			}
 		}
