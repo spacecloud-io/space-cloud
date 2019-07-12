@@ -1,0 +1,107 @@
+.topbar {
+  color: #fff;
+  .logo-l {
+    height: 30px;
+    margin-right: 16px;
+  }
+  .topbar-learn-l {
+    font-size: 18px;
+    padding-left: 16px;
+    border-left: 2px solid #fff;
+  }
+
+  .logo-s {
+    height: 30px;
+    margin-right: 8px;
+  }
+  .topbar-learn-s {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .nav-wrapper {
+    background-color: #002c39;
+    box-shadow: none;
+
+    .navbar-text-style {
+      color: #fff;
+      font-style: normal;
+      font-weight: 500;
+      font-size: 18px;
+      padding: 0px 24px;
+    }
+    .navbar-text-style:hover {
+      background-color: transparent;
+      border-bottom: 3px solid #fff;
+      transition: all 3ms;
+    }
+  }
+
+  .dehaze {
+    font-size: 26px;
+    color: #fff;
+    cursor: pointer;
+  }
+}
+
+.github {
+  width: 35px;
+}
+
+.get-started-btn {
+  background: #ff6600;
+  border-radius: 5px;
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: none;
+  padding: 0 9px;
+}
+.get-started-btn:hover {
+  background: #ff6600;
+}
+@media #{$large-and-up} {
+  nav {
+    height: 32px;
+    line-height: 32px;
+  }
+}
+
+.topbar-white {
+  padding: 10px 24px;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+  .logo-l {
+    height: 30px;
+    margin-right: 16px;
+  }
+  .topbar-white-learn-l {
+    font-size: 18px;
+    padding-left: 16px;
+    border-left: 2px solid #000;
+  }
+
+  .logo-s {
+    height: 30px;
+    margin-right: 8px;
+  }
+  .topbar-white-learn-s {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .nav-wrapper {
+    background-color: #fff;
+    box-shadow: none;
+
+    .navbar-text-style {
+      color: #000;
+      font-style: normal;
+      font-weight: 500;
+      font-size: 16px;
+      padding: 0px 24px;
+    }
+  }
+
+  .dehaze {
+    font-size: 26px;
+    color: #000;
+    cursor: pointer;
+  }
+}
