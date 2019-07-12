@@ -117,21 +117,7 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncMana
 func HandleLoadDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
-
-		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
-		if err != nil {
-			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
+		// Give negative acknowledgement
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
 	}
@@ -141,21 +127,27 @@ func HandleLoadDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncMa
 func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		// Give negative acknowledgement
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
+	}
+}
 
-		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
-		if err != nil {
-			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
+// HandleLoadOperationModeConfig returns the handler to load the operation config via a REST endpoint
+func HandleLoadOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Give negative acknowledgement
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
+	}
+}
+
+// HandleStoreOperationModeConfig returns the handler to store the operation config via a REST endpoint
+func HandleStoreOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Give negative acknowledgement
 		w.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
 	}
