@@ -24,6 +24,11 @@ raft-store
 publish.sh
 
 test_config.yaml
+config.yaml
+
+# Helper scripts
+rebuild.sh
+rebuild-kube.sh
 
 #IDEs
 .idea
