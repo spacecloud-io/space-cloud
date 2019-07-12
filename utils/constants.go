@@ -165,6 +165,9 @@ const (
 	// RaftCommandSetDeploy is used to set the deploy config
 	RaftCommandSetDeploy RaftCommandType = "set-deploy"
 
+	// RaftCommandSetOperation is used to set the deploy config
+	RaftCommandSetOperation RaftCommandType = "set-operation"
+
 	// RaftCommandDelete is used to delete a projects config
 	RaftCommandDelete RaftCommandType = "delete"
 )
@@ -184,3 +187,6 @@ const (
 	// ScopeDeploy is te scope used for the deploy module
 	ScopeDeploy string = "deploy"
 )
+
+// TypeRegisterRequest is the space cloud register request
+const TypeRegisterRequest string = "register"

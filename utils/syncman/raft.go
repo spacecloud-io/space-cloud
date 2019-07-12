@@ -119,6 +119,12 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 		s.deploy.SetConfig(c.Deploy)
+
+	case utils.RaftCommandSetOperation:
+		s.projectConfig.Admin.Operation = *c.Operation
+
+		// Write the config to file
+		config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 	return nil
 }

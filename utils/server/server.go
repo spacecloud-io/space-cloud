@@ -42,12 +42,13 @@ type Server struct {
 
 // New creates a new server instance
 func New(isProd bool) *Server {
+	nodeID := uuid.NewV1().String()
 	r := mux.NewRouter()
 	d := deploy.New()
-	adminMan := admin.New()
+	adminMan := admin.New(nodeID)
 	projects := projects.New(driver.New())
 	syncMan := syncman.New(projects, d, adminMan)
-	return &Server{nodeID: uuid.NewV1().String(), router: r, projects: projects, isProd: isProd,
+	return &Server{nodeID: nodeID, router: r, projects: projects, isProd: isProd,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
 		deploy: d,
 	}

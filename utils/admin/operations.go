@@ -50,7 +50,7 @@ func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
 
 	if scope == utils.ScopeDeploy {
 		if m.admin.Operation.Mode < 1 {
-			return http.StatusForbidden, errors.New("Operation not supported. Upgrade to avail this feature")
+			return http.StatusForbidden, errors.New("Please upgrade your instance")
 		}
 	}
 
@@ -82,4 +82,10 @@ func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
 	}
 
 	return http.StatusForbidden, errors.New("You are not authorized to make this request")
+}
+
+func (m *Manager) reduceOpMode() {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	m.admin.Operation.Mode = 0
 }

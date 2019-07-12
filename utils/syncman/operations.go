@@ -56,8 +56,37 @@ func makeRequest(method, token, url string, data *bytes.Buffer) error {
 	return nil
 }
 
+// SetOperationModeConfig applies the operation config to the raft log
+func (s *SyncManager) SetOperationModeConfig(token string, op *config.OperationConfig) error {
+	// Acquire a lock to make sure only a single operation occurs at any given point of time
+	s.lock.Lock()
+	defer s.lock.RUnlock()
+
+	if s.raft.State() != raft.Leader {
+		// Marshal json into byte array
+		data, _ := json.Marshal(op)
+
+		// Get the raft leader addr
+		addr := s.raft.Leader()
+
+		// Make the http request
+		return makeRequest("POST", token, "http://"+string(addr)+":8080/v1/api/config/operation", bytes.NewBuffer(data))
+	}
+
+	// Create a raft command
+	c := &model.RaftCommand{Kind: utils.RaftCommandSetOperation, Operation: op}
+	data, _ := json.Marshal(c)
+
+	// Apply the command to the raft log
+	return s.raft.Apply(data, 0).Error()
+}
+
 // SetProjectConfig applies the config to the raft log
 func (s *SyncManager) SetProjectConfig(token string, project *config.Project) error {
+	// Acquire a lock to make sure only a single operation occurs at any given point of time
+	s.lock.Lock()
+	defer s.lock.RUnlock()
+
 	if s.raft.State() != raft.Leader {
 		// Marshal json into byte array
 		data, _ := json.Marshal(project)
@@ -84,6 +113,10 @@ func (s *SyncManager) SetProjectConfig(token string, project *config.Project) er
 
 // SetDeployConfig applies the config to the raft log
 func (s *SyncManager) SetDeployConfig(token string, deploy *config.Deploy) error {
+	// Acquire a lock to make sure only a single operation occurs at any given point of time
+	s.lock.Lock()
+	defer s.lock.RUnlock()
+
 	if s.raft.State() != raft.Leader {
 		// Marshal json into byte array
 		data, _ := json.Marshal(deploy)
@@ -105,13 +138,17 @@ func (s *SyncManager) SetDeployConfig(token string, deploy *config.Deploy) error
 
 // DeleteConfig applies the config to the raft log
 func (s *SyncManager) DeleteConfig(token, projectID string) error {
+	// Acquire a lock to make sure only a single operation occurs at any given point of time
+	s.lock.Lock()
+	defer s.lock.RUnlock()
+
 	if s.raft.State() != raft.Leader {
 
 		// Get the raft leader addr
 		addr := s.raft.Leader()
 
 		// Make the http request
-		return makeRequest("DELETE", token, "http://"+string(addr)+"/v1/api/config/"+projectID, nil)
+		return makeRequest("DELETE", token, "http://"+string(addr)+":8080/v1/api/config/"+projectID, nil)
 	}
 
 	// Create a raft command

@@ -200,8 +200,76 @@ func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncM
 			return
 		}
 
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{})
+	}
+}
+
+// HandleStoreOperationModeConfig returns the handler to store the deployment config via a REST endpoint
+func HandleStoreOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := getToken(r)
+
+		// Load the body of the request
+		c := new(config.OperationConfig)
+		if err := json.NewDecoder(r.Body).Decode(c); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		status, err := adminMan.IsAdminOpAuthorised(token, "deploy")
+		if err != nil {
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Set the operation mode config
+		if err := adminMan.SetOperationMode(c); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Apply it to raft log
+		if err := syncMan.SetOperationModeConfig(token, c); err != nil {
+			// Reset the operation mode
+			c.Mode = 0
+			adminMan.SetOperationMode(c)
+
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{})
+	}
+}
+
+// HandleLoadOperationModeConfig returns the handler to load the operation config via a REST endpoint
+func HandleLoadOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := getToken(r)
+
+		// Check if the token is valid
+		if status, err := adminMan.IsAdminOpAuthorised(token, "deploy"); err != nil {
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		c := syncMan.GetGlobalConfig()
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"operation": &c.Admin.Operation})
 	}
 }
 

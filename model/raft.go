@@ -7,8 +7,9 @@ import (
 
 // RaftCommand is the object passed as a raft entry
 type RaftCommand struct {
-	Kind    utils.RaftCommandType `json:"kind"`
-	ID      string                `json:"projectId"`
-	Project *config.Project       `json:"project"`
-	Deploy  *config.Deploy        `json:"deploy"`
+	Kind      utils.RaftCommandType   `json:"kind"`
+	ID        string                  `json:"projectId"`
+	Project   *config.Project         `json:"project"`
+	Deploy    *config.Deploy          `json:"deploy"`
+	Operation *config.OperationConfig `json:"operation"`
 }
