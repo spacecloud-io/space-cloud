@@ -185,14 +185,6 @@ func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncM
 		}
 		defer r.Body.Close()
 
-		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token, "deploy")
-		if err != nil {
-			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Set the deploy config
 		if err := syncMan.SetDeployConfig(token, c); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
