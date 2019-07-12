@@ -72,7 +72,7 @@ func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, co
 		}
 
 		// Sync the config
-		err = syncMan.SetConfig(token, c)
+		err = syncMan.SetProjectConfig(token, c)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
