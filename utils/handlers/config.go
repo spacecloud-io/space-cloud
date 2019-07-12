@@ -52,15 +52,30 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.SyncManager, c
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
-		if err != nil {
-			w.WriteHeader(status)
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Load config from file
 		c := syncMan.GetGlobalConfig()
+
+		// Create a projects array
+		projects := []*config.Project{}
+
+		// Iterate over all projects
+		for _, p := range c.Projects {
+			// Add the project to the array if user has read access
+			_, err := adminMan.IsAdminOpAuthorised(token, p.ID)
+			if err == nil {
+				projects = append(projects, p)
+			}
+		}
+
+		// Give positive acknowledgement
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"projects": projects})
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -79,17 +94,9 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncMana
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
-		if err != nil {
-			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the body of the request
 		c := new(config.Project)
-		err = json.NewDecoder(r.Body).Decode(c)
+		err := json.NewDecoder(r.Body).Decode(c)
 		defer r.Body.Close()
 
 		// Throw error if request was of incorrect type
@@ -99,8 +106,16 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncMana
 			return
 		}
 
+		// Check if the request is authorised
+		status, err := adminMan.IsAdminOpAuthorised(token, c.ID)
+		if err != nil {
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		// Sync the config
-		err = syncMan.SetConfig(token, c)
+		err = syncMan.SetProjectConfig(token, c)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

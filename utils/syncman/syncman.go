@@ -13,6 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 )
 
 // SyncManager syncs the project config between folders
@@ -25,6 +26,7 @@ type SyncManager struct {
 	raftPort      string
 	list          *memberlist.Memberlist
 	cb            func(*config.Config) error
+	adminMan      *admin.Manager
 }
 
 type node struct {
@@ -33,9 +35,9 @@ type node struct {
 }
 
 // New creates a new instance of the sync manager
-func New() *SyncManager {
+func New(adminMan *admin.Manager) *SyncManager {
 	// Create a SyncManger instance
-	return new(SyncManager)
+	return &SyncManager{adminMan: adminMan}
 }
 
 // Start begins the sync manager operations
@@ -92,8 +94,8 @@ func (s *SyncManager) GetGlobalConfig() *config.Config {
 	return s.projectConfig
 }
 
-// SetConfig applies the config to the raft log
-func (s *SyncManager) SetConfig(token string, project *config.Project) error {
+// SetProjectConfig applies the set project config command to the raft log
+func (s *SyncManager) SetProjectConfig(token string, project *config.Project) error {
 	if s.raft.State() != raft.Leader {
 		// Marshal json into byte array
 		data, _ := json.Marshal(project)
@@ -102,7 +104,7 @@ func (s *SyncManager) SetConfig(token string, project *config.Project) error {
 		addr := s.raft.Leader()
 
 		// Create the http request
-		req, err := http.NewRequest("POST", "http://"+string(addr)+"/v1/api/config", bytes.NewBuffer(data))
+		req, err := http.NewRequest("POST", "http://"+string(addr)+":8080/v1/api/config", bytes.NewBuffer(data))
 		if err != nil {
 			return err
 		}
@@ -128,7 +130,12 @@ func (s *SyncManager) SetConfig(token string, project *config.Project) error {
 		return nil
 	}
 
-	if !s.validateConfigOp(project) {
+	// Acquire the read lock
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Validate the operation
+	if !s.adminMan.ValidateSyncOperation(s.projectConfig, project) {
 		return errors.New("Please upgrade your instance")
 	}
 
@@ -140,8 +147,8 @@ func (s *SyncManager) SetConfig(token string, project *config.Project) error {
 	return s.raft.Apply(data, 0).Error()
 }
 
-// DeleteConfig applies the config to the raft log
-func (s *SyncManager) DeleteConfig(token, projectID string) error {
+// DeleteProjectConfig applies delete project config command to the raft log
+func (s *SyncManager) DeleteProjectConfig(token, projectID string) error {
 	if s.raft.State() != raft.Leader {
 
 		// Get the raft leader addr
@@ -200,20 +207,4 @@ func (s *SyncManager) GetConfig(projectID string) (*config.Project, error) {
 // ClusterSize returns the size of the member list
 func (s *SyncManager) ClusterSize() int {
 	return s.list.NumMembers()
-}
-
-func (s *SyncManager) validateConfigOp(project *config.Project) bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	for _, p := range s.projectConfig.Projects {
-		if p.ID == project.ID {
-			return true
-		}
-	}
-	if len(s.projectConfig.Projects) == 0 {
-		return true
-	}
-
-	return false
 }
