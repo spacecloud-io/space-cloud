@@ -27,8 +27,16 @@ type input struct {
 func GenerateEmptyConfig() *Config {
 	return &Config{
 		SSL:      &SSL{Enabled: false},
-		Admin:    &Admin{User: "admin", Pass: "123", Role: "captain-cloud", Secret: "some-secret"},
+		Admin:    generateAdmin(),
 		Projects: []*Project{},
+	}
+}
+
+func generateAdmin() *Admin {
+	return &Admin{
+		Secret:    "some-secret",
+		Operation: OperationConfig{Mode: 0},
+		Users:     []AdminUser{{User: "admin", Pass: "123", Scopes: ProjectScope{"name": []string{"all"}}}},
 	}
 }
 

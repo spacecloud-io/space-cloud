@@ -21,11 +21,27 @@ type Project struct {
 
 // Admin stores the admin credentials
 type Admin struct {
-	User   string `json:"user" yaml:"user"`
-	Pass   string `json:"pass" yaml:"pass"`
-	Role   string `json:"role" yaml:"role"`
-	Secret string `json:"secret" yaml:"secret"`
+	Secret    string          `json:"secret" yaml:"secret"`
+	Operation OperationConfig `json:"operatiop"`
+	Users     []AdminUser     `json:"users" yaml:"users"`
 }
+
+// OperationConfig holds the operation mode config
+type OperationConfig struct {
+	Mode  int    `json:"mode" yaml:"mode"`
+	Email string `json:"email" yaml:"email"`
+	Key   string `json:"key" yaml:"key"`
+}
+
+// AdminUser holds the user credentials and scope
+type AdminUser struct {
+	User   string       `json:"user" yaml:"user"`
+	Pass   string       `json:"pass" yaml:"pass"`
+	Scopes ProjectScope `json:"scopes" yaml:"scopes"`
+}
+
+// ProjectScope contains the project level scope
+type ProjectScope map[string][]string // (project name -> []scopes)
 
 // SSL holds the certificate and key file locations
 type SSL struct {
