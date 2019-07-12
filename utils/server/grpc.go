@@ -14,6 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
+// Create inserts document(s) into the database
 func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -57,6 +58,7 @@ func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	return &pb.Response{Status: http.StatusOK}, nil
 }
 
+// Read queries document(s) from the database
 func (s *Server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -105,6 +107,7 @@ func (s *Server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	return &pb.Response{Status: http.StatusOK, Result: resultBytes}, nil
 }
 
+// Update updates document(s) from the database
 func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -151,6 +154,7 @@ func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 	return &pb.Response{Status: http.StatusOK}, nil
 }
 
+// Delete deletes document(s) from the database
 func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -193,6 +197,7 @@ func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	return &pb.Response{Status: http.StatusOK}, nil
 }
 
+// Aggregate aggregates document(s) from the database
 func (s *Server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -229,6 +234,7 @@ func (s *Server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	return &pb.Response{Status: http.StatusOK, Result: resultBytes}, nil
 }
 
+// Batch performs a batch operation on the database
 func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -360,6 +366,7 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	return &pb.Response{Status: http.StatusOK}, nil
 }
 
+// Call invokes a function on the provided services
 func (s *Server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Project)
@@ -389,6 +396,7 @@ func (s *Server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 	return &pb.Response{Result: data, Status: 200}, nil
 }
 
+// Service registers and handles all opertions of a service
 func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	// Create an empty project variable
 	var project string
@@ -451,6 +459,7 @@ func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	return nil
 }
 
+// RealTime registers and handles all opertions of a live query
 func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	// Create an empty project variable
 	var project string
@@ -536,6 +545,7 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	return nil
 }
 
+// Profile queries the user's profiles
 func (s *Server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -561,6 +571,7 @@ func (s *Server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Respon
 	return &out, nil
 }
 
+// Profiles queries all user profiles
 func (s *Server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -586,6 +597,7 @@ func (s *Server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Resp
 	return &out, nil
 }
 
+// EditProfile edits a user's profiles
 func (s *Server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -611,6 +623,7 @@ func (s *Server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*p
 	return &out, nil
 }
 
+// SignIn signs a user in
 func (s *Server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -636,6 +649,7 @@ func (s *Server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response
 	return &out, nil
 }
 
+// SignUp signs up a user
 func (s *Server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -661,6 +675,7 @@ func (s *Server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response
 	return &out, nil
 }
 
+// CreateFolder creates a new folder
 func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -680,6 +695,7 @@ func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (
 	return &out, nil
 }
 
+// DeleteFile delete a file
 func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -699,6 +715,7 @@ func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.
 	return &out, nil
 }
 
+// ListFiles lists all files in the provided folder
 func (s *Server) ListFiles(ctx context.Context, in *pb.ListFilesRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -724,6 +741,7 @@ func (s *Server) ListFiles(ctx context.Context, in *pb.ListFilesRequest) (*pb.Re
 	return &out, nil
 }
 
+// UploadFile uploads a file
 func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
 	req, err := stream.Recv()
 	if err != nil {
@@ -748,7 +766,7 @@ func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
 	// defer w.Close()
 
 	go func() {
-		status, err1 := state.FileStore.UploadFile(context.TODO(), req.Meta.Project, req.Meta.Token, &model.CreateFileRequest{req.Path, req.Name, "file", true}, r)
+		status, err1 := state.FileStore.UploadFile(context.TODO(), req.Meta.Project, req.Meta.Token, &model.CreateFileRequest{Path: req.Path, Name: req.Name, Type: "file", MakeAll: true}, r)
 		c <- status
 		if err1 != nil {
 			err = err1
@@ -774,17 +792,12 @@ func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
 
 	status := <-c
 	if err != nil {
-		return stream.SendAndClose(&pb.Response{
-			Status: int32(status),
-			Error:  err.Error(),
-		})
+		return stream.SendAndClose(&pb.Response{Status: int32(status), Error: err.Error()})
 	}
-	return stream.SendAndClose(&pb.Response{
-		Status: int32(status),
-		Result: []byte(""),
-	})
+	return stream.SendAndClose(&pb.Response{Status: int32(status), Result: []byte("{}")})
 }
 
+// DownloadFile downloads a file
 func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_DownloadFileServer) error {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -797,10 +810,7 @@ func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_D
 
 	status, file, err := state.FileStore.DownloadFile(context.TODO(), in.Meta.Project, in.Meta.Token, in.Path)
 	if err != nil {
-		stream.Send(&pb.FilePayload{
-			Status: int32(status),
-			Error:  err.Error(),
-		})
+		stream.Send(&pb.FilePayload{Status: int32(status), Error: err.Error()})
 		return nil
 	}
 	defer file.Close()
@@ -815,10 +825,7 @@ func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_D
 			break
 		}
 		if err != nil {
-			stream.Send(&pb.FilePayload{
-				Status: int32(http.StatusInternalServerError),
-				Error:  err.Error(),
-			})
+			stream.Send(&pb.FilePayload{Status: int32(http.StatusInternalServerError), Error: err.Error()})
 			break
 		}
 		req := pb.FilePayload{Payload: buf, Status: int32(http.StatusOK)}

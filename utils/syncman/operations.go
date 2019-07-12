@@ -56,8 +56,8 @@ func makeRequest(method, token, url string, data *bytes.Buffer) error {
 	return nil
 }
 
-// SetConfig applies the config to the raft log
-func (s *SyncManager) SetConfig(token string, project *config.Project) error {
+// SetProjectConfig applies the config to the raft log
+func (s *SyncManager) SetProjectConfig(token string, project *config.Project) error {
 	if s.raft.State() != raft.Leader {
 		// Marshal json into byte array
 		data, _ := json.Marshal(project)
@@ -69,7 +69,8 @@ func (s *SyncManager) SetConfig(token string, project *config.Project) error {
 		return makeRequest("POST", token, "http://"+string(addr)+":8080/v1/api/config", bytes.NewBuffer(data))
 	}
 
-	if !s.validateConfigOp(project) {
+	// Validate the operation
+	if !s.adminMan.ValidateSyncOperation(s.projectConfig, project) {
 		return errors.New("Please upgrade your instance")
 	}
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/deploy"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
@@ -23,6 +24,7 @@ type SyncManager struct {
 	list          *memberlist.Memberlist
 	projects      *projects.Projects
 	deploy        *deploy.Module
+	adminMan      *admin.Manager
 }
 
 type node struct {
@@ -31,11 +33,12 @@ type node struct {
 }
 
 // New creates a new instance of the sync manager
-func New(projects *projects.Projects, d *deploy.Module) *SyncManager {
+func New(projects *projects.Projects, d *deploy.Module, adminMan *admin.Manager) *SyncManager {
 	// Create a SyncManger instance
 	s := new(SyncManager)
 	s.deploy = d
 	s.projects = projects
+	s.adminMan = adminMan
 	return s
 }
 
@@ -83,20 +86,4 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 // ClusterSize returns the size of the member list
 func (s *SyncManager) ClusterSize() int {
 	return s.list.NumMembers()
-}
-
-func (s *SyncManager) validateConfigOp(project *config.Project) bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	for _, p := range s.projectConfig.Projects {
-		if p.ID == project.ID {
-			return true
-		}
-	}
-	if len(s.projectConfig.Projects) == 0 {
-		return true
-	}
-
-	return false
 }

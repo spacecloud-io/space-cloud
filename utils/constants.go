@@ -179,3 +179,8 @@ const (
 	// Kubernetes is the type used for a kubernetes deployement
 	Kubernetes OrchestratorType = "kubernetes"
 )
+
+const (
+	// ScopeDeploy is te scope used for the deploy module
+	ScopeDeploy string = "deploy"
+)

@@ -46,7 +46,7 @@ func New(isProd bool) *Server {
 	d := deploy.New()
 	adminMan := admin.New()
 	projects := projects.New(driver.New())
-	syncMan := syncman.New(projects, d)
+	syncMan := syncman.New(projects, d, adminMan)
 	return &Server{nodeID: uuid.NewV1().String(), router: r, projects: projects, isProd: isProd,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
 		deploy: d,

@@ -16,7 +16,7 @@ func HandleUploadAndDeploy(adminMan *admin.Manager, deploy *deploy.Module) http.
 		token := getToken(r)
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
+		status, err := adminMan.IsAdminOpAuthorised(token, "deploy")
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

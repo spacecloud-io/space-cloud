@@ -46,16 +46,11 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.SyncManager) h
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := getToken(r)
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
-		if err != nil {
-			w.WriteHeader(status)
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -63,9 +58,21 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.SyncManager) h
 		// Load config from file
 		c := syncMan.GetGlobalConfig()
 
+		// Create a projects array
+		projects := []*config.Project{}
+
+		// Iterate over all projects
+		for _, p := range c.Projects {
+			// Add the project to the array if user has read access
+			_, err := adminMan.IsAdminOpAuthorised(token, p.ID)
+			if err == nil {
+				projects = append(projects, p)
+			}
+		}
+
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects})
+		json.NewEncoder(w).Encode(map[string]interface{}{"projects": projects})
 	}
 }
 
@@ -76,17 +83,9 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncMana
 		// Get the JWT token from header
 		token := getToken(r)
 
-		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
-		if err != nil {
-			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the body of the request
 		c := new(config.Project)
-		err = json.NewDecoder(r.Body).Decode(c)
+		err := json.NewDecoder(r.Body).Decode(c)
 		defer r.Body.Close()
 
 		// Throw error if request was of incorrect type
@@ -96,8 +95,16 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncMana
 			return
 		}
 
+		// Check if the request is authorised
+		status, err := adminMan.IsAdminOpAuthorised(token, c.ID)
+		if err != nil {
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		// Sync the config
-		err = syncMan.SetConfig(token, c)
+		err = syncMan.SetProjectConfig(token, c)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -117,21 +124,22 @@ func HandleLoadDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncMa
 		// Get the JWT token from header
 		token := getToken(r)
 
-		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
-		if err != nil {
+		// Check if the token is valid
+		if status, err := adminMan.IsAdminOpAuthorised(token, "deploy"); err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
+		c := syncMan.GetGlobalConfig()
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"deploy": &c.Deploy})
 	}
 }
 
-// HandleDeleteConfig returns the handler to load the config via a REST endpoint
-func HandleDeleteConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
+// HandleDeleteProjectConfig returns the handler to load the config via a REST endpoint
+func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := getToken(r)
@@ -141,7 +149,7 @@ func HandleDeleteConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) h
 		project := vars["project"]
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
+		status, err := adminMan.IsAdminOpAuthorised(token, project)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -166,29 +174,6 @@ func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncM
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
-
-		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
-		if err != nil {
-			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
-	}
-}
-
-// HandleDeleteProjectConfig returns the handler to delete the config of a project via a REST endpoint
-func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Get the JWT token from header
 		token := getToken(r)
 
 		// Load the body of the request
@@ -201,7 +186,7 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncMan
 		defer r.Body.Close()
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token)
+		status, err := adminMan.IsAdminOpAuthorised(token, "deploy")
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -215,9 +200,8 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncMan
 			return
 		}
 
-		// Give positive acknowledgement
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
 	}
 }
 
