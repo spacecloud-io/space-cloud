@@ -40,8 +40,51 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.SyncManager) htt
 	}
 }
 
-// HandleStoreConfig returns the handler to load the config via a REST endpoint
-func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+// HandleLoadProjects returns the handler to load the projects via a REST endpoint
+func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		tokens, ok := r.Header["Authorization"]
+		if !ok {
+			tokens = []string{""}
+		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Load config from file
+		c := syncMan.GetGlobalConfig()
+
+		// Create a projects array
+		projects := []*config.Project{}
+
+		// Iterate over all projects
+		for _, p := range c.Projects {
+			// Add the project to the array if user has read access
+			_, err := adminMan.IsAdminOpAuthorised(token, p.ID)
+			if err == nil {
+				projects = append(projects, p)
+			}
+		}
+
+		// Give positive acknowledgement
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"projects": projects})
+
+		// Give positive acknowledgement
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects})
+	}
+}
+
+// HandleStoreProjectConfig returns the handler to store the config of a project via a REST endpoint
+func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -85,8 +128,8 @@ func HandleStoreConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, co
 	}
 }
 
-// HandleLoadConfig returns the handler to load the config via a REST endpoint
-func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+// HandleLoadDeploymentConfig returns the handler to load the deployment config via a REST endpoint
+func HandleLoadDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -97,35 +140,43 @@ func HandleLoadConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, con
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
 		// Check if the token is valid
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+		if status, err := adminMan.IsAdminOpAuthorised(token, "deploy"); err != nil {
+			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Load config from file
-		c := syncMan.GetGlobalConfig()
-
-		// Create a projects array
-		projects := []*config.Project{}
-
-		// Iterate over all projects
-		for _, p := range c.Projects {
-			// Add the project to the array if user has read access
-			_, err := adminMan.IsAdminOpAuthorised(token, p.ID)
-			if err == nil {
-				projects = append(projects, p)
-			}
-		}
-
-		// Give positive acknowledgement
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"projects": projects})
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
 	}
 }
 
-// HandleDeleteConfig returns the handler to load the config via a REST endpoint
-func HandleDeleteConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+// HandleStoreDeploymentConfig returns the handler to store the deployment config via a REST endpoint
+func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		tokens, ok := r.Header["Authorization"]
+		if !ok {
+			tokens = []string{""}
+		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+		// Check if the request is authorised
+		status, err := adminMan.IsAdminOpAuthorised(token, "deploy")
+		if err != nil {
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
+	}
+}
+
+// HandleDeleteProjectConfig returns the handler to delete the config of a project via a REST endpoint
+func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Give negative acknowledgement

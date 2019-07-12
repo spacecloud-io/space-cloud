@@ -36,7 +36,7 @@ func generateAdmin() *Admin {
 	return &Admin{
 		Secret:    "some-secret",
 		Operation: OperationConfig{Mode: 0},
-		Users:     []AdminUser{{User: "admin", Pass: "123", Scopes: ProjectScope{"name": []string{"all"}}}},
+		Users:     []AdminUser{{User: "admin", Pass: "123", Scopes: ProjectScope{"all": []string{"all"}}}},
 	}
 }
 

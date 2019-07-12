@@ -208,19 +208,3 @@ func (s *SyncManager) GetConfig(projectID string) (*config.Project, error) {
 func (s *SyncManager) ClusterSize() int {
 	return s.list.NumMembers()
 }
-
-func (s *SyncManager) validatseConfigOp(project *config.Project) bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	for _, p := range s.projectConfig.Projects {
-		if p.ID == project.ID {
-			return true
-		}
-	}
-	if len(s.projectConfig.Projects) == 0 {
-		return true
-	}
-
-	return false
-}

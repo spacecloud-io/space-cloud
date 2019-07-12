@@ -9,6 +9,9 @@ import (
 
 // IsTokenValid checks if the token is valid
 func (m *Manager) IsTokenValid(token string) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	_, err := m.parseToken(token)
 	return err
 }
