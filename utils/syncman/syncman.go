@@ -38,6 +38,7 @@ func New(projects *projects.Projects, d *deploy.Module, adminMan *admin.Manager)
 	s := new(SyncManager)
 	s.deploy = d
 	s.projects = projects
+	s.adminMan = adminMan
 	return s
 }
 

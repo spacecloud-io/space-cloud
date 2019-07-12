@@ -60,7 +60,7 @@ func makeRequest(method, token, url string, data *bytes.Buffer) error {
 func (s *SyncManager) SetOperationModeConfig(token string, op *config.OperationConfig) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time
 	s.lock.Lock()
-	defer s.lock.RUnlock()
+	defer s.lock.Unlock()
 
 	if s.raft.State() != raft.Leader {
 		// Marshal json into byte array
@@ -85,7 +85,7 @@ func (s *SyncManager) SetOperationModeConfig(token string, op *config.OperationC
 func (s *SyncManager) SetProjectConfig(token string, project *config.Project) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time
 	s.lock.Lock()
-	defer s.lock.RUnlock()
+	defer s.lock.Unlock()
 
 	if s.raft.State() != raft.Leader {
 		// Marshal json into byte array
@@ -115,7 +115,7 @@ func (s *SyncManager) SetProjectConfig(token string, project *config.Project) er
 func (s *SyncManager) SetDeployConfig(token string, deploy *config.Deploy) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time
 	s.lock.Lock()
-	defer s.lock.RUnlock()
+	defer s.lock.Unlock()
 
 	if s.raft.State() != raft.Leader {
 		// Marshal json into byte array
@@ -140,7 +140,7 @@ func (s *SyncManager) SetDeployConfig(token string, deploy *config.Deploy) error
 func (s *SyncManager) DeleteConfig(token, projectID string) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time
 	s.lock.Lock()
-	defer s.lock.RUnlock()
+	defer s.lock.Unlock()
 
 	if s.raft.State() != raft.Leader {
 
