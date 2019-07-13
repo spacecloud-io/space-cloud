@@ -5,6 +5,7 @@ type RegisterRequest struct {
 	ID      string `json:"id"` // This is the space cloud id
 	Key     string `json:"key"`
 	Account string `json:"account"`
+	Mode    int    `json:"mode"`
 }
 
 // RegisterResponse is the response to the register request

@@ -42,7 +42,7 @@ func (m *Manager) SetOperationMode(op *config.OperationConfig) error {
 
 	if op.Mode > 0 {
 		// Start the validation process for higher op modes
-		if err := m.validator.startValidation(m.nodeID, op.Email, op.Key); err != nil {
+		if err := m.validator.startValidation(m.nodeID, op.Email, op.Key, op.Mode); err != nil {
 			return err
 		}
 	} else {
