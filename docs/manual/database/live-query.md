@@ -1,4 +1,4 @@
-# Listening to real-time`db.liveQuery
+# Listening to real-time `db.liveQuery`
 You can listen / subscribe to changes happening in your app's data in real time by simply calling `db.liveQuery` on the frontend. Here's a code snippet to do this:
 
  <div class="row tabs-wrapper">
@@ -25,8 +25,8 @@ const db = api.Mongo();
 const condition = cond("category", "==", 'frontend');
 
 // Callback for data changes:
-const onSnapshot  = (docs, type) => {
-   console.log(docs, snapshot)
+const onSnapshot  = (docs, type, changedDoc) => {
+   console.log(docs, snapshot, changedDoc)
 }
 
 // Callback for error while subscribing
@@ -51,14 +51,19 @@ API api = new API("books-app", "localhost", 8081);
 SQL db = api.MySQL();
 LiveQueryUnsubscribe unsubscribe = db.liveQuery("books").subscribe(new LiveDataListener() {
     @Override
-    public void onSnapshot(LiveData data, String type) {
+    public void onSnapshot(LiveData data, String type, ChangedData changedData) {
         System.out.println(type);
         for (Book book : data.getValue(Book.class)) {
             System.out.printf("ID:%d, Name:%s, Author:%s\n", book.getId(), book.getName(), book.getAuthor());
         }
+        Book book = changedData.getValue(Book.class);
+        if (book!=null) {
+            System.out.println("CHANGED: ");
+            System.out.printf("ID:%d, Name:%s, Author:%s\n", book.getId(), book.getName(), book.getAuthor());
+            System.out.println();
+        }
         System.out.println();
     }
-
     @Override
     public void onError(String error) {
         System.out.println(error);
@@ -79,9 +84,10 @@ api = API('books-app', 'localhost:8081')
 db = api.my_sql()
 
 
-def on_snapshot(docs, kind):
+def on_snapshot(docs, kind, changedDoc):
     print("DOCS:", docs)
     print("KIND OF LIVE QUERY:", kind)
+    print("CHANGED DOC:", changedDoc)
 
 
 def on_error(error):
@@ -111,15 +117,18 @@ func main() {
 		fmt.Println(err)
 	}
 	db := api.MySQL()
-	db.LiveQuery("books").Subscribe(func(liveData *model.LiveData, changeType string) () {
-		fmt.Println(changeType)
+	db.LiveQuery("books").Subscribe(func(liveData *model.LiveData, changeType string, changedData *model.ChangedData) () {
+		fmt.Println("type", changeType)
 		var v []interface{}
 		liveData.Unmarshal(&v)
-		fmt.Println(v)
+		fmt.Println("data", v)
+		var v2 interface{}
+		changedData.Unmarshal(&v2)
+		fmt.Println("chagned", v2)
+		fmt.Println()
 	}, func(err error) () {
 		fmt.Println(err)
 	})
-	for {}
 }
       </code>
     </pre>
@@ -132,12 +141,78 @@ func main() {
 **docs:** An array of latest result set.
 **type:** Type of operation due to which the `onSnapshot` is called. It can have one of the following values:
 - **initial** - Called only once for the initial data on successful subscription
-- **write** - Whenever any data is added or updated
+- **insert** - Whenever any data is added
+- **update** - Whenever any data is updated
 - **delete** - Whenever any data is deleted
+**changedDoc:** The doc that changed.
 
 `onError` function is called with the `error` if there was any error subscribing to data.
 
 As you would have noticed the `subscribe` function returns an `unsubscribe` function. You should call this function whenever you want to unsubscribe to the changes.
+
+## Setting the liveQuery options:
+You can set the liveQuery options using the `options()` function.  
+The function helps to set `changesOnly` to true or false (default).  
+If `changesOnly` is false, it caches the docs. `onSnapshot` will be called with all 3 parameters set.  
+If `changesOnly` is true, it does not cache the docs and also ignores the initial values. `onSnapshot` will be called with only the last 2 parameters set.  
+
+Here's a code snippet to do this:
+
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#live-query-options-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#live-query-options-java">Java</a></li>
+      <li class="tab col s2"><a href="#live-query-options-python">Python</a></li>
+      <li class="tab col s2"><a href="#live-query-options-golang">Golang</a></li>
+    </ul>
+  </div>
+  <div id="live-query-options-js" class="col s12" style="padding:0">
+    <pre>
+      <code>
+let unsubscribe = db.liveQuery('posts').where({}).options({ changesOnly: true })subscribe(onSnapshot, onError) 
+      </code>
+    </pre>
+  </div>
+  <div id="live-query-options-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+LiveQueryUnsubscribe unsubscribe = db.liveQuery("books")
+    .options(LiveQueryOptions.Builder().setChangesOnly(true)).subscribe(new LiveDataListener() {
+    @Override
+    public void onSnapshot(LiveData data, String type, ChangedData changedData) {
+        // ...
+    }
+    @Override
+    public void onError(String error) {
+        // ...
+    }
+});
+      </code>
+    </pre>
+  </div>
+ <div id="live-query-options-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+unsubscribe = db.live_query('books').options(changes_only=True).subscribe(on_snapshot, on_error)
+      </code>
+    </pre>
+  </div>
+  <div id="live-query-options-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+db.LiveQuery("books").Options(&model.LiveQueryOptions{ChangesOnly: false}).
+  Subscribe(func(liveData *model.LiveData, changeType string, changedData *model.ChangedData) () {
+		// ...
+	}, func(err error) () {
+		// ...
+	})
+}
+      </code>
+    </pre>
+  </div>
+</div>
+
 
 ## Next steps
 
