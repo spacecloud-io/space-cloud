@@ -37,12 +37,12 @@ func (v *validator) startValidation(id, account, key string, mode int) error {
 	go func() {
 		timer := time.Now()
 		for {
-			if !v.isActive() {
-				return
-			}
-
 			if err := v.routineRead(); err != nil {
 				log.Println("Validate: Error -", err)
+			}
+
+			if !v.isActive() {
+				return
 			}
 
 			// Sleep for 5 minutes before connecting again
@@ -70,6 +70,9 @@ func (v *validator) startValidation(id, account, key string, mode int) error {
 func (v *validator) stopValidation() {
 	v.lock.Lock()
 	v.active = false
+	if v.socket != nil {
+		v.socket.Close()
+	}
 	v.lock.Unlock()
 }
 
