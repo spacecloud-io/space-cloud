@@ -8,6 +8,7 @@ type Deploy struct {
 	Constraints *Constraints      `json:"constraints" yaml:"constraints"`
 	Ports       []*Port           `json:"ports,omitempty" yaml:"ports,omitempty"`
 	Env         map[string]string `json:"env" yaml:"env"`
+	Expose      []*Expose         `json:"expose,omitempty" yaml:"expose,omitempty"`
 }
 
 // Runtime holds the runtime information
@@ -29,6 +30,14 @@ type Port struct {
 	Port     int     `json:"port" yaml:"port"`
 	Name     *string `json:"name,omitempty" yaml:"name,omitempty"`
 	Protocol *string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
+}
+
+// Expose holds the information about the ports to expose
+type Expose struct {
+	Prefix *string `json:"prefix" yaml:"prefix"`
+	Host   *string `json:"host" yaml:"host"`
+	Proxy  *string `json:"proxy" yaml:"proxy"`
+	Port   int32   `json:"port" yaml:"port"`
 }
 
 // UploadResponse is the response received from the registry
