@@ -319,8 +319,8 @@ func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Mo
 			// Send error response
 			if err != nil {
 				// Send realtime nack
-				for _, m := range msgIDs {
-					realtime.SendAck(m.id, meta.project, m.col, false)
+				for j := 0; j < i; j++ {
+					realtime.SendAck(msgIDs[j].id, meta.project, msgIDs[j].col, false)
 				}
 
 				// Send http response
