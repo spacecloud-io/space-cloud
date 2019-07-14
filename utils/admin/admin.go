@@ -31,6 +31,13 @@ func (m *Manager) SetConfig(admin *config.Admin) {
 	m.lock.Unlock()
 }
 
+// GetConfig returns the adming config
+func (m *Manager) GetConfig() *config.Admin {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	return m.admin
+}
+
 // SetOperationMode sets the operation mode
 func (m *Manager) SetOperationMode(op *config.OperationConfig) error {
 	m.lock.Lock()

@@ -26,9 +26,7 @@ func newValidator(cb func()) *validator {
 // Start starts the validation process
 func (v *validator) startValidation(id, account, key string, mode int) error {
 	// Set validation status to active
-	v.lock.Lock()
-	v.active = true
-	v.lock.Unlock()
+	v.setActive(true)
 
 	if err := v.registerSpaceCloud(id, account, key, mode); err != nil {
 		return err
@@ -51,8 +49,8 @@ func (v *validator) startValidation(id, account, key string, mode int) error {
 			// Check if 15 days are lapsed without authorization
 			if time.Since(timer).Hours() > 24*15 {
 
-				// Reduce op mode to open source
-				v.reduceMode()
+				// Stop the validation process
+				v.stopValidation()
 				return
 			}
 
@@ -68,16 +66,20 @@ func (v *validator) startValidation(id, account, key string, mode int) error {
 }
 
 func (v *validator) stopValidation() {
-	v.lock.Lock()
-	v.active = false
+	v.setActive(false)
+	v.reduceMode()
 	if v.socket != nil {
 		v.socket.Close()
 	}
-	v.lock.Unlock()
 }
 
 func (v *validator) isActive() bool {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 	return v.active
+}
+func (v *validator) setActive(active bool) {
+	v.lock.Lock()
+	v.active = active
+	v.lock.Unlock()
 }

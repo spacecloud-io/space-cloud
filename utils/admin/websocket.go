@@ -3,7 +3,6 @@ package admin
 import (
 	"errors"
 	"log"
-	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -63,7 +62,8 @@ func (v *validator) routineRead() error {
 
 			if !data.Ack {
 				log.Println("Validate Error -", data.Error)
-				os.Exit(-1)
+				// Reduce op mode to open source
+				v.stopValidation()
 			}
 		}
 	}
