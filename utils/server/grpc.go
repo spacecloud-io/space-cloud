@@ -214,6 +214,10 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 	allRequests := []model.AllRequest{}
 	for i, req := range in.Batchrequest {
+		// Make status and error variables
+		var status int
+		var err error
+
 		switch req.Type {
 		case string(utils.Create):
 			eachReq := model.AllRequest{}
@@ -222,8 +226,8 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			r := model.CreateRequest{}
 			var temp interface{}
-			if err := json.Unmarshal(req.Document, &temp); err != nil {
-				return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
+			if err = json.Unmarshal(req.Document, &temp); err != nil {
+				status = http.StatusInternalServerError
 			}
 			r.Document = temp
 			eachReq.Document = temp
@@ -234,14 +238,12 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsCreateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err != nil {
-				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+			status, err = s.auth.IsCreateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
+			if err == nil {
+				// Send realtime message intent
+				msgID := s.realtime.SendCreateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+				msgIDs[i] = &msg{id: msgID, col: req.Col}
 			}
-
-			// Send realtime message intent
-			msgID := s.realtime.SendCreateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-			msgIDs[i] = &msg{id: msgID, col: req.Col}
 
 		case string(utils.Update):
 			eachReq := model.AllRequest{}
@@ -257,8 +259,8 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			eachReq.Find = temp
 
 			temp = map[string]interface{}{}
-			if err := json.Unmarshal(req.Update, &temp); err != nil {
-				return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
+			if err = json.Unmarshal(req.Update, &temp); err != nil {
+				status = http.StatusInternalServerError
 			}
 			r.Update = temp
 			eachReq.Update = temp
@@ -269,14 +271,12 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsUpdateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err != nil {
-				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+			status, err = s.auth.IsUpdateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
+			if err == nil {
+				// Send realtime message intent
+				msgID := s.realtime.SendUpdateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+				msgIDs[i] = &msg{id: msgID, col: req.Col}
 			}
-
-			// Send realtime message intent
-			msgID := s.realtime.SendUpdateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-			msgIDs[i] = &msg{id: msgID, col: req.Col}
 
 		case string(utils.Delete):
 			eachReq := model.AllRequest{}
@@ -285,8 +285,8 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			r := model.DeleteRequest{}
 			temp := map[string]interface{}{}
-			if err := json.Unmarshal(req.Find, &temp); err != nil {
-				return &pb.Response{Status: 500, Error: err.Error()}, nil
+			if err = json.Unmarshal(req.Find, &temp); err != nil {
+				status = http.StatusInternalServerError
 			}
 			r.Find = temp
 			eachReq.Find = temp
@@ -297,16 +297,23 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsDeleteOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err != nil {
-				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+			status, err = s.auth.IsDeleteOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
+			if err == nil {
+				// Send realtime message intent
+				msgID := s.realtime.SendDeleteIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+				msgIDs[i] = &msg{id: msgID, col: req.Col}
 			}
-
-			// Send realtime message intent
-			msgID := s.realtime.SendDeleteIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-			msgIDs[i] = &msg{id: msgID, col: req.Col}
 		}
+
+		// Send negative acks and send error response
+		for j := 0; j < i; j++ {
+			s.realtime.SendAck(msgIDs[j].id, in.Meta.Project, msgIDs[j].col, false)
+		}
+
+		// Send gRPC Response
+		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
+
 	// Perform the Batch operation
 	batch := model.BatchRequest{}
 	batch.Requests = allRequests
