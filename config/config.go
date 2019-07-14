@@ -159,6 +159,7 @@ type Static struct {
 
 // StaticRoute holds the config for each route
 type StaticRoute struct {
+	ID        string `json:"id,omitempty" yaml:"id,omitempty"`
 	Path      string `json:"path" yaml:"path"`
 	URLPrefix string `json:"prefix" yaml:"prefix"`
 	Host      string `json:"host" yaml:"host"`

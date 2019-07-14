@@ -266,10 +266,10 @@ func HandleLoadOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.Syn
 			return
 		}
 
-		c := syncMan.GetGlobalConfig()
+		c := adminMan.GetConfig()
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"operation": &c.Admin.Operation})
+		json.NewEncoder(w).Encode(map[string]interface{}{"operation": &c.Operation})
 	}
 }
 

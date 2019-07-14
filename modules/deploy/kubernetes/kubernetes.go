@@ -13,6 +13,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
 // Driver is the main kubernetes driver
@@ -41,7 +42,7 @@ func New(registry *config.Registry) (*Driver, error) {
 }
 
 // Deploy deploys the service in kubernetes
-func (d *Driver) Deploy(ctx context.Context, c *model.Deploy) error {
+func (d *Driver) Deploy(ctx context.Context, c *model.Deploy, projects *projects.Projects) error {
 	// Create deployment and service objects
 	deployment := d.generateDeployment(c)
 	service := generateService(c)
@@ -58,6 +59,24 @@ func (d *Driver) Deploy(ctx context.Context, c *model.Deploy) error {
 
 		// Update the deployment if already exists
 		_, err = deploymentsClient.Update(deployment)
+		if err != nil {
+			return err
+		}
+
+		// Create service if ports is present
+		if c.Ports != nil {
+			_, err = servicesClient.Get(c.Name, metav1.GetOptions{})
+			if kubeErrors.IsNotFound(err) {
+				servicesClient.Create(service)
+			} else {
+				servicesClient.Update(service)
+			}
+
+			// expose the ports if required
+			if err := exposeRoute(c, projects); err != nil {
+				return err
+			}
+		}
 	} else if kubeErrors.IsNotFound(err) {
 
 		// Create a new deployment if it does not exist
@@ -67,9 +86,38 @@ func (d *Driver) Deploy(ctx context.Context, c *model.Deploy) error {
 			if c.Ports != nil {
 				_, err = servicesClient.Create(service)
 			}
+
+			if err := exposeRoute(c, projects); err != nil {
+				// Delete the deployment and service on error
+				deploymentsClient.Delete(c.Name, &metav1.DeleteOptions{})
+				servicesClient.Delete(c.Name, &metav1.DeleteOptions{})
+				return err
+			}
 		}
 	} else {
 		return err
+	}
+
+	return nil
+}
+
+func exposeRoute(c *model.Deploy, projects *projects.Projects) error {
+	// If expose param is present
+	if c.Expose != nil {
+		p, err := projects.LoadProject(c.Project)
+		if err != nil {
+			return err
+		}
+
+		// Remove all the previouse routes
+		p.Static.DeleteRoutesWithID(c.Name)
+
+		// Iterate over all the routes to be exposed
+		for _, e := range c.Expose {
+
+			// Add the routes exposed
+			p.Static.AddProxyRoute(c.Name, *e.Host, *e.Prefix, *e.Proxy)
+		}
 	}
 
 	return nil

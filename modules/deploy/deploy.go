@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/deploy/kubernetes"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
 // Module is the main object for handling all deployments
@@ -22,7 +23,7 @@ type Module struct {
 
 // Driver is the interface every deployment driver must implement
 type Driver interface {
-	Deploy(ctx context.Context, conf *model.Deploy) error
+	Deploy(ctx context.Context, conf *model.Deploy, projects *projects.Projects) error
 }
 
 // New creates a new instance of the deploy module

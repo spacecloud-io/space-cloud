@@ -24,25 +24,23 @@ func newValidator(cb func()) *validator {
 }
 
 // Start starts the validation process
-func (v *validator) startValidation(id, account, key string) error {
+func (v *validator) startValidation(id, account, key string, mode int) error {
 	// Set validation status to active
-	v.lock.Lock()
-	v.active = true
-	v.lock.Unlock()
+	v.setActive(true)
 
-	if err := v.registerSpaceCloud(id, account, key); err != nil {
+	if err := v.registerSpaceCloud(id, account, key, mode); err != nil {
 		return err
 	}
 
 	go func() {
 		timer := time.Now()
 		for {
-			if !v.isActive() {
-				return
-			}
-
 			if err := v.routineRead(); err != nil {
 				log.Println("Validate: Error -", err)
+			}
+
+			if !v.isActive() {
+				return
 			}
 
 			// Sleep for 5 minutes before connecting again
@@ -51,12 +49,12 @@ func (v *validator) startValidation(id, account, key string) error {
 			// Check if 15 days are lapsed without authorization
 			if time.Since(timer).Hours() > 24*15 {
 
-				// Reduce op mode to open source
-				v.reduceMode()
+				// Stop the validation process
+				v.stopValidation()
 				return
 			}
 
-			if err := v.registerSpaceCloud(id, account, key); err != nil {
+			if err := v.registerSpaceCloud(id, account, key, mode); err != nil {
 				log.Println("Validate: Error -", err)
 			} else {
 				timer = time.Now()
@@ -68,13 +66,20 @@ func (v *validator) startValidation(id, account, key string) error {
 }
 
 func (v *validator) stopValidation() {
-	v.lock.Lock()
-	v.active = false
-	v.lock.Unlock()
+	v.setActive(false)
+	v.reduceMode()
+	if v.socket != nil {
+		v.socket.Close()
+	}
 }
 
 func (v *validator) isActive() bool {
 	v.lock.Lock()
 	defer v.lock.Unlock()
 	return v.active
+}
+func (v *validator) setActive(active bool) {
+	v.lock.Lock()
+	v.active = active
+	v.lock.Unlock()
 }

@@ -31,6 +31,13 @@ func (m *Manager) SetConfig(admin *config.Admin) {
 	m.lock.Unlock()
 }
 
+// GetConfig returns the adming config
+func (m *Manager) GetConfig() *config.Admin {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	return m.admin
+}
+
 // SetOperationMode sets the operation mode
 func (m *Manager) SetOperationMode(op *config.OperationConfig) error {
 	m.lock.Lock()
@@ -42,7 +49,7 @@ func (m *Manager) SetOperationMode(op *config.OperationConfig) error {
 
 	if op.Mode > 0 {
 		// Start the validation process for higher op modes
-		if err := m.validator.startValidation(m.nodeID, op.Email, op.Key); err != nil {
+		if err := m.validator.startValidation(m.nodeID, op.Email, op.Key, op.Mode); err != nil {
 			return err
 		}
 	} else {
