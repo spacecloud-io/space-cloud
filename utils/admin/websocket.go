@@ -64,6 +64,7 @@ func (v *validator) routineRead() error {
 				log.Println("Validate Error -", data.Error)
 				// Reduce op mode to open source
 				v.stopValidation()
+				v.reduceMode()
 			}
 		}
 	}

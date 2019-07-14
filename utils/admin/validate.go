@@ -51,6 +51,7 @@ func (v *validator) startValidation(id, account, key string, mode int) error {
 
 				// Stop the validation process
 				v.stopValidation()
+				v.reduceMode()
 				return
 			}
 
@@ -67,7 +68,6 @@ func (v *validator) startValidation(id, account, key string, mode int) error {
 
 func (v *validator) stopValidation() {
 	v.setActive(false)
-	v.reduceMode()
 	if v.socket != nil {
 		v.socket.Close()
 	}
