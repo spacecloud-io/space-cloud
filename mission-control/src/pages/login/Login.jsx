@@ -1,11 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import background from '../../assets/Background.svg';
-import Header from '../../components/header/Header'
-import './login.css';
-import LoginForm from './LoginForm';
 import { set } from "automate-redux";
-import { login } from '../../actions/index';
+import service from '../../index';
+import { notify, handleClusterLoginSuccess } from "../../utils"
+
+import Header from '../../components/header/Header'
+import LoginForm from './LoginForm';
+import background from '../../assets/Background.svg';
+import './login.css';
 
 function Login(props) {
   return (
@@ -35,7 +37,15 @@ const mapDispatchToProps = (dispatch) => {
     updateFormState: (fields) => {
       dispatch(set("uiState.login.formState", fields))
     },
-    handleSubmit: login
+    handleSubmit: (user, pass) => {
+      service.login(user, pass).then(token => {
+        localStorage.setItem("token", token)
+        handleClusterLoginSuccess(token)
+      }).catch(error => {
+        console.log("Error", error)
+        notify("error", "Error", "Could not login")
+      })
+    }
   }
 }
 
