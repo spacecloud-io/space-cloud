@@ -119,8 +119,8 @@ export const generateProjectConfig = (name, dbType) => ({
         enabled: true,
         conn: getConnString(dbType),
         collections: {
-          users: {
-            isRealtimeEnabled: false,
+          default: {
+            isRealtimeEnabled: true,
             rules: {
               create: {
                 rule: 'allow'
@@ -141,13 +141,13 @@ export const generateProjectConfig = (name, dbType) => ({
     },
     auth: {},
     functions: {
-      enabled: true,
+      enabled: false,
       broker: "nats",
       conn: "nats://localhost:4222",
       rules: {}
     },
     realtime: {
-      enabled: false,
+      enabled: true,
       broker: "nats",
       conn: "nats://localhost:4222"
     },

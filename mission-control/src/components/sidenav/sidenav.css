@@ -40,6 +40,7 @@
   width: 85%;
   align-items: center;
   font-weight: 600;
+  box-shadow: 0px 1px 8px #BDBDBD !important;
 }
 
 .active>i {

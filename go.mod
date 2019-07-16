@@ -17,10 +17,8 @@ require (
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/nats-io/gnatsd v1.4.1 // indirect
-	github.com/nats-io/go-nats v1.7.2
-	github.com/nats-io/nats-server v1.4.1 // indirect
 	github.com/nats-io/nats-server/v2 v2.0.2
+	github.com/nats-io/nats.go v1.8.1
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
@@ -30,7 +28,6 @@ require (
 	go.mongodb.org/mongo-driver v1.0.4
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20190530194941-fb225487d101 // indirect
 	google.golang.org/grpc v1.21.0

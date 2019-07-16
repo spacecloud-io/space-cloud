@@ -1,5 +1,5 @@
 .topbar {
-  background: #FFFFFF;
+  background: #ffffff;
   box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
   height: 50px;
   line-height: 50px;
@@ -7,7 +7,7 @@
   left: 0;
   right: 0;
   top: 0;
-  z-index: 99 ;
+  z-index: 99;
   display: flex;
   position: fixed;
 }
@@ -18,13 +18,20 @@
   margin-top: 12px;
 }
 
-.topbar .save-button {
-  float: right;
+.topbar .action-button {
   height: 28px;
-  font-size: 14px;
-  margin: 11px 32px;
+  margin: 11px 8px;
+}
+
+.topbar .upgrade-button {
+  background: #5DA8DC;
+  border-color: #5DA8DC;
+}
+
+.topbar .right-list {
+  float: right;
   position: absolute;
-  right: 1.5vw;
+  right: 4vw;
 }
 
 .topbar > span {
