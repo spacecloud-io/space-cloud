@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const url = "wss://spaceuptech.com/v1/authenticate/socket/json"
+const url = "ws://192.168.43.226:11000/v1/authenticate/socket/json"
 
 // validator is the object which valiates the space cloud instance
 type validator struct {

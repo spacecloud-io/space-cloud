@@ -8,7 +8,7 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
-	github.com/gorilla/mux v1.7.0
+	github.com/gorilla/mux v1.7.2
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/memberlist v0.1.4
 	github.com/hashicorp/raft v1.1.0
@@ -17,6 +17,8 @@ require (
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/nats-io/gnatsd v1.4.1 // indirect
+	github.com/nats-io/go-nats v1.7.2
 	github.com/nats-io/nats-server/v2 v2.0.2
 	github.com/nats-io/nats.go v1.8.1
 	github.com/rs/cors v1.6.0
