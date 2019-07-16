@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/nats-io/go-nats"
+	nats "github.com/nats-io/nats.go"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
