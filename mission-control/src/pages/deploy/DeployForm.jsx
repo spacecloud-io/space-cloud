@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Input, Select, Switch } from 'antd';
+import { Form, Input, Select, Switch, Divider, Tooltip } from 'antd';
 import { createFormField } from 'rc-form';
 const { Option } = Select;
 
@@ -8,47 +8,81 @@ function DeployForm(props) {
   return (
     <div className="configure">
       <Form className="conn-form" layout="inline">
-        <div className="conn-form-options">
-          <Form.Item label="Enabled" className="switch">
-            {getFieldDecorator('enabled', { valuePropName: 'checked' })(<Switch size="small" />)}
-          </Form.Item>
-          <Form.Item>
-            {getFieldDecorator('orchestrator', {
-              rules: [{ required: true, message: '' }]
-            })(
-              <Select placeholder="Orchestration tool" className="select">
-                <Option value="kubernetes">Kubernetes</Option>
-              </Select>
-            )}
-          </Form.Item>
-        </div>
-        <div className="conn-form-cert">
-          <Form.Item className="conn-form-cert-input">
-            {getFieldDecorator('namespace', {
-              rules: [{ required: true, message: '' }]
-            })(<Input style={{ width: 600 }} placeholder="Enter Namespace" />)}
-          </Form.Item>
-        </div>
-        <div className="conn-form-cert">
-          <Form.Item className="conn-form-cert-input">
-            {getFieldDecorator('registry.url', {
-              rules: [{ required: true, message: '' }]
-            })(<Input style={{ width: 600 }} placeholder="Enter URL" />)}
-          </Form.Item>
-        </div>
-        <div className="conn-form-cert">
-          <Form.Item className="conn-form-cert-input">
-            {getFieldDecorator('registry.id', {
-              rules: [{ required: true, message: '' }]
-            })(<Input style={{ width: 600 }} placeholder="Enter ID" />)}
-          </Form.Item>
-        </div>
-        <div className="conn-form-cert">
-          <Form.Item className="conn-form-cert-input">
-            {getFieldDecorator('registry.key', {
-              rules: [{ required: true, message: '' }]
-            })(<Input style={{ width: 600 }} placeholder="Enter Key" />)}
-          </Form.Item>
+        <Form.Item label="Enabled" className="switch">
+          {getFieldDecorator('enabled', { valuePropName: 'checked' })(<Switch size="small" />)}
+        </Form.Item>
+        <Divider />
+        <div className="deploy-form">
+          <div className="deploy-flex">
+            <div className="orchestrator">Orchestrator:</div>
+            <div className="conn-form-options">
+              <Form.Item>
+                {getFieldDecorator('orchestrator', {
+                  rules: [{ required: true, message: '' }]
+                })(
+                  <Select placeholder="Orchestration tool" className="select">
+                    <Option value="kubernetes">Kubernetes</Option>
+                  </Select>
+                )}
+              </Form.Item>
+            </div>
+          </div>
+          <Divider />
+          <div className="deploy-flex">
+            <div className="namespace">Namespace/Network:</div>
+            <div className="conn-form-cert">
+              <Form.Item className="conn-form-cert-input">
+                {getFieldDecorator('namespace', {
+                  rules: [{ required: true, message: '' }]
+                })(<Input style={{ width: 400 }} placeholder="Enter Namespace" />)}
+              </Form.Item>
+            </div>
+            <Tooltip placement="right" title="Lorem ipsum dolor sit amet.">
+              <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
+            </Tooltip>
+          </div>
+          <Divider />
+          <div className="deploy-flex registry">
+            <div>Registry:</div>
+            <div className="url">URL:</div>
+            <div className="conn-form-cert">
+              <Form.Item className="conn-form-cert-input">
+                {getFieldDecorator('registry.url', {
+                  rules: [{ required: true, message: '' }]
+                })(<Input style={{ width: 400 }} placeholder="Enter URL" />)}
+              </Form.Item>
+            </div>
+            <Tooltip placement="right" title="Lorem ipsum dolor sit amet.">
+              <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
+            </Tooltip>
+          </div>
+          <div className="deploy-flex registry">
+            <div className="id">ID:</div>
+            <div className="conn-form-cert">
+              <Form.Item className="conn-form-cert-input">
+                {getFieldDecorator('registry.id', {
+                  rules: [{ required: true, message: '' }]
+                })(<Input style={{ width: 400 }} placeholder="Enter ID" />)}
+              </Form.Item>
+            </div>
+            <Tooltip placement="right" title="Lorem ipsum dolor sit amet.">
+              <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
+            </Tooltip>
+          </div>
+          <div className="deploy-flex registry">
+            <div className="key">KEY:</div>
+            <div className="conn-form-cert">
+              <Form.Item className="conn-form-cert-input">
+                {getFieldDecorator('registry.key', {
+                  rules: [{ required: true, message: '' }]
+                })(<Input style={{ width: 400 }} placeholder="Enter Key" />)}
+              </Form.Item>
+            </div>
+            <Tooltip placement="right" title="Lorem ipsum dolor sit amet.">
+              <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
+            </Tooltip>
+          </div>
+          <Divider />
         </div>
       </Form>
     </div>
