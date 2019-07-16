@@ -13,7 +13,6 @@ import Topbar from '../../components/topbar/Topbar';
 import TotalCredit from '../../components/billing/total-credit/TotalCredit';
 import BillingTable from '../../components/billing/billing-table/BillingTable';
 import BillingHistory from '../../components/billing/billing-history-table/BillingHistoryTable';
-import Upgrade from "../../components/upgrade/Upgrade";
 import RechargeModal from "../../components/billing/recharge-modal/RechargeModal";
 import EmptyState from "../../components/empty-state/EmptyState"
 import someGraphics from '../../assets/projectId.svg'
