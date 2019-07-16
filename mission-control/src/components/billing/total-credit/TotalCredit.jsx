@@ -12,7 +12,7 @@ function TotalCredit(props) {
         <div className="credit-text">Your credit</div>
       </div>
 			<div className="button-wrapper">
-				<Button type="primary">Pay Early</Button>
+				<Button type="primary" onClick={props.handleClick}>Pay Early</Button>
 			</div>
 		</div>
 	);

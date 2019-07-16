@@ -6,8 +6,8 @@ const initialState = {
   uiState: {
     login: {
       formState: {
-        userName: {value: ""},
-        password: {value: ""}
+        userName: { value: "" },
+        password: { value: "" }
       },
       isLoading: false
     }
