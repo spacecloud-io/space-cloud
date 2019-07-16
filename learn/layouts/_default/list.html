@@ -26,15 +26,19 @@
   {{partial "sidenav.html" . }}
   <div class="topic">
     {{partial "topbar-white.html" . }}
-    <center><div class="page-heading">Learn React</div></center>
+    <center><div class="page-heading">{{.Page.Title}}</div></center>
     <div class="row-top">
       <div class="row">
         <div class="col s12 m4 l4">
           <div class="left-wrapper">
-            <a class="waves-effect waves-light btn learn-react">Learn React</a>
+            <a class="waves-effect waves-light btn learn-react">{{.Page.Title}}</a>
             <div class="duration">
-              <span>7 TOPICS</span>
-              <span style="padding-left: 24px">2 HRS</span>
+              <span>{{len .Page.Pages}} TOPICS</span>
+              {{$readingTime:=0}}
+              {{range $i, $p := .Page.Pages}}
+              {{$readingTime = add $readingTime $p.ReadingTime}}
+              {{end}}
+              <span style="padding-left: 24px">{{$readingTime}} HRS</span>
             </div>
             <div class="steps">
               <div class="step valign-wrapper">
@@ -60,61 +64,21 @@
               HashiCorp Vault</div>
 
             <div class="timeline">
+              {{range $i, $p := .Page.Pages}}
               <div class="border">
-                <div class="dots">1</div>
-                <div class="content">
-                  <div class="timeline-title">Install React</div>
-                  <div class="timeline-time">
-                    <span>2 MINS</span>
-                    <span>.</span>
-                    <span>5 STEPS</span>
+                  <div class="dots">{{add $i 1}}</div>
+                  <div class="content">
+                    <div class="timeline-title">{{$p.Title}}</div>
+                    <div class="timeline-time">
+                      <span>{{$p.ReadingTime}} MINS</span>
+                      <!-- <span>.</span>
+                      <span>5 STEPS</span> -->
+                    </div>
+                    <div class="timeline-desc">Lorem ipsum dolor sit amet, consectetur
+                      adipiscing elit</div>
                   </div>
-                  <div class="timeline-desc">Lorem ipsum dolor sit amet, consectetur
-                    adipiscing elit</div>
                 </div>
-              </div>
-
-              <div class="border">
-                <div class="dots">2</div>
-                <div class="content">
-                  <div class="timeline-title">Install React</div>
-                  <div class="timeline-time">
-                    <span>2 MINS</span>
-                    <span>.</span>
-                    <span>5 STEPS</span>
-                  </div>
-                  <div class="timeline-desc">Lorem ipsum dolor sit amet, consectetur
-                    adipiscing elit</div>
-                </div>
-              </div>
-
-              <div class="border">
-                <div class="dots">3</div>
-                <div class="content">
-                  <div class="timeline-title">Install React</div>
-                  <div class="timeline-time">
-                    <span>2 MINS</span>
-                    <span>.</span>
-                    <span>5 STEPS</span>
-                  </div>
-                  <div class="timeline-desc">Lorem ipsum dolor sit amet, consectetur
-                    adipiscing elit</div>
-                </div>
-              </div>
-
-              <div class="border">
-                <div class="dots">4</div>
-                <div class="content">
-                  <div class="timeline-title">Install React</div>
-                  <div class="timeline-time">
-                    <span>2 MINS</span>
-                    <span>.</span>
-                    <span>5 STEPS</span>
-                  </div>
-                  <div class="timeline-desc">Lorem ipsum dolor sit amet, consectetur
-                    adipiscing elit</div>
-                </div>
-              </div>
+              {{end}}
             </div>
 
             <div class="timeline-footer valign-wrapper">
