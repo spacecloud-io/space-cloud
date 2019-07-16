@@ -37,7 +37,6 @@ type Expose struct {
 	Prefix *string `json:"prefix" yaml:"prefix"`
 	Host   *string `json:"host" yaml:"host"`
 	Proxy  *string `json:"proxy" yaml:"proxy"`
-	Port   int32   `json:"port" yaml:"port"`
 }
 
 // UploadResponse is the response received from the registry
