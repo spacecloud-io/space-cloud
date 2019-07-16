@@ -3,9 +3,9 @@ import { Button } from "antd"
 
 export default ({ graphics, desc, actionText, handleClick }) => {
   return (
-    <div>
+    <div className="empty-state">
       <img src={graphics} /> <br />
-      <p>{desc}</p>
+      <p className="desc">{desc}</p>
       <Button type="primary" onClick={handleClick}>{actionText}</Button>
     </div>
   )

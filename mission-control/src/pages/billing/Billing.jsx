@@ -16,6 +16,7 @@ import BillingHistory from '../../components/billing/billing-history-table/Billi
 import RechargeModal from "../../components/billing/recharge-modal/RechargeModal";
 import EmptyState from "../../components/empty-state/EmptyState"
 import someGraphics from '../../assets/projectId.svg'
+import Upgrade from '../../components/billing/upgrade/Upgrade'
 const { TabPane } = Tabs;
 
 class Billing extends React.Component {
@@ -45,6 +46,7 @@ class Billing extends React.Component {
 								<div>
 									<TotalCredit amount={this.props.totalCredit} handleClick={() => this.handleRechargeModalVisibility(true)} />
 									<div className="interval-text"></div>
+									<Upgrade />
 									<BillingTable data={this.props.billing} title={'Usage this month'} />
 								</div>
 							</React.Fragment>
