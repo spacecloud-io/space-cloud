@@ -3,10 +3,10 @@ import './login.css'
 import LoginForm from './LoginForm'
 import { Row, Col } from 'antd'
 import logo from '../../assets/logo-black.svg'
-import loginBg from '../../assets/login.svg'
 import { connect } from 'react-redux'
 import { set } from "automate-redux"
 import { login } from "../../actions/index"
+import loginBg from '../../assets/login.svg'
 import service from '../../index';
 import { notify, handleClusterLoginSuccess } from "../../utils"
 import LoginForm from './LoginForm';
