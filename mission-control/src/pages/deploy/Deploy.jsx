@@ -5,7 +5,6 @@ import Sidenav from '../../components/sidenav/Sidenav';
 import Topbar from '../../components/topbar/Topbar';
 import Header from '../../components/header/Header';
 import DeployForm from "./DeployForm";
-import Upgrade from "../../components/upgrade/Upgrade";
 import { get, set } from 'automate-redux';
 import EmptyState from "../../components/empty-state/EmptyState"
 import store from ".././../store";

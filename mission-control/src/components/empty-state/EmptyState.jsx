@@ -10,3 +10,4 @@ export default ({ graphics, desc, actionText, handleClick }) => {
     </div>
   )
 }
+

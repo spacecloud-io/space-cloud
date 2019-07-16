@@ -1,0 +1,16 @@
+.sign-in-modal .blue-bg {
+  background-color: #002c39;
+  color: #FFF;
+}
+
+.sign-in-modal .orange-bg {}
+
+.sign-in-modal .modal-heading {
+  font-size: 28px;
+}
+
+.sign-in-modal .modal-desc {
+  font-size: 18px;
+}
+
+.sign-in-modal .modal-footer {}

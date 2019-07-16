@@ -6,21 +6,39 @@ import "firebase/auth";
 import service from '../../index';
 import store from "../../store"
 import { notify, handleSpaceUpLoginSuccess } from "../../utils"
+import { google } from '../../assets/login-google.svg'
+import { fb } from '../../assets/login-fb.svg'
+import { github } from '../../assets/login-github.svg'
+import { twitter } from '../../assets/login-twitter.svg'
+import './sign-in-modal.css'
 
 import { Modal, Button, notification } from 'antd';
 
 function SigninModal({ handleOauthLogin, visible, handleCancel }) {
   return (
-    <div>
-      <Modal footer={null}
-        visible={visible}
-        onCancel={handleCancel}
-      >
-        <Button onClick={() => handleOauthLogin("google")}>Google</Button>
-        <Button onClick={() => handleOauthLogin("fb")}>FaceBook</Button>
-        <Button onClick={() => handleOauthLogin("twitter")}>Twitter</Button>
-        <Button onClick={() => handleOauthLogin("github")}>Github</Button>
-      </Modal>
+    <div className="sign-in-modal">
+      <div className="orange-bg"></div>
+      <div className="blue-bg">
+        <span className="modal-heading">Sign up to upgrade!</span><br />
+        <span className="modal-desc">Develop great applications without having to write backend code. Focus more
+          on business and less on the technology.</span><br />
+        <div className="modal-footer">
+          <img src={fb} alt="" onClick={() => handleOauthLogin("fb")} />
+          <img src={google} alt="" onClick={() => handleOauthLogin("google")} />
+          <img src={github} alt="" onClick={() => handleOauthLogin("github")} />
+          <img src={twitter} alt="" onClick={() => handleOauthLogin("twitter")} />
+        </div>
+        {/* <Modal footer={null}
+          visible={visible}
+          onCancel={handleCancel}
+        >
+          <img src={fb} alt="" onClick={() => handleOauthLogin("fb")}/>
+          <img src={google} alt="" onClick={() => handleOauthLogin("google")}/>
+          <img src={github} alt="" onClick={() => handleOauthLogin("github")}/>
+          <img src={twitter} alt="" onClick={() => handleOauthLogin("twitter")}/>
+        </Modal> */}
+      </div>
+
     </div>
   );
 }
