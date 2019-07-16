@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	nats "github.com/nats-io/nats-server/server"
+	nats "github.com/nats-io/nats-server/v2/server"
 	"github.com/rs/cors"
 	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
