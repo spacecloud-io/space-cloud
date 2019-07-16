@@ -5,7 +5,7 @@ import { isEqual } from "lodash"
 import service from "../../index"
 import history from "../../history";
 import store from "../../store";
-import { unAdjustConfig, notify } from "../../utils"
+import { unAdjustConfig, notify, openPlansPage } from "../../utils"
 
 import { Button, Icon } from 'antd';
 import DbSelector from '../../components/db-selector/DbSelector'
@@ -38,9 +38,12 @@ class Topbar extends Component {
           {(this.props.showDbSelector) &&
             <DbSelector handleSelect={this.props.handleSelect} selectedDb={this.props.selectedDb} />
           }
-          {(this.props.save !== "false") &&
-            <Button type="primary" className="save-button" onClick={this.props.handleSave} disabled={!this.props.unsavedChanges}>SAVE</Button>
-          }
+          <div className="right-list">
+            {this.props.mode < 1 && <Button type="primary" className="action-button upgrade-button" onClick={openPlansPage}>UPGRADE</Button>}
+            {(this.props.save !== "false") &&
+              <Button type="primary" className="action-button save-button" onClick={this.props.handleSave} disabled={!this.props.unsavedChanges}>SAVE</Button>
+            }
+          </div>
           <SelectProject visible={this.state.modalVisible} handleCancel={() => this.handleModalVisible(false)} />
         </div>
       </div>
@@ -51,6 +54,7 @@ class Topbar extends Component {
 
 const mapStateToProps = (state, ownProps) => {
   return {
+    mode: get(state, "operationConfig.mode", 0),
     selectedDb: ownProps.selectedDb,
     projectName: get(state, "config.name", ""),
     unsavedChanges: !isEqual(state.config, state.savedConfig) || !isEqual(state.deployConfig, state.savedDeployConfig),
