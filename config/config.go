@@ -45,9 +45,9 @@ type Admin struct {
 
 // OperationConfig holds the operation mode config
 type OperationConfig struct {
-	Mode  int    `json:"mode" yaml:"mode"`
-	Email string `json:"email" yaml:"email"`
-	Key   string `json:"key" yaml:"key"`
+	Mode   int    `json:"mode" yaml:"mode"`
+	UserID string `json:"userId" yaml:"userId"`
+	Key    string `json:"key" yaml:"key"`
 }
 
 // AdminUser holds the user credentials and scope

@@ -24,11 +24,11 @@ func newValidator(cb func()) *validator {
 }
 
 // Start starts the validation process
-func (v *validator) startValidation(id, account, key string, mode int) error {
+func (v *validator) startValidation(id, userID, key string, mode int) error {
 	// Set validation status to active
 	v.setActive(true)
 
-	if err := v.registerSpaceCloud(id, account, key, mode); err != nil {
+	if err := v.registerSpaceCloud(id, userID, key, mode); err != nil {
 		return err
 	}
 
@@ -54,7 +54,7 @@ func (v *validator) startValidation(id, account, key string, mode int) error {
 				return
 			}
 
-			if err := v.registerSpaceCloud(id, account, key, mode); err != nil {
+			if err := v.registerSpaceCloud(id, userID, key, mode); err != nil {
 				log.Println("Validate: Error -", err)
 			} else {
 				timer = time.Now()

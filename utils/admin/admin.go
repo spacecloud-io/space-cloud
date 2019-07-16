@@ -43,13 +43,13 @@ func (m *Manager) SetOperationMode(op *config.OperationConfig) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if op.Mode > 0 && (op.Email == "" || op.Key == "") {
+	if op.Mode > 0 && (op.UserID == "" || op.Key == "") {
 		return errors.New("Invalid operation setting provided")
 	}
 
 	if op.Mode > 0 {
 		// Start the validation process for higher op modes
-		if err := m.validator.startValidation(m.nodeID, op.Email, op.Key, op.Mode); err != nil {
+		if err := m.validator.startValidation(m.nodeID, op.UserID, op.Key, op.Mode); err != nil {
 			return err
 		}
 	} else {

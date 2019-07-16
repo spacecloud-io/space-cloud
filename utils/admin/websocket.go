@@ -34,8 +34,8 @@ func (v *validator) connect(url string) error {
 	return nil
 }
 
-func (v *validator) write(id, account, key string, mode int) error {
-	req := &model.RegisterRequest{ID: id, Account: account, Key: key, Mode: mode}
+func (v *validator) write(id, userID, key string, mode int) error {
+	req := &model.RegisterRequest{ID: id, UserID: userID, Key: key, Mode: mode}
 	msg := &model.Message{Type: utils.TypeRegisterRequest, Data: req}
 	return v.socket.WriteJSON(msg)
 }
@@ -69,13 +69,13 @@ func (v *validator) routineRead() error {
 	}
 }
 
-func (v *validator) registerSpaceCloud(id, account, secret string, mode int) error {
+func (v *validator) registerSpaceCloud(id, userID, secret string, mode int) error {
 	err := v.connect(url)
 	if err != nil {
 		return err
 	}
 
-	err = v.write(id, account, secret, mode)
+	err = v.write(id, userID, secret, mode)
 	if err != nil {
 		return err
 	}
