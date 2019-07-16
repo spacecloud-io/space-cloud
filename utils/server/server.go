@@ -58,8 +58,8 @@ func New(isProd bool) *Server {
 	a := auth.Init(c, fn)
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
-	syncMan := syncman.New()
 	adminMan := admin.New()
+	syncMan := syncman.New(adminMan)
 
 	return &Server{nodeID: uuid.NewV1().String(), router: r, auth: a, crud: c,
 		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,

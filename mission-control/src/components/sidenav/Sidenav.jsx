@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 import { Link } from 'react-router-dom';
+import { Divider } from "antd"
 import SidenavItem from './SidenavItem'
 import './sidenav.css'
 import Header from '../header/Header'
@@ -45,6 +46,13 @@ class Sidenav extends Component {
         </Link>
         <Link to={`/mission-control/projects/${this.props.projectId}/configure`}>
           <SidenavItem name="Configure" icon="settings" active={this.props.selectedItem === 'configure'} />
+        </Link>
+        <Divider />
+        <Link to={`/mission-control/projects/${this.props.projectId}/deploy`}>
+          <SidenavItem name="Deploy" icon="attach_money" active={this.props.selectedItem === 'deploy'} />
+        </Link>
+        <Link to={`/mission-control/projects/${this.props.projectId}/plans`}>
+          <SidenavItem name="Plans" icon="attach_money" active={this.props.selectedItem === 'plans'} />
         </Link>
         <Link to={`/mission-control/projects/${this.props.projectId}/billing`}>
           <SidenavItem name="Billing" icon="attach_money" active={this.props.selectedItem === 'billing'} />

@@ -1,14 +1,21 @@
 import React, { Component } from 'react'
+import { connect } from 'react-redux'
+import { set, get } from "automate-redux"
+import { cloneDeep } from "lodash"
+import service from '../../index';
+import store from "../../store"
+import history from "../../history"
+import { generateProjectConfig, notify, adjustConfig } from '../../utils';
+
+import { Row, Col, Button, Form, Input, Icon } from 'antd'
 import StarterTemplate from '../../components/starter-template/StarterTemplate'
 import Topbar from '../../components/topbar/Topbar'
+import './create-project.css'
+
 import create from '../../assets/create.svg'
 import postgresIcon from '../../assets/postgresIcon.svg'
 import mysqlIcon from '../../assets/mysqlIcon.svg'
 import mongoIcon from '../../assets/mongoIcon.svg'
-import './create-project.css'
-import { connect } from 'react-redux'
-import { Row, Col, Button, Form, Input, Icon } from 'antd'
-import { createProject } from "../../actions/index"
 
 class CreateProject extends Component {
   constructor(props) {
@@ -90,7 +97,21 @@ const WrappedCreateProject = Form.create({})(CreateProject)
 
 const mapDispatchToProps = (dispatch) => {
   return {
-    handleNext: createProject
+    handleNext: (name, dbType) => {
+      const projectConfig = generateProjectConfig(name, dbType)
+      service.saveProjectConfig(projectConfig).then(() => {
+        const updatedProjects = [...get(store.getState(), "projects", []), projectConfig]
+        dispatch(set("projects", updatedProjects))
+        history.push(`/mission-control/projects/${projectConfig.id}`)
+        const adjustedConfig = adjustConfig(projectConfig)
+        dispatch(set("config", adjustedConfig))
+        dispatch(set("savedConfig", cloneDeep(adjustedConfig)))
+        notify("success", "Success", "Project created successfully with suitable defaults")
+      }).catch(error => {
+        console.log("Error", error)
+        notify("error", "Error", "Could not create project")
+      })
+    }
   }
 }
 

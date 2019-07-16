@@ -8,10 +8,13 @@ import DBRules from './pages/database/rules/Rules'
 import FunctionRules from './pages/functions/rules/Rules'
 import FileStorageRules from './pages/file-storage/rules/Rules'
 import Configure from './pages/configure/configure'
-import Overview from  './pages/overview/Overview'
+import Overview from './pages/overview/Overview'
 import Welcome from "./pages/welcome/Welcome"
 import CreateProject from "./pages/create-project/CreateProject"
 import Billing from "./pages/billing/Billing"
+import Deploy from "./pages/deploy/Deploy"
+import Plans from "./pages/plans/Plans"
+import SigninModal from "./components/signin-modal/SigninModal"
 
 export default () => {
   return (
@@ -19,7 +22,7 @@ export default () => {
       <Route exact path="/mission-control" component={Login} />
       <Route exact path="/mission-control/welcome" component={Welcome} />
       <Route exact path="/mission-control/create-project" component={CreateProject} />
-      <Route exact path="/mission-control/projects/:projectId" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/overview`}/>} />
+      <Route exact path="/mission-control/projects/:projectId" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/overview`} />} />
       <Route exact path="/mission-control/projects/:projectId/overview" component={Overview} />
       <Route exact path="/mission-control/projects/:projectId/user-management" component={UserManagement} />
       <Route exact path="/mission-control/projects/:projectId/database" component={Database} />
@@ -29,7 +32,10 @@ export default () => {
       <Route exact path="/mission-control/projects/:projectId/file-storage" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/file-storage/rules`} />} />
       <Route exact path="/mission-control/projects/:projectId/file-storage/rules" component={FileStorageRules} />
       <Route exact path="/mission-control/projects/:projectId/configure" component={Configure} />
+      <Route exact path="/mission-control/projects/:projectId/deploy" component={Deploy} />
+      <Route exact path="/mission-control/projects/:projectId/plans" component={Plans} />
       <Route exact path="/mission-control/projects/:projectId/billing" component={Billing} />
+      <SigninModal />
     </Router>
   )
 }

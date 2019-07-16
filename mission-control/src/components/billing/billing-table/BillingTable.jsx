@@ -14,24 +14,21 @@ function BillingTable(props) {
 				{props.data.map((value) => {
 					return (
 						<Row>
-							<Col xs={{ span: 4, offset: 2 }}>
-								<div className="table-col">{value.project}</div>
-							</Col>
-							<Col xs={{ span: 6, offset: 0 }}>
+							<Col xs={{ span: 12 }}>
 								<div className="table-col">{value.item}</div>
 							</Col>
-							<Col xs={{ span: 4, offset: 2 }}>
+							<Col xs={{ span: 8 }}>
 								<div className="table-col">{value.usage}</div>
 							</Col>
-							<Col xs={{ span: 4, offset: 2 }}>
+							<Col xs={{ span: 4 }}>
 								<div className="table-col">$ {value.amount}</div>
 							</Col>
 						</Row>
 					);
 				})}
 				<Row>
-					<Col span={18} />
-					<Col xs={{ span: 4, offset: 2 }}>
+					<Col span={20} />
+					<Col xs={{ span: 4 }}>
 						<div className="total">
 							Total: $
 							<div className="total-amount">&nbsp;{total}</div>

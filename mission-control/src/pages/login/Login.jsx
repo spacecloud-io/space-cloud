@@ -7,6 +7,9 @@ import loginBg from '../../assets/login.svg'
 import { connect } from 'react-redux'
 import { set } from "automate-redux"
 import { login } from "../../actions/index"
+import service from '../../index';
+import { notify, handleClusterLoginSuccess } from "../../utils"
+import LoginForm from './LoginForm';
 
 function Login(props) {
   return (
@@ -46,7 +49,15 @@ const mapDispatchToProps = (dispatch) => {
     updateFormState: (fields) => {
       dispatch(set("uiState.login.formState", fields))
     },
-    handleSubmit: login
+    handleSubmit: (user, pass) => {
+      service.login(user, pass).then(token => {
+        localStorage.setItem("token", token)
+        handleClusterLoginSuccess(token)
+      }).catch(error => {
+        console.log("Error", error)
+        notify("error", "Error", "Could not login")
+      })
+    }
   }
 }
 

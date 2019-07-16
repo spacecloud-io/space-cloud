@@ -77,12 +77,6 @@ var essentialFlags = []cli.Flag{
 		Value:  "",
 	},
 	cli.StringFlag{
-		Name:   "admin-role",
-		Usage:  "Set the admin role",
-		EnvVar: "ADMIN_ROLE",
-		Value:  "",
-	},
-	cli.StringFlag{
 		Name:   "admin-sercret",
 		Usage:  "Set the admin secret",
 		EnvVar: "ADMIN_SECRET",
@@ -132,7 +126,6 @@ func actionRun(c *cli.Context) error {
 	// Flags related to the admin details
 	adminUser := c.String("admin-user")
 	adminPass := c.String("admin-pass")
-	adminRole := c.String("admin-role")
 	adminSecret := c.String("admin-secret")
 
 	// Project and env cannot be changed once space cloud has started
@@ -156,13 +149,10 @@ func actionRun(c *cli.Context) error {
 
 	// Override the admin config if provided
 	if adminUser != "" {
-		conf.Admin.User = adminUser
+		conf.Admin.Users[0].User = adminUser
 	}
 	if adminPass != "" {
-		conf.Admin.Pass = adminPass
-	}
-	if adminRole != "" {
-		conf.Admin.Role = adminRole
+		conf.Admin.Users[0].Pass = adminPass
 	}
 	if adminSecret != "" {
 		conf.Admin.Secret = adminSecret
