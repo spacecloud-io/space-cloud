@@ -49,10 +49,10 @@ class Sidenav extends Component {
         </Link>
         <Divider />
         <Link to={`/mission-control/projects/${this.props.projectId}/deploy`}>
-          <SidenavItem name="Deploy" icon="attach_money" active={this.props.selectedItem === 'deploy'} />
+          <SidenavItem name="Deploy" icon="local_airport" active={this.props.selectedItem === 'deploy'} />
         </Link>
         <Link to={`/mission-control/projects/${this.props.projectId}/plans`}>
-          <SidenavItem name="Plans" icon="attach_money" active={this.props.selectedItem === 'plans'} />
+          <SidenavItem name="Plans" icon="assignment" active={this.props.selectedItem === 'plans'} />
         </Link>
         <Link to={`/mission-control/projects/${this.props.projectId}/billing`}>
           <SidenavItem name="Billing" icon="attach_money" active={this.props.selectedItem === 'billing'} />
