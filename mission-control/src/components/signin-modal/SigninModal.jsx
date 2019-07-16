@@ -7,21 +7,36 @@ import service from '../../index';
 import store from "../../store"
 import { notify, handleSpaceUpLoginSuccess } from "../../utils"
 
-import { Modal, Button, notification } from 'antd';
+import { Modal } from 'antd';
+import googleIcon from "../../assets/google.svg"
+import githubIcon from "../../assets/github.svg"
+import twitterIcon from "../../assets/twitter.svg"
+import "./signin-modal.css"
 
 function SigninModal({ handleOauthLogin, visible, handleCancel }) {
   return (
-    <div>
-      <Modal footer={null}
-        visible={visible}
-        onCancel={handleCancel}
-      >
-        <Button onClick={() => handleOauthLogin("google")}>Google</Button>
-        <Button onClick={() => handleOauthLogin("fb")}>FaceBook</Button>
-        <Button onClick={() => handleOauthLogin("twitter")}>Twitter</Button>
-        <Button onClick={() => handleOauthLogin("github")}>Github</Button>
-      </Modal>
-    </div>
+    <Modal
+      style={{}}
+      wrapClassName="signin-modal"
+      closable={false}
+      title=""
+      footer={null}
+      visible={visible}
+      onCancel={handleCancel}
+    >
+      <div>
+        <div className="background" />
+        <div className="content">
+          <h1>Signin to upgrade!</h1>
+          <p className="desc">Lorem ipsum dolor sit amet consectetur adipisicing elit. Animi id libero dignissimos incidunt blanditiis officiis nam, facilis, rem quo quos itaque laborum odit perferendis provident corporis nesciunt assumenda adipisci! Dolor.</p>
+          <div className="footer">
+            <img src={googleIcon} alt="" onClick={() => handleOauthLogin("google")} />
+            <img src={githubIcon} alt="" onClick={() => handleOauthLogin("twitter")} />
+            <img src={twitterIcon} alt="" onClick={() => handleOauthLogin("github")} />
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
