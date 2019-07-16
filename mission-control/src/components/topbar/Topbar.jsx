@@ -1,15 +1,18 @@
 import React, { Component } from 'react'
-import logo from '../../assets/logo-black.svg';
 import { connect } from 'react-redux';
-import './topbar.css'
-import { Button, Icon } from 'antd';
-import DbSelector from '../../components/db-selector/DbSelector'
+import { set, get } from 'automate-redux';
 import { isEqual } from "lodash"
+import service from "../../index"
 import history from "../../history";
 import store from "../../store";
-import { get } from 'automate-redux';
-import { saveConfig } from '../../actions/index';
+import { unAdjustConfig, notify } from "../../utils"
+
+import { Button, Icon } from 'antd';
+import DbSelector from '../../components/db-selector/DbSelector'
 import SelectProject from '../../components/select-project/SelectProject'
+import './topbar.css'
+
+import logo from '../../assets/logo-black.svg';
 
 class Topbar extends Component {
   constructor(props) {
@@ -50,13 +53,54 @@ const mapStateToProps = (state, ownProps) => {
   return {
     selectedDb: ownProps.selectedDb,
     projectName: get(state, "config.name", ""),
-    unsavedChanges: !isEqual(state.config, state.savedConfig),
+    unsavedChanges: !isEqual(state.config, state.savedConfig) || !isEqual(state.deployConfig, state.savedDeployConfig),
   }
 }
 
 const mapDispatchToProps = (dispatch, ownProps) => {
   return {
-    handleSave: saveConfig,
+    handleSave: () => {
+      const config = get(store.getState(), "config")
+      const deployConfig = get(store.getState(), "deployConfig")
+      const mode = get(store.getState(), "operationConfig.mode", 0)
+
+      // UnAdjust the config and check if there are any errors
+      const result = unAdjustConfig(config)
+      if (!result.ack) {
+        if (Object.keys(result.errors.crud).length) {
+          let errorDesc = ''
+          Object.keys(result.errors.crud).forEach(db => {
+            errorDesc = `${errorDesc} ${db} - (${result.errors.crud[db].join(", ")})`
+          })
+          notify("error", 'Error in CRUD config', errorDesc, 0)
+        }
+
+        if (result.errors.functions.length) {
+          notify("error", 'Error in Functions config', `Services - ${result.errors.functions.join(", ")}`, 0)
+        }
+
+        if (result.errors.fileStore.length) {
+          notify("error", 'Error in File Storage config', `Rules - ${result.errors.fileStore.join(", ")}`, 0)
+        }
+        return
+      }
+
+      dispatch(set("pendingRequests", true))
+      const promises = mode > 0 ? [service.saveProjectConfig(result.config), service.saveDeployConfig(deployConfig)] : [service.saveProjectConfig(result.config)]
+      Promise.all(promises)
+        .then(() => {
+          notify("success", 'Success', 'Config saved successfully')
+          dispatch(set("savedConfig", config))
+          if (mode > 0) {
+            dispatch(set("savedDeployConfig", deployConfig))
+          }
+        })
+        .catch(error => {
+          console.log("Error", error)
+          notify("error", "Error", 'Could not save config')
+        })
+        .finally(() => dispatch(set("pendingRequests", false)))
+    },
 
     handleSelect(value) {
       const projectId = get(store.getState(), "config.id", "")

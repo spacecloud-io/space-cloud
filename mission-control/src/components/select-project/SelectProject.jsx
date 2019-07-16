@@ -1,11 +1,15 @@
 import React from 'react'
+import { connect } from 'react-redux'
+import { Link } from "react-router-dom"
+import { get, set, reset } from 'automate-redux';
+import service from "../../index";
+import store from "../../store"
+import history from "../../history";
+import { openProject, notify } from "../../utils"
+
 import { Modal, Icon, Button, Table } from 'antd'
 import Header from "../../components/header/Header"
-import { Link } from "react-router-dom"
 import './select-project.css'
-import { connect } from 'react-redux'
-import { deleteProject, openProject } from '../../actions';
-import { get } from 'automate-redux';
 
 function SelectProject(props) {
   const columns = [
@@ -88,7 +92,26 @@ const mapStateToProps = (state, ownProps) => {
 
 const mapDispatchToProps = (dispatch, ownProps) => {
   return {
-    handleDelete: deleteProject,
+    handleDelete: (projectId) => {
+      service.deleteProject(projectId).then(() => {
+        notify("success", "Success", "Project deleted successfully")
+        const updatedProjects = get(store.getState(), "projects", []).filter(project => project.id !== projectId)
+        dispatch(set("projects", updatedProjects))
+        const selectedProject = get(store.getState(), "config.id")
+        if (selectedProject === projectId) {
+          dispatch(reset("config"))
+          dispatch(reset("savedConfig"))
+          if (updatedProjects.length) {
+            openProject(updatedProjects[0].id)
+            return
+          }
+          history.push("/mission-control/welcome")
+        }
+      }).catch(ex => {
+        console.log("Error", ex)
+        notify("error", "Error", ex)
+      })
+    },
     handleProjectChange: openProject,
     handleCancel: ownProps.handleCancel
   }
