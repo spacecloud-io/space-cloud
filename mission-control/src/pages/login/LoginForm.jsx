@@ -1,7 +1,7 @@
 import React from 'react'
-import logo from '../../assets/logo-black.svg';
-import { Form, Icon, Input, Button } from 'antd';
+import { Form, Input, Button } from 'antd';
 import { createFormField } from 'rc-form';
+import './login.css'
 
 function LoginForm(props) {
   const handleSubmit = e => {
@@ -11,46 +11,32 @@ function LoginForm(props) {
         props.handleSubmit(values.userName, values.password);
       }
     });
-  }
+  };
   const { getFieldDecorator } = props.form;
-  
   return (
-    <div className="login-card">
-      <div className="content">
-        <img className="logo" src={logo} alt="logo"/><br />
-        <p className="about">If you've got an idea, let's space it up !</p>
+    <div className="login-form">
+      <p className="sign-in">Sign In</p>
+      <Form onSubmit={handleSubmit}>
+        <Form.Item >
+          {getFieldDecorator('userName', {
+            rules: [{ required: true, message: 'Please input your username!' }],
+          })(
+            <Input placeholder="Username" className="input" />,
+          )}
+        </Form.Item>
 
-        <Form onSubmit={handleSubmit} className="login-form">
-          <Form.Item className="input">
-            {getFieldDecorator('userName', {
-              rules: [{ required: true, message: 'Please input your username!' }],
-            })(
-              <Input
-                prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
-                placeholder="Username"
+        <Form.Item>
+          {getFieldDecorator('password', {
+            rules: [{ required: true, message: 'Please input your password!' }],
+          })(
+            <Input.Password type="password" placeholder="Password" className="input" />
+          )}
+        </Form.Item>
 
-              />,
-            )}
-          </Form.Item>
-
-          <Form.Item>
-            {getFieldDecorator('password', {
-              rules: [{ required: true, message: 'Please input your password!' }],
-            })(
-              (<Input.Password
-                prefix={<Icon type="lock" style={{ color: 'rgba(0,0,0,.25)' }} />}
-                type="password"
-                placeholder="Password"
-              />)
-            )}
-          </Form.Item>
-
-          <Button type="primary" htmlType="submit" className="login-button" loading={props.isLoading}>
-            Log in
+        <Button type="primary" htmlType="submit" loading={props.isLoading} className="btn">
+          SIGN IN
           </Button>
-        </Form>
-
-      </div>
+      </Form>
     </div>
   )
 }
@@ -62,7 +48,7 @@ const WrappedNormalLoginForm = Form.create({
       password: createFormField(props.formState.password),
     };
   },
-  onFieldsChange(props, changedFields, allFields) {
+  onFieldsChange(props, _, allFields) {
     props.updateFormState(allFields)
   },
 })(LoginForm);

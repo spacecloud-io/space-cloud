@@ -1,26 +1,36 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { set } from "automate-redux";
+import React from 'react'
+import './login.css'
+import { Row, Col } from 'antd'
+import logo from '../../assets/logo-black.svg'
+import { connect } from 'react-redux'
+import { set } from "automate-redux"
+import loginBg from '../../assets/login.svg'
 import service from '../../index';
 import { notify, handleClusterLoginSuccess } from "../../utils"
-
-import Header from '../../components/header/Header'
 import LoginForm from './LoginForm';
-import background from '../../assets/Background.svg';
-import './login.css';
 
 function Login(props) {
   return (
-    <div className="wrapper" >
-      <div className="image">
-        <img className="background" src={background} alt="background" />
-        <div className="r-text">
-          <Header name="Welcome to Space Cloud !" color="#FFF" fontSize="28px" />
-          <p className="text">Develop great applications without having to write backend code.
-              Focus more on business and less on technology.</p>
-        </div>
+    <div className="login">
+      <div className="main-wrapper">
+        <Row className="row">
+          <Col span={12} className="left-wrapper">
+            <div className="left-content">
+              <img className="logo" src={logo} alt="logo" /><br />
+              <div className="welcome">Welcome back!</div>
+              <div className="text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.</div><br />
+              <img src={loginBg} alt="login" height="240" width="360" /><br />
+            </div>
+          </Col>
+
+          <Col span={12} className="right-wrapper">
+            <div className="right-content">
+              <LoginForm formState={props.formState} isLoading={props.isLoading}
+                updateFormState={props.updateFormState} handleSubmit={props.handleSubmit} />
+            </div>
+          </Col>
+        </Row>
       </div>
-      <LoginForm formState={props.formState} isLoading={props.isLoading} updateFormState={props.updateFormState} handleSubmit={props.handleSubmit} />
     </div>
   )
 }

@@ -4,17 +4,18 @@ import '../../index.css'
 import Sidenav from '../../components/sidenav/Sidenav';
 import Topbar from '../../components/topbar/Topbar';
 import Header from '../../components/header/Header';
+import Documentation from '../../components/documentation/Documentation'
 import DeployForm from "./DeployForm";
-import Upgrade from "../../components/upgrade/Upgrade";
 import { get, set } from 'automate-redux';
 import EmptyState from "../../components/empty-state/EmptyState"
 import store from ".././../store";
 import someGraphics from '../../assets/projectId.svg'
 import { triggerSignin, isUserSignedIn, openPlansPage } from "../../utils"
+import './deploy.css'
 
 function Deploy({ isSignedIn, mode, deployConfig, handleChange }) {
   return (
-    <div>
+    <div class="deploy">
       <Topbar showProjectSelector />
       <div className="flex-box">
         <Sidenav selectedItem="deploy" />
@@ -24,7 +25,10 @@ function Deploy({ isSignedIn, mode, deployConfig, handleChange }) {
               <React.Fragment>
                 {mode > 0 ?
                   <React.Fragment>
-                    <Header name="Deploy Configuration" color="#000" fontSize="22px" />
+                    <div className="header-flex">
+                      <Header name="Deploy Configuration" color="#000" fontSize="22px" />
+                      <Documentation url="https://spaceuptech.com" />
+                    </div>
                     <DeployForm formState={deployConfig} handleChange={handleChange} />
                   </React.Fragment>
                   :
