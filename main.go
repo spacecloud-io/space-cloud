@@ -18,6 +18,18 @@ var essentialFlags = []cli.Flag{
 		Value: "config.yaml",
 		Usage: "Load space cloud config from `FILE`",
 	},
+	cli.StringFlag{
+		Name:   "ssl-cert",
+		Value:  "none",
+		Usage:  "Load ssl certificate from `FILE`",
+		EnvVar: "SSL_CERT",
+	},
+	cli.StringFlag{
+		Name:   "ssl-key",
+		Value:  "none",
+		Usage:  "Load ssl key from `FILE`",
+		EnvVar: "SSL_KEY",
+	},
 	cli.BoolFlag{
 		Name:   "prod",
 		Usage:  "Run space-cloud in production mode",
@@ -99,6 +111,10 @@ func actionRun(c *cli.Context) error {
 	seeds := c.String("seeds")
 	profiler := c.Bool("profiler")
 
+	// Load flags related to ssl
+	sslCert := c.String("ssl-cert")
+	sslKey := c.String("ssl-key")
+
 	// Flags related to the admin details
 	adminUser := c.String("admin-user")
 	adminPass := c.String("admin-pass")
@@ -111,6 +127,11 @@ func actionRun(c *cli.Context) error {
 	conf, err := config.LoadConfigFromFile(configPath)
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
+	}
+
+	// Set the ssl config
+	if sslCert != "none" && sslKey != "none" {
+		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
 	// Save the config file path for future use

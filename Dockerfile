@@ -8,7 +8,11 @@ COPY space-cloud .
 # COPY space-cloud.yaml .
 RUN set -ex  \
   && apk add --no-cache ca-certificates wget \
-  && chmod +x space-cloud
+  && chmod +x space-cloud \ 
+  && mkdir -p /root/.space-cloud/mission-control-v0.10.0
+
+COPY mission-control /root/.space-cloud/mission-control-v0.10.0
+
 ENV PROD=false
 ENV PATH="/space-cloud:${PATH}"
 
