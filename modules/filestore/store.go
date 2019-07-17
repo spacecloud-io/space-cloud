@@ -9,9 +9,9 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
+	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/filestore/amazons3"
 	"github.com/spaceuptech/space-cloud/modules/filestore/local"
-	"github.com/spaceuptech/space-cloud/modules/auth"
 )
 
 // Module is responsible for managing the file storage module
@@ -70,7 +70,7 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	}
 
 	// Create a new crud blocks
-	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn)
+	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn, conf.Endpoint)
 	if err != nil {
 		return err
 	}
@@ -86,12 +86,12 @@ func (m *Module) IsEnabled() bool {
 	return m.enabled
 }
 
-func initBlock(fileStoreType utils.FileStoreType, connection string) (FileStore, error) {
+func initBlock(fileStoreType utils.FileStoreType, connection, endpoint string) (FileStore, error) {
 	switch fileStoreType {
 	case utils.Local:
 		return local.Init(connection)
 	case utils.AmazonS3:
-		return amazons3.Init(connection) // connection is the aws region code
+		return amazons3.Init(connection, endpoint) // connection is the aws region code
 	default:
 		return nil, utils.ErrInvalidParams
 	}
