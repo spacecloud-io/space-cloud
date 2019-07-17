@@ -9,13 +9,12 @@ COPY space-cloud .
 RUN set -ex  \
   && apk add --no-cache ca-certificates wget \
   && chmod +x space-cloud
-  
 ENV PROD=false
 ENV PATH="/space-cloud:${PATH}"
 
 # ports for the http and https servers
-EXPOSE 4242 4244
-EXPOSE 4343 4245
+EXPOSE 4122 4124
+EXPOSE 4126 4128
 
 # ports for nats
 EXPOSE 4222 4248

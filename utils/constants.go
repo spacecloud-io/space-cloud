@@ -190,3 +190,29 @@ const (
 
 // TypeRegisterRequest is the space cloud register request
 const TypeRegisterRequest string = "register"
+
+const (
+	// PortHTTP is the port used for the http server
+	PortHTTP string = "4122"
+
+	// PortGRPC is the port used for the grpc server
+	PortGRPC string = "4124"
+
+	// PortHTTPSecure is the port used for the http server with tls
+	PortHTTPSecure string = "4126"
+
+	// PortGRPCSecure is the port used for the grpc server with tls
+	PortGRPCSecure string = "4128"
+
+	// PortNatsServer is the port used for nats
+	PortNatsServer int = 4222
+
+	// PortNatsCluster is the port used by nats for clustering
+	PortNatsCluster int = 4248
+
+	// PortGossip is used for the membership protocol
+	PortGossip string = "4232"
+
+	// PortRaft is used internally by raft
+	PortRaft string = "4234"
+)

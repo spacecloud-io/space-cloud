@@ -14,26 +14,6 @@ import (
 
 var essentialFlags = []cli.Flag{
 	cli.StringFlag{
-		Name:  "port",
-		Value: "8080",
-		Usage: "Start HTTP server on port `PORT`",
-	},
-	cli.StringFlag{
-		Name:  "grpc-port",
-		Value: "8081",
-		Usage: "Start grpc on port `GRPC_PORT`",
-	},
-	cli.IntFlag{
-		Name:  "nats-port",
-		Value: 4222,
-		Usage: "Start nats on port `NATS_PORT`",
-	},
-	cli.IntFlag{
-		Name:  "cluster-port",
-		Value: 4248,
-		Usage: "Start nats on port `NATS_PORT`",
-	},
-	cli.StringFlag{
 		Name:  "config",
 		Value: "config.yaml",
 		Usage: "Load space cloud config from `FILE`",
@@ -112,11 +92,7 @@ func main() {
 
 func actionRun(c *cli.Context) error {
 	// Load cli flags
-	port := c.String("port")
-	grpcPort := c.String("grpc-port")
 	configPath := c.String("config")
-	natsPort := c.Int("nats-port")
-	clusterPort := c.Int("cluster-port")
 	isProd := c.Bool("prod")
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
@@ -130,13 +106,6 @@ func actionRun(c *cli.Context) error {
 
 	// Project and env cannot be changed once space cloud has started
 	s := server.New(isProd)
-
-	if !disableNats {
-		err := s.RunNatsServer(seeds, natsPort, clusterPort)
-		if err != nil {
-			return err
-		}
-	}
 
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)
@@ -173,7 +142,16 @@ func actionRun(c *cli.Context) error {
 	}
 
 	s.Routes(profiler, staticPath)
-	return s.Start(port, grpcPort, seeds)
+
+	// Start nats if not disabled
+	if !disableNats {
+		err := s.RunNatsServer(seeds, utils.PortNatsServer, utils.PortNatsCluster)
+		if err != nil {
+			return err
+		}
+	}
+
+	return s.Start(seeds)
 }
 
 func actionInit(*cli.Context) error {
@@ -184,18 +162,21 @@ func initMissionContol(version string) (string, error) {
 	homeDir := utils.UserHomeDir()
 	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
 	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
+		fmt.Println("Could not find mission control")
 		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
 			os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
 		}
-		fmt.Println("Downloading Mission Control UI...")
+		fmt.Println("Downloading...")
 		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
 			return "", err
 		}
+		fmt.Println("Extracting...")
 		err = utils.Unzip(uiPath+".zip", uiPath)
 		if err != nil {
 			return "", err
 		}
+		fmt.Println("Done...")
 		err = os.Remove(uiPath + ".zip")
 		if err != nil {
 			return "", err
