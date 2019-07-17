@@ -46,7 +46,7 @@ func (v *validator) startValidation(id, userID, key string, mode int) error {
 			// Sleep for 5 minutes before connecting again
 			time.Sleep(5 * time.Minute)
 
-			// Check if 15 days are lapsed without authorization
+			// Check if 15 days have lapsed without authorization
 			if time.Since(timer).Hours() > 24*15 {
 
 				// Stop the validation process

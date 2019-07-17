@@ -95,7 +95,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 				found = true
 			}
 		}
-		if !found && len(s.projectConfig.Projects) == 0 {
+		if !found {
 			s.projectConfig.Projects = append(s.projectConfig.Projects, c.Project)
 		}
 		// Write the config to file
@@ -107,7 +107,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 	case utils.RaftCommandDelete:
 		for i, p := range s.projectConfig.Projects {
 			if p.ID == c.ID {
-				remove(s.projectConfig.Projects, i)
+				s.projectConfig.Projects = remove(s.projectConfig.Projects, i)
 				break
 			}
 		}
