@@ -67,16 +67,16 @@ func New(isProd bool) *Server {
 }
 
 // Start begins the server operations
-func (s *Server) Start(port, grpcPort string, seeds string) error {
+func (s *Server) Start(seeds string) error {
 	// Start gRPC server in a separate goroutine
-	go s.initGRPCServer(grpcPort)
+	go s.initGRPCServer()
 
 	// Start the sync manager
 	if seeds == "" {
 		seeds = "127.0.0.1"
 	}
 	array := strings.Split(seeds, ",")
-	if err := s.syncMan.Start(s.nodeID, s.configFilePath, "4232", "4234", array, s.LoadConfig); err != nil {
+	if err := s.syncMan.Start(s.nodeID, s.configFilePath, utils.PortGossip, utils.PortRaft, array, s.LoadConfig); err != nil {
 		return err
 	}
 
@@ -93,14 +93,24 @@ func (s *Server) Start(port, grpcPort string, seeds string) error {
 
 	handler := corsObj.Handler(s.router)
 
-	fmt.Println("Starting HTTP Server on port: " + port)
+	fmt.Println("Starting http server on port: " + utils.PortHTTP)
 
-	fmt.Println("Space Cloud is running on the specified ports :D")
 	if s.ssl != nil && s.ssl.Enabled {
-		return http.ListenAndServeTLS(":"+port, s.ssl.Crt, s.ssl.Key, handler)
+		fmt.Println("Starting https server on port: " + utils.PortHTTPSecure)
+		go func() {
+
+			if err := http.ListenAndServeTLS(":"+utils.PortHTTPSecure, s.ssl.Crt, s.ssl.Key, handler); err != nil {
+				fmt.Println("Error starting https server:", err)
+			}
+		}()
 	}
 
-	return http.ListenAndServe(":"+port, handler)
+	fmt.Println()
+	fmt.Println("\t Hosting mission control on http://localhost:" + utils.PortHTTP + "/mission-control/")
+	fmt.Println()
+
+	fmt.Println("Space cloud is running on the specified ports :D")
+	return http.ListenAndServe(":"+utils.PortHTTP, handler)
 }
 
 // SetConfig sets the config
@@ -149,27 +159,42 @@ func (s *Server) LoadConfig(config *config.Config) error {
 	return s.crud.SetConfig(p.Modules.Crud)
 }
 
-func (s *Server) initGRPCServer(port string) {
-	lis, err := net.Listen("tcp", ":"+port)
+func (s *Server) initGRPCServer() {
+
+	if s.ssl != nil && s.ssl.Enabled {
+		lis, err := net.Listen("tcp", ":"+utils.PortGRPCSecure)
+		if err != nil {
+			log.Fatal("Failed to listen:", err)
+		}
+		creds, err := credentials.NewServerTLSFromFile(s.ssl.Crt, s.ssl.Key)
+		if err != nil {
+			log.Fatalln("Error: ", err)
+		}
+		options := []grpc.ServerOption{grpc.Creds(creds)}
+
+		grpcServer := grpc.NewServer(options...)
+		pb.RegisterSpaceCloudServer(grpcServer, s)
+
+		fmt.Println("Starting grpc secure server on port: " + utils.PortGRPCSecure)
+		go func() {
+			if err := grpcServer.Serve(lis); err != nil {
+				log.Fatal("Error starting grpc secure server:", err)
+			}
+		}()
+	}
+
+	lis, err := net.Listen("tcp", ":"+utils.PortGRPC)
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
 	}
 
 	options := []grpc.ServerOption{}
-	if s.ssl != nil && s.ssl.Enabled {
-		creds, err := credentials.NewServerTLSFromFile(s.ssl.Crt, s.ssl.Key)
-		if err != nil {
-			log.Fatalln("Error: ", err)
-		}
-		options = append(options, grpc.Creds(creds))
-	}
-
 	grpcServer := grpc.NewServer(options...)
 	pb.RegisterSpaceCloudServer(grpcServer, s)
 
-	fmt.Println("Starting gRPC Server on port: " + port)
+	fmt.Println("Starting grpc server on port: " + utils.PortGRPC)
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal("failed to serve:", err)
+		log.Fatal("Error starting grpc server:", err)
 	}
 }
 

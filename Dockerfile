@@ -5,7 +5,18 @@ COPY space-cloud .
 RUN set -ex  \
   && apk add --no-cache ca-certificates \
   && chmod +x space-cloud
+
 ENV PROD=false
 ENV PATH="/space-cloud:${PATH}"
-EXPOSE 8080
+
+# ports for the http and https servers
+EXPOSE 4122 4124
+EXPOSE 4126 4128
+
+# ports for nats
+EXPOSE 4222 4248
+
+# ports for gossip and raft
+EXPOSE 4232 4234
+
 CMD ./space-cloud run
