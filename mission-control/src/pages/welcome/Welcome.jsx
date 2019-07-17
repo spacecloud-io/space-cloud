@@ -1,13 +1,11 @@
 import React from 'react'
 import { Link } from "react-router-dom"
 import './welcome.css'
-import Topbar from '../../components/topbar/Topbar'
 import { Button } from 'antd'
 
 function Welcome(props) {
   return (
     <div className="welcome-page">
-      <Topbar save="false" />
       <div className="outer-rectangle"></div>
       <div className="inner-rectangle">
         <div className="content">

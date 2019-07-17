@@ -17,11 +17,11 @@ const Rules = (props) => {
 		<div>
 			<Topbar showProjectSelector />
 			<div className="flex-box">
-				<Sidenav selectedItem="file-storage" />
+				<Sidenav selectedItem="static" />
 				<div className="page-content">
 					<div className="header-flex">
 						<Header name="Rules" color="#000" fontSize="22px" />
-						<Documentation url="https://spaceuptech.com/docs/file-storage" />
+						<Documentation url="https://spaceuptech.com/docs/static" />
 					</div>
 					{noOfRules > 0 && <RulesComponent
 						array={true}
@@ -42,33 +42,23 @@ const Rules = (props) => {
 
 const mapStateToProps = (state) => {
 	return {
-		rules: get(state, `config.modules.fileStore.rules`, []),
+		rules: get(state, `config.modules.static.rules`, []),
 	}
 };
 
 const mapDispatchToProps = (dispatch) => {
 	return {
 		handleRuleChange: (index, value) => {
-			let rules = get(store.getState(), "config.modules.fileStore.rules", []).slice()
+			let rules = get(store.getState(), "config.modules.static.rules", []).slice()
 			rules[index] = value
-			dispatch(set(`config.modules.fileStore.rules`, rules))
+			dispatch(set(`config.modules.static.rules`, rules))
 		},
 		handleCreateRule: () => {
 			const defaultRule = {
 				prefix: "/",
-				rule: {
-					create: {
-						rule: "allow"
-					},
-					read: {
-						rule: "allow"
-					},
-					delete: {
-						rule: "allow"
-					}
-				}
+				proxy: "http://localhost:3000"
 			}
-			dispatch(push(`config.modules.fileStore.rules`, JSON.stringify(defaultRule, null, 2)))
+			dispatch(push(`config.modules.static.rules`, JSON.stringify(defaultRule, null, 2)))
 		},
 	};
 };

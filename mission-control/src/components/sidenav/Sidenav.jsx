@@ -11,7 +11,7 @@ const Sidenav = (props) => {
   return(
     <div className="sidenav">
     <div className="flex-container">
-      <Header name={props.projectName} color="#000" fontSize="18px" />
+      <Header name={props.projectId} color="#000" fontSize="18px" />
     </div>
     <Link to={`/mission-control/projects/${props.projectId}/overview`}>
       <SidenavItem name="Project Overview" icon="home" active={props.selectedItem === 'overview'} />
@@ -24,6 +24,9 @@ const Sidenav = (props) => {
     </Link>
     <Link to={`/mission-control/projects/${props.projectId}/file-storage`}>
       <SidenavItem name="File Storage" icon="folder_open" active={props.selectedItem === 'file-storage'} />
+    </Link>
+    <Link to={`/mission-control/projects/${props.projectId}/static`}>
+      <SidenavItem name="Static Hosting" icon="cloud" active={props.selectedItem === 'static'} />
     </Link>
     <Link to={`/mission-control/projects/${props.projectId}/functions`}>
       <SidenavItem name="Functions" icon="code" active={props.selectedItem === 'functions'} />
@@ -48,7 +51,6 @@ const Sidenav = (props) => {
 const mapStateToProps = (state, ownProps) => {
   return {
     projectId: get(state, "config.id", ""),
-    projectName: get(state, "config.name", ""),
     selectedItem: ownProps.selectedItem,
   }
 }

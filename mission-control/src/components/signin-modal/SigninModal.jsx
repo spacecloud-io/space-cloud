@@ -69,7 +69,7 @@ const mapDispatchToProps = (dispatch) => {
         var user = result.user;
         service.oauthLogin(user.uid).then(({ token, user }) => {
           localStorage.setItem("space-up-token", token)
-          const newOperationConfig = Object.assign({}, get(store.getState(), "operationConfig", {}), { email: user.email, key: user.key })
+          const newOperationConfig = Object.assign({}, get(store.getState(), "operationConfig", {}), { userId: user.id, key: user.key })
           service.saveOperationConfig(newOperationConfig).then(() => dispatch(set("operationConfig", newOperationConfig)))
           handleSpaceUpLoginSuccess(token)
         }).catch(error => {

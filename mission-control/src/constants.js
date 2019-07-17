@@ -13,5 +13,5 @@ export const defaultDbConnectionStrings = {
 export const PAYU_MERCHANT_KEY = "FkS68IbH"
 
 export const SPACE_API_PROJECT = "space-cloud"
-export const SPACE_API_URL = "http://localhost:8080"
+export const SPACE_API_URL = "https://spaceuptech.com"
 

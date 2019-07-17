@@ -51,7 +51,6 @@ class Service {
           return
         }
 
-        this.spaceUpUserId = data.result.user._id
         resolve(data.result.user)
       }).catch(ex => reject(ex))
     })

@@ -74,7 +74,7 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 		},
 		handleCreateRule: (ruleName) => {
 			const defaultRule = {
-				isRealtimeEnabled: false,
+				isRealtimeEnabled: true,
 				rules: {
 					create: {
 						rule: "allow"

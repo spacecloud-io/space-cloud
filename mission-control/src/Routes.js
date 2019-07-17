@@ -7,6 +7,7 @@ import UserManagement from './pages/user-management/UserManagement';
 import DBRules from './pages/database/rules/Rules'
 import FunctionRules from './pages/functions/rules/Rules'
 import FileStorageRules from './pages/file-storage/rules/Rules'
+import StaticRules from './pages/static/rules/Rules'
 import Configure from './pages/configure/configure'
 import Overview from './pages/overview/Overview'
 import Welcome from "./pages/welcome/Welcome"
@@ -31,6 +32,8 @@ export default () => {
       <Route exact path="/mission-control/projects/:projectId/functions/rules" component={FunctionRules} />
       <Route exact path="/mission-control/projects/:projectId/file-storage" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/file-storage/rules`} />} />
       <Route exact path="/mission-control/projects/:projectId/file-storage/rules" component={FileStorageRules} />
+      <Route exact path="/mission-control/projects/:projectId/static" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/static/rules`} />} />
+      <Route exact path="/mission-control/projects/:projectId/static/rules" component={StaticRules} />
       <Route exact path="/mission-control/projects/:projectId/configure" component={Configure} />
       <Route exact path="/mission-control/projects/:projectId/deploy" component={Deploy} />
       <Route exact path="/mission-control/projects/:projectId/plans" component={Plans} />

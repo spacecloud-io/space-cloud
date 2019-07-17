@@ -38,12 +38,12 @@ class Topbar extends Component {
           {(this.props.showDbSelector) &&
             <DbSelector handleSelect={this.props.handleSelect} selectedDb={this.props.selectedDb} />
           }
-          <div className="right-list">
-            {this.props.mode < 1 && <Button type="primary" className="action-button upgrade-button" onClick={openPlansPage}>UPGRADE</Button>}
-            {(this.props.save !== "false") &&
+          {
+            !this.props.hideActions && <div className="right-list">
+              {this.props.mode < 1 && <Button type="primary" className="action-button upgrade-button" onClick={openPlansPage}>UPGRADE</Button>}
               <Button type="primary" className="action-button save-button" onClick={this.props.handleSave} disabled={!this.props.unsavedChanges}>SAVE</Button>
-            }
-          </div>
+            </div>
+          }
           <SelectProject visible={this.state.modalVisible} handleCancel={() => this.handleModalVisible(false)} />
         </div>
       </div>
@@ -85,6 +85,10 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 
         if (result.errors.fileStore.length) {
           notify("error", 'Error in File Storage config', `Rules - ${result.errors.fileStore.join(", ")}`, 0)
+        }
+
+        if (result.errors.static.length) {
+          notify("error", 'Error in Static Module config', `Rules - ${result.errors.static.join(", ")}`, 0)
         }
         return
       }

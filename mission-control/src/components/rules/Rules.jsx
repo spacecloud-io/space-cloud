@@ -13,7 +13,7 @@ class Rules extends Component {
 	constructor(props) {
 		super(props);
 		const rules = Object.keys(this.props.rules);
-		var selectedRule = '';
+		var selectedRule = null;
 		if (rules.length > 0) {
 			selectedRule = rules[0];
 		}
@@ -26,7 +26,7 @@ class Rules extends Component {
 		this.setState({ selectedRule: rule });
 	}
 	render() {
-		var rules = Object.keys(this.props.rules);
+		var rules = this.props.array ? this.props.rules.map((_, index) => (`Rule ${index + 1}`)) : Object.keys(this.props.rules);
 
 		return (
 			<div className="rules-main-wrapper">
@@ -36,14 +36,15 @@ class Rules extends Component {
 							<Icon className="addIcon" type="plus" /> {this.props.addText}
 						</div>
 						<div className="rulesTable">
-							{rules.map((rule) => {
+
+							{rules.map((rule, index) => {
 								return (
 									<div
 										className={`rule ${this.state.selectedRule === rule ? 'selected' : ''}`}
 										id="rule"
 										value={rule}
 										key={rule}
-										onClick={() => this.handleClick(rule)}
+										onClick={() => this.handleClick(this.props.array ? index : rule)}
 									>
 										{rule}
 									</div>
