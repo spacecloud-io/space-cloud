@@ -25,6 +25,7 @@ config.yaml
 
 # Helper scripts
 kube
+docker-build.sh
 
 #IDEs
 .idea
