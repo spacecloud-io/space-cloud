@@ -54,10 +54,7 @@
 }
 
 .sidenav .flex-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 40px 0;
+  padding: 24px;
 }
 
 .sidenav .edit {

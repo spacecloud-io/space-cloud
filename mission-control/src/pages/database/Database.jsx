@@ -11,7 +11,7 @@ import Topbar from '../../components/topbar/Topbar'
 import Documentation from '../../components/documentation/Documentation'
 import DatabaseCardList from '../../components/database-card/DatabaseCardList'
 import { Redirect } from "react-router-dom";
-import { get } from "automate-redux";
+import { get, set } from "automate-redux";
 
 function Database(props) {
   const cards = [{ graphics: mysql, name: "MySQL", desc: "The world's most popular open source database.", key: "sql-mysql" },
@@ -53,7 +53,7 @@ const mapStateToProps = (state, ownProps) => {
 const mapDispatchToProps = (dispatch) => {
   return {
     handleEnable(key) {
-      console.log(`Enabled: ${key}`)
+      dispatch(set(`config.modules.crud.${key}.enabled`, true))
     }
   }
 }

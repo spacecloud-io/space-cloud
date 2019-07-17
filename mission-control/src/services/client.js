@@ -1,6 +1,5 @@
 const fetchJSON = (url, options) => {
   return new Promise((resolve, reject) => {
-    url = 'http://localhost:8080' + url
     fetch(url, options).then(res => {
       const status = res.status
       res.json().then(data => {

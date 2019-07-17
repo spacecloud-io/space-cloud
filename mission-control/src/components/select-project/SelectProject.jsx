@@ -1,11 +1,10 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { Link } from "react-router-dom"
 import { get, set, reset } from 'automate-redux';
 import service from "../../index";
 import store from "../../store"
 import history from "../../history";
-import { openProject, notify } from "../../utils"
+import { openProject, notify, openPlansPage } from "../../utils"
 
 import { Modal, Icon, Button, Table } from 'antd'
 import Header from "../../components/header/Header"
@@ -51,9 +50,7 @@ function SelectProject(props) {
       <Modal className="select-project" footer={null} closable={false} bodyStyle={{ widtht: "800" }}
         title={<div className="modal-header">
           <Header name="Select a project" />
-          <Link to="/mission-control/create-project">
-            <Button type="primary" >Create a project</Button>
-          </Link>
+          <Button type="primary" onClick={props.handleCreateProject}>Create a project</Button>
         </div>}
         visible={props.visible}
         onCancel={props.handleCancel}
@@ -92,6 +89,15 @@ const mapStateToProps = (state, ownProps) => {
 
 const mapDispatchToProps = (dispatch, ownProps) => {
   return {
+    handleCreateProject: () => {
+      const mode = get(store.getState(), "operationConfig.mode", 0)
+      if (mode < 1) {
+        openPlansPage()
+        notify("info", "Info", "You need to upgrade to create multiple projects on the same cluster")
+        return
+      }
+      history.push("/mission-control/create-project")
+    },
     handleDelete: (projectId) => {
       service.deleteProject(projectId).then(() => {
         notify("success", "Success", "Project deleted successfully")

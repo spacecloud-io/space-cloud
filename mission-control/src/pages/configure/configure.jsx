@@ -9,6 +9,7 @@ import { Divider } from 'antd';
 import RealtimeConfigure from '../../components/configure/RealtimeConfigure';
 import FunctionConfigure from '../../components/configure/FunctionConfigure';
 import FileStorage from '../../components/configure/FileStorageConfigure';
+import StaticConfigure from '../../components/configure/StaticConfigure';
 import { get, set } from 'automate-redux';
 import store from ".././../store";
 
@@ -27,6 +28,8 @@ function Rules(props) {
 					<FunctionConfigure formState={props.functions} handleChange={props.handleFunctionChange} />
 					<Divider />
 					<FileStorage formState={props.fileStorage} handleChange={props.handleFileStorageChange} />
+					<Divider />
+					<StaticConfigure formState={props.static} handleChange={props.handleStaticChange} />
 				</div>
 			</div>
 		</div>
@@ -38,7 +41,8 @@ const mapStateToProps = (state, ownProps) => {
 		secret: get(state, "config.secret"),
 		realtime: get(state, "config.modules.realtime", {}),
 		functions: get(state, "config.modules.functions", {}),
-		fileStorage: get(state, "config.modules.fileStore", {})
+		fileStorage: get(state, "config.modules.fileStore", {}),
+		static: get(state, "config.modules.static", {})
 	};
 };
 
@@ -58,6 +62,10 @@ const mapDispatchToProps = (dispatch) => {
 		handleFileStorageChange: (value) => {
 			const config = get(store.getState(), "config.modules.fileStore", {})
 			dispatch(set("config.modules.fileStore", Object.assign({}, config, value)))
+		},
+		handleStaticChange: (value) => {
+			const config = get(store.getState(), "config.modules.static", {})
+			dispatch(set("config.modules.static", Object.assign({}, config, value)))
 		}
 	};
 };

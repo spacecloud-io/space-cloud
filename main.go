@@ -167,7 +167,7 @@ func actionRun(c *cli.Context) error {
 	}
 
 	// Download and host mission control
-	staticPath, err := initMissionContol("0.9.0")
+	staticPath, err := initMissionContol(utils.BuildVersion)
 	if err != nil {
 		return err
 	}

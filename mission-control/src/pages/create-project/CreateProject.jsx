@@ -42,7 +42,7 @@ class CreateProject extends Component {
     const { getFieldDecorator } = this.props.form;
     return (
       <div className="create-project">
-        <Topbar save="false" />
+        <Topbar hideActions />
         <div className="content">
           <div>
             <span>PROJECT NAME</span>
@@ -115,4 +115,4 @@ const mapDispatchToProps = (dispatch) => {
   }
 }
 
-export default connect(mapDispatchToProps)(WrappedCreateProject);
+export default connect(null, mapDispatchToProps)(WrappedCreateProject);

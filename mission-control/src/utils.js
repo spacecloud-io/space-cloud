@@ -15,7 +15,7 @@ export const openProject = (projectId) => {
     return
   }
 
-  const adjustedConfig = adjustConfig(config)
+  const adjustedConfig = adjustConfig(cloneDeep(config))
   store.dispatch(set("config", adjustedConfig))
   store.dispatch(set("savedConfig", cloneDeep(adjustedConfig)))
 }
@@ -41,9 +41,12 @@ export const adjustConfig = (config) => {
 
   // Adjust file storage rules
   if (config.modules && config.modules.fileStore && config.modules.fileStore.rules) {
-    Object.keys(config.modules.fileStore.rules).forEach(rule => {
-      config.modules.fileStore.rules[rule] = JSON.stringify(config.modules.fileStore.rules[rule], null, 2)
-    })
+    config.modules.fileStore.rules = config.modules.fileStore.rules.map(rule => JSON.stringify(rule, null, 2))
+  }
+
+  // Adjust static module rules
+  if (config.modules && config.modules.static && config.modules.static.rules) {
+    config.modules.static.rules = config.modules.static.rules.map(rule => JSON.stringify(rule, null, 2))
   }
 
   return config
@@ -51,7 +54,7 @@ export const adjustConfig = (config) => {
 
 export const unAdjustConfig = (c) => {
   let config = cloneDeep(c)
-  let result = { ack: true, errors: { crud: {}, functions: [], fileStore: [] } }
+  let result = { ack: true, errors: { crud: {}, functions: [], fileStore: [], static: [] } }
   // Unadjust database rules
   if (config.modules && config.modules.crud) {
     Object.keys(config.modules.crud).forEach(db => {
@@ -82,12 +85,24 @@ export const unAdjustConfig = (c) => {
 
   // Unadjust file storage rules
   if (config.modules && config.modules.fileStore && config.modules.fileStore.rules) {
-    Object.keys(config.modules.fileStore.rules).forEach(rule => {
+    config.modules.fileStore.rules = config.modules.fileStore.rules.map((rule, index) => {
       try {
-        config.modules.fileStore.rules[rule] = JSON.parse(config.modules.fileStore.rules[rule])
+        return JSON.parse(rule)
       } catch (error) {
         result.ack = false
-        result.errors.functions.push(rule)
+        result.errors.functions.push(`Rule ${index + 1}`)
+      }
+    })
+  }
+
+  // Unadjust file storage rules
+  if (config.modules && config.modules.static && config.modules.static.rules) {
+    config.modules.static.rules = config.modules.static.rules.map((rule, index) => {
+      try {
+        return JSON.parse(rule)
+      } catch (error) {
+        result.ack = false
+        result.errors.static.push(`Rule ${index + 1}`)
       }
     })
   }
@@ -112,7 +127,7 @@ const getConnString = (dbType) => {
 export const generateProjectConfig = (name, dbType) => ({
   name: name,
   id: generateProjectId(name),
-  secret: 'some-secret',
+  secret: generateId(),
   modules: {
     crud: {
       [dbType]: {
@@ -158,10 +173,8 @@ export const generateProjectConfig = (name, dbType) => ({
       rules: []
     },
     static: {
-      enabled: false,
-      routes: [
-        { prefix: "/", path: "./public" }
-      ]
+      enabled: true,
+      routes: []
     }
   }
 })
@@ -215,9 +228,31 @@ export const handleSpaceUpLoginSuccess = (token) => {
     const date = new Date()
     const month = date.getMonth()
     const year = date.getFullYear()
-    Promise.all([service.fetchCredits(user._id), service.fetchBilling(user._id, month, year)]).then(([credits, billing]) => {
+    const mode = Object.assign({}, get(store.getState(), "operationConfig.mode", 0))
+    let deployConfig = Object.assign({}, get(store.getState(), "deployConfig", {}))
+    const defaultDeployConfig = {
+      enabled: false,
+      orchestrator: "kubernetes",
+      namespace: "default",
+      registry: {
+        url: "https://spaceuptech.com",
+        id: user.id,
+        key: user.key
+      }
+    }
+    if (deployConfig.enabled) {
+      deployConfig.registry = Object.assign({}, deployConfig.registry, { id: user.id, key: user.key })
+    } else {
+      deployConfig = defaultDeployConfig
+    }
+
+    Promise.all([service.fetchCredits(user.id), service.fetchBilling(user.id, month, year), service.saveDeployConfig(deployConfig)]).then(([credits, billing]) => {
       store.dispatch(set("credits", credits))
       store.dispatch(set("billing", billing))
+      if (mode > 0) {
+        store.dispatch(set("deployConfig", deployConfig))
+        store.dispatch(set("savedDeployConfig", cloneDeep(deployConfig)))
+      }
     })
     store.dispatch(set("user", user))
   }).catch(error => {
@@ -235,7 +270,7 @@ export const generateId = () => {
 }
 
 export const isUserSignedIn = () => {
-  const userId = get(store.getState(), "user._id", "")
+  const userId = get(store.getState(), "user.id", "")
   return userId && userId.length > 0
 }
 
