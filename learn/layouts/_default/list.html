@@ -34,55 +34,53 @@
             <a class="waves-effect waves-light btn learn-react">{{.Page.Title}}</a>
             <div class="duration">
               <span>{{len .Page.Pages}} TOPICS</span>
-              {{$readingTime:=0}}
+              {{$totalReadingTime:=0}}
               {{range $i, $p := .Page.Pages}}
-              {{$readingTime = add $readingTime $p.ReadingTime}}
+              {{$totalReadingTime = add $totalReadingTime $p.ReadingTime}}
               {{end}}
-              <span style="padding-left: 24px">{{$readingTime}} HRS</span>
+              <span style="padding-left: 24px">{{$totalReadingTime}} MINS</span>
             </div>
             <div class="steps">
+              {{range $i, $c := .Page.Params.cover}}
               <div class="step valign-wrapper">
                 <a href="#" class="material-icons">chevron_right</a>
-                <span>Lorem ipsum dolor sit amet, consectetur adipiscing elit</span>
+                <span>{{$c}}</span>
               </div>
-              <div class="step valign-wrapper">
-                <a href="#" class="material-icons">chevron_right</a>
-                <span>Lorem ipsum dolor sit amet, consectetur adipiscing elit</span>
-              </div>
-              <div class="step valign-wrapper">
-                <a href="#" class="material-icons">chevron_right</a>
-                <span>Lorem ipsum dolor sit amet, consectetur adipiscing elit</span>
-              </div>
+              {{end}}
             </div>
-            <a class="waves-effect waves-orange btn-flat start-now">Start now</a>
+            {{$startPage := ""}}
+            {{range $i, $p := .Page.Pages}}
+            {{if eq $p.Params.index 1}}
+              {{$startPage = $p.Permalink}}
+            {{end}}
+            {{end}}
+            <a class="waves-effect waves-orange btn-flat start-now" href="{{$startPage}}">Start now</a>
           </div>
         </div>
 
         <div class="col s12 m8 l8">
           <div class="right-wrapper">
-            <div class="title">Learn about secrets management and data protection with
-              HashiCorp Vault</div>
+            <div class="title">{{.Page.Description}}</div>
 
             <div class="timeline">
-              {{range $i, $p := .Page.Pages}}
+              {{range $i, $p := sort .Page.Pages "Params.index" "asc"}}
               <div class="border">
                   <div class="dots">{{add $i 1}}</div>
                   <div class="content">
-                    <div class="timeline-title">{{$p.Title}}</div>
+                    <a class="timeline-title" href="{{$p.Permalink}}">{{$p.Title}}</a>
                     <div class="timeline-time">
                       <span>{{$p.ReadingTime}} MINS</span>
                       <!-- <span>.</span>
                       <span>5 STEPS</span> -->
                     </div>
-                    <div class="timeline-desc">Lorem ipsum dolor sit amet, consectetur
-                      adipiscing elit</div>
+                    <div class="timeline-desc">{{.Page.Description}}</div>
                   </div>
                 </div>
               {{end}}
             </div>
 
             <div class="timeline-footer valign-wrapper">
-              <span>Go back to top</span>
+              <a href={{$startPage}}>Go back to top</a>
               <a href="#" class="material-icons">chevron_right</a>
             </div>
           </div>

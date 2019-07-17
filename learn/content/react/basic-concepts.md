@@ -1,7 +1,9 @@
 ---
 title: "Basic Concepts"
+description: Cover the basic concepts for using Space Cloud
 date: 2019-07-16T20:07:39+05:30
 draft: true
+index: 1
 ---
 
 Hey guys, its Noorain Your tech bud, and in this tutorial I’m gonna teach you everything you’ll need to build a react app with space cloud and mongodb.

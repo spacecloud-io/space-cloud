@@ -1,7 +1,9 @@
 ---
 title: "Install Space Cloud"
+description: The first step to using Space Cloud is to install it
 date: 2019-07-16T20:11:26+05:30
 draft: true
+index: 2
 ---
 
 Hey guys, its Noorain Your tech bud, and in this tutorial I’m gonna teach you everything you’ll need to build a react app with space cloud and mongodb.
