@@ -7,7 +7,7 @@ COPY space-cloud .
 
 # COPY space-cloud.yaml .
 RUN set -ex  \
-  && apk add --no-cache ca-certificates wget \
+  && apk add --no-cache ca-certificates \
   && chmod +x space-cloud \ 
   && mkdir -p /root/.space-cloud/mission-control-v0.10.0
 

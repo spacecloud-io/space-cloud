@@ -165,4 +165,5 @@ type StaticRoute struct {
 	URLPrefix string `json:"prefix" yaml:"prefix"`
 	Host      string `json:"host" yaml:"host"`
 	Proxy     string `json:"proxy" yaml:"proxy"`
+	Protocol  string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 }

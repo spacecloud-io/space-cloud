@@ -2,12 +2,21 @@ package handlers
 
 import (
 	"bufio"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/gorilla/websocket"
+
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 // HandleStaticRequest creates a static request endpoint
 func HandleStaticRequest(p *projects.Projects) http.HandlerFunc {
@@ -30,6 +39,12 @@ func HandleStaticRequest(p *projects.Projects) http.HandlerFunc {
 
 			// Its a proxy request
 			if route.Proxy != "" {
+				// See if websocket needs to be proxied
+				if route.Protocol == "ws" {
+					routineWebsocket(w, r, route.Proxy)
+					return false
+				}
+
 				addr := route.Proxy + path
 				req, err := http.NewRequest(r.Method, addr, r.Body)
 				if err != nil {
@@ -81,6 +96,52 @@ func HandleStaticRequest(p *projects.Projects) http.HandlerFunc {
 
 		if completed {
 			http.Error(w, "Path not found", http.StatusNotFound)
+		}
+	}
+}
+
+func routineWebsocket(w http.ResponseWriter, r *http.Request, proxy string) {
+	in, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print("Websocket proxy upgrade:", err)
+		return
+	}
+	defer in.Close()
+
+	upstream, _, err := websocket.DefaultDialer.Dial(proxy, nil)
+	if err != nil {
+		log.Fatal("Websocket proxy dial:", err)
+		return
+	}
+	defer upstream.Close()
+
+	go func() {
+		// Read from upstream
+		for {
+			mt, message, err := upstream.ReadMessage()
+			if err != nil {
+				log.Println("Websocket proxy read (up):", err)
+				break
+			}
+			err = in.WriteMessage(mt, message)
+			if err != nil {
+				log.Println("Websocket proxy write (down):", err)
+				break
+			}
+		}
+	}()
+
+	// Read from incomming
+	for {
+		mt, message, err := in.ReadMessage()
+		if err != nil {
+			log.Println("Websocket proxy read (down):", err)
+			break
+		}
+		err = upstream.WriteMessage(mt, message)
+		if err != nil {
+			log.Println("Websocket proxy write (up):", err)
+			break
 		}
 	}
 }
