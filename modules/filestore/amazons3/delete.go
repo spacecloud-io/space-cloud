@@ -2,25 +2,16 @@ package amazons3
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
+// DeleteFile deletes a file from S3
 func (a *AmazonS3) DeleteFile(ctx context.Context, project, path string) error {
-	session, err := session.NewSession(&aws.Config{
-		Region: aws.String(a.region),
-	},
-	)
-	if err != nil {
-		fmt.Println("AmazonS3 Couldn't Establish Connection ", err)
-		return err
-	}
-	svc := s3.New(session)
-	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(project), Key: aws.String(path)})
+	svc := s3.New(a.client)
+	_, err := svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(project), Key: aws.String(path)})
 	if err != nil {
 		return err
 	}
@@ -31,17 +22,10 @@ func (a *AmazonS3) DeleteFile(ctx context.Context, project, path string) error {
 	})
 }
 
+// DeleteDir deletes a directory in S3
 func (a *AmazonS3) DeleteDir(ctx context.Context, project, path string) error {
-	session, err := session.NewSession(&aws.Config{
-		Region: aws.String(a.region),
-	},
-	)
-	if err != nil {
-		fmt.Println("AmazonS3 Couldn't Establish Connection ", err)
-		return err
-	}
 	// TODO: Consider AWS operation limit
-	svc := s3.New(session)
+	svc := s3.New(a.client)
 
 	// Setup BatchDeleteIterator to iterate through a list of objects.
 	iter := s3manager.NewDeleteListIterator(svc, &s3.ListObjectsInput{

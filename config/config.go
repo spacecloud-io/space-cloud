@@ -142,6 +142,7 @@ type FileStore struct {
 	Enabled   bool        `json:"enabled" yaml:"enabled"`
 	StoreType string      `json:"storeType" yaml:"storeType"`
 	Conn      string      `json:"conn" yaml:"conn"`
+	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
 	Rules     []*FileRule `json:"rules" yaml:"rules"`
 }
 
