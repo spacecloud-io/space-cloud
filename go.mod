@@ -6,7 +6,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/golang/protobuf v1.3.1
+	github.com/golang/protobuf v1.3.2
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/gorilla/mux v1.7.0
@@ -20,10 +20,10 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nats-io/gnatsd v1.4.1 // indirect
-	github.com/nats-io/go-nats v1.7.2
+	github.com/nats-io/go-nats v1.7.2 // indirect
 	github.com/nats-io/nats-server v1.4.1
-	github.com/nats-io/nkeys v0.0.2 // indirect
-	github.com/nats-io/nuid v1.0.1 // indirect
+	github.com/nats-io/nats-server/v2 v2.0.2 // indirect
+	github.com/nats-io/nats.go v1.8.1
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
@@ -31,10 +31,9 @@ require (
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.0.4
-	golang.org/x/crypto v0.0.0-20190530122614-20be4c3c3ed5
+	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
 	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 // indirect
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
-	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f // indirect
 	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20190530194941-fb225487d101 // indirect

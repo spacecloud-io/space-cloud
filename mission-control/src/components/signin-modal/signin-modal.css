@@ -1,0 +1,56 @@
+.signin-modal {
+  
+}
+
+.signin-modal .background {
+  position: absolute;
+  background: #ff6700;
+  top: -8px;
+  bottom: -8px;
+  left: 8px;
+  right: 8px;
+  border-radius: 40px;
+}
+
+.signin-modal .content {
+  position: relative;
+  background-color: #002c39;
+  border-radius: 40px;
+  padding: 48px 64px;
+  color: white;
+  text-align: center;
+}
+
+.signin-modal h1 {
+  color: white;
+  text-decoration: underline;
+}
+
+.signin-modal .desc {
+  margin: 32px;
+}
+
+.signin-modal .footer {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.signin-modal .footer img {
+  height: 24px;
+  width: 24px;
+  cursor: pointer;
+}
+
+.signin-modal .ant-modal-body {
+  padding: 0;
+}
+
+.signin-modal .ant-modal-content {
+  background-color: rgba(0, 0, 0, 0);
+  width: 600px;
+  display: inline-block;
+}
+
+.signin-modal .ant-modal {
+  text-align: center;
+}
