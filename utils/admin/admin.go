@@ -27,8 +27,16 @@ func New(nodeID string) *Manager {
 // SetConfig sets the admin config
 func (m *Manager) SetConfig(admin *config.Admin) {
 	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if admin.Operation.Mode > 0 {
+		// Start the validation process for higher op modes
+		if err := m.validator.startValidation(m.nodeID, admin.Operation.UserID, admin.Operation.Key, admin.Operation.Mode); err != nil {
+			admin.Operation.Mode = 0
+		}
+	}
+
 	m.admin = admin
-	m.lock.Unlock()
 }
 
 // GetConfig returns the adming config

@@ -35,7 +35,7 @@ func (m *Manager) ValidateSyncOperation(c *config.Config, project *config.Projec
 		maxProjects = 5
 	}
 
-	if len(c.Projects) == (maxProjects - 1) {
+	if len(c.Projects) < maxProjects {
 		return true
 	}
 
