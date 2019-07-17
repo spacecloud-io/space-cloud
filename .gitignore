@@ -27,8 +27,7 @@ test_config.yaml
 config.yaml
 
 # Helper scripts
-rebuild.sh
-rebuild-kube.sh
+kube
 
 #IDEs
 .idea
