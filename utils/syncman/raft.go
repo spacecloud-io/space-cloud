@@ -102,7 +102,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 		// Set project config in projects manager
-		s.projects.StoreProject(c.Project)
+		go s.projects.StoreProject(c.Project)
 
 	case utils.RaftCommandDelete:
 		for i, p := range s.projectConfig.Projects {
