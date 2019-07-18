@@ -9,9 +9,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	nats "github.com/nats-io/nats-server/server"
+	nats "github.com/nats-io/nats-server/v2/server"
 	"github.com/rs/cors"
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -49,7 +48,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(isProd bool) *Server {
+func New(nodeID string, isProd bool) *Server {
 	r := mux.NewRouter()
 	c := crud.Init()
 	rt := realtime.Init(c)
@@ -61,7 +60,9 @@ func New(isProd bool) *Server {
 	adminMan := admin.New()
 	syncMan := syncman.New(adminMan)
 
-	return &Server{nodeID: uuid.NewV1().String(), router: r, auth: a, crud: c,
+	fmt.Println("Creating a new server with id", nodeID)
+
+	return &Server{nodeID: nodeID, router: r, auth: a, crud: c,
 		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
 		functions: fn, realtime: rt, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }

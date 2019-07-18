@@ -14,15 +14,13 @@ require (
 	github.com/hashicorp/memberlist v0.1.4
 	github.com/hashicorp/raft v1.1.0
 	github.com/hashicorp/raft-boltdb v0.0.0-20190605210249-ef2e128ed477
+	github.com/hashicorp/serf v0.8.3
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/nats-io/gnatsd v1.4.1 // indirect
-	github.com/nats-io/go-nats v1.7.2 // indirect
-	github.com/nats-io/nats-server v1.4.1
-	github.com/nats-io/nats-server/v2 v2.0.2 // indirect
+	github.com/nats-io/nats-server/v2 v2.0.2
 	github.com/nats-io/nats.go v1.8.1
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0

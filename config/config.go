@@ -7,8 +7,25 @@ type Config struct {
 	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
 	SSL      *SSL       `json:"ssl" yaml:"ssl"`
 	Admin    *Admin     `json:"admin" yaml:"admin"`
+	Deploy   Deploy     `json:"deploy" yaml:"deploy"`
 	Cluster  string     `json:"cluster" yaml:"cluster"`
 	NodeID   string     `json:"nodeId" yaml:"nodeId"`
+}
+
+// Deploy holds the deployment environment config
+type Deploy struct {
+	Orchestrator utils.OrchestratorType `json:"orchestrator,omitempty" yaml:"orchestrator,omitempty"`
+	Registry     Registry               `json:"registry,omitempty" yaml:"registry,omitempty"`
+	Namespace    string                 `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Enabled      bool                   `json:"enabled" yaml:"enabled"`
+}
+
+// Registry holds the details of the registry
+type Registry struct {
+	URL   string  `json:"url" yaml:"url"`
+	ID    string  `json:"id" yaml:"id"`
+	Key   string  `json:"key" yaml:"key"`
+	Token *string `json:"token,omitempty" yaml:"token,omitempty"`
 }
 
 // Project holds the project level configuration
@@ -28,9 +45,9 @@ type Admin struct {
 
 // OperationConfig holds the operation mode config
 type OperationConfig struct {
-	Mode  int    `json:"mode" yaml:"mode"`
-	Email string `json:"email" yaml:"email"`
-	Key   string `json:"key" yaml:"key"`
+	Mode   int    `json:"mode" yaml:"mode"`
+	UserID string `json:"userId" yaml:"userId"`
+	Key    string `json:"key" yaml:"key"`
 }
 
 // AdminUser holds the user credentials and scope
@@ -143,6 +160,7 @@ type Static struct {
 
 // StaticRoute holds the config for each route
 type StaticRoute struct {
+	ID        string `json:"id,omitempty" yaml:"id,omitempty"`
 	Path      string `json:"path" yaml:"path"`
 	URLPrefix string `json:"prefix" yaml:"prefix"`
 	Host      string `json:"host" yaml:"host"`

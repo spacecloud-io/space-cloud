@@ -76,10 +76,6 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.SyncManager, c
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"projects": projects})
-
-		// Give positive acknowledgement
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects})
 	}
 }
 
@@ -133,8 +129,8 @@ func HandleLoadDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncMa
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Give negative acknowledgement
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"deploy": config.Deploy{}})
 	}
 }
 
@@ -153,8 +149,8 @@ func HandleLoadOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.Syn
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Give negative acknowledgement
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{"error": "Operation not supported. Upgrade to avail this feature"})
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"operation": config.OperationConfig{}})
 	}
 }
 
