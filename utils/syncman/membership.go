@@ -53,12 +53,32 @@ type eventDelegate SyncManager
 
 func (d *eventDelegate) NotifyJoin(n *memberlist.Node) {
 	if d.raft != nil {
-		d.raft.AddVoter(raft.ServerID(n.Name), raft.ServerAddress(n.Addr.String()+":"+d.raftPort), 0, 0).Error()
+		if d.raft.State() == raft.Leader {
+			toBeAdded, toBeRemoved := d.getDifferenceNodesInRaft()
+			for _, n := range toBeAdded {
+				d.raft.AddVoter(raft.ServerID(n.ID), raft.ServerAddress(n.Addr), 0, 0).Error()
+			}
+
+			for _, n := range toBeRemoved {
+				d.raft.RemoveServer(raft.ServerID(n.ID), 0, 0).Error()
+			}
+		}
 	}
 }
 
 func (d *eventDelegate) NotifyLeave(n *memberlist.Node) {
-	d.raft.RemoveServer(raft.ServerID(n.Name), 0, 0).Error()
+	if d.raft != nil {
+		if d.raft.State() == raft.Leader {
+			toBeAdded, toBeRemoved := d.getDifferenceNodesInRaft()
+			for _, n := range toBeAdded {
+				d.raft.AddVoter(raft.ServerID(n.ID), raft.ServerAddress(n.Addr), 0, 0).Error()
+			}
+
+			for _, n := range toBeRemoved {
+				d.raft.RemoveServer(raft.ServerID(n.ID), 0, 0).Error()
+			}
+		}
+	}
 }
 
 func (d *eventDelegate) NotifyUpdate(n *memberlist.Node) {}
