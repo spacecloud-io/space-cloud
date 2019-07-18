@@ -14,11 +14,11 @@ function FileStorageConfigure(props) {
 				<div className="conn-form-options">
 					<Form.Item>
 						{getFieldDecorator('storeType', {
-							rules: [ { required: true, message: '' } ]
+							rules: [{ required: true, message: '' }]
 						})(
 							<Select placeholder="Store Type" className="select">
 								<Option value="local">Local</Option>
-								<Option value="s3">S3</Option>
+								<Option value="amazon-s3">Amazon S3</Option>
 							</Select>
 						)}
 					</Form.Item>
@@ -29,8 +29,14 @@ function FileStorageConfigure(props) {
 				<div className="conn-form-cert">
 					<Form.Item className="conn-form-cert-input">
 						{getFieldDecorator('conn', {
-							rules: [ { required: true, message: '' } ]
+							rules: [{ required: true, message: '' }]
 						})(<Input style={{ width: 600 }} placeholder="Enter Connection String" />)}
+					</Form.Item>
+				</div>
+				<div className="conn-form-cert">
+					<Form.Item className="conn-form-cert-input">
+						{getFieldDecorator('endpoint', {
+						})(<Input style={{ width: 600 }} placeholder="Endpoint (Optional)" />)}
 					</Form.Item>
 				</div>
 			</Form> <br />
@@ -43,7 +49,8 @@ const WrappedFileStorageConfigureForm = Form.create({
 		return {
 			storeType: createFormField({ value: props.formState.storeType }),
 			enabled: createFormField({ value: props.formState.enabled }),
-			conn: createFormField({ value: props.formState.conn })
+			conn: createFormField({ value: props.formState.conn }),
+			endpoint: createFormField({ value: props.formState.endpoint })
 		};
 	},
 	onValuesChange(props, changedValues) {
