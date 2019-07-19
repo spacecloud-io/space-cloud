@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/urfave/cli"
@@ -76,10 +77,16 @@ var essentialFlags = []cli.Flag{
 		Value:  "",
 	},
 	cli.StringFlag{
-		Name:   "admin-sercret",
+		Name:   "admin-secret",
 		Usage:  "Set the admin secret",
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
+	},
+	cli.IntFlag{
+		Name:   "delay",
+		Usage:  "Delay space cloud startup (in seconds)",
+		EnvVar: "DELAY",
+		Value:  2,
 	},
 }
 
@@ -117,7 +124,8 @@ func actionRun(c *cli.Context) error {
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
 	seeds := c.String("seeds")
-	profiler := c.Bool("profiler")
+	//profiler := c.Bool("profiler")
+	delay := c.Int("delay")
 
 	// Load flags related to ssl
 	sslCert := c.String("ssl-cert")
@@ -132,6 +140,8 @@ func actionRun(c *cli.Context) error {
 	if nodeID == "none" {
 		nodeID = uuid.NewV1().String()
 	}
+
+	time.Sleep(time.Duration(delay) * time.Second)
 
 	// Project and env cannot be changed once space cloud has started
 	s := server.New(nodeID, isProd)
@@ -163,11 +173,11 @@ func actionRun(c *cli.Context) error {
 	}
 
 	// Initialise the routes
-	s.InitRoutes(profiler, staticPath)
+	s.InitRoutes(false, staticPath)
 
 	// Set the ssl config
 	if sslCert != "none" && sslKey != "none" {
-		s.InitSecureRoutes(profiler, staticPath)
+		s.InitSecureRoutes(false, staticPath)
 		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
