@@ -29,26 +29,28 @@ func (s *SyncManager) handleSerfEvents() {
 	for {
 		select {
 		case <-ticker.C:
-			future := s.raft.VerifyLeader()
+			if s.raft != nil {
+				future := s.raft.VerifyLeader()
 
-			//fmt.Println()
-			if err := future.Error(); err != nil {
-				//fmt.Println("Node is a follower. Leader:", s.raft.Leader())
-			} else {
-				//fmt.Println("Node is leader")
+				// fmt.Println()
+				if err := future.Error(); err != nil {
+					// fmt.Println("Node is a follower. Leader:", s.raft.Leader())
+				} else {
+					// fmt.Println("Node is leader")
+				}
+				// fmt.Println()
+
+				cfuture := s.raft.GetConfiguration()
+
+				if err := cfuture.Error(); err != nil {
+					log.Fatalf("error getting config: %s", err)
+				}
+
+				// configuration := cfuture.Configuration()
+				// fmt.Println()
+				// fmt.Println("Raft configuration:", configuration.Servers)
+				// fmt.Println()
 			}
-			//fmt.Println()
-
-			cfuture := s.raft.GetConfiguration()
-
-			if err := cfuture.Error(); err != nil {
-				log.Fatalf("error getting config: %s", err)
-			}
-
-			// configuration := cfuture.Configuration()
-			// fmt.Println()
-			// fmt.Println("Raft configuration:", configuration.Servers)
-			// fmt.Println()
 
 		case ev := <-s.serfEvents:
 
@@ -74,12 +76,14 @@ func (s *SyncManager) handleSerfEvents() {
 
 					} else if memberEvent.EventType() == serf.EventMemberLeave || memberEvent.EventType() == serf.EventMemberFailed || memberEvent.EventType() == serf.EventMemberReap {
 
-						if leader.Error() == nil {
+						if err := leader.Error(); err == nil {
 							// Remove the server
 							f := s.raft.RemoveServer(raft.ServerID(addr), 0, 0)
 							if err := f.Error(); err != nil {
 								log.Fatalf("error removing server: %s", err)
 							}
+						} else {
+							// fmt.Println("Could not remove node", err)
 						}
 					}
 				}

@@ -76,8 +76,7 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 	for _, m := range seeds {
 		addrs, err := net.LookupHost(m)
 		if err != nil {
-			log.Printf("Syncman: Cant look up host %s error %v", m, err)
-			continue
+			log.Fatalf("Syncman: Cant look up host %s error %v\n", m, err)
 		}
 		nodes = append(nodes, node{Addr: addrs[0]})
 	}
