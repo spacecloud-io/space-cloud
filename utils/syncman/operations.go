@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-
-	"github.com/hashicorp/raft"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -15,15 +14,15 @@ import (
 
 // SetGlobalConfig sets the global config. This must be called before the Start command.
 func (s *SyncManager) SetGlobalConfig(c *config.Config) {
-	s.internalLock.Lock()
+	s.lock.Lock()
 	s.projectConfig = c
-	s.internalLock.Unlock()
+	s.lock.Unlock()
 }
 
 // GetGlobalConfig gets the global config
 func (s *SyncManager) GetGlobalConfig() *config.Config {
-	s.internalLock.Lock()
-	defer s.internalLock.Unlock()
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 	return s.projectConfig
 }
 
@@ -47,7 +46,9 @@ func makeRequest(method, token, url string, data *bytes.Buffer) error {
 	defer resp.Body.Close()
 
 	m := map[string]interface{}{}
-	json.NewDecoder(resp.Body).Decode(&m)
+	if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
+		return err
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		return errors.New(m["error"].(string))
@@ -59,18 +60,18 @@ func makeRequest(method, token, url string, data *bytes.Buffer) error {
 // SetOperationModeConfig applies the operation config to the raft log
 func (s *SyncManager) SetOperationModeConfig(token string, op *config.OperationConfig) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time
-	s.internalLock.Lock()
-	defer s.internalLock.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if s.raft.State() != raft.Leader {
+	if s.raft.VerifyLeader().Error() != nil {
 		// Marshal json into byte array
 		data, _ := json.Marshal(op)
 
 		// Get the raft leader addr
-		addr := s.raft.Leader()
+		addr := strings.Split(string(s.raft.Leader()), ":")[0]
 
 		// Make the http request
-		return makeRequest("POST", token, "http://"+string(addr)+":8080/v1/api/config/operation", bytes.NewBuffer(data))
+		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/operation", bytes.NewBuffer(data))
 	}
 
 	// Create a raft command
@@ -84,18 +85,18 @@ func (s *SyncManager) SetOperationModeConfig(token string, op *config.OperationC
 // SetProjectConfig applies the config to the raft log
 func (s *SyncManager) SetProjectConfig(token string, project *config.Project) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time
-	s.internalLock.Lock()
-	defer s.internalLock.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if s.raft.State() != raft.Leader {
+	if s.raft.VerifyLeader().Error() != nil {
 		// Marshal json into byte array
 		data, _ := json.Marshal(project)
 
 		// Get the raft leader addr
-		addr := s.raft.Leader()
+		addr := strings.Split(string(s.raft.Leader()), ":")[0]
 
 		// Make the http request
-		return makeRequest("POST", token, "http://"+string(addr)+":8080/v1/api/config", bytes.NewBuffer(data))
+		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/projects", bytes.NewBuffer(data))
 	}
 
 	// Validate the operation
@@ -117,18 +118,18 @@ func (s *SyncManager) SetProjectConfig(token string, project *config.Project) er
 // SetDeployConfig applies the config to the raft log
 func (s *SyncManager) SetDeployConfig(token string, deploy *config.Deploy) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time
-	s.internalLock.Lock()
-	defer s.internalLock.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if s.raft.State() != raft.Leader {
+	if s.raft.VerifyLeader().Error() != nil {
 		// Marshal json into byte array
 		data, _ := json.Marshal(deploy)
 
 		// Get the raft leader addr
-		addr := s.raft.Leader()
+		addr := strings.Split(string(s.raft.Leader()), ":")[0]
 
 		// Make the http request
-		return makeRequest("POST", token, "http://"+string(addr)+":8080/v1/api/config/deploy", bytes.NewBuffer(data))
+		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/deploy", bytes.NewBuffer(data))
 	}
 
 	// Create a raft command
@@ -142,16 +143,16 @@ func (s *SyncManager) SetDeployConfig(token string, deploy *config.Deploy) error
 // DeleteConfig applies the config to the raft log
 func (s *SyncManager) DeleteConfig(token, projectID string) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time
-	s.internalLock.Lock()
-	defer s.internalLock.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if s.raft.State() != raft.Leader {
+	if s.raft.VerifyLeader().Error() != nil {
 
 		// Get the raft leader addr
-		addr := s.raft.Leader()
+		addr := strings.Split(string(s.raft.Leader()), ":")[0]
 
 		// Make the http request
-		return makeRequest("DELETE", token, "http://"+string(addr)+":8080/v1/api/config/"+projectID, nil)
+		return makeRequest("DELETE", token, "http://"+string(addr)+":4122/v1/api/config/"+projectID, nil)
 	}
 
 	// Create a raft command
@@ -164,8 +165,8 @@ func (s *SyncManager) DeleteConfig(token, projectID string) error {
 
 // GetConfig returns the config present in the state
 func (s *SyncManager) GetConfig(projectID string) (*config.Project, error) {
-	s.internalLock.Lock()
-	defer s.internalLock.Unlock()
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {

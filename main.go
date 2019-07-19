@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	uuid "github.com/satori/go.uuid"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -13,6 +14,12 @@ import (
 )
 
 var essentialFlags = []cli.Flag{
+	cli.StringFlag{
+		Name:   "id",
+		Value:  "none",
+		Usage:  "The id to start space cloud with",
+		EnvVar: "NODE_ID",
+	},
 	cli.StringFlag{
 		Name:  "config",
 		Value: "config.yaml",
@@ -104,6 +111,7 @@ func main() {
 
 func actionRun(c *cli.Context) error {
 	// Load cli flags
+	nodeID := c.String("id")
 	configPath := c.String("config")
 	isProd := c.Bool("prod")
 	disableMetrics := c.Bool("disable-metrics")
@@ -120,8 +128,13 @@ func actionRun(c *cli.Context) error {
 	adminPass := c.String("admin-pass")
 	adminSecret := c.String("admin-secret")
 
+	// Generate a new id if not provided
+	if nodeID == "none" {
+		nodeID = uuid.NewV1().String()
+	}
+
 	// Project and env cannot be changed once space cloud has started
-	s := server.New(isProd)
+	s := server.New(nodeID, isProd)
 
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)

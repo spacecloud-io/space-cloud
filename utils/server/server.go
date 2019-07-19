@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	nats "github.com/nats-io/nats-server/v2/server"
 	"github.com/rs/cors"
-	uuid "github.com/satori/go.uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -41,8 +40,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(isProd bool) *Server {
-	nodeID := uuid.NewV1().String()
+func New(nodeID string, isProd bool) *Server {
 	r := mux.NewRouter()
 	d := deploy.New()
 	adminMan := admin.New(nodeID)
