@@ -34,6 +34,6 @@ func HandleMissionControl(staticPath string) http.HandlerFunc {
 		}
 
 		// If path does not exists serve the root index file
-		http.ServeFile(w, r, strings.TrimSuffix("/mission-control", "/")+"/index.html")
+		http.ServeFile(w, r, strings.TrimSuffix(staticPath, "/")+"/index.html")
 	}
 }
