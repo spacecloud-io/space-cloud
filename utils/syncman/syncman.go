@@ -2,10 +2,11 @@ package syncman
 
 import (
 	"log"
+	"net"
 	"sync"
 
-	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/raft"
+	"github.com/hashicorp/serf/serf"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/deploy"
@@ -15,37 +16,42 @@ import (
 
 // SyncManager syncs the project config between folders
 type SyncManager struct {
-	internalLock  sync.Mutex
+	lock          sync.RWMutex
 	raft          *raft.Raft
 	projectConfig *config.Config
 	configFile    string
 	gossipPort    string
 	raftPort      string
-	list          *memberlist.Memberlist
+	list          *serf.Serf
 	projects      *projects.Projects
 	deploy        *deploy.Module
+	myIP          string
+	serfEvents    chan serf.Event
+	bootstrap     string
 	adminMan      *admin.Manager
 }
 
+const (
+	bootstrapPending string = "pending"
+	bootstrapDone    string = "done"
+	bootstrapEvent   string = "bootstrap"
+)
+
 type node struct {
-	ID   string `json:"id"`
 	Addr string `json:"addr"`
 }
 
 // New creates a new instance of the sync manager
 func New(projects *projects.Projects, d *deploy.Module, adminMan *admin.Manager) *SyncManager {
 	// Create a SyncManger instance
-	s := new(SyncManager)
-	s.deploy = d
-	s.projects = projects
-	s.adminMan = adminMan
-	return s
+	return &SyncManager{adminMan: adminMan, myIP: getOutboundIP(), serfEvents: make(chan serf.Event, 16),
+		bootstrap: bootstrapPending, deploy: d, projects: projects}
 }
 
 // Start begins the sync manager operations
 func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string, seeds []string) error {
 	// Save the ports
-	s.internalLock.Lock()
+	s.lock.Lock()
 	s.gossipPort = gossipPort
 	s.raftPort = raftPort
 
@@ -64,16 +70,23 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 		}
 	}
 
-	s.internalLock.Unlock()
+	s.lock.Unlock()
 
-	// Start the membership protocol
-	if err := s.initMembership(seeds); err != nil {
-		return err
+	nodes := []node{}
+	for _, m := range seeds {
+		addrs, err := net.LookupHost(m)
+		if err != nil {
+			log.Printf("Syncman: Cant look up host %s error %v", m, err)
+			continue
+		}
+		nodes = append(nodes, node{Addr: addrs[0]})
 	}
 
-	nodes := []*node{}
-	for _, m := range s.list.Members() {
-		nodes = append(nodes, &node{ID: m.Name, Addr: m.Addr.String() + ":" + raftPort})
+	go s.handleSerfEvents()
+
+	// Start the membership protocol
+	if err := s.initMembership(nodes); err != nil {
+		return err
 	}
 
 	if err := s.initRaft(nodes); err != nil {
@@ -81,9 +94,4 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 	}
 
 	return nil
-}
-
-// ClusterSize returns the size of the member list
-func (s *SyncManager) ClusterSize() int {
-	return s.list.NumMembers()
 }

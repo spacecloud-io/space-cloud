@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"runtime"
 	"time"
@@ -113,7 +111,7 @@ func (s *Server) RoutineMetrics() {
 	// Connect to metrics Server
 	trans, err := newTransport("spaceuptech.com", "11001", true)
 	if err != nil {
-		fmt.Println("Metrics Error -", err)
+		//fmt.Println("Metrics Error -", err)
 		return
 	}
 
@@ -127,12 +125,12 @@ func (s *Server) RoutineMetrics() {
 	update["$set"] = set
 	status, err := trans.update(context.TODO(), m, "upsert", find, update)
 	if err != nil {
-		fmt.Println("Metrics Error -", err)
+		//fmt.Println("Metrics Error -", err)
 		return
 	}
 
 	if status != 200 {
-		fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
+		//fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
 		return
 	}
 
@@ -151,11 +149,11 @@ func (s *Server) RoutineMetrics() {
 		update["$set"] = set
 		status, err := trans.update(context.TODO(), m, "one", find, update)
 		if err != nil {
-			log.Println("Metrics Error -", err)
+			//log.Println("Metrics Error -", err)
 		}
 
 		if status != 200 {
-			log.Println("Metrics Error - Invalid status code ", status)
+			//log.Println("Metrics Error - Invalid status code ", status)
 		}
 	}
 }
