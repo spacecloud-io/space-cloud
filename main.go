@@ -76,7 +76,7 @@ var essentialFlags = []cli.Flag{
 		Value:  "",
 	},
 	cli.StringFlag{
-		Name:   "admin-sercret",
+		Name:   "admin-secret",
 		Usage:  "Set the admin secret",
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
