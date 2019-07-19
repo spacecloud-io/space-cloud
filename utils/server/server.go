@@ -32,6 +32,7 @@ import (
 type Server struct {
 	nodeID         string
 	router         *mux.Router
+	routerSecure   *mux.Router
 	auth           *auth.Module
 	crud           *crud.Module
 	user           *userman.Module
@@ -50,6 +51,7 @@ type Server struct {
 // New creates a new server instance
 func New(nodeID string, isProd bool) *Server {
 	r := mux.NewRouter()
+	r2 := mux.NewRouter()
 	c := crud.Init()
 	rt := realtime.Init(c)
 	s := static.Init()
@@ -62,7 +64,7 @@ func New(nodeID string, isProd bool) *Server {
 
 	fmt.Println("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, router: r, auth: a, crud: c,
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
 		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
 		functions: fn, realtime: rt, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }
@@ -92,11 +94,10 @@ func (s *Server) Start(seeds string) error {
 		ExposedHeaders: []string{"Authorization", "Content-Type"},
 	})
 
-	handler := corsObj.Handler(s.router)
-
 	fmt.Println("Starting http server on port: " + utils.PortHTTP)
 
 	if s.ssl != nil && s.ssl.Enabled {
+		handler := corsObj.Handler(s.routerSecure)
 		fmt.Println("Starting https server on port: " + utils.PortHTTPSecure)
 		go func() {
 
@@ -105,6 +106,8 @@ func (s *Server) Start(seeds string) error {
 			}
 		}()
 	}
+
+	handler := corsObj.Handler(s.router)
 
 	fmt.Println()
 	fmt.Println("\t Hosting mission control on http://localhost:" + utils.PortHTTP + "/mission-control/")
