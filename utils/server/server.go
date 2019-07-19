@@ -29,6 +29,7 @@ type Server struct {
 	nodeID         string
 	lock           sync.RWMutex
 	router         *mux.Router
+	routerSecure   *mux.Router
 	isProd         bool
 	nats           *nats.Server
 	projects       *projects.Projects
@@ -42,11 +43,12 @@ type Server struct {
 // New creates a new server instance
 func New(nodeID string, isProd bool) *Server {
 	r := mux.NewRouter()
+	r2 := mux.NewRouter()
 	d := deploy.New()
 	adminMan := admin.New(nodeID)
 	projects := projects.New(driver.New())
 	syncMan := syncman.New(projects, d, adminMan)
-	return &Server{nodeID: nodeID, router: r, projects: projects, isProd: isProd,
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: projects, isProd: isProd,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
 		deploy: d,
 	}
@@ -77,11 +79,10 @@ func (s *Server) Start(seeds string) error {
 		ExposedHeaders: []string{"Authorization", "Content-Type"},
 	})
 
-	handler := corsObj.Handler(s.router)
-
 	fmt.Println("Starting http server on port: " + utils.PortHTTP)
 
 	if s.ssl != nil && s.ssl.Enabled {
+		handler := corsObj.Handler(s.routerSecure)
 		fmt.Println("Starting https server on port: " + utils.PortHTTPSecure)
 		go func() {
 
@@ -90,6 +91,8 @@ func (s *Server) Start(seeds string) error {
 			}
 		}()
 	}
+
+	handler := corsObj.Handler(s.router)
 
 	fmt.Println()
 	fmt.Println("\t Hosting mission control on http://localhost:" + utils.PortHTTP + "/mission-control/")

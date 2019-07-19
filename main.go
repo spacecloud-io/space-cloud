@@ -142,11 +142,6 @@ func actionRun(c *cli.Context) error {
 		conf = config.GenerateEmptyConfig()
 	}
 
-	// Set the ssl config
-	if sslCert != "none" && sslKey != "none" {
-		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
-	}
-
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
 
@@ -161,6 +156,21 @@ func actionRun(c *cli.Context) error {
 		conf.Admin.Secret = adminSecret
 	}
 
+	// Download and host mission control
+	staticPath, err := initMissionContol(utils.BuildVersion)
+	if err != nil {
+		return err
+	}
+
+	// Initialise the routes
+	s.InitRoutes(profiler, staticPath)
+
+	// Set the ssl config
+	if sslCert != "none" && sslKey != "none" {
+		s.InitSecureRoutes(profiler, staticPath)
+		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
+	}
+
 	// Configure all modules
 	s.SetConfig(conf)
 
@@ -168,14 +178,6 @@ func actionRun(c *cli.Context) error {
 	if !disableMetrics {
 		go s.RoutineMetrics()
 	}
-
-	// Download and host mission control
-	staticPath, err := initMissionContol(utils.BuildVersion)
-	if err != nil {
-		return err
-	}
-
-	s.Routes(profiler, staticPath)
 
 	// Start nats if not disabled
 	if !disableNats {

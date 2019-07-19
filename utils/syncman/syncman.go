@@ -17,6 +17,7 @@ import (
 // SyncManager syncs the project config between folders
 type SyncManager struct {
 	lock          sync.RWMutex
+	membersLock   sync.Mutex
 	raft          *raft.Raft
 	projectConfig *config.Config
 	configFile    string
