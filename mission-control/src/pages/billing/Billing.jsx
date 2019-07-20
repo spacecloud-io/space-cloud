@@ -54,7 +54,7 @@ class Billing extends React.Component {
 							<EmptyState
 								graphics={someGraphics}
 								handleClick={triggerSignin}
-								desc="Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae qui id nulla ipsa maiores fugit ipsum inventore esse iste magnam. Porro blanditiis possimus animi voluptatum? Similique vel illo at asperiores."
+								desc="With Space Cloud Enterprise you get the power to experience Firebase + Heroku on your Kubernetes cluster and much more. Signin to access the Space Cloud Enterprise and unlock new powers!"
 								actionText="Register / Login" />
 						}
 					</div>

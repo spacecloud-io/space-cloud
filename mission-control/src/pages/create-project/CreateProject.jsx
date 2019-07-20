@@ -64,22 +64,23 @@ class CreateProject extends Component {
           <div className="cards">
             <Row>
               <Col span={6}>
+
                 <StarterTemplate icon={postgresIcon} onClick={() => this.handleSelect("sql-postgres")}
-                  heading="POSTGRESQL" desc="Lorem ipsum dolor sit amet, cotetur adipiscing elit. Lorem ipsum."
+                  heading="POSTGRESQL" desc="The world's most advanced open source database."
                   recommended={false} selected={this.state.selected}
                   active={this.state.selected === "sql-postgres"} />
               </Col>
 
               <Col span={6}>
                 <StarterTemplate icon={mongoIcon} onClick={() => this.handleSelect("mongo")}
-                  heading="MONGODB" desc="Lorem ipsum dolor sit amet, cotetur adipiscing elit."
+                  heading="MONGODB" desc="A open-source cross-platform document- oriented database."
                   recommended={false} selected={this.state.selected}
                   active={this.state.selected === "mongo"} />
               </Col>
 
               <Col span={6}>
                 <StarterTemplate icon={mysqlIcon} onClick={() => this.handleSelect("sql-mysql")}
-                  heading="MYSQL" desc="Lorem ipsum dolor sit amet, cotetur adipiscing elit. Lorem ipsum dolor."
+                  heading="MYSQL" desc="The world's most popular open source database."
                   recommended={false} selected={this.state.selected}
                   active={this.state.selected === "sql-mysql"} />
               </Col>

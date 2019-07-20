@@ -32,7 +32,7 @@ function Deploy({ mode, deployConfig, handleChange }) {
             <EmptyState
               graphics={someGraphics}
               handleClick={openPlansPage}
-              desc="Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae qui id nulla ipsa maiores fugit ipsum inventore esse iste magnam. Porro blanditiis possimus animi voluptatum? Similique vel illo at asperiores."
+              desc="With Space Cloud Enterprise you get the power to experience Firebase + Heroku on your Kubernetes cluster and much more. Explore the plans that suits your need and upgrade to unlock new potentials!"
               actionText="Explore Plans" />
           }
         </div>

@@ -28,7 +28,7 @@ function SigninModal({ handleOauthLogin, visible, handleCancel }) {
         <div className="background" />
         <div className="content">
           <h1>Signin to upgrade!</h1>
-          <p className="desc">Lorem ipsum dolor sit amet consectetur adipisicing elit. Animi id libero dignissimos incidunt blanditiis officiis nam, facilis, rem quo quos itaque laborum odit perferendis provident corporis nesciunt assumenda adipisci! Dolor.</p>
+          <p className="desc">With Space Cloud Enterprise you get the power to experience Firebase + Heroku on your Kubernetes cluster and much more. Signin to access the Space Cloud Enterprise and unlock new powers!</p>
           <div className="footer">
             <img src={googleIcon} alt="" onClick={() => handleOauthLogin("google")} />
             <img src={githubIcon} alt="" onClick={() => handleOauthLogin("twitter")} />
