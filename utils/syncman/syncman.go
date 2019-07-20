@@ -75,6 +75,9 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 
 	nodes := []node{}
 	for _, m := range seeds {
+		if m == "127.0.0.1" {
+			m = s.myIP
+		}
 		addrs, err := net.LookupHost(m)
 		if err != nil {
 			log.Fatalf("Syncman: Cant look up host %s error %v\n", m, err)

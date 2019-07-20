@@ -55,7 +55,7 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "seeds",
-		Value:  "",
+		Value:  "127.0.0.1",
 		Usage:  "Seed nodes to cluster with",
 		EnvVar: "SEEDS",
 	},
