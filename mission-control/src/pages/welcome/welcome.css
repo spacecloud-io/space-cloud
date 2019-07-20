@@ -1,5 +1,6 @@
 .welcome-page {
   background-image: url("../../assets/Wave.svg");
+  background-size: cover;
   height: 100vh;
   overflow: hidden;
   text-align: center;

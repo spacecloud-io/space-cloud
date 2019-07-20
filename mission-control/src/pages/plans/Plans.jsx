@@ -12,6 +12,12 @@ import Header from '../../components/header/Header';
 import Plan from "../../components/plan/Plan";
 import '../../index.css'
 
+const NotifyContent = (props) => (
+	<span>
+		Follow <a href="https://spaceuptech.com/docs">this guide</a> to deploy apps on Kubernetes via Space Cloud
+	</span>
+)
+
 function Plans({ mode, handleModeChange }) {
 	return (
 		<div>
@@ -67,6 +73,10 @@ const mapDispatchToProps = (dispatch) => {
 			const newOperationConfig = Object.assign({}, get(store.getState(), "operationConfig", {}), { mode: mode })
 			service.saveOperationConfig(newOperationConfig).then(() => {
 				dispatch(set("operationConfig", newOperationConfig))
+				notify("success", "Success", "Plan changed successfully")
+				if (mode > 0) {
+					notify("info", "Next steps", <NotifyContent/>)
+				}
 			}).catch(error => {
 				console.log("Error", error)
 				notify("error", "Error", 'Could not change mode')
