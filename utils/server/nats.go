@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	nats "github.com/nats-io/nats-server/server"
+	nats "github.com/nats-io/nats-server/v2/server"
 )
 
 // DefaultNatsOptions are the default setting to start nats with

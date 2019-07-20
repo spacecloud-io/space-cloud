@@ -39,13 +39,14 @@ func HandleStaticRequest(static *static.Module) http.HandlerFunc {
 
 		// Its a proxy request
 		if route.Proxy != "" {
+			addr := route.Proxy + path
+
 			// See if websocket needs to be proxied
 			if route.Protocol == "ws" {
-				routineWebsocket(w, r, route.Proxy)
+				routineWebsocket(w, r, addr)
 				return
 			}
 
-			addr := route.Proxy + path
 			req, err := http.NewRequest(r.Method, addr, r.Body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusNotFound)
@@ -56,6 +57,9 @@ func HandleStaticRequest(static *static.Module) http.HandlerFunc {
 			req.Header = make(http.Header)
 			if contentType, p := r.Header["Content-Type"]; p {
 				req.Header["Content-Type"] = contentType
+			}
+			if contentType, p := r.Header["Authorization"]; p {
+				req.Header["Authorization"] = contentType
 			}
 
 			// Make the http client request

@@ -23,7 +23,7 @@ test_config.yaml
 config.yaml
 
 # Helper scripts
-kube/**
+# kube/**
 
 # docs and learn
 docs/**

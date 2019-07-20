@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	uuid "github.com/satori/go.uuid"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -13,6 +14,12 @@ import (
 )
 
 var essentialFlags = []cli.Flag{
+	cli.StringFlag{
+		Name:   "id",
+		Value:  "none",
+		Usage:  "The id to start space cloud with",
+		EnvVar: "NODE_ID",
+	},
 	cli.StringFlag{
 		Name:  "config",
 		Value: "config.yaml",
@@ -47,7 +54,7 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "seeds",
-		Value:  "",
+		Value:  "127.0.0.1",
 		Usage:  "Seed nodes to cluster with",
 		EnvVar: "SEEDS",
 	},
@@ -69,7 +76,7 @@ var essentialFlags = []cli.Flag{
 		Value:  "",
 	},
 	cli.StringFlag{
-		Name:   "admin-sercret",
+		Name:   "admin-secret",
 		Usage:  "Set the admin secret",
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
@@ -104,6 +111,7 @@ func main() {
 
 func actionRun(c *cli.Context) error {
 	// Load cli flags
+	nodeID := c.String("id")
 	configPath := c.String("config")
 	isProd := c.Bool("prod")
 	disableMetrics := c.Bool("disable-metrics")
@@ -120,18 +128,18 @@ func actionRun(c *cli.Context) error {
 	adminPass := c.String("admin-pass")
 	adminSecret := c.String("admin-secret")
 
+	// Generate a new id if not provided
+	if nodeID == "none" {
+		nodeID = uuid.NewV1().String()
+	}
+
 	// Project and env cannot be changed once space cloud has started
-	s := server.New(isProd)
+	s := server.New(nodeID, isProd)
 
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
-	}
-
-	// Set the ssl config
-	if sslCert != "none" && sslKey != "none" {
-		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
 	// Save the config file path for future use
@@ -148,6 +156,21 @@ func actionRun(c *cli.Context) error {
 		conf.Admin.Secret = adminSecret
 	}
 
+	// Download and host mission control
+	staticPath, err := initMissionContol(utils.BuildVersion)
+	if err != nil {
+		return err
+	}
+
+	// Initialise the routes
+	s.InitRoutes(profiler, staticPath)
+
+	// Set the ssl config
+	if sslCert != "none" && sslKey != "none" {
+		s.InitSecureRoutes(profiler, staticPath)
+		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
+	}
+
 	// Configure all modules
 	s.SetConfig(conf)
 
@@ -155,14 +178,6 @@ func actionRun(c *cli.Context) error {
 	if !disableMetrics {
 		go s.RoutineMetrics()
 	}
-
-	// Download and host mission control
-	staticPath, err := initMissionContol(utils.BuildVersion)
-	if err != nil {
-		return err
-	}
-
-	s.Routes(profiler, staticPath)
 
 	// Start nats if not disabled
 	if !disableNats {

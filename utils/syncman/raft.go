@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -17,7 +18,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (s *SyncManager) initRaft(seeds []*node) error {
+func (s *SyncManager) initRaft(seeds []node) error {
 	// Create the snapshot store. This allows the Raft to truncate the log.
 	snapshots, err := raft.NewFileSnapshotStore(utils.RaftSnapshotDirectory, 3, os.Stderr)
 	if err != nil {
@@ -33,22 +34,23 @@ func (s *SyncManager) initRaft(seeds []*node) error {
 	stableStore := boltDB
 
 	// Setup Raft communication.
-	addr, err := net.ResolveTCPAddr("tcp", ":"+s.raftPort)
+	addr, err := net.ResolveTCPAddr("tcp", s.myIP+":"+s.raftPort)
 	if err != nil {
 		return err
 	}
 
-	transport, err := raft.NewTCPTransport(":"+s.raftPort, addr, 3, 10*time.Second, os.Stderr)
+	transport, err := raft.NewTCPTransport(s.myIP+":"+s.raftPort, addr, 3, 10*time.Second, ioutil.Discard)
 	if err != nil {
 		return err
 	}
 
 	// Setup Raft configuration.
 	config := raft.DefaultConfig()
-	config.LocalID = raft.ServerID(s.projectConfig.NodeID)
+	config.LocalID = raft.ServerID(s.myIP)
 	config.LogOutput = ioutil.Discard
 
 	// Instantiate the Raft systems.
+
 	r, err := raft.NewRaft(config, s, logStore, stableStore, snapshots, transport)
 	if err != nil {
 		return err
@@ -60,21 +62,30 @@ func (s *SyncManager) initRaft(seeds []*node) error {
 	servers := []raft.Server{}
 	for _, seed := range seeds {
 		servers = append(servers, raft.Server{
-			ID:      raft.ServerID(seed.ID),
-			Address: raft.ServerAddress(seed.Addr),
+			ID:      raft.ServerID(seed.Addr),
+			Address: raft.ServerAddress(seed.Addr + ":" + utils.PortRaft),
 		})
 	}
 
+	// fmt.Println("Bootstrapping cluster:", servers)
 	if err := r.BootstrapCluster(raft.Configuration{Servers: servers}).Error(); err != nil {
 		//r.AddVoter()
+		// fmt.Println("Syncman bootsrapping error:", err)
+	} else {
+		if err := s.list.UserEvent(bootstrapEvent, []byte(bootstrapDone), false); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	c := s.raft.GetConfiguration()
+	if err := c.Error(); err != nil {
+		log.Println("Syncman node sync error:", err)
 	}
 	return nil
 }
 
 // Apply applies a Raft log entry to the key-value store
 func (s *SyncManager) Apply(l *raft.Log) interface{} {
-	s.lock.Lock()
-	defer s.lock.Unlock()
 
 	var c model.RaftCommand
 	json.Unmarshal(l.Data, &c)
