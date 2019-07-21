@@ -3,8 +3,7 @@ import { connect } from 'react-redux';
 import { get, increment } from 'automate-redux';
 import store from '../../store';
 import service from '../../index';
-import { generateId, notify, isUserSignedIn, triggerSignin } from "../../utils"
-import { PAYU_MERCHANT_KEY } from "../../constants"
+import { notify, isUserSignedIn, triggerSignin } from "../../utils"
 
 import { Tabs } from 'antd';
 import './billing.css';
@@ -46,7 +45,7 @@ class Billing extends React.Component {
 								<div>
 									<TotalCredit amount={this.props.totalCredit} handleClick={() => this.props.handleRechargeClick()} />
 									<div className="interval-text"></div>
-									<Upgrade />
+									{this.props.mode === 0 && <Upgrade />}
 									<BillingTable data={this.props.billing} title={'Usage this month'} />
 								</div>
 							</React.Fragment>
@@ -83,7 +82,7 @@ const mapDispatchToProps = (dispatch) => {
 		handleRechargeClick: () => {
 			const { email, name } = get(store.getState(), "user", {})
 			service.requestPayment(email, name).then(() => {
-				notify("success", "Hey Buddy", "We are excited that you want to pay! You will receive an email within a day from our team to guide you through the next steps for payment")
+				notify("success", "Hey Buddy", "We are excited that you want to pay! You will receive an email within a day from our team to guide you through the next steps for payment", 20)
 			}).catch(ex => {
 				console.log("Error", ex)
 				notify("error", "Error", "Error requesting payment")
