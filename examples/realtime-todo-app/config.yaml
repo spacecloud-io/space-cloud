@@ -42,6 +42,7 @@ projects:
       enabled: false
       storeType: local
       conn: ./
+      endpoint: ""
       rules:
       - prefix: /
         rule:
@@ -58,11 +59,23 @@ projects:
         prefix: /
         host: ""
         proxy: ""
-ssl: null
-admin: 
-  user: admin
-  pass: 123
-  role: captain-cloud
-  secret: shhhhhhh
+ssl:
+  enabled: false
+  crt: ""
+  key: ""
+admin:
+  secret: some-secret
+  operation:
+    mode: 0
+    userId: ""
+    key: ""
+  users:
+  - user: admin
+    pass: "123"
+    scopes:
+      all:
+      - all
+deploy:
+  enabled: false
 cluster: ""
 nodeId: aefc31ee-9d7e-11e9-865a-60f81dd0a692
