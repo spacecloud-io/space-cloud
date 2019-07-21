@@ -4,27 +4,11 @@ import { Provider } from "react-redux";
 import store from "./store";
 import { handleClusterLoginSuccess, handleSpaceUpLoginSuccess } from './utils';
 import Service from "./services/service";
-import * as firebase from "firebase/app";
 
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import './index.css'
 
-
-
-
-var firebaseConfig = {
-  apiKey: "AIzaSyDDk3Nx9Zgft5wfT9oQxJSiObIOYSuIV34",
-  authDomain: "space-cloud.firebaseapp.com",
-  databaseURL: "https://space-cloud.firebaseio.com",
-  projectId: "space-cloud",
-  storageBucket: "",
-  messagingSenderId: "332138526349",
-  appId: "1:332138526349:web:a3c24f2fe681c03e"
-};
-
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
 
 const service = new Service()
 

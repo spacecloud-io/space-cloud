@@ -18,7 +18,7 @@ function Login(props) {
             <div className="left-content">
               <img className="logo" src={logo} alt="logo" /><br />
               <div className="welcome">Welcome back!</div>
-              <div className="text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.</div><br />
+              <div className="text">Login to configure your Space Cloud cluster.</div><br />
               <img src={loginBg} alt="login" height="240" width="360" /><br />
             </div>
           </Col>

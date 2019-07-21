@@ -10,8 +10,6 @@ export const defaultDbConnectionStrings = {
   [dbTypes.MYSQL]: "user:my-secret-pwd@/project"
 }
 
-export const PAYU_MERCHANT_KEY = "FkS68IbH"
-
 export const SPACE_API_PROJECT = "space-cloud"
-export const SPACE_API_URL = "https://spaceuptech.com"
+export const SPACE_API_URL = "https://api.spaceuptech.com"
 

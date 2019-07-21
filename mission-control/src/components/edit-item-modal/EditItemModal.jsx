@@ -29,7 +29,7 @@ function EditItemModal(props) {
           <div className="content">
             <Header name={props.name} color="#000" fontSize="18px" />
             <span className="desc">{props.desc}</span>
-            <Form onSubmit={handleSubmit} className="login-form">
+            <Form onSubmit={handleSubmit} className="edit-form">
               <Form.Item>
                 {getFieldDecorator('item', {
                   rules: [{ required: true, message: 'Please input a valid value!'}],

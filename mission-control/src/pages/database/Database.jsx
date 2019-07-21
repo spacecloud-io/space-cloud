@@ -15,7 +15,7 @@ import { get, set } from "automate-redux";
 
 function Database(props) {
   const cards = [{ graphics: mysql, name: "MySQL", desc: "The world's most popular open source database.", key: "sql-mysql" },
-  { graphics: postgresql, name: "PostgreSQL", desc: "The world's most popular open source database.", key: "sql-postgres" },
+  { graphics: postgresql, name: "PostgreSQL", desc: "The world's most advanced open source database.", key: "sql-postgres" },
   { graphics: mongodb, name: "MongoDB", desc: "A open-source cross-platform document- oriented database.", key: "mongo" }]
 
   if (props.selectedDb) {

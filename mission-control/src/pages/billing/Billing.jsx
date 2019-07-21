@@ -3,8 +3,7 @@ import { connect } from 'react-redux';
 import { get, increment } from 'automate-redux';
 import store from '../../store';
 import service from '../../index';
-import { generateId, notify, isUserSignedIn, triggerSignin } from "../../utils"
-import { PAYU_MERCHANT_KEY } from "../../constants"
+import { notify, isUserSignedIn, triggerSignin } from "../../utils"
 
 import { Tabs } from 'antd';
 import './billing.css';
@@ -40,13 +39,13 @@ class Billing extends React.Component {
 					<div className="page-content">
 						{this.props.signedIn ?
 							<React.Fragment>
-								<RechargeModal visible={this.state.isRechargeModalVisible}
+								{/* <RechargeModal visible={this.state.isRechargeModalVisible}
 									handleCancel={() => this.handleRechargeModalVisibility(false)}
-									handleSubmit={(option) => this.props.handleRecharge(option)} />
+									handleSubmit={(option) => this.props.handleRecharge(option)} /> */}
 								<div>
-									<TotalCredit amount={this.props.totalCredit} handleClick={() => this.handleRechargeModalVisibility(true)} />
+									<TotalCredit amount={this.props.totalCredit} handleClick={() => this.props.handleRechargeClick()} />
 									<div className="interval-text"></div>
-									<Upgrade />
+									{this.props.mode === 0 && <Upgrade />}
 									<BillingTable data={this.props.billing} title={'Usage this month'} />
 								</div>
 							</React.Fragment>
@@ -54,7 +53,7 @@ class Billing extends React.Component {
 							<EmptyState
 								graphics={someGraphics}
 								handleClick={triggerSignin}
-								desc="Lorem ipsum dolor sit amet consectetur adipisicing elit. Vitae qui id nulla ipsa maiores fugit ipsum inventore esse iste magnam. Porro blanditiis possimus animi voluptatum? Similique vel illo at asperiores."
+								desc="With Space Cloud Enterprise you get the power to experience Firebase + Heroku on your Kubernetes cluster and much more. Signin to access the Space Cloud Enterprise and unlock new powers!"
 								actionText="Register / Login" />
 						}
 					</div>
@@ -80,58 +79,13 @@ const mapStateToProps = (state, ownProps) => {
 
 const mapDispatchToProps = (dispatch) => {
 	return {
-		handleRecharge: option => {
-			// Note: Amount is to be expressed in stringified float with double digit precision otherwise PAYU hash does not matches 
-			let amount = "10.00", extraCredits = 0
-			switch (option) {
-				case 1:
-					amount = "100.00"
-					extraCredits = 10
-					break
-				case 2:
-					amount = "1000.00"
-					extraCredits = 150
-					break
-			}
-			//Create a Data object that is to be passed to LAUNCH method of Bolt
-			let pd = {
-				key: PAYU_MERCHANT_KEY, txnid: generateId().substring(0, 29),
-				amount: amount, udf1: extraCredits, udf2: '', udf3: '', udf4: '', udf5: '',
-				firstname: get(store.getState(), "user.name").split(" ")[0], email: get(store.getState(), "user.email"),
-				phone: '6111111111', productinfo: `Space Cloud Enterprise Credits`, hash: '',
-				surl: 'https://www.payumoney.com/merchant-dashboard/#/transactions',
-				furl: 'https://www.payumoney.com/merchant-dashboard/#/transactions'
-			}
-
-			// Data to be Sent to API to generate hash.
-			let data = {
-				txnid: pd.txnid, email: pd.email, amount: pd.amount, productinfo: pd.productinfo, firstname: pd.firstname, udf1: pd.udf1
-			}
-
-			service.startPayment(data).then(hash => {
-				pd.hash = hash
-				window.bolt.launch(pd, {
-					responseHandler: function (response) {
-						// your payment response Code goes here
-						if (response.response.txnStatus !== "CANCEL") {
-							service.completePayment(Object.assign({}, response.response, { udf1: pd.udf1 })).then(() => {
-								dispatch(increment("credits", Number(amount) + extraCredits))
-								notify("success", "Success", "Payment was successfull")
-							}).catch(ex => {
-								console.log("Error", ex)
-								notify("error", "Error", "Payment failed")
-							})
-						}
-					},
-					catchException: function (response) {
-						console.log("Exception", response)
-						notify("error", "Error", "Something went wrong")
-					}
-				});
-
+		handleRechargeClick: () => {
+			const { email, name } = get(store.getState(), "user", {})
+			service.requestPayment(email, name).then(() => {
+				notify("success", "Hey Buddy", "We are excited that you want to pay! You will receive an email within a day from our team to guide you through the next steps for payment", 20)
 			}).catch(ex => {
 				console.log("Error", ex)
-				notify("error", "Error", "Payment could not be initiated")
+				notify("error", "Error", "Error requesting payment")
 			})
 		},
 		handleRangeChange: (dateStringprops) => {

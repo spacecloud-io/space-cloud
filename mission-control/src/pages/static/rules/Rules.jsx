@@ -42,23 +42,23 @@ const Rules = (props) => {
 
 const mapStateToProps = (state) => {
 	return {
-		rules: get(state, `config.modules.static.rules`, []),
+		rules: get(state, `config.modules.static.routes`, []),
 	}
 };
 
 const mapDispatchToProps = (dispatch) => {
 	return {
 		handleRuleChange: (index, value) => {
-			let rules = get(store.getState(), "config.modules.static.rules", []).slice()
-			rules[index] = value
-			dispatch(set(`config.modules.static.rules`, rules))
+			let routes = get(store.getState(), "config.modules.static.routes", []).slice()
+			routes[index] = value
+			dispatch(set(`config.modules.static.routes`, routes))
 		},
 		handleCreateRule: () => {
 			const defaultRule = {
 				prefix: "/",
 				proxy: "http://localhost:3000"
 			}
-			dispatch(push(`config.modules.static.rules`, JSON.stringify(defaultRule, null, 2)))
+			dispatch(push(`config.modules.static.routes`, JSON.stringify(defaultRule, null, 2)))
 		},
 	};
 };

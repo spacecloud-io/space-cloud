@@ -17,16 +17,29 @@ class Service {
     this.spaceApi.setToken(token)
   }
 
-  oauthLogin(uid) {
+  spaceUpRegister(name, email, pass) {
     return new Promise((resolve, reject) => {
-      this.spaceApi.call("console-auth", "oauthComplete", { uid: uid }).then(({ status, data }) => {
+      this.spaceApi.call("console-auth", "signup", { name, email, pass }).then(({ status, data }) => {
         if (status !== 200 || !data.result.ack) {
-          reject(data.error)
+          reject(data.result.error)
           return
         }
 
         resolve({ token: data.result.token, user: data.result.user })
-      }).catch(ex => reject(ex))
+      }).catch(ex => reject(ex.toString()))
+    })
+  }
+
+  spaceUpLogin(email, pass) {
+    return new Promise((resolve, reject) => {
+      this.spaceApi.call("console-auth", "login", { email, pass }).then(({ status, data }) => {
+        if (status !== 200 || !data.result.ack) {
+          reject(data.result.error)
+          return
+        }
+
+        resolve({ token: data.result.token, user: data.result.user })
+      }).catch(ex => reject(ex.toString()))
     })
   }
 
@@ -143,23 +156,9 @@ class Service {
     })
   }
 
-  startPayment(data) {
+  requestPayment(email, name) {
     return new Promise((resolve, reject) => {
-      this.spaceApi.call('payment-service', 'startPayment', data, 5000)
-        .then(({ status, data }) => {
-          if (status !== 200 || !data.result.ack) {
-            reject()
-            return
-          }
-
-          resolve(data.result.hash)
-        }).catch(ex => reject(ex))
-    })
-  }
-
-  completePayment(data) {
-    return new Promise((resolve, reject) => {
-      this.spaceApi.call('payment-service', 'paymentResponse', data, 5000)
+      this.spaceApi.call('space-site', 'request-payment', { email: email, name: name }, 5000)
         .then(({ status, data }) => {
           if (status !== 200 || !data.result.ack) {
             reject()

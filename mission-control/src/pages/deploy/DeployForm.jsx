@@ -37,7 +37,7 @@ function DeployForm(props) {
                 })(<Input style={{ width: 400 }} placeholder="Enter Namespace" />)}
               </Form.Item>
             </div>
-            <Tooltip placement="right" title="Lorem ipsum dolor sit amet.">
+            <Tooltip placement="right" title="Namespace in kubernetes">
               <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
             </Tooltip>
           </div>
@@ -52,7 +52,7 @@ function DeployForm(props) {
                 })(<Input style={{ width: 400 }} placeholder="Enter URL" />)}
               </Form.Item>
             </div>
-            <Tooltip placement="right" title="Lorem ipsum dolor sit amet.">
+            <Tooltip placement="right" title="URL of the registry">
               <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
             </Tooltip>
           </div>
@@ -65,7 +65,7 @@ function DeployForm(props) {
                 })(<Input style={{ width: 400 }} placeholder="Enter ID" />)}
               </Form.Item>
             </div>
-            <Tooltip placement="right" title="Lorem ipsum dolor sit amet.">
+            <Tooltip placement="right" title="User ID">
               <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
             </Tooltip>
           </div>
@@ -78,7 +78,7 @@ function DeployForm(props) {
                 })(<Input style={{ width: 400 }} placeholder="Enter Key" />)}
               </Form.Item>
             </div>
-            <Tooltip placement="right" title="Lorem ipsum dolor sit amet.">
+            <Tooltip placement="right" title="API key">
               <span style={{ height: 20 }}><i class="material-icons help">help_outline</i></span>
             </Tooltip>
           </div>

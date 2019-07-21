@@ -45,8 +45,8 @@ export const adjustConfig = (config) => {
   }
 
   // Adjust static module rules
-  if (config.modules && config.modules.static && config.modules.static.rules) {
-    config.modules.static.rules = config.modules.static.rules.map(rule => JSON.stringify(rule, null, 2))
+  if (config.modules && config.modules.static && config.modules.static.routes) {
+    config.modules.static.routes = config.modules.static.routes.map(rule => JSON.stringify(rule, null, 2))
   }
 
   return config
@@ -96,8 +96,8 @@ export const unAdjustConfig = (c) => {
   }
 
   // Unadjust file storage rules
-  if (config.modules && config.modules.static && config.modules.static.rules) {
-    config.modules.static.rules = config.modules.static.rules.map((rule, index) => {
+  if (config.modules && config.modules.static && config.modules.static.routes) {
+    config.modules.static.routes = config.modules.static.routes.map((rule, index) => {
       try {
         return JSON.parse(rule)
       } catch (error) {
@@ -156,7 +156,7 @@ export const generateProjectConfig = (name, dbType) => ({
     },
     auth: {},
     functions: {
-      enabled: false,
+      enabled: true,
       broker: "nats",
       conn: "nats://localhost:4222",
       rules: {}
@@ -235,7 +235,7 @@ export const handleSpaceUpLoginSuccess = (token) => {
       orchestrator: "kubernetes",
       namespace: "default",
       registry: {
-        url: "https://spaceuptech.com",
+        url: "https://api.spaceuptech.com",
         id: user.id,
         key: user.key
       }

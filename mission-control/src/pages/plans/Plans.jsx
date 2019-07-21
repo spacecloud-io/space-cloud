@@ -12,6 +12,12 @@ import Header from '../../components/header/Header';
 import Plan from "../../components/plan/Plan";
 import '../../index.css'
 
+const NotifyContent = (props) => (
+	<span>
+		Follow <a href="https://spaceuptech.com/blog/firebase-and-heroku-on-kubernetes">this guide</a> to deploy apps on Kubernetes via Space Cloud
+	</span>
+)
+
 function Plans({ mode, handleModeChange }) {
 	return (
 		<div>
@@ -20,7 +26,7 @@ function Plans({ mode, handleModeChange }) {
 				<Sidenav selectedItem="plans" />
 				<div className="page-content">
 					<Header name="Plans" color="#000" fontSize="22px" />
-					<p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequuntur soluta accusantium rem amet ratione corrupti laborum illo cumque sunt officiis nulla delectus nobis commodi corporis laudantium repudiandae voluptate, beatae libero!</p>
+					<p>We strongly believe in open source. That's why all development related features in Space Cloud will be open source forever. Our paid plans help you move faster by automating devops and providing support.</p>
 					<Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }} type="flex" style={{ marginTop: '48px' }}>
 						<Col span={8}>
 							<Plan
@@ -32,7 +38,7 @@ function Plans({ mode, handleModeChange }) {
 						<Col span={8}>
 							<Plan
 								name="Standard"
-								desc="Ease your deployment with Standard package. Deploy your frontend, microservices in one click"
+								desc="Experience Firebase + Heroku on your Kubernetes cluster!"
 								points={["Deploy to Kubernetes / Docker Swarm", "3 Projects"]}
 								pricing="10$/hour/instance" active={mode === 1} handleClick={() => handleModeChange(1)} />
 						</Col>
@@ -67,6 +73,10 @@ const mapDispatchToProps = (dispatch) => {
 			const newOperationConfig = Object.assign({}, get(store.getState(), "operationConfig", {}), { mode: mode })
 			service.saveOperationConfig(newOperationConfig).then(() => {
 				dispatch(set("operationConfig", newOperationConfig))
+				notify("success", "Success", "Plan changed successfully")
+				if (mode > 0) {
+					notify("info", "Next steps", <NotifyContent/>)
+				}
 			}).catch(error => {
 				console.log("Error", error)
 				notify("error", "Error", 'Could not change mode')
