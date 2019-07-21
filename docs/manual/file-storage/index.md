@@ -21,8 +21,7 @@ modules:
     storeType: local
     conn: /tmp/data
     rules:
-      rule1:
-        prefix: /
+      - prefix: /
         rule:
           create:
             rule: allow

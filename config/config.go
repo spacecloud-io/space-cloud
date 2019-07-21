@@ -4,21 +4,67 @@ import "github.com/spaceuptech/space-cloud/utils"
 
 // Config holds the entire configuration
 type Config struct {
-	Projects map[string]*Project `json:"projects" yaml:"projects"` // The key here is the project id
+	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
+	SSL      *SSL       `json:"ssl" yaml:"ssl"`
+	Admin    *Admin     `json:"admin" yaml:"admin"`
+	Deploy   Deploy     `json:"deploy" yaml:"deploy"`
+	Cluster  string     `json:"cluster" yaml:"cluster"`
+	NodeID   string     `json:"nodeId" yaml:"nodeId"`
+}
+
+// Deploy holds the deployment environment config
+type Deploy struct {
+	Orchestrator utils.OrchestratorType `json:"orchestrator,omitempty" yaml:"orchestrator,omitempty"`
+	Registry     Registry               `json:"registry,omitempty" yaml:"registry,omitempty"`
+	Namespace    string                 `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Enabled      bool                   `json:"enabled" yaml:"enabled"`
+}
+
+// Registry holds the details of the registry
+type Registry struct {
+	URL   string  `json:"url" yaml:"url"`
+	ID    string  `json:"id" yaml:"id"`
+	Key   string  `json:"key" yaml:"key"`
+	Token *string `json:"token,omitempty" yaml:"token,omitempty"`
 }
 
 // Project holds the project level configuration
 type Project struct {
-	ID      string   `json:"id" yaml:"id"`
 	Secret  string   `json:"secret" yaml:"secret"`
+	ID      string   `json:"id" yaml:"id"`
+	Name    string   `json:"name" yaml:"name"`
 	Modules *Modules `json:"modules" yaml:"modules"`
-	SSL     *SSL     `json:"ssl" yaml:"ssl"`
 }
+
+// Admin stores the admin credentials
+type Admin struct {
+	Secret    string          `json:"secret" yaml:"secret"`
+	Operation OperationConfig `json:"operatiop"`
+	Users     []AdminUser     `json:"users" yaml:"users"`
+}
+
+// OperationConfig holds the operation mode config
+type OperationConfig struct {
+	Mode   int    `json:"mode" yaml:"mode"`
+	UserID string `json:"userId" yaml:"userId"`
+	Key    string `json:"key" yaml:"key"`
+}
+
+// AdminUser holds the user credentials and scope
+type AdminUser struct {
+	User   string       `json:"user" yaml:"user"`
+	Pass   string       `json:"pass" yaml:"pass"`
+	Scopes ProjectScope `json:"scopes" yaml:"scopes"`
+}
+
+// ProjectScope contains the project level scope
+type ProjectScope map[string][]string // (project name -> []scopes)
 
 // SSL holds the certificate and key file locations
 type SSL struct {
-	Crt string `json:"crt" yaml:"crt"`
-	Key string `json:"key" yaml:"key"`
+	Enabled bool   `json:"enabled" yaml:"enabled"`
+	Crt     string `json:"crt" yaml:"crt"`
+	Key     string `json:"key" yaml:"key"`
 }
 
 // Modules holds the config of all the modules of that environment
@@ -39,6 +85,7 @@ type CrudStub struct {
 	Conn        string                `json:"conn" yaml:"conn"`
 	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
+	Enabled     bool                  `json:"enabled" yaml:"enabled"`
 }
 
 // TableRule contains the config at the collection level
@@ -50,16 +97,16 @@ type TableRule struct {
 // Rule is the authorisation object at the query level
 type Rule struct {
 	Rule    string                 `json:"rule" yaml:"rule"`
-	Eval    string                 `json:"eval" yaml:"eval"`
-	Type    string                 `json:"type" yaml:"type"`
-	F1      interface{}            `json:"f1" yaml:"f1"`
-	F2      interface{}            `json:"f2" yaml:"f2"`
-	Clauses []*Rule                `json:"clauses" yaml:"clauses"`
-	DB      string                 `json:"db" yaml:"db"`
-	Col     string                 `json:"col" yaml:"col"`
-	Find    map[string]interface{} `json:"find" yaml:"find"`
-	Service string                 `json:"service" yaml:"service"`
-	Func    string                 `json:"func" yaml:"func"`
+	Eval    string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
+	Type    string                 `json:"type,omitempty" yaml:"type,omitempty"`
+	F1      interface{}            `json:"f1,omitempty" yaml:"f1,omitempty"`
+	F2      interface{}            `json:"f2,omitempty" yaml:"f2,omitempty"`
+	Clauses []*Rule                `json:"clauses,omitempty" yaml:"clauses,omitempty"`
+	DB      string                 `json:"db,omitempty" yaml:"db,omitempty"`
+	Col     string                 `json:"col,omitempty" yaml:"col,omitempty"`
+	Find    map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
+	Service string                 `json:"service,omitempty" yaml:"service,omitempty"`
+	Func    string                 `json:"func,omitempty" yaml:"func,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -92,10 +139,11 @@ type Realtime struct {
 
 // FileStore holds the config for the file store module
 type FileStore struct {
-	Enabled   bool                 `json:"enabled" yaml:"enabled"`
-	StoreType string               `json:"storeType" yaml:"storeType"`
-	Conn      string               `json:"conn" yaml:"conn"`
-	Rules     map[string]*FileRule `json:"rules" yaml:"rules"`
+	Enabled   bool        `json:"enabled" yaml:"enabled"`
+	StoreType string      `json:"storeType" yaml:"storeType"`
+	Conn      string      `json:"conn" yaml:"conn"`
+	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
+	Rules     []*FileRule `json:"rules" yaml:"rules"`
 }
 
 // FileRule is the authorization object at the file rule level
@@ -112,8 +160,10 @@ type Static struct {
 
 // StaticRoute holds the config for each route
 type StaticRoute struct {
+	ID        string `json:"id,omitempty" yaml:"id,omitempty"`
 	Path      string `json:"path" yaml:"path"`
 	URLPrefix string `json:"prefix" yaml:"prefix"`
 	Host      string `json:"host" yaml:"host"`
 	Proxy     string `json:"proxy" yaml:"proxy"`
+	Protocol  string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 }

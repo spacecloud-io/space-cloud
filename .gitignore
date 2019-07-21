@@ -20,9 +20,15 @@ css
 .sass-cache
 
 space-cloud
+raft-store
 publish.sh
 
 test_config.yaml
+config.yaml
+
+# Helper scripts
+kube
+docker-build.sh
 
 #IDEs
 .idea

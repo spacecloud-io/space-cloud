@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nats-io/go-nats"
+	nats "github.com/nats-io/nats.go"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -66,29 +66,23 @@ func (m *Module) SetConfig(project string, conf *config.Realtime) error {
 		return nil
 	}
 
-	// Close the nats client if exists
-	if m.nc != nil {
-		m.nc.Close()
-	}
-
-	// Close the channel if exists
-	if m.feed != nil {
-		close(m.feed)
-	}
-
 	// Connect and create a new nats client
 	if conf.Broker != utils.Nats {
 		return errors.New("Realtime Error: Broker is not supported")
 	}
 
-	nc, err := nats.Connect(conf.Conn)
-	if err != nil {
-		return err
+	if m.nc == nil {
+		nc, err := nats.Connect(conf.Conn)
+		if err != nil {
+			return err
+		}
+
+		// Create new channel and start worker routines
+		m.feed = make(chan *nats.Msg, utils.RealtimeWorkerCount)
+		m.initWorkers(utils.RealtimeWorkerCount)
+		m.nc = nc
 	}
 
-	m.feed = make(chan *nats.Msg, utils.RealtimeWorkerCount)
-	m.initWorkers(utils.RealtimeWorkerCount)
-	m.nc = nc
 	m.enabled = true
 	return nil
 }

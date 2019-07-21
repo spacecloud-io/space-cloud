@@ -1,0 +1,19 @@
+.empty-state {
+  text-align: center;
+}
+
+.empty-state > img {
+  margin-bottom: 16px;
+}
+
+.empty-state > p {
+  color: #000;
+  width: 50%;
+  position: relative;
+  left: 17.5vw;
+  right: 17.5vw;
+}
+
+.empty-state .add-btn {
+  border-radius: 20px;
+}

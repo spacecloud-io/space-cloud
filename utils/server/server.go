@@ -1,14 +1,15 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
-	"sync"
+	"strings"
 
 	"github.com/gorilla/mux"
-	nats "github.com/nats-io/nats-server/server"
+	nats "github.com/nats-io/nats-server/v2/server"
 	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -22,25 +23,35 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	pb "github.com/spaceuptech/space-cloud/proto"
+	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/admin"
+	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
+// Server is the object which sets up the server and handles all server operations
 type Server struct {
-	lock      sync.Mutex
-	router    *mux.Router
-	auth      *auth.Module
-	crud      *crud.Module
-	user      *userman.Module
-	file      *filestore.Module
-	functions *functions.Module
-	realtime  *realtime.Module
-	static    *static.Module
-	isProd    bool
-	config    *config.Project
-	nats      *nats.Server
+	nodeID         string
+	router         *mux.Router
+	routerSecure   *mux.Router
+	auth           *auth.Module
+	crud           *crud.Module
+	user           *userman.Module
+	file           *filestore.Module
+	functions      *functions.Module
+	realtime       *realtime.Module
+	static         *static.Module
+	adminMan       *admin.Manager
+	isProd         bool
+	nats           *nats.Server
+	configFilePath string
+	syncMan        *syncman.SyncManager
+	ssl            *config.SSL
 }
 
-func New(isProd bool) *Server {
+// New creates a new server instance
+func New(nodeID string, isProd bool) *Server {
 	r := mux.NewRouter()
+	r2 := mux.NewRouter()
 	c := crud.Init()
 	rt := realtime.Init(c)
 	s := static.Init()
@@ -48,13 +59,29 @@ func New(isProd bool) *Server {
 	a := auth.Init(c, fn)
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
+	adminMan := admin.New()
+	syncMan := syncman.New(adminMan)
 
-	return &Server{router: r, auth: a, crud: c, user: u, file: f, static: s, functions: fn, realtime: rt, isProd: isProd}
+	fmt.Println("Creating a new server with id", nodeID)
+
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
+		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
+		functions: fn, realtime: rt, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
 }
 
-func (s *Server) Start(port, grpcPort string) error {
+// Start begins the server operations
+func (s *Server) Start(seeds string) error {
+	// Start gRPC server in a separate goroutine
+	go s.initGRPCServer()
 
-	go s.initGRPCServer(grpcPort)
+	// Start the sync manager
+	if seeds == "" {
+		seeds = "127.0.0.1"
+	}
+	array := strings.Split(seeds, ",")
+	if err := s.syncMan.Start(s.nodeID, s.configFilePath, utils.PortGossip, utils.PortRaft, array, s.LoadConfig); err != nil {
+		return err
+	}
 
 	// Allow cors
 	corsObj := cors.New(cors.Options{
@@ -67,72 +94,115 @@ func (s *Server) Start(port, grpcPort string) error {
 		ExposedHeaders: []string{"Authorization", "Content-Type"},
 	})
 
-	handler := corsObj.Handler(s.router)
+	fmt.Println("Starting http server on port: " + utils.PortHTTP)
 
-	fmt.Println("Starting http Server on port " + port)
+	if s.ssl != nil && s.ssl.Enabled {
+		handler := corsObj.Handler(s.routerSecure)
+		fmt.Println("Starting https server on port: " + utils.PortHTTPSecure)
+		go func() {
 
-	if s.config.SSL != nil {
-		return http.ListenAndServeTLS(":"+port, s.config.SSL.Crt, s.config.SSL.Key, handler)
+			if err := http.ListenAndServeTLS(":"+utils.PortHTTPSecure, s.ssl.Crt, s.ssl.Key, handler); err != nil {
+				fmt.Println("Error starting https server:", err)
+			}
+		}()
 	}
 
-	return http.ListenAndServe(":"+port, handler)
+	handler := corsObj.Handler(s.router)
+
+	fmt.Println()
+	fmt.Println("\t Hosting mission control on http://localhost:" + utils.PortHTTP + "/mission-control/")
+	fmt.Println()
+
+	fmt.Println("Space cloud is running on the specified ports :D")
+	return http.ListenAndServe(":"+utils.PortHTTP, handler)
 }
 
-func (s *Server) LoadConfig(config *config.Project) error {
-	s.lock.Lock()
-	s.config = config
-	s.lock.Unlock()
+// SetConfig sets the config
+func (s *Server) SetConfig(c *config.Config) {
+	s.ssl = c.SSL
+	s.syncMan.SetGlobalConfig(c)
+	s.adminMan.SetConfig(c.Admin)
+}
+
+// LoadConfig configures each module to to use the provided config
+func (s *Server) LoadConfig(config *config.Config) error {
+
+	if config.Projects == nil {
+		return errors.New("No projects provided")
+	}
+
+	p := config.Projects[0]
 
 	// Set the configuration for the auth module
-	s.auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions)
+	s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions)
 
 	// Set the configuration for the user management module
-	s.user.SetConfig(config.Modules.Auth)
+	s.user.SetConfig(p.Modules.Auth)
 
 	// Set the configuration for the file storage module
-	if err := s.file.SetConfig(config.Modules.FileStore); err != nil {
+	if err := s.file.SetConfig(p.Modules.FileStore); err != nil {
 		return err
 	}
 
 	// Set the configuration for the functions module
-	if err := s.functions.SetConfig(config.Modules.Functions); err != nil {
+	if err := s.functions.SetConfig(p.Modules.Functions); err != nil {
 		return err
 	}
 
 	// Set the configuration for the realtime module
-	if err := s.realtime.SetConfig(config.ID, config.Modules.Realtime); err != nil {
+	if err := s.realtime.SetConfig(p.ID, p.Modules.Realtime); err != nil {
 		return err
 	}
 
 	// Set the configuration for static module
-	if err := s.static.SetConfig(config.Modules.Static); err != nil {
+	if err := s.static.SetConfig(p.Modules.Static); err != nil {
 		return err
 	}
 
 	// Set the configuration for the crud module
-	return s.crud.SetConfig(config.Modules.Crud)
+	return s.crud.SetConfig(p.Modules.Crud)
 }
 
-func (s *Server) initGRPCServer(port string) {
-	lis, err := net.Listen("tcp", ":"+port)
+func (s *Server) initGRPCServer() {
+
+	if s.ssl != nil && s.ssl.Enabled {
+		lis, err := net.Listen("tcp", ":"+utils.PortGRPCSecure)
+		if err != nil {
+			log.Fatal("Failed to listen:", err)
+		}
+		creds, err := credentials.NewServerTLSFromFile(s.ssl.Crt, s.ssl.Key)
+		if err != nil {
+			log.Fatalln("Error: ", err)
+		}
+		options := []grpc.ServerOption{grpc.Creds(creds)}
+
+		grpcServer := grpc.NewServer(options...)
+		pb.RegisterSpaceCloudServer(grpcServer, s)
+
+		fmt.Println("Starting grpc secure server on port: " + utils.PortGRPCSecure)
+		go func() {
+			if err := grpcServer.Serve(lis); err != nil {
+				log.Fatal("Error starting grpc secure server:", err)
+			}
+		}()
+	}
+
+	lis, err := net.Listen("tcp", ":"+utils.PortGRPC)
 	if err != nil {
 		log.Fatal("Failed to listen:", err)
 	}
 
 	options := []grpc.ServerOption{}
-	if s.config.SSL != nil {
-		creds, err := credentials.NewServerTLSFromFile(s.config.SSL.Crt, s.config.SSL.Key)
-		if err != nil {
-			log.Fatalln("Error: ", err)
-		}
-		options = append(options, grpc.Creds(creds))
-	}
-
 	grpcServer := grpc.NewServer(options...)
 	pb.RegisterSpaceCloudServer(grpcServer, s)
 
-	fmt.Println("Starting gRPC Server on port: " + port)
+	fmt.Println("Starting grpc server on port: " + utils.PortGRPC)
 	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal("failed to serve:", err)
+		log.Fatal("Error starting grpc server:", err)
 	}
+}
+
+// SetConfigFilePath sets the config file path
+func (s *Server) SetConfigFilePath(configFilePath string) {
+	s.configFilePath = configFilePath
 }

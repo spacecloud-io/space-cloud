@@ -3,29 +3,20 @@ package amazons3
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spaceuptech/space-cloud/model"
 )
 
+// ListDir lists a directory in S3
 func (a *AmazonS3) ListDir(ctx context.Context, project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(a.region),
-	},
-	)
-	if err != nil {
-		fmt.Println("AmazonS3 Couldn't Establish Connection ", err)
-		return nil, err
-	}
-	svc := s3.New(sess)
+	svc := s3.New(a.client)
 
 	resp, _ := svc.ListObjects(&s3.ListObjectsInput{
 		Bucket:    aws.String(project),
@@ -52,6 +43,7 @@ func (a *AmazonS3) ListDir(ctx context.Context, project string, req *model.ListF
 	return result, nil
 }
 
+// ReadFile reads a file from S3
 func (a *AmazonS3) ReadFile(ctx context.Context, project, path string) (*model.File, error) {
 	u2 := uuid.NewV4()
 
@@ -59,15 +51,8 @@ func (a *AmazonS3) ReadFile(ctx context.Context, project, path string) (*model.F
 	if err != nil {
 		return nil, err
 	}
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(a.region),
-	},
-	)
-	if err != nil {
-		fmt.Println("AmazonS3 Couldn't Establish Connection ", err)
-		return nil, err
-	}
-	downloader := s3manager.NewDownloader(sess)
+
+	downloader := s3manager.NewDownloader(a.client)
 
 	_, err = downloader.Download(tmpfile,
 		&s3.GetObjectInput{

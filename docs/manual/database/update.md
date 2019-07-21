@@ -77,6 +77,7 @@ db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.Respo
     <pre>
       <code class="python">
 from space_api import API, AND, OR, COND
+
 api = API("books-app", "localhost:8081")
 db = api.my_sql()
 
@@ -157,79 +158,26 @@ db.updateOne('todos').where(cond('_id_', '==', 1))
   <div id="update-one-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
 HashMap<String, Object> set = new HashMap<>();
 set.put("name", "Book1");
-db.updateOne("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.updateOne("books").where(new Cond("id", "==", 1)).set(set).apply(myResponseListener);
       </code>
     </pre>
   </div>
  <div id="update-one-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-api = API("books-app", "localhost:8081")
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update_one("books").where(condition).set({"name": "A book"}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="update-one-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	set := map[string]interface{}{"name":"ABook"}
-	resp, err := db.UpdateOne("books").Where(condition).Set(set).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+set := map[string]interface{}{"name":"ABook"}
+resp, err := db.UpdateOne("books").Where(condition).Set(set).Apply()
       </code>
     </pre>
   </div>
@@ -260,79 +208,26 @@ db.upsert('todos').where(cond('_id', '==', 1))
   <div id="upsert-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
 HashMap<String, Object> set = new HashMap<>();
 set.put("name", "Book1");
-db.upsert("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.upsert("books").where(new Cond("id", "==", 1)).set(set).apply(myResponseListener);
       </code>
     </pre>
   </div>
  <div id="upsert-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.upsert("books").where(condition).set({"name": "A book"}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="upsert-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	set := map[string]interface{}{"name":"ABook"}
-	resp, err := db.Upsert("books").Where(condition).Set(set).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+set := map[string]interface{}{"name":"ABook"}
+resp, err := db.Upsert("books").Where(condition).Set(set).Apply()
       </code>
     </pre>
   </div>
@@ -378,79 +273,26 @@ db.update('todos').where(condition)
    <div id="cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
 HashMap<String, Object> set = new HashMap<>();
 set.put("name", "Book1");
-db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).set(set).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="cond-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-api = API("books-app", "localhost:8081")
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).set({"name": "A book"}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="cond-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	set := map[string]interface{}{"name":"ABook"}
-	resp, err := db.Update("books").Where(condition).Set(set).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+set := map[string]interface{}{"name":"ABook"}
+resp, err := db.Update("books").Where(condition).Set(set).Apply()
       </code>
     </pre>
   </div>
@@ -506,81 +348,28 @@ db.update('todos').where(condition)
    <div id="multiple-cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
 HashMap<String, Object> set = new HashMap<>();
 set.put("name", "Book1");
-db.update("books").where(Or.create(new Cond("id", "==", 1), new Cond("name", "==", "aBook"))).set(set).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(Or.create(new Cond("id", "==", 1), new Cond("name", "==", "aBook"))).set(set).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="multiple-cond-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-api = API("books-app", "localhost:8081")
-db = api.my_sql()
-
-# The condition to be matched
 condition = AND(COND("author", "==", "author1"), COND("name", "==", "someBook"))
-
-# Update the books
 response = db.update("books").where(condition).set({"name": "A book"}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="multiple-cond-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition1 := utils.Cond("id", "==", 1)
-	condition2 := utils.Cond("id", "==", 2)
-	condition := utils.Or(condition1, condition2)
-	set := map[string]interface{}{"name":"ABook"}
-	resp, err := db.Update("books").Where(condition).Set(set).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition1 := utils.Cond("id", "==", 1)
+condition2 := utils.Cond("id", "==", 2)
+condition := utils.Or(condition1, condition2)
+set := map[string]interface{}{"name":"ABook"}
+resp, err := db.Update("books").Where(condition).Set(set).Apply()
       </code>
     </pre>
   </div>
@@ -617,79 +406,26 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="set-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
 HashMap<String, Object> set = new HashMap<>();
 set.put("name", "Book1");
-db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).set(set).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="set-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-api = API("books-app", "localhost:8081")
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).set({"name": "A book"}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="set-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	set := map[string]interface{}{"name":"ABook"}
-	resp, err := db.Update("books").Where(condition).Set(set).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+set := map[string]interface{}{"name":"ABook"}
+resp, err := db.Update("books").Where(condition).Set(set).Apply()
       </code>
     </pre>
   </div>
@@ -723,78 +459,26 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="push-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
 HashMap<String, Object> push = new HashMap<>();
 push.put("name", "Book1");
-db.update("books").where(new Cond("id", "==", 1)).push(push).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).push(push).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="push-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).push({"name": "A book"}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="push-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	push := map[string]interface{}{"name":"ABook"}
-	resp, err := db.Update("books").Where(condition).Push(push).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+push := map[string]interface{}{"name":"ABook"}
+resp, err := db.Update("books").Where(condition).Push(push).Apply()
       </code>
     </pre>
   </div>
@@ -827,75 +511,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="remove-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
-db.update("books").where(new Cond("id", "==", 1)).remove("author").apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).remove("author").apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="remove-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).remove("author").apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="remove-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Update("books").Where(condition).Remove("author").Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Update("books").Where(condition).Remove("author").Apply()
       </code>
     </pre>
   </div>
@@ -928,78 +560,26 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="rename-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
 HashMap<String, Object> rename = new HashMap<>();
 rename.put("name", "bookName");
-db.update("books").where(new Cond("id", "==", 1)).rename(rename).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).rename(rename).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="rename-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).rename({"writer":"author"}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="rename-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	rename := map[string]interface{}{"writer": "author"}
-	resp, err := db.Update("books").Where(condition).Rename(rename).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+rename := map[string]interface{}{"writer": "author"}
+resp, err := db.Update("books").Where(condition).Rename(rename).Apply()
       </code>
     </pre>
   </div>
@@ -1036,78 +616,26 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="inc-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
 HashMap<String, Object> increment = new HashMap<>();
 increment.put("likes", 1);
-db.update("books").where(new Cond("id", "==", 1)).inc(increment).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).inc(increment).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="inc-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).inc({"likes":1}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="inc-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	inc := map[string]interface{}{"likes": 1}
-	resp, err := db.Update("books").Where(condition).Inc(inc).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+inc := map[string]interface{}{"likes": 1}
+resp, err := db.Update("books").Where(condition).Inc(inc).Apply()
       </code>
     </pre>
   </div>
@@ -1140,78 +668,26 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="mul-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
 HashMap<String, Object> mul = new HashMap<>();
 mul.put("likes", 2);
-db.update("books").where(new Cond("id", "==", 1)).mul(mul).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).mul(mul).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="mul-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).mul({"likes":10}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="mul-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	mul := map[string]interface{}{"likes": 10}
-	resp, err := db.Update("books").Where(condition).Mul(mul).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+mul := map[string]interface{}{"likes": 10}
+resp, err := db.Update("books").Where(condition).Mul(mul).Apply()
       </code>
     </pre>
   </div>
@@ -1244,78 +720,26 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="max-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
 HashMap<String, Object> max = new HashMap<>();
 max.put("likes", 100);
-db.update("books").where(new Cond("id", "==", 1)).max(max).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).max(max).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="max-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).max({"likes":100}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="max-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	max := map[string]interface{}{"likes": 100}
-	resp, err := db.Update("books").Where(condition).Max(max).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+max := map[string]interface{}{"likes": 100}
+resp, err := db.Update("books").Where(condition).Max(max).Apply()
       </code>
     </pre>
   </div>
@@ -1346,78 +770,26 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="min-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
 HashMap<String, Object> min = new HashMap<>();
 min.put("likes", 100);
-db.update("books").where(new Cond("id", "==", 1)).min(min).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).min(min).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="min-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).min({"likes":100}).apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="min-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	min := map[string]interface{}{"likes": 100}
-	resp, err := db.Update("books").Where(condition).Min(min).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+min := map[string]interface{}{"likes": 100}
+resp, err := db.Update("books").Where(condition).Min(min).Apply()
       </code>
     </pre>
   </div>
@@ -1448,75 +820,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="current-timestamp-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
-db.update("books").where(new Cond("id", "==", 1)).currentTimestamp("last_read").apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).currentTimestamp("last_read").apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="current-timestamp-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).current_timestamp("last_read").apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="current-timestamp-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Update("books").Where(condition).CurrentTimestamp("lastRead").Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Update("books").Where(condition).CurrentTimestamp("lastRead").Apply()
       </code>
     </pre>
   </div>
@@ -1549,75 +869,23 @@ db.update('todos').where(cond('_id_', '==', 1))
  <div id="current-date-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
-db.update("books").where(new Cond("id", "==", 1)).currentDate("last_read").apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.update("books").where(new Cond("id", "==", 1)).currentDate("last_read").apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="current-date-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-api = API("books-app", "localhost:8081")
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "author1")
-
-# Update the books
 response = db.update("books").where(condition).current_date("last_read").apply()
-
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="current-date-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Update("books").Where(condition).CurrentDate("lastRead").Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Update("books").Where(condition).CurrentDate("lastRead").Apply()
       </code>
     </pre>
   </div>

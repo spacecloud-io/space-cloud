@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"runtime"
 	"time"
@@ -86,6 +84,7 @@ func newTransport(host, port string, sslEnabled bool) (*transport, error) {
 	return &transport{conn, stub}, nil
 }
 
+// RoutineMetrics routinely sends anonymous metrics
 func (s *Server) RoutineMetrics() {
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
@@ -112,27 +111,26 @@ func (s *Server) RoutineMetrics() {
 	// Connect to metrics Server
 	trans, err := newTransport("spaceuptech.com", "11001", true)
 	if err != nil {
-		fmt.Println("Metrics Error -", err)
+		//fmt.Println("Metrics Error -", err)
 		return
 	}
 
-	s.lock.Lock()
-	if s.config != nil && s.config.Modules != nil {
-		set["project"] = getProjectInfo(s.config.Modules)
-		set["projectId"] = s.config.ID
-		set["sslEnabled"] = s.config.SSL != nil
+	c := s.syncMan.GetGlobalConfig()
+	if c != nil && c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
+		set["project"] = getProjectInfo(c.Projects[0].Modules)
+		set["projectId"] = c.Projects[0].ID
+		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
 	}
-	s.lock.Unlock()
 
 	update["$set"] = set
 	status, err := trans.update(context.TODO(), m, "upsert", find, update)
 	if err != nil {
-		fmt.Println("Metrics Error -", err)
+		//fmt.Println("Metrics Error -", err)
 		return
 	}
 
 	if status != 200 {
-		fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
+		//fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
 		return
 	}
 
@@ -141,22 +139,21 @@ func (s *Server) RoutineMetrics() {
 			"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "date"}},
 		}
 
-		s.lock.Lock()
-		if s.config != nil && s.config.Modules != nil {
-			set["project"] = getProjectInfo(s.config.Modules)
-			set["projectId"] = s.config.ID
-			set["sslEnabled"] = s.config.SSL != nil
+		c := s.syncMan.GetGlobalConfig()
+		if c != nil && c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
+			set["project"] = getProjectInfo(c.Projects[0].Modules)
+			set["projectId"] = c.Projects[0].ID
+			set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
 		}
-		s.lock.Unlock()
 
 		update["$set"] = set
 		status, err := trans.update(context.TODO(), m, "one", find, update)
 		if err != nil {
-			log.Println("Metrics Error -", err)
+			//log.Println("Metrics Error -", err)
 		}
 
 		if status != 200 {
-			log.Println("Metrics Error - Invalid status code ", status)
+			//log.Println("Metrics Error - Invalid status code ", status)
 		}
 	}
 }
@@ -164,7 +161,7 @@ func (s *Server) RoutineMetrics() {
 func getProjectInfo(config *config.Modules) map[string]interface{} {
 	project := map[string]interface{}{
 		"crud":      []string{},
-		"functions":      map[string]interface{}{"enabled": false},
+		"functions": map[string]interface{}{"enabled": false},
 		"realtime":  map[string]interface{}{"enabled": false},
 		"fileStore": map[string]interface{}{"enabled": false},
 		"auth":      []string{},

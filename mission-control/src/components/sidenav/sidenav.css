@@ -1,0 +1,74 @@
+.sidenav {
+  position: fixed;
+  top: 51px;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  width: 250px;
+  background: #FFFFFF;
+  box-shadow: 10px 0 5px -5px #EEE;
+}
+
+.item {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  border-left: 4px solid #fff;
+  color: #000;
+  font-size: 14px;
+  cursor: pointer;
+  width: 85%;
+}
+
+.item>i {
+  font-size: 16px;
+  padding: 12px 16px 12px 24px;
+}
+
+.item:hover {
+  background: #eee;
+  font-weight: 600;
+  border-left: 4px solid #eee;
+  border-radius: 0 30px 30px 0;
+  width: 85%;
+}
+
+.active {
+  background: #eee;
+  border-left: 4px solid #FF6700;
+  border-radius: 0 30px 30px 0;
+  width: 85%;
+  align-items: center;
+  font-weight: 600;
+  box-shadow: 0px 1px 8px #BDBDBD !important;
+}
+
+.active>i {
+  font-size: 16px;
+  color: #FF6700;
+  padding: 12px 16px 12px 24px;
+}
+
+.sidenav .line {
+  margin-bottom: 0;
+}
+
+.sidenav .flex-container {
+  padding: 24px;
+}
+
+.sidenav .edit {
+  height: 22px;
+  width: 48px;
+  border: 2px solid #eee;
+  background: #fff;
+  border-radius: 60px;
+  font-size: 12px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sidenav .edit:hover {
+  background: #eee;
+}

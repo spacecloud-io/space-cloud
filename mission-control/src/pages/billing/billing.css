@@ -1,0 +1,24 @@
+.interval-text {
+  color: #000;
+  font-size: 18px;
+  margin-top: 15px;
+  margin-bottom: 30px;
+  font-weight: 600;
+}
+.amount-wrapper{
+  border: 1px solid #BDBDBD;
+  box-sizing: border-box;
+  border-radius: 15px;
+  padding: 30px;
+  display: flex;
+  justify-content: space-between;
+}
+.amount-wrapper .amount-text{
+  font-size: 22px;
+  color: #000;
+  font-weight: 600;
+}
+.amount-wrapper .amount{
+color: #FF6700;
+font-size: 22px;
+}
