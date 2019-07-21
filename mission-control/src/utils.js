@@ -249,10 +249,8 @@ export const handleSpaceUpLoginSuccess = (token) => {
     Promise.all([service.fetchCredits(user.id), service.fetchBilling(user.id, month, year), service.saveDeployConfig(deployConfig)]).then(([credits, billing]) => {
       store.dispatch(set("credits", credits))
       store.dispatch(set("billing", billing))
-      if (mode > 0) {
-        store.dispatch(set("deployConfig", deployConfig))
-        store.dispatch(set("savedDeployConfig", cloneDeep(deployConfig)))
-      }
+      store.dispatch(set("deployConfig", deployConfig))
+      store.dispatch(set("savedDeployConfig", cloneDeep(deployConfig)))
     })
     store.dispatch(set("user", user))
   }).catch(error => {
