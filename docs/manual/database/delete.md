@@ -137,85 +137,30 @@ As you would have noticed, the `delete` method is asynchronous in nature. It tak
   <div id="delete-one-js" class="col s12" style="padding:0">
     <pre>
       <code class="javascript">
-db.deleteOne('todos').where(cond('_id', '==', 1)).apply().then(res => ...).catch(ex => ...);      
+db.deleteOne('todos').where(cond('_id', '==', 1)).apply().then(res => ...).catch(ex => ...);
       </code>
     </pre>
   </div>
-   <div id="delete-one-java" class="col s12" style="padding:0">
+  <div id="delete-one-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.deleteOne("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.deleteOne("books").where(new Cond("name", "==", "aBook")).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="delete-one-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("name", "==", "SomeAwesomeBook")
-
-# Delete all books which match a particular condition
 response = db.delete_one("books").where(condition).apply()
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="delete-one-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("author", "==", "anAuthor")
-	resp, err := db.DeleteOne("books").Where(condition).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("author", "==", "anAuthor")
+resp, err := db.DeleteOne("books").Where(condition).Apply()
       </code>
     </pre>
   </div>
@@ -235,6 +180,7 @@ The `cond` function is used to specify a single condition as shown below:
     <ul class="tabs">
       <li class="tab col s2"><a href="#cond-js">Javascript</a></li>
       <li class="tab col s2"><a href="#cond-java">Java</a></li>
+      <li class="tab col s2"><a href="#cond-python">Python</a></li>
       <li class="tab col s2"><a href="#cond-golang">Golang</a></li>
     </ul>
   </div>
@@ -249,85 +195,30 @@ const condition = cond(op1, operator, op2);
 
 // Example
 const condition = cond('_id', '==', 1);
-db.delete('todos').where(condition).apply().then(res => ...);   
+db.delete('todos').where(condition).apply().then(res => ...);
       </code>
     </pre>
   </div>
-   <div id="cond-java" class="col s12" style="padding:0">
+  <div id="cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.delete("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.delete("books").where(new Cond("name", "==", "aBook")).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="cond-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("name", "==", "SomeAwesomeBook")
-
-# Delete all books which match a particular condition
 response = db.delete("books").where(condition).apply()
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="cond-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Delete("books").Where(condition).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Delete("books").Where(condition).Apply()
       </code>
     </pre>
   </div>
@@ -374,87 +265,32 @@ const condition = or(...conditions)
 
 // Example
 const condition = or(cond('author', '==', 'some-author'), cond('category', '==', 'some-category'));
-db.delete('todos').where(condition).apply().then(res => ...);      
+db.delete('todos').where(condition).apply().then(res => ...)
       </code>
     </pre>
   </div>
    <div id="multiple-cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.delete("books").where(And.create(new Cond("name", "==", "aBook"), new Cond("author", "==", "myelf"))).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.delete("books").where(And.create(new Cond("name", "==", "aBook"), new Cond("author", "==", "myelf"))).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="multiple-cond-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, COND, OR, AND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = AND(COND("name", "==", "SomeAwesomeBook"), COND("author", "==", "SomeAuthor"))
-
-# Delete all books which match a particular condition
 response = db.delete("books").where(condition).apply()
-if response.status == 200:
-    print("Success")
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="multiple-cond-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition1 := utils.Cond("id", "==", 1)
-	condition2 := utils.Cond("id", "==", 2)
-	condition := utils.Or(condition1, condition2)
-	resp, err := db.Delete("books").Where(condition).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition1 := utils.Cond("id", "==", 1)
+condition2 := utils.Cond("id", "==", 2)
+condition := utils.Or(condition1, condition2)
+resp, err := db.Delete("books").Where(condition).Apply()
       </code>
     </pre>
   </div>
