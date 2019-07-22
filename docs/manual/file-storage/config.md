@@ -23,7 +23,7 @@ modules:
 
 Inside `fileStore` you have to speicify the following fields:
 - **enable:** Setting this field to `true` enables the file storage module.
-- **storeType:** Choose the storage technology to back the file storage module. The possible options are `local` and `amazon-s3`.
+- **storeType:** Choose the storage technology to back the file storage module. The possible options are `local`, `amazon-s3` and `gcp-storage`.
 - **conn:** Connection is the region name for `amazon-s3` and the root file path for `local`.
 - **rules:** Are the [security rules](/docs/security/file-storage) used to secure access to the file storage module. It's essentially a map which contains the `rule` and the `prefix` on which to apply the rule. 
 

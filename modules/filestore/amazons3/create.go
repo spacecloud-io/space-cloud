@@ -1,7 +1,6 @@
 package amazons3
 
 import (
-	"context"
 	"io"
 	"strings"
 
@@ -12,7 +11,7 @@ import (
 )
 
 // CreateFile creates a file in S3
-func (a *AmazonS3) CreateFile(ctx context.Context, project string, req *model.CreateFileRequest, file io.Reader) error {
+func (a *AmazonS3) CreateFile(project string, req *model.CreateFileRequest, file io.Reader) error {
 	uploader := s3manager.NewUploader(a.client)
 	_, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(project),
@@ -23,7 +22,7 @@ func (a *AmazonS3) CreateFile(ctx context.Context, project string, req *model.Cr
 }
 
 // CreateDir creates a directory in S3
-func (a *AmazonS3) CreateDir(ctx context.Context, project string, req *model.CreateFileRequest) error {
+func (a *AmazonS3) CreateDir(project string, req *model.CreateFileRequest) error {
 	path := req.Path
 	// back slash at the end is important, if not then file will be created of that name
 	if !strings.HasSuffix(path, "/") {
@@ -37,5 +36,4 @@ func (a *AmazonS3) CreateDir(ctx context.Context, project string, req *model.Cre
 	}
 	_, err := svc.PutObject(request)
 	return err
-	// return errors.New("Not Implemented")
 }
