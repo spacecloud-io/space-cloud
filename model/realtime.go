@@ -20,6 +20,7 @@ type RealtimeRequest struct {
 	Type    string                 `json:"type"`  // Can either be subscribe or unsubscribe
 	ID      string                 `json:"id"`    // id is the query id
 	Where   map[string]interface{} `json:"where"`
+	Options LiveQueryOptions       `json:"options"`
 }
 
 // RealtimeResponse is the object sent for realtime requests
@@ -36,4 +37,9 @@ type Message struct {
 	Type string      `json:"type"`
 	Data interface{} `json:"data"`
 	ID   string      `json:"id"` // the request id
+}
+
+// LiveQueryOptions is to set the options for realtime requests
+type LiveQueryOptions struct {
+	SkipInitial bool `json:"skipInitial"`
 }

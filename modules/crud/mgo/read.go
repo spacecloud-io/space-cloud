@@ -58,10 +58,10 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 
 		results := []interface{}{}
 		cur, err := collection.Find(ctx, req.Find, findOptions)
-		defer cur.Close(ctx)
 		if err != nil {
 			return nil, err
 		}
+		defer cur.Close(ctx)
 
 		// Finding multiple documents returns a cursor
 		// Iterating through the cursor allows us to decode documents one at a time

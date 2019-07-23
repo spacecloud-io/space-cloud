@@ -13,19 +13,20 @@ type CreateFileRequest struct {
 	Path    string `json:"path"`
 	Name    string `json:"name"`
 	Type    string `json:"type"`    // Either file or dir
-	MakeAll bool   `json:"makeAll"` // This option is only available for creatig directories
+	MakeAll bool   `json:"makeAll"` // This option is only available for creating directories
 }
 
-// ListFilesRequest is the request made to browse the cotents inside a directory
+// ListFilesRequest is the request made to browse the contents inside a directory
 type ListFilesRequest struct {
 	Path string `json:"path"`
 	Type string `json:"type"` // Type could be dir, file or all
 }
 
-// ListFilesResponse is the response given to browse the cotents inside a directory
+// ListFilesResponse is the response given to browse the contents inside a directory
 type ListFilesResponse struct {
 	Name string `json:"name"`
 	Type string `json:"type"` // Type could be dir or file
 }
 
-type FileReader func(io.Reader)(int, error)
+// FileReader is a function type used for file streaming
+type FileReader func(io.Reader) (int, error)

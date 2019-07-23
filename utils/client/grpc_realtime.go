@@ -58,8 +58,8 @@ func (c *GRPCRealtimeClient) RoutineWrite() {
 // Write wrties the object to the client
 func (c *GRPCRealtimeClient) Write(res *model.Message) {
 	select {
-	case c.channel <- res:
 	case <-c.ctx.Done():
+	case c.channel <- res:
 	}
 }
 
@@ -74,7 +74,6 @@ func (c *GRPCRealtimeClient) Read(cb DataCallback) {
 	for {
 		in, err := c.stream.Recv()
 		if err != nil {
-			log.Println("GRPC Error -", err)
 			return
 		}
 		data := make(map[string]interface{})
@@ -91,6 +90,13 @@ func (c *GRPCRealtimeClient) Read(cb DataCallback) {
 			return
 		}
 		data["Where"] = temp
+		var temp1 model.LiveQueryOptions
+		err = json.Unmarshal(in.Options, &temp1)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		data["Options"] = temp1
 
 		msg := &model.Message{Type: in.Type, ID: in.Id, Data: data}
 

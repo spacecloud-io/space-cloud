@@ -50,7 +50,6 @@ func (c *WebsocketClient) Read(cb DataCallback) {
 		data := &model.Message{}
 		err := c.socket.ReadJSON(data)
 		if err != nil {
-			log.Println(err)
 			return
 		}
 

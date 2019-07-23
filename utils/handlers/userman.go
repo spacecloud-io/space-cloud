@@ -147,9 +147,12 @@ func HandleEmailSignUp(projects *projects.Projects) http.HandlerFunc {
 
 		status, result, err := state.UserManagement.EmailSignUp(ctx, dbType, project, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
 		if err != nil {
+			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		w.WriteHeader(status)
+
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(result)
 	}
 }

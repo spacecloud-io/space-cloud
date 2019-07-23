@@ -1,13 +1,17 @@
 package projects
 
-import "github.com/spaceuptech/space-cloud/config"
+import (
+	"log"
+
+	"github.com/spaceuptech/space-cloud/config"
+)
 
 // StoreProject stores the provided project config
-func (p *Projects) StoreProject(project string, config *config.Project) error {
+func (p *Projects) StoreProject(config *config.Project) error {
 	// Get the project. Create if not exists
-	state, err := p.LoadProject(project)
+	state, err := p.LoadProject(config.ID)
 	if err != nil {
-		state = p.NewProject(project)
+		state = p.NewProject(config.ID)
 	}
 
 	// Set the configuration for the auth module
@@ -17,24 +21,28 @@ func (p *Projects) StoreProject(project string, config *config.Project) error {
 	state.UserManagement.SetConfig(config.Modules.Auth)
 
 	if err := state.Static.SetConfig(config.Modules.Static); err != nil {
-		return err
+		log.Println("Static module config error:", err)
 	}
 
 	// Set the configuration for the file storage module
 	if err := state.FileStore.SetConfig(config.Modules.FileStore); err != nil {
-		return err
+		log.Println("File storage module config error:", err)
 	}
 
 	// Set the configuration for the functions module
 	if err := state.Functions.SetConfig(config.Modules.Functions); err != nil {
-		return err
+		log.Println("Functions module config error:", err)
 	}
 
 	// Set the configuration for the Realtime module
-	if err := state.Realtime.SetConfig(project, config.Modules.Realtime); err != nil {
-		return err
+	if err := state.Realtime.SetConfig(config.ID, config.Modules.Realtime); err != nil {
+		log.Println("Realtime module config error:", err)
 	}
 
 	// Set the configuration for the crud module
-	return state.Crud.SetConfig(config.Modules.Crud)
+	if err := state.Crud.SetConfig(config.Modules.Crud); err != nil {
+		log.Println("Database module config error:", err)
+	}
+
+	return nil
 }

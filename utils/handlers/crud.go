@@ -364,8 +364,8 @@ func HandleCrudBatch(isProd bool, projects *projects.Projects) http.HandlerFunc 
 			// Send error response
 			if err != nil {
 				// Send realtime nack
-				for _, m := range msgIDs {
-					state.Realtime.SendAck(m.id, meta.project, m.col, false)
+				for j := 0; j < i; j++ {
+					state.Realtime.SendAck(msgIDs[j].id, meta.project, msgIDs[j].col, false)
 				}
 
 				// Send http response

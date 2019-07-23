@@ -1,35 +1,35 @@
 ---
-id: basic-todo-app
-secret: some-secret
-modules:
-  crud:
-    mongo:
-      conn: mongodb://localhost:27017
-      collections:
-        todos:
-          rules:
-            read:
-              rule: allow
-            create:
-              rule: allow
-            update:
-              rule: allow
-            delete:
-              rule: allow
-          isRealtimeEnabled: false
-        users:
-          rules:
-            read:
-              rule: allow
-            create:
-              rule: allow
-            update:
-              rule: allow
-            delete:
-              rule: allow
-          isRealtimeEnabled: false
-      isPrimary: true
-  auth:
-    email:
-      enabled: true
-
+projects:
+  - id: basic-todo-app  
+    secret: some-secret
+    modules:
+      crud:
+        mongo:
+          enabled: true
+          conn: mongodb://localhost:27017
+          collections:
+            todos:
+              rules:
+                read:
+                  rule: allow
+                create:
+                  rule: allow
+                update:
+                  rule: allow
+                delete:
+                  rule: allow
+              isRealtimeEnabled: false
+            users:
+              rules:
+                read:
+                  rule: allow
+                create:
+                  rule: allow
+                update:
+                  rule: allow
+                delete:
+                  rule: allow
+              isRealtimeEnabled: false
+      auth:
+        email:
+          enabled: true

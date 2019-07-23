@@ -1,0 +1,93 @@
+.login {
+  color: #000;
+}
+
+.login .main-wrapper {
+  position: absolute;
+  top: 5vw;
+  bottom: 5vw;
+  left: 6vw;
+  right: 6vw;
+  border-radius: 70px;
+  background: #FFF;
+  box-shadow: 0 0 15px #BDBDBD;
+}
+
+.login .left-wrapper {
+  border-radius: 0 70px 70px 0;
+  text-align: center;
+}
+
+.login .left-content {
+  position: relative;
+  top: 4vw;
+}
+
+.login .logo {
+  margin-bottom: 30px;
+}
+
+.login .welcome {
+  font-weight: 600;
+  font-size: 28px;
+  margin-bottom: 2px;
+}
+
+.login .text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #BDBDBD;
+  text-align: center;
+  margin-bottom: 16px;
+  padding: 0 140px;
+}
+
+.login .right-wrapper {
+  border-radius: 0 70px 70px 0;
+  background: #002C39;
+  text-align: center;
+  padding: 64px 40px;
+}
+
+.login-form .sign-in {
+  color: #ff6700;
+  font-weight: 600;
+  font-size: 32px;
+}
+
+.login-form input {
+  width: 75%;
+  background: #053D4E !important;
+  border: 1px solid #053D4E !important;
+  color: #BDBDBD;
+}
+
+.login-form .input {
+  width: 75%;
+}
+
+.login .ant-input-suffix>i {
+  color: #BDBDBD;
+}
+
+.login-form .input input {
+  width: 100%;
+}
+
+.login-form .btn {
+  margin-bottom: 50px;
+}
+
+.login .row {
+  display: flex;
+  height: 100%;
+}
+
+.login .right-content {
+  position: relative;
+  top: 6vw;
+}
+
+.login .signin-with {
+  cursor: pointer;
+}

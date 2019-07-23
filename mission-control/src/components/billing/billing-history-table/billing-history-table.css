@@ -1,0 +1,52 @@
+.billing-history .table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #002C39;
+  padding: 10px;
+}
+
+.billing-history .table-header .selected-range {
+  color: #ffffff;
+  font-size: 22px;
+}
+
+.ant-calendar-picker-input {
+  background-color: #002C39;
+  color: #ffffff;
+}
+
+.billing-history .table {
+  border: 1px solid #BDBDBD;
+}
+
+.billing-history .table .heading-row {
+  margin: 20px 0;
+}
+
+.billing-history .table .heading-row .table-heading {
+  color: #000;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.billing-history .table .row {
+  margin-bottom: 20px;
+  color: #000;
+}
+
+.billing-history .table .total {
+  position: relative;
+  right: 40px;
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.billing-history .table .row .amountPositive {
+  color: #34A853;
+
+}
+
+.billing-history .table .row .amountNegative {
+  color: #F5222D;
+}
