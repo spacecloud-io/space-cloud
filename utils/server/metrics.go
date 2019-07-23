@@ -211,8 +211,8 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 		project["auth"] = auth
 	}
 
-	if config.Functions != nil {
-		temp := map[string]interface{}{"enabled": config.Functions.Enabled}
+	if config.Functions != nil && config.Functions.Enabled {
+		temp := map[string]interface{}{"enabled": true}
 		if config.Functions.Rules != nil {
 			temp["services"] = len(config.Functions.Rules)
 			noOfFunctions := 0
@@ -230,16 +230,16 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 		project["realtime"] = map[string]interface{}{"enabled": config.Realtime.Enabled}
 	}
 
-	if config.FileStore != nil {
-		temp := map[string]interface{}{"enabled": config.FileStore.Enabled, "storeType": config.FileStore.StoreType, "rules": 0}
+	if config.FileStore != nil && config.FileStore.Enabled {
+		temp := map[string]interface{}{"enabled": true, "storeType": config.FileStore.StoreType, "rules": 0}
 		if config.FileStore.Rules != nil {
 			temp["rules"] = len(config.FileStore.Rules)
 		}
 		project["fileStore"] = temp
 	}
 
-	if config.Static != nil {
-		temp := map[string]interface{}{"enabled": config.Static.Enabled, "routes": 0}
+	if config.Static != nil && config.Static.Enabled {
+		temp := map[string]interface{}{"enabled": true, "routes": 0}
 		if config.Static.Routes != nil {
 			temp["routes"] = len(config.Static.Routes)
 		}
