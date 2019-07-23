@@ -12,10 +12,11 @@ import FileStorage from '../../components/configure/FileStorageConfigure';
 import StaticConfigure from '../../components/configure/StaticConfigure';
 import { get, set } from 'automate-redux';
 import store from ".././../store";
+import './configure.css'
 
 function Rules(props) {
 	return (
-		<div>
+		<div className="configurations">
 			<Topbar showProjectSelector />
 			<div className="flex-box">
 				<Sidenav selectedItem="configure" />
