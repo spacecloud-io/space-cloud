@@ -46,7 +46,10 @@ class Rules extends Component {
 										key={rule}
 										onClick={() => this.handleClick(this.props.array ? index : rule)}
 									>
-										{rule}
+										<div className="add-a-rule">
+											{rule}
+											<i class="material-icons delete-icon">delete</i>
+										</div>
 									</div>
 								);
 							})}

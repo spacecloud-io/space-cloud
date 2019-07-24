@@ -52,3 +52,14 @@
 .rules-main-wrapper .code .code-mirror {
   height: 300px;
 }
+
+.rules-main-wrapper .add-a-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.rules-main-wrapper .add-a-rule .delete-icon, .rules-main-wrapper .addaRule {
+  cursor: pointer;
+}

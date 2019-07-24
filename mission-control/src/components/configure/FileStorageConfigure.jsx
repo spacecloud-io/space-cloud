@@ -7,7 +7,7 @@ const { Option } = Select;
 function FileStorageConfigure(props) {
 	const { getFieldDecorator } = props.form;
 	return (
-		<div className="configure">
+		<div className="configure file-storage">
 			<div className="conn-string">FileStorage : </div>
 
 			<Form className="conn-form" layout="inline">
