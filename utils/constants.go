@@ -51,6 +51,9 @@ const (
 
 	// AmazonS3 is the type used for the AmazonS3 storage
 	AmazonS3 FileStoreType = "amazon-s3"
+
+	// GCPStorage is the type used for the GCP storage
+	GCPStorage FileStoreType = "gcp-storage"
 )
 
 // FileOpType is the type of file operation being performed on the file store

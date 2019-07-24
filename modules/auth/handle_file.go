@@ -21,7 +21,10 @@ func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOp
 	}
 	rule := rules.Rule[string(op)]
 	if rule.Rule == "allow" {
-		return nil
+		if m.project == project {
+			return nil
+		}
+		return errors.New("invalid project details provided")
 	}
 
 	auth, err := m.parseToken(token)
@@ -39,13 +42,17 @@ func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOp
 
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
 	pathParams := make(map[string]interface{})
+	ps := "/"
+	if m.fileStoreType == string(utils.Local) {
+		ps = string(os.PathSeparator)
+	}
 
 	// Check if its a valid absolute path
-	if strings.Contains(path, string(os.PathSeparator) + "..") {
+	if strings.Contains(path, "..") {
 		return nil, nil, errors.New("Local: Provided path should be absolute")
 	}
 
-	in1 := strings.Split(path, string(os.PathSeparator))
+	in1 := strings.Split(path, ps)
 	// Remove last element if it is empty
 	if in1[len(in1)-1] == "" {
 		in1 = in1[:len(in1)-1]
@@ -53,7 +60,7 @@ func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileR
 
 	for _, r := range m.fileRules {
 
-		rulePath := strings.Split(r.Prefix, string(os.PathSeparator))
+		rulePath := strings.Split(r.Prefix, ps)
 
 		if rulePath[len(rulePath)-1] == "" {
 			rulePath = rulePath[:len(rulePath)-1]
