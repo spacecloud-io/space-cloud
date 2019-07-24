@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import '../../index.css'
 import Sidenav from '../../components/sidenav/Sidenav';
@@ -12,10 +13,14 @@ import FileStorage from '../../components/configure/FileStorageConfigure';
 import StaticConfigure from '../../components/configure/StaticConfigure';
 import { get, set } from 'automate-redux';
 import store from ".././../store";
+import './configure.css'
 
 function Rules(props) {
+	useState(() => {
+    ReactGA.pageview("/projects/configure");
+  }, [])
 	return (
-		<div>
+		<div className="configurations">
 			<Topbar showProjectSelector />
 			<div className="flex-box">
 				<Sidenav selectedItem="configure" />

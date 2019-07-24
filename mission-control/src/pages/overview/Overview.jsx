@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import ReactGA from 'react-ga';
 import { Link } from 'react-router-dom'
 import { connect } from 'react-redux'
 import '../../index.css'
@@ -19,6 +20,9 @@ import { Row, Col, Button } from 'antd'
 import { get } from 'automate-redux';
 
 function Overview(props) {
+  useState(() => {
+    ReactGA.pageview("/projects/overview");
+  }, [])
   return (
     <div className="overview">
       <Topbar showProjectSelector />
@@ -52,7 +56,7 @@ function Overview(props) {
             </div>
           </div>
           <Header name="Explore Modules" color="#000" fontSize="22px" />
-          <Row  className ="overview-padding">
+          <Row className="overview-padding">
             <Link to={`/mission-control/projects/${props.projectId}/user-management`}>
               <Col span={11}><UserManagement modules={props.modules.userManagement} /></Col>
             </Link>

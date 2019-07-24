@@ -1,6 +1,7 @@
 module github.com/spaceuptech/space-cloud
 
 require (
+	cloud.google.com/go v0.38.0
 	github.com/aws/aws-sdk-go v1.19.7
 	github.com/c2fo/testify v0.0.0-20150827203832-fba96363964a // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -27,8 +28,9 @@ require (
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.0.4
+	go.opencensus.io v0.22.0 // indirect
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
+	google.golang.org/api v0.7.0
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20190530194941-fb225487d101 // indirect
 	google.golang.org/grpc v1.21.0

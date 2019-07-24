@@ -1,14 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 
@@ -44,10 +42,6 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
 			return
 		}
-
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
 
 		// Extract the path from the url
 		token, project, _ := getMetaData(r)
@@ -85,7 +79,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 				fileName = tempName
 			}
 
-			status, err := state.FileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
+			status, err := state.FileStore.UploadFile(project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -94,7 +88,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{})
 		} else {
 			name := r.Form.Get("name")
-			status, err := state.FileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
+			status, err := state.FileStore.CreateDir(project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -120,10 +114,6 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
 		// Extract the path from the url
 		token, project, path := getMetaData(r)
 
@@ -133,7 +123,7 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
 
-			status, res, err := state.FileStore.ListFiles(ctx, project, token, &model.ListFilesRequest{Path: path, Type: mode})
+			status, res, err := state.FileStore.ListFiles(project, token, &model.ListFilesRequest{Path: path, Type: mode})
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -144,7 +134,7 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Read the file from file storage
-		status, file, err := state.FileStore.DownloadFile(ctx, project, token, path)
+		status, file, err := state.FileStore.DownloadFile(project, token, path)
 		w.WriteHeader(status)
 		if err != nil {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -169,14 +159,11 @@ func HandleDelete(projects *projects.Projects) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
 
 		// Extract the path from the url
 		token, project, path := getMetaData(r)
 
-		status, err := state.FileStore.DeleteFile(ctx, project, token, path)
+		status, err := state.FileStore.DeleteFile(project, token, path)
 
 		w.WriteHeader(status)
 		if err != nil {

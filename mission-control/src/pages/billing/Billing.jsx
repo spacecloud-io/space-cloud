@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { get, increment } from 'automate-redux';
 import store from '../../store';
@@ -28,6 +29,9 @@ class Billing extends React.Component {
 		this.setState({ isRechargeModalVisible: visible })
 	}
 
+	componentDidMount() {
+		ReactGA.pageview("/billing");
+	}
 	render() {
 		const reducer = (accumulator, currentValue) => accumulator + currentValue.amount;
 		const total = this.props.billing.reduce(reducer, 0)

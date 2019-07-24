@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import '../../../index.css';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -19,6 +20,10 @@ class Rules extends React.Component {
 		super(props)
 		this.state = { modalVisible: false }
 		this.handleModalVisiblity = this.handleModalVisiblity.bind(this);
+	}
+
+	componentDidMount() {
+		ReactGA.pageview("/projects/database/rules");
 	}
 
 	handleModalVisiblity(visible) {
@@ -42,6 +47,7 @@ class Rules extends React.Component {
 							handleRuleChange={this.props.handleRuleChange}
 							addText={'Add a table rule'}
 							handleAddRuleClick={() => this.handleModalVisiblity(true)}
+							handleDeleteRule={this.props.handleDeleteRule}
 						/>}
 						{!noOfRules && <EmptyState
 							graphics={rulesImg} desc="Guard your data with rules that define who has access to it and how it is structured."
@@ -71,6 +77,11 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 	return {
 		handleRuleChange: (ruleName, value) => {
 			dispatch(set(`config.modules.crud.${selectedDb}.collections.${ruleName}`, value))
+		},
+		handleDeleteRule: (ruleName) => {
+			const rules = get(store.getState(), `config.modules.crud.${selectedDb}.collections`)
+			delete rules[ruleName]
+			dispatch(set(`config.modules.crud.${selectedDb}.collections`, rules))
 		},
 		handleCreateRule: (ruleName) => {
 			const defaultRule = {

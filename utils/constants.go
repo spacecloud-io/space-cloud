@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.10.0"
+const BuildVersion = "0.10.1"
 
 const (
 	// SpaceCloudProject is the default project to store the config in
@@ -58,6 +58,9 @@ const (
 
 	// AmazonS3 is the type used for the AmazonS3 storage
 	AmazonS3 FileStoreType = "amazon-s3"
+
+	// GCPStorage is the type used for the GCP storage
+	GCPStorage FileStoreType = "gcp-storage"
 )
 
 // FileOpType is the type of file operation being performed on the file store

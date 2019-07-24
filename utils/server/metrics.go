@@ -1,87 +1,50 @@
 package server
 
 import (
-	"context"
-	"crypto/tls"
+	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"runtime"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
-	uuid "github.com/satori/go.uuid"
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-type transport struct {
-	conn *grpc.ClientConn
-	stub proto.SpaceCloudClient
+func currentTimeInMillis() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func (t *transport) insert(ctx context.Context, meta *proto.Meta, op string, obj interface{}) (int, error) {
-	objJSON, err := json.Marshal(obj)
-	if err != nil {
-		return http.StatusInternalServerError, err
+func appendIfMissing(slice []string, s string) []string {
+	for _, ele := range slice {
+		if ele == s {
+			return slice
+		}
 	}
-
-	req := proto.CreateRequest{Document: objJSON, Meta: meta, Operation: op}
-	res, err := t.stub.Create(ctx, &req)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	if res.Status >= 200 || res.Status < 300 {
-		return int(res.Status), nil
-	}
-
-	return int(res.Status), nil
+	return append(slice, s)
 }
 
-func (t *transport) update(ctx context.Context, meta *proto.Meta, op string, find, update map[string]interface{}) (int, error) {
-	updateJSON, err := json.Marshal(update)
+func updateSCMetrics(find, update map[string]interface{}, upsert bool) error {
+	op := "one"
+	if upsert {
+		op = "upsert"
+	}
+	req := map[string]interface{}{"find": find, "update": update, "op": op}
+	jsonValue, err := json.Marshal(req)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return err
 	}
-
-	findJSON, err := json.Marshal(find)
+	resp, err := http.Post("https://api.spaceuptech.com/v1/api/space-cloud/crud/mongo/metrics/update", "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return err
 	}
 
-	req := proto.UpdateRequest{Find: findJSON, Update: updateJSON, Meta: meta, Operation: op}
-	res, err := t.stub.Update(ctx, &req)
-	if err != nil {
-		return http.StatusInternalServerError, err
+	if resp.StatusCode != 200 {
+		return errors.New("Internal server error")
 	}
 
-	if res.Status >= 200 || res.Status < 300 {
-		return int(res.Status), nil
-	}
-
-	return int(res.Status), nil
-}
-
-// Init initialises a new transport
-func newTransport(host, port string, sslEnabled bool) (*transport, error) {
-	dialOptions := []grpc.DialOption{}
-
-	if sslEnabled {
-		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
-	} else {
-		dialOptions = append(dialOptions, grpc.WithInsecure())
-	}
-
-	conn, err := grpc.Dial(host+":"+port, dialOptions...)
-	if err != nil {
-		return nil, err
-	}
-
-	stub := proto.NewSpaceCloudClient(conn)
-	return &transport{conn, stub}, nil
+	return nil
 }
 
 // RoutineMetrics routinely sends anonymous metrics
@@ -89,113 +52,134 @@ func (s *Server) RoutineMetrics() {
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 
-	id := uuid.NewV1().String()
-	col := "metrics"
-	project := "crm"
-	m := &proto.Meta{Col: col, DbType: "mongo", Project: project}
-
 	// Create the find and update clauses
-	find := map[string]interface{}{"_id": id}
-	update := map[string]interface{}{
-		"$currentDate": map[string]interface{}{
-			"lastUpdated": map[string]interface{}{"$type": "date"},
-			"startTime":   map[string]interface{}{"$type": "date"},
-		},
-	}
+	find := map[string]interface{}{"_id": s.nodeID}
 	set := map[string]interface{}{
-		"os":      runtime.GOOS,
-		"isProd":  s.isProd,
-		"version": utils.BuildVersion,
-	}
-
-	// Connect to metrics Server
-	trans, err := newTransport("spaceuptech.com", "11001", true)
-	if err != nil {
-		//fmt.Println("Metrics Error -", err)
-		return
+		"os":           runtime.GOOS,
+		"isProd":       s.isProd,
+		"version":      utils.BuildVersion,
+		"clusterSize":  s.syncMan.GetClusterSize(),
+		"distribution": "ee",
+		"startTime":    currentTimeInMillis(),
+		"lastUpdated":  currentTimeInMillis(),
 	}
 
 	c := s.syncMan.GetGlobalConfig()
-	if c != nil && c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-		set["project"] = getProjectInfo(c.Projects[0].Modules)
-		set["projectId"] = c.Projects[0].ID
+	if c != nil {
 		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
+		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
+		if c.Admin != nil {
+			set["mode"] = c.Admin.Operation.Mode
+		}
+		if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
+			set["modules"] = getProjectInfo(c.Projects)
+			projects := []string{}
+			for _, project := range c.Projects {
+				projects = append(projects, project.ID)
+			}
+			set["projects"] = projects
+		}
 	}
 
-	update["$set"] = set
-	status, err := trans.update(context.TODO(), m, "upsert", find, update)
+	update := map[string]interface{}{"$set": set}
+	err := updateSCMetrics(find, update, true)
 	if err != nil {
-		//fmt.Println("Metrics Error -", err)
-		return
-	}
-
-	if status != 200 {
-		//fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
-		return
+		// fmt.Println("Metrics Error -", err)
 	}
 
 	for range ticker.C {
-		update := map[string]interface{}{
-			"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "date"}},
+		set := map[string]interface{}{
+			"lastUpdated": currentTimeInMillis(),
+			"clusterSize": s.syncMan.GetClusterSize(),
 		}
 
 		c := s.syncMan.GetGlobalConfig()
-		if c != nil && c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-			set["project"] = getProjectInfo(c.Projects[0].Modules)
-			set["projectId"] = c.Projects[0].ID
+		if c != nil {
 			set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
+			set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
+			if c.Admin != nil {
+				set["mode"] = c.Admin.Operation.Mode
+			}
+			if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
+				set["modules"] = getProjectInfo(c.Projects)
+				projects := []string{}
+				for _, project := range c.Projects {
+					projects = append(projects, project.ID)
+				}
+				set["projects"] = projects
+			}
 		}
 
-		update["$set"] = set
-		status, err := trans.update(context.TODO(), m, "one", find, update)
+		update := map[string]interface{}{"$set": set}
+		err := updateSCMetrics(find, update, false)
 		if err != nil {
-			//log.Println("Metrics Error -", err)
-		}
-
-		if status != 200 {
-			//log.Println("Metrics Error - Invalid status code ", status)
+			// fmt.Println("Metrics Error -", err)
 		}
 	}
 }
 
-func getProjectInfo(config *config.Modules) map[string]interface{} {
-	project := map[string]interface{}{
-		"crud":      []string{},
-		"functions": map[string]interface{}{"enabled": false},
-		"realtime":  map[string]interface{}{"enabled": false},
-		"fileStore": map[string]interface{}{"enabled": false},
-		"auth":      []string{},
-	}
+func getProjectInfo(projects []*config.Project) map[string]interface{} {
 
-	if config.Crud != nil {
-		crud := []string{}
-		for k := range config.Crud {
-			crud = append(crud, k)
-		}
-		project["crud"] = crud
-	}
+	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
+	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
+	realtimeConfig := map[string]interface{}{"enabled": false}
+	fileStoreConfig := map[string]interface{}{"enabled": false, "storeTypes": []string{}, "rules": 0}
+	staticConfig := map[string]interface{}{"enabled": false, "routes": 0}
+	auth := []string{}
 
-	if config.Auth != nil {
-		auth := []string{}
-		for k, v := range config.Auth {
-			if v.Enabled {
-				auth = append(auth, k)
+	for _, project := range projects {
+		if config := project.Modules; config != nil {
+			if config.Crud != nil {
+				for k, v := range config.Crud {
+					if v.Enabled {
+						crudConfig["dbs"] = appendIfMissing(crudConfig["dbs"].([]string), k)
+						if v.Collections != nil {
+							crudConfig["collections"] = crudConfig["collections"].(int) + len(v.Collections)
+						}
+					}
+				}
+			}
+
+			if config.Auth != nil {
+				for k, v := range config.Auth {
+					if v.Enabled {
+						auth = appendIfMissing(auth, k)
+					}
+				}
+			}
+
+			if config.Functions != nil && config.Functions.Enabled {
+				functionsConfig["enabled"] = true
+				if config.Functions.Rules != nil {
+					functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Rules)
+					for _, v := range config.Functions.Rules {
+						if v != nil {
+							functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v)
+						}
+					}
+				}
+			}
+
+			if config.Realtime != nil && config.Realtime.Enabled {
+				realtimeConfig["enabled"] = true
+			}
+
+			if config.FileStore != nil && config.FileStore.Enabled {
+				fileStoreConfig["enabled"] = true
+				fileStoreConfig["storeTypes"] = appendIfMissing(fileStoreConfig["storeTypes"].([]string), config.FileStore.StoreType)
+				if config.FileStore.Rules != nil {
+					fileStoreConfig["rules"] = len(config.FileStore.Rules) + fileStoreConfig["rules"].(int)
+				}
+			}
+
+			if config.Static != nil && config.Static.Enabled {
+				staticConfig["enabled"] = true
+				if config.Static.Routes != nil {
+					staticConfig["routes"] = len(config.Static.Routes) + staticConfig["routes"].(int)
+				}
 			}
 		}
-		project["auth"] = auth
 	}
 
-	if config.Functions != nil {
-		project["functions"] = map[string]interface{}{"enabled": config.Functions.Enabled}
-	}
-
-	if config.Realtime != nil {
-		project["realtime"] = map[string]interface{}{"enabled": config.Realtime.Enabled}
-	}
-
-	if config.FileStore != nil {
-		project["fileStore"] = map[string]interface{}{"enabled": config.FileStore.Enabled, "storeType": config.FileStore.StoreType}
-	}
-
-	return project
+	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "static": staticConfig, "auth": auth}
 }

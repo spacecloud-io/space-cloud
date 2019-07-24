@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import store from '../../../store'
 import '../../../index.css';
@@ -12,6 +13,9 @@ import RulesComponent from '../../../components/rules/Rules';
 import { get, set, push } from "automate-redux";
 
 const Rules = (props) => {
+	useState(() => {
+    ReactGA.pageview("/projects/file-storage/rules");
+  }, [])
 	const noOfRules = props.rules.length
 	return (
 		<div>
@@ -29,6 +33,7 @@ const Rules = (props) => {
 						handleRuleChange={props.handleRuleChange}
 						addText={'Add a rule'}
 						handleAddRuleClick={props.handleCreateRule}
+						handleDeleteRule={props.handleDeleteRule}
 					/>}
 					{!noOfRules && <EmptyState
 						graphics={rulesImg} desc="Guard your data with rules that define who has access to it and how it is structured."
@@ -51,6 +56,10 @@ const mapDispatchToProps = (dispatch) => {
 		handleRuleChange: (index, value) => {
 			let rules = get(store.getState(), "config.modules.fileStore.rules", []).slice()
 			rules[index] = value
+			dispatch(set(`config.modules.fileStore.rules`, rules))
+		},
+		handleDeleteRule: (index) => {
+			const rules = get(store.getState(), `config.modules.fileStore.rules`, []).filter((o, i) => i !== index)
 			dispatch(set(`config.modules.fileStore.rules`, rules))
 		},
 		handleCreateRule: () => {
