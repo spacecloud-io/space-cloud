@@ -9,12 +9,13 @@ function StaticConfigureForm(props) {
 	return (
 		<div className="configure">
 			<div className="conn-string">Static : </div>
-
 			<Form className="conn-form" layout="inline">
-				<div className="conn-form-options">
-					<Form.Item label="Enabled" className="switch">
-						{getFieldDecorator('enabled', { valuePropName: 'checked' })(<Switch size="small" />)}
-					</Form.Item>
+				<div className="static">
+					<div className="conn-form-options">
+						<Form.Item label="Enabled" className="switch static-switch">
+							{getFieldDecorator('enabled', { valuePropName: 'checked' })(<Switch size="small" />)}
+						</Form.Item>
+					</div>
 				</div>
 			</Form> <br />
 		</div>

@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux'
 import { Collapse, Icon } from 'antd';
 import Oauth from '../../components/user-management/Oauth'
@@ -19,6 +20,9 @@ import store from "../../store";
 
 const Panel = Collapse.Panel;
 function UserManagement(props) {
+  useState(() => {
+    ReactGA.pageview("/projects/user-management");
+  }, [])
   return (
     <div className="user-management">
       <Topbar showProjectSelector />
@@ -32,7 +36,7 @@ function UserManagement(props) {
           <div className="collapse">
             <Collapse accordion expandIconPosition="right" expandIcon={({ isActive }) => <Icon type="right" rotate={isActive ? 270 : 90} />}>
               <Panel header={(<CollapseHeader icon={mailIcon} desc="Mail" />)} key="1">
-                <Email formState={props.email} handleChange={(values) => props.handleChange("email", values)}/>
+                <Email formState={props.email} handleChange={(values) => props.handleChange("email", values)} />
               </Panel>
               {/* <Panel header={(<CollapseHeader icon={googleIcon} desc="Google" />)} key="2">
                 <Oauth formState={props.google} type="Google" redirectUrl="www.google.com" handleChange={(values) => props.handleChange("google", values)} />

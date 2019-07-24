@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.10.0"
+const BuildVersion = "0.10.1"
 
 const (
 	// One operation returns a single document from the database
@@ -51,6 +51,9 @@ const (
 
 	// AmazonS3 is the type used for the AmazonS3 storage
 	AmazonS3 FileStoreType = "amazon-s3"
+
+	// GCPStorage is the type used for the GCP storage
+	GCPStorage FileStoreType = "gcp-storage"
 )
 
 // FileOpType is the type of file operation being performed on the file store
@@ -187,7 +190,7 @@ const (
 
 	// PortHTTPSecure is the port used for the http server with tls
 	PortHTTPSecure string = "4126"
-	
+
 	// PortGRPCSecure is the port used for the grpc server with tls
 	PortGRPCSecure string = "4128"
 

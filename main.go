@@ -174,11 +174,6 @@ func actionRun(c *cli.Context) error {
 	// Configure all modules
 	s.SetConfig(conf)
 
-	// Anonymously collect usage metrics if not explicitly disabled
-	if !disableMetrics {
-		go s.RoutineMetrics()
-	}
-
 	// Start nats if not disabled
 	if !disableNats {
 		err := s.RunNatsServer(seeds, utils.PortNatsServer, utils.PortNatsCluster)
@@ -187,7 +182,7 @@ func actionRun(c *cli.Context) error {
 		}
 	}
 
-	return s.Start(seeds)
+	return s.Start(seeds, disableMetrics)
 }
 
 func actionInit(*cli.Context) error {
