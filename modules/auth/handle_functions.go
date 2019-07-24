@@ -1,6 +1,10 @@
 package auth
 
-import "github.com/spaceuptech/space-cloud/config"
+import (
+	"errors"
+
+	"github.com/spaceuptech/space-cloud/config"
+)
 
 // IsFuncCallAuthorised checks if the func call is authorised
 func (m *Module) IsFuncCallAuthorised(project, service, function, token string, params interface{}) (TokenClaims, error) {
@@ -12,7 +16,10 @@ func (m *Module) IsFuncCallAuthorised(project, service, function, token string, 
 		return nil, err
 	}
 	if rule.Rule == "allow" {
-		return map[string]interface{}{}, nil
+		if m.project == project {
+			return map[string]interface{}{}, nil
+		}
+		return map[string]interface{}{}, errors.New("invalid project details provided")
 	}
 
 	auth, err := m.parseToken(token)

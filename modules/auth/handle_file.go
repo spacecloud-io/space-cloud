@@ -21,7 +21,10 @@ func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOp
 	}
 	rule := rules.Rule[string(op)]
 	if rule.Rule == "allow" {
-		return nil
+		if m.project == project {
+			return nil
+		}
+		return errors.New("invalid project details provided")
 	}
 
 	auth, err := m.parseToken(token)
