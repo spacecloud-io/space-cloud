@@ -2,7 +2,6 @@ package local
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"io"
 	"os"
@@ -11,7 +10,7 @@ import (
 )
 
 // CreateFile creates a file in the path provided
-func (l *Local) CreateFile(ctx context.Context, project string, req *model.CreateFileRequest, file io.Reader) error {
+func (l *Local) CreateFile(project string, req *model.CreateFileRequest, file io.Reader) error {
 	path := l.rootPath + project + req.Path
 
 	// Create the dir recursively if it does not exists or overwrite if a file of same name already exists.
@@ -40,7 +39,7 @@ func (l *Local) CreateFile(ctx context.Context, project string, req *model.Creat
 }
 
 // CreateDir creates a directory in the path provided
-func (l *Local) CreateDir(ctx context.Context, project string, req *model.CreateFileRequest) error {
+func (l *Local) CreateDir(project string, req *model.CreateFileRequest) error {
 	path := l.rootPath + project + req.Path
 	if !isPathDir(path) && !req.MakeAll {
 		return errors.New("Local: Provided path is not a directory")

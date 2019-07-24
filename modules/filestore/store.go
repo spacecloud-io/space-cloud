@@ -1,7 +1,6 @@
 package filestore
 
 import (
-	"context"
 	"io"
 	"sync"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/filestore/amazons3"
 	"github.com/spaceuptech/space-cloud/modules/filestore/local"
+	"github.com/spaceuptech/space-cloud/modules/filestore/gcpstorage"
 )
 
 // Module is responsible for managing the file storage module
@@ -29,14 +29,14 @@ func Init(auth *auth.Module) *Module {
 
 // FileStore abstracts the implementation file storage operations
 type FileStore interface {
-	CreateFile(ctx context.Context, project string, req *model.CreateFileRequest, file io.Reader) error
-	CreateDir(ctx context.Context, project string, req *model.CreateFileRequest) error
+	CreateFile(project string, req *model.CreateFileRequest, file io.Reader) error
+	CreateDir(project string, req *model.CreateFileRequest) error
 
-	ListDir(ctx context.Context, project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error)
-	ReadFile(ctx context.Context, project, path string) (*model.File, error)
+	ListDir(project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error)
+	ReadFile(project, path string) (*model.File, error)
 
-	DeleteDir(ctx context.Context, project, path string) error
-	DeleteFile(ctx context.Context, project, path string) error
+	DeleteDir(project, path string) error
+	DeleteFile(project, path string) error
 
 	GetStoreType() utils.FileStoreType
 	Close() error
@@ -92,6 +92,8 @@ func initBlock(fileStoreType utils.FileStoreType, connection, endpoint string) (
 		return local.Init(connection)
 	case utils.AmazonS3:
 		return amazons3.Init(connection, endpoint) // connection is the aws region code
+	case utils.GCPStorage:
+		return gcpstorage.Init(connection, endpoint)
 	default:
 		return nil, utils.ErrInvalidParams
 	}

@@ -548,7 +548,7 @@ func (s *Server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response
 
 // CreateFolder creates a new folder
 func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (*pb.Response, error) {
-	status, err := s.file.CreateDir(ctx, in.Meta.Project, in.Meta.Token, &model.CreateFileRequest{Name: in.Name, Path: in.Path, Type: "dir", MakeAll: false})
+	status, err := s.file.CreateDir(in.Meta.Project, in.Meta.Token, &model.CreateFileRequest{Name: in.Name, Path: in.Path, Type: "dir", MakeAll: false})
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -562,7 +562,7 @@ func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (
 
 // DeleteFile delete a file
 func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.Response, error) {
-	status, err := s.file.DeleteFile(ctx, in.Meta.Project, in.Meta.Token, in.Path)
+	status, err := s.file.DeleteFile(in.Meta.Project, in.Meta.Token, in.Path)
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -576,7 +576,7 @@ func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.
 
 // ListFiles lists all files in the provided folder
 func (s *Server) ListFiles(ctx context.Context, in *pb.ListFilesRequest) (*pb.Response, error) {
-	status, result, err := s.file.ListFiles(ctx, in.Meta.Project, in.Meta.Token, &model.ListFilesRequest{Path: in.Path, Type: "all"})
+	status, result, err := s.file.ListFiles(in.Meta.Project, in.Meta.Token, &model.ListFilesRequest{Path: in.Path, Type: "all"})
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -607,7 +607,7 @@ func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
 	// defer w.Close()
 
 	go func() {
-		status, err1 := s.file.UploadFile(context.TODO(), req.Meta.Project, req.Meta.Token, &model.CreateFileRequest{Path: req.Path, Name: req.Name, Type: "file", MakeAll: true}, r)
+		status, err1 := s.file.UploadFile(req.Meta.Project, req.Meta.Token, &model.CreateFileRequest{Path: req.Path, Name: req.Name, Type: "file", MakeAll: true}, r)
 		c <- status
 		if err1 != nil {
 			err = err1
@@ -640,7 +640,7 @@ func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
 
 // DownloadFile downloads a file
 func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_DownloadFileServer) error {
-	status, file, err := s.file.DownloadFile(context.TODO(), in.Meta.Project, in.Meta.Token, in.Path)
+	status, file, err := s.file.DownloadFile(in.Meta.Project, in.Meta.Token, in.Path)
 	if err != nil {
 		stream.Send(&pb.FilePayload{Status: int32(status), Error: err.Error()})
 		return nil
