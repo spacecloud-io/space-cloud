@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import '../../index.css'
 import Sidenav from '../../components/sidenav/Sidenav';
@@ -14,6 +15,9 @@ import { openPlansPage } from "../../utils"
 import './deploy.css'
 
 function Deploy({ mode, deployConfig, handleChange }) {
+  useState(() => {
+    ReactGA.pageview("/deploy");
+  }, [])
   return (
     <div class="deploy">
       <Topbar showProjectSelector />

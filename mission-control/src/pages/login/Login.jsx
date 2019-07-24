@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import './login.css'
 import { Row, Col } from 'antd'
 import logo from '../../assets/logo-black.svg'
@@ -8,8 +8,12 @@ import loginBg from '../../assets/login.svg'
 import service from '../../index';
 import { notify, handleClusterLoginSuccess } from "../../utils"
 import LoginForm from './LoginForm';
+import ReactGA from 'react-ga';
 
 function Login(props) {
+  useState(() => {
+    ReactGA.pageview("/");
+  }, [])
   return (
     <div className="login">
       <div className="main-wrapper">

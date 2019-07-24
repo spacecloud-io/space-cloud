@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import '../../../index.css';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -15,8 +16,10 @@ import store from "../../../store"
 
 const Rules = (props) => {
 	const [modalVisible, setModalVisibility] = useState(false)
+	useState(() => {
+    ReactGA.pageview("/projects/functions/rules");
+  }, [])
 	const noOfRules = Object.keys(props.rules).length
-	console.log("No of rules", noOfRules)
 	return (
 		<div>
 			<Topbar showProjectSelector />

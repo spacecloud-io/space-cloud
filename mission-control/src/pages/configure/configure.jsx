@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import '../../index.css'
 import Sidenav from '../../components/sidenav/Sidenav';
@@ -15,6 +16,9 @@ import store from ".././../store";
 import './configure.css'
 
 function Rules(props) {
+	useState(() => {
+    ReactGA.pageview("/projects/configure");
+  }, [])
 	return (
 		<div className="configurations">
 			<Topbar showProjectSelector />

@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import '../../../index.css';
 import Sidenav from '../../../components/sidenav/Sidenav';
@@ -19,6 +20,10 @@ class Rules extends React.Component {
 		super(props)
 		this.state = { modalVisible: false }
 		this.handleModalVisiblity = this.handleModalVisiblity.bind(this);
+	}
+
+	componentDidMount() {
+		ReactGA.pageview("/projects/database/rules");
 	}
 
 	handleModalVisiblity(visible) {
