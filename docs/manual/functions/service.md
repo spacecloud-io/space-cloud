@@ -16,7 +16,7 @@ You can easily extend Space Cloud by writing your custom logic on the backend in
       <code>
 const { API, cond } = require('space-api');
 
-const api = new API('my-app', 'http://localhost:8080');
+const api = new API('my-app', 'http://localhost:4122');
 
 // Make a service
 const service = api.Service('service-name');
@@ -43,7 +43,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.Init("books-app", "localhost", "4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -64,7 +64,7 @@ func Echo(params, auth *model.Message, fn service.CallBackFunction) {
   <div id="service-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 Service service = api.service("service");
 service.registerFunc("echo_func", new ServiceFunction() {
     @Override
@@ -81,7 +81,7 @@ service.start(); // Is blocking
       <code class="python">
 from space_api import API
 
-api = API('books-app', 'localhost:8081')
+api = API('books-app', 'localhost:4124')
 
 
 def my_func(params, auth, cb):  # Function to be registered
