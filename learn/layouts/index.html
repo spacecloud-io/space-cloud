@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>{{.Page.Title}} | Space Up Technologies</title>
+  <link type="text/css" rel="stylesheet" href="/css/app.css" media="screen,projection" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+    integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('.sidenav').sidenav({ edge: 'right' });
+    });
+  </script>
+</head>
+
+
+<body>
+  {{partial "sidenav.html" . }}
+  <div class="landing main-wrapper">
+    <center>
+      <div class="orange-bg"></div>
+    </center>
+    <div class="blue-bg">
+      {{ partial "topbar.html" . }}
+  <div class="top-position">
+    <p class="top-title">Real world Space Cloud tutorials for frontend developers with deadlines!</p>
+    <p class="top-desc">With these open-source tutorials, you will move from the basics of
+      GraphQL to building a real-time application in 2 hours</p>
+  </div>
+  </div>
+  <div class="content-position">
+    <div class="content-heading valign-wrapper">
+      <b><span>Front-end</span></b>
+      <div class="material-icons">chevron_right</div>
+    </div>
+    <div class="row">
+      {{ partial "cards.html" . }}
+      {{ partial "cards.html" . }}
+      {{ partial "cards.html" . }}
+    </div>
+
+    <div class="content-heading valign-wrapper">
+      <b><span>Back-end</span></b>
+      <div class="material-icons">chevron_right</div>
+    </div>
+    <div class="row">
+      {{ partial "cards.html" . }}
+      {{ partial "cards.html" . }}
+      {{ partial "cards.html" . }}
+    </div>
+
+    <div class="content-heading valign-wrapper">
+      <b><span>Mobile</span></b>
+      <div class="material-icons">chevron_right</div>
+    </div>
+    <div class="row">
+      {{ partial "cards.html" . }}
+      {{ partial "cards.html" . }}
+      {{ partial "cards.html" . }}
+    </div>
+  </div>
+  {{ partial "newsletter.html" . }}
+  {{ partial "footer.html" . }}
+  </div>
+</body>
+
+</html>
