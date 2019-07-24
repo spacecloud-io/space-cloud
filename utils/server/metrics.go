@@ -178,73 +178,63 @@ func (s *Server) RoutineMetrics() {
 }
 
 func getProjectInfo(config *config.Modules) map[string]interface{} {
-	project := map[string]interface{}{
-		"crud":      map[string]interface{}{"dbs": []string{}},
-		"functions": map[string]interface{}{"enabled": false},
-		"realtime":  map[string]interface{}{"enabled": false},
-		"fileStore": map[string]interface{}{"enabled": false},
-		"static":    map[string]interface{}{"enabled": false},
-		"auth":      []string{},
-	}
+
+	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
+	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
+	realtimeConfig := map[string]interface{}{"enabled": false}
+	fileStoreConfig := map[string]interface{}{"enabled": false, "storeTypes": []string{}, "rules": 0}
+	staticConfig := map[string]interface{}{"enabled": false, "routes": 0}
+	auth := []string{}
 
 	if config.Crud != nil {
-		dbs := []string{}
-		collections := 0
 		for k, v := range config.Crud {
 			if v.Enabled {
-				dbs = append(dbs, k)
+				crudConfig["dbs"] = append(crudConfig["dbs"].([]string), k)
 				if v.Collections != nil {
-					collections = collections + len(v.Collections)
+					crudConfig["collections"] = crudConfig["collections"].(int) + len(v.Collections)
 				}
 			}
 		}
-		project["crud"] = map[string]interface{}{"dbs": dbs, "collections": collections}
 	}
 
 	if config.Auth != nil {
-		auth := []string{}
 		for k, v := range config.Auth {
 			if v.Enabled {
 				auth = append(auth, k)
 			}
 		}
-		project["auth"] = auth
 	}
 
 	if config.Functions != nil && config.Functions.Enabled {
-		temp := map[string]interface{}{"enabled": true}
+		functionsConfig["enabled"] = true
 		if config.Functions.Rules != nil {
-			temp["services"] = len(config.Functions.Rules)
-			noOfFunctions := 0
+			functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Rules)
 			for _, v := range config.Functions.Rules {
 				if v != nil {
-					noOfFunctions = noOfFunctions + len(v)
+					functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v)
 				}
 			}
-			temp["functions"] = noOfFunctions
 		}
-		project["functions"] = temp
 	}
 
-	if config.Realtime != nil {
-		project["realtime"] = map[string]interface{}{"enabled": config.Realtime.Enabled}
+	if config.Realtime != nil && config.Realtime.Enabled {
+		realtimeConfig["enabled"] = true
 	}
 
 	if config.FileStore != nil && config.FileStore.Enabled {
-		temp := map[string]interface{}{"enabled": true, "storeType": config.FileStore.StoreType, "rules": 0}
+		fileStoreConfig["enabled"] = true
+		fileStoreConfig["storeTypes"] = []string{config.FileStore.StoreType}
 		if config.FileStore.Rules != nil {
-			temp["rules"] = len(config.FileStore.Rules)
+			fileStoreConfig["rules"] = len(config.FileStore.Rules)
 		}
-		project["fileStore"] = temp
 	}
 
 	if config.Static != nil && config.Static.Enabled {
-		temp := map[string]interface{}{"enabled": true, "routes": 0}
+		staticConfig["enabled"] = true
 		if config.Static.Routes != nil {
-			temp["routes"] = len(config.Static.Routes)
+			staticConfig["routes"] = len(config.Static.Routes)
 		}
-		project["static"] = temp
 	}
 
-	return project
+	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "static": staticConfig, "auth": auth}
 }

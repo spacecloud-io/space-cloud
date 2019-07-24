@@ -64,6 +64,11 @@ func Test(t *testing.T) {
 			Realtime: &config.Realtime{
 				Enabled: true,
 			},
+			Auth: map[string]*config.AuthStub{
+				"email": &config.AuthStub{
+					Enabled: true,
+				},
+			},
 		},
 		result: map[string]interface{}{
 			"crud": map[string]interface{}{
@@ -76,9 +81,9 @@ func Test(t *testing.T) {
 				"functions": 4,
 			},
 			"fileStore": map[string]interface{}{
-				"enabled":   true,
-				"storeType": "amazon-s3",
-				"rules":     2,
+				"enabled":    true,
+				"storeTypes": []string{"amazon-s3"},
+				"rules":      2,
 			},
 			"static": map[string]interface{}{
 				"enabled": true,
@@ -87,7 +92,7 @@ func Test(t *testing.T) {
 			"realtime": map[string]interface{}{
 				"enabled": true,
 			},
-			"auth": []string{},
+			"auth": []string{"email"},
 		},
 	})
 
