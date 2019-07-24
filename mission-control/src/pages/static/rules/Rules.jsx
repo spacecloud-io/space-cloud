@@ -29,6 +29,7 @@ const Rules = (props) => {
 						handleRuleChange={props.handleRuleChange}
 						addText={'Add a rule'}
 						handleAddRuleClick={props.handleCreateRule}
+						handleDeleteRule={props.handleDeleteRoute}
 					/>}
 					{!noOfRules && <EmptyState
 						graphics={rulesImg} desc="Guard your data with rules that define who has access to it and how it is structured."
@@ -51,6 +52,10 @@ const mapDispatchToProps = (dispatch) => {
 		handleRuleChange: (index, value) => {
 			let routes = get(store.getState(), "config.modules.static.routes", []).slice()
 			routes[index] = value
+			dispatch(set(`config.modules.static.routes`, routes))
+		},
+		handleDeleteRoute: (index) => {
+			const routes = get(store.getState(), `config.modules.static.routes`, []).filter((o, i) => i !== index)
 			dispatch(set(`config.modules.static.routes`, routes))
 		},
 		handleCreateRule: () => {
