@@ -2,7 +2,6 @@ package amazons3
 
 import (
 	"bufio"
-	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,12 +14,12 @@ import (
 )
 
 // ListDir lists a directory in S3
-func (a *AmazonS3) ListDir(ctx context.Context, project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
+func (a *AmazonS3) ListDir(project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
 	svc := s3.New(a.client)
 
 	resp, _ := svc.ListObjects(&s3.ListObjectsInput{
 		Bucket:    aws.String(project),
-		Prefix:    aws.String(req.Path), //backslach at the end is important
+		Prefix:    aws.String(req.Path), //backslash at the end is important
 		Delimiter: aws.String("/"),
 	})
 
@@ -44,7 +43,7 @@ func (a *AmazonS3) ListDir(ctx context.Context, project string, req *model.ListF
 }
 
 // ReadFile reads a file from S3
-func (a *AmazonS3) ReadFile(ctx context.Context, project, path string) (*model.File, error) {
+func (a *AmazonS3) ReadFile(project, path string) (*model.File, error) {
 	u2 := uuid.NewV4()
 
 	tmpfile, err := ioutil.TempFile("", u2.String())
