@@ -29,14 +29,14 @@ func Init(auth *auth.Module) *Module {
 
 // FileStore abstracts the implementation file storage operations
 type FileStore interface {
-	CreateFile(project string, req *model.CreateFileRequest, file io.Reader) error
-	CreateDir(project string, req *model.CreateFileRequest) error
+	CreateFile(req *model.CreateFileRequest, file io.Reader) error
+	CreateDir(req *model.CreateFileRequest) error
 
-	ListDir(project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error)
-	ReadFile(project, path string) (*model.File, error)
+	ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error)
+	ReadFile(path string) (*model.File, error)
 
-	DeleteDir(project, path string) error
-	DeleteFile(project, path string) error
+	DeleteDir(path string) error
+	DeleteFile(path string) error
 
 	GetStoreType() utils.FileStoreType
 	Close() error
@@ -70,7 +70,7 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	}
 
 	// Create a new crud blocks
-	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn, conf.Endpoint)
+	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn, conf.Endpoint, conf.Bucket)
 	if err != nil {
 		return err
 	}
@@ -86,14 +86,14 @@ func (m *Module) IsEnabled() bool {
 	return m.enabled
 }
 
-func initBlock(fileStoreType utils.FileStoreType, connection, endpoint string) (FileStore, error) {
+func initBlock(fileStoreType utils.FileStoreType, connection, endpoint, bucket string) (FileStore, error) {
 	switch fileStoreType {
 	case utils.Local:
 		return local.Init(connection)
 	case utils.AmazonS3:
-		return amazons3.Init(connection, endpoint) // connection is the aws region code
+		return amazons3.Init(connection, endpoint, bucket) // connection is the aws region code
 	case utils.GCPStorage:
-		return gcpstorage.Init(connection, endpoint)
+		return gcpstorage.Init(bucket)
 	default:
 		return nil, utils.ErrInvalidParams
 	}
