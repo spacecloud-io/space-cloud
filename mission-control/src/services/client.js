@@ -1,5 +1,7 @@
 const fetchJSON = (url, options) => {
-  url = "http://localhost:4122" + url
+  if (process.env.NODE_ENV !== "production")  {
+    url = "http://localhost:4122" + url
+  }
   return new Promise((resolve, reject) => {
     fetch(url, options).then(res => {
       const status = res.status
