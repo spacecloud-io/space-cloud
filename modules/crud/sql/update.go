@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
-	goqu "gopkg.in/doug-martin/goqu.v4"
+	goqu "github.com/doug-martin/goqu/v8"
 
 	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
 	_ "github.com/lib/pq"                              // Import for postgres
-	_ "gopkg.in/doug-martin/goqu.v4/adapters/postgres" // Adapter for postgres
+	_ "github.com/doug-martin/goqu/v8/dialect/postgres"  // Dialect for postgres
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -16,6 +16,9 @@ import (
 
 // Update updates the document(s) which match the condition provided.
 func (s *SQL) Update(ctx context.Context, project, col string, req *model.UpdateRequest) error {
+	if req == nil {
+		return utils.ErrInvalidParams
+	}
 	sqlString, args, err := s.generateUpdateQuery(ctx, project, col, req)
 	if err != nil {
 		return err
@@ -26,18 +29,16 @@ func (s *SQL) Update(ctx context.Context, project, col string, req *model.Update
 //generateUpdateQuery makes query for update operation
 func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
-	query := goqu.From(col).Prepared(true)
-	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
+	dialect := goqu.Dialect(s.dbType)
+	query := dialect.From(col).Prepared(true)
 
 	if req.Find != nil {
-
 		// Get the where clause from query object
 		var err error
 		query, err = generateWhereClause(query, req.Find)
 		if err != nil {
 			return "", nil, err
 		}
-
 	}
 
 	if req.Update == nil {
@@ -50,7 +51,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	}
 
 	// Generate SQL string and arguments
-	sqlString, args, err := query.ToUpdateSql(record)
+	sqlString, args, err := query.Update().Set(record).ToSQL()
 	if err != nil {
 		return "", nil, err
 	}
