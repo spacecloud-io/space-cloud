@@ -76,24 +76,27 @@ func (s *SQL) GetDBType() utils.DBType {
 	return utils.MySQL
 }
 
-func (s *SQL) doExecContext(ctx context.Context, query string, args []interface{}) error {
-	stmt, err := s.client.PreparexContext(ctx, query)
-	if err != nil {
+func doExecContext(ctx context.Context, query string, args []interface{}, executor interface{}) error {
+	switch exec := executor.(type) {
+	case *sqlx.DB:
+		stmt, err := exec.PreparexContext(ctx, query)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		_, err = stmt.ExecContext(ctx, args...)
 		return err
-	}
-	defer stmt.Close()
+	case *sqlx.Tx:
+		stmt, err := exec.PreparexContext(ctx, query)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, args...)
-	return err
-}
-
-func doTransactionExecContext(ctx context.Context, query string, args []interface{}, tx *sqlx.Tx) error {
-	stmt, err := tx.PreparexContext(ctx, query)
-	if err != nil {
+		_, err = stmt.ExecContext(ctx, args...)
 		return err
+	default:
+		return errors.New("Error executing query")
 	}
-	defer stmt.Close()
-
-	_, err = stmt.ExecContext(ctx, args...)
-	return err
 }

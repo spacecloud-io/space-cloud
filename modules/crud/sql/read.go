@@ -163,11 +163,6 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 
 			switch s.GetDBType() {
 			case utils.MySQL, utils.Postgres:
-				rowTypes, _ = rows.ColumnTypes()
-			}
-
-			switch s.GetDBType() {
-			case utils.MySQL, utils.Postgres:
 				mysqlTypeCheck(rowTypes, mapping)
 			}
 

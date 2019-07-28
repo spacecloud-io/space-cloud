@@ -20,7 +20,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 	if err != nil {
 		return err
 	}
-	return s.doExecContext(ctx, sqlQuery, args)
+	return doExecContext(ctx, sqlQuery, args, s.client)
 }
 
 //generateCreateQuery makes query for create operation
