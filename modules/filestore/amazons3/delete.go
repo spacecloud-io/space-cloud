@@ -7,27 +7,27 @@ import (
 )
 
 // DeleteFile deletes a file from S3
-func (a *AmazonS3) DeleteFile(project, path string) error {
+func (a *AmazonS3) DeleteFile(path string) error {
 	svc := s3.New(a.client)
-	_, err := svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(project), Key: aws.String(path)})
+	_, err := svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(a.bucket), Key: aws.String(path)})
 	if err != nil {
 		return err
 	}
 
 	return svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
-		Bucket: aws.String(project),
-		Key:    aws.String(project + path),
+		Bucket: aws.String(a.bucket),
+		Key:    aws.String(a.bucket + path),
 	})
 }
 
 // DeleteDir deletes a directory in S3
-func (a *AmazonS3) DeleteDir(project, path string) error {
+func (a *AmazonS3) DeleteDir(path string) error {
 	// TODO: Consider AWS operation limit
 	svc := s3.New(a.client)
 
 	// Setup BatchDeleteIterator to iterate through a list of objects.
 	iter := s3manager.NewDeleteListIterator(svc, &s3.ListObjectsInput{
-		Bucket: aws.String(project),
+		Bucket: aws.String(a.bucket),
 		Prefix: aws.String(path),
 	})
 

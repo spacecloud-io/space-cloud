@@ -9,16 +9,17 @@ import (
 // AmazonS3 holds the S3 driver session
 type AmazonS3 struct {
 	client *session.Session
+	bucket string
 }
 
 // Init initializes an amazon s3 driver
-func Init(region, endpoint string) (*AmazonS3, error) {
+func Init(region, endpoint, bucket string) (*AmazonS3, error) {
 	awsConf := &aws.Config{Region: aws.String(region)}
 	if len(endpoint) > 0 {
 		awsConf.Endpoint = aws.String(endpoint)
 	}
 	session, err := session.NewSession(awsConf)
-	return &AmazonS3{client: session}, err
+	return &AmazonS3{client: session, bucket: bucket}, err
 }
 
 // GetStoreType returns the file store type
