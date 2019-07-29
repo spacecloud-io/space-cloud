@@ -1,0 +1,20 @@
+.testing-form {
+  margin-top: 16px;
+}
+.testing-form .row {
+  margin-bottom: 16px;
+}
+
+.testing-form .input-row {
+  display: flex;
+  align-items: center;
+}
+
+.testing-form .params .CodeMirror {
+  height: auto;
+  max-height: 240px;
+}
+
+.testing-form .result .CodeMirror {
+  height: auto;
+}
