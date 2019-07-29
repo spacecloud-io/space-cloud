@@ -26,6 +26,8 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("POST").Path("/v1/api/config/deploy").HandlerFunc(handlers.HandleStoreDeploymentConfig(s.adminMan, s.syncMan))
 	router.Methods("GET").Path("/v1/api/config/operation").HandlerFunc(handlers.HandleLoadOperationModeConfig(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/api/config/operation").HandlerFunc(handlers.HandleStoreOperationModeConfig(s.adminMan, s.syncMan))
+	router.Methods("GET").Path("/v1/api/config/static").HandlerFunc(handlers.HandleLoadStaticConfig(s.adminMan, s.syncMan))
+	router.Methods("POST").Path("/v1/api/config/static").HandlerFunc(handlers.HandleStoreStaticConfig(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan))
 
 	// Initialize routes for the deployment module
@@ -75,5 +77,5 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
 
 	// Initialize the route for handling static files
-	router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.projects))
+	router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.static))
 }

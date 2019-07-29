@@ -124,7 +124,7 @@ func getProjectInfo(projects []*config.Project) map[string]interface{} {
 	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
 	realtimeConfig := map[string]interface{}{"enabled": false}
 	fileStoreConfig := map[string]interface{}{"enabled": false, "storeTypes": []string{}, "rules": 0}
-	staticConfig := map[string]interface{}{"enabled": false, "routes": 0}
+	// staticConfig := map[string]interface{}{"enabled": false, "routes": 0}
 	auth := []string{}
 
 	for _, project := range projects {
@@ -172,14 +172,14 @@ func getProjectInfo(projects []*config.Project) map[string]interface{} {
 				}
 			}
 
-			if config.Static != nil && config.Static.Enabled {
-				staticConfig["enabled"] = true
-				if config.Static.Routes != nil {
-					staticConfig["routes"] = len(config.Static.Routes) + staticConfig["routes"].(int)
-				}
-			}
+			// if config.Static != nil && config.Static.Enabled {
+			// 	staticConfig["enabled"] = true
+			// 	if config.Static.Routes != nil {
+			// 		staticConfig["routes"] = len(config.Static.Routes) + staticConfig["routes"].(int)
+			// 	}
+			// }
 		}
 	}
 
-	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "static": staticConfig, "auth": auth}
+	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "auth": auth}
 }

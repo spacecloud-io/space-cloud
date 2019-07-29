@@ -10,6 +10,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/deploy"
+	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
@@ -30,6 +31,7 @@ type SyncManager struct {
 	serfEvents    chan serf.Event
 	bootstrap     string
 	adminMan      *admin.Manager
+	static        *static.Module
 }
 
 const (
@@ -43,10 +45,10 @@ type node struct {
 }
 
 // New creates a new instance of the sync manager
-func New(projects *projects.Projects, d *deploy.Module, adminMan *admin.Manager) *SyncManager {
+func New(projects *projects.Projects, d *deploy.Module, adminMan *admin.Manager, s *static.Module) *SyncManager {
 	// Create a SyncManger instance
 	return &SyncManager{adminMan: adminMan, myIP: getOutboundIP(), serfEvents: make(chan serf.Event, 16),
-		bootstrap: bootstrapPending, deploy: d, projects: projects}
+		bootstrap: bootstrapPending, deploy: d, projects: projects, static: s}
 }
 
 // Start begins the sync manager operations

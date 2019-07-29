@@ -10,7 +10,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
-	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 )
 
@@ -21,7 +20,6 @@ type ProjectState struct {
 	Crud           *crud.Module
 	UserManagement *userman.Module
 	FileStore      *filestore.Module
-	Static         *static.Module
 	Functions      *functions.Module
 	Realtime       *realtime.Module
 }
@@ -85,9 +83,8 @@ func (p *Projects) NewProject(project string) *ProjectState {
 	u := userman.Init(c, a)
 	file := filestore.Init(a)
 	r := realtime.Init(c)
-	s := static.Init()
 
-	state := &ProjectState{Crud: c, Functions: f, Auth: a, UserManagement: u, FileStore: file, Realtime: r, Static: s}
+	state := &ProjectState{Crud: c, Functions: f, Auth: a, UserManagement: u, FileStore: file, Realtime: r}
 	p.projects[project] = state
 
 	return state

@@ -17,6 +17,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/modules/deploy"
+	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
@@ -38,6 +39,7 @@ type Server struct {
 	configFilePath string
 	adminMan       *admin.Manager
 	deploy         *deploy.Module
+	static         *static.Module
 }
 
 // New creates a new server instance
@@ -45,9 +47,10 @@ func New(nodeID string, isProd bool) *Server {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 	d := deploy.New()
+	s := static.Init()
 	adminMan := admin.New(nodeID)
 	projects := projects.New(driver.New())
-	syncMan := syncman.New(projects, d, adminMan)
+	syncMan := syncman.New(projects, d, adminMan, s)
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: projects, isProd: isProd,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
 		deploy: d,
@@ -113,6 +116,7 @@ func (s *Server) SetConfig(c *config.Config) {
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetConfig(c.Admin)
 	s.deploy.SetConfig(&c.Deploy)
+	s.static.SetConfig(c.Static)
 }
 
 func (s *Server) initGRPCServer() {

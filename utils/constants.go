@@ -171,6 +171,12 @@ const (
 	// RaftCommandSetOperation is used to set the deploy config
 	RaftCommandSetOperation RaftCommandType = "set-operation"
 
+	// RaftCommandSetStatic is used to set the deploy config
+	RaftCommandSetStatic RaftCommandType = "set-static"
+
+	// RaftCommandAddInternalRouteOperation is used to add internal routes
+	RaftCommandAddInternalRouteOperation RaftCommandType = "add-internal-route"
+
 	// RaftCommandDelete is used to delete a projects config
 	RaftCommandDelete RaftCommandType = "delete"
 )
@@ -219,3 +225,6 @@ const (
 	// PortRaft is used internally by raft
 	PortRaft string = "4234"
 )
+
+// InternalUserID is the auth.id used for internal requests
+const InternalUserID string = "internal-sc-user"

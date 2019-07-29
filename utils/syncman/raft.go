@@ -141,6 +141,16 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 
 		// Write the config to file
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
+
+	case utils.RaftCommandSetStatic:
+		if s.projectConfig.Static == nil {
+			s.projectConfig.Static = &config.Static{}
+		}
+
+		s.projectConfig.Static.Routes = c.Static.Routes
+
+		// Write the config to file
+		config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
 	return nil

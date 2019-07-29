@@ -20,10 +20,6 @@ func (p *Projects) StoreProject(config *config.Project) error {
 	// Set the configuration for the user management module
 	state.UserManagement.SetConfig(config.Modules.Auth)
 
-	if err := state.Static.SetConfig(config.Modules.Static); err != nil {
-		log.Println("Static module config error:", err)
-	}
-
 	// Set the configuration for the file storage module
 	if err := state.FileStore.SetConfig(config.Modules.FileStore); err != nil {
 		log.Println("File storage module config error:", err)

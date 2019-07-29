@@ -104,20 +104,20 @@ func (d *Driver) Deploy(ctx context.Context, c *model.Deploy, projects *projects
 func exposeRoute(c *model.Deploy, projects *projects.Projects) error {
 	// If expose param is present
 	if c.Expose != nil {
-		p, err := projects.LoadProject(c.Project)
-		if err != nil {
-			return err
-		}
+		// p, err := projects.LoadProject(c.Project)
+		// if err != nil {
+		// 	return err
+		// }
 
-		// Remove all the previouse routes
-		p.Static.DeleteRoutesWithID(c.Name)
+		// // Remove all the previouse routes
+		// p.Static.DeleteRoutesWithID(c.Name)
 
-		// Iterate over all the routes to be exposed
-		for _, e := range c.Expose {
+		// // Iterate over all the routes to be exposed
+		// for _, e := range c.Expose {
 
-			// Add the routes exposed
-			p.Static.AddProxyRoute(c.Name, *e.Host, *e.Prefix, *e.Proxy)
-		}
+		// 	// Add the routes exposed
+		// 	p.Static.AddProxyRoute(c.Name, *e.Host, *e.Prefix, *e.Proxy)
+		// }
 	}
 
 	return nil

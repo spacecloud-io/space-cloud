@@ -12,4 +12,5 @@ type RaftCommand struct {
 	Project   *config.Project         `json:"project"`
 	Deploy    *config.Deploy          `json:"deploy"`
 	Operation *config.OperationConfig `json:"operation"`
+	Static    *config.Static          `json:"static"`
 }
