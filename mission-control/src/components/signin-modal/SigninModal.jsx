@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import ReactGA from "react-ga"
 import { connect } from "react-redux";
 import { get, set } from 'automate-redux';
 import service from '../../index';
@@ -13,6 +14,9 @@ import "./signin-modal.css"
 const TabPane = Tabs.TabPane;
 
 const SigninModal = ({ handleCancel, handleLogin, handleRegister, visible }) => {
+  useState(() => {
+    ReactGA.pageview("/signup");
+  }, [])
   return (
     <Modal
       title=""

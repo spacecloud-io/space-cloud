@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux';
 import { get, set, increment, decrement } from 'automate-redux';
 import service from "../../index"
@@ -19,6 +20,9 @@ const NotifyContent = (props) => (
 )
 
 function Plans({ mode, handleModeChange }) {
+	useState(() => {
+		ReactGA.pageview("/plans");
+	}, [])
 	return (
 		<div>
 			<Topbar showProjectSelector />
@@ -75,7 +79,7 @@ const mapDispatchToProps = (dispatch) => {
 				dispatch(set("operationConfig", newOperationConfig))
 				notify("success", "Success", "Plan changed successfully")
 				if (mode > 0) {
-					notify("info", "Next steps", <NotifyContent/>)
+					notify("info", "Next steps", <NotifyContent />)
 				}
 			}).catch(error => {
 				console.log("Error", error)

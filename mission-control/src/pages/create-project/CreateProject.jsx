@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux'
 import { set, get } from "automate-redux"
 import { cloneDeep } from "lodash"
@@ -21,9 +22,13 @@ class CreateProject extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      selected: "sql-postgres"
+      selected: "mongo"
     };
   }
+
+  componentDidMount() {
+		ReactGA.pageview("/create-project");
+	}
 
   handleSelect(value) {
     return this.setState({ selected: value });

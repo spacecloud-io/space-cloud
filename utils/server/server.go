@@ -55,7 +55,7 @@ func New(nodeID string, isProd bool) *Server {
 }
 
 // Start begins the server operations
-func (s *Server) Start(seeds string) error {
+func (s *Server) Start(seeds string, disableMetrics bool) error {
 	// Start gRPC server in a separate goroutine
 	go s.initGRPCServer()
 
@@ -66,6 +66,11 @@ func (s *Server) Start(seeds string) error {
 	array := strings.Split(seeds, ",")
 	if err := s.syncMan.Start(s.nodeID, s.configFilePath, utils.PortGossip, utils.PortRaft, array); err != nil {
 		return err
+	}
+
+	// Anonymously collect usage metrics if not explicitly disabled
+	if !disableMetrics {
+		go s.RoutineMetrics()
 	}
 
 	// Allow cors

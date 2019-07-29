@@ -18,13 +18,13 @@
 
 .create-project .image {
   position: absolute;
-  right: 5vw;
+  right: 2vw;
   top: 1vw;
 }
 
 .create-project .next-btn {
   position: absolute;
-  right: 35vw;
+  right: 30vw;
   margin-top: 16px;
   border-radius: 15px;
   padding: 0 20px;
@@ -33,7 +33,7 @@
 }
 
 .create-project .cards {
-  padding-right: 180px;
+  padding-right: 100px;
 }
 
 .create-project  .ant-input-affix-wrapper .ant-input:not(:first-child)  {

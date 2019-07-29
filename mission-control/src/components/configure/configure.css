@@ -36,3 +36,17 @@
 .configure .ant-input {
   height: 36px;
 }
+
+.configure .static {
+  width: 610px;
+  position: relative;
+}
+
+.configure .static-switch {
+  position: absolute;
+  right: 0;
+}
+
+.file-storage .conn-form-cert{
+  margin-bottom: 8px;
+}

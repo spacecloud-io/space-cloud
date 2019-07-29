@@ -1,9 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
+import ReactGA from 'react-ga';
 import { Link } from "react-router-dom"
 import './welcome.css'
 import { Button } from 'antd'
 
 function Welcome(props) {
+  useState(() => {
+    ReactGA.pageview("/welcome");
+  }, [])
   return (
     <div className="welcome-page">
       <div className="outer-rectangle"></div>

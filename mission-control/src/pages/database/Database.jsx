@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import ReactGA from 'react-ga';
 import { connect } from 'react-redux'
 import './database.css'
 import '../../index.css'
@@ -17,6 +18,10 @@ function Database(props) {
   const cards = [{ graphics: mysql, name: "MySQL", desc: "The world's most popular open source database.", key: "sql-mysql" },
   { graphics: postgresql, name: "PostgreSQL", desc: "The world's most advanced open source database.", key: "sql-postgres" },
   { graphics: mongodb, name: "MongoDB", desc: "A open-source cross-platform document- oriented database.", key: "mongo" }]
+
+  useState(() => {
+    ReactGA.pageview("/projects/database");
+  }, [])
 
   if (props.selectedDb) {
     return <Redirect to={`/mission-control/projects/${props.projectId}/database/rules/${props.selectedDb}`} />;

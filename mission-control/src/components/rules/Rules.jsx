@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import './rules.css';
 import { Row, Col, Icon } from 'antd';
 import { Controlled as CodeMirror } from 'react-codemirror2';
@@ -9,77 +9,77 @@ import 'codemirror/addon/selection/active-line.js'
 import 'codemirror/addon/edit/matchbrackets.js'
 import 'codemirror/addon/edit/closebrackets.js'
 
-class Rules extends Component {
-	constructor(props) {
-		super(props);
-		const rules = Object.keys(this.props.rules);
-		var selectedRule = null;
-		if (rules.length > 0) {
-			selectedRule = rules[0];
+const Rules = (props) => {
+	const [selected, setSelected] = useState(null)
+
+	useEffect(() => {
+		if (props.array && props.rules.length) {
+			setSelected(0)
+		} else if (!props.array && Object.keys(props.rules).length) {
+			setSelected(Object.keys(props.rules)[0])
 		}
-		this.state = { selectedRule: selectedRule };
+	}, [])
 
-		this.handleClick = this.handleClick.bind(this);
+	const handleDeleteClick = (e, rule) => {
+		e.stopPropagation()
+		props.handleDeleteRule(rule)
 	}
+	var rules = props.array ? props.rules.map((_, index) => (`Rule ${index + 1}`)) : Object.keys(props.rules);
 
-	handleClick(rule) {
-		this.setState({ selectedRule: rule });
-	}
-	render() {
-		var rules = this.props.array ? this.props.rules.map((_, index) => (`Rule ${index + 1}`)) : Object.keys(this.props.rules);
+	return (
+		<div className="rules-main-wrapper">
+			<Row>
+				<Col span={6}>
+					<div className="addaRule" onClick={props.handleAddRuleClick}>
+						<Icon className="addIcon" type="plus" /> {props.addText}
+					</div>
+					<div className="rulesTable">
 
-		return (
-			<div className="rules-main-wrapper">
-				<Row>
-					<Col span={6}>
-						<div className="addaRule" onClick={this.props.handleAddRuleClick}>
-							<Icon className="addIcon" type="plus" /> {this.props.addText}
-						</div>
-						<div className="rulesTable">
-
-							{rules.map((rule, index) => {
-								return (
-									<div
-										className={`rule ${this.state.selectedRule === rule ? 'selected' : ''}`}
-										id="rule"
-										value={rule}
-										key={rule}
-										onClick={() => this.handleClick(this.props.array ? index : rule)}
-									>
+						{rules.map((rule, index) => {
+							return (
+								<div
+									className={`rule ${selected === (props.array ? index : rule) ? 'selected' : ''}`}
+									id="rule"
+									value={rule}
+									key={rule}
+									onClick={() => setSelected(props.array ? index : rule)}
+								>
+									<div className="add-a-rule">
 										{rule}
+										<i class="material-icons delete-icon" onClick={(e) => handleDeleteClick(e, props.array ? index : rule)}>delete</i>
 									</div>
-								);
-							})}
+								</div>
+							);
+						})}
+					</div>
+				</Col>
+				<Col span={18}>
+					<div className="code">
+						<div className="code-hint">
+							Hint : To indent press ctrl + A in the editor and then shift + tab
 						</div>
-					</Col>
-					<Col span={18}>
-						<div className="code">
-							<div className="code-hint">
-								Hint : To indent press ctrl + A in the editor and then shift + tab
-							</div>
-							<div className="code-mirror">
-								<CodeMirror
-									value={this.props.rules[this.state.selectedRule]}
-									options={{
-										mode: { name: "javascript", json: true },
-										lineNumbers: true,
-										styleActiveLine: true,
-										matchBrackets: true,
-										autoCloseBrackets: true,
-										tabSize: 2,
-										autofocus: true
-									}}
-									onBeforeChange={(editor, data, value) => {
-										this.props.handleRuleChange(this.state.selectedRule, value);
-									}}
-								/>
-							</div>
+						<div className="code-mirror">
+							<CodeMirror
+								value={props.rules[selected]}
+								options={{
+									mode: { name: "javascript", json: true },
+									lineNumbers: true,
+									styleActiveLine: true,
+									matchBrackets: true,
+									autoCloseBrackets: true,
+									tabSize: 2,
+									autofocus: true
+								}}
+								onBeforeChange={(editor, data, value) => {
+									props.handleRuleChange(selected, value);
+								}}
+							/>
 						</div>
-					</Col>
-				</Row>
-			</div>
-		);
-	}
+					</div>
+				</Col>
+			</Row>
+		</div>
+	);
 }
 
 export default Rules;
