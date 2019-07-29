@@ -5,7 +5,16 @@ import (
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
 )
+
+// GetInternalAccessToken returns the token that can be used internally by Space Cloud
+func (m *Manager) GetInternalAccessToken() (string, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	return m.createToken(map[string]interface{}{"id": utils.InternalUserID})
+}
 
 // IsTokenValid checks if the token is valid
 func (m *Manager) IsTokenValid(token string) error {
@@ -55,6 +64,10 @@ func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
 	user, p := auth["id"]
 	if !p {
 		return http.StatusUnauthorized, errors.New("Invalid Token")
+	}
+
+	if user == utils.InternalUserID {
+		return http.StatusOK, nil
 	}
 
 	for _, u := range m.admin.Users {
