@@ -17,7 +17,7 @@ You can easily allow users to create a folder via the File Management module of 
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Create a folder
 api.FileStore()
@@ -37,7 +37,7 @@ api.FileStore()
   <div id="create-folder-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 FileStore fileStore = api.fileStore();
 
 fileStore.createFolder("\\", "aNewFolder", new Utils.ResponseListener() {
@@ -64,7 +64,7 @@ fileStore.createFolder("\\", "aNewFolder", new Utils.ResponseListener() {
 from space_api import API
 
 # Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 
 # Initialize file storage module
 file_store = api.file_store()
@@ -81,7 +81,7 @@ else:
   <div id="create-folder-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-api, err := api.New("books-app", "localhost:8081", false)
+api, err := api.New("books-app", "localhost:4124", false)
 if(err != nil) {
   fmt.Println(err)
 }

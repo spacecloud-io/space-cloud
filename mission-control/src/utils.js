@@ -188,8 +188,11 @@ export const generateProjectConfig = (name, dbType) => ({
 * Else it redirects the user to welcome page if user has no projects.
 */
 export const handleClusterLoginSuccess = (token, lastProjectId) => {
+  if (token) {
+    service.setToken(token)
+  }
+
   store.dispatch(increment("pendingRequests"))
-  service.setToken(token)
   Promise.all([service.fetchProjects(), service.fetchDeployCofig(), service.fetchOperationCofig()])
     .then(([projects, deployConfig, operationConfig]) => {
 
@@ -279,4 +282,27 @@ export const triggerSignin = () => {
 export const openPlansPage = () => {
   const projectId = get(store.getState(), "config.id")
   history.push(`/mission-control/projects/${projectId}/plans`)
+}
+
+export const onAppLoad = () => {
+  service.fetchEnv().then(isProd => {
+    const token = localStorage.getItem("token")
+    const spaceUpToken = localStorage.getItem("space-up-token")
+    if (isProd && !token) {
+      history.push("/mission-control/login")
+      return
+    }
+
+    let lastProjectId = null
+    const urlParams = window.location.pathname.split("/")
+    if (urlParams.length > 3 && urlParams[3]) {
+      lastProjectId = urlParams[3]
+    }
+
+    handleClusterLoginSuccess(token, lastProjectId)
+
+    if (spaceUpToken) {
+      handleSpaceUpLoginSuccess(spaceUpToken)
+    }
+  })
 }
