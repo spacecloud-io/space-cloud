@@ -33,51 +33,68 @@ Space Cloud needs a config file in order to function. The config file is used to
 This is how the config file looks like.
 
 ```yaml
----
-id: space-cloud
-secret: some-secret
-modules:
-  crud:
-    mongo:
-      conn: mongodb://localhost:27017
-      isPrimary: true
-      collections:
-        todos:
-          isRealtimeEnabled: true
-          rules:
-            create:
-              rule: allow
-            read:
-              rule: allow
-            update:
-              rule: allow
-            delete:
-              rule: allow
-  auth:
-    email:
+projects:
+- secret: 4ef6a590-d736-4ac0-b0d3-008c17dea690
+  id: todo-app
+  name: Todo App
+  modules:
+    crud:
+      mongo:
+        conn: mongodb://localhost:27017
+        collections:
+          default:
+            isRealtimeEnabled: true
+            rules:
+              create:
+                rule: allow
+              delete:
+                rule: allow
+              read:
+                rule: allow
+              update:
+                rule: allow
+        isPrimary: false
+        enabled: true
+    auth: {}
+    functions:
       enabled: true
-  functions:
-    enabled: false
-    nats: nats://localhost:4222
-  realtime:
-    enabled: true
-    kafka: localhost
-  fileStore:
-    enabled: false
-    storeType: local
-    conn: ./
-    rules:
-      - prefix: /
-        rule:
-          create:
-            rule: allow
-          read:
-            rule: allow
-          delete:
-            rule: allow
+      broker: nats
+      conn: nats://localhost:4222
+      rules: {}
+    realtime:
+      enabled: true
+      broker: nats
+      conn: nats://localhost:4222
+    fileStore:
+      enabled: false
+      storeType: local
+      conn: ./
+      endpoint: ""
+      rules: []
+ssl:
+  enabled: false
+  crt: ""
+  key: ""
+static:
+  enabled: true
+  routes: []  
+admin:
+  secret: some-secret
+  operation:
+    mode: 0
+    userId: ""
+    key: ""
+  users:
+  - user: admin
+    pass: "123"
+    scopes:
+      all:
+      - all
+deploy:
+  enabled: false
 ```
 
-Quickly going through it, `id` is the project name. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `functions`, `realtime` and `fileStore` are supported.
+Quickly going through it,`projects` is the array of projects running on Space Cloud cluster where each `project` has  `id`, `name`, `secret` and `modules`.`name` is the project name whereas `id` is the unique identifier for the project in the cluster. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `functions`, `realtime` and `fileStore` are supported.
 
 > Note: The in-depth configurations of various modules are explained in their corresponding sections.
 
@@ -85,9 +102,9 @@ Quickly going through it, `id` is the project name. `secret` is the secret key u
 
 You can start `space-cloud` with the following command. Make sure MongoDB is running before this step.
 
-**For Linux / Mac:** `./space-cloud run --config config.yaml`
+**For Linux / Mac:** `./space-cloud run --dev --config config.yaml`
 
-**For Windows:** `space-cloud.exe run --config config.yaml`
+**For Windows:** `space-cloud.exe run --dev --config config.yaml`
 
 That's it. Your backend is up and running!
 

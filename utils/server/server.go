@@ -41,7 +41,6 @@ type Server struct {
 	realtime       *realtime.Module
 	static         *static.Module
 	adminMan       *admin.Manager
-	isProd         bool
 	nats           *nats.Server
 	configFilePath string
 	syncMan        *syncman.SyncManager
@@ -49,7 +48,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID string, isProd bool) *Server {
+func New(nodeID string) *Server {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 	c := crud.Init()
@@ -66,7 +65,7 @@ func New(nodeID string, isProd bool) *Server {
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
 		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
-		functions: fn, realtime: rt, isProd: isProd, configFilePath: utils.DefaultConfigFilePath}
+		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath}
 }
 
 // Start begins the server operations
@@ -123,9 +122,10 @@ func (s *Server) Start(seeds string, disableMetrics bool) error {
 }
 
 // SetConfig sets the config
-func (s *Server) SetConfig(c *config.Config) {
+func (s *Server) SetConfig(c *config.Config, isProd bool) {
 	s.ssl = c.SSL
 	s.syncMan.SetGlobalConfig(c)
+	s.adminMan.SetEnv(isProd)
 	s.adminMan.SetConfig(c.Admin)
 }
 
@@ -160,7 +160,7 @@ func (s *Server) LoadConfig(config *config.Config) error {
 	}
 
 	// Set the configuration for static module
-	if err := s.static.SetConfig(p.Modules.Static); err != nil {
+	if err := s.static.SetConfig(config.Static); err != nil {
 		return err
 	}
 

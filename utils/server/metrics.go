@@ -47,7 +47,7 @@ func (s *Server) RoutineMetrics() {
 	find := map[string]interface{}{"_id": s.nodeID}
 	set := map[string]interface{}{
 		"os":           runtime.GOOS,
-		"isProd":       s.isProd,
+		"isProd":       s.adminMan.LoadEnv(),
 		"version":      utils.BuildVersion,
 		"clusterSize":  s.syncMan.GetClusterSize(),
 		"distribution": "ce",
@@ -78,6 +78,7 @@ func (s *Server) RoutineMetrics() {
 		set := map[string]interface{}{
 			"lastUpdated": currentTimeInMillis(),
 			"clusterSize": s.syncMan.GetClusterSize(),
+			"isProd": s.adminMan.LoadEnv(),
 		}
 
 		c := s.syncMan.GetGlobalConfig()
@@ -107,7 +108,7 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
 	realtimeConfig := map[string]interface{}{"enabled": false}
 	fileStoreConfig := map[string]interface{}{"enabled": false, "storeTypes": []string{}, "rules": 0}
-	staticConfig := map[string]interface{}{"enabled": false, "routes": 0}
+	// staticConfig := map[string]interface{}{"enabled": false, "routes": 0}
 	auth := []string{}
 
 	if config.Crud != nil {
@@ -153,12 +154,12 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 		}
 	}
 
-	if config.Static != nil && config.Static.Enabled {
-		staticConfig["enabled"] = true
-		if config.Static.Routes != nil {
-			staticConfig["routes"] = len(config.Static.Routes)
-		}
-	}
+	// if static != nil && static.Enabled {
+	// 	staticConfig["enabled"] = true
+	// 	if static.Routes != nil {
+	// 		staticConfig["routes"] = len(static.Routes)
+	// 	}
+	// }
 
-	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "static": staticConfig, "auth": auth}
+	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "auth": auth}
 }
