@@ -13,6 +13,8 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/static"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
@@ -20,10 +22,12 @@ import (
 type Driver struct {
 	client   *kubernetes.Clientset
 	registry *config.Registry
+	adminMan *admin.Manager
+	static   *static.Module
 }
 
 // New creates a new instance of the kubernetes driver
-func New(registry *config.Registry) (*Driver, error) {
+func New(registry *config.Registry, a *admin.Manager, s *static.Module) (*Driver, error) {
 	d := &Driver{}
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
@@ -38,6 +42,8 @@ func New(registry *config.Registry) (*Driver, error) {
 
 	d.client = clientset
 	d.registry = registry
+	d.adminMan = a
+	d.static = s
 	return d, nil
 }
 
@@ -73,7 +79,7 @@ func (d *Driver) Deploy(ctx context.Context, c *model.Deploy, projects *projects
 			}
 
 			// expose the ports if required
-			if err := exposeRoute(c, projects); err != nil {
+			if err := d.exposeRoute(c); err != nil {
 				return err
 			}
 		}
@@ -87,7 +93,7 @@ func (d *Driver) Deploy(ctx context.Context, c *model.Deploy, projects *projects
 				_, err = servicesClient.Create(service)
 			}
 
-			if err := exposeRoute(c, projects); err != nil {
+			if err := d.exposeRoute(c); err != nil {
 				// Delete the deployment and service on error
 				deploymentsClient.Delete(c.Name, &metav1.DeleteOptions{})
 				servicesClient.Delete(c.Name, &metav1.DeleteOptions{})
@@ -101,23 +107,20 @@ func (d *Driver) Deploy(ctx context.Context, c *model.Deploy, projects *projects
 	return nil
 }
 
-func exposeRoute(c *model.Deploy, projects *projects.Projects) error {
+func (d *Driver) exposeRoute(c *model.Deploy) error {
 	// If expose param is present
 	if c.Expose != nil {
-		// p, err := projects.LoadProject(c.Project)
-		// if err != nil {
-		// 	return err
-		// }
+		routes := make([]*config.StaticRoute, len(c.Expose))
+		for i, e := range c.Expose {
+			routes[i] = &config.StaticRoute{ID: c.Name, Host: *e.Host, URLPrefix: *e.Prefix, Proxy: *e.Proxy}
+		}
 
-		// // Remove all the previouse routes
-		// p.Static.DeleteRoutesWithID(c.Name)
+		token, err := d.adminMan.GetInternalAccessToken()
+		if err != nil {
+			return err
+		}
 
-		// // Iterate over all the routes to be exposed
-		// for _, e := range c.Expose {
-
-		// 	// Add the routes exposed
-		// 	p.Static.AddProxyRoute(c.Name, *e.Host, *e.Prefix, *e.Proxy)
-		// }
+		return d.static.AddInternalRoute(token, &config.Static{InternalRoutes: routes})
 	}
 
 	return nil

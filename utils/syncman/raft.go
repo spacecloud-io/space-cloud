@@ -151,6 +151,17 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 
 		// Write the config to file
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
+
+	case utils.RaftCommandAddInternalRouteOperation:
+		if s.projectConfig.Static == nil {
+			s.projectConfig.Static = &config.Static{}
+		}
+
+		routes := s.static.CompareAndAddInternalRoutes(c.Static.InternalRoutes)
+		s.projectConfig.Static.InternalRoutes = routes
+
+		// Write the config to file
+		config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
 	return nil

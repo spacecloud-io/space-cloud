@@ -47,8 +47,10 @@ type node struct {
 // New creates a new instance of the sync manager
 func New(projects *projects.Projects, d *deploy.Module, adminMan *admin.Manager, s *static.Module) *SyncManager {
 	// Create a SyncManger instance
-	return &SyncManager{adminMan: adminMan, myIP: getOutboundIP(), serfEvents: make(chan serf.Event, 16),
+	syncMan := &SyncManager{adminMan: adminMan, myIP: getOutboundIP(), serfEvents: make(chan serf.Event, 16),
 		bootstrap: bootstrapPending, deploy: d, projects: projects, static: s}
+	syncMan.static.AddInternalRoute = syncMan.AddInternalRoutes
+	return syncMan
 }
 
 // Start begins the sync manager operations

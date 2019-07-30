@@ -82,6 +82,31 @@ func (s *SyncManager) SetStaticConfig(token string, static *config.Static) error
 	return s.raft.Apply(data, 0).Error()
 }
 
+// AddInternalRoutes adds the provided routes to the internal routes
+func (s *SyncManager) AddInternalRoutes(token string, static *config.Static) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if s.raft.VerifyLeader().Error() != nil {
+		// Marshal json into byte array
+		data, _ := json.Marshal(static)
+
+		// Get the raft leader addr
+		addr := strings.Split(string(s.raft.Leader()), ":")[0]
+
+		// Make the http request
+		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/static/internal", bytes.NewBuffer(data))
+	}
+
+	// Create a raft command
+	c := &model.RaftCommand{Kind: utils.RaftCommandAddInternalRouteOperation, Static: static}
+	data, _ := json.Marshal(c)
+
+	// Apply the command to the raft log
+	return s.raft.Apply(data, 0).Error()
+}
+
 // SetOperationModeConfig applies the operation config to the raft log
 func (s *SyncManager) SetOperationModeConfig(token string, op *config.OperationConfig) error {
 	// Acquire a lock to make sure only a single operation occurs at any given point of time

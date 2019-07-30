@@ -10,9 +10,10 @@ import (
 // Module is responsible for static
 type Module struct {
 	sync.RWMutex
-	Enabled        bool
-	routes         []*config.StaticRoute
-	internalRoutes []*config.StaticRoute
+	Enabled          bool
+	routes           []*config.StaticRoute
+	internalRoutes   []*config.StaticRoute
+	AddInternalRoute func(string, *config.Static) error
 }
 
 // Init returns a new instance of the static module wit default values
