@@ -143,6 +143,7 @@ type FileStore struct {
 	StoreType string      `json:"storeType" yaml:"storeType"`
 	Conn      string      `json:"conn" yaml:"conn"`
 	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
+	Bucket    string      `json:"bucket" yaml:"bucket"`
 	Rules     []*FileRule `json:"rules" yaml:"rules"`
 }
 

@@ -25,7 +25,7 @@ func (m *Module) CreateDir(project, token string, req *model.CreateFileRequest) 
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.CreateDir(project, req)
+	err = m.store.CreateDir(req)
 	if err != nil {
 		return 500, err
 	} else {
@@ -49,7 +49,7 @@ func (m *Module) DeleteFile(project, token, path string) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.DeleteFile(project, path)
+	err = m.store.DeleteFile(path)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -73,7 +73,7 @@ func (m *Module) ListFiles(project, token string, req *model.ListFilesRequest) (
 	m.RLock()
 	defer m.RUnlock()
 
-	res, err := m.store.ListDir(project, req)
+	res, err := m.store.ListDir(req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -97,7 +97,7 @@ func (m *Module) UploadFile(project, token string, req *model.CreateFileRequest,
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.CreateFile(project, req, reader)
+	err = m.store.CreateFile(req, reader)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -121,7 +121,7 @@ func (m *Module) DownloadFile(project, token, path string) (int, *model.File, er
 	defer m.RUnlock()
 
 	// Read the file from file storage
-	file, err := m.store.ReadFile(project, path)
+	file, err := m.store.ReadFile(path)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
