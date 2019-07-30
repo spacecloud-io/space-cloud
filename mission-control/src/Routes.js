@@ -36,8 +36,8 @@ export default () => {
       <Route exact path="/mission-control/projects/:projectId/functions/testing" component={FunctionTesting} />
       <Route exact path="/mission-control/projects/:projectId/file-storage" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/file-storage/rules`} />} />
       <Route exact path="/mission-control/projects/:projectId/file-storage/rules" component={FileStorageRules} />
-      <Route exact path="/mission-control/projects/:projectId/static" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/static/rules`} />} />
-      <Route exact path="/mission-control/projects/:projectId/static/rules" component={StaticRules} />
+      <Route exact path="/mission-control/projects/:projectId/gateway" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/gateway/rules`} />} />
+      <Route exact path="/mission-control/projects/:projectId/gateway/rules" component={StaticRules} />
       <Route exact path="/mission-control/projects/:projectId/configure" component={Configure} />
       <Route exact path="/mission-control/projects/:projectId/deploy" component={Deploy} />
       <Route exact path="/mission-control/projects/:projectId/plans" component={Plans} />

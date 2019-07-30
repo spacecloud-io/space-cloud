@@ -44,16 +44,12 @@ export const adjustConfig = (config) => {
     config.modules.fileStore.rules = config.modules.fileStore.rules.map(rule => JSON.stringify(rule, null, 2))
   }
 
-  // Adjust static module rules
-  if (config.modules && config.modules.static && config.modules.static.routes) {
-    config.modules.static.routes = config.modules.static.routes.map(rule => JSON.stringify(rule, null, 2))
-  }
-
   return config
 }
 
-export const unAdjustConfig = (c) => {
+export const unAdjustConfig = (c, s) => {
   let config = cloneDeep(c)
+  let staticConfig = cloneDeep(s)
   let result = { ack: true, errors: { crud: {}, functions: [], fileStore: [], static: [] } }
   // Unadjust database rules
   if (config.modules && config.modules.crud) {
@@ -96,8 +92,8 @@ export const unAdjustConfig = (c) => {
   }
 
   // Unadjust file storage rules
-  if (config.modules && config.modules.static && config.modules.static.routes) {
-    config.modules.static.routes = config.modules.static.routes.map((rule, index) => {
+  if (staticConfig && staticConfig.routes) {
+    staticConfig.routes = staticConfig.routes.map((rule, index) => {
       try {
         return JSON.parse(rule)
       } catch (error) {
@@ -108,6 +104,7 @@ export const unAdjustConfig = (c) => {
   }
 
   result.config = config
+  result.staticConfig = staticConfig
   return result
 }
 
@@ -193,13 +190,21 @@ export const handleClusterLoginSuccess = (token, lastProjectId) => {
   }
 
   store.dispatch(increment("pendingRequests"))
-  Promise.all([service.fetchProjects(), service.fetchDeployCofig(), service.fetchOperationCofig()])
-    .then(([projects, deployConfig, operationConfig]) => {
-
+  Promise.all([service.fetchProjects(), service.fetchDeployCofig(), service.fetchOperationCofig(), service.fetchStaticConfig()])
+    .then(([projects, deployConfig, operationConfig, staticConfig]) => {
       // Save deploy config
       const adjustedDeployConfig = adjustConfig(deployConfig)
       store.dispatch(set("deployConfig", adjustedDeployConfig))
       store.dispatch(set("savedDeployConfig", cloneDeep(adjustedDeployConfig)))
+      // Save static config
+      let adjustedStaticConfig = cloneDeep(staticConfig)
+
+      if (!adjustedStaticConfig || !adjustedStaticConfig.routes) {
+        adjustedStaticConfig = { routes: [] }
+      }
+      adjustedStaticConfig.routes = adjustedStaticConfig.routes.map(rule => JSON.stringify(rule, null, 2))
+      store.dispatch(set("staticConfig", adjustedStaticConfig))
+      store.dispatch(set("savedStaticConfig", cloneDeep(adjustedStaticConfig)))
 
       // Save operation config
       store.dispatch(set("operationConfig", operationConfig))
