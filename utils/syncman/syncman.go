@@ -172,6 +172,57 @@ func (s *SyncManager) SetProjectConfig(token string, project *config.Project) er
 	return s.raft.Apply(data, 0).Error()
 }
 
+// SetStaticConfig applies the set project config command to the raft log
+func (s *SyncManager) SetStaticConfig(token string, static *config.Static) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if s.raft.VerifyLeader().Error() != nil {
+		// Marshal json into byte array
+		data, _ := json.Marshal(static)
+
+		// Get the raft leader addr
+		addr := strings.Split(string(s.raft.Leader()), ":")[0]
+
+		// Create the http request
+		req, err := http.NewRequest("POST", "http://"+string(addr)+":4122/v1/api/config/static", bytes.NewBuffer(data))
+		if err != nil {
+			return err
+		}
+
+		// Add token header
+		req.Header.Add("Authorization", "Bearer "+token)
+
+		// Create a http client and fire the request
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		m := map[string]interface{}{}
+		if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			log.Println("Syncman Error:", m, resp.StatusCode)
+			return errors.New("Operation failed")
+		}
+
+		return nil
+	}
+
+	// Create a raft command
+	c := &model.RaftCommand{Kind: utils.RaftCommandSetStatic, Static: static}
+	data, _ := json.Marshal(c)
+
+	// Apply the command to the raft log
+	return s.raft.Apply(data, 0).Error()
+}
+
 // DeleteProjectConfig applies delete project config command to the raft log
 func (s *SyncManager) DeleteProjectConfig(token, projectID string) error {
 	// Acquire a lock

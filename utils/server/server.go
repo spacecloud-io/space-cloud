@@ -160,7 +160,7 @@ func (s *Server) LoadConfig(config *config.Config) error {
 	}
 
 	// Set the configuration for static module
-	if err := s.static.SetConfig(p.Modules.Static); err != nil {
+	if err := s.static.SetConfig(config.Static); err != nil {
 		return err
 	}
 
