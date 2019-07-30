@@ -38,9 +38,9 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "SSL_KEY",
 	},
 	cli.BoolFlag{
-		Name:   "prod",
-		Usage:  "Run space-cloud in production mode",
-		EnvVar: "PROD",
+		Name:   "dev",
+		Usage:  "Run space-cloud in development mode",
+		EnvVar: "DEV",
 	},
 	cli.BoolFlag{
 		Name:   "disable-metrics",
@@ -113,7 +113,7 @@ func actionRun(c *cli.Context) error {
 	// Load cli flags
 	nodeID := c.String("id")
 	configPath := c.String("config")
-	isProd := c.Bool("prod")
+	isDev := c.Bool("dev")
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
 	seeds := c.String("seeds")
@@ -133,8 +133,7 @@ func actionRun(c *cli.Context) error {
 		nodeID = uuid.NewV1().String()
 	}
 
-	// Project and env cannot be changed once space cloud has started
-	s := server.New(nodeID, isProd)
+	s := server.New(nodeID)
 
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)
@@ -172,7 +171,7 @@ func actionRun(c *cli.Context) error {
 	}
 
 	// Configure all modules
-	s.SetConfig(conf)
+	s.SetConfig(conf, !isDev)
 
 	// Start nats if not disabled
 	if !disableNats {
@@ -192,13 +191,21 @@ func actionInit(*cli.Context) error {
 func initMissionContol(version string) (string, error) {
 	homeDir := utils.UserHomeDir()
 	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
-	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
+	_, err := os.Stat(uiPath)
+	if os.IsNotExist(err) {
 		fmt.Println("Could not find mission control")
-		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
-			os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
+		_, err := os.Stat(homeDir + "/.space-cloud")
+		if err != nil && !os.IsNotExist(err) {
+			return "", err
+		}
+		if os.IsNotExist(err) {
+			err := os.Mkdir("/usr"+"/.space-cloud", os.ModePerm)
+			if err != nil {
+				return "", err
+			}
 		}
 		fmt.Println("Downloading...")
-		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
+		err = utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
 			return "", err
 		}
@@ -212,6 +219,10 @@ func initMissionContol(version string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		return uiPath + "/build", nil
+	}
+	if err != nil {
+		return "", err
 	}
 	return uiPath + "/build", nil
 }

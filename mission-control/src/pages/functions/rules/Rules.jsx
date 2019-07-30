@@ -5,6 +5,7 @@ import '../../../index.css';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import Topbar from '../../../components/topbar/Topbar';
 import Header from '../../../components/header/Header';
+import Tabs from "../../../components/functions/tabs/Tabs"
 import Documentation from '../../../components/documentation/Documentation';
 import EmptyState from '../../../components/rules/EmptyState';
 import rulesImg from '../../../assets/rules.svg';
@@ -13,21 +14,24 @@ import EditItemModal from "../../../components/edit-item-modal/EditItemModal";
 import projectId from '../../../assets/projectId.svg'
 import { get, set } from "automate-redux";
 import store from "../../../store"
+import "../functions.css"
 
 const Rules = (props) => {
 	const [modalVisible, setModalVisibility] = useState(false)
 	useState(() => {
-    ReactGA.pageview("/projects/functions/rules");
-  }, [])
+		ReactGA.pageview("/projects/functions/rules");
+	}, [])
 	const noOfRules = Object.keys(props.rules).length
 	return (
-		<div>
+		<div className="functions-content">
 			<Topbar showProjectSelector />
 			<div className="flex-box">
 				<Sidenav selectedItem="functions" />
 				<div className="page-content">
-					<div className="header-flex">
-						<Header name="Rules" color="#000" fontSize="22px" />
+					{/* <div className="header-flex">
+					</div> */}
+					<Tabs activeKey="rules" projectId={props.projectId} />
+					<div className="documentation-container">
 						<Documentation url="https://spaceuptech.com/docs/functions" />
 					</div>
 					{noOfRules > 0 && <RulesComponent
@@ -51,6 +55,7 @@ const Rules = (props) => {
 const mapStateToProps = (state, ownProps) => {
 	return {
 		rules: get(state, `config.modules.functions.rules`, {}),
+		projectId: get(state, "config.id", "")
 	}
 };
 

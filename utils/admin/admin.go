@@ -10,8 +10,9 @@ import (
 
 // Manager manages all admin transactions
 type Manager struct {
-	lock  sync.RWMutex
-	admin *config.Admin
+	lock   sync.RWMutex
+	admin  *config.Admin
+	isProd bool
 }
 
 // New creates a new admin manager instance
@@ -24,6 +25,20 @@ func (m *Manager) SetConfig(admin *config.Admin) {
 	m.lock.Lock()
 	m.admin = admin
 	m.lock.Unlock()
+}
+
+// SetEnv sets the env
+func (m *Manager) SetEnv(isProd bool) {
+	m.lock.Lock()
+	m.isProd = isProd
+	m.lock.Unlock()
+}
+
+// LoadEnv gets the env
+func (m *Manager) LoadEnv() bool {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.isProd
 }
 
 // Login handles the admin login operation

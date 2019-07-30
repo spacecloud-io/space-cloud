@@ -17,7 +17,7 @@ A client instance of Space Cloud will help you talk to `space-cloud` binary and 
 ```python
 from space_api import API
 
-api = API('books-app', 'localhost:8081')
+api = API('books-app', 'localhost:4124')
 ```
 
 The API method takes the following parameters:

@@ -24,7 +24,7 @@ You can update / modify all documents in your app matching a specific condition 
 import { API, and, or, cond } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -51,7 +51,7 @@ db.update("todos")
  <div id="update-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
 HashMap<String, Object> set = new HashMap<>();
 set.put("name", "Book1");
@@ -78,7 +78,7 @@ db.update("books").where(new Cond("id", "==", 1)).set(set).apply(new Utils.Respo
       <code class="python">
 from space_api import API, AND, OR, COND
 
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 db = api.my_sql()
 
 # The condition to be matched
@@ -106,7 +106,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.Init("books-app", "localhost", "4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}

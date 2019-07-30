@@ -21,7 +21,7 @@ const Rules = (props) => {
 		<div>
 			<Topbar showProjectSelector />
 			<div className="flex-box">
-				<Sidenav selectedItem="static" />
+				<Sidenav selectedItem="gateway" />
 				<div className="page-content">
 					<div className="header-flex">
 						<Header name="Rules" color="#000" fontSize="22px" />
@@ -47,27 +47,27 @@ const Rules = (props) => {
 
 const mapStateToProps = (state) => {
 	return {
-		rules: get(state, `config.modules.static.routes`, []),
+		rules: state.staticConfig ? get(state, `staticConfig.routes`, []): []
 	}
 };
 
 const mapDispatchToProps = (dispatch) => {
 	return {
 		handleRuleChange: (index, value) => {
-			let routes = get(store.getState(), "config.modules.static.routes", []).slice()
+			let routes = get(store.getState(), "staticConfig.routes", []).slice()
 			routes[index] = value
-			dispatch(set(`config.modules.static.routes`, routes))
+			dispatch(set(`staticConfig.routes`, routes))
 		},
 		handleDeleteRoute: (index) => {
-			const routes = get(store.getState(), `config.modules.static.routes`, []).filter((o, i) => i !== index)
-			dispatch(set(`config.modules.static.routes`, routes))
+			const routes = get(store.getState(), `staticConfig.routes`, []).filter((o, i) => i !== index)
+			dispatch(set(`staticConfig.routes`, routes))
 		},
 		handleCreateRule: () => {
 			const defaultRule = {
 				prefix: "/",
 				proxy: "http://localhost:3000"
 			}
-			dispatch(push(`config.modules.static.routes`, JSON.stringify(defaultRule, null, 2)))
+			dispatch(push(`staticConfig.routes`, JSON.stringify(defaultRule, null, 2)))
 		},
 	};
 };

@@ -3,7 +3,7 @@ import random
 import jwt
 from space_api import API
 
-api = API('demo', 'localhost:8081')
+api = API('demo', 'localhost:4124')
 SECRET = 'my_secret'
 api.set_token(jwt.encode({"password": "super_secret_password"}, SECRET, algorithm='HS256').decode('utf-8'))
 db = api.my_sql()

@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from "react-redux";
 import store from "./store";
-import { handleClusterLoginSuccess, handleSpaceUpLoginSuccess } from './utils';
+import { onAppLoad } from './utils';
 import Service from "./services/service";
 
 import App from './App';
@@ -29,19 +29,6 @@ ReactDOM.render(
 // Learn more about service workers: https://bit.ly/CRA-PWA
 serviceWorker.unregister();
 
+
 export default service
-
-const token = localStorage.getItem("token")
-const spaceUpToken = localStorage.getItem("space-up-token")
-if (token) {
-  const urlParams = window.location.pathname.split("/")
-  let lastProjectId = null
-  if (urlParams.length > 3 && urlParams[3]) {
-    lastProjectId = urlParams[3]
-  }
-  handleClusterLoginSuccess(token, lastProjectId)
-}
-
-if (spaceUpToken) {
-  handleSpaceUpLoginSuccess(spaceUpToken)
-}
+onAppLoad()

@@ -8,6 +8,7 @@ type Config struct {
 	SSL      *SSL       `json:"ssl" yaml:"ssl"`
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 	Deploy   Deploy     `json:"deploy" yaml:"deploy"`
+	Static   *Static    `json:"gateway" yaml:"gateway"`
 	Cluster  string     `json:"cluster" yaml:"cluster"`
 	NodeID   string     `json:"nodeId" yaml:"nodeId"`
 }
@@ -74,7 +75,6 @@ type Modules struct {
 	Functions *Functions `json:"functions" yaml:"functions"`
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
-	Static    *Static    `json:"static" yaml:"static"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -155,8 +155,8 @@ type FileRule struct {
 
 // Static holds the config for the static files module
 type Static struct {
-	Enabled bool           `json:"enabled" yaml:"enabled"`
-	Routes  []*StaticRoute `json:"routes" yaml:"routes"`
+	Routes         []*StaticRoute `json:"routes" yaml:"routes"`
+	InternalRoutes []*StaticRoute `json:"internalRoutes" yaml:"internalRoutes"`
 }
 
 // StaticRoute holds the config for each route

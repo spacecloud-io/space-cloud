@@ -17,6 +17,18 @@ class Service {
     this.spaceApi.setToken(token)
   }
 
+  fetchEnv() {
+    return new Promise((resolve, reject) => {
+      this.client.getJSON("/v1/api/config/env").then(({ status, data }) => {
+        if (status !== 200) {
+          reject("Internal server error")
+          return
+        }
+        resolve(data.isProd)
+      }).catch(ex => reject(ex.toString()))
+    })
+  }
+
   spaceUpRegister(name, email, pass) {
     return new Promise((resolve, reject) => {
       this.spaceApi.call("console-auth", "signup", { name, email, pass }).then(({ status, data }) => {
@@ -156,6 +168,30 @@ class Service {
     })
   }
 
+  fetchStaticConfig() {
+    return new Promise((resolve, reject) => {
+      this.client.getJSON(`/v1/api/config/static`).then(({ status, data }) => {
+        if (status !== 200) {
+          reject(data.error)
+          return
+        }
+        resolve(data.static)
+      }).catch(ex => reject(ex))
+    })
+  }
+
+  saveStaticConfig(staticConfig) {
+    return new Promise((resolve, reject) => {
+      this.client.postJSON(`/v1/api/config/static`, staticConfig).then(({ status, data }) => {
+        if (status !== 200) {
+          reject(data.error)
+          return
+        }
+        resolve()
+      }).catch(ex => reject(ex))
+    })
+  }
+
   requestPayment(email, name) {
     return new Promise((resolve, reject) => {
       this.spaceApi.call('space-site', 'request-payment', { email: email, name: name }, 5000)
@@ -198,6 +234,16 @@ class Service {
           return
         }
         resolve(data.result)
+      }).catch(ex => reject(ex))
+    })
+  }
+
+  triggerFunction(projectId, serviceName, funcName, params) {
+    const url = process.env.NODE_ENV !== "production" ? "http://localhost:4122" : undefined
+    const api = new API(projectId, url)
+    return new Promise((resolve, reject) => {
+      api.call(serviceName, funcName, params).then(res => {
+        resolve(res)
       }).catch(ex => reject(ex))
     })
   }
