@@ -191,13 +191,21 @@ func actionInit(*cli.Context) error {
 func initMissionContol(version string) (string, error) {
 	homeDir := utils.UserHomeDir()
 	uiPath := homeDir + "/.space-cloud/mission-control-v" + version
-	if _, err := os.Stat(uiPath); os.IsNotExist(err) {
+	_, err := os.Stat(uiPath)
+	if os.IsNotExist(err) {
 		fmt.Println("Could not find mission control")
-		if _, err := os.Stat(homeDir + "/space-cloud"); os.IsNotExist(err) {
-			os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
+		_, err := os.Stat(homeDir + "/.space-cloud")
+		if err != nil && !os.IsNotExist(err) {
+			return "", err
+		}
+		if os.IsNotExist(err) {
+			err := os.Mkdir("/usr"+"/.space-cloud", os.ModePerm)
+			if err != nil {
+				return "", err
+			}
 		}
 		fmt.Println("Downloading...")
-		err := utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
+		err = utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
 			return "", err
 		}
@@ -211,6 +219,10 @@ func initMissionContol(version string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		return uiPath + "/build", nil
+	}
+	if err != nil {
+		return "", err
 	}
 	return uiPath + "/build", nil
 }
