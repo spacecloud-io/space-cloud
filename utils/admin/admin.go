@@ -14,6 +14,7 @@ type Manager struct {
 	nodeID    string
 	admin     *config.Admin
 	validator *validator
+	isProd    bool
 }
 
 // New creates a new admin manager instance
@@ -67,6 +68,20 @@ func (m *Manager) SetOperationMode(op *config.OperationConfig) error {
 
 	m.admin.Operation = *op
 	return nil
+}
+
+// SetEnv sets the env
+func (m *Manager) SetEnv(isProd bool) {
+	m.lock.Lock()
+	m.isProd = isProd
+	m.lock.Unlock()
+}
+
+// LoadEnv gets the env
+func (m *Manager) LoadEnv() bool {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	return m.isProd
 }
 
 // Login handles the admin login operation

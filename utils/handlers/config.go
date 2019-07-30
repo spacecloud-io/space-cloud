@@ -11,6 +11,14 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
+// HandleLoadEnv returns the handler to load the projects via a REST endpoint
+func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv()})
+	}
+}
+
 // HandleAdminLogin creates the admin login endpoint
 func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
 

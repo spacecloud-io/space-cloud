@@ -19,7 +19,7 @@ type requestMetaData struct {
 }
 
 // HandleCrudCreate creates the create operation endpoint
-func HandleCrudCreate(isProd bool, projects *projects.Projects) http.HandlerFunc {
+func HandleCrudCreate(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -125,7 +125,7 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 }
 
 // HandleCrudUpdate creates the update operation endpoint
-func HandleCrudUpdate(isProd bool, projects *projects.Projects) http.HandlerFunc {
+func HandleCrudUpdate(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -180,7 +180,7 @@ func HandleCrudUpdate(isProd bool, projects *projects.Projects) http.HandlerFunc
 }
 
 // HandleCrudDelete creates the delete operation endpoint
-func HandleCrudDelete(isProd bool, projects *projects.Projects) http.HandlerFunc {
+func HandleCrudDelete(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
@@ -298,7 +298,7 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 }
 
 // HandleCrudBatch creates the batch operation endpoint
-func HandleCrudBatch(isProd bool, projects *projects.Projects) http.HandlerFunc {
+func HandleCrudBatch(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

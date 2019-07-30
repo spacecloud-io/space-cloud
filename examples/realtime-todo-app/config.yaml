@@ -70,5 +70,3 @@ admin:
       - all
 deploy:
   enabled: false
-cluster: ""
-nodeId: aefc31ee-9d7e-11e9-865a-60f81dd0a692

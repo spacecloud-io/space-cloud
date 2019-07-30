@@ -39,9 +39,9 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "SSL_KEY",
 	},
 	cli.BoolFlag{
-		Name:   "prod",
-		Usage:  "Run space-cloud in production mode",
-		EnvVar: "PROD",
+		Name:   "dev",
+		Usage:  "Run space-cloud in development mode",
+		EnvVar: "DEV",
 	},
 	cli.BoolFlag{
 		Name:   "disable-metrics",
@@ -120,7 +120,7 @@ func actionRun(c *cli.Context) error {
 	// Load cli flags
 	nodeID := c.String("id")
 	configPath := c.String("config")
-	isProd := c.Bool("prod")
+	isDev := c.Bool("dev")
 	disableMetrics := c.Bool("disable-metrics")
 	disableNats := c.Bool("disable-nats")
 	seeds := c.String("seeds")
@@ -144,7 +144,7 @@ func actionRun(c *cli.Context) error {
 	time.Sleep(time.Duration(delay) * time.Second)
 
 	// Project and env cannot be changed once space cloud has started
-	s := server.New(nodeID, isProd)
+	s := server.New(nodeID)
 
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)
@@ -182,7 +182,7 @@ func actionRun(c *cli.Context) error {
 	}
 
 	// Configure all modules
-	s.SetConfig(conf)
+	s.SetConfig(conf, !isDev)
 
 	// Start nats if not disabled
 	if !disableNats {

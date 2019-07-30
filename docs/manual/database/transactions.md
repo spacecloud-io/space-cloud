@@ -25,7 +25,7 @@ Here's a code snippet to batch multiple mutations in your app:
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -55,7 +55,7 @@ batch.apply()
   <div id="batch-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
 Batch batch = db.beginBatch();
 Map<String, String> document = new HashMap<>();
@@ -88,7 +88,7 @@ batch.apply(new Utils.ResponseListener() {
       <code class="python">
 from space_api import API, COND
 
-api = API('grpc', 'localhost:8081')
+api = API('grpc', 'localhost:4124')
 db = api.my_sql()
 
 b = db.begin_batch()
@@ -110,7 +110,7 @@ api.close()
       <code class="golang">
 from space_api import API, COND
 
-api = API('grpc', 'localhost:8081')
+api = API('grpc', 'localhost:4124')
 db = api.my_sql()
 
 b = db.begin_batch()

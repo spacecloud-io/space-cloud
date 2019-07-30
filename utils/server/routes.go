@@ -19,6 +19,7 @@ func (s Server) InitSecureRoutes(profiler bool, staticPath string) {
 
 func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// Initialize the routes for config management
+	router.Methods("GET").Path("/v1/api/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods("POST").Path("/v1/api/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
 	router.Methods("GET").Path("/v1/api/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/api/config/projects").HandlerFunc(handlers.HandleStoreProjectConfig(s.adminMan, s.syncMan))
@@ -41,13 +42,13 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("POST").Path("/v1/api/{project}/functions/{service}/{func}").HandlerFunc(handlers.HandleFunctionCall(s.projects))
 
 	// Initialize the routes for the crud operations
-	router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.isProd, s.projects))
+	router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.projects))
 
 	crudRouter := router.Methods("POST").PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
-	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.isProd, s.projects))
+	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.projects))
 	crudRouter.HandleFunc("/read", handlers.HandleCrudRead(s.projects))
-	crudRouter.HandleFunc("/update", handlers.HandleCrudUpdate(s.isProd, s.projects))
-	crudRouter.HandleFunc("/delete", handlers.HandleCrudDelete(s.isProd, s.projects))
+	crudRouter.HandleFunc("/update", handlers.HandleCrudUpdate(s.projects))
+	crudRouter.HandleFunc("/delete", handlers.HandleCrudDelete(s.projects))
 	crudRouter.HandleFunc("/aggr", handlers.HandleCrudAggregate(s.projects))
 
 	// Initialize the routes for the user management operations

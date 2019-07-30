@@ -31,7 +31,6 @@ type Server struct {
 	lock           sync.RWMutex
 	router         *mux.Router
 	routerSecure   *mux.Router
-	isProd         bool
 	nats           *nats.Server
 	projects       *projects.Projects
 	ssl            *config.SSL
@@ -43,7 +42,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID string, isProd bool) *Server {
+func New(nodeID string) *Server {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 	adminMan := admin.New(nodeID)
@@ -51,7 +50,7 @@ func New(nodeID string, isProd bool) *Server {
 	d := deploy.New(adminMan, s)
 	projects := projects.New(driver.New())
 	syncMan := syncman.New(projects, d, adminMan, s)
-	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: projects, isProd: isProd,
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: projects,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
 		deploy: d,
 	}
@@ -111,9 +110,10 @@ func (s *Server) Start(seeds string, disableMetrics bool) error {
 }
 
 // SetConfig sets the config
-func (s *Server) SetConfig(c *config.Config) {
+func (s *Server) SetConfig(c *config.Config, isProd bool) {
 	s.ssl = c.SSL
 	s.syncMan.SetGlobalConfig(c)
+	s.adminMan.SetEnv(isProd)
 	s.adminMan.SetConfig(c.Admin)
 	s.deploy.SetConfig(&c.Deploy)
 	s.static.SetConfig(c.Static)

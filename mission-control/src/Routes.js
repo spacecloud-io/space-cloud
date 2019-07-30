@@ -2,6 +2,7 @@ import React from 'react';
 import { Router, Route, Redirect } from 'react-router-dom';
 import history from './history';
 import Login from './pages/login/Login'
+import Home from "./pages/home/Home"
 import Database from './pages/database/Database'
 import UserManagement from './pages/user-management/UserManagement';
 import DBRules from './pages/database/rules/Rules'
@@ -21,7 +22,8 @@ import SigninModal from "./components/signin-modal/SigninModal"
 export default () => {
   return (
     <Router history={history}>
-      <Route exact path="/mission-control" component={Login} />
+      <Route exact path="/mission-control" component={Home} />
+      <Route exact path="/mission-control/login" component={Login} />
       <Route exact path="/mission-control/welcome" component={Welcome} />
       <Route exact path="/mission-control/create-project" component={CreateProject} />
       <Route exact path="/mission-control/projects/:projectId" component={(props) => <Redirect to={`/mission-control/projects/${props.match.params.projectId}/overview`} />} />

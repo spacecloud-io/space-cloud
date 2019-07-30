@@ -21,6 +21,10 @@ func (m *Manager) IsTokenValid(token string) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
+	if !m.isProd {
+		return nil
+	}
+
 	_, err := m.parseToken(token)
 	return err
 }
@@ -60,6 +64,10 @@ func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
 		if m.admin.Operation.Mode < 1 {
 			return http.StatusForbidden, errors.New("Please upgrade your instance")
 		}
+	}
+
+	if !m.isProd {
+		return http.StatusOK, nil
 	}
 
 	auth, err := m.parseToken(token)

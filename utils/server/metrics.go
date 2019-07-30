@@ -56,7 +56,7 @@ func (s *Server) RoutineMetrics() {
 	find := map[string]interface{}{"_id": s.nodeID}
 	set := map[string]interface{}{
 		"os":           runtime.GOOS,
-		"isProd":       s.isProd,
+		"isProd":       s.adminMan.LoadEnv(),
 		"version":      utils.BuildVersion,
 		"clusterSize":  s.syncMan.GetClusterSize(),
 		"distribution": "ee",
@@ -91,6 +91,7 @@ func (s *Server) RoutineMetrics() {
 		set := map[string]interface{}{
 			"lastUpdated": currentTimeInMillis(),
 			"clusterSize": s.syncMan.GetClusterSize(),
+			"isProd": s.adminMan.LoadEnv(),
 		}
 
 		c := s.syncMan.GetGlobalConfig()
