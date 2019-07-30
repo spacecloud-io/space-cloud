@@ -16,7 +16,7 @@ You can listen / subscribe to changes happening in your app's data in real time 
 import { API, cond, or, and } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -47,7 +47,7 @@ if (on some logic) {
   <div id="live-query-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
 LiveQueryUnsubscribe unsubscribe = db.liveQuery("books").subscribe(new LiveDataListener() {
     @Override
@@ -80,7 +80,7 @@ unsubscribe.unsubscribe();
       <code class="python">
 from space_api import API
 
-api = API('books-app', 'localhost:8081')
+api = API('books-app', 'localhost:4124')
 db = api.my_sql()
 
 
@@ -112,7 +112,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.Init("books-app", "localhost", "4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}

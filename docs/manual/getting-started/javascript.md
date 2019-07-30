@@ -23,19 +23,19 @@ A client instance of Space Cloud on the frontend will help you talk to `space-cl
 ```js
 import { API } from 'space-api';
 
-const api = new API('demo-project', 'http://localhost:8080');
+const api = new API('demo-project', 'http://localhost:4122');
 ```
 
 **For ES5/CommonJS:**
 ```js
 const { API } = require('space-api');
 
-const api = new API('demo-project', 'http://localhost:8080');
+const api = new API('demo-project', 'http://localhost:4122');
 ```
 
 **For stand alone:**
 ```js
-var api = new Space.API("todo-app", "http://localhost:8080");
+var api = new Space.API("todo-app", "http://localhost:4122");
 ```
 
 The API method takes the following parameters:

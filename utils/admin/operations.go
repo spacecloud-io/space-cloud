@@ -12,6 +12,10 @@ func (m *Manager) IsTokenValid(token string) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
+	if !m.isProd {
+		return nil
+	}
+
 	_, err := m.parseToken(token)
 	return err
 }
@@ -46,6 +50,10 @@ func (m *Manager) ValidateSyncOperation(c *config.Config, project *config.Projec
 func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
+
+	if !m.isProd {
+		return http.StatusOK, nil
+	}
 
 	auth, err := m.parseToken(token)
 	if err != nil {
