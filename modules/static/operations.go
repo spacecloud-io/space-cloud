@@ -1,6 +1,8 @@
 package static
 
-import "github.com/spaceuptech/space-cloud/config"
+import (
+	"github.com/spaceuptech/space-cloud/config"
+)
 
 // CompareAndAddInternalRoutes adds a internal route in the static module
 func (m *Module) CompareAndAddInternalRoutes(routes []*config.StaticRoute) []*config.StaticRoute {
@@ -26,7 +28,9 @@ func (m *Module) SetInternalRoutes(conf *config.Static) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.internalRoutes = conf.InternalRoutes
+	if conf != nil {
+		m.internalRoutes = conf.InternalRoutes
+	}
 }
 
 func (m *Module) deleteRoutesWithID(id string) {

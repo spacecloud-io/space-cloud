@@ -52,7 +52,7 @@ func New(nodeID string) *Server {
 	syncMan := syncman.New(projects, d, adminMan, s)
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: projects,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
-		deploy: d,
+		deploy: d, static: s,
 	}
 }
 
