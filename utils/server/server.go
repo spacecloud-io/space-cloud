@@ -46,9 +46,9 @@ type Server struct {
 func New(nodeID string, isProd bool) *Server {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
-	d := deploy.New()
-	s := static.Init()
 	adminMan := admin.New(nodeID)
+	s := static.Init()
+	d := deploy.New(adminMan, s)
 	projects := projects.New(driver.New())
 	syncMan := syncman.New(projects, d, adminMan, s)
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: projects, isProd: isProd,
@@ -117,6 +117,7 @@ func (s *Server) SetConfig(c *config.Config) {
 	s.adminMan.SetConfig(c.Admin)
 	s.deploy.SetConfig(&c.Deploy)
 	s.static.SetConfig(c.Static)
+	s.static.SetInternalRoutes(c.Static)
 }
 
 func (s *Server) initGRPCServer() {

@@ -9,16 +9,20 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/deploy/kubernetes"
+	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
 // Module is the main object for handling all deployments
 type Module struct {
-	lock   sync.RWMutex
-	config *config.Deploy
-	driver Driver
-	client http.Client
+	lock     sync.RWMutex
+	config   *config.Deploy
+	driver   Driver
+	client   http.Client
+	static   *static.Module
+	adminMan *admin.Manager
 }
 
 // Driver is the interface every deployment driver must implement
@@ -27,9 +31,11 @@ type Driver interface {
 }
 
 // New creates a new instance of the deploy module
-func New() *Module {
+func New(a *admin.Manager, s *static.Module) *Module {
 	m := new(Module)
 	m.client = http.Client{}
+	m.adminMan = a
+	m.static = s
 	return m
 }
 
@@ -55,7 +61,7 @@ func (m *Module) SetConfig(c *config.Deploy) error {
 	var err error
 	switch c.Orchestrator {
 	case utils.Kubernetes:
-		m.driver, err = kubernetes.New(&c.Registry)
+		m.driver, err = kubernetes.New(&c.Registry, m.adminMan, m.static)
 	default:
 		err = errors.New("Deploy: Invalid orchestrator provided")
 	}

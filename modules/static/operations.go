@@ -2,20 +2,34 @@ package static
 
 import "github.com/spaceuptech/space-cloud/config"
 
-// AddProxyRoute adds a proxy route in the static module
-func (m *Module) AddProxyRoute(id, host, prefix, proxy string) {
+// CompareAndAddInternalRoutes adds a internal route in the static module
+func (m *Module) CompareAndAddInternalRoutes(routes []*config.StaticRoute) []*config.StaticRoute {
 	m.Lock()
 	defer m.Unlock()
 
-	route := &config.StaticRoute{ID: id, Host: host, URLPrefix: prefix, Proxy: proxy}
-	m.routes = append(m.routes, route)
+	// Return if no routes are present
+	if len(routes) == 0 {
+		return m.internalRoutes
+	}
+
+	m.deleteRoutesWithID(routes[0].ID)
+
+	for _, r := range routes {
+		m.internalRoutes = append(m.internalRoutes, r)
+	}
+
+	return m.internalRoutes
 }
 
-// DeleteRoutesWithID removes all routes of particular id
-func (m *Module) DeleteRoutesWithID(id string) {
+// SetInternalRoutes sets the internal routes
+func (m *Module) SetInternalRoutes(conf *config.Static) {
 	m.Lock()
 	defer m.Unlock()
 
+	m.internalRoutes = conf.InternalRoutes
+}
+
+func (m *Module) deleteRoutesWithID(id string) {
 	// Filter out those routes whose ids don't match
 	routes := []*config.StaticRoute{}
 	for _, r := range m.routes {
