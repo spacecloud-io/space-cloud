@@ -29,7 +29,7 @@ func (m *Module) IsFuncCallAuthorised(project, service, function, token string, 
 
 	if err = m.matchRule(project, rule, map[string]interface{}{
 		"args": map[string]interface{}{"auth": auth, "params": params},
-	}); err != nil {
+	}, auth); err != nil {
 		return nil, err
 	}
 

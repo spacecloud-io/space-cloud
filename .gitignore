@@ -30,3 +30,5 @@ docker-build.sh
 #IDEs
 .idea
 .vscode
+
+yarn.lock

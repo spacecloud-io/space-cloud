@@ -1,0 +1,16 @@
+.explorer .apply-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.explorer .row {
+  margin-bottom: 16px;
+}
+
+.explorer .CodeMirror {
+  height: auto;
+}
+
+.explorer .help {
+  color: #BDBDBD;
+}

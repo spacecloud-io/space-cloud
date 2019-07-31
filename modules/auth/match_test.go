@@ -212,7 +212,7 @@ func TestMatchRule(t *testing.T) {
 	authModule.project = "project"
 	for i, test := range authMatchRule {
 		t.Run(test.testName, func(t *testing.T) {
-			err := authModule.matchRule("project", test.rule, test.args)
+			err := authModule.matchRule("project", test.rule, test.args, map[string]interface{}{})
 			if i <= testcases {
 				if !reflect.DeepEqual(err, test.err) {
 					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
