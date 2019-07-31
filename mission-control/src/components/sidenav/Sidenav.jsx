@@ -31,6 +31,9 @@ const Sidenav = (props) => {
     <Link to={`/mission-control/projects/${props.projectId}/configure`}>
       <SidenavItem name="Configure" icon="settings" active={props.selectedItem === 'configure'} />
     </Link>
+    <Link to={`/mission-control/projects/${props.projectId}/explorer`}>
+      <SidenavItem name="Explorer" icon="explore" active={props.selectedItem === 'explorer'} />
+    </Link>
     <Divider />
     <Link to={`/mission-control/projects/${props.projectId}/gateway`}>
       <SidenavItem name="Gateway" icon="cloud" active={props.selectedItem === 'gateway'} />

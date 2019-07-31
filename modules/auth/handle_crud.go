@@ -32,7 +32,7 @@ func (m *Module) IsCreateOpAuthorised(project, dbType, col, token string, req *m
 
 	for _, row := range rows {
 		args["doc"] = row
-		err := m.matchRule(project, rule, map[string]interface{}{"args": args})
+		err := m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 		if err != nil {
 			return http.StatusForbidden, err
 		}
@@ -52,7 +52,7 @@ func (m *Module) IsReadOpAuthorised(project, dbType, col, token string, req *mod
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find}
-	err = m.matchRule(project, rule, map[string]interface{}{"args": args})
+	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -71,7 +71,7 @@ func (m *Module) IsUpdateOpAuthorised(project, dbType, col, token string, req *m
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update}
-	err = m.matchRule(project, rule, map[string]interface{}{"args": args})
+	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -90,7 +90,7 @@ func (m *Module) IsDeleteOpAuthorised(project, dbType, col, token string, req *m
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find}
-	err = m.matchRule(project, rule, map[string]interface{}{"args": args})
+	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -109,7 +109,7 @@ func (m *Module) IsAggregateOpAuthorised(project, dbType, col, token string, req
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline}
-	err = m.matchRule(project, rule, map[string]interface{}{"args": args})
+	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}

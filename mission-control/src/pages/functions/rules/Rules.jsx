@@ -5,7 +5,6 @@ import '../../../index.css';
 import Sidenav from '../../../components/sidenav/Sidenav';
 import Topbar from '../../../components/topbar/Topbar';
 import Header from '../../../components/header/Header';
-import Tabs from "../../../components/functions/tabs/Tabs"
 import Documentation from '../../../components/documentation/Documentation';
 import EmptyState from '../../../components/rules/EmptyState';
 import rulesImg from '../../../assets/rules.svg';
@@ -28,10 +27,8 @@ const Rules = (props) => {
 			<div className="flex-box">
 				<Sidenav selectedItem="functions" />
 				<div className="page-content">
-					{/* <div className="header-flex">
-					</div> */}
-					<Tabs activeKey="rules" projectId={props.projectId} />
-					<div className="documentation-container">
+					<div className="header-flex">
+						<Header name="Rules" color="#000" fontSize="22px" />
 						<Documentation url="https://spaceuptech.com/docs/functions" />
 					</div>
 					{noOfRules > 0 && <RulesComponent
