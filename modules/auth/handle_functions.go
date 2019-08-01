@@ -41,9 +41,9 @@ func (m *Module) getFunctionRule(service, function string) (*config.Rule, error)
 		return nil, ErrRuleNotFound
 	}
 
-	if service, p := m.funcRules[service]; p {
-		if rule, p := service[function]; p {
-			return rule, nil
+	if service, p := m.funcRules[service]; p && service.Functions != nil {
+		if funcStub, p := service.Functions[function]; p {
+			return funcStub.Rule, nil
 		}
 	}
 

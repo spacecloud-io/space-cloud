@@ -244,7 +244,6 @@ class Service {
 
   execSpaceAPI(projectId, code, token) {
     return new Promise((resolve, reject) => {
-      console.log("Token", token)
       const url = process.env.NODE_ENV !== "production" ? "http://localhost:4122" : undefined
       const api = new API(projectId, url)
       if (token) {
@@ -264,16 +263,6 @@ class Service {
       }
     })
 
-  }
-
-  triggerFunction(projectId, serviceName, funcName, params) {
-    const url = process.env.NODE_ENV !== "production" ? "http://localhost:4122" : undefined
-    const api = new API(projectId, url)
-    return new Promise((resolve, reject) => {
-      api.call(serviceName, funcName, params).then(res => {
-        resolve(res)
-      }).catch(ex => reject(ex))
-    })
   }
 }
 

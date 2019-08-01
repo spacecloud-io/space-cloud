@@ -51,7 +51,7 @@ const Rules = (props) => {
 
 const mapStateToProps = (state, ownProps) => {
 	return {
-		rules: get(state, `config.modules.functions.rules`, {}),
+		rules: get(state, `config.modules.functions.services`, {}),
 		projectId: get(state, "config.id", "")
 	}
 };
@@ -59,20 +59,24 @@ const mapStateToProps = (state, ownProps) => {
 const mapDispatchToProps = (dispatch) => {
 	return {
 		handleRuleChange: (ruleName, value) => {
-			dispatch(set(`config.modules.functions.rules.${ruleName}`, value))
+			dispatch(set(`config.modules.functions.services.${ruleName}`, value))
 		},
 		handleDeleteRule: (ruleName) => {
-			const rules = Object.assign({}, get(store.getState(), `config.modules.functions.rules`))
+			const rules = Object.assign({}, get(store.getState(), `config.modules.functions.services`))
 			delete rules[ruleName]
-			dispatch(set(`config.modules.functions.rules`, rules))
+			dispatch(set(`config.modules.functions.services`, rules))
 		},
-		handleCreateRule: (ruleName) => {
+		handleCreateRule: (serviceName) => {
 			const defaultRule = {
-				function1: {
-					rule: "allow"
+				functions: {
+					function1: {
+						rule: {
+							rule: "allow"
+						}
+					}
 				}
 			}
-			dispatch(set(`config.modules.functions.rules.${ruleName}`, JSON.stringify(defaultRule, null, 2)))
+			dispatch(set(`config.modules.functions.services.${serviceName}`, JSON.stringify(defaultRule, null, 2)))
 		},
 	};
 };
