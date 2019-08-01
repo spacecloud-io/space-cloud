@@ -69,7 +69,7 @@ const mapDispatchToProps = (dispatch) => {
 		handleCreateRule: (serviceName) => {
 			const defaultRule = {
 				functions: {
-					function1: {
+					default: {
 						rule: {
 							rule: "allow"
 						}

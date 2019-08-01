@@ -37,9 +37,9 @@ projects:
         broker: nats
         conn: nats://localhost:4222
         services:
-          service1:
+          default:
             functions: 
-              function1:
+              default:
                 rule: 
                   rule: allow
       realtime:

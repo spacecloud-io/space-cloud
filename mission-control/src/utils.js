@@ -156,7 +156,17 @@ export const generateProjectConfig = (name, dbType) => ({
       enabled: true,
       broker: "nats",
       conn: "nats://localhost:4222",
-      services: {}
+      services: {
+        default: {
+          functions: {
+            default: {
+              rule: {
+                rule: "allow"
+              }
+            }
+          }
+        }
+      }
     },
     realtime: {
       enabled: true,

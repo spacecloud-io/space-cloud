@@ -41,9 +41,17 @@ func (m *Module) getFunctionRule(service, function string) (*config.Rule, error)
 		return nil, ErrRuleNotFound
 	}
 
-	if service, p := m.funcRules[service]; p && service.Functions != nil {
-		if funcStub, p := service.Functions[function]; p {
+	if serviceStub, p := m.funcRules[service]; p && serviceStub.Functions != nil {
+		if funcStub, p := serviceStub.Functions[function]; p && funcStub.Rule != nil {
 			return funcStub.Rule, nil
+		} else if defaultFuncStub, p := serviceStub.Functions["default"]; p && defaultFuncStub.Rule != nil {
+			return defaultFuncStub.Rule, nil
+		}
+	} else if defaultServiceStub, p := m.funcRules["default"]; p && defaultServiceStub.Functions != nil {
+		if funcStub, p := defaultServiceStub.Functions[function]; p && funcStub.Rule != nil {
+			return funcStub.Rule, nil
+		} else if defaultFuncStub, p := defaultServiceStub.Functions["default"]; p && defaultFuncStub.Rule != nil {
+			return defaultFuncStub.Rule, nil
 		}
 	}
 
