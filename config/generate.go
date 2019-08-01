@@ -15,6 +15,7 @@ type input struct {
 	Conn         string
 	PrimaryDB    string
 	ID           string
+	Name         string
 	AdminName    string
 	AdminPass    string
 	AdminRole    string
@@ -54,11 +55,11 @@ func GenerateConfig(configFilePath string) error {
 	workingDir, _ := os.Getwd()
 	array := strings.Split(workingDir, string(os.PathSeparator))
 	dir := array[len(array)-1]
-	err := survey.AskOne(&survey.Input{Message: "project name:", Default: formatProjectID(dir)}, &i.ID, survey.Required)
+	err := survey.AskOne(&survey.Input{Message: "project name:", Default: formatProjectID(dir)}, &i.Name, survey.Required)
 	if err != nil {
 		return err
 	}
-	i.ID = formatProjectID(i.ID)
+	i.ID = formatProjectID(i.Name)
 
 	// Ask the primary db
 	err = survey.AskOne(&survey.Select{

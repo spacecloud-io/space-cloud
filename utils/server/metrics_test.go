@@ -9,6 +9,7 @@ import (
 
 type TestProjectInfoStub struct {
 	modules *config.Modules
+	static  *config.Static
 	result  map[string]interface{}
 }
 
@@ -34,14 +35,20 @@ func Test(t *testing.T) {
 			},
 			Functions: &config.Functions{
 				Enabled: true,
-				Rules: map[string]map[string]*config.Rule{
-					"service 1": map[string]*config.Rule{
-						"func1": &config.Rule{},
+				Services: config.Services{
+					"service1": &config.Service{
+						Functions: map[string]config.Function{
+							"func1": config.Function{
+								Rule: &config.Rule{},
+							},
+						},
 					},
-					"service 2": map[string]*config.Rule{
-						"func1": &config.Rule{},
-						"func2": &config.Rule{},
-						"func3": &config.Rule{},
+					"service2": &config.Service{
+						Functions: map[string]config.Function{
+							"func1": config.Function{Rule: &config.Rule{}},
+							"func2": config.Function{Rule: &config.Rule{}},
+							"func3": config.Function{Rule: &config.Rule{}},
+						},
 					},
 				},
 			},
@@ -53,14 +60,6 @@ func Test(t *testing.T) {
 					&config.FileRule{},
 				},
 			},
-			Static: &config.Static{
-				Enabled: true,
-				Routes: []*config.StaticRoute{
-					&config.StaticRoute{},
-					&config.StaticRoute{},
-					&config.StaticRoute{},
-				},
-			},
 			Realtime: &config.Realtime{
 				Enabled: true,
 			},
@@ -69,6 +68,9 @@ func Test(t *testing.T) {
 					Enabled: true,
 				},
 			},
+		},
+		static: &config.Static{
+			Routes: []*config.StaticRoute{&config.StaticRoute{}, &config.StaticRoute{}, &config.StaticRoute{}},
 		},
 		result: map[string]interface{}{
 			"crud": map[string]interface{}{
@@ -86,8 +88,8 @@ func Test(t *testing.T) {
 				"rules":      2,
 			},
 			"static": map[string]interface{}{
-				"enabled": true,
-				"routes":  3,
+				"routes":         3,
+				"internalRoutes": 0,
 			},
 			"realtime": map[string]interface{}{
 				"enabled": true,
@@ -97,7 +99,7 @@ func Test(t *testing.T) {
 	})
 
 	for i, testCase := range test {
-		res := getProjectInfo(testCase.modules)
+		res := getProjectInfo(testCase.modules, testCase.static)
 		eq := reflect.DeepEqual(testCase.result, res)
 		if i < trueCases && !eq {
 			t.Error(i+1, ":", "Incorrect Match - Actual: ", res, " Expected: ", testCase.result)

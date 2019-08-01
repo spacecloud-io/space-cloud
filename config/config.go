@@ -121,14 +121,24 @@ type AuthStub struct {
 
 // Functions holds the config for the functions module
 type Functions struct {
-	Enabled bool         `json:"enabled" yaml:"enabled"`
-	Broker  utils.Broker `json:"broker" yaml:"broker"`
-	Conn    string       `json:"conn" yaml:"conn"`
-	Rules   FuncRules    `json:"rules" yaml:"rules"`
+	Enabled  bool         `json:"enabled" yaml:"enabled"`
+	Broker   utils.Broker `json:"broker" yaml:"broker"`
+	Conn     string       `json:"conn" yaml:"conn"`
+	Services Services     `json:"services" yaml:"services"`
 }
 
-// FuncRules is the rules for the functions module
-type FuncRules map[string]map[string]*Rule // service -> function -> rule
+// Services holds the config of services
+type Services map[string]*Service
+
+// Service holds the config of service
+type Service struct {
+	Functions map[string]Function `json:"functions" yaml:"functions"`
+}
+
+// Function holds the config of a function
+type Function struct {
+	Rule *Rule `json:"rule" yaml:"rule"`
+}
 
 // Realtime holds the config for the realtime module
 type Realtime struct {
