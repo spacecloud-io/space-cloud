@@ -18,7 +18,8 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 	if err != nil {
 		return err
 	}
-	return doExecContext(ctx, sqlString, args, s.client)
+	_, err = doExecContext(ctx, sqlString, args, s.client)
+	return err
 }
 
 //genrateDeleteQuery makes query for delete operation

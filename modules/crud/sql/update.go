@@ -18,10 +18,19 @@ import (
 
 // Update updates the document(s) which match the condition provided.
 func (s *SQL) Update(ctx context.Context, project, col string, req *model.UpdateRequest) error {
-	return s.update(ctx, project, col, req, s.client)
+	tx, err := s.client.BeginTxx(ctx, nil) //TODO - Write *sqlx.TxOption instead of nil
+	if err != nil {
+		fmt.Println("Error in initiating Batch")
+		return err
+	}
+	err = s.update(ctx, project, col, req, tx)
+	if err != nil {
+		return err
+	}
+	return tx.Commit() // commit the Batch
 }
 
-func (s *SQL) update(ctx context.Context, project, col string, req *model.UpdateRequest, executor interface{}) error {
+func (s *SQL) update(ctx context.Context, project, col string, req *model.UpdateRequest, executor executor) error {
 	if req == nil {
 		return utils.ErrInvalidParams
 	}
@@ -37,7 +46,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 				if err != nil {
 					return err
 				}
-				err = doExecContext(ctx, sqlQuery, args, executor)
+				_, err = doExecContext(ctx, sqlQuery, args, executor)
 				if err != nil {
 					return err
 				}
@@ -46,16 +55,52 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			}
 		}
 	case utils.Upsert:
-		for k := range req.Update {
-			switch k {
-			case "$set", "$inc", "$mul", "$max", "$min", "$currentDate":
-				err := s.upsert(ctx, project, col, req, k)
-				if err != nil {
-					return err
-				}
-			default: // (case "$push", "$unset", "$rename")
-				return utils.ErrInvalidParams
+		sqlString, args, err := s.generateReadQuery(ctx, project, col, &model.ReadRequest{Find: req.Find, Operation: utils.One})
+		if err != nil {
+			return err
+		}
+		
+		stmt, err := executor.PreparexContext(ctx, sqlString)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		rows, err := stmt.QueryxContext(ctx, args...)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		
+		if !rows.Next() {
+			// not found. So, insert
+			doc := make(map[string]interface{})
+			for k, v := range req.Find {
+				doc[k] = v
 			}
+			for op := range req.Update {
+				if op == "$currentDate" {
+					return utils.ErrInvalidParams
+				}
+				m, ok := req.Update[op].(map[string]interface{})
+				if !ok {
+					return utils.ErrInvalidParams
+				}
+				for k, v := range m { // k -> $max, $min, $inc, $mul 
+					doc[k] = v
+				}
+			}
+			sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, &model.CreateRequest{Document: doc, Operation: utils.One})
+			if err != nil {
+				return err
+			}
+			_, err = doExecContext(ctx, sqlQuery, args, executor)
+			if err != nil {
+				return err
+			}
+		} else {
+			req.Operation = utils.All
+			return s.update(ctx, project, col, req, executor)
 		}
 	default: // (case utils.One)
 		return utils.ErrInvalidParams
@@ -90,23 +135,9 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	}
 
 	if op == "$currentDate" {
-		for k,v := range m {
-			mm, ok := v.(map[string]interface{})
-			if !ok {
-				return "", nil, utils.ErrInvalidParams
-			}
-			for _, val := range mm {
-				val, ok := val.(string)
-				if !ok {
-					return "", nil, utils.ErrInvalidParams
-				}
-				switch val {
-				case "date", "timestamp":
-					m[k] = val
-				default:
-					return "", nil, utils.ErrInvalidParams
-				}
-			}
+		err := flattenForDate(&m)
+		if err != nil {
+			return "", nil, err
 		}
 	}
 	
@@ -163,9 +194,9 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 				return "", nil, utils.ErrInvalidParams
 			}
 			if val == "timestamp" {
-				sqlString = strings.Replace(sqlString, k+"='"+val+"'", k+"=CURRENT_TIMESTAMP()", -1)
+				sqlString = strings.Replace(sqlString, k+"='"+val+"'", k+"=CURRENT_TIMESTAMP", -1)
 			} else {
-				sqlString = strings.Replace(sqlString, k+"='"+val+"'", k+"=CURRENT_DATE()", -1)
+				sqlString = strings.Replace(sqlString, k+"='"+val+"'", k+"=CURRENT_DATE", -1)
 			}
 		}
 	default:
@@ -174,53 +205,32 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	return sqlString, args, nil
 }
 
-// helper function to upsert data
-func (s *SQL) upsert(ctx context.Context, project, col string, req *model.UpdateRequest, op string) error {
-	tx, err := s.client.BeginTxx(ctx, nil) //TODO - Write *sqlx.TxOption instead of nil
-	if err != nil {
-		fmt.Println("Error in initiating Transaction for Upsert")
-		return err
-	}
-
-	sqlString, args, err := s.generateUpdateQuery(ctx, project, col, req, op)
-	if err != nil {
-		return err
-	}
-	
-	stmt, err := tx.PreparexContext(ctx, sqlString)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	result, err := stmt.ExecContext(ctx, args...)
-	if err != nil {
-		return err
-	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		if op == "$currentDate" {
-			return utils.ErrInvalidParams
-		}
-		sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, &model.CreateRequest{Document: req.Update[op], Operation: utils.One})
-		if err != nil {
-			return err
-		}
-		err = doExecContext(ctx, sqlQuery, args, tx)
-		if err != nil {
-			return err
-		}
-	}
-	return tx.Commit()
-}
-
 func numToString(v interface{}) (string, error) {
 	val, ok := v.(float64)
 	if !ok {
 		return "", utils.ErrInvalidParams
 	}
 	return strconv.FormatFloat(val, 'f', -1, 64), nil
+}
+
+func flattenForDate(m *map[string]interface{}) error {
+	for k,v := range *m {
+		mm, ok := v.(map[string]interface{})
+		if !ok {
+			return utils.ErrInvalidParams
+		}
+		for _, val := range mm {
+			val, ok := val.(string)
+			if !ok {
+				return utils.ErrInvalidParams
+			}
+			switch val {
+			case "date", "timestamp":
+				(*m)[k] = val
+			default:
+				return utils.ErrInvalidParams
+			}
+		}
+	}
+	return nil
 }

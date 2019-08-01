@@ -17,8 +17,8 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error) {
+// generateReadQuery makes a query for read operation
+func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dialect := goqu.Dialect(s.dbType)
 	query := dialect.From(col).Prepared(true)
 
@@ -27,7 +27,7 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 		var err error
 		query, err = generateWhereClause(query, req.Find)
 		if err != nil {
-			return nil, err
+			return "", nil, err
 		}
 	}
 	
@@ -78,7 +78,7 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 	case utils.Distinct:
 		distinct := req.Options.Distinct
 		if distinct == nil {
-			return nil, utils.ErrInvalidParams
+			return "", nil, utils.ErrInvalidParams
 		}
 		query = query.SelectDistinct(*distinct)
 	case utils.One, utils.All:
@@ -88,10 +88,18 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 	// Generate the sql string and arguments
 	sqlString, args, err := query.ToSQL()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
+	return sqlString, args, nil
+}
+// Read query document(s) from the database
+func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error) {
+	sqlString, args, err := s.generateReadQuery(ctx, project, col, req)
+	if err != nil {
+		return nil, err
+	}
 	
 	stmt, err := s.client.PreparexContext(ctx, sqlString)
 	if err != nil {
