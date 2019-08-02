@@ -44,14 +44,14 @@ function Plans({ mode, handleModeChange }) {
 								name="Standard"
 								desc="Experience Firebase + Heroku on your Kubernetes cluster!"
 								points={["Deploy to Kubernetes / Docker Swarm", "3 Projects"]}
-								pricing="10$/hour/instance" active={mode === 1} handleClick={() => handleModeChange(1)} />
+								pricing="10$/hour/month" active={mode === 1} handleClick={() => handleModeChange(1)} />
 						</Col>
 						<Col span={8}>
 							<Plan
 								name="Premium"
 								desc="Unlock all powers with the  Premium SC. Make enterprise ready apps"
 								points={["Metrics + Reporting", "10 Projects"]}
-								pricing="50$/hour/instance" active={mode === 2} handleClick={() => handleModeChange(2)} />
+								pricing="50$/hour/month" active={mode === 2} handleClick={() => handleModeChange(2)} />
 						</Col>
 					</Row>
 				</div>
