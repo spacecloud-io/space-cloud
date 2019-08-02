@@ -75,24 +75,38 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 		if !rows.Next() {
 			// not found. So, insert
 			doc := make(map[string]interface{})
+			dates := make(map[string]interface{})
 			for k, v := range req.Find {
 				doc[k] = v
 			}
 			for op := range req.Update {
-				if op == "$currentDate" {
-					return utils.ErrInvalidParams
-				}
 				m, ok := req.Update[op].(map[string]interface{})
 				if !ok {
 					return utils.ErrInvalidParams
 				}
-				for k, v := range m { // k -> $max, $min, $inc, $mul 
-					doc[k] = v
+				if op == "$currentDate" {
+					err := flattenForDate(&m)
+					if err != nil {
+						return err
+					}
+					for k, v := range m { // k -> column name, v -> function name
+						dates[k] = v
+					}
+				} else {
+					for k, v := range m { // k -> column name
+						doc[k] = v
+					}
 				}
 			}
 			sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, &model.CreateRequest{Document: doc, Operation: utils.One})
 			if err != nil {
 				return err
+			}
+			for k, v := range dates {
+				f := strings.Index(sqlQuery, ")")
+				sqlQuery = sqlQuery[:f]+", "+k+sqlQuery[f:]
+				l := strings.LastIndex(sqlQuery, ")")
+				sqlQuery = sqlQuery[:l]+", "+v.(string)+sqlQuery[l:]
 			}
 			_, err = doExecContext(ctx, sqlQuery, args, executor)
 			if err != nil {
@@ -193,11 +207,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			if !ok {
 				return "", nil, utils.ErrInvalidParams
 			}
-			if val == "timestamp" {
-				sqlString = strings.Replace(sqlString, k+"='"+val+"'", k+"=CURRENT_TIMESTAMP", -1)
-			} else {
-				sqlString = strings.Replace(sqlString, k+"='"+val+"'", k+"=CURRENT_DATE", -1)
-			}
+			sqlString = strings.Replace(sqlString, k+"='"+val+"'", k+"="+val, -1)
 		}
 	default:
 		return "", nil, utils.ErrInvalidParams
@@ -225,8 +235,10 @@ func flattenForDate(m *map[string]interface{}) error {
 				return utils.ErrInvalidParams
 			}
 			switch val {
-			case "date", "timestamp":
-				(*m)[k] = val
+			case "date":
+				(*m)[k] = "CURRENT_DATE"
+			case "timestamp":
+				(*m)[k] = "CURRENT_TIMESTAMP"
 			default:
 				return utils.ErrInvalidParams
 			}
