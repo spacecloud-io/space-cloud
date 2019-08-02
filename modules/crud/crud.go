@@ -58,7 +58,7 @@ func (m *Module) SetConfig(crud config.Crud) error {
 		// Initialise a new block
 		c, err := m.h.InitBlock(utils.DBType(dbType), v.Conn)
 		if err != nil {
-			return errors.New("CURD: Error - " + dbType + " could not be initialised - " + err.Error())
+			return errors.New("CRUD: Error - " + dbType + " could not be initialised - " + err.Error())
 		}
 
 		if v.IsPrimary {
