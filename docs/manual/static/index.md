@@ -19,9 +19,7 @@ A `route` consists of the following fields:
 Here's an sample config of how to host static resources via Space Cloud:
 
 ```yaml
-modules:
   static:
-    enabled: true
     routes:
       - host: console.spaceuptech.com
         prefix: /home
@@ -34,9 +32,7 @@ The above configuration will host the folder the static resources at `/public/co
 Here's how Space Cloud can be configured to act as a reverse proxy server to other servers in your system:
 
 ```yaml
-modules:
   static:
-    enabled: true
     routes:
       - host: spaceuptech.com
         prefix: /v1/

@@ -2,7 +2,7 @@
 
 Follow this guide to use Space Cloud APIs in your python app.
 
-> Note: Make sure you have all the completed all [prerequisites](/docs/getting-started).
+> **Note:** Make sure you have all the completed all [prerequisites](/docs/getting-started).
 
 ## Step 1: Install Space Cloud API
 **Install via pip:**
@@ -31,7 +31,7 @@ The API method takes the following parameters:
 
 The `api` instance created above will help you to directly use `fileStorage` and `functions` modules. However, to use `crud`, `realTime` and `auth` modules you will also need to create a `db` instance.
 
-> Note: You can use multiple databases in the same project. (For eg. MongoDB and MySQL)
+> **Note:** You can use multiple databases in the same project. (For eg. MongoDB and MySQL)
 
 **For MongoDB:**
 ```python
@@ -40,7 +40,7 @@ db = api.mongo()
 
 **For PostgreSQL:**
 
-> Note: This can also be used for any other database that is PostgreSQL compatible (For eg. CockroachDB, Yugabyte etc.)
+> **Note:** This can also be used for any other database that is PostgreSQL compatible (For eg. CockroachDB, Yugabyte etc.)
 ```python
 db = api.postgres()
 ```
@@ -49,7 +49,7 @@ db = api.postgres()
 
 **For MySQL:**
 
-> Note: This can also be used for any other database that is MySQL compatible (For eg. TiDB)
+> **Note:** This can also be used for any other database that is MySQL compatible (For eg. TiDB)
 ```python
 db = api.my_sql()
 ```

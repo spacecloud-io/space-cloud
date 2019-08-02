@@ -2,13 +2,13 @@
 
 This guide will help you get started with Space Cloud quickly on your local machine. You will go through how to develop a realtime todo app using Space Cloud and MongoDB. We'll be deploying the `space-cloud` binary manually.
 
-> Note: If you instead want to start a project from scratch using `space-cloud`, then check out the [getting started](/docs/getting-started) guide.
+> **Note:** If you instead want to start a project from scratch using `space-cloud`, then check out the [getting started](/docs/getting-started) guide.
 
 ## Prerequisites
 
 - [MongoDB Database](https://docs.mongodb.com/manual/installation/)
 
-> Note: MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as its database.
+> **Note:** MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as its database.
 
 ## Step 1: Download `space-cloud`
 
@@ -34,15 +34,15 @@ This is how the config file looks like.
 
 ```yaml
 projects:
-- secret: 4ef6a590-d736-4ac0-b0d3-008c17dea690
-  id: todo-app
-  name: Todo App
+- secret: some-secret
+  id: realtime-todo-app
+  name: Realtime Todo App
   modules:
     crud:
       mongo:
         conn: mongodb://localhost:27017
         collections:
-          default:
+          todos:
             isRealtimeEnabled: true
             rules:
               create:
@@ -50,14 +50,22 @@ projects:
               delete:
                 rule: allow
               read:
-                rule: allow
+                rule: match
+                eval: ==
+                type: string
+                f1: args.auth.id
+                f2: args.find.userId
               update:
                 rule: allow
         isPrimary: false
         enabled: true
-    auth: {}
+    auth:
+      email:
+        enabled: true
+        id: ""
+        secret: ""
     functions:
-      enabled: true
+      enabled: false
       broker: nats
       conn: nats://localhost:4222
       rules: {}
@@ -70,14 +78,25 @@ projects:
       storeType: local
       conn: ./
       endpoint: ""
-      rules: []
+      rules:
+      - prefix: /
+        rule:
+          create:
+            rule: allow
+          delete:
+            rule: allow
+          read:
+            rule: allow
 ssl:
   enabled: false
   crt: ""
   key: ""
 static:
-  enabled: true
-  routes: []  
+  routes:
+  - path: ./public
+    prefix: /
+    host: ""
+    proxy: ""
 admin:
   secret: some-secret
   operation:
@@ -96,7 +115,7 @@ deploy:
 
 Quickly going through it,`projects` is the array of projects running on Space Cloud cluster where each `project` has  `id`, `name`, `secret` and `modules`.`name` is the project name whereas `id` is the unique identifier for the project in the cluster. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `functions`, `realtime` and `fileStore` are supported.
 
-> Note: The in-depth configurations of various modules are explained in their corresponding sections.
+> **Note:** The in-depth configurations of various modules are explained in their corresponding sections.
 
 ## Step 3: Start Space Cloud
 

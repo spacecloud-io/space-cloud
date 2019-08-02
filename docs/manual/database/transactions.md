@@ -131,7 +131,7 @@ api.close()
 
 The `add` method is used to add multiple db operations to a batch request. It can be called n number of times to add n number of operations to the batch. As you would have noticed, the batch is triggered by calling `batch.apply` after adding all the mutations. 
 
-> Note: `apply` is not to be used on individual operation in a batch request.
+> **Note:** `apply` is not to be used on individual operation in a batch request.
 
 ## Response
 
