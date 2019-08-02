@@ -283,8 +283,6 @@ resp, err := db.Count("books").Where(condition).Apply()
   </div>
 </div>
 
-> Note: `count` is only available in Mongo DB.
-
 As you would have noticed, the `count` method is asynchronous in nature. It takes the name of the concerned collection/table. The `apply` method actually triggers the given request to `space-cloud` and returns a promise where `res.data.result` is an integer specifying the number of documents matching the given condition.
 
 ## <a name="aggregate"></a>Aggregate documents:

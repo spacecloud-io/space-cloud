@@ -233,8 +233,6 @@ resp, err := db.Upsert("books").Where(condition).Set(set).Apply()
   </div>
 </div>
 
-> Note: `upsert` method is only available for Mongo DB.
-
 The above example will update a todo of _id = 1 with the text - 'Fork Space Cloud on Github' if a todo with _id = 1 already exists. Otherwise it will create a new todo - { _id: 1, text: 'Fork Space Cloud on Github' }
 
 ## Update documents selectively
@@ -711,9 +709,9 @@ Sometimes you might want to update a number in your document with a new value on
   <div id="max-js" class="col s12" style="padding:0">
     <pre>
       <code class="javascript">  
-// Add a new category for a todo
+// Updates 'likes' if it was lesser than 50
 db.update('todos').where(cond('_id_', '==', 1))
-  .push({categories: 'some-category'}).apply().then(res => ...); 
+  .max({likes: 50}).apply().then(res => ...);
       </code>
     </pre>
   </div>

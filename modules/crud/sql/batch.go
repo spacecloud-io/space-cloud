@@ -11,7 +11,7 @@ import (
 // Batch performs the provided operations in a single Batch
 func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchRequest) error {
 
-	tx, err := s.client.BeginTxx(ctx, nil) //TODO - Wirte *sqlx.TxOption instead of nil
+	tx, err := s.client.BeginTxx(ctx, nil) //TODO - Write *sqlx.TxOption instead of nil
 	if err != nil {
 		fmt.Println("Error in initiating Batch")
 		return err
@@ -23,7 +23,7 @@ func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchR
 			if err != nil {
 				return err
 			}
-			err = doTransactionExecContext(ctx, sqlQuery, args, tx)
+			_, err = doExecContext(ctx, sqlQuery, args, tx)
 			if err != nil {
 				return err
 			}
@@ -33,26 +33,18 @@ func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchR
 			if err != nil {
 				return err
 			}
-			err = doTransactionExecContext(ctx, sqlQuery, args, tx)
+			_, err = doExecContext(ctx, sqlQuery, args, tx)
 			if err != nil {
 				return err
 			}
 
 		case string(utils.Update):
-			sqlQuery, args, err := s.generateUpdateQuery(ctx, project, req.Col, &model.UpdateRequest{Find: req.Find, Operation: req.Operation, Update: req.Update})
-			if err != nil {
-				return err
-			}
-			err = doTransactionExecContext(ctx, sqlQuery, args, tx)
+			err = s.update(ctx, project, req.Col, &model.UpdateRequest{Find: req.Find, Operation: req.Operation, Update: req.Update}, tx)
 			if err != nil {
 				return err
 			}
 
 		}
 	}
-	err = tx.Commit() // commit the Batch
-	if err != nil {
-		return err
-	}
-	return nil
+	return tx.Commit() // commit the Batch
 }
