@@ -32,3 +32,5 @@ docker-build.sh
 .vscode
 
 yarn.lock
+
+build
