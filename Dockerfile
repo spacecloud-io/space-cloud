@@ -9,9 +9,9 @@ COPY space-cloud .
 RUN set -ex  \
   && apk add --no-cache ca-certificates \
   && chmod +x space-cloud \ 
-  && mkdir -p /root/.space-cloud/mission-control-v0.10.0
+  && mkdir -p /root/.space-cloud/mission-control-v0.10.3
 
-COPY mission-control /root/.space-cloud/mission-control-v0.10.0
+COPY mission-control /root/.space-cloud/mission-control-v0.10.3
 
 ENV PROD=false
 ENV PATH="/space-cloud:${PATH}"
