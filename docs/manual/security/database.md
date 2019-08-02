@@ -6,6 +6,7 @@ The security rules for database access works to authorize client request for dat
 modules:
   crud:
     mongo:
+      enabled: true
       conn: mongodb://localhost:27017
       isPrimary: true
       collections:

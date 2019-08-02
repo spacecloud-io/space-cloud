@@ -24,9 +24,9 @@ modules:
 Inside `fileStore` you have to speicify the following fields:
 - **enable:** Setting this field to `true` enables the file storage module.
 - **storeType:** Choose the storage technology to back the file storage module. The possible options are `local`, `amazon-s3` and `gcp-storage`.
-- **conn:** Connection is the region name for `amazon-s3` and the directory file path for `local`
-- **bucket** Bucket is the bucket name for `amazon-s3` and `gcp-storage`
-- **endpoint:** Endpoint is the endpoint for `amazon-s3`
+- **conn:** Connection is the region name for `amazon-s3` and the directory file path for `local`. Not required for `gcp-storage`.
+- **bucket** Bucket is the bucket name for `amazon-s3` and `gcp-storage`. Not required for `local`.
+- **endpoint:** Endpoint is the http endpoint for `amazon-s3`. It's only required when using an S3 compatible storage system.
 - **rules:** Are the [security rules](/docs/security/file-storage) used to secure access to the file storage module. It's essentially a map which contains the `rule` and the `prefix` on which to apply the rule. 
 
 The snippet shown above configues Space Cloud to use the local filesystem (`local`). The files will be stored under the `/tmp/data` directory. There is a single rule named `rule1` which allows all file storage operations (`create`, `read` and `delete`). All rules are applied based on prefix matching on the URL.

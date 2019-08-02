@@ -2,7 +2,7 @@
 
 Follow this guide to get started using `space-cloud` in a project from scratch.
 
-> Note: If you instead want to play around with `space-cloud` to see what it can do, then check out the [Quick start](/docs/quick-start).
+> **Note:** If you instead want to play around with `space-cloud` to see what it can do, then check out the [Quick start](/docs/quick-start).
 
 Since `space-cloud` bridges the gap between your frontend and database, it involves a 3-tier architecture as shown below:
 
@@ -58,52 +58,89 @@ This is how the config file looks like.
 
 ```yaml
 ---
-id: space-cloud
-secret: some-secret
-modules:
-  crud:
-    mongo:
-      conn: mongodb://localhost:27017
-      isPrimary: true
-      collections:
-        todos:
-          isRealtimeEnabled: true
-          rules:
-            create:
-              rule: allow
-            read:
-              rule: allow
-            update:
-              rule: allow
-            delete:
-              rule: allow
-  auth:
-    email:
+projects:
+- secret: some-secret
+  id: realtime-todo-app
+  name: Realtime Todo App
+  modules:
+    crud:
+      mongo:
+        conn: mongodb://localhost:27017
+        collections:
+          todos:
+            isRealtimeEnabled: true
+            rules:
+              create:
+                rule: allow
+              delete:
+                rule: allow
+              read:
+                rule: match
+                eval: ==
+                type: string
+                f1: args.auth.id
+                f2: args.find.userId
+              update:
+                rule: allow
+        isPrimary: false
+        enabled: true
+    auth:
+      email:
+        enabled: true
+        id: ""
+        secret: ""
+    functions:
+      enabled: false
+      broker: nats
+      conn: nats://localhost:4222
+      rules: {}
+    realtime:
       enabled: true
-  functions:
-    enabled: false
-    nats: nats://localhost:4222
-  realtime:
-    enabled: true
-    kafka: localhost
-  fileStore:
-    enabled: false
-    storeType: local
-    conn: ./
-    rules:
+      broker: nats
+      conn: nats://localhost:4222
+    fileStore:
+      enabled: false
+      storeType: local
+      conn: ./
+      endpoint: ""
+      rules:
       - prefix: /
         rule:
           create:
             rule: allow
-          read:
-            rule: allow
           delete:
             rule: allow
+          read:
+            rule: allow
+ssl:
+  enabled: false
+  crt: ""
+  key: ""
+static:
+  routes:
+  - path: ./public
+    prefix: /
+    host: ""
+    proxy: ""
+admin:
+  secret: some-secret
+  operation:
+    mode: 0
+    userId: ""
+    key: ""
+  users:
+  - user: admin
+    pass: "123"
+    scopes:
+      all:
+      - all
+deploy:
+  enabled: false
 ```
 
 Quickly going through it, `id` is the project name. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `functions` (functions), `realtime` and `fileStore` are supported.
 
-> Note: The in-depth configurations of various modules are explained in their corresponding sections.
+> **Note:** The in-depth configurations of various modules are explained in their corresponding sections.
 
 ## Step 4: Start Space Cloud
 

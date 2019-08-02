@@ -106,7 +106,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "4124", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -133,7 +133,7 @@ As you would have noticed, the `update` method is asynchronous in nature. It tak
 
 ## <a name="updating-a-single-document"></a>Updating a single document:
 
-> Note: `updateOne` method is not available for SQL databases. 
+> **Note:** `updateOne` method is not available for SQL databases. 
 
 `updateOne` finds and updates a single document. It returns an error if no matching document was found.
 
@@ -378,7 +378,7 @@ resp, err := db.Update("books").Where(condition).Set(set).Apply()
 
 You can perform different types of update operations like set, push, rename, etc. on your data. Following are the different types of update operations:
 
-> Note: In SQL databases, only `set` operation is available.
+> **Note:** In SQL databases, only `set` operation is available.
 
 ### Set operation
 

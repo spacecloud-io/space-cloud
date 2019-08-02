@@ -37,10 +37,11 @@ modules:
     enabled: true
     broker: nats
     conn: nats://localhost:4222
-    rules:
+    services:
       service-name:
-        func-name:
-          rule: allow
+        functions:
+          func-name:
+            rule: allow
 ```
 
 All you need to do is set the `enabled` field to true and provide the connection string of the broker. You can configure the security rules of a function under the `rules` section as shown above. You can learn more about securing the functions module in depth over [here](/docs/security/functions)
