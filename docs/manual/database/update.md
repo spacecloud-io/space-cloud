@@ -106,7 +106,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "4124", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -133,7 +133,7 @@ As you would have noticed, the `update` method is asynchronous in nature. It tak
 
 ## <a name="updating-a-single-document"></a>Updating a single document:
 
-> Note: `updateOne` method is not available for SQL databases. 
+> **Note:** `updateOne` method is not available for SQL databases. 
 
 `updateOne` finds and updates a single document. It returns an error if no matching document was found.
 
@@ -232,8 +232,6 @@ resp, err := db.Upsert("books").Where(condition).Set(set).Apply()
     </pre>
   </div>
 </div>
-
-> Note: `upsert` method is only available for Mongo DB.
 
 The above example will update a todo of _id = 1 with the text - 'Fork Space Cloud on Github' if a todo with _id = 1 already exists. Otherwise it will create a new todo - { _id: 1, text: 'Fork Space Cloud on Github' }
 
@@ -380,7 +378,7 @@ resp, err := db.Update("books").Where(condition).Set(set).Apply()
 
 You can perform different types of update operations like set, push, rename, etc. on your data. Following are the different types of update operations:
 
-> Note: In SQL databases, only `set` operation is available.
+> **Note:** In SQL databases, only `set` operation is available.
 
 ### Set operation
 
@@ -711,9 +709,9 @@ Sometimes you might want to update a number in your document with a new value on
   <div id="max-js" class="col s12" style="padding:0">
     <pre>
       <code class="javascript">  
-// Add a new category for a todo
+// Updates 'likes' if it was lesser than 50
 db.update('todos').where(cond('_id_', '==', 1))
-  .push({categories: 'some-category'}).apply().then(res => ...); 
+  .max({likes: 50}).apply().then(res => ...);
       </code>
     </pre>
   </div>

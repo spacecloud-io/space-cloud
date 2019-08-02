@@ -23,7 +23,7 @@ The client sends a JSON request (loosely following the MongoDB DSL) to Space Clo
 
 If any clients had subscribed to realtime changes in database, then the realtime module propagates the database changes to the concerned clients in realtime. The realtime module makes sure that whenever there is any change in the result set (results get added, removed or updated), the client will be updated. The realtime module uses a pub-sub broker under the hood to make sure the realtime piece works in a distributed fashion.
 
-> Note: Space Cloud runs a Nats server by default in the same process so that you don't have to run a broker. However, you can run your own broker and configure Space Cloud to use that instead. As of now, only Nats is supported as a broker with RabbitMQ and Kafka coming in future. 
+> **Note:** Space Cloud runs a Nats server by default in the same process so that you don't have to run a broker. However, you can run your own broker and configure Space Cloud to use that instead. As of now, only Nats is supported as a broker with RabbitMQ and Kafka coming in future. 
 
 ## Limitations
 
@@ -34,7 +34,7 @@ There are a few limitations in the queries which can be used while using the rea
 - The fields used in the where clause of liveQuery should not be updated by another request.
 - All updates and deletes can be made on a single document only using the _id or id field in the where clause.
 
-> Note: This limitations are only applicable if you intend to use the realtime functionality.
+> **Note:** This limitations are only applicable if you intend to use the realtime functionality.
 
 ## Configure the database module
 
@@ -44,6 +44,7 @@ The config pertaining to crud module can be found inside the `crud` key under th
 modules:
   crud:
     mongo:
+      enabled: true
       conn: mongodb://localhost:27017
       collections:
         todos:

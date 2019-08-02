@@ -346,6 +346,10 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			state.Realtime.SendAck(msgIDs[j].id, in.Meta.Project, msgIDs[j].col, false)
 		}
 
+		if err != nil {
+			return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+		}
+
 		// Send gRPC Response
 		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}

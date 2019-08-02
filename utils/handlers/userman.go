@@ -83,7 +83,7 @@ func HandleProfiles(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(status)
-		json.NewEncoder(w).Encode(map[string]interface{}{"users": result})
+		json.NewEncoder(w).Encode(result)
 	}
 }
 

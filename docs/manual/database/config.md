@@ -6,9 +6,10 @@ The config pertaining to crud module can be found inside the `crud` key under th
 modules:
   crud:
     mongo:
+      enabled: true
       conn: mongodb://localhost:27017
       collections:
-        todos:
+        default:
           isRealtimeEnabled: false
           rules:
             create:
@@ -20,6 +21,7 @@ modules:
             delete:
               rule: allow
     sql-mysql:
+      enabled: true
       conn: user:my-secret-pwd@/project
       collections:
         users:
@@ -33,6 +35,10 @@ modules:
               rule: allow
             delete:
               rule: allow
+  realtime:
+    enabled: true
+    broker: nats
+    conn: nats://localhost:4222
 
   # Config for other modules go here
 ```

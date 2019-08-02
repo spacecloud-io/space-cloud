@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"time"
+	"database/sql"
 
 	"github.com/jmoiron/sqlx"
 
@@ -76,24 +77,16 @@ func (s *SQL) GetDBType() utils.DBType {
 	return utils.MySQL
 }
 
-func (s *SQL) doExecContext(ctx context.Context, query string, args []interface{}) error {
-	stmt, err := s.client.PreparexContext(ctx, query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.ExecContext(ctx, args...)
-	return err
+type executor interface {
+	PreparexContext(ctx context.Context, query string) (*sqlx.Stmt, error)
 }
 
-func doTransactionExecContext(ctx context.Context, query string, args []interface{}, tx *sqlx.Tx) error {
-	stmt, err := tx.PreparexContext(ctx, query)
+func doExecContext(ctx context.Context, query string, args []interface{}, executor executor) (sql.Result, error) {
+	stmt, err := executor.PreparexContext(ctx, query)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, args...)
-	return err
+	return stmt.ExecContext(ctx, args...)
 }

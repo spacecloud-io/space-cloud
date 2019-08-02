@@ -1,3 +1,4 @@
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -26,6 +27,8 @@ config.yaml
 # Helper scripts
 kube
 docker-build.sh
+build/
+test
 
 #IDEs
 .idea
