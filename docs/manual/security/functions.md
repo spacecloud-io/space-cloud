@@ -113,11 +113,11 @@ Example (Check if a field is present in the `params`):
 ```yaml
 rule: match
 eval: ==
-type: string
-f1: utils.exist(args.params.postId)
+type: bool
+f1: utils.exists(args.params.postId)
 f2: true
 ```
-`utils.exist` is a utility function by the security rules which checks if a given field exists or not and returns true or false.
+`utils.exists` is a utility function by the security rules which checks if a given field exists or not and returns true or false.
 
 ### Database Query
 This rule is used to allow a certain function call only if a database request returns successfully. The query's find clause is generated dynamically using this rule. The query is considered to be successful if even a single row is successfully returned.

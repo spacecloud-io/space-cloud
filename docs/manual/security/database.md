@@ -130,10 +130,10 @@ rules:
     rule: match
     eval: ==
     type: bool
-    f1: utils.exist(args.find.postId)
+    f1: utils.exists(args.find.postId)
     f2: true
 ```
-`utils.exist` is a utility function by the security rules which checks if a given field exists or not and returns true or false.
+`utils.exists` is a utility function by the security rules which checks if a given field exists or not and returns true or false.
 
 ### Database Query
 This rule is used to allow a certain request only if a database request returns successfully. The query's find clause is generated dynamically using this rule. The query is considered to be successful if even a single row is successfully returned.
