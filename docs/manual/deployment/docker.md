@@ -53,7 +53,7 @@ Space Cloud has it's own Mission Control (admin UI) to configure all of this in 
 
 ### Open Mission Control
 
-Head over to `http://localhost:4122` or `https://localhost:4126` to open Mission Control depending on how you started Space Cloud.
+Head over to `http://localhost:4122/mission-control` or `https://localhost:4126/mission-control` to open Mission Control depending on how you started `space-cloud`.
 
 > **Note:** Replace `localhost` with the address of your Space Cloud if you are not running it locally. 
 
