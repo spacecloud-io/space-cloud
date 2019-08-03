@@ -210,7 +210,7 @@ func initMissionContol(version string) (string, error) {
 			return "", err
 		}
 		if os.IsNotExist(err) {
-			err := os.Mkdir("/usr"+"/.space-cloud", os.ModePerm)
+			err := os.Mkdir(homeDir+"/.space-cloud", os.ModePerm)
 			if err != nil {
 				return "", err
 			}
