@@ -35,5 +35,3 @@ test
 .vscode
 
 yarn.lock
-
-build
