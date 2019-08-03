@@ -170,7 +170,7 @@ Here's a code snippet to do this:
   <div id="live-query-options-js" class="col s12" style="padding:0">
     <pre>
       <code>
-let unsubscribe = db.liveQuery('posts').where({}).options({ changesOnly: true })subscribe(onSnapshot, onError) 
+let unsubscribe = db.liveQuery('posts').where({}).options({ changesOnly: true }).subscribe(onSnapshot, onError) 
       </code>
     </pre>
   </div>

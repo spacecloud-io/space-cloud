@@ -12,9 +12,11 @@ modules:
       service1:
         functions:
           func1:
-            rule: allow
-          func2:
-            rule: allow
+            rule: 
+              rule: allow
+          func2: 
+            rule: 
+              rule: allow
 
 # Config for other modules go here 
 ```
@@ -50,7 +52,8 @@ services:
   service1:
     functions:
       func1:
-        rule: allow
+        rule:
+          rule: allow
 ```
 
 ## Deny access
@@ -62,7 +65,8 @@ services:
   service1:
     functions:
       func1:
-        rule: deny
+        rule:
+          rule: deny
 ```
 
 ## Allow only authenticated users
@@ -74,7 +78,8 @@ services:
   service1:
     functions:
       func1:
-        rule: authenticated
+        rule:
+          rule: authenticated
 ```
 
 ## Allow function call on certain conditions
@@ -185,16 +190,17 @@ modules:
       service1:
         functions:
           func1:
-            rule: func
-            service: auth-service
-            func: auth-func
+            rule: 
+              rule: func
+              service: auth-service
+              func: auth-func
 ```
 
 In the above case, to authorize a request to call `func1`, the Space Cloud will make a call to the `auth-func` function of the `auth-service`. The request to `func1` will be considered authorized by the Space Cloud only when the `auth-func` returns an object with `ack` property set to true.
 
 ## Next steps
 
-Great! You have learned how to secure function calls. You may now head over to the [static module](/docs/deploy) to learn how to host static resources.
+Great! You have learned how to secure function calls. You may now head over to the [static module](/docs/static) to learn how to host static resources.
 
 <div class="btns-wrapper">
   <a href="/docs/security/file-storage" class="waves-effect waves-light btn primary-btn-border btn-small">

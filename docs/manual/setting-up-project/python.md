@@ -2,8 +2,6 @@
 
 Follow this guide to use Space Cloud APIs in your python app.
 
-> **Note:** Make sure you have all the completed all [prerequisites](/docs/getting-started).
-
 ## Step 1: Install Space Cloud API
 **Install via pip:**
 ```bash
@@ -14,17 +12,17 @@ $ pip install space-api-py
 
 A client instance of Space Cloud will help you talk to `space-cloud` binary and perform backend operations directly from the frontend.
 
+The `API` constructor takes two parameters: 
+- **PROJECT_ID:** Unqiue identifier of a project. It's derived by converting your project name to lowercase and replacing all spaces to hiphens. For example `Todo App` becomes `todo-app`.
+- **SPACE_CLOUD_URL:** This is the url of your `space-cloud` binary. It's `localhost:4124` or `localhost:4128` for grpc and grpc secure endpoints respectively.
+
+> **Note:** Replace `localhost` with the address of your Space Cloud if you are not running it locally. 
+
 ```python
 from space_api import API
 
 api = API('books-app', 'localhost:4124')
 ```
-
-The API method takes the following parameters:
-
-**project-id:** - Name of the project
-
-**url:** - Url of the `space-cloud` binary
 
 
 ## Step 3: Create a DB instance
@@ -64,7 +62,7 @@ Great! Since you have initialized the `api` and `db` instance you can start buil
 - [Secure](/docs/security) your apps
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/setting-up-project/" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
   <a href="/docs/database/" class="waves-effect waves-light btn primary-btn-fill btn-small">

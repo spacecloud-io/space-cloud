@@ -2,8 +2,6 @@
 
 Follow this guide to use Space Cloud APIs in your web app or any Javascript/Node.js project.
 
-> **Note:** Make sure you have all the completed all [prerequisites](/docs/getting-started).
-
 ## Step 1: Install Space Cloud API
 **Install via npm:**
 ```bash
@@ -15,34 +13,34 @@ $ npm install space-api --save
 <script src="https://spaceuptech.com/downloads/libraries/space-api.js"></script>
 ```
 
-## Step 2: Create a Client instance
+## Step 2: Create an API instance
 
-A client instance of Space Cloud on the frontend will help you talk to `space-cloud` binary and perform backend operations directly from the frontend.
+An `api` instance of Space Cloud on the frontend will help you talk to `space-cloud` binary and perform backend operations directly from the frontend. 
+
+The `API` constructor takes two parameters: 
+- **PROJECT_ID:** Unqiue identifier of a project. It's derived by converting your project name to lowercase and replacing all spaces to hiphens. For example `Todo App` becomes `todo-app`.
+- **SPACE_CLOUD_URL:** This is the url of your `space-cloud` binary. It's `http://localhost:4122` or `https://localhost:4126` for HTTP and HTTPS endpoints respectively.
+
+> **Note:** Replace `localhost` with the address of your Space Cloud if you are not running it locally. 
 
 **For ES6:**
 ```js
 import { API } from 'space-api';
 
-const api = new API('demo-project', 'http://localhost:4122');
+const api = new API('todo-app', 'http://localhost:4122');
 ```
 
 **For ES5/CommonJS:**
 ```js
 const { API } = require('space-api');
 
-const api = new API('demo-project', 'http://localhost:4122');
+const api = new API('todo-app', 'http://localhost:4122');
 ```
 
 **For stand alone:**
 ```js
 var api = new Space.API("todo-app", "http://localhost:4122");
 ```
-
-The API method takes the following parameters:
-
-**project-id:** - Name of the project
-
-**url:** - Url of the `space-cloud` binary
 
 
 ## Step 3: Create a DB instance
@@ -80,7 +78,7 @@ Great! Since you have initialized the `api` and `db` instance you can start buil
 - [Secure](/docs/security) your apps
 
 <div class="btns-wrapper">
-  <a href="/docs/getting-started/" class="waves-effect waves-light btn primary-btn-border btn-small">
+  <a href="/docs/setting-up-project/" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
   <a href="/docs/database/" class="waves-effect waves-light btn primary-btn-fill btn-small">

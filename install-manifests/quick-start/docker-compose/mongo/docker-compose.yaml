@@ -1,0 +1,27 @@
+version: '3.6'
+services:
+  mongo:
+    image: mongo
+    restart: always
+    volumes:
+    - db_data:/data/db
+  space-cloud:
+    image: spaceuptech/space-cloud
+    ports:
+    - "4122:4122"
+    - "4124:4124"
+    - "4126:4126"
+    - "4128:4128"
+    depends_on:
+    - "mongo"
+    restart: always
+    environment:
+      ## The DEV environment lets you use Mission Control (Admin UI) without login
+      ## Change the dev mode to false if you want a login to your Mission Control UI
+      DEV: "true"
+      ## Uncomment next lines to change the login credentials of Mission Control UI
+      # ADMIN_USER: "admin"
+      # ADMIN_PASS: "123"
+      # ADMIN_SECRET: "some-secret" # This is the JWT secret used for login authentication in Mission Control
+volumes:
+  db_data:

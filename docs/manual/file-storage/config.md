@@ -1,5 +1,7 @@
 # Configuring the file storage module
 
+> **Note:** All changes to the config of `space-cloud` has to be done through the Mission Control only. Changes made manually to the config file will get overwritten. 
+
 The config pertaining to file management module can be found inside the `fileStore` key under the `modules` object. Here's the snippet:
 
 ```yaml
