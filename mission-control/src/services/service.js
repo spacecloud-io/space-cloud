@@ -1,6 +1,10 @@
 import Client from "./client";
-import { API, cond, and } from 'space-api';
+import SpaceAPI from 'space-api';
 import { SPACE_API_PROJECT, SPACE_API_URL } from "../constants";
+
+const API = SpaceAPI.API
+const cond = SpaceAPI.cond
+const and = SpaceAPI.and
 
 class Service {
   constructor() {
@@ -15,6 +19,18 @@ class Service {
 
   setSpaceApiToken(token) {
     this.spaceApi.setToken(token)
+  }
+
+  fetchEnv() {
+    return new Promise((resolve, reject) => {
+      this.client.getJSON("/v1/api/config/env").then(({ status, data }) => {
+        if (status !== 200) {
+          reject("Internal server error")
+          return
+        }
+        resolve(data.isProd)
+      }).catch(ex => reject(ex.toString()))
+    })
   }
 
   spaceUpRegister(name, email, pass) {
@@ -156,6 +172,30 @@ class Service {
     })
   }
 
+  fetchStaticConfig() {
+    return new Promise((resolve, reject) => {
+      this.client.getJSON(`/v1/api/config/static`).then(({ status, data }) => {
+        if (status !== 200) {
+          reject(data.error)
+          return
+        }
+        resolve(data.static)
+      }).catch(ex => reject(ex))
+    })
+  }
+
+  saveStaticConfig(staticConfig) {
+    return new Promise((resolve, reject) => {
+      this.client.postJSON(`/v1/api/config/static`, staticConfig).then(({ status, data }) => {
+        if (status !== 200) {
+          reject(data.error)
+          return
+        }
+        resolve()
+      }).catch(ex => reject(ex))
+    })
+  }
+
   requestPayment(email, name) {
     return new Promise((resolve, reject) => {
       this.spaceApi.call('space-site', 'request-payment', { email: email, name: name }, 5000)
@@ -200,6 +240,29 @@ class Service {
         resolve(data.result)
       }).catch(ex => reject(ex))
     })
+  }
+
+  execSpaceAPI(projectId, code, token) {
+    return new Promise((resolve, reject) => {
+      const url = process.env.NODE_ENV !== "production" ? "http://localhost:4122" : undefined
+      const api = new API(projectId, url)
+      if (token) {
+        api.setToken(token)
+      }
+      const cond = SpaceAPI.cond
+      const and = SpaceAPI.and
+      const or = SpaceAPI.or
+      try {
+        const promise = eval(code)
+        if (!promise || !promise.then) {
+          reject("Not a valid Space Cloud API call")
+        }
+        promise.then(res => resolve(res)).catch(ex => reject(ex.toString()))
+      } catch (error) {
+        reject(error.toString())
+      }
+    })
+
   }
 }
 

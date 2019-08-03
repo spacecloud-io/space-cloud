@@ -21,7 +21,7 @@ Uploading a file via Space Cloud from frontend is as simple as getting the refer
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Get the file to be uploaded
 const myFile = document.querySelector("#your-file-input").files[0];
@@ -44,7 +44,7 @@ api.FileStore()
   <div id="upload-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 FileStore fileStore = api.fileStore();
 InputStream inputStream = new FileInputStream("input.txt");
 fileStore.uploadFile("\\", "file.txt", inputStream, new Utils.ResponseListener() {
@@ -71,7 +71,7 @@ fileStore.uploadFile("\\", "file.txt", inputStream, new Utils.ResponseListener()
 from space_api import API
 
 # Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 
 # Initialize file storage module
 file_store = api.file_store()
@@ -88,7 +88,7 @@ else:
   <div id="upload-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-api, err := api.New("books-app", "localhost:8081", false)
+api, err := api.New("books-app", "localhost:4124", false)
 if(err != nil) {
   fmt.Println(err)
 }
@@ -137,7 +137,7 @@ A response object sent by the server contains the **status** fields explained be
 All files uploaded via File Management module are accessible on the following url:
 
 ```
-url = `http://localhost:8080/v1/api/$projectName/files/$path/$fileName`
+url = `http://localhost:4122/v1/api/$projectName/files/$path/$fileName`
 ```
 
 The url is different for each file and has following variable parts to it:
@@ -159,7 +159,7 @@ Here's a code snippet to download a file:
   <div id="download-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 FileStore fileStore = api.fileStore();
 OutputStream outputStream = new FileOutputStream("output.txt";);
 fileStore.downloadFile("\\file.txt", outputStream, new Utils.ResponseListener() {
@@ -186,7 +186,7 @@ fileStore.downloadFile("\\file.txt", outputStream, new Utils.ResponseListener() 
 from space_api import API
 
 # Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 
 # Initialize file storage module
 file_store = api.file_store()
@@ -203,7 +203,7 @@ else:
   <div id="download-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-api, err := api.New("books-app", "localhost:8081", false)
+api, err := api.New("books-app", "localhost:4124", false)
 if(err != nil) {
   fmt.Println(err)
 }

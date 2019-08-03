@@ -8,6 +8,7 @@ type Config struct {
 	SSL      *SSL       `json:"ssl" yaml:"ssl"`
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 	Deploy   Deploy     `json:"deploy" yaml:"deploy"`
+	Static   *Static    `json:"gateway" yaml:"gateway"`
 	Cluster  string     `json:"cluster" yaml:"cluster"`
 	NodeID   string     `json:"nodeId" yaml:"nodeId"`
 }
@@ -74,7 +75,6 @@ type Modules struct {
 	Functions *Functions `json:"functions" yaml:"functions"`
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
-	Static    *Static    `json:"static" yaml:"static"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -121,14 +121,24 @@ type AuthStub struct {
 
 // Functions holds the config for the functions module
 type Functions struct {
-	Enabled bool         `json:"enabled" yaml:"enabled"`
-	Broker  utils.Broker `json:"broker" yaml:"broker"`
-	Conn    string       `json:"conn" yaml:"conn"`
-	Rules   FuncRules    `json:"rules" yaml:"rules"`
+	Enabled  bool         `json:"enabled" yaml:"enabled"`
+	Broker   utils.Broker `json:"broker" yaml:"broker"`
+	Conn     string       `json:"conn" yaml:"conn"`
+	Services Services     `json:"services" yaml:"services"`
 }
 
-// FuncRules is the rules for the functions module
-type FuncRules map[string]map[string]*Rule // service -> function -> rule
+// Services holds the config of services
+type Services map[string]*Service
+
+// Service holds the config of service
+type Service struct {
+	Functions map[string]Function `json:"functions" yaml:"functions"`
+}
+
+// Function holds the config of a function
+type Function struct {
+	Rule *Rule `json:"rule" yaml:"rule"`
+}
 
 // Realtime holds the config for the realtime module
 type Realtime struct {
@@ -155,8 +165,8 @@ type FileRule struct {
 
 // Static holds the config for the static files module
 type Static struct {
-	Enabled bool           `json:"enabled" yaml:"enabled"`
-	Routes  []*StaticRoute `json:"routes" yaml:"routes"`
+	Routes         []*StaticRoute `json:"routes" yaml:"routes"`
+	InternalRoutes []*StaticRoute `json:"internalRoutes" yaml:"internalRoutes"`
 }
 
 // StaticRoute holds the config for each route

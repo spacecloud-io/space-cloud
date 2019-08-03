@@ -12,15 +12,22 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
-func (m *Module) matchRule(project string, rule *config.Rule, args map[string]interface{}) error {
+func (m *Module) matchRule(project string, rule *config.Rule, args map[string]interface{}, auth map[string]interface{}) error {
 	if project != m.project {
 		return errors.New("invalid project details provided")
 	}
 
-	switch rule.Rule {
-	case "allow", "authenticated":
+	if rule.Rule == "allow" || rule.Rule == "authenticated" {
 		return nil
+	}
 
+	if idTemp, p := auth["id"]; p {
+		if id, ok := idTemp.(string); ok && id == utils.InternalUserID {
+			return nil
+		}
+	}
+
+	switch rule.Rule {
 	case "deny":
 		return ErrIncorrectMatch
 

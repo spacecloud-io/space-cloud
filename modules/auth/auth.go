@@ -19,7 +19,7 @@ type Module struct {
 	crud          *crud.Module
 	functions     *functions.Module
 	fileRules     []*config.FileRule
-	funcRules     config.FuncRules
+	funcRules     config.Services
 	project       string
 	fileStoreType string
 }
@@ -43,7 +43,7 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	}
 
 	if functions != nil && functions.Enabled {
-		m.funcRules = functions.Rules
+		m.funcRules = functions.Services
 	}
 }
 

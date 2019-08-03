@@ -41,7 +41,7 @@ A sample object in JSON will have the following format
   "id":    "string", // this will be _id for MongoDB
   "email": "string",
   "name":  "string",
-  "pass":  "string",
+  "pass":  "string", // The password field is bcrypted
   "role":  "string"
 }
 ```

@@ -25,16 +25,19 @@ const Sidenav = (props) => {
     <Link to={`/mission-control/projects/${props.projectId}/file-storage`}>
       <SidenavItem name="File Storage" icon="folder_open" active={props.selectedItem === 'file-storage'} />
     </Link>
-    <Link to={`/mission-control/projects/${props.projectId}/static`}>
-      <SidenavItem name="Static Hosting" icon="cloud" active={props.selectedItem === 'static'} />
-    </Link>
     <Link to={`/mission-control/projects/${props.projectId}/functions`}>
       <SidenavItem name="Functions" icon="code" active={props.selectedItem === 'functions'} />
     </Link>
     <Link to={`/mission-control/projects/${props.projectId}/configure`}>
       <SidenavItem name="Configure" icon="settings" active={props.selectedItem === 'configure'} />
     </Link>
+    <Link to={`/mission-control/projects/${props.projectId}/explorer`}>
+      <SidenavItem name="Explorer" icon="explore" active={props.selectedItem === 'explorer'} />
+    </Link>
     <Divider />
+    <Link to={`/mission-control/projects/${props.projectId}/gateway`}>
+      <SidenavItem name="Gateway" icon="cloud" active={props.selectedItem === 'gateway'} />
+    </Link>
     <Link to={`/mission-control/projects/${props.projectId}/deploy`}>
       <SidenavItem name="Deploy" icon="local_airport" active={props.selectedItem === 'deploy'} />
     </Link>

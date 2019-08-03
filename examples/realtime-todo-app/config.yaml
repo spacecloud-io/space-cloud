@@ -52,17 +52,16 @@ projects:
             rule: allow
           read:
             rule: allow
-    static:
-      enabled: false
-      routes:
-      - path: ./public
-        prefix: /
-        host: ""
-        proxy: ""
 ssl:
   enabled: false
   crt: ""
   key: ""
+static:
+  routes:
+  - path: "."
+    prefix: /
+    host: ""
+    proxy: ""
 admin:
   secret: some-secret
   operation:
@@ -77,5 +76,3 @@ admin:
       - all
 deploy:
   enabled: false
-cluster: ""
-nodeId: aefc31ee-9d7e-11e9-865a-60f81dd0a692

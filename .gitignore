@@ -31,7 +31,10 @@ config.yaml
 # Helper scripts
 kube
 docker-build.sh
+build/
 
 #IDEs
 .idea
 .vscode
+
+yarn.lock

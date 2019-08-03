@@ -17,7 +17,7 @@ You can delete data in your app by simply calling `db.delete` on the frontend. H
 import { API, and, or, cond } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -42,7 +42,7 @@ db.delete("todos").where(condition).apply()
    <div id="delete-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
 db.delete("books").where(new Cond("name", "==", "aBook")).apply(new Utils.ResponseListener() {
     @Override
@@ -68,7 +68,7 @@ db.delete("books").where(new Cond("name", "==", "aBook")).apply(new Utils.Respon
 from space_api import API, COND
 
 # Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 
 # Initialize database(s) you intend to use
 db = api.my_sql()
@@ -97,7 +97,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -123,7 +123,7 @@ As you would have noticed, the `delete` method is asynchronous in nature. It tak
 
 ## Deleting a single document:
 
-> Note: `deleteOne` method is not available for SQL databases.
+> **Note:** `deleteOne` method is not available for SQL databases.
 
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">

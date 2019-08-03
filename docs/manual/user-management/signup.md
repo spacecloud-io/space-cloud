@@ -16,7 +16,7 @@ You can easily allow users to create a new user on your app via email using the 
 import { API } from 'space-api';
 
 // Initialize api with the project name and url of the space cloud
-const api = new API('todo-app', 'http://localhost:8080');
+const api = new API('todo-app', 'http://localhost:4122');
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -41,7 +41,7 @@ db.signUp('demo@example.com', 'User1', '1234', 'default').then(res => {
   <div id="signup-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
 db.signUp("email", "name", "password", "role", new Utils.ResponseListener() {
     @Override
@@ -71,7 +71,7 @@ db.signUp("email", "name", "password", "role", new Utils.ResponseListener() {
 from space_api import API
 
 // Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 
 // Initialize database(s) you intend to use
 db = api.my_sql()
@@ -96,7 +96,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}

@@ -26,7 +26,7 @@ You can query all documents from your database that matches a particular conditi
 import { API, and, or, cond } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -51,7 +51,7 @@ db.get("todos").where(condition).apply().then(res => {
  <div id="get-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
 db.get("books").where(new Cond("author", "==", "myself")).apply(new Utils.ResponseListener() {
     @Override
@@ -81,7 +81,7 @@ db.get("books").where(new Cond("author", "==", "myself")).apply(new Utils.Respon
 from space_api import API, AND, OR, COND
 
 # Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 
 # Initialize database(s) you intend to use
 db = api.my_sql()
@@ -110,7 +110,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -365,7 +365,7 @@ resp, err := db.Aggr("posts").Pipe(pipe).Apply()
 
 The `aggr` method takes a collection name and `pipe` method takes a [MongoDB pipeline](https://docs.mongodb.com/manual/core/aggregation-pipeline/). The `apply` methods triggers the request and result is received in `res.data.result`. 
 
-> Note: Aggregate functionality is only available in MongoDB
+> **Note:** Aggregate functionality is only available in MongoDB
 
 ## Read documents selectively
 

@@ -2,7 +2,7 @@
 
 This guide will help you get started with Space Cloud quickly so that you can explore its powers and play around with it. 
 
-> Note: If you instead want to start a project from scratch using `space-cloud`, then check out the [getting started](/docs/getting-started) guide.
+> **Note:** If you instead want to start a project from scratch using `space-cloud`, then check out the [getting started](/docs/getting-started) guide.
 
 To get started with Space Cloud you will need to:
 - Make a config file

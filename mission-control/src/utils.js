@@ -33,9 +33,9 @@ export const adjustConfig = (config) => {
   }
 
   // Adjust function rules
-  if (config.modules && config.modules.functions && config.modules.functions.rules) {
-    Object.keys(config.modules.functions.rules).forEach(service => {
-      config.modules.functions.rules[service] = JSON.stringify(config.modules.functions.rules[service], null, 2)
+  if (config.modules && config.modules.functions && config.modules.functions.services) {
+    Object.keys(config.modules.functions.services).forEach(service => {
+      config.modules.functions.services[service] = JSON.stringify(config.modules.functions.services[service], null, 2)
     })
   }
 
@@ -44,16 +44,12 @@ export const adjustConfig = (config) => {
     config.modules.fileStore.rules = config.modules.fileStore.rules.map(rule => JSON.stringify(rule, null, 2))
   }
 
-  // Adjust static module rules
-  if (config.modules && config.modules.static && config.modules.static.routes) {
-    config.modules.static.routes = config.modules.static.routes.map(rule => JSON.stringify(rule, null, 2))
-  }
-
   return config
 }
 
-export const unAdjustConfig = (c) => {
+export const unAdjustConfig = (c, s) => {
   let config = cloneDeep(c)
+  let staticConfig = cloneDeep(s)
   let result = { ack: true, errors: { crud: {}, functions: [], fileStore: [], static: [] } }
   // Unadjust database rules
   if (config.modules && config.modules.crud) {
@@ -72,10 +68,10 @@ export const unAdjustConfig = (c) => {
   }
 
   // Unadjust function rules
-  if (config.modules && config.modules.functions && config.modules.functions.rules) {
-    Object.keys(config.modules.functions.rules).forEach(service => {
+  if (config.modules && config.modules.functions && config.modules.functions.services) {
+    Object.keys(config.modules.functions.services).forEach(service => {
       try {
-        config.modules.functions.rules[service] = JSON.parse(config.modules.functions.rules[service])
+        config.modules.functions.services[service] = JSON.parse(config.modules.functions.services[service])
       } catch (error) {
         result.ack = false
         result.errors.functions.push(service)
@@ -96,8 +92,8 @@ export const unAdjustConfig = (c) => {
   }
 
   // Unadjust file storage rules
-  if (config.modules && config.modules.static && config.modules.static.routes) {
-    config.modules.static.routes = config.modules.static.routes.map((rule, index) => {
+  if (staticConfig && staticConfig.routes) {
+    staticConfig.routes = staticConfig.routes.map((rule, index) => {
       try {
         return JSON.parse(rule)
       } catch (error) {
@@ -108,6 +104,7 @@ export const unAdjustConfig = (c) => {
   }
 
   result.config = config
+  result.staticConfig = staticConfig
   return result
 }
 
@@ -159,7 +156,17 @@ export const generateProjectConfig = (name, dbType) => ({
       enabled: true,
       broker: "nats",
       conn: "nats://localhost:4222",
-      rules: {}
+      services: {
+        default: {
+          functions: {
+            default: {
+              rule: {
+                rule: "allow"
+              }
+            }
+          }
+        }
+      }
     },
     realtime: {
       enabled: true,
@@ -188,15 +195,26 @@ export const generateProjectConfig = (name, dbType) => ({
 * Else it redirects the user to welcome page if user has no projects.
 */
 export const handleClusterLoginSuccess = (token, lastProjectId) => {
-  store.dispatch(increment("pendingRequests"))
-  service.setToken(token)
-  Promise.all([service.fetchProjects(), service.fetchDeployCofig(), service.fetchOperationCofig()])
-    .then(([projects, deployConfig, operationConfig]) => {
+  if (token) {
+    service.setToken(token)
+  }
 
+  store.dispatch(increment("pendingRequests"))
+  Promise.all([service.fetchProjects(), service.fetchDeployCofig(), service.fetchOperationCofig(), service.fetchStaticConfig()])
+    .then(([projects, deployConfig, operationConfig, staticConfig]) => {
       // Save deploy config
       const adjustedDeployConfig = adjustConfig(deployConfig)
       store.dispatch(set("deployConfig", adjustedDeployConfig))
       store.dispatch(set("savedDeployConfig", cloneDeep(adjustedDeployConfig)))
+      // Save static config
+      let adjustedStaticConfig = cloneDeep(staticConfig)
+
+      if (!adjustedStaticConfig || !adjustedStaticConfig.routes) {
+        adjustedStaticConfig = { routes: [] }
+      }
+      adjustedStaticConfig.routes = adjustedStaticConfig.routes.map(rule => JSON.stringify(rule, null, 2))
+      store.dispatch(set("staticConfig", adjustedStaticConfig))
+      store.dispatch(set("savedStaticConfig", cloneDeep(adjustedStaticConfig)))
 
       // Save operation config
       store.dispatch(set("operationConfig", operationConfig))
@@ -279,4 +297,27 @@ export const triggerSignin = () => {
 export const openPlansPage = () => {
   const projectId = get(store.getState(), "config.id")
   history.push(`/mission-control/projects/${projectId}/plans`)
+}
+
+export const onAppLoad = () => {
+  service.fetchEnv().then(isProd => {
+    const token = localStorage.getItem("token")
+    const spaceUpToken = localStorage.getItem("space-up-token")
+    if (isProd && !token) {
+      history.push("/mission-control/login")
+      return
+    }
+
+    let lastProjectId = null
+    const urlParams = window.location.pathname.split("/")
+    if (urlParams.length > 3 && urlParams[3]) {
+      lastProjectId = urlParams[3]
+    }
+
+    handleClusterLoginSuccess(token, lastProjectId)
+
+    if (spaceUpToken) {
+      handleSpaceUpLoginSuccess(spaceUpToken)
+    }
+  })
 }

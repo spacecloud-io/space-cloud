@@ -57,7 +57,7 @@ const mapStateToProps = (state, ownProps) => {
     mode: get(state, "operationConfig.mode", 0),
     selectedDb: ownProps.selectedDb,
     projectName: get(state, "config.name", ""),
-    unsavedChanges: !isEqual(state.config, state.savedConfig) || !isEqual(state.deployConfig, state.savedDeployConfig),
+    unsavedChanges: !isEqual(state.config, state.savedConfig) || !isEqual(state.deployConfig, state.savedDeployConfig) || !isEqual(state.staticConfig, state.savedStaticConfig),
   }
 }
 
@@ -66,10 +66,11 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     handleSave: () => {
       const config = get(store.getState(), "config")
       const deployConfig = get(store.getState(), "deployConfig")
+      const staticConfig = get(store.getState(), "staticConfig")
       const mode = get(store.getState(), "operationConfig.mode", 0)
 
       // UnAdjust the config and check if there are any errors
-      const result = unAdjustConfig(config)
+      const result = unAdjustConfig(config, staticConfig)
       if (!result.ack) {
         if (Object.keys(result.errors.crud).length) {
           let errorDesc = ''
@@ -94,11 +95,14 @@ const mapDispatchToProps = (dispatch, ownProps) => {
       }
 
       dispatch(set("pendingRequests", true))
-      const promises = mode > 0 ? [service.saveProjectConfig(result.config), service.saveDeployConfig(deployConfig)] : [service.saveProjectConfig(result.config)]
+      const promises = mode > 0 ?
+        [service.saveProjectConfig(result.config), service.saveStaticConfig(result.staticConfig), service.saveDeployConfig(deployConfig)]
+        : [service.saveProjectConfig(result.config), service.saveStaticConfig(result.staticConfig)]
       Promise.all(promises)
         .then(() => {
           notify("success", 'Success', 'Config saved successfully')
           dispatch(set("savedConfig", config))
+          dispatch(set("savedStaticConfig", staticConfig))
           if (mode > 0) {
             dispatch(set("savedDeployConfig", deployConfig))
           }

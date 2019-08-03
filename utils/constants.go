@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.10.1"
+const BuildVersion = "0.11.0"
 
 const (
 	// One operation returns a single document from the database
@@ -158,6 +158,18 @@ const (
 	// RaftCommandSet is used to set a projects config
 	RaftCommandSet RaftCommandType = "set"
 
+	// RaftCommandSetDeploy is used to set the deploy config
+	RaftCommandSetDeploy RaftCommandType = "set-deploy"
+
+	// RaftCommandSetOperation is used to set the deploy config
+	RaftCommandSetOperation RaftCommandType = "set-operation"
+
+	// RaftCommandSetStatic is used to set the deploy config
+	RaftCommandSetStatic RaftCommandType = "set-static"
+
+	// RaftCommandAddInternalRouteOperation is used to add internal routes
+	RaftCommandAddInternalRouteOperation RaftCommandType = "add-internal-route"
+
 	// RaftCommandDelete is used to delete a projects config
 	RaftCommandDelete RaftCommandType = "delete"
 )
@@ -206,3 +218,6 @@ const (
 	// PortRaft is used internally by raft
 	PortRaft string = "4234"
 )
+
+// InternalUserID is the auth.id used for internal requests
+const InternalUserID string = "internal-sc-user"

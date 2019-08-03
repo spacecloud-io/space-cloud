@@ -47,7 +47,7 @@ func (s *Server) RoutineMetrics() {
 	find := map[string]interface{}{"_id": s.nodeID}
 	set := map[string]interface{}{
 		"os":           runtime.GOOS,
-		"isProd":       s.isProd,
+		"isProd":       s.adminMan.LoadEnv(),
 		"version":      utils.BuildVersion,
 		"clusterSize":  s.syncMan.GetClusterSize(),
 		"distribution": "ce",
@@ -63,7 +63,7 @@ func (s *Server) RoutineMetrics() {
 			set["mode"] = c.Admin.Operation.Mode
 		}
 		if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-			set["modules"] = getProjectInfo(c.Projects[0].Modules)
+			set["modules"] = getProjectInfo(c.Projects[0].Modules, c.Static)
 			set["projects"] = []string{c.Projects[0].ID}
 		}
 	}
@@ -78,6 +78,7 @@ func (s *Server) RoutineMetrics() {
 		set := map[string]interface{}{
 			"lastUpdated": currentTimeInMillis(),
 			"clusterSize": s.syncMan.GetClusterSize(),
+			"isProd":      s.adminMan.LoadEnv(),
 		}
 
 		c := s.syncMan.GetGlobalConfig()
@@ -88,7 +89,7 @@ func (s *Server) RoutineMetrics() {
 				set["mode"] = c.Admin.Operation.Mode
 			}
 			if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-				set["modules"] = getProjectInfo(c.Projects[0].Modules)
+				set["modules"] = getProjectInfo(c.Projects[0].Modules, c.Static)
 				set["projects"] = []string{c.Projects[0].ID}
 			}
 		}
@@ -101,13 +102,13 @@ func (s *Server) RoutineMetrics() {
 	}
 }
 
-func getProjectInfo(config *config.Modules) map[string]interface{} {
+func getProjectInfo(config *config.Modules, static *config.Static) map[string]interface{} {
 
 	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
 	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
 	realtimeConfig := map[string]interface{}{"enabled": false}
 	fileStoreConfig := map[string]interface{}{"enabled": false, "storeTypes": []string{}, "rules": 0}
-	staticConfig := map[string]interface{}{"enabled": false, "routes": 0}
+	staticConfig := map[string]interface{}{"routes": 0, "internalRoutes": 0}
 	auth := []string{}
 
 	if config.Crud != nil {
@@ -131,11 +132,11 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 
 	if config.Functions != nil && config.Functions.Enabled {
 		functionsConfig["enabled"] = true
-		if config.Functions.Rules != nil {
-			functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Rules)
-			for _, v := range config.Functions.Rules {
-				if v != nil {
-					functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v)
+		if config.Functions.Services != nil {
+			functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Services)
+			for _, v := range config.Functions.Services {
+				if v != nil && v.Functions != nil {
+					functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v.Functions)
 				}
 			}
 		}
@@ -153,12 +154,14 @@ func getProjectInfo(config *config.Modules) map[string]interface{} {
 		}
 	}
 
-	if config.Static != nil && config.Static.Enabled {
-		staticConfig["enabled"] = true
-		if config.Static.Routes != nil {
-			staticConfig["routes"] = len(config.Static.Routes)
+	if static != nil {
+		if static.Routes != nil {
+			staticConfig["routes"] = len(static.Routes)
+		}
+		if static.InternalRoutes != nil {
+			staticConfig["internalRoutes"] = len(static.InternalRoutes)
 		}
 	}
 
-	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "static": staticConfig, "auth": auth}
+	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "auth": auth, "static": staticConfig}
 }
