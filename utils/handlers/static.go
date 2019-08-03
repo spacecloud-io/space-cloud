@@ -34,10 +34,13 @@ func HandleStaticRequest(s *static.Module) http.HandlerFunc {
 		if !strings.HasPrefix(path, "/") {
 			path = "/" + path
 		}
-		path = route.Path + path
 
 		// Its a proxy request
 		if route.Proxy != "" {
+			if strings.HasSuffix(route.Proxy, "/") {
+				strings.TrimSuffix(route.Proxy, "/")
+			}
+
 			addr := route.Proxy + path
 			// See if websocket needs to be proxied
 			if route.Protocol == "ws" {
@@ -75,6 +78,8 @@ func HandleStaticRequest(s *static.Module) http.HandlerFunc {
 			reader.WriteTo(w)
 			return
 		}
+
+		path = route.Path + path
 
 		// Check if path exists
 		if fileInfo, err := os.Stat(path); !os.IsNotExist(err) {
