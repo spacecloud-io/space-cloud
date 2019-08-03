@@ -52,17 +52,16 @@ projects:
             rule: allow
           read:
             rule: allow
-    static:
-      enabled: false
-      routes:
-      - path: ./public
-        prefix: /
-        host: ""
-        proxy: ""
 ssl:
   enabled: false
   crt: ""
   key: ""
+static:
+  routes:
+  - path: "."
+    prefix: /
+    host: ""
+    proxy: ""
 admin:
   secret: some-secret
   operation:

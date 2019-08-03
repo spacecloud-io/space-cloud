@@ -69,7 +69,7 @@ func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{"users": result})
+		json.NewEncoder(w).Encode(result)
 	}
 }
 

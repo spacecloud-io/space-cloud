@@ -1,27 +1,23 @@
-# Quickly get started with Space Cloud
+# Quick Start
 
-This guide will help you get started with Space Cloud quickly so that you can explore its powers and play around with it. 
+This guide will help you try Space Cloud quickly along with MongoDB without having to set up any project. This is the easiest way to explore the powers of Space Cloud.
 
-> Note: If you instead want to start a project from scratch using `space-cloud`, then check out the [getting started](/docs/getting-started) guide.
+If you instead want to start a project with Space Cloud from scratch then check out the [getting started](/docs/getting-started) guide.
 
-To get started with Space Cloud you will need to:
-- Make a config file
-- Run `space-cloud` using the config file
+> **Note**: Space Cloud works with any database. However, this guide assumes MongoDB as the data store for ease of use because of it's schemaless nature. 
 
-## Choose a quick started guide:
-- [Using the binary](/docs/quick-start/manual): You can manually deploy `space-cloud` on your machine using the binary.
-- Using docker: Coming soon!
 
-### For production deployments:
-- Kubernetes: Coming soon!
-- Digital Ocean: Coming soon!
-- Google Cloud Platform: Coming soon!
+## Choose a quick start guide:
+- [Using Docker Compose](/docs/quick-start/docker-compose) **(recommended)**: Run a local development setup that sets up both the Space Cloud and MongoDB.
+- [Using the binary](/docs/quick-start/manual): Manually deploy `space-cloud` on your machine.
+- Using Heroku: Coming soon!
+
 
 <div class="btns-wrapper">
   <a href="/docs" class="waves-effect waves-light btn primary-btn-border btn-small">
     <i class="material-icons btn-with-icon">arrow_back</i>Previous
   </a>
-  <a href="/docs/quick-start/manual" class="waves-effect waves-light btn primary-btn-fill btn-small">
+  <a href="/docs/quick-start/docker-compose" class="waves-effect waves-light btn primary-btn-fill btn-small">
     Next<i class="material-icons btn-with-icon">arrow_forward</i>
   </a>
 </div>

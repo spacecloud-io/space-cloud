@@ -2,7 +2,6 @@ package gcpstorage
 
 import (
 	"context"
-	"strings"
 
 	"cloud.google.com/go/storage"
 
@@ -12,21 +11,17 @@ import (
 // GCPStorage holds the GCPStorage client
 type GCPStorage struct {
 	client *storage.Client
+	bucket string
 }
 
 // Init initializes a GCPStorage client
-func Init(connection, endpoint string) (*GCPStorage, error) {
+func Init(bucket string) (*GCPStorage, error) {
 	ctx := context.TODO()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if err := client.Bucket(endpoint).Create(ctx, connection, nil); err != nil {
-		if !strings.Contains(err.Error(), "409") {
-			return nil, err
-		}
-	}
-	return &GCPStorage{client}, nil
+	return &GCPStorage{client, bucket}, nil
 }
 
 // GetStoreType returns the file store type

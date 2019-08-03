@@ -33,7 +33,7 @@ func TestGenerateUpdateQuery(t *testing.T) {
 	s := SQL{dbType: string(utils.MySQL)}
 	for i, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			sqlString, _, err := s.generateUpdateQuery(context.TODO(), project, test.tableName, &test.req)
+			sqlString, _, err := s.generateUpdateQuery(context.TODO(), project, test.tableName, &test.req, "$set")
 			if i < truecases {
 				if i == 0 {
 					if ((sqlString != test.wantThis) && (sqlString != test.orThis)) || err != nil {

@@ -1,6 +1,7 @@
 package local
 
 import (
+	"strings"
 	"bufio"
 	"io/ioutil"
 	"os"
@@ -9,8 +10,9 @@ import (
 )
 
 // ListDir lists the directory
-func (l *Local) ListDir(project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
-	path := l.rootPath + project + req.Path
+func (l *Local) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
+	ps := string(os.PathSeparator)
+	path := strings.TrimRight(l.rootPath, ps) + ps + strings.TrimLeft(req.Path, ps)
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		return nil, err
@@ -32,8 +34,9 @@ func (l *Local) ListDir(project string, req *model.ListFilesRequest) ([]*model.L
 }
 
 // ReadFile reads a file from the path provided
-func (l *Local) ReadFile(project, path string) (*model.File, error) {
-	p := l.rootPath + project + path
+func (l *Local) ReadFile(path string) (*model.File, error) {
+	ps := string(os.PathSeparator)
+	p := strings.TrimRight(l.rootPath, ps) + ps + strings.TrimLeft(path, ps)
 	f, err := os.Open(p)
 	if err != nil {
 		return nil, err

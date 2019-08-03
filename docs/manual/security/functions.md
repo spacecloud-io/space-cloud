@@ -8,10 +8,15 @@ modules:
     enabled: true
     broker: nats
     conn: nats://localhost:4222
-    rules:
+    services:
       service1:
-        func1:
-          rule: allow
+        functions:
+          func1:
+            rule: 
+              rule: allow
+          func2: 
+            rule: 
+              rule: allow
 
 # Config for other modules go here 
 ```
@@ -43,10 +48,12 @@ All requests for function calls contains 2 variables which are availabe to you f
 You can disable authentication and authorization for a particular function of a service completely by using `allow`. The request is allowed to be made even if the JWT token is absent in the request. You might want to use this when you want your users to perform certain operation without signin. Here's how to give access to a particular operation using `allow`:
 
 ```yaml
-rules:
+services:
   service1:
-    func1:
-      rule: allow
+    functions:
+      func1:
+        rule:
+          rule: allow
 ```
 
 ## Deny access
@@ -54,10 +61,12 @@ rules:
 This rule is to deny all calls to a particular function irrespective of any thing. It might be useful to temporarily deny access to a function (For example in testing). Here's how to deny access to a particular function using `deny`:
 
 ```yaml
-rules:
+services:
   service1:
-    func1:
-      rule: allow
+    functions:
+      func1:
+        rule:
+          rule: deny
 ```
 
 ## Allow only authenticated users
@@ -65,10 +74,12 @@ rules:
 You can allow a certain function to be called by a user only if the user is authenticated. (For example, allow only logged in users to make a payment). This rule is used to allow the request only if a valid JWT token is found in the request. No checks are imposed beyond that. Basically it authorizes every request which has passed the authentication stage. Here's how to allow a function call for authenticated users:
 
 ```yaml
-rules:
+services:
   service1:
-    func1:
-      rule: authenticated
+    functions:
+      func1:
+        rule:
+          rule: authenticated
 ```
 
 ## Allow function call on certain conditions
@@ -113,11 +124,11 @@ Example (Check if a field is present in the `params`):
 ```yaml
 rule: match
 eval: ==
-type: string
-f1: utils.exist(args.params.postId)
+type: bool
+f1: utils.exists(args.params.postId)
 f2: true
 ```
-`utils.exist` is a utility function by the security rules which checks if a given field exists or not and returns true or false.
+`utils.exists` is a utility function by the security rules which checks if a given field exists or not and returns true or false.
 
 ### Database Query
 This rule is used to allow a certain function call only if a database request returns successfully. The query's find clause is generated dynamically using this rule. The query is considered to be successful if even a single row is successfully returned.
@@ -175,19 +186,21 @@ In case where the matching and db query for validating conditions are not enough
 ```yaml
 modules:
   functions:
-    rules:
+    services:
       service1:
-        func1:
-          rule: func
-          service: auth-service
-          func: auth-func
+        functions:
+          func1:
+            rule: 
+              rule: func
+              service: auth-service
+              func: auth-func
 ```
 
 In the above case, to authorize a request to call `func1`, the Space Cloud will make a call to the `auth-func` function of the `auth-service`. The request to `func1` will be considered authorized by the Space Cloud only when the `auth-func` returns an object with `ack` property set to true.
 
 ## Next steps
 
-Great! You have learned how to secure function calls. You may now head over to the [static module](/docs/deploy) to learn how to host static resources.
+Great! You have learned how to secure function calls. You may now head over to the [static module](/docs/static) to learn how to host static resources.
 
 <div class="btns-wrapper">
   <a href="/docs/security/file-storage" class="waves-effect waves-light btn primary-btn-border btn-small">

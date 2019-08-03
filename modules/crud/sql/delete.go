@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/model"
-	goqu "gopkg.in/doug-martin/goqu.v4"
+	goqu "github.com/doug-martin/goqu/v8"
 
-	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
-	_ "github.com/lib/pq"                              // Import for postgres
-	_ "gopkg.in/doug-martin/goqu.v4/adapters/postgres" // Adapter for postgres
+	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
+	_ "github.com/lib/pq"                               // Import for postgres
+	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 )
 
 // Delete removes the document(s) from the database which match the condition
@@ -18,14 +18,15 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 	if err != nil {
 		return err
 	}
-	return s.doExecContext(ctx, sqlString, args)
+	_, err = doExecContext(ctx, sqlString, args, s.client)
+	return err
 }
 
 //genrateDeleteQuery makes query for delete operation
 func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
-	query := goqu.From(col).Prepared(true)
-	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
+	dialect := goqu.Dialect(s.dbType)
+	query := dialect.From(col).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object
@@ -37,7 +38,7 @@ func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req 
 	}
 
 	// Generate SQL string and arguments
-	sqlString, args, err := query.ToDeleteSql()
+	sqlString, args, err := query.Delete().ToSQL()
 	if err != nil {
 		return "", nil, err
 	}

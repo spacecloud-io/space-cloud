@@ -1,14 +1,17 @@
 # Configuring the database module
 
+> **Note:** All changes to the config of `space-cloud` has to be done through the Mission Control only. Changes made manually to the config file will get overwritten. 
+
 The config pertaining to crud module can be found inside the `crud` key under the `modules` object. Here's the snippet:
 
 ```yaml
 modules:
   crud:
     mongo:
+      enabled: true
       conn: mongodb://localhost:27017
       collections:
-        todos:
+        default:
           isRealtimeEnabled: false
           rules:
             create:
@@ -20,6 +23,7 @@ modules:
             delete:
               rule: allow
     sql-mysql:
+      enabled: true
       conn: user:my-secret-pwd@/project
       collections:
         users:
@@ -33,6 +37,10 @@ modules:
               rule: allow
             delete:
               rule: allow
+  realtime:
+    enabled: true
+    broker: nats
+    conn: nats://localhost:4222
 
   # Config for other modules go here
 ```

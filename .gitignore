@@ -1,6 +1,8 @@
 .idea
 .vscode
 
+test
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -34,3 +36,5 @@ build/
 #IDEs
 .idea
 .vscode
+
+yarn.lock

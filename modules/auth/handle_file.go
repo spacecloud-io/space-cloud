@@ -37,7 +37,7 @@ func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOp
 	args["auth"] = auth
 
 	// Match the rule
-	return m.matchRule(project, rule, map[string]interface{}{"args": args})
+	return m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 }
 
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
