@@ -117,7 +117,7 @@ We believe that each app built with Space Cloud must be extremely robust and fut
 
 ### Leverage the existing tools
 
-The goal of this project is not to re-invent the wheel over and over again. In fact, integration with proven technologies is preferred over implementing them ourselves. For example, we are using [Apache Kafka](https://kafka.apache.org/) under the hood, to make our `realtime database` feature reliable. Also, [Nats](https://nats.io/) is used to implement the `functions` modules for high throughput and scale.
+The goal of this project is not to re-invent the wheel over and over again. In fact, integration with proven technologies is preferred over implementing them ourselves. For example, we are using [Nats](https://nats.io/) under the hood, to implement `realtime`  and `functions` modules for high throughput and scale.
 
 ## Documentation
 

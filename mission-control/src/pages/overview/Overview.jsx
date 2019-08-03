@@ -50,7 +50,7 @@ function Overview(props) {
                 <span class="circle" id="go"><img src={go} alt="go" /></span>
               </a>
               <div className="sepration"></div>
-              <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
+              <a href="https://spaceuptech.com/docs/deployment/" target="_blank" rel="noopener noreferrer">
                 <Button type="primary" shape="round" icon="play-circle" size="large" className="get-started">Getting Started</Button>
               </a>
             </div>
