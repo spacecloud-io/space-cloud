@@ -110,7 +110,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "4124", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -283,8 +283,6 @@ resp, err := db.Count("books").Where(condition).Apply()
   </div>
 </div>
 
-> Note: `count` is only available in Mongo DB.
-
 As you would have noticed, the `count` method is asynchronous in nature. It takes the name of the concerned collection/table. The `apply` method actually triggers the given request to `space-cloud` and returns a promise where `res.data.result` is an integer specifying the number of documents matching the given condition.
 
 ## <a name="aggregate"></a>Aggregate documents:
@@ -367,7 +365,7 @@ resp, err := db.Aggr("posts").Pipe(pipe).Apply()
 
 The `aggr` method takes a collection name and `pipe` method takes a [MongoDB pipeline](https://docs.mongodb.com/manual/core/aggregation-pipeline/). The `apply` methods triggers the request and result is received in `res.data.result`. 
 
-> Note: Aggregate functionality is only available in MongoDB
+> **Note:** Aggregate functionality is only available in MongoDB
 
 ## Read documents selectively
 

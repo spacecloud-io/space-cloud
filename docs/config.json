@@ -8,26 +8,44 @@
         "Quick start (Manual)"
       ],
       [
-        "sample-apps",
-        "Sample Apps"
+        "docker-compose",
+        "Quick start (Docker Compose)"
       ]
     ]
   },
   {
-    "name": "Getting Started",
-    "url": "getting-started",
+    "name": "Deploying",
+    "url": "deployment",
+    "pages": [
+      [
+        "docker",
+        "Docker"
+      ],
+      [
+        "manual",
+        "Manually"
+      ]
+    ]
+  },
+  {
+    "name": "Setting up project",
+    "url": "setting-up-project",
     "pages": [
       [
         "javascript",
         "Javascript"
       ],
       [
+        "python",
+        "Python"
+      ],
+      [
         "java",
         "Java"
       ],
       [
-        "python",
-        "Python"
+        "golang",
+        "Golang"
       ]
     ]
   },
@@ -148,11 +166,6 @@
   {
     "name": "Static hosting",
     "url": "static",
-    "pages": []
-  },
-  {
-    "name": "Deploy",
-    "url": "deploy",
     "pages": []
   },
   {

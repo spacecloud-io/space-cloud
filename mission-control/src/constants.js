@@ -12,4 +12,5 @@ export const defaultDbConnectionStrings = {
 
 export const SPACE_API_PROJECT = "space-cloud"
 export const SPACE_API_URL = "https://api.spaceuptech.com"
+export const SPACE_CLOUD_USER_ID = "internal-sc-user"
 

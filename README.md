@@ -66,7 +66,7 @@ We believed that **technology should adapt to your needs** and not the other way
 
 ## About Space Cloud
 
-> Note: Space Cloud is still in Beta.
+> **Note:** Space Cloud is still in Beta.
 
 Space Cloud is essentially a web server that automatically integrates with an existing or a new database to provide instant realtime APIs over REST, websockets, gRPC, etc. Written in Golang, it provides a high throughput data access layer which can be consumed directly from the frontend. It's completely unopinionated and works with the tech stack of your choice.
 
@@ -117,7 +117,7 @@ We believe that each app built with Space Cloud must be extremely robust and fut
 
 ### Leverage the existing tools
 
-The goal of this project is not to re-invent the wheel over and over again. In fact, integration with proven technologies is preferred over implementing them ourselves. For example, we are using [Apache Kafka](https://kafka.apache.org/) under the hood, to make our `realtime database` feature reliable. Also, [Nats](https://nats.io/) is used to implement the `functions` modules for high throughput and scale.
+The goal of this project is not to re-invent the wheel over and over again. In fact, integration with proven technologies is preferred over implementing them ourselves. For example, we are using [Nats](https://nats.io/) under the hood, to implement `realtime`  and `functions` modules for high throughput and scale.
 
 ## Documentation
 
@@ -138,7 +138,7 @@ Let's see how to build a realtime todo app using Space Cloud and MongoDB
 
 - [MongoDB database](https://docs.mongodb.com/manual/installation/)
 
-> Note: MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as it's database.
+> **Note:** MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as it's database.
 
 ### Step 1: Download Space Cloud
 

@@ -23,7 +23,7 @@ The client sends a JSON request (loosely following the MongoDB DSL) to Space Clo
 
 If any clients had subscribed to realtime changes in database, then the realtime module propagates the database changes to the concerned clients in realtime. The realtime module makes sure that whenever there is any change in the result set (results get added, removed or updated), the client will be updated. The realtime module uses a pub-sub broker under the hood to make sure the realtime piece works in a distributed fashion.
 
-> Note: Space Cloud runs a Nats server by default in the same process so that you don't have to run a broker. However, you can run your own broker and configure Space Cloud to use that instead. As of now, only Nats is supported as a broker with RabbitMQ and Kafka coming in future. 
+> **Note:** Space Cloud runs a Nats server by default in the same process so that you don't have to run a broker. However, you can run your own broker and configure Space Cloud to use that instead. As of now, only Nats is supported as a broker with RabbitMQ and Kafka coming in future. 
 
 ## Limitations
 
@@ -34,39 +34,49 @@ There are a few limitations in the queries which can be used while using the rea
 - The fields used in the where clause of liveQuery should not be updated by another request.
 - All updates and deletes can be made on a single document only using the _id or id field in the where clause.
 
-> Note: This limitations are only applicable if you intend to use the realtime functionality.
+> **Note:** This limitations are only applicable if you intend to use the realtime functionality.
 
 ## Configure the database module
 
-The config pertaining to crud module can be found inside the `crud` key under the `modules` object. Here's the snippet:
+Head over to the `Database` section in Mission Control to configure the database module.
 
-```yaml
-modules:
-  crud:
-    mongo:
-      conn: mongodb://localhost:27017
-      collections:
-        todos:
-          isRealtimeEnabled: false
-          rules:
-            create:
-              rule: allow
-            read:
-              rule: allow
-            update:
-              rule: allow
-            delete:
-              rule: allow
-  realtime:
-    enabled: true
-    broker: nats
-    conn: nats://localhost:4222
-  # Config for other modules go here
+> **Note:** Make sure you have selected the right database from the topbar.
+
+### Enabling the database
+Enable the switch in the upper right corner of `Database` section to enable the selected database.
+
+### Connection string
+The `Connection string` input takes the connection string of your database.
+
+You can use `environment variables` in the connection string to take db credentials. For example: `$MONGO_URL`
+
+### Configuring collections
+
+Mission Control by default creates the configuration for the `default` collection/table for you. The configuration of `default` collection/table is used when the configuration of requested collection/table is not found.    
+
+The configuration of table/collection looks like the following: 
+
+```json
+{
+  "isRealtimeEnabled": true,
+  "rules": {
+    "create": {
+      "rule": "allow"
+    },
+    "read": {
+      "rule": "allow"
+    },
+    "update": {
+      "rule": "allow"
+    },
+    "delete": {
+      "rule": "allow"
+    }
+  }
+}
 ```
 
-The above snippet instructs `space-cloud` to connect to MongoDB at `mongodb://localhost:27017`. All operations (create, read, update and delete) are allowed on the `todos` collection. The realtime module is enabled and uses `nats` as a broker present at `http://localhost:4222`
-
-You can learn more about the various parameters available for configuring the database module [here](/docs/database/config).
+All operations (create, read, update and delete) are allowed in the above example. You can learn more about securing the functions module in depth over [here](/docs/security/database).  
 
 ## Next steps
 

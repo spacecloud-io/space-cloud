@@ -44,8 +44,10 @@ func HandleProfile(projects *projects.Projects) http.HandlerFunc {
 
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]interface{}{"user": result})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+		json.NewEncoder(w).Encode(map[string]interface{}{"user": result})
 	}
 }
 
@@ -81,7 +83,7 @@ func HandleProfiles(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(status)
-		json.NewEncoder(w).Encode(map[string]interface{}{"users": result})
+		json.NewEncoder(w).Encode(result)
 	}
 }
 

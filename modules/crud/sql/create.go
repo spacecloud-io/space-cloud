@@ -4,11 +4,11 @@ import (
 	"context"
 	"strings"
 
-	goqu "gopkg.in/doug-martin/goqu.v4"
+	goqu "github.com/doug-martin/goqu/v8"
 
-	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
-	_ "github.com/lib/pq"                              // Import for postgres
-	_ "gopkg.in/doug-martin/goqu.v4/adapters/postgres" // Adapter for postgres
+	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
+	_ "github.com/lib/pq"                               // Import for postgres
+	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -20,14 +20,15 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 	if err != nil {
 		return err
 	}
-	return s.doExecContext(ctx, sqlQuery, args)
+	_, err = doExecContext(ctx, sqlQuery, args, s.client)
+	return err
 }
 
 //generateCreateQuery makes query for create operation
 func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
-	query := goqu.From(col).Prepared(true)
-	query = query.SetAdapter(goqu.NewAdapter(s.dbType, query))
+	dialect := goqu.Dialect(s.dbType)
+	query := dialect.From(col).Prepared(true)
 
 	var insert []interface{}
 	if req.Operation == "one" {
@@ -53,7 +54,7 @@ func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req 
 		records = append(records, record)
 	}
 
-	sqlQuery, args, err := query.ToInsertSql(records)
+	sqlQuery, args, err := query.Insert().Rows(records).ToSQL()
 	if err != nil {
 		return "", nil, err
 	}

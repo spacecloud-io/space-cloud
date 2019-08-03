@@ -97,7 +97,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "4124", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -123,7 +123,7 @@ As you would have noticed, the `delete` method is asynchronous in nature. It tak
 
 ## Deleting a single document:
 
-> Note: `deleteOne` method is not available for SQL databases.
+> **Note:** `deleteOne` method is not available for SQL databases.
 
  <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">

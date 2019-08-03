@@ -346,6 +346,10 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			state.Realtime.SendAck(msgIDs[j].id, in.Meta.Project, msgIDs[j].col, false)
 		}
 
+		if err != nil {
+			return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+		}
+
 		// Send gRPC Response
 		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
@@ -801,7 +805,7 @@ func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
 	if err != nil {
 		return stream.SendAndClose(&pb.Response{Status: int32(status), Error: err.Error()})
 	}
-	return stream.SendAndClose(&pb.Response{Status: int32(status), Result: []byte("{}")})
+	return stream.SendAndClose(&pb.Response{Status: int32(status), Result: []byte("")})
 }
 
 // DownloadFile downloads a file

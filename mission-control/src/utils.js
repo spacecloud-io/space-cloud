@@ -33,9 +33,9 @@ export const adjustConfig = (config) => {
   }
 
   // Adjust function rules
-  if (config.modules && config.modules.functions && config.modules.functions.rules) {
-    Object.keys(config.modules.functions.rules).forEach(service => {
-      config.modules.functions.rules[service] = JSON.stringify(config.modules.functions.rules[service], null, 2)
+  if (config.modules && config.modules.functions && config.modules.functions.services) {
+    Object.keys(config.modules.functions.services).forEach(service => {
+      config.modules.functions.services[service] = JSON.stringify(config.modules.functions.services[service], null, 2)
     })
   }
 
@@ -68,10 +68,10 @@ export const unAdjustConfig = (c, s) => {
   }
 
   // Unadjust function rules
-  if (config.modules && config.modules.functions && config.modules.functions.rules) {
-    Object.keys(config.modules.functions.rules).forEach(service => {
+  if (config.modules && config.modules.functions && config.modules.functions.services) {
+    Object.keys(config.modules.functions.services).forEach(service => {
       try {
-        config.modules.functions.rules[service] = JSON.parse(config.modules.functions.rules[service])
+        config.modules.functions.services[service] = JSON.parse(config.modules.functions.services[service])
       } catch (error) {
         result.ack = false
         result.errors.functions.push(service)
@@ -156,7 +156,17 @@ export const generateProjectConfig = (name, dbType) => ({
       enabled: true,
       broker: "nats",
       conn: "nats://localhost:4222",
-      rules: {}
+      services: {
+        default: {
+          functions: {
+            default: {
+              rule: {
+                rule: "allow"
+              }
+            }
+          }
+        }
+      }
     },
     realtime: {
       enabled: true,

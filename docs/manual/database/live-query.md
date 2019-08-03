@@ -35,11 +35,11 @@ const onError = (err) => {
 }
 
 // Subscribe to any changes in posts of 'frontend' category
-let unsubscribe = db.liveQuery('posts').where(condition).subscribe(onSnapshot, onError) 
+let subscription = db.liveQuery('posts').where(condition).subscribe(onSnapshot, onError) 
 
 // Unsubscribe to changes
 if (on some logic) {
-  unsubscribe()
+  subscription.unsubscribe()
 }
       </code>
     </pre>
@@ -49,7 +49,7 @@ if (on some logic) {
       <code class="java">
 API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
-LiveQueryUnsubscribe unsubscribe = db.liveQuery("books").subscribe(new LiveDataListener() {
+LiveQuerySubscription subscription = db.liveQuery("books").subscribe(new LiveDataListener() {
     @Override
     public void onSnapshot(LiveData data, String type, ChangedData changedData) {
         System.out.println(type);
@@ -71,7 +71,7 @@ LiveQueryUnsubscribe unsubscribe = db.liveQuery("books").subscribe(new LiveDataL
 });
 
 // After some condition
-unsubscribe.unsubscribe();
+subscription.unsubscribe();
       </code>
     </pre>
   </div>
@@ -94,10 +94,10 @@ def on_error(error):
     print("ERROR:", error)
 
 
-unsubscribe = db.live_query('books').subscribe(on_snapshot, on_error)
+subscription = db.live_query('books').subscribe(on_snapshot, on_error)
 
 # After some logic/condition
-unsubscribe()
+subscription.unsubscribe()
 api.close()
       </code>
     </pre>
@@ -112,12 +112,12 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "4124", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
 	db := api.MySQL()
-	db.LiveQuery("books").Subscribe(func(liveData *model.LiveData, changeType string, changedData *model.ChangedData) () {
+	subscription := db.LiveQuery("books").Subscribe(func(liveData *model.LiveData, changeType string, changedData *model.ChangedData) () {
 		fmt.Println("type", changeType)
 		var v []interface{}
 		liveData.Unmarshal(&v)
@@ -129,6 +129,9 @@ func main() {
 	}, func(err error) () {
 		fmt.Println(err)
 	})
+
+  // On some condition
+  subscription.unsubscribe()
 }
       </code>
     </pre>
@@ -170,14 +173,14 @@ Here's a code snippet to do this:
   <div id="live-query-options-js" class="col s12" style="padding:0">
     <pre>
       <code>
-let unsubscribe = db.liveQuery('posts').where({}).options({ changesOnly: true })subscribe(onSnapshot, onError) 
+let subscription = db.liveQuery('posts').where({}).options({ changesOnly: true }).subscribe(onSnapshot, onError) 
       </code>
     </pre>
   </div>
   <div id="live-query-options-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-LiveQueryUnsubscribe unsubscribe = db.liveQuery("books")
+LiveQuerySubscription subscription = db.liveQuery("books")
     .options(LiveQueryOptions.Builder().setChangesOnly(true)).subscribe(new LiveDataListener() {
     @Override
     public void onSnapshot(LiveData data, String type, ChangedData changedData) {
@@ -194,20 +197,88 @@ LiveQueryUnsubscribe unsubscribe = db.liveQuery("books")
  <div id="live-query-options-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-unsubscribe = db.live_query('books').options(changes_only=True).subscribe(on_snapshot, on_error)
+subscription = db.live_query('books').options(changes_only=True).subscribe(on_snapshot, on_error)
       </code>
     </pre>
   </div>
   <div id="live-query-options-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-db.LiveQuery("books").Options(&model.LiveQueryOptions{ChangesOnly: false}).
+subscription := db.LiveQuery("books").Options(&model.LiveQueryOptions{ChangesOnly: false}).
   Subscribe(func(liveData *model.LiveData, changeType string, changedData *model.ChangedData) () {
 		// ...
 	}, func(err error) () {
 		// ...
 	})
 }
+      </code>
+    </pre>
+  </div>
+</div>
+
+
+## Getting the current snapshot:
+You can also get the current snapshot(temporary variable, not automatically updated when new changes come in), using the `subscription.getSnapshot()` function.  
+The snapshot is empty if `changesOnly` is set to true.  
+
+Here's a code snippet to do this:
+
+ <div class="row tabs-wrapper">
+  <div class="col s12" style="padding:0">
+    <ul class="tabs">
+      <li class="tab col s2"><a class="active" href="#live-query-snapshot-js">Javascript</a></li>
+      <li class="tab col s2"><a href="#live-query-snapshot-java">Java</a></li>
+      <li class="tab col s2"><a href="#live-query-snapshot-python">Python</a></li>
+      <li class="tab col s2"><a href="#live-query-snapshot-golang">Golang</a></li>
+    </ul>
+  </div>
+  <div id="live-query-snapshot-js" class="col s12" style="padding:0">
+    <pre>
+      <code>
+let subscription = db.liveQuery('posts').where({}).subscribe(onSnapshot, onError) 
+snapshot = subscription.getSnapshot()
+      </code>
+    </pre>
+  </div>
+  <div id="live-query-snapshot-java" class="col s12" style="padding:0">
+    <pre>
+      <code class="java">
+LiveQuerySubscription subscription = db.liveQuery("books")
+    .options(LiveQueryOptions.Builder().setChangesOnly(true)).subscribe(new LiveDataListener() {
+    @Override
+    public void onSnapshot(LiveData data, String type, ChangedData changedData) {
+        // ...
+    }
+    @Override
+    public void onError(String error) {
+        // ...
+    }
+});
+LiveData snapshot = subscription.getSnapshot();
+// This is a just temporary object, and will not be automatically updated when new changes come in.
+      </code>
+    </pre>
+  </div>
+ <div id="live-query-snapshot-python" class="col s12" style="padding:0">
+    <pre>
+      <code class="python">
+subscription = db.live_query('books').options(changes_only=True).subscribe(on_snapshot, on_error)
+snapshot = subscription.get_snapshot()
+      </code>
+    </pre>
+  </div>
+  <div id="live-query-snapshot-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+subscription := db.LiveQuery("books").Options(&model.LiveQueryOptions{ChangesOnly: false}).
+  Subscribe(func(liveData *model.LiveData, changeType string, changedData *model.ChangedData) () {
+		// ...
+	}, func(err error) () {
+		// ...
+	})
+}
+var snapshot []interface{}
+subscription.GetSnapshot().Unmarshal(&snapshot)
       </code>
     </pre>
   </div>

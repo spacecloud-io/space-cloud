@@ -1,6 +1,10 @@
 import Client from "./client";
-import { API, cond, and } from 'space-api';
+import SpaceAPI from 'space-api';
 import { SPACE_API_PROJECT, SPACE_API_URL } from "../constants";
+
+const API = SpaceAPI.API
+const cond = SpaceAPI.cond
+const and = SpaceAPI.and
 
 class Service {
   constructor() {
@@ -238,14 +242,27 @@ class Service {
     })
   }
 
-  triggerFunction(projectId, serviceName, funcName, params) {
-    const url = process.env.NODE_ENV !== "production" ? "http://localhost:4122" : undefined
-    const api = new API(projectId, url)
+  execSpaceAPI(projectId, code, token) {
     return new Promise((resolve, reject) => {
-      api.call(serviceName, funcName, params).then(res => {
-        resolve(res)
-      }).catch(ex => reject(ex))
+      const url = process.env.NODE_ENV !== "production" ? "http://localhost:4122" : undefined
+      const api = new API(projectId, url)
+      if (token) {
+        api.setToken(token)
+      }
+      const cond = SpaceAPI.cond
+      const and = SpaceAPI.and
+      const or = SpaceAPI.or
+      try {
+        const promise = eval(code)
+        if (!promise || !promise.then) {
+          reject("Not a valid Space Cloud API call")
+        }
+        promise.then(res => resolve(res)).catch(ex => reject(ex.toString()))
+      } catch (error) {
+        reject(error.toString())
+      }
     })
+
   }
 }
 
