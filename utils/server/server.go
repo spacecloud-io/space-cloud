@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -132,40 +131,41 @@ func (s *Server) SetConfig(c *config.Config, isProd bool) {
 // LoadConfig configures each module to to use the provided config
 func (s *Server) LoadConfig(config *config.Config) error {
 
-	if config.Projects == nil {
-		return errors.New("No projects provided")
+	if config.Projects != nil {
+
+		p := config.Projects[0]
+
+		// Set the configuration for the auth module
+		s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions)
+
+		// Set the configuration for the user management module
+		s.user.SetConfig(p.Modules.Auth)
+
+		// Set the configuration for the file storage module
+		if err := s.file.SetConfig(p.Modules.FileStore); err != nil {
+			log.Println("Error in files module config: ", err)
+		}
+
+		// Set the configuration for the functions module
+		if err := s.functions.SetConfig(p.Modules.Functions); err != nil {
+			log.Println("Error in functions module config: ", err)
+		}
+
+		// Set the configuration for the realtime module
+		if err := s.realtime.SetConfig(p.ID, p.Modules.Realtime); err != nil {
+			log.Println("Error in realtime module config", err)
+		}
+
+		// Set the configuration for static module
+		if err := s.static.SetConfig(config.Static); err != nil {
+			log.Println("Error in static module config", err)
+		}
+
+		// Set the configuration for the crud module
+		s.crud.SetConfig(p.Modules.Crud)
 	}
 
-	p := config.Projects[0]
-
-	// Set the configuration for the auth module
-	s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions)
-
-	// Set the configuration for the user management module
-	s.user.SetConfig(p.Modules.Auth)
-
-	// Set the configuration for the file storage module
-	if err := s.file.SetConfig(p.Modules.FileStore); err != nil {
-		return err
-	}
-
-	// Set the configuration for the functions module
-	if err := s.functions.SetConfig(p.Modules.Functions); err != nil {
-		return err
-	}
-
-	// Set the configuration for the realtime module
-	if err := s.realtime.SetConfig(p.ID, p.Modules.Realtime); err != nil {
-		return err
-	}
-
-	// Set the configuration for static module
-	if err := s.static.SetConfig(config.Static); err != nil {
-		return err
-	}
-
-	// Set the configuration for the crud module
-	return s.crud.SetConfig(p.Modules.Crud)
+	return nil
 }
 
 func (s *Server) initGRPCServer() {
