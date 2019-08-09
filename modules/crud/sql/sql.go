@@ -2,9 +2,9 @@ package sql
 
 import (
 	"context"
-	"errors"
-	"time"
 	"database/sql"
+	"log"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -16,53 +16,42 @@ import (
 
 // SQL holds the sql db object
 type SQL struct {
-	client  *sqlx.DB
-	dbType  string
-	timeOut time.Duration
+	enabled    bool
+	connection string
+	client     *sqlx.DB
+	dbType     string
 }
 
 // Init initialises a new sql instance
-func Init(dbType utils.DBType, connection string) (*SQL, error) {
-	var sql *sqlx.DB
-	var err error
-
-	s := &SQL{}
-
-	timeOut := 5 * time.Second
-
-	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
-	defer cancel()
+func Init(dbType utils.DBType, enabled bool, connection string) (s *SQL, err error) {
+	s = &SQL{enabled: enabled, connection: connection, client: nil}
 
 	switch dbType {
 	case utils.Postgres:
-		sql, err = sqlx.Open("postgres", connection)
 		s.dbType = "postgres"
 
 	case utils.MySQL:
-		sql, err = sqlx.Open("mysql", connection)
 		s.dbType = "mysql"
 
 	default:
-		return nil, errors.New("SQL: Invalid driver provided")
+		err = utils.ErrUnsupportedDatabase
+		return
 	}
 
-	if err != nil {
-		return nil, err
+	if s.enabled {
+		err = s.connect()
 	}
 
-	err = sql.PingContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	s.client = sql
-	s.timeOut = timeOut
-	return s, nil
+	return
 }
 
 // Close gracefully the SQL client
 func (s *SQL) Close() error {
-	return s.client.Close()
+	if s.client != nil {
+		return s.client.Close()
+	}
+
+	return nil
 }
 
 // GetDBType returns the dbType of the crud block
@@ -75,6 +64,38 @@ func (s *SQL) GetDBType() utils.DBType {
 	}
 
 	return utils.MySQL
+}
+
+// IsClientSafe checks whether database is enabled and connected
+func (s *SQL) IsClientSafe() error {
+	if !s.enabled {
+		return utils.ErrDatabaseDisabled
+	}
+
+	if s.client == nil {
+		if err := s.connect(); err != nil {
+			log.Println("Error connecting to " + s.dbType + " : " + err.Error())
+			return utils.ErrDatabaseConnection
+		}
+	}
+
+	return nil
+}
+
+func (s *SQL) connect() error {
+	timeOut := 5 * time.Second
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
+	defer cancel()
+
+	sql, err := sqlx.Open(s.dbType, s.connection)
+	if err != nil {
+		return err
+	}
+
+	s.client = sql
+
+	return sql.PingContext(ctx)
 }
 
 type executor interface {

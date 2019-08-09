@@ -36,9 +36,7 @@ func (p *Projects) StoreProject(config *config.Project) error {
 	}
 
 	// Set the configuration for the crud module
-	if err := state.Crud.SetConfig(config.Modules.Crud); err != nil {
-		log.Println("Database module config error:", err)
-	}
+	state.Crud.SetConfig(config.Modules.Crud)
 
 	return nil
 }

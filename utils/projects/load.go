@@ -20,9 +20,7 @@ func (p *Projects) LoadConfigFromDB(account, dbType, conn string) error {
 		},
 	}
 
-	if err := state.Crud.SetConfig(crudConfig); err != nil {
-		return err
-	}
+	state.Crud.SetConfig(crudConfig)
 
 	if err := state.Realtime.SetConfig(utils.SpaceCloudProject, &config.Realtime{Enabled: true, Broker: utils.Nats, Conn: "nats://localhost:4222"}); err != nil {
 		return err

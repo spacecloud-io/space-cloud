@@ -16,6 +16,10 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
 	return crud.Create(ctx, project, col, req)
 }
 
@@ -26,6 +30,10 @@ func (m *Module) Read(ctx context.Context, dbType, project, col string, req *mod
 
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
 		return nil, err
 	}
 
@@ -42,6 +50,10 @@ func (m *Module) Update(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
 	return crud.Update(ctx, project, col, req)
 }
 
@@ -52,6 +64,10 @@ func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *m
 
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
 		return err
 	}
 
@@ -68,6 +84,10 @@ func (m *Module) Aggregate(ctx context.Context, dbType, project, col string, req
 		return nil, err
 	}
 
+	if err := crud.IsClientSafe(); err != nil {
+		return nil, err
+	}
+
 	return crud.Aggregate(ctx, project, col, req)
 }
 
@@ -78,6 +98,10 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
 		return err
 	}
 
