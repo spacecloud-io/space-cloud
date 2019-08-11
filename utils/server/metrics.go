@@ -16,12 +16,39 @@ func currentTimeInMillis() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func updateSCMetrics(find, update map[string]interface{}, upsert bool) error {
-	op := "one"
-	if upsert {
-		op = "upsert"
+func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) {
+	// Create the find and update clauses
+	find = map[string]interface{}{"_id": s.nodeID}
+	set := map[string]interface{}{
+		"os":           runtime.GOOS,
+		"isProd":       s.adminMan.LoadEnv(),
+		"version":      utils.BuildVersion,
+		"clusterSize":  s.syncMan.GetClusterSize(),
+		"distribution": "ce",
+		"lastUpdated":  currentTimeInMillis(),
 	}
-	req := map[string]interface{}{"find": find, "update": update, "op": op}
+	min := map[string]interface{}{"startTime": currentTimeInMillis()}
+
+	c := s.syncMan.GetGlobalConfig()
+	if c != nil {
+		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
+		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
+		if c.Admin != nil {
+			set["mode"] = c.Admin.Operation.Mode
+		}
+		if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
+			set["modules"] = getProjectInfo(c.Projects[0].Modules, c.Static)
+			set["projects"] = []string{c.Projects[0].ID}
+		}
+	}
+
+	update = map[string]interface{}{"$set": set, "$min": min}
+	return
+}
+
+func updateSCMetrics(find, update map[string]interface{}) error {
+
+	req := map[string]interface{}{"find": find, "update": update, "op": "upsert"}
 	jsonValue, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -43,59 +70,15 @@ func (s *Server) RoutineMetrics() {
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 
-	// Create the find and update clauses
-	find := map[string]interface{}{"_id": s.nodeID}
-	set := map[string]interface{}{
-		"os":           runtime.GOOS,
-		"isProd":       s.adminMan.LoadEnv(),
-		"version":      utils.BuildVersion,
-		"clusterSize":  s.syncMan.GetClusterSize(),
-		"distribution": "ce",
-		"startTime":    currentTimeInMillis(),
-		"lastUpdated":  currentTimeInMillis(),
-	}
-
-	c := s.syncMan.GetGlobalConfig()
-	if c != nil {
-		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
-		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
-		if c.Admin != nil {
-			set["mode"] = c.Admin.Operation.Mode
-		}
-		if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-			set["modules"] = getProjectInfo(c.Projects[0].Modules, c.Static)
-			set["projects"] = []string{c.Projects[0].ID}
-		}
-	}
-
-	update := map[string]interface{}{"$set": set}
-	err := updateSCMetrics(find, update, true)
+	find, update := s.generateMetricsRequest()
+	err := updateSCMetrics(find, update)
 	if err != nil {
 		// fmt.Println("Metrics Error -", err)
 	}
 
 	for range ticker.C {
-		set := map[string]interface{}{
-			"lastUpdated": currentTimeInMillis(),
-			"clusterSize": s.syncMan.GetClusterSize(),
-			"isProd":      s.adminMan.LoadEnv(),
-		}
-
-		c := s.syncMan.GetGlobalConfig()
-		if c != nil {
-			set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
-			set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
-			if c.Admin != nil {
-				set["mode"] = c.Admin.Operation.Mode
-			}
-			if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-				set["modules"] = getProjectInfo(c.Projects[0].Modules, c.Static)
-				set["projects"] = []string{c.Projects[0].ID}
-			}
-		}
-
-		update := map[string]interface{}{"$set": set}
-		err := updateSCMetrics(find, update, false)
+		find, update := s.generateMetricsRequest()
+		err := updateSCMetrics(find, update)
 		if err != nil {
 			// fmt.Println("Metrics Error -", err)
 		}
