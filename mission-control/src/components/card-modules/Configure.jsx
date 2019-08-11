@@ -12,10 +12,10 @@ function Configure(props) {
           <span className="docs">Documentation</span>
           <i className="material-icons book">import_contacts</i>
         </a>
-        {props.modules.enabled ?
+        {/* {props.modules.enabled ?
           <button className="button">Enabled</button> :
           <button className="disabled button">Disabled</button>
-        }
+        } */}
       </div>
     </div>
   )

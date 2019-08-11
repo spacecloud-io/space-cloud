@@ -38,36 +38,45 @@ There are a few limitations in the queries which can be used while using the rea
 
 ## Configure the database module
 
-The config pertaining to crud module can be found inside the `crud` key under the `modules` object. Here's the snippet:
+Head over to the `Database` section in Mission Control to configure the database module.
 
-```yaml
-modules:
-  crud:
-    mongo:
-      enabled: true
-      conn: mongodb://localhost:27017
-      collections:
-        todos:
-          isRealtimeEnabled: false
-          rules:
-            create:
-              rule: allow
-            read:
-              rule: allow
-            update:
-              rule: allow
-            delete:
-              rule: allow
-  realtime:
-    enabled: true
-    broker: nats
-    conn: nats://localhost:4222
-  # Config for other modules go here
+> **Note:** Make sure you have selected the right database from the topbar.
+
+### Enabling the database
+Enable the switch in the upper right corner of `Database` section to enable the selected database.
+
+### Connection string
+The `Connection string` input takes the connection string of your database.
+
+You can use `environment variables` in the connection string to take db credentials. For example: `$MONGO_URL`
+
+### Configuring collections
+
+Mission Control by default creates the configuration for the `default` collection/table for you. The configuration of `default` collection/table is used when the configuration of requested collection/table is not found.    
+
+The configuration of table/collection looks like the following: 
+
+```json
+{
+  "isRealtimeEnabled": true,
+  "rules": {
+    "create": {
+      "rule": "allow"
+    },
+    "read": {
+      "rule": "allow"
+    },
+    "update": {
+      "rule": "allow"
+    },
+    "delete": {
+      "rule": "allow"
+    }
+  }
+}
 ```
 
-The above snippet instructs `space-cloud` to connect to MongoDB at `mongodb://localhost:27017`. All operations (create, read, update and delete) are allowed on the `todos` collection. The realtime module is enabled and uses `nats` as a broker present at `http://localhost:4222`
-
-You can learn more about the various parameters available for configuring the database module [here](/docs/database/config).
+All operations (create, read, update and delete) are allowed in the above example. You can learn more about securing the functions module in depth over [here](/docs/security/database).  
 
 ## Next steps
 

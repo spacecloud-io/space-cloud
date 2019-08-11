@@ -7,12 +7,8 @@ User management is used for managing the various sign in methods which are gener
 
 
 The various sign in methods supported are:
-- OAuth (Coming Soon)
-- Facebook
-- Google
-- Github
-- Twitter
 - Basic (email & password sign in)
+- OAuth (Coming Soon)
 
 ## Prerequisites
 - A running database (We'll be using MongoDB in this example)
