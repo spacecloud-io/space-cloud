@@ -17,7 +17,6 @@ type Client interface {
 	RoutineWrite()
 	ClientID() string
 	Close()
-
 	Context() context.Context
 }
 
@@ -32,7 +31,7 @@ func CreateWebsocketClient(socket *websocket.Conn) *WebsocketClient {
 	return &WebsocketClient{id, channel, ctx, cancel, socket}
 }
 
-// CreateGRPCRealtimeClient makes a client object to manage the grpc
+// CreateGRPCRealtimeClient makes a client object to manage the grpc for realtime
 func CreateGRPCRealtimeClient(stream proto.SpaceCloud_RealTimeServer) *GRPCRealtimeClient {
 	channel := make(chan *model.Message, 5)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -40,10 +39,18 @@ func CreateGRPCRealtimeClient(stream proto.SpaceCloud_RealTimeServer) *GRPCRealt
 	return &GRPCRealtimeClient{id, channel, ctx, cancel, stream}
 }
 
-// CreateGRPCServiceClient makes a client object to manage the grpc
+// CreateGRPCServiceClient makes a client object to manage the grpc for services
 func CreateGRPCServiceClient(stream proto.SpaceCloud_ServiceServer) *GRPCServiceClient {
 	channel := make(chan *model.Message, 5)
 	ctx, cancel := context.WithCancel(context.Background())
 	id := uuid.NewV1().String()
 	return &GRPCServiceClient{id, channel, ctx, cancel, stream}
+}
+
+// CreateGRPCPubsubClient makes a client object to manage the grpc for pubsub
+func CreateGRPCPubsubClient(stream proto.SpaceCloud_PubsubSubscribeServer) *GRPCPubsubClient {
+	channel := make(chan *model.Message, 5)
+	ctx, cancel := context.WithCancel(context.Background())
+	id := uuid.NewV1().String()
+	return &GRPCPubsubClient{id, channel, ctx, cancel, stream}
 }
