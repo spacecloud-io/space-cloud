@@ -564,7 +564,7 @@ func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (
 	return &out, nil
 }
 
-// DeleteFile delete a file
+// DeleteFile deletes a file
 func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.Response, error) {
 	status, err := s.file.DeleteFile(in.Meta.Project, in.Meta.Token, in.Path)
 	out := pb.Response{}
@@ -667,5 +667,94 @@ func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_D
 		req := pb.FilePayload{Payload: buf, Status: int32(http.StatusOK)}
 		stream.Send(&req)
 	}
+	return nil
+}
+
+// PubsubPublish publishes to the pubsub module, using the pubsub module
+func (s *Server) PubsubPublish(ctx context.Context, in *pb.PubsubPublishRequest) (*pb.Response, error) {
+	status, err := s.pubsub.Publish(in.Meta.Project, in.Meta.Token, in.Subject, in.Msg)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+	}
+	return &out, nil
+}
+
+// PubsubSubscribe subscribes to a particular subject, using the pubsub module
+func (s *Server) PubsubSubscribe(stream pb.SpaceCloud_PubsubSubscribeServer) error {
+	c := client.CreateGRPCPubsubClient(stream)
+	defer s.pubsub.UnsubscribeAll(c.ClientID())
+	defer c.Close()
+	go c.RoutineWrite()
+
+	// Get GRPC Service client details
+	clientID := c.ClientID()
+	c.Read(func(req *model.Message) bool {
+		switch req.Type {
+		case utils.TypePubsubSubscribe:
+			// For pubsub subscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			// Subscribe to pubsub feed
+			var status int
+			var err error
+			if data.Queue == "" {
+				status, err = s.pubsub.Subscribe(data.Project, data.Token, clientID, data.Subject, func(msg *model.PubsubMsg) {
+					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribeFeed, Data: msg})
+				})
+			} else {
+				status, err = s.pubsub.QueueSubscribe(data.Project, data.Token, clientID, data.Subject, data.Queue, func(msg *model.PubsubMsg) {
+					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribeFeed, Data: msg})
+				})
+			}
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
+
+		case utils.TypePubsubUnsubscribe:
+			// For pubsub unsubscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			status, err := s.pubsub.Unsubscribe(clientID, data.Subject)
+
+			// Send response to c
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
+		case utils.TypePubsubUnsubscribeAll:
+			// For pubsub unsubscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			status, err := s.pubsub.UnsubscribeAll(clientID)
+
+			// Send response to c
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
+		}
+		return true
+	})
 	return nil
 }

@@ -170,6 +170,27 @@ message FilePayload {
   bytes payload = 3;
 }
 
+message PubsubPublishRequest {
+  string subject = 1;
+  bytes msg = 2;
+  Meta meta = 3;
+}
+message PubsubSubscribeRequest {
+  string subject = 1;
+  string queue = 2;
+  string type = 3;
+  string token = 4;
+  string project = 5;
+  string id = 6;
+}
+message PubsubMsgResponse {
+  string id = 1;
+  string type = 2;
+  int32 status = 3;
+  string error = 4;
+  bytes msg = 5;
+}
+
 service SpaceCloud {
   rpc Create(CreateRequest) returns (Response) {}
   rpc Read(ReadRequest) returns (Response) {}
@@ -177,7 +198,7 @@ service SpaceCloud {
   rpc Delete(DeleteRequest) returns (Response) {}
   rpc Aggregate(AggregateRequest) returns (Response) {}
   rpc Batch(BatchRequest) returns (Response) {}
-  
+
   rpc Call(FunctionsRequest) returns (Response) {}
   rpc RealTime(stream RealTimeRequest) returns (stream RealTimeResponse) {}
   rpc Service(stream FunctionsPayload) returns (stream FunctionsPayload) {}
@@ -193,4 +214,7 @@ service SpaceCloud {
   rpc DeleteFile(DeleteFileRequest) returns (Response) {}
   rpc UploadFile(stream UploadFileRequest) returns (Response) {}
   rpc DownloadFile(DownloadFileRequest) returns (stream FilePayload) {}
+
+  rpc PubsubPublish(PubsubPublishRequest) returns (Response) {}
+  rpc PubsubSubscribe(stream PubsubSubscribeRequest) returns (stream PubsubMsgResponse) {}
 }
