@@ -1,27 +1,36 @@
 package graphql
 
 import (
-	"log"
+	"errors"
+	"fmt"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
 
-	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/auth"
+	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
-type Operations map[string]Operation
-
-// Operation is the main graphql module
-type Operation struct {
-	kind     string // can be read or func request
-	readReq  *model.ReadRequest
-	funcReq  *model.FunctionsRequest
-	children Operations
+// Module is the object for the GraphQL module
+type Module struct {
+	project   string
+	auth      *auth.Module
+	crud      *crud.Module
+	functions *functions.Module
 }
 
-func parseGraphQLQuery(query string) error {
+// New creates a new GraphQL module
+func New(project string, a *auth.Module, c *crud.Module, f *functions.Module) *Module {
+	return &Module{project, a, c, f}
+}
+
+type m map[string]interface{}
+
+func (graph *Module) execGraphQLQuery(query string) (interface{}, error) {
 	source := source.NewSource(&source.Source{
 		Body: []byte(query),
 		Name: "GraphQL request",
@@ -30,57 +39,119 @@ func parseGraphQLQuery(query string) error {
 	// parse the source
 	doc, err := parser.Parse(parser.ParseParams{Source: source})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	ops := Operations{}
-	mapGraphQLDocument(doc, ops)
-	return nil
+	return graph.execGraphQLDocument(doc, m{})
 }
 
-func mapGraphQLDocument(node ast.Node, ops Operation) {
-	log.Println(node.GetKind())
+func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, error) {
 	switch node.GetKind() {
 
 	case kinds.Document:
 		doc := node.(*ast.Document)
 		for _, v := range doc.Definitions {
-			mapGraphQLDocument(v, ops)
+			return graph.execGraphQLDocument(v, store)
 		}
+		return nil, errors.New("No definitions provided")
 
 	case kinds.OperationDefinition:
 		op := node.(*ast.OperationDefinition)
 		switch op.Operation {
 		case "query":
-			ops[op.Operation] = Operation{}
+			obj := m{}
 			for _, v := range op.SelectionSet.Selections {
 				field := v.(*ast.Field)
-				mapGraphQLDocument(field, ops)
+				result, err := graph.execGraphQLDocument(field, store)
+				if err != nil {
+					return nil, err
+				}
+
+				obj[getFieldName(field)] = result
 			}
+
+			return obj, nil
+
+		default:
+			return nil, errors.New("Invalid operation: " + op.Operation)
 		}
 
 	case kinds.Field:
 		field := node.(*ast.Field)
 
 		// No directive means its a nested field
-		if len(field.Directives) == 0 {
-			return
+		if len(field.Directives) > 0 {
+			kind := getQueryKind(field.Directives[0])
+
+			if kind == "read" {
+				result, err := graph.execReadRequest(field, store)
+				if err != nil {
+					return nil, err
+				}
+
+				switch val := result.(type) {
+				case []interface{}:
+					array := make([]interface{}, len(val))
+
+					for i, v := range val {
+						obj := m{}
+
+						for _, sel := range field.SelectionSet.Selections {
+							storeNew := shallowClone(store)
+							storeNew[getFieldName(field)] = v
+							storeNew["coreParentKey"] = getFieldName(field)
+
+							f := sel.(*ast.Field)
+
+							output, err := graph.execGraphQLDocument(f, storeNew)
+							if err != nil {
+								return nil, err
+							}
+
+							obj[getFieldName(f)] = output
+						}
+
+						array[i] = obj
+					}
+
+					return array, nil
+
+				default:
+					return nil, errors.New("Incorrect result type")
+				}
+			}
+
+			return nil, errors.New("Incorrect query type")
 		}
 
-		kind := getQueryKind(field.Directives[0])
-		op := Operation{kind: kind}
-
-		if kind == "read" {
-			op.readReq = getReadRequest(field.Arguments)
+		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
+		if err != nil {
+			return nil, err
 		}
-		ops = op
-	}
-}
+		if field.SelectionSet == nil {
+			return currentValue, nil
+		}
 
-func getReadRequest(args []*ast.Arguments) *model.ReadRequest {
-	find := map[string]interface{}{}
-	for _, v := range args {
+		obj := m{}
+		for _, sel := range field.SelectionSet.Selections {
+			storeNew := shallowClone(store)
+			storeNew[getFieldName(field)] = currentValue
+			storeNew["coreParentKey"] = getFieldName(field)
 
+			f := sel.(*ast.Field)
+
+			output, err := graph.execGraphQLDocument(f, storeNew)
+			if err != nil {
+				return nil, err
+			}
+
+			obj[getFieldName(f)] = output
+		}
+
+		return obj, nil
+
+	default:
+		return nil, errors.New("Invalid node type " + node.GetKind() + ": " + string(node.GetLoc().Source.Body)[node.GetLoc().Start:node.GetLoc().End])
 	}
 }
 
