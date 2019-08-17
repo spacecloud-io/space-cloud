@@ -20,6 +20,7 @@ type Module struct {
 	functions     *functions.Module
 	fileRules     []*config.FileRule
 	funcRules     config.Services
+	pubsubRules   []*config.PubsubRule
 	project       string
 	fileStoreType string
 }
@@ -30,7 +31,7 @@ func Init(crud *crud.Module, functions *functions.Module) *Module {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions) {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions, pubsub *config.Pubsub) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -44,6 +45,10 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 
 	if functions != nil && functions.Enabled {
 		m.funcRules = functions.Services
+	}
+
+	if pubsub != nil && pubsub.Enabled {
+		m.pubsubRules = pubsub.Rules
 	}
 }
 

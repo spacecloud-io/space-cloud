@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -22,6 +21,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
+	"github.com/spaceuptech/space-cloud/modules/pubsub"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
@@ -42,6 +42,7 @@ type Server struct {
 	static         *static.Module
 	adminMan       *admin.Manager
 	nats           *nats.Server
+	pubsub         *pubsub.Module
 	configFilePath string
 	syncMan        *syncman.SyncManager
 	ssl            *config.SSL
@@ -58,13 +59,14 @@ func New(nodeID string) *Server {
 	a := auth.Init(c, fn)
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
+	p := pubsub.Init(a)
 	adminMan := admin.New()
 	syncMan := syncman.New(adminMan)
 
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
-		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
+		user: u, file: f, static: s, pubsub: p, syncMan: syncMan, adminMan: adminMan,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath}
 }
 
@@ -132,40 +134,46 @@ func (s *Server) SetConfig(c *config.Config, isProd bool) {
 // LoadConfig configures each module to to use the provided config
 func (s *Server) LoadConfig(config *config.Config) error {
 
-	if config.Projects == nil {
-		return errors.New("No projects provided")
+	if config.Projects != nil {
+
+		p := config.Projects[0]
+
+		// Set the configuration for the auth module
+		s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions, p.Modules.Pubsub)
+
+		// Set the configuration for the user management module
+		s.user.SetConfig(p.Modules.Auth)
+
+		// Set the configuration for the file storage module
+		if err := s.file.SetConfig(p.Modules.FileStore); err != nil {
+			log.Println("Error in files module config: ", err)
+		}
+
+		// Set the configuration for the functions module
+		if err := s.functions.SetConfig(p.Modules.Functions); err != nil {
+			log.Println("Error in functions module config: ", err)
+		}
+
+		// Set the configuration for the pubsub module
+		if err := s.pubsub.SetConfig(p.Modules.Pubsub); err != nil {
+			log.Println("Error in pubsub module config: ", err)
+		}
+
+		// Set the configuration for the realtime module
+		if err := s.realtime.SetConfig(p.ID, p.Modules.Realtime); err != nil {
+			log.Println("Error in realtime module config", err)
+		}
+
+		// Set the configuration for static module
+		if err := s.static.SetConfig(config.Static); err != nil {
+			log.Println("Error in static module config", err)
+		}
+
+		// Set the configuration for the crud module
+		s.crud.SetConfig(p.Modules.Crud)
 	}
 
-	p := config.Projects[0]
-
-	// Set the configuration for the auth module
-	s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions)
-
-	// Set the configuration for the user management module
-	s.user.SetConfig(p.Modules.Auth)
-
-	// Set the configuration for the file storage module
-	if err := s.file.SetConfig(p.Modules.FileStore); err != nil {
-		return err
-	}
-
-	// Set the configuration for the functions module
-	if err := s.functions.SetConfig(p.Modules.Functions); err != nil {
-		return err
-	}
-
-	// Set the configuration for the realtime module
-	if err := s.realtime.SetConfig(p.ID, p.Modules.Realtime); err != nil {
-		return err
-	}
-
-	// Set the configuration for static module
-	if err := s.static.SetConfig(config.Static); err != nil {
-		return err
-	}
-
-	// Set the configuration for the crud module
-	return s.crud.SetConfig(p.Modules.Crud)
+	return nil
 }
 
 func (s *Server) initGRPCServer() {

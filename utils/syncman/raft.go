@@ -106,7 +106,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 		// Write the config to file
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
 
-		s.cb(s.projectConfig)
+		go s.cb(s.projectConfig)
 
 	case utils.RaftCommandDelete:
 		for i, p := range s.projectConfig.Projects {
@@ -124,7 +124,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 
 		s.projectConfig.Static.Routes = c.Static.Routes
 
-		s.cb(s.projectConfig)
+		go s.cb(s.projectConfig)
 
 		// Write the config to file
 		config.StoreConfigToFile(s.projectConfig, s.configFile)

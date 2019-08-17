@@ -11,6 +11,7 @@ require (
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.0
+	github.com/graphql-go/graphql v0.7.8
 	github.com/hashicorp/memberlist v0.1.4
 	github.com/hashicorp/raft v1.1.0
 	github.com/hashicorp/raft-boltdb v0.0.0-20190605210249-ef2e128ed477

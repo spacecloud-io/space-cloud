@@ -37,16 +37,16 @@ function Overview(props) {
           <div className="overview-padding">
             <div className="desc">Start with one of the language specific getting started guides below or watch a getting started video to help you get started.</div>
             <div className="lang">
-              <a href="https://www.spaceuptech.com/docs/getting-started/python" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.spaceuptech.com/docs/setting-up-project/python" target="_blank" rel="noopener noreferrer">
                 <span class="circle"><img src={python} alt="python" heg /></span>
               </a>
-              <a href="https://www.spaceuptech.com/docs/getting-started/javascript" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.spaceuptech.com/docs/setting-up-project/javascript" target="_blank" rel="noopener noreferrer">
                 <span class="circle"><img src={js} alt="js" /></span>
               </a>
-              <a href="https://www.spaceuptech.com/docs/getting-started/java" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.spaceuptech.com/docs/setting-up-project/java" target="_blank" rel="noopener noreferrer">
                 <span class="circle"><img src={java} alt="java" /></span>
               </a>
-              <a href="https://www.spaceuptech.com/docs/getting-started/golang" target="_blank" rel="noopener noreferrer">
+              <a href="https://www.spaceuptech.com/docs/setting-up-project/golang" target="_blank" rel="noopener noreferrer">
                 <span class="circle" id="go"><img src={go} alt="go" /></span>
               </a>
               <div className="sepration"></div>
