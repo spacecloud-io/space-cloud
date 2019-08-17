@@ -89,38 +89,17 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 					return nil, err
 				}
 
-				switch val := result.(type) {
-				case []interface{}:
-					array := make([]interface{}, len(val))
-
-					for i, v := range val {
-						obj := m{}
-
-						for _, sel := range field.SelectionSet.Selections {
-							storeNew := shallowClone(store)
-							storeNew[getFieldName(field)] = v
-							storeNew["coreParentKey"] = getFieldName(field)
-
-							f := sel.(*ast.Field)
-
-							output, err := graph.execGraphQLDocument(f, storeNew)
-							if err != nil {
-								return nil, err
-							}
-
-							obj[getFieldName(f)] = output
-						}
-
-						array[i] = obj
-					}
-
-					return array, nil
-
-				default:
-					return nil, errors.New("Incorrect result type")
-				}
+				return graph.processQueryResult(field, store, result)
 			}
 
+			if kind == "func" {
+				result, err := graph.execFuncCall(field, store)
+				if err != nil {
+					return nil, err
+				}
+
+				return graph.processQueryResult(field, store, result)
+			}
 			return nil, errors.New("Incorrect query type")
 		}
 

@@ -17,9 +17,11 @@ func TestMapping(t *testing.T) {
 				SomeKey:k2
 			}
 			key2
+			
 			users(where:{name: random__key1__k1}) @mongo {
 				_id
 				email
+				
 			}
 		}
 	}

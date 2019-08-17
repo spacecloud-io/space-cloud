@@ -28,20 +28,18 @@ func getFieldName(field *ast.Field) string {
 }
 
 func getCollection(field *ast.Field) (string, error) {
-	col := field.Name.Value
 	if len(field.Directives[0].Arguments) > 0 {
 		for _, v := range field.Directives[0].Arguments {
 			if v.Name.Value == "col" {
-				c, ok := v.Value.GetValue().(string)
+				col, ok := v.Value.GetValue().(string)
 				if !ok {
 					return "", errors.New("Invalid value for collection: " + string(v.Value.GetLoc().Source.Body)[v.Value.GetLoc().Start:v.Value.GetLoc().End])
 				}
-				col = c
+				return col, nil
 			}
 		}
 	}
-
-	return col, nil
+	return field.Name.Value, nil
 }
 
 func parseValue(value ast.Value, store m) (interface{}, error) {
@@ -117,6 +115,59 @@ func parseValue(value ast.Value, store m) (interface{}, error) {
 
 	default:
 		return nil, errors.New("Invalid data type `" + value.GetKind() + "` for value " + string(value.GetLoc().Source.Body)[value.GetLoc().Start:value.GetLoc().End])
+	}
+}
+
+func (graph *Module) processQueryResult(field *ast.Field, store m, result interface{}) (interface{}, error) {
+	switch val := result.(type) {
+	case []interface{}:
+		array := make([]interface{}, len(val))
+
+		for i, v := range val {
+			obj := m{}
+
+			for _, sel := range field.SelectionSet.Selections {
+				storeNew := shallowClone(store)
+				storeNew[getFieldName(field)] = v
+				storeNew["coreParentKey"] = getFieldName(field)
+
+				f := sel.(*ast.Field)
+
+				output, err := graph.execGraphQLDocument(f, storeNew)
+				if err != nil {
+					return nil, err
+				}
+
+				obj[getFieldName(f)] = output
+			}
+
+			array[i] = obj
+		}
+
+		return array, nil
+
+	case map[string]interface{}:
+		obj := m{}
+
+		for _, sel := range field.SelectionSet.Selections {
+			storeNew := shallowClone(store)
+			storeNew[getFieldName(field)] = val
+			storeNew["coreParentKey"] = getFieldName(field)
+
+			f := sel.(*ast.Field)
+
+			output, err := graph.execGraphQLDocument(f, storeNew)
+			if err != nil {
+				return nil, err
+			}
+
+			obj[getFieldName(f)] = output
+		}
+
+		return obj, nil
+
+	default:
+		return nil, errors.New("Incorrect result type")
 	}
 }
 
