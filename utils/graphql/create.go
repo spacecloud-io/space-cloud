@@ -28,7 +28,7 @@ func (graph *Module) execWriteRequest(field *ast.Field, store m) (m, error) {
 }
 
 func generateCreateRequest(field *ast.Field, store m) (*model.CreateRequest, error) {
-	// Create a read request object
+	// Create a create request object
 	req := model.CreateRequest{Operation: utils.All}
 
 	var err error

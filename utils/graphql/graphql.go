@@ -93,6 +93,15 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 				return graph.processQueryResult(field, store, result)
 			}
 
+			if strings.HasPrefix(field.Name.Value, "delete_") {
+				result, err := graph.execDeleteRequest(field, store)
+				if err != nil {
+					return nil, err
+				}
+
+				return graph.processQueryResult(field, store, result)
+			}
+
 			kind := getQueryKind(field.Directives[0])
 			if kind == "read" {
 				result, err := graph.execReadRequest(field, store)
