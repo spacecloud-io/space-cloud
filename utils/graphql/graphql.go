@@ -3,6 +3,7 @@ package graphql
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
@@ -58,9 +59,10 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 	case kinds.OperationDefinition:
 		op := node.(*ast.OperationDefinition)
 		switch op.Operation {
-		case "query":
+		case "query", "mutation":
 			obj := m{}
 			for _, v := range op.SelectionSet.Selections {
+
 				field := v.(*ast.Field)
 				result, err := graph.execGraphQLDocument(field, store)
 				if err != nil {
@@ -80,9 +82,18 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 		field := node.(*ast.Field)
 
 		// No directive means its a nested field
-		if len(field.Directives) > 0 {
-			kind := getQueryKind(field.Directives[0])
 
+		if len(field.Directives) > 0 {
+			if strings.HasPrefix(field.Name.Value, "insert_") {
+				result, err := graph.execWriteRequest(field, store)
+				if err != nil {
+					return nil, err
+				}
+
+				return graph.processQueryResult(field, store, result)
+			}
+
+			kind := getQueryKind(field.Directives[0])
 			if kind == "read" {
 				result, err := graph.execReadRequest(field, store)
 				if err != nil {
@@ -100,6 +111,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 
 				return graph.processQueryResult(field, store, result)
 			}
+
 			return nil, errors.New("Incorrect query type")
 		}
 
@@ -136,7 +148,8 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 
 func getQueryKind(directive *ast.Directive) string {
 	switch directive.Name.Value {
-	case "mongo", "postgres", "mysql":
+
+	case "postgres", "mysql", "mongo":
 		return "read"
 
 	default:

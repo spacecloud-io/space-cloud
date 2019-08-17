@@ -12,7 +12,7 @@ import (
 func TestMapping(t *testing.T) {
 	query := `
 	query {
-		random(where: {}) @mongo(col: random) {
+		random(where: {}, skip: 87) @mongo(col: random) {
 			key1 {
 				SomeKey:k2
 			}

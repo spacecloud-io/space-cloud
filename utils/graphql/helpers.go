@@ -72,7 +72,6 @@ func parseValue(value ast.Value, store m) (interface{}, error) {
 
 			array[i] = val
 		}
-
 		return array, nil
 
 	case kinds.EnumValue:
