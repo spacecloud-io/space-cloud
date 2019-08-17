@@ -136,6 +136,10 @@
     "url": "functions",
     "pages": [
       [
+        "quick-start",
+        "Quick Start"
+      ],
+      [
         "service",
         "Write functions"
       ],

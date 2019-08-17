@@ -14,10 +14,10 @@ If you instead want to start a project from scratch using `space-cloud`, then ch
 
 ## Step 1: Get the docker-compose file
 
-The [spaceuptech/space-cloud/install-manifests](https://github.com/spaceuptech/space-cloud/install-manifests) repo contains all installation manifests required to deploy Space Cloud anywhere. Get the docker compose file from there:
+The [spaceuptech/space-cloud/install-manifests](https://github.com/spaceuptech/space-cloud/tree/master/install-manifests) repo contains all installation manifests required to deploy Space Cloud anywhere. Get the docker compose file from there:
 
 ```bash
-wget https://raw.githubusercontent.com/spaceuptech/space-cloud/master/install-manifests/quick-start/mongo/docker-compose.yaml
+wget https://raw.githubusercontent.com/spaceuptech/space-cloud/master/install-manifests/quick-start/docker-compose/mongo/docker-compose.yaml
 ```
 
 ## Step 2: Run Space Cloud & MongoDB
