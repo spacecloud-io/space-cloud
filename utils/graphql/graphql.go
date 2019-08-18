@@ -84,6 +84,8 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 		// No directive means its a nested field
 
 		if len(field.Directives) > 0 {
+
+			// Insert query function
 			if strings.HasPrefix(field.Name.Value, "insert_") {
 				result, err := graph.execWriteRequest(field, store)
 				if err != nil {
@@ -93,8 +95,19 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 				return graph.processQueryResult(field, store, result)
 			}
 
+			// Delete query function
 			if strings.HasPrefix(field.Name.Value, "delete_") {
 				result, err := graph.execDeleteRequest(field, store)
+				if err != nil {
+					return nil, err
+				}
+
+				return graph.processQueryResult(field, store, result)
+			}
+
+			// Update query function
+			if strings.HasPrefix(field.Name.Value, "update_") {
+				result, err := graph.execUpdateRequest(field, store)
 				if err != nil {
 					return nil, err
 				}
