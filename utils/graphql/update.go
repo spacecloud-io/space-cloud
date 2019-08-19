@@ -36,9 +36,9 @@ func extractUpdateOperation(args []*ast.Argument, store m) (string, error) {
 			}
 			if temp.(string) == "upsert" {
 				return utils.Upsert, nil
-			} else {
-				return utils.All, nil
 			}
+
+			return utils.All, nil
 		}
 	}
 	return utils.All, nil

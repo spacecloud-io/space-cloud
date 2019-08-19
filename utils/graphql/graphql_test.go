@@ -41,8 +41,10 @@ func TestMapping(t *testing.T) {
 	a := auth.Init(c, nil)
 	a.SetConfig("todo-app", "some-secret", conf, nil, fConf, nil)
 
-	graph := New("todo-app", a, c, f)
-	output, err := graph.execGraphQLQuery(query)
+	graph := New(a, c, f)
+	graph.SetConfig("todo-app")
+
+	output, err := graph.ExecGraphQLQuery(query)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -25,13 +25,19 @@ type Module struct {
 }
 
 // New creates a new GraphQL module
-func New(project string, a *auth.Module, c *crud.Module, f *functions.Module) *Module {
-	return &Module{project, a, c, f}
+func New(a *auth.Module, c *crud.Module, f *functions.Module) *Module {
+	return &Module{auth: a, crud: c, functions: f}
+}
+
+// SetConfig sets the project configuration
+func (graph *Module) SetConfig(project string) {
+	graph.project = project
 }
 
 type m map[string]interface{}
 
-func (graph *Module) execGraphQLQuery(query string) (interface{}, error) {
+// ExecGraphQLQuery executes the provided graphql query
+func (graph *Module) ExecGraphQLQuery(query string) (interface{}, error) {
 	source := source.NewSource(&source.Source{
 		Body: []byte(query),
 		Name: "GraphQL request",
