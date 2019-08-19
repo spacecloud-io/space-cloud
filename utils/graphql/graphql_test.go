@@ -25,6 +25,9 @@ func TestMapping(t *testing.T) {
 			}
 		}
 	}
+	mutation {
+		user(where: {}, set: {}, op: upsert)
+	}
 	`
 
 	f := functions.Init()

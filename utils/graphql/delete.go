@@ -40,19 +40,3 @@ func generateDeleteRequest(field *ast.Field, store m) (*model.DeleteRequest, err
 
 	return &deleteRequest, nil
 }
-
-func extractWhereClause(args []*ast.Argument, store m) (m, error) {
-	for _, v := range args {
-		switch v.Name.Value {
-		case "where":
-			temp, err := parseValue(v.Value, store)
-			if err != nil {
-				return nil, err
-			}
-
-			return temp.(m), nil
-		}
-	}
-
-	return m{}, nil
-}
