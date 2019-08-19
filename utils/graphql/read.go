@@ -35,7 +35,7 @@ func generateReadRequest(field *ast.Field, store m) (*model.ReadRequest, error) 
 	// Create a read request object
 	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions)}
 
-	readRequest.Find, err = generateWhereClause(field.Arguments, store)
+	readRequest.Find, err = extractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func generateReadRequest(field *ast.Field, store m) (*model.ReadRequest, error) 
 	return &readRequest, nil
 }
 
-func generateWhereClause(args []*ast.Argument, store m) (m, error) {
+func extractWhereClause(args []*ast.Argument, store m) (m, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "where":
