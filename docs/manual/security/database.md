@@ -141,7 +141,7 @@ This rule is used to allow a certain request only if a database request returns 
 
 The basic syntax looks like this:
 ```yaml
-rule: read
+rule: query
 db:   mongo | sql-mysql | sql-postgres  # Any one of them
 col:  collection                        # Name of the table / collection
 find: mongo-find query                  # Find object following MongoDB query syntax
@@ -154,7 +154,7 @@ Example (make sure user can query only public `profiles`):
 ```yaml
 rules:
   query:
-    rule: read
+    rule: query
     db:   mongo
     col:  profiles
     find:
@@ -176,13 +176,13 @@ Example (The Instagram problem - Make sure the user can query a profile only if 
 ```yaml
 rule: or
 clauses:
-  - rule: read
+  - rule: query
     db:   mongo
     col:  profiles
     find:
       userId: args.find.userId  # Assuming profiles has field `userId`
       isPublic: true 
-  - rule: read
+  - rule: query
     db:   mongo
     col:  profiles
     find:
