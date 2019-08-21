@@ -112,6 +112,12 @@ func parseValue(value ast.Value, store m) (interface{}, error) {
 
 		return val, nil
 
+	case kinds.Variable:
+		t := value.(*ast.Variable)
+		//	e := store["vars"]
+		//////// ----
+		return utils.LoadValue(t.Name.Value, store)
+
 	default:
 		return nil, errors.New("Invalid data type `" + value.GetKind() + "` for value " + string(value.GetLoc().Source.Body)[value.GetLoc().Start:value.GetLoc().End])
 	}

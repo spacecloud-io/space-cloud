@@ -10,6 +10,7 @@ import (
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
 
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
@@ -37,19 +38,18 @@ func (graph *Module) SetConfig(project string) {
 type m map[string]interface{}
 
 // ExecGraphQLQuery executes the provided graphql query
-func (graph *Module) ExecGraphQLQuery(query string) (interface{}, error) {
+func (graph *Module) ExecGraphQLQuery(req *model.GraphQLRequest) (interface{}, error) {
 	source := source.NewSource(&source.Source{
-		Body: []byte(query),
-		Name: "GraphQL request",
+		Body: []byte(req.Query),
+		Name: req.OperationName,
 	})
 
-	// parse the source
 	doc, err := parser.Parse(parser.ParseParams{Source: source})
 	if err != nil {
 		return nil, err
 	}
 
-	return graph.execGraphQLDocument(doc, m{})
+	return graph.execGraphQLDocument(doc, m{"vars": req.Variables})
 }
 
 func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, error) {
