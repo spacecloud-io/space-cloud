@@ -2,6 +2,7 @@ package mgo
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -12,38 +13,68 @@ import (
 
 // Mongo holds the mongo session
 type Mongo struct {
-	client  *mongo.Client
-	timeOut time.Duration
+	enabled    bool
+	connection string
+	client     *mongo.Client
 }
 
 // Init initialises a new mongo instance
-func Init(connection string) (*Mongo, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(connection))
-	if err != nil {
-		return nil, err
+func Init(enabled bool, connection string) (mongoStub *Mongo, err error) {
+	mongoStub = &Mongo{enabled: enabled, connection: connection, client: nil}
+
+	if mongoStub.enabled {
+		err = mongoStub.connect()
 	}
 
+	return
+}
+
+// Close gracefully the Mongo client
+func (m *Mongo) Close() error {
+	if m.client != nil {
+		return m.client.Disconnect(context.TODO())
+	}
+
+	return nil
+}
+
+// IsClientSafe checks whether database is enabled and connected
+func (m *Mongo) IsClientSafe() error {
+	if !m.enabled {
+		return utils.ErrDatabaseDisabled
+	}
+
+	if m.client == nil {
+		if err := m.connect(); err != nil {
+			log.Println("Error connecting to mongo : " + err.Error())
+			return utils.ErrDatabaseConnection
+		}
+	}
+
+	return nil
+}
+
+func (m *Mongo) connect() error {
 	timeOut := 5 * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
 	defer cancel()
 
-	err = client.Connect(ctx)
+	client, err := mongo.NewClient(options.Client().ApplyURI(m.connection))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		return nil, err
+	if err := client.Connect(ctx); err != nil {
+		return err
 	}
 
-	return &Mongo{client, timeOut}, nil
-}
+	if err := client.Ping(ctx, nil); err != nil {
+		return err
+	}
 
-// Close gracefully the Mongo client
-func (m *Mongo) Close() error {
-	return m.client.Disconnect(context.TODO())
+	m.client = client
+	return nil
 }
 
 // GetDBType returns the dbType of the crud block

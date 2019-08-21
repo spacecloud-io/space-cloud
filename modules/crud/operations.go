@@ -16,6 +16,10 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
 	return crud.Create(ctx, project, col, req)
 }
 
@@ -26,6 +30,10 @@ func (m *Module) Read(ctx context.Context, dbType, project, col string, req *mod
 
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
 		return nil, err
 	}
 
@@ -42,6 +50,10 @@ func (m *Module) Update(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
 	return crud.Update(ctx, project, col, req)
 }
 
@@ -52,6 +64,10 @@ func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *m
 
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
 		return err
 	}
 
@@ -68,16 +84,24 @@ func (m *Module) Aggregate(ctx context.Context, dbType, project, col string, req
 		return nil, err
 	}
 
+	if err := crud.IsClientSafe(); err != nil {
+		return nil, err
+	}
+
 	return crud.Aggregate(ctx, project, col, req)
 }
 
-// Create inserts a document (or multiple when op is "all") into the database based on dbType
+// Batch performs a batch operation on the database
 func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.BatchRequest) error {
 	m.RLock()
 	defer m.RUnlock()
 
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
 		return err
 	}
 

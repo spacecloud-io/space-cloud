@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.11.0"
+const BuildVersion = "0.12.0"
 
 const (
 	// One operation returns a single document from the database
@@ -132,6 +132,18 @@ const (
 
 	// TypeServiceRequest is type triggering a service's function
 	TypeServiceRequest string = "service-request"
+
+	// TypePubsubSubscribe is type triggering a pubsub subscribe
+	TypePubsubSubscribe string = "pubsub-subscribe"
+
+	// TypePubsubSubscribeFeed is type having a pubsub subscribe feed
+	TypePubsubSubscribeFeed string = "pubsub-subscribe-feed"
+
+	// TypePubsubUnsubscribe is type triggering a pubsub unsubscribe
+	TypePubsubUnsubscribe string = "pubsub-unsubscribe"
+
+	// TypePubsubUnsubscribeAll is type triggering a pubsub unsubscribe all
+	TypePubsubUnsubscribeAll string = "pubsub-unsubscribe-all"
 )
 
 // RealTimeProtocol is the type of protocol requested for realtime.
@@ -221,3 +233,14 @@ const (
 
 // InternalUserID is the auth.id used for internal requests
 const InternalUserID string = "internal-sc-user"
+
+// PubsubType is the type of pubsub request
+type PubsubType string
+
+const (
+	// Publish is the type used for publish requests
+	Publish PubsubType = "publish"
+
+	// Subscribe is the type used for subscribe requests
+	Subscribe PubsubType = "subscribe"
+)
