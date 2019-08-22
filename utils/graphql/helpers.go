@@ -114,16 +114,14 @@ func parseValue(value ast.Value, store m) (interface{}, error) {
 
 	case kinds.Variable:
 		t := value.(*ast.Variable)
-		//	e := store["vars"]
-		//////// ----
-		return utils.LoadValue(t.Name.Value, store)
+		return utils.LoadValue("vars."+t.Name.Value, store)
 
 	default:
 		return nil, errors.New("Invalid data type `" + value.GetKind() + "` for value " + string(value.GetLoc().Source.Body)[value.GetLoc().Start:value.GetLoc().End])
 	}
 }
 
-func (graph *Module) processQueryResult(field *ast.Field, store m, result interface{}) (interface{}, error) {
+func (graph *Module) processQueryResult(field *ast.Field, token string, store m, result interface{}) (interface{}, error) {
 	switch val := result.(type) {
 	case []interface{}:
 		array := make([]interface{}, len(val))
@@ -138,7 +136,7 @@ func (graph *Module) processQueryResult(field *ast.Field, store m, result interf
 
 				f := sel.(*ast.Field)
 
-				output, err := graph.execGraphQLDocument(f, storeNew)
+				output, err := graph.execGraphQLDocument(f, token, storeNew)
 				if err != nil {
 					return nil, err
 				}
@@ -161,7 +159,7 @@ func (graph *Module) processQueryResult(field *ast.Field, store m, result interf
 
 			f := sel.(*ast.Field)
 
-			output, err := graph.execGraphQLDocument(f, storeNew)
+			output, err := graph.execGraphQLDocument(f, token, storeNew)
 			if err != nil {
 				return nil, err
 			}

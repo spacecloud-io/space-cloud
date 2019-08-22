@@ -10,7 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execUpdateRequest(field *ast.Field, store m) (m, error) {
+func (graph *Module) execUpdateRequest(field *ast.Field, token string, store m) (m, error) {
 	dbType := field.Directives[0].Name.Value
 	col := strings.TrimPrefix(field.Name.Value, "update_")
 
@@ -18,7 +18,7 @@ func (graph *Module) execUpdateRequest(field *ast.Field, store m) (m, error) {
 	if err != nil {
 		return nil, err
 	}
-	status, err := graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, "", req)
+	status, err := graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}

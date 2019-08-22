@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
@@ -44,7 +45,9 @@ func TestMapping(t *testing.T) {
 	graph := New(a, c, f)
 	graph.SetConfig("todo-app")
 
-	output, err := graph.ExecGraphQLQuery(query)
+	te := model.GraphQLRequest{}
+	te.Query = query
+	output, err := graph.ExecGraphQLQuery(&te, "")
 	if err != nil {
 		t.Fatal(err)
 	}
