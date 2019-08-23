@@ -672,6 +672,11 @@ func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_D
 
 // PubsubPublish publishes to the pubsub module, using the pubsub module
 func (s *Server) PubsubPublish(ctx context.Context, in *pb.PubsubPublishRequest) (*pb.Response, error) {
+	var v interface{}
+	err := json.Unmarshal(in.Msg, &v)
+	if err != nil {
+		return &pb.Response{Status: int32(500), Error: err.Error()}, nil
+	}
 	status, err := s.pubsub.Publish(in.Meta.Project, in.Meta.Token, in.Subject, in.Msg)
 	out := pb.Response{}
 	out.Status = int32(status)

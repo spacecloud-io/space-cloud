@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 	
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/pubsub"
+	"github.com/spaceuptech/space-cloud/model"
 )
 
 // HandlePublishCall publishes to pubsub
@@ -18,10 +18,10 @@ func HandlePublishCall(pubsub *pubsub.Module, auth *auth.Module) http.HandlerFun
 		// Get the path parameters
 		vars := mux.Vars(r)
 		project := vars["project"]
-		subject := vars["subject"]
 
 		// Load the params from the body
-		b, err := ioutil.ReadAll(r.Body)
+		req := model.PubsubPublishRequest{}
+		err := json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -36,7 +36,7 @@ func HandlePublishCall(pubsub *pubsub.Module, auth *auth.Module) http.HandlerFun
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		status, err := pubsub.Publish(project, token, subject, b)
+		status, err := pubsub.Publish(project, token, req.Subject, req.Data)
 
 		w.WriteHeader(status)
 		if err != nil {

@@ -4,7 +4,6 @@ import (
 	"sync"
 	"net/http"
 	"errors"
-	"encoding/json"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -22,7 +21,7 @@ type pubsubSubscription struct {
 }
 
 // Publish publishes a byte array to a particular subject, if its permitted
-func (m *Module) Publish(project, token, subject string, data []byte) (int, error) {
+func (m *Module) Publish(project, token, subject string, data interface{}) (int, error) {
 	// Exit if pubsub is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
@@ -39,13 +38,7 @@ func (m *Module) Publish(project, token, subject string, data []byte) (int, erro
 	// m.RLock()
 	// defer m.RUnlock()
 
-	var v interface{}
-	err = json.Unmarshal(data, &v)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	err = m.connection.Publish(subject, &model.PubsubMsg{subject, v})
+	err = m.connection.Publish(subject, &model.PubsubMsg{subject, data})
 	if err != nil {
 		return http.StatusInternalServerError, err
 	} else {
