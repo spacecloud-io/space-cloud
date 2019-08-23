@@ -22,29 +22,31 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		pid := graphql.GetProjectID()
-		if projectID == pid {
 
-			// Get the path parameters
-			meta := getRequestMetaData(r)
-			// Load the request from the body
-			req := model.GraphQLRequest{}
-
-			json.NewDecoder(r.Body).Decode(&req)
-			defer r.Body.Close()
-
-			op, err := graphql.ExecGraphQLQuery(&req, meta.token)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError) //http status codee
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
-			w.WriteHeader(http.StatusOK) //http status codee
-			json.NewEncoder(w).Encode(map[string]string{"result": op.(string)})
+		if projectID != pid {
+			//throw some error
+			w.WriteHeader(http.StatusInternalServerError) //http status codee
+			json.NewEncoder(w).Encode(map[string]string{"error": "project id doesn't match"})
 			return
 		}
-		//throw some error
-		w.WriteHeader(http.StatusInternalServerError) //http status codee
-		json.NewEncoder(w).Encode(map[string]string{"error": "project id doesn't match"})
+
+		// Get the path parameters
+		token := getRequestMetaData(r).token
+		// Load the request from the body
+		req := model.GraphQLRequest{}
+
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
+
+		op, err := graphql.ExecGraphQLQuery(&req, token)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError) //http status codee
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]string{"result": op.(string)})
 		return
 	}
+
 }
