@@ -26,21 +26,19 @@ func Connect(connection string) (*nats, error) {
 // Publish publishes a model.PubsubMsg to a particular subject
 func (n *nats) Publish(subject string, msg *model.PubsubMsg) error {
 	subject = strings.Replace(subject, "/", ".", -1)
-	subject = strings.TrimPrefix(subject, ".")
-	subject = strings.TrimSuffix(subject, ".")
+	subject = strings.Trim(subject, ".")
 	return n.conn.Publish(subject, msg)
 }
 
 // QueueSubscribe subscribes to a particular subject, using a queue
 func (n *nats) QueueSubscribe(subject, queue string, ch chan *model.PubsubMsg) (model.PubsubUnsubscribe , error) {
 	subject = strings.Replace(subject, "/", ".", -1)
-	subject = strings.TrimPrefix(subject, ".")
-	natsWildcard := ">"
+	subject = strings.Trim(subject, ".")
+	natsWildcard := ".>"
 	subs1, err1 := n.conn.BindRecvQueueChan(subject + natsWildcard, queue, ch)
 	if err1 != nil {
 		return nil, err1
 	}
-	subject = strings.TrimSuffix(subject, ".")
 	subs2, err2 := n.conn.BindRecvQueueChan(subject, queue, ch)
 	if err2 != nil {
 		subs1.Unsubscribe()
