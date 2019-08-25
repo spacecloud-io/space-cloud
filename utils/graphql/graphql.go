@@ -34,30 +34,27 @@ func (graph *Module) SetConfig(project string) {
 	graph.project = project
 }
 
-type m map[string]interface{}
-
 // ExecGraphQLQuery executes the provided graphql query
 func (graph *Module) ExecGraphQLQuery(query string) (interface{}, error) {
 	source := source.NewSource(&source.Source{
 		Body: []byte(query),
 		Name: "GraphQL request",
 	})
-
 	// parse the source
 	doc, err := parser.Parse(parser.ParseParams{Source: source})
 	if err != nil {
 		return nil, err
 	}
-
-	return graph.execGraphQLDocument(doc, m{})
+	return graph.execGraphQLDocument(doc, utils.M{})
 }
 
-func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, error) {
+func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interface{}, error) {
 	switch node.GetKind() {
 
 	case kinds.Document:
 		doc := node.(*ast.Document)
 		for _, v := range doc.Definitions {
+			fmt.Println("For ", v)
 			return graph.execGraphQLDocument(v, store)
 		}
 		return nil, errors.New("No definitions provided")
@@ -66,7 +63,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 		op := node.(*ast.OperationDefinition)
 		switch op.Operation {
 		case "query", "mutation":
-			obj := m{}
+			obj := utils.M{}
 			for _, v := range op.SelectionSet.Selections {
 
 				field := v.(*ast.Field)
@@ -151,7 +148,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store m) (interface{}, e
 			return currentValue, nil
 		}
 
-		obj := m{}
+		obj := utils.M{}
 		for _, sel := range field.SelectionSet.Selections {
 			storeNew := shallowClone(store)
 			storeNew[getFieldName(field)] = currentValue

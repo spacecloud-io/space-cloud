@@ -6,9 +6,10 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execFuncCall(field *ast.Field, store m) (interface{}, error) {
+func (graph *Module) execFuncCall(field *ast.Field, store utils.M) (interface{}, error) {
 	serviceName := field.Directives[0].Name.Value
 	funcName, err := getFuncName(field)
 	if err != nil {
@@ -33,7 +34,7 @@ func (graph *Module) execFuncCall(field *ast.Field, store m) (interface{}, error
 	return graph.functions.Call(serviceName, funcName, claims, params, timeout)
 }
 
-func generateFuncCallRequest(field *ast.Field, store m) (*model.FunctionsRequest, error) {
+func generateFuncCallRequest(field *ast.Field, store utils.M) (*model.FunctionsRequest, error) {
 	timeout, err := getFuncTimeout(field, store)
 	if err != nil {
 		return nil, err
@@ -62,11 +63,11 @@ func getFuncName(field *ast.Field) (string, error) {
 	return field.Name.Value, nil
 }
 
-func getFuncTimeout(field *ast.Field, store m) (int, error) {
+func getFuncTimeout(field *ast.Field, store utils.M) (int, error) {
 	if len(field.Directives[0].Arguments) > 0 {
 		for _, v := range field.Directives[0].Arguments {
 			if v.Name.Value == "func" {
-				val, err := parseValue(v.Value, store)
+				val, err := ParseValue(v.Value, store)
 				if err != nil {
 					return 0, err
 				}
@@ -82,11 +83,11 @@ func getFuncTimeout(field *ast.Field, store m) (int, error) {
 	return 5, nil
 }
 
-func getFuncParams(field *ast.Field, store m) (m, error) {
-	obj := make(m, len(field.Arguments))
+func getFuncParams(field *ast.Field, store utils.M) (utils.M, error) {
+	obj := make(utils.M, len(field.Arguments))
 
 	for _, v := range field.Arguments {
-		val, err := parseValue(v.Value, store)
+		val, err := ParseValue(v.Value, store)
 		if err != nil {
 			return nil, err
 		}
