@@ -10,7 +10,11 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
+<<<<<<< HEAD
 func (graph *Module) execDeleteRequest(field *ast.Field, token string, store m) (m, error) {
+=======
+func (graph *Module) execDeleteRequest(field *ast.Field, store utils.M) (utils.M, error) {
+>>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
 	dbType := field.Directives[0].Name.Value
 	col := strings.TrimPrefix(field.Name.Value, "delete_")
 
@@ -24,10 +28,10 @@ func (graph *Module) execDeleteRequest(field *ast.Field, token string, store m) 
 		return nil, err
 	}
 
-	return m{"status": status}, graph.crud.Delete(context.TODO(), dbType, graph.project, col, req)
+	return utils.M{"status": status}, graph.crud.Delete(context.TODO(), dbType, graph.project, col, req)
 }
 
-func generateDeleteRequest(field *ast.Field, store m) (*model.DeleteRequest, error) {
+func generateDeleteRequest(field *ast.Field, store utils.M) (*model.DeleteRequest, error) {
 	var err error
 
 	// Create a delete request object

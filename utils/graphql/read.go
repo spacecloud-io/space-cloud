@@ -10,7 +10,11 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
+<<<<<<< HEAD
 func (graph *Module) execReadRequest(field *ast.Field, token string, store m) (interface{}, error) {
+=======
+func (graph *Module) execReadRequest(field *ast.Field, store utils.M) (interface{}, error) {
+>>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
 	dbType := field.Directives[0].Name.Value
 	col, err := getCollection(field)
 	if err != nil {
@@ -29,7 +33,7 @@ func (graph *Module) execReadRequest(field *ast.Field, token string, store m) (i
 	return graph.crud.Read(context.TODO(), dbType, graph.project, col, req)
 }
 
-func generateReadRequest(field *ast.Field, store m) (*model.ReadRequest, error) {
+func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, error) {
 	var err error
 
 	// Create a read request object
@@ -48,28 +52,28 @@ func generateReadRequest(field *ast.Field, store m) (*model.ReadRequest, error) 
 	return &readRequest, nil
 }
 
-func extractWhereClause(args []*ast.Argument, store m) (m, error) {
+func extractWhereClause(args []*ast.Argument, store utils.M) (utils.M, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "where":
-			temp, err := parseValue(v.Value, store)
+			temp, err := ParseValue(v.Value, store)
 			if err != nil {
 				return nil, err
 			}
 
-			return temp.(m), nil
+			return temp.(utils.M), nil
 		}
 	}
 
-	return m{}, nil
+	return utils.M{}, nil
 }
 
-func generateOptions(args []*ast.Argument, store m) (*model.ReadOptions, error) {
+func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, error) {
 	options := model.ReadOptions{}
 	for _, v := range args {
 		switch v.Name.Value {
 		case "skip":
-			temp, err := parseValue(v.Value, store)
+			temp, err := ParseValue(v.Value, store)
 			if err != nil {
 				return nil, err
 			}
@@ -83,7 +87,7 @@ func generateOptions(args []*ast.Argument, store m) (*model.ReadOptions, error) 
 			options.Skip = &tempInt64
 
 		case "limit":
-			temp, err := parseValue(v.Value, store)
+			temp, err := ParseValue(v.Value, store)
 			if err != nil {
 				return nil, err
 			}

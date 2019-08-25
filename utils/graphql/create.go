@@ -10,7 +10,11 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
+<<<<<<< HEAD
 func (graph *Module) execWriteRequest(field *ast.Field, token string, store m) (m, error) {
+=======
+func (graph *Module) execWriteRequest(field *ast.Field, store utils.M) (utils.M, error) {
+>>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
 	dbType := field.Directives[0].Name.Value
 	col := strings.TrimPrefix(field.Name.Value, "insert_")
 
@@ -24,10 +28,10 @@ func (graph *Module) execWriteRequest(field *ast.Field, token string, store m) (
 		return nil, err
 	}
 
-	return m{"status": status}, graph.crud.Create(context.TODO(), dbType, graph.project, col, req)
+	return utils.M{"status": status}, graph.crud.Create(context.TODO(), dbType, graph.project, col, req)
 }
 
-func generateCreateRequest(field *ast.Field, store m) (*model.CreateRequest, error) {
+func generateCreateRequest(field *ast.Field, store utils.M) (*model.CreateRequest, error) {
 	// Create a create request object
 	req := model.CreateRequest{Operation: utils.All}
 
@@ -40,11 +44,11 @@ func generateCreateRequest(field *ast.Field, store m) (*model.CreateRequest, err
 	return &req, nil
 }
 
-func extractDocs(args []*ast.Argument, store m) ([]interface{}, error) {
+func extractDocs(args []*ast.Argument, store utils.M) ([]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "docs":
-			temp, err := parseValue(v.Value, store)
+			temp, err := ParseValue(v.Value, store)
 			if err != nil {
 				return nil, err
 			}

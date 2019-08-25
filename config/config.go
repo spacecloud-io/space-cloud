@@ -93,6 +93,7 @@ type CrudStub struct {
 type TableRule struct {
 	IsRealTimeEnabled bool             `json:"isRealtimeEnabled" yaml:"isRealtimeEnabled"`
 	Rules             map[string]*Rule `json:"rules" yaml:"rules"` // The key here is query, insert, update or delete
+	Schema            string           `json:"schema" yaml:"schema"`
 }
 
 // Rule is the authorisation object at the query level
@@ -182,14 +183,14 @@ type StaticRoute struct {
 
 // Pubsub holds the config for the realtime module
 type Pubsub struct {
-	Enabled bool         `json:"enabled" yaml:"enabled"`
-	Broker  utils.Broker `json:"broker" yaml:"broker"`
-	Conn    string       `json:"conn" yaml:"conn"`
+	Enabled bool          `json:"enabled" yaml:"enabled"`
+	Broker  utils.Broker  `json:"broker" yaml:"broker"`
+	Conn    string        `json:"conn" yaml:"conn"`
 	Rules   []*PubsubRule `json:"rules" yaml:"rules"`
 }
 
 // PubsubRule is the authorization object at the pubsub rule level
 type PubsubRule struct {
 	Subject string           `json:"subject" yaml:"subject"` // The channel subject
-	Rule    map[string]*Rule `json:"rule" yaml:"rule"` // The key can be publish or subscribe
+	Rule    map[string]*Rule `json:"rule" yaml:"rule"`       // The key can be publish or subscribe
 }

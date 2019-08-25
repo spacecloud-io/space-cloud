@@ -10,8 +10,8 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func shallowClone(obj m) m {
-	temp := m{}
+func shallowClone(obj utils.M) utils.M {
+	temp := utils.M{}
 	for k, v := range obj {
 		temp[k] = v
 	}
@@ -42,15 +42,16 @@ func getCollection(field *ast.Field) (string, error) {
 	return field.Name.Value, nil
 }
 
-func parseValue(value ast.Value, store m) (interface{}, error) {
+// ParseValue returns an interface that can be casted to string
+func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 	switch value.GetKind() {
 	case kinds.ObjectValue:
-		o := m{}
+		o := utils.M{}
 
 		obj := value.(*ast.ObjectValue)
 
 		for _, v := range obj.Fields {
-			temp, err := parseValue(v.Value, store)
+			temp, err := ParseValue(v.Value, store)
 			if err != nil {
 				return nil, err
 			}
@@ -65,7 +66,7 @@ func parseValue(value ast.Value, store m) (interface{}, error) {
 
 		array := make([]interface{}, len(listValue.Values))
 		for i, v := range listValue.Values {
-			val, err := parseValue(v, store)
+			val, err := ParseValue(v, store)
 			if err != nil {
 				return nil, err
 			}
@@ -121,15 +122,19 @@ func parseValue(value ast.Value, store m) (interface{}, error) {
 	}
 }
 
+<<<<<<< HEAD
 func (graph *Module) processQueryResult(field *ast.Field, token string, store m, result interface{}) (interface{}, error) {
 
+=======
+func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result interface{}) (interface{}, error) {
+>>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
 	switch val := result.(type) {
 
 	case []map[string]interface{}:
 		array := make([]interface{}, len(val))
 
 		for i, v := range val {
-			obj := m{}
+			obj := utils.M{}
 
 			for _, sel := range field.SelectionSet.Selections {
 				storeNew := shallowClone(store)
@@ -151,8 +156,13 @@ func (graph *Module) processQueryResult(field *ast.Field, token string, store m,
 
 		return array, nil
 
+<<<<<<< HEAD
 	case map[string]interface{}, m:
 		obj := m{}
+=======
+	case map[string]interface{}:
+		obj := utils.M{}
+>>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
 
 		for _, sel := range field.SelectionSet.Selections {
 			storeNew := shallowClone(store)
