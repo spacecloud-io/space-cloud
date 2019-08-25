@@ -1,9 +1,7 @@
 package crud
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
@@ -17,8 +15,8 @@ import (
 // ParseSchema Initializes Schema field in Module struct
 func (m *Module) ParseSchema(crud config.Crud) (SchemaType, error) {
 	schema := make(SchemaType, len(crud))
-	collection := SchemaCollection{}
 	for dbName, v := range crud {
+		collection := SchemaCollection{}
 		for collectionName, v := range v.Collections {
 			source := source.NewSource(&source.Source{
 				Body: []byte(v.Schema),
@@ -28,46 +26,46 @@ func (m *Module) ParseSchema(crud config.Crud) (SchemaType, error) {
 			if err != nil {
 				return nil, err
 			}
-			value, _ := getSchemaDetails(doc, collectionName)
+			value, err := getCollectionSchema(doc, collectionName)
+			if err != nil {
+				return nil, err
+			}
 			collection[collectionName] = value
 		}
 		schema[dbName] = collection
 	}
-	b, err := json.MarshalIndent(schema, "", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	fmt.Print(string(b))
 	return schema, nil
 }
 
-func getSchemaDetails(doc *ast.Document, collectionName string) (SchemaField, error) {
+func getCollectionSchema(doc *ast.Document, collectionName string) (SchemaField, error) {
 	fieldMap := SchemaField{}
 	for _, v := range doc.Definitions {
+		colName := v.(*ast.ObjectDefinition).Name.Value
+
+		if colName != strings.Title(collectionName) {
+			continue
+		}
 		for _, ve := range v.(*ast.ObjectDefinition).Fields {
 
-			colName := v.(*ast.ObjectDefinition).Name.Value
-			// fmt.Println("Collection Name", collectionName, colName)
-
-			if colName != strings.Title(collectionName) {
-				continue
-			}
 			fieldTypeStuct := SchemaFieldType{
 				Directive: DirectiveProperties{
 					Value: DirectiveArgs{},
 				},
 			}
-
-			for _, w := range ve.Directives {
+			if len(ve.Directives) > 0 {
+				val := ve.Directives[0]
 				argValue := map[string]string{}
-				for _, x := range w.Arguments {
+
+				for _, x := range val.Arguments {
 
 					val, _ := (utils.ParseGraphqlValue(x.Value, nil))
 					argValue[x.Name.Value] = val.(string) // direvtive field name & value name
 				}
-				fieldTypeStuct.Directive.Kind = w.Name.Value
+
+				fieldTypeStuct.Directive.Kind = val.Name.Value
 				fieldTypeStuct.Directive.Value = argValue
 			}
+
 			err := getFieldType(ve.Type, &fieldTypeStuct, doc)
 			if err != nil {
 				return nil, err
@@ -85,21 +83,16 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 		{
 			fieldTypeStuct.IsFieldTypeRequired = true
 			getFieldType(fieldType.(*ast.NonNull).Type, fieldTypeStuct, doc)
-
 		}
 	case kinds.List:
 		{
 			fieldTypeStuct.IsList = true
-			if fieldType.(*ast.List).Type.GetKind() == kinds.Named {
-				getFieldType(fieldType.(*ast.List).Type, fieldTypeStuct, doc)
-			} else {
-				getFieldType(fieldType.(*ast.List).Type.(*ast.NonNull).Type, fieldTypeStuct, doc)
-			}
+			getFieldType(fieldType.(*ast.List).Type, fieldTypeStuct, doc)
+
 		}
 	case kinds.Named:
 		{
 			myType := fieldType.(*ast.Named).Name.Value
-			fmt.Println("Type:", myType)
 			switch myType {
 			case TypeString, TypeEnum:
 				fieldTypeStuct.Kind = TypeString
@@ -117,12 +110,11 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 				fieldTypeStuct.Kind = TypeJSON
 			default:
 				{
-					fmt.Println("Mytype here", myType)
 					fieldTypeStuct.Kind = TypeRelation
 					fieldTypeStuct.TableJoin = strings.ToLower(myType[0:1]) + myType[1:]
 					if fieldTypeStuct.Directive.Kind != "relation" {
 						fieldTypeStuct.Kind = TypeJoin
-						nestedSchemaField, err := getSchemaDetails(doc, myType)
+						nestedSchemaField, err := getCollectionSchema(doc, myType)
 						if err != nil {
 							return err
 						}

@@ -1,6 +1,8 @@
 package crud
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -12,7 +14,7 @@ func TestParseSchema(t *testing.T) {
 		id: ID! @id
 		createdAt: DateTime! @createdAt
 		text: String
-		owner: [User] @relation(link: INLINE)
+		owner: [User!]! @relation(link: INLINE)
 		location: Location!
 	  }
 	  
@@ -37,6 +39,25 @@ func TestParseSchema(t *testing.T) {
 				"tweet": &config.TableRule{
 					Schema: query,
 				},
+				"location": &config.TableRule{
+					Schema: query,
+				},
+				"user": &config.TableRule{
+					Schema: query,
+				},
+			},
+		},
+		"sql": &config.CrudStub{
+			Collections: map[string]*config.TableRule{
+				"tweet": &config.TableRule{
+					Schema: query,
+				},
+				"location": &config.TableRule{
+					Schema: query,
+				},
+				"user": &config.TableRule{
+					Schema: query,
+				},
 			},
 		},
 	}
@@ -47,11 +68,11 @@ func TestParseSchema(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// b, err := json.MarshalIndent(output, "", "  ")
-		// if err != nil {
-		// 	fmt.Println("error:", err)
-		// }
-		// fmt.Print(string(b))
+		b, err := json.MarshalIndent(output, "", "  ")
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		fmt.Print(string(b))
 		t.Log("Logging Test Output :: ", output)
 	})
 }
