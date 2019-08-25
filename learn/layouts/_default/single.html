@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Learn</title>
+  <link type="text/css" rel="stylesheet" href="/css/app.css" media="screen,projection" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+    integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+  <link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons|Raleway:100,200,300,400,500,600,700,800,900|Open+Sans:300,400,600,700,800"
+    rel="stylesheet">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('.sidenav').sidenav({ edge: 'right' });
+    });
+  </script>
+</head>
+
+<body>
+  {{partial "sidenav.html" . }}
+  <div class="course">
+    {{ partial "topbar-white.html" . }}
+    <div class="topbar-breadcrumb valign-wrapper hide-on-small-only">
+      <a href="#"><span>Front-end</span></a>
+      <a href="#" class="material-icons">chevron_right</a>
+      <a href="#"><span>React</span></a>
+    </div>
+
+    <div style="background-color: #EBF4F5">
+      <div class="row-top-padding">
+        <div class="row">
+          <div class="col m3 l3 hide-on-small-only">
+            <div class="left-wrapper">
+              <div class="timeline-border">
+                <div class="dots">1</div>
+                <div class="point">Point 1</div>
+              </div>
+              <div class="timeline-border">
+                <div class="dots">2</div>
+                <div class="point">Point 2</div>
+              </div>
+              <div class="timeline-border">
+                <div class="dots">3</div>
+                <div class="point">Point 3</div>
+              </div>
+              <div class="timeline-border">
+                <div class="dots">4</div>
+                <div class="point">Point 4</div>
+              </div>
+              <div class="timeline-border" id="selected">
+                <div class="dots">5</div>
+                <div class="point">Point 5</div>
+              </div>
+              <div class="timeline-border">
+                <div class="dots">6</div>
+                <div class="point">Point 6</div>
+              </div>
+              <div class="timeline-border">
+                <div class="dots">7</div>
+                <div class="point">Point 7</div>
+              </div>
+              <div class="timeline-border">
+                <div class="dots">8</div>
+                <div class="point">Point 8</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col m7 l7">
+            <div class="middle-padding">
+              <div class="middle-wrapper">
+                <div style="box-shadow: 0 8px 10px -6px #EEE;">
+                  <div style="padding: 0 24px" class="hide-on-med-and-up">
+                    <div class="breadcrumbs valign-wrapper">
+                      <a href="#"><span>Front-end</span></a>
+                      <a href="#" class="material-icons">chevron_right</a>
+                      <a href="#"><span>React</span></a>
+                    </div>
+                    <p class="on-this-page">On this page:</p>
+                    <div class="valign-wrapper" style="margin-bottom: 12px">
+                      <a href="#" class="material-icons">chevron_right</a>
+                      <span class="points">Point 1</span>
+                    </div>
+                    <div class="valign-wrapper" style="margin-bottom: 12px">
+                      <a href="#" class="material-icons">chevron_right</a>
+                      <span class="points">Point 1</span>
+                    </div>
+                    <div class="valign-wrapper" style="margin-bottom: 12px">
+                      <a href="#" class="material-icons">chevron_right</a>
+                      <span class="points">Point 1</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="content">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                  deserunt mollit anim id est laborum.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                  deserunt mollit anim id est laborum.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                  deserunt mollit anim id est laborum.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                  deserunt mollit anim id est laborum.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                  deserunt mollit anim id est laborum.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                  deserunt mollit anim id est laborum.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute
+                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia
+                  deserunt mollit anim id est laborum.
+                </div>
+              </div> <br />
+
+              <div class="buttons hide-on-med-and-up">
+                <div class="button1 valign-wrapper">
+                  <a href="#" class="material-icons">chevron_left</a>
+                </div> <br />
+                <div class="button2">
+                  <div class="next-topic">
+                    <p class=next-topic-text>Next topic</p>
+                    <a href="#" class="material-icons">chevron_right</a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="buttons-l hide-on-small-only">
+                <a href="#">
+                  <div class="col m6 l6">
+                    <div class="previous">
+                      <div class="material-icons">chevron_left</div>
+                      <div style="margin-left: 16px;">
+                        <div class="topic">Previous Topic</div>
+                        <div class="next-topic">Point 1</div>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+
+                <a href="#">
+                  <div class="col m6 l6">
+                    <div class="next">
+                      <div style="margin-right: 16px;">
+                        <div class="topic">Next Topic</div>
+                        <div class="next-topic">Point 2</div>
+                      </div>
+                      <div class="material-icons">chevron_right</div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col m2 l2 hide-on-small-only">
+            <div class="right-wrapper">
+              <div class="on-this-page">On this page:</div>
+              <div class="valign-wrapper" style="margin-bottom: 12px; cursor: pointer;">
+                <a href="#" class="material-icons">chevron_right</a>
+                <span class="points">Point 1</span>
+              </div>
+              <div class="valign-wrapper" id=selected style="margin-bottom: 12px; cursor: pointer;">
+                <a href="#" class="material-icons">chevron_right</a>
+                <span class="points">Point 1</span>
+              </div>
+              <div class="valign-wrapper" style="margin-bottom: 12px; cursor: pointer;">
+                <a href="#" class="material-icons">chevron_right</a>
+                <span class="points">Point 1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {{partial "newsletter.html" . }}
+    {{partial "footer.html" . }}
+  </div>
+</body>
+
+</html>

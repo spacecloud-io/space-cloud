@@ -1,0 +1,82 @@
+.newsletter {
+  text-align: center;
+  width: 90%;
+  background-color: #0c344b;
+  border-radius: 60px;
+  color: #fff;
+  padding: 32px 24px;
+  z-index: 1;
+  position: relative;
+  top: -30vh;
+
+  .newsletter-title {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .input-wrapper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    background: #002c39;
+    padding: 8px 24px;
+    border-radius: 5px;
+    color: #fff;
+
+    .input-field {
+      margin: 0;
+      flex: 0.8;
+      .subscribe-email {
+        margin: 0;
+        border-bottom: 0;
+      }
+      .subscribe-email::placeholder {
+        color: #bdbdbd;
+      }
+      .subscribe-email.valid {
+        border-bottom: 1px solid #9e9e9e !important;
+        box-shadow: none !important;
+      }
+      .subscribe-email.valid:focus {
+        border-bottom: 1px solid #26a69a !important;
+        box-shadow: 0 1px 0 0 #26a69a !important;
+      }
+      .subscribe-email.error {
+        border-bottom: 1px solid #f44336 !important;
+        box-shadow: none !important;
+      }
+      .subscribe-email.error:focus {
+        border-bottom: 1px solid #f44336 !important;
+        box-shadow: 0 1px 0 0 #f44336 !important;
+      }
+      .subscribe-email-label {
+        margin-top: 8px;
+        color: #f44336;
+        display: none;
+      }
+    }
+    #subscribeBtn {
+      background-color: #ff6700;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 8px;
+    }
+  }
+
+  .discord {
+    height: 60px;
+    margin: 0 8px;
+    cursor: pointer;
+  }
+
+  .github {
+    height: 35px;
+    margin: 0 8px;
+    cursor: pointer;
+  }
+  
+  @media #{$large-and-up} {
+    top: -10vw;
+  }
+}
+

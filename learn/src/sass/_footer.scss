@@ -1,0 +1,178 @@
+.footer {
+  background-color: #002c39;
+  padding: 200px 10px 0px 10px;
+  position: relative;
+  .logo-img {
+    width: 50%;
+    height: auto;
+    transform: translateX(-8px);
+    margin-bottom: 20px;
+    @media only screen and (min-width: 993px) {
+      margin-top: 20px;
+    }
+  }
+
+  .row-footer {
+    position: relative;
+    top: 0px !important;
+  }
+
+  .address-wrapper {
+    .address {
+      display: block;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+  }
+  .tertiary-header {
+    color: #fff;
+    font-family: "Raleway", sans-serif;
+    font-weight: 600;
+  }
+  .contact-wrapper {
+    .contact {
+      display: block;
+      margin-bottom: 16px;
+      color: #fff;
+      i {
+        transform: translate(0px, 6px);
+        margin-right: 16px;
+      }
+    }
+  }
+  .connect-wrapper {
+    display: flex;
+    margin-bottom: 20px;
+    a {
+      i {
+        font-size: 24px;
+        color: #fff;
+      }
+    }
+  }
+  .hr-div {
+    margin: 20px 0px 12px 0px;
+    height: 1px;
+    background: #9f9f9f;
+    @media only screen and (min-width: 993px) {
+      margin-bottom: 8px;
+      margin-top: 28px;
+    }
+  }
+  .copyright-text {
+    text-align: center;
+    color: #fff;
+    line-height: 2;
+    margin-bottom: 20px;
+  }
+}
+
+.body-text {
+  color: #434c5e;
+  line-height: 1.7;
+  margin-bottom: 20px;
+
+  @media only screen and (min-width: 993px) {
+    margin-bottom: 30px;
+    line-height: 1.7;
+  }
+}
+
+.row {
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 20px;
+
+  // Clear floating children
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  .col {
+    float: left;
+    box-sizing: border-box;
+    padding: 0 1.5rem / 2;
+    min-height: 1px;
+
+    &[class*="push-"],
+    &[class*="pull-"] {
+      position: relative;
+    }
+
+    $i: 1;
+    @while $i <= 12 {
+      $perc: unquote((100 / (12 / $i)) + "%");
+      &.s#{$i} {
+        width: $perc;
+        @include reset-offset;
+      }
+      $i: $i + 1;
+    }
+
+    $i: 1;
+    @while $i <= 12 {
+      $perc: unquote((100 / (12 / $i)) + "%");
+      @include grid-classes("s", $i, $perc);
+      $i: $i + 1;
+    }
+
+    @media only screen and (min-width: 601px) {
+      $i: 1;
+      @while $i <= 12 {
+        $perc: unquote((100 / (12 / $i)) + "%");
+        &.m#{$i} {
+          width: $perc;
+          @include reset-offset;
+        }
+        $i: $i + 1;
+      }
+
+      $i: 1;
+      @while $i <= 12 {
+        $perc: unquote((100 / (12 / $i)) + "%");
+        @include grid-classes("m", $i, $perc);
+        $i: $i + 1;
+      }
+    }
+
+    @media only screen and (min-width: 993px) {
+      $i: 1;
+      @while $i <= 12 {
+        $perc: unquote((100 / (12 / $i)) + "%");
+        &.l#{$i} {
+          width: $perc;
+          @include reset-offset;
+        }
+        $i: $i + 1;
+      }
+
+      $i: 1;
+      @while $i <= 12 {
+        $perc: unquote((100 / (12 / $i)) + "%");
+        @include grid-classes("l", $i, $perc);
+        $i: $i + 1;
+      }
+    }
+
+    @media only screen and (min-width: 1201) {
+      $i: 1;
+      @while $i <= 12 {
+        $perc: unquote((100 / (12 / $i)) + "%");
+        &.xl#{$i} {
+          width: $perc;
+          @include reset-offset;
+        }
+        $i: $i + 1;
+      }
+
+      $i: 1;
+      @while $i <= 12 {
+        $perc: unquote((100 / (12 / $i)) + "%");
+        @include grid-classes("xl", $i, $perc);
+        $i: $i + 1;
+      }
+    }
+  }
+}
