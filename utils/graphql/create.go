@@ -48,7 +48,6 @@ func extractDocs(args []*ast.Argument, store m) ([]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-
 			return temp.([]interface{}), nil
 		}
 	}

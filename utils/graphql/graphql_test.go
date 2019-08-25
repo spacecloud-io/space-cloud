@@ -17,7 +17,7 @@ func TestMapping(t *testing.T) {
 			key1 {
 				SomeKey:k2
 			}
-			key2
+			key2   
 			
 			users(where:{name: random__key1__k1}) @mongo {
 				_id

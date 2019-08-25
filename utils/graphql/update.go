@@ -13,7 +13,6 @@ import (
 func (graph *Module) execUpdateRequest(field *ast.Field, token string, store m) (m, error) {
 	dbType := field.Directives[0].Name.Value
 	col := strings.TrimPrefix(field.Name.Value, "update_")
-
 	req, err := generateUpdateRequest(field, store)
 	if err != nil {
 		return nil, err

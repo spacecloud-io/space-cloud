@@ -122,8 +122,10 @@ func parseValue(value ast.Value, store m) (interface{}, error) {
 }
 
 func (graph *Module) processQueryResult(field *ast.Field, token string, store m, result interface{}) (interface{}, error) {
+
 	switch val := result.(type) {
-	case []interface{}:
+
+	case []map[string]interface{}:
 		array := make([]interface{}, len(val))
 
 		for i, v := range val {
@@ -149,7 +151,7 @@ func (graph *Module) processQueryResult(field *ast.Field, token string, store m,
 
 		return array, nil
 
-	case map[string]interface{}:
+	case map[string]interface{}, m:
 		obj := m{}
 
 		for _, sel := range field.SelectionSet.Selections {

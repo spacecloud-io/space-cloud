@@ -43,6 +43,7 @@ type m map[string]interface{}
 
 // ExecGraphQLQuery executes the provided graphql query
 func (graph *Module) ExecGraphQLQuery(req *model.GraphQLRequest, token string) (interface{}, error) {
+
 	source := source.NewSource(&source.Source{
 		Body: []byte(req.Query),
 		Name: req.OperationName,

@@ -45,7 +45,7 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]string{"result": op.(string)})
+		json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
 		return
 	}
 
