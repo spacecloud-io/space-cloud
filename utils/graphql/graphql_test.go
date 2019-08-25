@@ -11,13 +11,23 @@ import (
 
 func TestMapping(t *testing.T) {
 	query := `
-	type Tweet {
-		id: ID! @unique
-		createdAt: DateTime!
-		text: String!
-		owner: User!
-		location: Location!
-	  }
+	query {
+		random(where: {}, skip: 87) @mongo(col: random) {
+			key1 {
+				SomeKey:k2
+			}
+			key2
+			
+			users(where:{name: random__key1__k1}) @mongo {
+				_id
+				email
+				
+			}
+		}
+	}
+	mutation {
+		user(where: {}, set: {}, op: upsert)
+	}
 	`
 
 	f := functions.Init()

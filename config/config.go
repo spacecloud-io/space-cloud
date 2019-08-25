@@ -93,7 +93,7 @@ type CrudStub struct {
 type TableRule struct {
 	IsRealTimeEnabled bool             `json:"isRealtimeEnabled" yaml:"isRealtimeEnabled"`
 	Rules             map[string]*Rule `json:"rules" yaml:"rules"` // The key here is query, insert, update or delete
-	Schema            string           `json:"Schema" yaml:"Schema"`
+	Schema            string           `json:"schema" yaml:"schema"`
 }
 
 // Rule is the authorisation object at the query level
