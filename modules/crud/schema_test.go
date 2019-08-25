@@ -11,8 +11,8 @@ func TestParseSchema(t *testing.T) {
 	type Tweet {
 		id: ID! @id
 		createdAt: DateTime! @createdAt
-		text: String!
-		owner: User! @relation(link: INLINE)
+		text: String
+		owner: [User] @relation(link: INLINE)
 		location: Location!
 	  }
 	  
@@ -25,7 +25,7 @@ func TestParseSchema(t *testing.T) {
 		tweets: [Tweet!]!
 	  }
 	  
-	  type location {
+	  type Location {
 		id: ID! @id
 		latitude: Float!
 		longitude: Float!
@@ -34,7 +34,7 @@ func TestParseSchema(t *testing.T) {
 	v := config.Crud{
 		"mongo": &config.CrudStub{
 			Collections: map[string]*config.TableRule{
-				"random": &config.TableRule{
+				"tweet": &config.TableRule{
 					Schema: query,
 				},
 			},
@@ -47,6 +47,11 @@ func TestParseSchema(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// b, err := json.MarshalIndent(output, "", "  ")
+		// if err != nil {
+		// 	fmt.Println("error:", err)
+		// }
+		// fmt.Print(string(b))
 		t.Log("Logging Test Output :: ", output)
 	})
 }

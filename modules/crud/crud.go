@@ -18,35 +18,42 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]Crud
 	primaryDB string
-	schema    []SchemaType
+	schema    SchemaType
 }
 
 type (
 	// SchemaType is the data structure for storing the parsed values of schema string
-	SchemaType               map[string]schemaCollection
-	schemaCollection         map[string]schemaField
-	schemaField              map[string]*schemaFieldType
-	schemaFieldDirectiveArgs map[string]string
-	fieldType                int
+	SchemaType       map[string]SchemaCollection // key is database name
+	SchemaCollection map[string]SchemaField      // key is collection name
+	SchemaField      map[string]*SchemaFieldType // key is field name
+	DirectiveArgs    map[string]string           // key is directive's argument name
+	fieldType        int
 
-	schemaFieldType struct {
+	SchemaFieldType struct {
 		IsFieldTypeRequired bool
 		IsList              bool
-		DirectiveType       map[string]schemaFieldDirectiveArgs
-		Kind                fieldType
+		Directive           DirectiveProperties
+		Kind                string
+		NestedObject        SchemaField
+		TableJoin           string
+	}
+	DirectiveProperties struct {
+		Kind  string
+		Value DirectiveArgs
 	}
 )
 
 const (
-	TypeString fieldType = iota
-	TypeInteger
-	TypeFloat
-	TypeBoolean
-	TypeDateTime
-	TypeEnum
-	TypeJSON
-	TypeID
-	TypeJoin
+	TypeString   string = "String"
+	TypeInteger  string = "Integer"
+	TypeFloat    string = "Float"
+	TypeBoolean  string = "Boolean"
+	TypeDateTime string = "DateTime"
+	TypeEnum     string = "Enum"
+	TypeJSON     string = "Json"
+	TypeID       string = "ID"
+	TypeJoin     string = "Object"
+	TypeRelation string = "Join"
 )
 
 // Crud abstracts the implementation crud operations of databases
