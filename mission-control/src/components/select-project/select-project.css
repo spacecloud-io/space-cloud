@@ -1,0 +1,17 @@
+.select-project .modal-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 8px;
+}
+
+.ant-modal {
+  width: 700px !important;
+}
+
+.select-project .checked {
+  color: #FF6700;
+}
+
+.select-project  .modal-header .header .line {
+  margin-bottom: 0;
+}

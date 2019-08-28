@@ -12,13 +12,37 @@ import (
 )
 
 type input struct {
-	Conn      string
-	PrimaryDB string
-	ID        string
+	Conn         string
+	PrimaryDB    string
+	ID           string
+	Name         string
+	AdminName    string
+	AdminPass    string
+	AdminRole    string
+	AdminSecret  string
+	HomeDir      string
+	BuildVersion string
+}
+
+// GenerateEmptyConfig creates an empty config file
+func GenerateEmptyConfig() *Config {
+	return &Config{
+		SSL:      &SSL{Enabled: false},
+		Admin:    generateAdmin(),
+		Projects: []*Project{},
+	}
+}
+
+func generateAdmin() *Admin {
+	return &Admin{
+		Secret:    "some-secret",
+		Operation: OperationConfig{Mode: 0},
+		Users:     []AdminUser{{User: "admin", Pass: "123", Scopes: ProjectScope{"all": []string{"all"}}}},
+	}
 }
 
 // GenerateConfig started the interactive cli to generate config file
-func GenerateConfig() error {
+func GenerateConfig(configFilePath string) error {
 	fmt.Println()
 	fmt.Println("This utility walks you through creating a config.yaml file for your space-cloud project.")
 	fmt.Println("It only covers the most essential configurations and suggests sensible defaults.")
@@ -28,14 +52,14 @@ func GenerateConfig() error {
 	i := new(input)
 
 	// Ask the project id
-	dir, _ := os.Getwd()
-	array := strings.Split(dir, string(os.PathSeparator))
-	dir = array[len(array)-1]
-	err := survey.AskOne(&survey.Input{Message: "project name:", Default: formatProjectID(dir)}, &i.ID, survey.Required)
+	workingDir, _ := os.Getwd()
+	array := strings.Split(workingDir, string(os.PathSeparator))
+	dir := array[len(array)-1]
+	err := survey.AskOne(&survey.Input{Message: "project name:", Default: formatProjectID(dir)}, &i.Name, survey.Required)
 	if err != nil {
 		return err
 	}
-	i.ID = formatProjectID(i.ID)
+	i.ID = formatProjectID(i.Name)
 
 	// Ask the primary db
 	err = survey.AskOne(&survey.Select{
@@ -56,17 +80,50 @@ func GenerateConfig() error {
 		return err
 	}
 
-	return writeConfig(i)
+	// Ask for the admin username
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (UserName)", Default: "admin"}, &i.AdminName, survey.Required)
+	if err != nil {
+		return err
+	}
+
+	// Ask for the admin password
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (Password)", Default: "123"}, &i.AdminPass, survey.Required)
+	if err != nil {
+		return err
+	}
+
+	// Ask for the admin role
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (Role)", Default: "captain-cloud"}, &i.AdminRole, survey.Required)
+	if err != nil {
+		return err
+	}
+
+	// Ask for the admin secret
+	err = survey.AskOne(&survey.Input{Message: "Mission Control (JWT Secret)", Default: "some-secret"}, &i.AdminSecret, survey.Required)
+	if err != nil {
+		return err
+	}
+
+	i.HomeDir = utils.UserHomeDir()
+	i.BuildVersion = utils.BuildVersion
+
+	if configFilePath == "none" {
+		configFilePath = workingDir + string(os.PathSeparator) + i.ID + ".yaml"
+	}
+
+	return writeConfig(i, configFilePath)
 }
 
-func writeConfig(i *input) error {
-	f, err := os.Create("./" + i.ID + ".yaml")
+func writeConfig(i *input, configFilePath string) error {
+	f, err := os.Create(configFilePath)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	tmpl, err := template.New("config").Parse(templateString)
+	tmplString := templateString
+
+	tmpl, err := template.New("config").Parse(tmplString)
 	if err != nil {
 		return err
 	}

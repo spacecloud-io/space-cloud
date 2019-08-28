@@ -1,204 +1,150 @@
 package server
 
 import (
-	"context"
-	"crypto/tls"
+	"bytes"
 	"encoding/json"
-	"fmt"
-	"log"
+	"errors"
 	"net/http"
 	"runtime"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-type transport struct {
-	conn *grpc.ClientConn
-	stub proto.SpaceCloudClient
+func currentTimeInMillis() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func (t *transport) insert(ctx context.Context, meta *proto.Meta, op string, obj interface{}) (int, error) {
-	objJSON, err := json.Marshal(obj)
-	if err != nil {
-		return http.StatusInternalServerError, err
+func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) {
+	// Create the find and update clauses
+	find = map[string]interface{}{"_id": s.nodeID}
+	set := map[string]interface{}{
+		"os":           runtime.GOOS,
+		"isProd":       s.adminMan.LoadEnv(),
+		"version":      utils.BuildVersion,
+		"clusterSize":  s.syncMan.GetClusterSize(),
+		"distribution": "ce",
+		"lastUpdated":  currentTimeInMillis(),
+	}
+	min := map[string]interface{}{"startTime": currentTimeInMillis()}
+
+	c := s.syncMan.GetGlobalConfig()
+	if c != nil {
+		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
+		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
+		if c.Admin != nil {
+			set["mode"] = c.Admin.Operation.Mode
+		}
+		if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
+			set["modules"] = getProjectInfo(c.Projects[0].Modules, c.Static)
+			set["projects"] = []string{c.Projects[0].ID}
+		}
 	}
 
-	req := proto.CreateRequest{Document: objJSON, Meta: meta, Operation: op}
-	res, err := t.stub.Create(ctx, &req)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-
-	if res.Status >= 200 || res.Status < 300 {
-		return int(res.Status), nil
-	}
-
-	return int(res.Status), nil
+	update = map[string]interface{}{"$set": set, "$min": min}
+	return
 }
 
-func (t *transport) update(ctx context.Context, meta *proto.Meta, op string, find, update map[string]interface{}) (int, error) {
-	updateJSON, err := json.Marshal(update)
+func updateSCMetrics(find, update map[string]interface{}) error {
+
+	req := map[string]interface{}{"find": find, "update": update, "op": "upsert"}
+	jsonValue, err := json.Marshal(req)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return err
 	}
-
-	findJSON, err := json.Marshal(find)
+	resp, err := http.Post("https://api.spaceuptech.com/v1/api/space-cloud/crud/mongo/metrics/update", "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return err
 	}
 
-	req := proto.UpdateRequest{Find: findJSON, Update: updateJSON, Meta: meta, Operation: op}
-	res, err := t.stub.Update(ctx, &req)
-	if err != nil {
-		return http.StatusInternalServerError, err
+	if resp.StatusCode != 200 {
+		return errors.New("Internal server error")
 	}
 
-	if res.Status >= 200 || res.Status < 300 {
-		return int(res.Status), nil
-	}
-
-	return int(res.Status), nil
+	return nil
 }
 
-// Init initialises a new transport
-func newTransport(host, port string, sslEnabled bool) (*transport, error) {
-	dialOptions := []grpc.DialOption{}
-
-	if sslEnabled {
-		dialOptions = append(dialOptions, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
-	} else {
-		dialOptions = append(dialOptions, grpc.WithInsecure())
-	}
-
-	conn, err := grpc.Dial(host+":"+port, dialOptions...)
-	if err != nil {
-		return nil, err
-	}
-
-	stub := proto.NewSpaceCloudClient(conn)
-	return &transport{conn, stub}, nil
-}
-
+// RoutineMetrics routinely sends anonymous metrics
 func (s *Server) RoutineMetrics() {
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 
-	id := uuid.NewV1().String()
-	col := "metrics"
-	project := "crm"
-	m := &proto.Meta{Col: col, DbType: "mongo", Project: project}
-
-	// Create the find and update clauses
-	find := map[string]interface{}{"_id": id}
-	update := map[string]interface{}{
-		"$currentDate": map[string]interface{}{
-			"lastUpdated": map[string]interface{}{"$type": "date"},
-			"startTime":   map[string]interface{}{"$type": "date"},
-		},
-	}
-	set := map[string]interface{}{
-		"os":      runtime.GOOS,
-		"isProd":  s.isProd,
-		"version": utils.BuildVersion,
-	}
-
-	// Connect to metrics Server
-	trans, err := newTransport("spaceuptech.com", "11001", true)
+	find, update := s.generateMetricsRequest()
+	err := updateSCMetrics(find, update)
 	if err != nil {
-		fmt.Println("Metrics Error -", err)
-		return
-	}
-
-	s.lock.Lock()
-	if s.config != nil && s.config.Modules != nil {
-		set["project"] = getProjectInfo(s.config.Modules)
-		set["projectId"] = s.config.ID
-		set["sslEnabled"] = s.config.SSL != nil
-	}
-	s.lock.Unlock()
-
-	update["$set"] = set
-	status, err := trans.update(context.TODO(), m, "upsert", find, update)
-	if err != nil {
-		fmt.Println("Metrics Error -", err)
-		return
-	}
-
-	if status != 200 {
-		fmt.Println("Metrics Error - Upsert failed: Invalid status code ", status)
-		return
+		// fmt.Println("Metrics Error -", err)
 	}
 
 	for range ticker.C {
-		update := map[string]interface{}{
-			"$currentDate": map[string]interface{}{"lastUpdated": map[string]interface{}{"$type": "date"}},
-		}
-
-		s.lock.Lock()
-		if s.config != nil && s.config.Modules != nil {
-			set["project"] = getProjectInfo(s.config.Modules)
-			set["projectId"] = s.config.ID
-			set["sslEnabled"] = s.config.SSL != nil
-		}
-		s.lock.Unlock()
-
-		update["$set"] = set
-		status, err := trans.update(context.TODO(), m, "one", find, update)
+		find, update := s.generateMetricsRequest()
+		err := updateSCMetrics(find, update)
 		if err != nil {
-			log.Println("Metrics Error -", err)
-		}
-
-		if status != 200 {
-			log.Println("Metrics Error - Invalid status code ", status)
+			// fmt.Println("Metrics Error -", err)
 		}
 	}
 }
 
-func getProjectInfo(config *config.Modules) map[string]interface{} {
-	project := map[string]interface{}{
-		"crud":      []string{},
-		"functions":      map[string]interface{}{"enabled": false},
-		"realtime":  map[string]interface{}{"enabled": false},
-		"fileStore": map[string]interface{}{"enabled": false},
-		"auth":      []string{},
-	}
+func getProjectInfo(config *config.Modules, static *config.Static) map[string]interface{} {
+
+	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
+	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
+	realtimeConfig := map[string]interface{}{"enabled": false}
+	fileStoreConfig := map[string]interface{}{"enabled": false, "storeTypes": []string{}, "rules": 0}
+	staticConfig := map[string]interface{}{"routes": 0, "internalRoutes": 0}
+	auth := []string{}
 
 	if config.Crud != nil {
-		crud := []string{}
-		for k := range config.Crud {
-			crud = append(crud, k)
+		for k, v := range config.Crud {
+			if v.Enabled {
+				crudConfig["dbs"] = append(crudConfig["dbs"].([]string), k)
+				if v.Collections != nil {
+					crudConfig["collections"] = crudConfig["collections"].(int) + len(v.Collections)
+				}
+			}
 		}
-		project["crud"] = crud
 	}
 
 	if config.Auth != nil {
-		auth := []string{}
 		for k, v := range config.Auth {
 			if v.Enabled {
 				auth = append(auth, k)
 			}
 		}
-		project["auth"] = auth
 	}
 
-	if config.Functions != nil {
-		project["functions"] = map[string]interface{}{"enabled": config.Functions.Enabled}
+	if config.Functions != nil && config.Functions.Enabled {
+		functionsConfig["enabled"] = true
+		if config.Functions.Services != nil {
+			functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Services)
+			for _, v := range config.Functions.Services {
+				if v != nil && v.Functions != nil {
+					functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v.Functions)
+				}
+			}
+		}
 	}
 
-	if config.Realtime != nil {
-		project["realtime"] = map[string]interface{}{"enabled": config.Realtime.Enabled}
+	if config.Realtime != nil && config.Realtime.Enabled {
+		realtimeConfig["enabled"] = true
 	}
 
-	if config.FileStore != nil {
-		project["fileStore"] = map[string]interface{}{"enabled": config.FileStore.Enabled, "storeType": config.FileStore.StoreType}
+	if config.FileStore != nil && config.FileStore.Enabled {
+		fileStoreConfig["enabled"] = true
+		fileStoreConfig["storeTypes"] = []string{config.FileStore.StoreType}
+		if config.FileStore.Rules != nil {
+			fileStoreConfig["rules"] = len(config.FileStore.Rules)
+		}
 	}
 
-	return project
+	if static != nil {
+		if static.Routes != nil {
+			staticConfig["routes"] = len(static.Routes)
+		}
+		if static.InternalRoutes != nil {
+			staticConfig["internalRoutes"] = len(static.InternalRoutes)
+		}
+	}
+
+	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "auth": auth, "static": staticConfig}
 }

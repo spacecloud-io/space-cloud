@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"io"
+	"net/http"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -14,6 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/client"
 )
 
+// Create inserts document(s) into the database
 func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response, error) {
 	// Create a create request
 	req := model.CreateRequest{}
@@ -51,6 +52,7 @@ func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 	return &pb.Response{Status: http.StatusOK}, nil
 }
 
+// Read queries document(s) from the database
 func (s *Server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, error) {
 	req := model.ReadRequest{}
 	temp := map[string]interface{}{}
@@ -93,6 +95,7 @@ func (s *Server) Read(ctx context.Context, in *pb.ReadRequest) (*pb.Response, er
 	return &pb.Response{Status: http.StatusOK, Result: resultBytes}, nil
 }
 
+// Update updates document(s) from the database
 func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response, error) {
 	req := model.UpdateRequest{}
 	temp := map[string]interface{}{}
@@ -133,6 +136,7 @@ func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 	return &pb.Response{Status: http.StatusOK}, nil
 }
 
+// Delete deletes document(s) from the database
 func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response, error) {
 	// Load the request from the body
 	req := model.DeleteRequest{}
@@ -169,6 +173,7 @@ func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 	return &pb.Response{Status: http.StatusOK}, nil
 }
 
+// Aggregate aggregates document(s) from the database
 func (s *Server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Response, error) {
 	req := model.AggregateRequest{}
 	temp := []map[string]interface{}{}
@@ -199,6 +204,7 @@ func (s *Server) Aggregate(ctx context.Context, in *pb.AggregateRequest) (*pb.Re
 	return &pb.Response{Status: http.StatusOK, Result: resultBytes}, nil
 }
 
+// Batch performs a batch operation on the database
 func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, error) {
 	type msg struct {
 		id, col string
@@ -208,6 +214,10 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 	allRequests := []model.AllRequest{}
 	for i, req := range in.Batchrequest {
+		// Make status and error variables
+		var status int
+		var err error
+
 		switch req.Type {
 		case string(utils.Create):
 			eachReq := model.AllRequest{}
@@ -216,8 +226,8 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			r := model.CreateRequest{}
 			var temp interface{}
-			if err := json.Unmarshal(req.Document, &temp); err != nil {
-				return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
+			if err = json.Unmarshal(req.Document, &temp); err != nil {
+				status = http.StatusInternalServerError
 			}
 			r.Document = temp
 			eachReq.Document = temp
@@ -228,14 +238,12 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsCreateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err != nil {
-				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+			status, err = s.auth.IsCreateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
+			if err == nil {
+				// Send realtime message intent
+				msgID := s.realtime.SendCreateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+				msgIDs[i] = &msg{id: msgID, col: req.Col}
 			}
-
-			// Send realtime message intent
-			msgID := s.realtime.SendCreateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-			msgIDs[i] = &msg{id: msgID, col: req.Col}
 
 		case string(utils.Update):
 			eachReq := model.AllRequest{}
@@ -251,8 +259,8 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			eachReq.Find = temp
 
 			temp = map[string]interface{}{}
-			if err := json.Unmarshal(req.Update, &temp); err != nil {
-				return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
+			if err = json.Unmarshal(req.Update, &temp); err != nil {
+				status = http.StatusInternalServerError
 			}
 			r.Update = temp
 			eachReq.Update = temp
@@ -263,14 +271,12 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsUpdateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err != nil {
-				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+			status, err = s.auth.IsUpdateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
+			if err == nil {
+				// Send realtime message intent
+				msgID := s.realtime.SendUpdateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+				msgIDs[i] = &msg{id: msgID, col: req.Col}
 			}
-
-			// Send realtime message intent
-			msgID := s.realtime.SendUpdateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-			msgIDs[i] = &msg{id: msgID, col: req.Col}
 
 		case string(utils.Delete):
 			eachReq := model.AllRequest{}
@@ -279,8 +285,8 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			r := model.DeleteRequest{}
 			temp := map[string]interface{}{}
-			if err := json.Unmarshal(req.Find, &temp); err != nil {
-				return &pb.Response{Status: 500, Error: err.Error()}, nil
+			if err = json.Unmarshal(req.Find, &temp); err != nil {
+				status = http.StatusInternalServerError
 			}
 			r.Find = temp
 			eachReq.Find = temp
@@ -291,16 +297,27 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 			allRequests = append(allRequests, eachReq)
 
 			// Check if the user is authenticated
-			status, err := s.auth.IsDeleteOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err != nil {
-				return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+			status, err = s.auth.IsDeleteOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
+			if err == nil {
+				// Send realtime message intent
+				msgID := s.realtime.SendDeleteIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
+				msgIDs[i] = &msg{id: msgID, col: req.Col}
 			}
-
-			// Send realtime message intent
-			msgID := s.realtime.SendDeleteIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-			msgIDs[i] = &msg{id: msgID, col: req.Col}
 		}
+
+		// Send negative acks and send error response
+		for j := 0; j < i; j++ {
+			s.realtime.SendAck(msgIDs[j].id, in.Meta.Project, msgIDs[j].col, false)
+		}
+
+		if err != nil {
+			return &pb.Response{Status: int32(status), Error: err.Error()}, nil
+		}
+
+		// Send gRPC Response
+		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
+
 	// Perform the Batch operation
 	batch := model.BatchRequest{}
 	batch.Requests = allRequests
@@ -324,6 +341,7 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	return &pb.Response{Status: http.StatusOK}, nil
 }
 
+// Call invokes a function on the provided services
 func (s *Server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Response, error) {
 	var params interface{}
 	if err := json.Unmarshal(in.Params, &params); err != nil {
@@ -347,6 +365,7 @@ func (s *Server) Call(ctx context.Context, in *pb.FunctionsRequest) (*pb.Respons
 	return &pb.Response{Result: data, Status: 200}, nil
 }
 
+// Service registers and handles all opertions of a service
 func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	c := client.CreateGRPCServiceClient(stream)
 	defer s.functions.UnregisterService(c.ClientID())
@@ -381,6 +400,7 @@ func (s *Server) Service(stream pb.SpaceCloud_ServiceServer) error {
 	return nil
 }
 
+// RealTime registers and handles all opertions of a live query
 func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	c := client.CreateGRPCRealtimeClient(stream)
 	defer s.realtime.RemoveClient(c.ClientID())
@@ -430,6 +450,7 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 	return nil
 }
 
+// Profile queries the user's profiles
 func (s *Server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Response, error) {
 	status, result, err := s.user.Profile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id)
 	out := pb.Response{}
@@ -449,6 +470,7 @@ func (s *Server) Profile(ctx context.Context, in *pb.ProfileRequest) (*pb.Respon
 	return &out, nil
 }
 
+// Profiles queries all user profiles
 func (s *Server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Response, error) {
 	status, result, err := s.user.Profiles(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project)
 	out := pb.Response{}
@@ -468,6 +490,7 @@ func (s *Server) Profiles(ctx context.Context, in *pb.ProfilesRequest) (*pb.Resp
 	return &out, nil
 }
 
+// EditProfile edits a user's profiles
 func (s *Server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*pb.Response, error) {
 	status, result, err := s.user.EmailEditProfile(ctx, in.Meta.Token, in.Meta.DbType, in.Meta.Project, in.Id, in.Email, in.Name, in.Password)
 	out := pb.Response{}
@@ -487,6 +510,7 @@ func (s *Server) EditProfile(ctx context.Context, in *pb.EditProfileRequest) (*p
 	return &out, nil
 }
 
+// SignIn signs a user in
 func (s *Server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response, error) {
 	status, result, err := s.user.EmailSignIn(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Password)
 	out := pb.Response{}
@@ -506,6 +530,7 @@ func (s *Server) SignIn(ctx context.Context, in *pb.SignInRequest) (*pb.Response
 	return &out, nil
 }
 
+// SignUp signs up a user
 func (s *Server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response, error) {
 	status, result, err := s.user.EmailSignUp(ctx, in.Meta.DbType, in.Meta.Project, in.Email, in.Name, in.Password, in.Role)
 	out := pb.Response{}
@@ -525,8 +550,9 @@ func (s *Server) SignUp(ctx context.Context, in *pb.SignUpRequest) (*pb.Response
 	return &out, nil
 }
 
+// CreateFolder creates a new folder
 func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (*pb.Response, error) {
-	status, err := s.file.CreateDir(ctx, in.Meta.Project, in.Meta.Token, &model.CreateFileRequest{Name: in.Name, Path: in.Path, Type: "dir", MakeAll: false})
+	status, err := s.file.CreateDir(in.Meta.Project, in.Meta.Token, &model.CreateFileRequest{Name: in.Name, Path: in.Path, Type: "dir", MakeAll: false})
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -538,8 +564,9 @@ func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (
 	return &out, nil
 }
 
+// DeleteFile deletes a file
 func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.Response, error) {
-	status, err := s.file.DeleteFile(ctx, in.Meta.Project, in.Meta.Token, in.Path)
+	status, err := s.file.DeleteFile(in.Meta.Project, in.Meta.Token, in.Path)
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -551,8 +578,9 @@ func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.
 	return &out, nil
 }
 
+// ListFiles lists all files in the provided folder
 func (s *Server) ListFiles(ctx context.Context, in *pb.ListFilesRequest) (*pb.Response, error) {
-	status, result, err := s.file.ListFiles(ctx, in.Meta.Project, in.Meta.Token, &model.ListFilesRequest{Path: in.Path, Type: "all"})
+	status, result, err := s.file.ListFiles(in.Meta.Project, in.Meta.Token, &model.ListFilesRequest{Path: in.Path, Type: "all"})
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {
@@ -570,22 +598,20 @@ func (s *Server) ListFiles(ctx context.Context, in *pb.ListFilesRequest) (*pb.Re
 	return &out, nil
 }
 
+// UploadFile uploads a file
 func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
 	req, err := stream.Recv()
 	if err != nil {
-		return stream.SendAndClose(&pb.Response{
-			Status: int32(http.StatusInternalServerError),
-			Error: err.Error(),
-		})
+		return stream.SendAndClose(&pb.Response{Status: int32(http.StatusInternalServerError), Error: err.Error()})
 	}
 
 	c := make(chan int)
 	r, w := io.Pipe()
 	// defer r.Close()
 	// defer w.Close()
-	
+
 	go func() {
-		status, err1 := s.file.UploadFile(context.TODO(), req.Meta.Project, req.Meta.Token, &model.CreateFileRequest{req.Path, req.Name, "file", true}, r)
+		status, err1 := s.file.UploadFile(req.Meta.Project, req.Meta.Token, &model.CreateFileRequest{Path: req.Path, Name: req.Name, Type: "file", MakeAll: true}, r)
 		c <- status
 		if err1 != nil {
 			err = err1
@@ -608,27 +634,19 @@ func (s *Server) UploadFile(stream pb.SpaceCloud_UploadFileServer) error {
 		}
 		w.Close()
 	}()
-	
-	status := <- c
+
+	status := <-c
 	if err != nil {
-		return stream.SendAndClose(&pb.Response{
-			Status: int32(status),
-			Error: err.Error(),
-		})
+		return stream.SendAndClose(&pb.Response{Status: int32(status), Error: err.Error()})
 	}
-	return stream.SendAndClose(&pb.Response{
-		Status: int32(status),
-		Result: []byte(""),
-	})	
+	return stream.SendAndClose(&pb.Response{Status: int32(status), Result: []byte("")})
 }
 
+// DownloadFile downloads a file
 func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_DownloadFileServer) error {
-	status, file, err := s.file.DownloadFile(context.TODO(), in.Meta.Project, in.Meta.Token, in.Path)
+	status, file, err := s.file.DownloadFile(in.Meta.Project, in.Meta.Token, in.Path)
 	if err != nil {
-		stream.Send(&pb.FilePayload{
-			Status: int32(status),
-			Error: err.Error(),
-		})
+		stream.Send(&pb.FilePayload{Status: int32(status), Error: err.Error()})
 		return nil
 	}
 	defer file.Close()
@@ -636,21 +654,112 @@ func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_D
 	buf := make([]byte, utils.PayloadSize)
 	for {
 		n, err := file.File.Read(buf)
-        if n > 0 {
+		if n > 0 {
 			buf = buf[:n]
 		}
-        if err == io.EOF {
-            break
-        }
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
-			stream.Send(&pb.FilePayload{
-				Status: int32(http.StatusInternalServerError),
-				Error: err.Error(),
-			})
+			stream.Send(&pb.FilePayload{Status: int32(http.StatusInternalServerError), Error: err.Error()})
 			break
 		}
 		req := pb.FilePayload{Payload: buf, Status: int32(http.StatusOK)}
 		stream.Send(&req)
 	}
+	return nil
+}
+
+// PubsubPublish publishes to the pubsub module, using the pubsub module
+func (s *Server) PubsubPublish(ctx context.Context, in *pb.PubsubPublishRequest) (*pb.Response, error) {
+	var v interface{}
+	err := json.Unmarshal(in.Msg, &v)
+	if err != nil {
+		return &pb.Response{Status: int32(500), Error: err.Error()}, nil
+	}
+	status, err := s.pubsub.Publish(in.Meta.Project, in.Meta.Token, in.Subject, in.Msg)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+	}
+	return &out, nil
+}
+
+// PubsubSubscribe subscribes to a particular subject, using the pubsub module
+func (s *Server) PubsubSubscribe(stream pb.SpaceCloud_PubsubSubscribeServer) error {
+	c := client.CreateGRPCPubsubClient(stream)
+	defer s.pubsub.UnsubscribeAll(c.ClientID())
+	defer c.Close()
+	go c.RoutineWrite()
+
+	// Get GRPC Service client details
+	clientID := c.ClientID()
+	c.Read(func(req *model.Message) bool {
+		switch req.Type {
+		case utils.TypePubsubSubscribe:
+			// For pubsub subscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			// Subscribe to pubsub feed
+			var status int
+			var err error
+			if data.Queue == "" {
+				status, err = s.pubsub.Subscribe(data.Project, data.Token, clientID, data.Subject, func(msg *model.PubsubMsg) {
+					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribeFeed, Data: msg})
+				})
+			} else {
+				status, err = s.pubsub.QueueSubscribe(data.Project, data.Token, clientID, data.Subject, data.Queue, func(msg *model.PubsubMsg) {
+					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribeFeed, Data: msg})
+				})
+			}
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
+
+		case utils.TypePubsubUnsubscribe:
+			// For pubsub unsubscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			status, err := s.pubsub.Unsubscribe(clientID, data.Subject)
+
+			// Send response to c
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
+		case utils.TypePubsubUnsubscribeAll:
+			// For pubsub unsubscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			status, err := s.pubsub.UnsubscribeAll(clientID)
+
+			// Send response to c
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
+		}
+		return true
+	})
 	return nil
 }

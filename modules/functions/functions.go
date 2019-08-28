@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/nats-io/go-nats"
+	nats "github.com/nats-io/nats.go"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -41,31 +41,23 @@ func (m *Module) SetConfig(functions *config.Functions) error {
 		return nil
 	}
 
-	// Close the nats client if exists
-	if m.nc != nil {
-		m.nc.Close()
-	}
-
-	// Close the channel if exists
-	if m.channel != nil {
-		close(m.channel)
-	}
-
 	// Connect and create a new nats client
 	if functions.Broker != utils.Nats {
 		return errors.New("Functions Error: Broker is not supported")
 	}
 
-	nc, err := nats.Connect(functions.Conn)
-	if err != nil {
-		return err
+	if m.nc == nil {
+		nc, err := nats.Connect(functions.Conn)
+		if err != nil {
+			return err
+		}
+		m.nc = nc
+
+		// Create new channel and start worker routines
+		m.channel = make(chan *nats.Msg, 10)
+		m.initWorkers(utils.FunctionsWorkerCount)
 	}
 
-	// Create new channel and start worker routines
-	m.channel = make(chan *nats.Msg, 10)
-	m.initWorkers(utils.FunctionsWorkerCount)
-
-	m.nc = nc
 	m.enabled = true
 	return nil
 }

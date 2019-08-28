@@ -29,21 +29,31 @@ Space Cloud uses a broker with RPC semantics under the hood to heavy lift the sc
 
 ## Configure the functions module
 
-The config pertaining to functions module can be found inside the `functions` key under the `modules` object. Here's the snippet:
+Head over to the `Functions Mesh` section in Mission Control to configure the functions module.
 
-```yaml
-modules:
-  functions:
-    enabled: true
-    broker: nats
-    conn: nats://localhost:4222
-    rules:
-      service-name:
-        func-name:
-          rule: allow
+### Enabling the functions module
+Enable the switch in the upper right corner of `Functions Mesh` section to enable the functions module.
+
+### Configuring services
+
+Mission Control by default creates the configuration for a `default` service for you with a `default` function. The configuration of the `default` service/function is used when the configuration of requested service/function is not found.    
+
+The configuration of a service looks like the following: 
+
+```json
+{
+  "functions": {
+    "func1": {
+      "rule": {
+        "rule": "allow"
+      }
+    }
+  }
+}
 ```
 
-All you need to do is set the `enabled` field to true and provide the connection string of the broker. You can configure the security rules of a function under the `rules` section as shown above. You can learn more about securing the functions module in depth over [here](/docs/security/functions)
+The above example exposes all function calls to `func1`. You can learn more about securing the functions module in depth over [here](/docs/security/functions).  
+
 ## Next steps
 
 You can now see how to write the services on the backend and invoke them from the frontend.

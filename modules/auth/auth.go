@@ -11,9 +11,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
-// TokenClaims holds the JWT token claims
-type TokenClaims map[string]interface{}
-
 var (
 	// ErrInvalidSigningMethod denotes a jwt signing method type not used by Space Cloud.
 	ErrInvalidSigningMethod = errors.New("invalid signing method type")
@@ -23,13 +20,15 @@ var (
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
-	rules     config.Crud
-	secret    string
-	crud      *crud.Module
-	functions *functions.Module
-	fileRules map[string]*config.FileRule
-	funcRules config.FuncRules
-	project   string
+	rules         config.Crud
+	secret        string
+	crud          *crud.Module
+	functions     *functions.Module
+	fileRules     []*config.FileRule
+	funcRules     config.Services
+	pubsubRules   []*config.PubsubRule
+	project       string
+	fileStoreType string
 }
 
 // Init creates a new instance of the auth object
@@ -38,7 +37,7 @@ func Init(crud *crud.Module, functions *functions.Module) *Module {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions) {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions, pubsub *config.Pubsub) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -47,10 +46,15 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	m.secret = secret
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
+		m.fileStoreType = fileStore.StoreType
 	}
 
 	if functions != nil && functions.Enabled {
-		m.funcRules = functions.Rules
+		m.funcRules = functions.Services
+	}
+
+	if pubsub != nil && pubsub.Enabled {
+		m.pubsubRules = pubsub.Rules
 	}
 }
 

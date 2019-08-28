@@ -26,7 +26,7 @@ You can query all documents from your database that matches a particular conditi
 import { API, and, or, cond } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -51,7 +51,7 @@ db.get("todos").where(condition).apply().then(res => {
  <div id="get-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
 db.get("books").where(new Cond("author", "==", "myself")).apply(new Utils.ResponseListener() {
     @Override
@@ -81,7 +81,7 @@ db.get("books").where(new Cond("author", "==", "myself")).apply(new Utils.Respon
 from space_api import API, AND, OR, COND
 
 # Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 
 # Initialize database(s) you intend to use
 db = api.my_sql()
@@ -110,7 +110,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -165,88 +165,23 @@ db.getOne('todos').where(cond('_id', '==', 1)).apply().then(res => ...).catch(ex
   <div id="get-one-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.getOne("books").where(new Cond("id", "==", 1)).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            try {
-                Book b = response.getResult(Book.class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.getOne("books").where(new Cond("id", "==", 1)).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="get-one-python" class="col s12" style="padding:0">
     <pre>
      <code class="python">
-from space_api import API, AND, OR, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("author", "==", "SomeAuthor")
-
-# Get the book
 response = db.get_one("books").where(condition).apply()
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="get-one-golang" class="col s12" style="padding:0">
     <pre>
      <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.GetOne("books").Where(condition).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.GetOne("books").Where(condition).Apply()
       </code>
     </pre>
   </div>
@@ -278,88 +213,23 @@ db.distinct('todos').distinctKey('category').apply().then(res => ...).catch(ex =
   <div id="distinct-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
-db.distinct("books").apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if(statusCode==200) {
-            try {
-                Book[] books = response.getResults(Book[].class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.distinct("books").apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="distinct-python" class="col s12" style="padding:0">
     <pre>
      <code class="python">
-from space_api import API, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "SomeAuthor")
-
-# Get the books
 response = db.distinct("books").where(condition).apply()
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="distinct-golang" class="col s12" style="padding:0">
     <pre>
      <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Distinct("books").Where(condition).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v []map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Distinct("books").Where(condition).Apply()
       </code>
     </pre>
   </div>
@@ -391,94 +261,27 @@ db.count('todos').where(cond('categories', '==', 'some-category')).apply().then(
   <div id="count-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-Mongo db = api.Mongo();
-db.count("books").apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if(statusCode==200) {
-            try {
-                Book[] books = response.getResults(Book[].class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.count("books").apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="count-python" class="col s12" style="padding:0">
     <pre>
      <code class="python">
-from space_api import API, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.mongo()
-
-# The condition to be matched
 condition = COND("author", "==", "SomeAuthor")
-
-# Get the books
 response = db.count("books").where(condition).apply()
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="count-golang" class="col s12" style="padding:0">
     <pre>
      <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.Mongo()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Count("books").Where(condition).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v []map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Count("books").Where(condition).Apply()
       </code>
     </pre>
   </div>
 </div>
-
-> Note: `count` is only available in Mongo DB.
 
 As you would have noticed, the `count` method is asynchronous in nature. It takes the name of the concerned collection/table. The `apply` method actually triggers the given request to `space-cloud` and returns a promise where `res.data.result` is an integer specifying the number of documents matching the given condition.
 
@@ -498,7 +301,7 @@ Here's how you can aggregate documents in a single document by using `aggr`:
     <pre>
       <code class="javascript">
 const pipe = [
-    $match: { status: 'A' } },
+    { $match: { status: 'A' } },
     { $group: { _id: '$cust_id', total: { $sum: '$amount' } } }
   ]
   
@@ -517,21 +320,44 @@ db.aggr('posts').pipe(pipe).apply().then(res => {
    <div id="aggr-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Coming soon!      
+HashMap[] pipe = new HashMap[2];
+HashMap<String, Object> hm1 = new HashMap<>();
+HashMap<String, Object> h1 = new HashMap<>();
+h1.put("status", "A");
+hm1.put("$match", h1);
+pipe[0] = hm1;
+HashMap<String, Object> hm2 = new HashMap<>();
+HashMap<String, Object> h2 = new HashMap<>();
+HashMap<String, Object> h3 = new HashMap<>();
+h2.put("_id", "$cust_id");
+h2.put("$sum", "$amount");
+h2.put("total", h3);
+hm2.put("$group", h2);
+pipe[1] = hm2;
+db.aggr("posts").pipe(pipe).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="aggr-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Coming Soon
+pipe = [
+    {"$match": {"status": "A"}},
+    {"$group": {"_id": "$cust_id", "total": {"$sum": "amount"}}}
+]
+
+response = db.aggr("posts").pipe(pipe).apply()
       </code>
     </pre>
   </div>
   <div id="aggr-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-// Coming soon!
+pipe := []interface{}{
+  map[string]interface{}{"$match": map[string]interface{}{"status": "A"}},
+  map[string]interface{}{"$group": map[string]interface{}{"_id": "$cust_id", "total": map[string]interface{}{"$sum": "$amount"}}},
+}
+resp, err := db.Aggr("posts").Pipe(pipe).Apply()
       </code>
     </pre>
   </div>
@@ -539,7 +365,7 @@ db.aggr('posts').pipe(pipe).apply().then(res => {
 
 The `aggr` method takes a collection name and `pipe` method takes a [MongoDB pipeline](https://docs.mongodb.com/manual/core/aggregation-pipeline/). The `apply` methods triggers the request and result is received in `res.data.result`. 
 
-> Note: Aggregate functionality is only available in MongoDB
+> **Note:** Aggregate functionality is only available in MongoDB
 
 ## Read documents selectively
 
@@ -576,88 +402,23 @@ db.get('todos').where(condition).apply().then(res => ...)
    <div id="cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.get("books").where(new Cond("author", "==", "myself")).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            try {
-                Book[] books = response.getResults(Book[].class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.get("books").where(new Cond("author", "==", "myself")).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="cond-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("id", "==", "1")
-
-# Get the books
 response = db.get("books").where(condition).apply()
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="cond-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Get("books").Where(condition).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v []map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Get("books").Where(condition).Apply()
       </code>
     </pre>
   </div>
@@ -711,88 +472,23 @@ db.get('todos').where(condition).apply().then(res => ...);
    <div id="multiple-cond-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.get("books").where(Or.create(new Cond("author", "==", "myself"), new Cond("author", "==", "someAuthor"))).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            try {
-                Book[] books = response.getResults(Book[].class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.get("books").where(Or.create(new Cond("author", "==", "myself"), new Cond("author", "==", "someAuthor"))).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="multiple-cond-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = AND(COND("id", "==", "1"), COND("author", "==", "SomeAuthor"))
-
-# Get the books
 response = db.get("books").where(condition).apply()
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="multiple-cond-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Get("books").Where(condition).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v []map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Get("books").Where(condition).Apply()
       </code>
     </pre>
   </div>
@@ -828,91 +524,26 @@ db.get('posts').where(cond('category', '==', 'some-category'))
   <div id="select-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
 HashMap<String, Integer> select = new HashMap<>();
 select.put("name", 1);
-db.get("books").select(select).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            try {
-                Book[] books = response.getResults(Book[].class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.get("books").select(select).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="select-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("author", "==", "SomeAuthor")
-
-# Get the books
 response = db.get("books").where(condition).select({"name":1}).apply()
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="select-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	sel := map[string]int32{"name":1}
-	resp, err := db.Get("books").Where(condition).Select(sel).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v []map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+sel := map[string]int32{"name":1}
+resp, err := db.Get("books").Where(condition).Select(sel).Apply()
       </code>
     </pre>
   </div>
@@ -946,90 +577,25 @@ db.get('posts').where(cond('category', '==', 'some-category'))
   <div id="sort-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.get("books").sort("id", "-name").apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            try {
-                Book[] books = response.getResults(Book[].class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.get("books").sort("id", "-name").apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="sort-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("author", "==", "SomeAuthor")
-
-# Get the books
 response = db.get("books").where(condition).sort("name", "-id").apply()
 # "name" -> sort by name, ascending order
 # "-name" -> sort by name, descending order
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="sort-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Get("books").Where(condition).Sort("name", "-id").Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v []map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Get("books").Where(condition).Sort("name", "-id").Apply()
       </code>
     </pre>
   </div>
@@ -1065,88 +631,23 @@ db.get('posts').where(cond('category', '==', 'some-category'))
   <div id="skip-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.get("books").skip(2).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            try {
-                Book[] books = response.getResults(Book[].class);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.get("books").skip(2).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="skip-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("author", "==", "SomeAuthor")
-
-# Get the books
 response = db.get("books").where(condition).skip(1).apply()
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="skip-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Get("books").Where(condition).Skip(1).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v []map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Get("books").Where(condition).Skip(1).Apply()
       </code>
     </pre>
   </div>
@@ -1180,89 +681,23 @@ db.get('posts').where(cond('category', '==', 'some-category'))
   <div id="limit-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
-db.get("books").limit(2).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            try {
-                Book[] books = response.getResults(Book[].class);
-                System.out.println(books);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.get("books").limit(2).apply(myResponseListener);
       </code>
     </pre>
   </div>
   <div id="limit-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API, AND, OR, COND
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The condition to be matched
 condition = COND("author", "==", "SomeAuthor")
-
-# Get the books
 response = db.get("books").where(condition).limit(2).apply()
-if response.status == 200:
-    print(response.result)
-else:
-    print(response.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="limit-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"github.com/spaceuptech/space-api-go/api/utils"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	condition := utils.Cond("id", "==", 1)
-	resp, err := db.Get("books").Where(condition).Limit(2).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			var v []map[string]interface{}
-			err:= resp.Unmarshal(&v)
-			if err != nil {
-				fmt.Println("Error Unmarshalling:", err)
-			} else {
-				fmt.Println("Result:", v)
-			}
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+condition := utils.Cond("id", "==", 1)
+resp, err := db.Get("books").Where(condition).Limit(2).Apply()
       </code>
     </pre>
   </div>

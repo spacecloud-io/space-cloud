@@ -1,0 +1,65 @@
+.rules-main-wrapper {
+  box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.04), 0px 6px 12px rgba(0, 0, 0, 0.0125), 0px 12px 24px rgba(0, 0, 0, 0.00625), 0px 24px 48px rgba(0, 0, 0, 0.003125), 0px 48px 96px rgba(0, 0, 0, 0.003125);
+  margin-top: 40px;
+}
+
+.rules-main-wrapper .rulesTable {
+  border: 1px solid #E4E4E4;
+  height: 300px;
+  overflow-y: scroll;
+
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E0E0E0;
+}
+
+.rules-main-wrapper .rulesTable .rule {
+  padding: 20px;
+  border: 1px solid #E0E0E0;
+  color: #000;
+  font-weight: 600;
+}
+
+.rules-main-wrapper .rulesTable .selected {
+  border-left: 5px solid #FF6700;
+
+}
+
+.rules-main-wrapper .addaRule {
+  color: #1890FF;
+  padding: 20px;
+}
+
+.rules-main-wrapper .rulesTable .addaRule .addIcon {
+  margin-right: 20px
+}
+
+.rules-main-wrapper .code .code-hint {
+  padding: 20px;
+  border: 1px solid #E4E4E4;
+}
+
+.rules-main-wrapper .code .code-mirror {
+  height: 300px;
+}
+
+.rules-main-wrapper .add-a-rule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.rules-main-wrapper .add-a-rule .delete-icon, .rules-main-wrapper .addaRule {
+  cursor: pointer;
+}

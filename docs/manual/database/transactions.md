@@ -16,6 +16,7 @@ Here's a code snippet to batch multiple mutations in your app:
       <li class="tab col s2"><a class="active" href="#batch-js">Javascript</a></li>
       <li class="tab col s2"><a href="#batch-java">Java</a></li>
       <li class="tab col s2"><a href="#batch-python">Python</a></li>
+      <li class="tab col s2"><a href="#batch-golang">Golang</a></li>
     </ul>
   </div>
   <div id="batch-js" class="col s12" style="padding:0">
@@ -24,7 +25,7 @@ Here's a code snippet to batch multiple mutations in your app:
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -54,7 +55,31 @@ batch.apply()
   <div id="batch-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Coming soon!   
+API api = new API("books-app", "localhost", 4124);
+SQL db = api.MySQL();
+Batch batch = db.beginBatch();
+Map<String, String> document = new HashMap<>();
+document.put("name", "aBook");
+batch.add(db.insert("books").doc(document));
+HashMap<String, Object> set = new HashMap<>();
+set.put("name", "Book1");
+batch.add(db.update("books").where(new Cond("id", "==", 1)).set(set));
+batch.add(db.delete("books").where(new Cond("id", "==", 1)));
+batch.apply(new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+            System.out.println("Success");
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
@@ -63,7 +88,7 @@ batch.apply()
       <code class="python">
 from space_api import API, COND
 
-api = API('grpc', 'localhost:8081')
+api = API('grpc', 'localhost:4124')
 db = api.my_sql()
 
 b = db.begin_batch()
@@ -77,7 +102,28 @@ else:
   print(response.error)
 
 api.close()
+      </code>
+    </pre>
+  </div>
+  <div id="batch-golang" class="col s12" style="padding:0">
+    <pre>
+      <code class="golang">
+from space_api import API, COND
 
+api = API('grpc', 'localhost:4124')
+db = api.my_sql()
+
+b = db.begin_batch()
+b.add(db.insert('books').doc({"name": "MyBook", "author": "John Doe"}))
+b.add(db.insert('books').docs([{"name": "BookName"}, {"name": "BookName"}]))
+b.add(db.delete('books').where(COND('name', '!=', 'Book_name')))
+response = b.apply()
+if response.status == 200:
+  print("Success")
+else:
+  print(response.error)
+
+api.close()
       </code>
     </pre>
   </div>
@@ -85,7 +131,7 @@ api.close()
 
 The `add` method is used to add multiple db operations to a batch request. It can be called n number of times to add n number of operations to the batch. As you would have noticed, the batch is triggered by calling `batch.apply` after adding all the mutations. 
 
-> Note: `apply` is not to be used on individual operation in a batch request.
+> **Note:** `apply` is not to be used on individual operation in a batch request.
 
 ## Response
 

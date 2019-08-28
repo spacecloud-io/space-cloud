@@ -17,7 +17,7 @@ You can add data to your app by simply calling `db.insert` on the frontend. Here
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Initialize database(s) you intend to use
 const db = api.Mongo();
@@ -42,7 +42,7 @@ db.insert("todos").doc(doc).apply()
   <div id="insert-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 SQL db = api.MySQL();
 Map<String, String> document = new HashMap<>();
 document.put("name", "aBook");
@@ -70,7 +70,7 @@ db.insert("books").doc(document).apply(new Utils.ResponseListener() {
 from space_api import API
 
 # Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 
 # Initialize database(s) you intend to use
 db = api.my_sql()
@@ -97,7 +97,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}
@@ -146,8 +146,6 @@ db.insert('todos').docs(docs).apply().then(res => ...).catch(ex => ...);
   <div id="insertmany-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
-SQL db = api.MySQL();
 HashMap<String, String> document = new HashMap<>();
 document.put("name", "aBook");
 HashMap<String, String> document2 = new HashMap<>();
@@ -155,76 +153,25 @@ document2.put("name", "anotherBook");
 HashMap[] docs = new HashMap[2];
 docs[0] = document;
 docs[1] = document2;
-db.insert("books").docs(docs).apply(new Utils.ResponseListener() {
-    @Override
-    public void onResponse(int statusCode, Response response) {
-        if (statusCode == 200) {
-            System.out.println("Success");
-        } else {
-            System.out.println(response.getError());
-        }
-    }
-
-    @Override
-    public void onError(Exception e) {
-        System.out.println(e.getMessage());
-    }
-});
+db.insert("books").docs(docs).apply(myResponseListener);
       </code>
     </pre>
   </div>
  <div id="insertmany-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-from space_api import API
-
-# Initialize api with the project name and url of the space cloud
-api = API("books-app", "localhost:8081")
-
-# Initialize database(s) you intend to use
-db = api.my_sql()
-
-# The books to be created
 documents = [{"name": "SomeAwesomeBook"},{"name": "AnotherAwesomeBook"}]
-
 result = db.insert("books").docs(documents).apply()
-if result.status == 200:
-    print("Success")
-else:
-    print(result.error)
-
-api.close()
       </code>
     </pre>
   </div>
   <div id="insertmany-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-import (
-	"github.com/spaceuptech/space-api-go/api"
-	"fmt"
-)
-
-func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
-	if(err != nil) {
-		fmt.Println(err)
-	}
-	db := api.MySQL()
-	docs := make([]map[string]interface{}, 2)
-	docs[0] = map[string]interface{}{"name": "SomeBook"}
-	docs[1] = map[string]interface{}{"name": "SomeOtherBook"}
-	resp, err := db.Insert("books").Docs(docs).Apply()
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if resp.Status == 200 {
-			fmt.Println("Success")
-		} else {
-			fmt.Println("Error Processing Request:", resp.Error)
-		}
-	}
-}
+docs := make([]map[string]interface{}, 2)
+docs[0] = map[string]interface{}{"name": "SomeBook"}
+docs[1] = map[string]interface{}{"name": "SomeOtherBook"}
+resp, err := db.Insert("books").Docs(docs).Apply()
       </code>
     </pre>
   </div>

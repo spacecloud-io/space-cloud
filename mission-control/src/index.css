@@ -1,0 +1,34 @@
+body {
+  font-family: 'Raleway', sans-serif;
+  margin: 0;
+}
+
+.page-content {
+  padding: 48px 120px 0 56px;
+  position: absolute;
+  top: 51px;
+  left: 250px;
+  right: 0;
+}
+
+.flex-blox {
+  display: flex;
+}
+
+.header-flex {
+  display: flex;
+  justify-content: space-between;
+}
+
+.discord {
+  background: #ffffff;
+  box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  z-index: 8;
+  padding: 0 8px;
+  right: 3vw;
+  position: fixed;
+  bottom: 30px;
+  cursor: pointer;
+  color: #002c39;
+}

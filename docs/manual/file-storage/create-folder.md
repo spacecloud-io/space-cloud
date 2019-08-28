@@ -17,7 +17,7 @@ You can easily allow users to create a folder via the File Management module of 
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Create a folder
 api.FileStore()
@@ -37,21 +37,65 @@ api.FileStore()
   <div id="create-folder-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 4124);
+FileStore fileStore = api.fileStore();
+
+fileStore.createFolder("\\", "aNewFolder", new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        if (statusCode == 200) {
+          System.out.println("Success");
+        } else {
+          System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
  <div id="create-folder-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+# Initialize api with the project name and url of the space cloud
+api = API("books-app", "localhost:4124")
+
+# Initialize file storage module
+file_store = api.file_store()
+
+# Create a folder ("folder" [remote]) in the location ("\\" [remote])
+response = file_store.create_folder("\\", "folder")
+if response.status == 200:
+    print("Success")
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
   <div id="create-folder-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-// Golang client coming soon!
+api, err := api.New("books-app", "localhost:4124", false)
+if(err != nil) {
+  fmt.Println(err)
+}
+filestore := api.Filestore()
+resp, err := filestore.CreateFolder("\\myFolder100", "Folder1")
+if err != nil {
+  fmt.Println("Error:", err)
+} else {
+  if resp.Status == 200 {
+    fmt.Println("Success")
+  } else {
+    fmt.Println("Error Processing Request:", resp.Error)
+  }
+}
       </code>
     </pre>
   </div>

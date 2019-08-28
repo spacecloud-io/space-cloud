@@ -7,12 +7,8 @@ User management is used for managing the various sign in methods which are gener
 
 
 The various sign in methods supported are:
-- OAuth (Coming Soon)
-- Facebook
-- Google
-- Github
-- Twitter
 - Basic (email & password sign in)
+- OAuth (Coming Soon)
 
 ## Prerequisites
 - A running database (We'll be using MongoDB in this example)
@@ -41,7 +37,7 @@ A sample object in JSON will have the following format
   "id":    "string", // this will be _id for MongoDB
   "email": "string",
   "name":  "string",
-  "pass":  "string",
+  "pass":  "string", // The password field is bcrypted
   "role":  "string"
 }
 ```

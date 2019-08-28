@@ -16,7 +16,7 @@ You can call a function running on the backend (written via functions module of 
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Call a function running 'my-func' of 'my-service' running on backend
 api.call('my-service', 'my-func', { msg: 'Space Cloud is awesome!' }, 1000)
@@ -33,7 +33,7 @@ api.call('my-service', 'my-func', { msg: 'Space Cloud is awesome!' }, 1000)
   <div id="client-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-API api = new API("books-app", "localhost", 8081);
+API api = new API("books-app", "localhost", 4124);
 Utils.ResponseListener responseListener = new Utils.ResponseListener() {
     @Override
     public void onResponse(int statusCode, Response response) {
@@ -58,7 +58,7 @@ api.call("service", "echo_func", 5000, "FaaS is awesome!", responseListener);
       <code class="python">
 from space_api import API
 
-api = API("books-app", "localhost:8081")
+api = API("books-app", "localhost:4124")
 # Call a function, 'my-func' of 'my-engine' running on backend
 response = api.call('my-engine', 'my-func', {"msg": 'Space Cloud is awesome!'}, 1000)
 if response.status == 200:
@@ -79,7 +79,7 @@ import (
 )
 
 func main() {
-	api, err := api.Init("books-app", "localhost", "8081", false)
+	api, err := api.New("books-app", "localhost:4124", false)
 	if(err != nil) {
 		fmt.Println(err)
 	}

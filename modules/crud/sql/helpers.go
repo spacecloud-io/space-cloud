@@ -6,7 +6,7 @@ import (
 	"log"
 	"strconv"
 
-	goqu "gopkg.in/doug-martin/goqu.v4"
+	goqu "github.com/doug-martin/goqu/v8"
 )
 
 func generator(find map[string]interface{}) goqu.Expression {
@@ -59,7 +59,8 @@ func generator(find map[string]interface{}) goqu.Expression {
 	}
 	return goqu.And(array...)
 }
-func generateWhereClause(q *goqu.Dataset, find map[string]interface{}) (query *goqu.Dataset, err error) {
+
+func generateWhereClause(q *goqu.SelectDataset, find map[string]interface{}) (query *goqu.SelectDataset, err error) {
 	query = q
 	err = nil
 	if len(find) == 0 {

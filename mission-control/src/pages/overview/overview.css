@@ -1,0 +1,72 @@
+.overview .flex-blox {
+  display: flex;
+}
+
+.overview .desc {
+  width: 60%;
+  color: #000;
+  font-size: 12px;
+  margin-bottom: 24px;
+  font-weight: 600;
+}
+
+.overview .circle {
+  height: 44px;
+  width: 44px;
+  border-radius: 50%;
+  background-color: #ff6700;
+  text-align: center;
+  display: inline-block;
+  margin-right: 14px;
+  cursor: pointer;
+}
+
+.overview .circle > img {
+  height: 25px;
+  width: 28px;
+  position: relative;
+  transform: translateY(35%);
+}
+
+.overview .get-started{
+  background: #1890FF;
+  border-color: #1890FF;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 20px;
+  text-align: center; 
+  cursor: pointer;
+}
+
+.overview .ant-btn-primary:focus {
+  background: #1890FF;
+  border-color: #1890FF;
+}
+
+.overview .ant-btn-round.ant-btn-lg {
+  height: 36px;
+  padding: 0 16px;
+}
+
+.overview .sepration{
+  height: 56px;
+  width:3px;
+  background: #979797;
+  margin-right: 32px;
+  margin-left: 16px;
+}
+
+.overview .lang {
+  display: flex;
+  align-items: center;
+  margin-bottom: 64px;
+}
+
+.overview .overview-padding {
+  margin-left: 20px;
+}
+
+.overview .page-content{
+  margin-bottom: 72px;
+}
+

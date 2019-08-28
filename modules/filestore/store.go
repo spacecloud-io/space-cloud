@@ -1,7 +1,6 @@
 package filestore
 
 import (
-	"context"
 	"io"
 	"sync"
 
@@ -9,9 +8,10 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
+	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/filestore/amazons3"
 	"github.com/spaceuptech/space-cloud/modules/filestore/local"
-	"github.com/spaceuptech/space-cloud/modules/auth"
+	"github.com/spaceuptech/space-cloud/modules/filestore/gcpstorage"
 )
 
 // Module is responsible for managing the file storage module
@@ -29,14 +29,14 @@ func Init(auth *auth.Module) *Module {
 
 // FileStore abstracts the implementation file storage operations
 type FileStore interface {
-	CreateFile(ctx context.Context, project string, req *model.CreateFileRequest, file io.Reader) error
-	CreateDir(ctx context.Context, project string, req *model.CreateFileRequest) error
+	CreateFile(req *model.CreateFileRequest, file io.Reader) error
+	CreateDir(req *model.CreateFileRequest) error
 
-	ListDir(ctx context.Context, project string, req *model.ListFilesRequest) ([]*model.ListFilesResponse, error)
-	ReadFile(ctx context.Context, project, path string) (*model.File, error)
+	ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error)
+	ReadFile(path string) (*model.File, error)
 
-	DeleteDir(ctx context.Context, project, path string) error
-	DeleteFile(ctx context.Context, project, path string) error
+	DeleteDir(path string) error
+	DeleteFile(path string) error
 
 	GetStoreType() utils.FileStoreType
 	Close() error
@@ -59,18 +59,13 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	if conf == nil || !conf.Enabled {
 		m.enabled = false
 
-		// Close the store if present
-		if m.store != nil {
-			m.store.Close()
-		}
-
-		// Clear th store object
+		// Clear the store object
 		m.store = nil
 		return nil
 	}
 
 	// Create a new crud blocks
-	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn)
+	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn, conf.Endpoint, conf.Bucket)
 	if err != nil {
 		return err
 	}
@@ -86,12 +81,14 @@ func (m *Module) IsEnabled() bool {
 	return m.enabled
 }
 
-func initBlock(fileStoreType utils.FileStoreType, connection string) (FileStore, error) {
+func initBlock(fileStoreType utils.FileStoreType, connection, endpoint, bucket string) (FileStore, error) {
 	switch fileStoreType {
 	case utils.Local:
 		return local.Init(connection)
 	case utils.AmazonS3:
-		return amazons3.Init(connection) // connection is the aws region code
+		return amazons3.Init(connection, endpoint, bucket) // connection is the aws region code
+	case utils.GCPStorage:
+		return gcpstorage.Init(bucket)
 	default:
 		return nil, utils.ErrInvalidParams
 	}

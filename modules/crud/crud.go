@@ -2,7 +2,7 @@ package crud
 
 import (
 	"context"
-	"errors"
+	"log"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -29,6 +29,7 @@ type Crud interface {
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) error
 	GetDBType() utils.DBType
+	IsClientSafe() error
 	Close() error
 }
 
@@ -37,30 +38,17 @@ func Init() *Module {
 	return &Module{blocks: make(map[string]Crud)}
 }
 
-func initBlock(dbType utils.DBType, connection string) (Crud, error) {
+func initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
 	switch dbType {
 	case utils.Mongo:
-		return mgo.Init(connection)
+		return mgo.Init(enabled, connection)
 
 	case utils.MySQL, utils.Postgres:
-		return sql.Init(dbType, connection)
+		return sql.Init(dbType, enabled, connection)
 
 	default:
 		return nil, utils.ErrInvalidParams
 	}
-}
-
-// GetPrimaryDB get the database configured as primary
-func (m *Module) GetPrimaryDB() (Crud, error) {
-	m.RLock()
-	defer m.RUnlock()
-
-	c, p := m.blocks[m.primaryDB]
-	if !p {
-		return nil, errors.New("CRUD: Primary DB not configured")
-	}
-
-	return c, nil
 }
 
 func (m *Module) getCrudBlock(dbType string) (Crud, error) {
@@ -68,11 +56,11 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 		return crud, nil
 	}
 
-	return nil, errors.New("CRUD: No crud block present for db")
+	return nil, utils.ErrDatabaseConfigAbsent
 }
 
 // SetConfig set the rules adn secret key required by the crud block
-func (m *Module) SetConfig(crud config.Crud) error {
+func (m *Module) SetConfig(crud config.Crud) {
 	m.Lock()
 	defer m.Unlock()
 
@@ -84,20 +72,13 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 	// Create a new crud blocks
 	for k, v := range crud {
-		// Skip this block if it is not enabled
-		if !v.Enabled {
-			continue
-		}
-
-		c, err := initBlock(utils.DBType(k), v.Conn)
-		if err != nil {
-			return errors.New("CURD: Error - " + k + " could not be initialised")
-		}
-		if v.IsPrimary {
-			m.primaryDB = k
-		}
+		c, err := initBlock(utils.DBType(k), v.Enabled, v.Conn)
 		m.blocks[k] = c
-	}
 
-	return nil
+		if err != nil {
+			log.Println("Error connecting to " + k + " : " + err.Error())
+		} else {
+			log.Println("Successfully connected to " + k)
+		}
+	}
 }

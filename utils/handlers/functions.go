@@ -55,6 +55,6 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(result)
+		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
 }

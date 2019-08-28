@@ -1,0 +1,52 @@
+.configure {
+  display: flex;
+}
+
+.configure  .conn-string {
+  color: #000;
+  height: 31px;
+  width: 120px;
+  text-align: center;
+  line-height: 31px;
+  font-size: 16px;
+  margin-right: 100px;
+}
+
+.configure .conn-form .conn-form-cert ,.configure .conn-form .conn-form-switch,.configure .conn-form .conn-form-key{
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+  height: 36px;
+}
+
+.configure .conn-form .conn-form-options {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.configure .conn-form .conn-form-options .select  {
+  width: 100px;
+}
+
+.configure .ant-form-item-contro {
+  line-height: 70px;
+}
+
+.configure .ant-input {
+  height: 36px;
+}
+
+.configure .static {
+  width: 610px;
+  position: relative;
+}
+
+.configure .static-switch {
+  position: absolute;
+  right: 0;
+}
+
+.file-storage .conn-form-cert{
+  margin-bottom: 8px;
+}

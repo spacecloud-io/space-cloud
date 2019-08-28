@@ -1,18 +1,18 @@
-# Quick start (Manual)
+# Quick start (Using Binary)
 
-This guide will help you get started with Space Cloud quickly on your local machine. You will go through how to develop a realtime todo app using Space Cloud and MongoDB. We'll be deploying the `space-cloud` binary manually.
+This guide will help you setup `space-cloud` binary quickly on your local machine. It will guide you through exploring the Space Cloud APIs on MongoDB without having to set up any project.
 
-> Note: If you instead want to start a project from scratch using `space-cloud`, then check out the [getting started](/docs/getting-started) guide.
+If you instead want to start a project from scratch using `space-cloud`, then check out the [getting started](/docs/getting-started) guide.
 
 ## Prerequisites
 
 - [MongoDB Database](https://docs.mongodb.com/manual/installation/)
 
-> Note: MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as its database.
+> **Note:** MongoDB is not a dependency of Space Cloud. We are using MongoDB in this guide for ease of use because of it's schemaless nature.
 
-## Step 1: Download `space-cloud`
+## Step 1: Download Space Cloud
 
-The first step is to download the `space-cloud` binary. This binary is the server creating the endpoints and connecting to your database. You need to download binary for your operating system or you could build it directly from its source code. You will need go version 1.11.2 or later to build it from source.
+The first step is to download the `space-cloud` binary. You need to download binary for your operating system or you could build it directly from its source code. You will need go version 1.12.0 or later to build it from source.
 
 Download the binary for your OS from here:
 
@@ -26,86 +26,160 @@ You can unzip the compressed archive
 
 **For Windows:** Right click on the archive and select `extract here`.
 
-## Step 2: Download the sample config file
+To make sure if `space-cloud` binary is correct, type the following command from the directory where `space-cloud` is downloaded:
 
-Space Cloud needs a config file in order to function. The config file is used to load information like the database to be used, its connection string, security rules, etc. You can find the config used for our todo app [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/config.yaml).
+**For Linux / Mac:** `./space-cloud -v`
 
-This is how the config file looks like.
+**For Windows:** `space-cloud.exe -v`
 
-```yaml
----
-id: space-cloud
-secret: some-secret
-modules:
-  crud:
-    mongo:
-      conn: mongodb://localhost:27017
-      isPrimary: true
-      collections:
-        todos:
-          isRealtimeEnabled: true
-          rules:
-            create:
-              rule: allow
-            read:
-              rule: allow
-            update:
-              rule: allow
-            delete:
-              rule: allow
-  auth:
-    email:
-      enabled: true
-  functions:
-    enabled: false
-    nats: nats://localhost:4222
-  realtime:
-    enabled: true
-    kafka: localhost
-  fileStore:
-    enabled: false
-    storeType: local
-    conn: ./
-    rules:
-      rule1:
-        prefix: /
-        rule:
-          create:
-            rule: allow
-          read:
-            rule: allow
-          delete:
-            rule: allow
+It should show something like this:
+```bash
+space-cloud-ee version 0.11.0
 ```
 
-Quickly going through it, `id` is the project name. `secret` is the secret key used for signing and parsing JWT tokens. All the configuration for individual modules goes under the `modules` key. Currently, `crud`, `auth` (user management), `functions`, `realtime` and `fileStore` are supported.
+## Step 2: Start Space Cloud
+> **Note:** Make sure your MongoDB is up and running before this point
 
-> Note: The in-depth configurations of various modules are explained in their corresponding sections.
+To start `space-cloud` in `dev` mode, just copy paste the following command and hit enter:
 
-## Step 3: Start Space Cloud
+**For Linux / Mac:** `./space-cloud run --dev`
 
-You can start `space-cloud` with the following command. Make sure MongoDB is running before this step.
+**For Windows:** `space-cloud.exe run --dev`
 
-**For Linux / Mac:** `./space-cloud run --config config.yaml`
+You should be seeing something like this when `space-cloud` starts:
 
-**For Windows:** `space-cloud.exe run --config config.yaml`
+```bash
+Starting Nats Server
+Starting grpc server on port: 4124
+2019/08/03 08:00:38 Syncman node query response error: failed to respond to key query: response is past the deadline
+Starting http server on port: 4122
 
-That's it. Your backend is up and running!
+	 Hosting mission control on http://localhost:4122/mission-control/
 
-That was quick wasn't it?
+Space cloud is running on the specified ports :D
+``` 
+
+> **Note:** The `--dev` flag tells `space-cloud` to run in dev mode (so that the admin UI does not asks for a username and password)
+
+## Step 3: Configure Space Cloud
+
+As you would have noticed, on running `space-cloud`, a `config.yaml` file and a `raft-store` folder would have been generated in the directory from where you had run `space-cloud`.
+
+Space Cloud needs this config file in order to function. The config file is used to load information like the database to be used, its connection string, security rules, etc. 
+
+Space Cloud has it's own Mission Control (admin UI) to configure all of this in an easy way. 
+
+> **Note:** All changes to the config of `space-cloud` has to be done through the Mission Control only. Changes made manually to the config file will get overwritten. 
+
+
+### Open Mission Control
+
+Head over to `http://localhost:4122/mission-control` to open Mission Control.
+
+> **Note:** Replace `localhost` with the address of your Space Cloud if you are not running it locally. 
+
+### Creating a project
+Click on `Create a Project` button. 
+
+Give a `name` to your project. MongoDB will be selected as your database by default. Keep it as it is for this guide.
+
+Hit `Next` to create the project. On creation of project you will be directed to the project overview screen. 
+
+### Configuring DB config
+
+Head over to the `Database` section.
+
+The `Connection String` input contains the default connection string of MongoDB which is `mongodb://localhost:27017`.
+
+If your MongodDB isn't running on this address, then paste the `connection string` of your MongoDB over there and hit `Save` button. That's all what is required to configure Space Cloud for this guide!
 
 ## Step 4: Try it out
 
-Our backend is up and running. Time to show off it's awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using html and javascript which uses the backend you have just setup.
+Our backend is up and running, configured to expose APIs on MongoDB. Time to explore it's awesome powers. 
 
-Open it in two different windows by double clicking the html file twice, login into both and then try adding some todos to see the magic.
+## Space Cloud Explorer 
+
+Head over to the `Explorer` section. 
+
+The Explorer is a tool in Mission Control that lets you try Space Cloud APIs without actually setting up any frontend or backend project. It directly lets you run javascript APIs of `space-cloud` against itself.  
+
+> **Note:** The `api` object and certain helpers like `and`, `or` and `cond` for generating where clauses are available to all code snippets you run through the Explorer.
+
+### Inserting data
+
+Copy paste the following code in the Explorer and hit apply to insert multiple todos:
+
+```js
+const db = api.Mongo()
+const docs = [
+  {_id: "1", text: "Star Space Cloud on Github", date: new Date()},
+  {_id: "2", text: "Follow us on Twitter", date: new Date()},
+  {_id: "3", text: "Spread the love!", date: new Date()}
+]
+
+db.insert("todos").docs(docs).apply()
+```
+
+On successful insert, you should be able to see the `status` as `200` which means the documents were inserted in the database.
+
+### Querying all documents back
+To retrieve the documents from MongoDB using Space cloud, copy paste the following code in the Explorer and hit apply:
+
+```js
+const db = api.Mongo()
+
+db.get("todos").apply()
+```
+
+You should be able to see the `status` as `200` and the `result` with the documents you inserted in the previous step:
+```json
+{
+  "result": [
+    {
+      "_id": "1",
+      "date": "2019-08-03T03:24:43.641Z",
+      "text": "Star Space Cloud on Github"
+    },
+    {
+      "_id": "2",
+      "date": "2019-08-03T03:24:43.641Z",
+      "text": "Follow us on Twitter"
+    },
+    {
+      "_id": "3",
+      "date": "2019-08-03T03:24:43.641Z",
+      "text": "Spread the love!"
+    }
+  ]
+}
+```
+
+### Querying single document
+To retrieve the document with `_id` equals to `2`, copy paste the following code in the Explorer and hit apply:
+
+```js
+const db = api.Mongo()
+
+db.getOne("todos").where(cond("_id", "==", "2")).apply()
+```
+
+You should be able to see the `status` as `200` and the following `result`:
+```json
+{
+  "result": {
+      "_id": "2",
+      "date": "2019-08-03T03:24:43.641Z",
+      "text": "Follow us on Twitter"
+    }
+}
+```
+
 
 ## Next Steps
 
-Awesome! We just made a realtime app without writing a single line of backend code. The next step is to dive into the various Space Cloud modules or run some [sample apps](/docs/quick-start/sample-apps).
+Awesome! We just performed few CRUD operations on MongoDB without writing a single line of backend code. The next step is to dive into the various Space Cloud modules.
 
 - Perform CRUD operations using [Database](/docs/database/) module
-- [Realtime](/docs/realtime/) data sync across all devices
 - Manage files with ease using [File Management](/docs/file-storage) module
 - Allow users to sign-in into your app using [User management](/docs/user-management) module
 - Write custom logic at backend using [Functions](/docs/functions/) module

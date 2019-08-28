@@ -1,4 +1,4 @@
-var api = new Space.API("demo", "http://localhost:8080")
+var api = new Space.API("demo", "http://localhost:4122")
 var db = api.MySQL()
 var loginLayout = document.getElementById("login")
 var registerLayout = document.getElementById("register")

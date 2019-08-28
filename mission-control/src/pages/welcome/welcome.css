@@ -1,0 +1,49 @@
+.welcome-page {
+  background-image: url("../../assets/Wave.svg");
+  background-size: cover;
+  height: 100vh;
+  overflow: hidden;
+  text-align: center;
+}
+
+.welcome-page .outer-rectangle {
+  background: #ff6700;
+  border-radius: 60px; 
+  position: absolute;
+  top: 20vh;
+  bottom: 15vh;
+  left: 34vw;
+  right: 34vw;
+}
+
+.welcome-page .inner-rectangle {
+  background: #002C39;
+  border-radius: 60px; 
+  position: absolute;
+  top: 22vh;
+  bottom: 17vh;
+  left: 31vw;
+  right: 31vw;
+  color: #FFF;
+  padding: 56px 0;
+}
+
+.welcome-page .welcome {
+  font-size: 32px;
+  font-weight: 500;
+}
+
+.welcome-page .text {
+  margin-top: 32px;
+  padding: 0 64px;
+  font-size: 16px;
+}
+
+.welcome-page .create-btn {
+  font-weight: 600;
+  margin-top: 48px; 
+}
+
+.welcome-page .content {
+  transform: translateY(26%);
+}

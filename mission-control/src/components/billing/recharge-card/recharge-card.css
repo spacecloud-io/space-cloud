@@ -1,0 +1,64 @@
+.cards {
+  padding: 18px;
+  color: #000;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.cards .triangle-down {
+  width: 0;
+  height: 0;
+  border-left: 80px solid transparent;
+  border-right: 0px solid transparent;
+  border-top: 80px solid #FF6600;
+  filter: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.45));
+  float: right;
+  position: absolute;
+  top: -1px;
+  right: -1px;
+}
+
+.cards .star {
+  color: #002C39 !important;
+  font-size: 25px !important;
+  z-index: 1;
+  position: absolute;
+  top: 1vw;
+  right: 1vw;
+}
+
+.cards .pricing-cards {
+  background: #FFFFFF;
+  border-radius: 15px;
+  box-shadow: 0px 4px 25px rgba(0, 0, 0, 0.3), 0px 0px 1px rgba(0, 0, 0, 0.20);
+  border: 2px solid #DDD;
+  position: relative;
+}
+
+.cards .cards-title {
+  font-size: 32px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  padding-top: 16px;
+}
+
+.cards .cards-desc {
+  font-size: 14px;
+  margin-bottom: 24px;
+  padding: 0 8px;
+}
+
+.cards .footer {
+  height: 48px;
+  background-color: #002c39;
+  border-radius: 0 0 10px 10px;
+  color: #FF6700;
+  font-size: 16px;
+  font-weight: 400;
+  vertical-align: middle;
+  line-height: 48px;
+  cursor: pointer;
+}
+
+.selected.cards .triangle-down, .selected.cards .star  {
+}

@@ -9,8 +9,7 @@ modules:
     storeType: local
     conn: /tmp/data
     rules:                        # `rules` is a map of mutiple rules
-      imageRule: 
-        prefix: /images/:userId   # `prefix` is the path prefix on which the rule applies
+      - prefix: /images/:userId   # `prefix` is the path prefix on which the rule applies
         rule:
           create:                 # `create` is the rule object for file write operations
             rule: allow
@@ -26,6 +25,7 @@ modules:
 
 The following needs to be kept in mind for the security rules in the file storage module.
 - The `rules` is a map of rules. The key (`imageRule` in this case) is just a unique key to indentify each rule.
+- Using the `allow` rule will instruct Space Cloud to disable JWT token parsing for that function. This means the `auth` parameter in the function will always be a `null` value when the rule is set to allow.
 - All rules are applied on a `prefix`. A `prefix` is nothing but the path prefix where the file / folder is present or is to be created 
 - The prefix may contain path parameters (`/:userId` in this case). The value of the path parameter is available in the `args.params` object. The key would be `userId` and the value would be the actual value in the path provided.
 

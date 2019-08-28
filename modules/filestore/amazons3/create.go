@@ -1,58 +1,35 @@
 package amazons3
 
 import (
-	"context"
-	"fmt"
 	"io"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (a *AmazonS3) CreateFile(ctx context.Context, project string, req *model.CreateFileRequest, file io.Reader) error {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(a.region),
-	},
-	)
-	if err != nil {
-		fmt.Println("AmazonS3 Couldn't Establish Connection ", err)
-		return err
-	}
-	uploader := s3manager.NewUploader(sess)
-	_, err = uploader.Upload(&s3manager.UploadInput{
-		Bucket: aws.String(project),
-		Key:    aws.String(req.Path + "/" + req.Name),
+// CreateFile creates a file in S3
+func (a *AmazonS3) CreateFile(req *model.CreateFileRequest, file io.Reader) error {
+	uploader := s3manager.NewUploader(a.client)
+	_, err := uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(a.bucket),
+		Key:    aws.String(utils.JoinLeading(req.Name, req.Path, "/")),
 		Body:   file,
 	})
 	return err
 }
 
-func (a *AmazonS3) CreateDir(ctx context.Context, project string, req *model.CreateFileRequest) error {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(a.region),
-	},
-	)
-	if err != nil {
-		fmt.Println("AmazonS3 Couldn't Establish Connection ", err)
-		return err
-	}
-
-	path := req.Path
+// CreateDir creates a directory in S3
+func (a *AmazonS3) CreateDir(req *model.CreateFileRequest) error {
 	// back slash at the end is important, if not then file will be created of that name
-	if !strings.HasSuffix(path, "/") {
-		path = req.Path + "/"
-	}
-
-	svc := s3.New(sess)
+	svc := s3.New(a.client)
 	request := &s3.PutObjectInput{
-		Bucket: aws.String(project),
-		Key:    aws.String(req.Path),
+		Bucket: aws.String(a.bucket),
+		Key:    aws.String(utils.JoinLeadingTrailing(req.Name, req.Path, "/")),
 	}
-	_, err = svc.PutObject(request)
+	_, err := svc.PutObject(request)
 	return err
-	// return errors.New("Not Implemented")
 }

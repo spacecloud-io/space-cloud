@@ -1,7 +1,6 @@
 package filestore
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"errors"
@@ -11,7 +10,7 @@ import (
 )
 
 // CreateDir creates a directory at the provided path
-func (m *Module) CreateDir(ctx context.Context, project, token string, req *model.CreateFileRequest) (int, error) {
+func (m *Module) CreateDir(project, token string, req *model.CreateFileRequest) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
@@ -26,7 +25,7 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.CreateDir(ctx, project, req)
+	err = m.store.CreateDir(req)
 	if err != nil {
 		return 500, err
 	} else {
@@ -35,7 +34,7 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 }
 
 // DeleteFile deletes a file at the provided path
-func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (int, error) {
+func (m *Module) DeleteFile(project, token, path string) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
@@ -50,7 +49,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (i
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.DeleteDir(ctx, project, path)
+	err = m.store.DeleteFile(path)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -59,7 +58,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (i
 }
 
 // ListFiles lists all the files in the provided path
-func (m *Module) ListFiles(ctx context.Context, project, token string, req *model.ListFilesRequest) (int, []*model.ListFilesResponse, error) {
+func (m *Module) ListFiles(project, token string, req *model.ListFilesRequest) (int, []*model.ListFilesResponse, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
@@ -74,7 +73,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 	m.RLock()
 	defer m.RUnlock()
 
-	res, err := m.store.ListDir(ctx, project, req)
+	res, err := m.store.ListDir(req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -83,7 +82,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 }
 
 // UploadFile uploads a file to the provided path
-func (m *Module) UploadFile(ctx context.Context, project, token string, req *model.CreateFileRequest, reader io.Reader) (int, error) {
+func (m *Module) UploadFile(project, token string, req *model.CreateFileRequest, reader io.Reader) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
@@ -98,7 +97,7 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.CreateFile(ctx, project, req, reader)
+	err = m.store.CreateFile(req, reader)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -106,7 +105,7 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 }
 
 // DownloadFile downloads a file from the provided path
-func (m *Module) DownloadFile(ctx context.Context, project, token, path string) (int, *model.File, error) {
+func (m *Module) DownloadFile(project, token, path string) (int, *model.File, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
@@ -122,7 +121,7 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 	defer m.RUnlock()
 
 	// Read the file from file storage
-	file, err := m.store.ReadFile(ctx, project, path)
+	file, err := m.store.ReadFile(path)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}

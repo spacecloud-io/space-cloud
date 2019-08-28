@@ -2,7 +2,7 @@
 
 ## About Space Cloud
 
-> Note: Space Cloud is still in Beta.
+> **Note:** Space Cloud is still in Beta.
 
 Space Cloud is essentially a web server that automatically integrates with an existing or a new database to provide instant realtime APIs over REST, websockets, gRPC, etc. Written in Golang, it provides a high throughput data access layer which can be consumed directly from the frontend. It's completely unopinionated and works with the tech stack of your choice.
 
@@ -16,7 +16,7 @@ In a nutshell, Space Cloud provides you with all of the following **without havi
 - Freedom from vendor lock-ins.
 - Flexibility to work with the tech stack of your choice.
 
-Supported databases:heart::
+Supported databases❤️:
 - **MongoDB**
 - **PostgreSQL** and PostgreSQL compatible databases (For eg. CockroachDB, Yugabyte etc.)
 - **MySQL** and MySQL compatible databases (For eg. TiDB)
@@ -53,12 +53,12 @@ We believe that each app built with Space Cloud must be extremely robust and fut
 
 ### Leverage the existing tools
 
-The goal of this project is not to re-invent the wheel over and over again. In fact, integration with proven technologies is preferred over implementing them ourselves. For example, we are using [Apache Kafka](https://kafka.apache.org/) under the hood, to make our `realtime database` feature reliable. Also, [Nats](https://nats.io/) is used to implement the `functions` modules for high throughput and scale.
+The goal of this project is not to re-invent the wheel over and over again. In fact, integration with proven technologies is preferred over implementing them ourselves. For example, we are using [Nats](https://nats.io/) under the hood, to implement `realtime`  and `functions` modules for high throughput and scale.
 
 ## What's next?
 
-- Check out a realtime todo app made using Space Cloud with our [quick started guide](/docs/quick-start).  
-- Start a new project from scratch using Space Cloud with our [getting started guide](/docs/quick-start).
+- Take Space Cloud up for a spin with our [quick started guide](/docs/quick-start).  
+- [Deploy](/docs/deployment/) Space Cloud and [set up a project](/docs/setting-up-project/) from scratch.
 
 <div class="btns-wrapper">
   <a href="/docs/quick-start" class="waves-effect waves-light btn primary-btn-fill btn-small">

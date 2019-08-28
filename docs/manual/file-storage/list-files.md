@@ -17,7 +17,7 @@ You can list all files and folders within a specific folder by simply calling `l
 import { API } from "space-api";
 
 // Initialize api with the project name and url of the space cloud
-const api = new API("todo-app", "http://localhost:8080");
+const api = new API("todo-app", "http://localhost:4122");
 
 // Upload the file
 api.FileStore()
@@ -38,21 +38,80 @@ api.FileStore()
   <div id="list-java" class="col s12" style="padding:0">
     <pre>
       <code class="java">
-// Java client coming soon!      
+API api = new API("books-app", "localhost", 4124);
+FileStore fileStore = api.fileStore();
+
+fileStore.listFiles("\\", new Utils.ResponseListener() {
+    @Override
+    public void onResponse(int statusCode, Response response) {
+        System.out.println(statusCode);
+        if (statusCode == 200) {
+            try {
+                Map[] files = response.getResults(Map[].class);
+                for (Map file : files) {
+                    System.out.println("Name: " + file.get("name"));
+                    System.out.println("Type: " + file.get("type"));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println(response.getError());
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        System.out.println(e.getMessage());
+    }
+});
       </code>
     </pre>
   </div>
  <div id="list-python" class="col s12" style="padding:0">
     <pre>
       <code class="python">
-# Python client coming soon!
+from space_api import API
+
+# Initialize api with the project name and url of the space cloud
+api = API("books-app", "localhost:4124")
+
+# Initialize file storage module
+file_store = api.file_store()
+
+# List all the files in a particular location ("\\" [remote])
+response = file_store.list_files("\\")
+if response.status == 200:
+    print(response.result)
+else:
+    print(response.error)
       </code>
     </pre>
   </div>
   <div id="list-golang" class="col s12" style="padding:0">
     <pre>
       <code class="golang">
-// Golang client coming soon!
+api, err := api.New("books-app", "localhost:4124", false)
+if(err != nil) {
+  fmt.Println(err)
+}
+filestore := api.Filestore()
+resp, err := filestore.ListFiles("\\")
+if err != nil {
+  fmt.Println("Error:", err)
+} else {
+  if resp.Status == 200 {
+    var v []map[string]interface{}
+    err:= resp.Unmarshal(&v)
+    if err != nil {
+      fmt.Println("Error Unmarshalling:", err)
+    } else {
+      fmt.Println("Result:", v)
+    }
+  } else {
+    fmt.Println("Error Processing Request:", resp.Error)
+  }
+}
       </code>
     </pre>
   </div>

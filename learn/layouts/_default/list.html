@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Learn</title>
+  <link type="text/css" rel="stylesheet" href="/css/app.css" media="screen,projection" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+    integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+  <link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons|Raleway:100,200,300,400,500,600,700,800,900|Open+Sans:300,400,600,700,800"
+    rel="stylesheet">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('.sidenav').sidenav({ edge: 'right' });
+    });
+  </script>
+</head>
+
+<body>
+  {{partial "sidenav.html" . }}
+  <div class="topic">
+    {{partial "topbar-white.html" . }}
+    <center><div class="page-heading">{{.Page.Title}}</div></center>
+    <div class="row-top">
+      <div class="row">
+        <div class="col s12 m4 l4">
+          <div class="left-wrapper">
+            <a class="waves-effect waves-light btn learn-react">{{.Page.Title}}</a>
+            <div class="duration">
+              <span>{{len .Page.Pages}} TOPICS</span>
+              {{$totalReadingTime:=0}}
+              {{range $i, $p := .Page.Pages}}
+              {{$totalReadingTime = add $totalReadingTime $p.ReadingTime}}
+              {{end}}
+              <span style="padding-left: 24px">{{$totalReadingTime}} MINS</span>
+            </div>
+            <div class="steps">
+              {{range $i, $c := .Page.Params.cover}}
+              <div class="step valign-wrapper">
+                <a href="#" class="material-icons">chevron_right</a>
+                <span>{{$c}}</span>
+              </div>
+              {{end}}
+            </div>
+            {{$startPage := ""}}
+            {{range $i, $p := .Page.Pages}}
+            {{if eq $p.Params.index 1}}
+              {{$startPage = $p.Permalink}}
+            {{end}}
+            {{end}}
+            <a class="waves-effect waves-orange btn-flat start-now" href="{{$startPage}}">Start now</a>
+          </div>
+        </div>
+
+        <div class="col s12 m8 l8">
+          <div class="right-wrapper">
+            <div class="title">{{.Page.Description}}</div>
+
+            <div class="timeline">
+              {{range $i, $p := sort .Page.Pages "Params.index" "asc"}}
+              <div class="border">
+                  <div class="dots">{{add $i 1}}</div>
+                  <div class="content">
+                    <a class="timeline-title" href="{{$p.Permalink}}">{{$p.Title}}</a>
+                    <div class="timeline-time">
+                      <span>{{$p.ReadingTime}} MINS</span>
+                      <!-- <span>.</span>
+                      <span>5 STEPS</span> -->
+                    </div>
+                    <div class="timeline-desc">{{.Page.Description}}</div>
+                  </div>
+                </div>
+              {{end}}
+            </div>
+
+            <div class="timeline-footer valign-wrapper">
+              <a href={{$startPage}}>Go back to top</a>
+              <a href="#" class="material-icons">chevron_right</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {{partial "newsletter.html" . }}
+    {{partial "footer.html" . }}
+</body>
+
+</html>
