@@ -53,7 +53,7 @@ func TestParseSchema(t *testing.T) {
 	m := Init()
 
 	t.Run("Schema Parser", func(t *testing.T) {
-		err := m.ParseSchema(v)
+		err := m.parseSchema(v)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -83,7 +83,7 @@ func TestValidateSchema(t *testing.T) {
 				"text":      "Hello World!",
 				"location": map[string]interface{}{
 					"id":        "locatoinid",
-					"latitude":  5.6,
+					"latitude":  5,
 					"longitude": 312.3,
 				},
 				"owner": arr,
@@ -102,7 +102,7 @@ func TestValidateSchema(t *testing.T) {
 	}}
 
 	m := Init()
-	err := m.ParseSchema(v)
+	err := m.parseSchema(v)
 	if err != nil {
 		t.Fatal(err)
 	}

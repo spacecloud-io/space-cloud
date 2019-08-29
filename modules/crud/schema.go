@@ -17,7 +17,7 @@ import (
 // TODO: check graphql types
 
 // ParseSchema Initializes Schema field in Module struct
-func (m *Module) ParseSchema(crud config.Crud) error {
+func (m *Module) parseSchema(crud config.Crud) error {
 	schema := make(SchemaType, len(crud))
 	for dbName, v := range crud {
 		collection := SchemaCollection{}
@@ -137,13 +137,21 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 	return nil
 }
 
-func (m *Module) schemaValidator(dbType, col string, fields map[string]interface{}) error {
+func (m *Module) schemaValidator(dbType, col string, doc map[string]interface{}) error {
 
-	collectionFields := m.schema[dbType][col]
+	collection, ok := m.schema[dbType]
+	if !ok {
+		return nil
+	}
+	collectionFields, ok := collection[col]
+	if !ok {
+		return nil
+	}
+
 	for fieldKey, fieldValue := range collectionFields {
 		// TODO: check if internal elements of list is required for this we need to change schmea parser
 		// check if key is required
-		value, ok := fields[fieldKey]
+		value, ok := doc[fieldKey]
 		if fieldValue.IsFieldTypeRequired {
 			if !ok {
 				return errors.New("Field " + fieldKey + " Not Present")
@@ -151,13 +159,9 @@ func (m *Module) schemaValidator(dbType, col string, fields map[string]interface
 		}
 
 		// check type
-		fieldType, err := m.checkType(value, fieldValue.Kind, dbType, fieldValue.TableJoin)
+		err := m.checkType(value, fieldValue.Kind, dbType, fieldValue.TableJoin)
 		if err != nil {
 			return err
-		}
-
-		if fieldType != fieldValue.Kind {
-			return errors.New("Wrong Type Wanter " + fieldValue.Kind + " got " + fieldType)
 		}
 
 	}
@@ -178,8 +182,7 @@ func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) er
 	}
 
 	for _, fields := range v {
-		err := m.schemaValidator(dbType, col, fields)
-		if err != nil {
+		if err := m.schemaValidator(dbType, col, fields); err != nil {
 			return err
 		}
 	}
@@ -187,66 +190,68 @@ func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) er
 	return nil
 }
 
-func (m *Module) checkType(value interface{}, kind, dbType, col string) (string, error) {
-
+func (m *Module) checkType(value interface{}, kind, dbType, col string) error {
+	var checkKind string
+	var errGlobal error
 	switch v := value.(type) {
 	case int:
 		// TODO: int64
+		checkKind = TypeInteger
 		switch kind {
 		case TypeDateTime:
 			unitTimeInRFC3339 := time.Unix(int64(v), 0).Format(time.RFC3339)
 			if unitTimeInRFC3339 == "" {
-				return "", errors.New("Integer Wrong Date-Time Format")
+				return errors.New("Integer Wrong Date-Time Format")
 			}
-			return TypeDateTime, nil
+			checkKind = TypeDateTime
 		case TypeID:
-			return TypeID, nil
+			checkKind = TypeID
 		}
-		return TypeInteger, nil
 
 	case string:
+		checkKind = TypeString
 		switch kind {
 		case TypeDateTime:
 			_, err := time.Parse(time.RFC3339, v)
 			if err != nil {
-				return "", errors.New("String Wrong Date-Time Format")
+				return errors.New("String Wrong Date-Time Format")
 			}
-			return TypeDateTime, nil
+			checkKind = TypeDateTime
 		case TypeID:
-			return TypeID, nil
+			checkKind = TypeID
 		}
-		return TypeString, nil
 
 	case float32, float64:
-		return TypeFloat, nil
+		checkKind = TypeFloat
 
 	case bool:
-		return TypeBoolean, nil
+		checkKind = TypeBoolean
 
 	case map[string]interface{}:
 		err := m.schemaValidator(dbType, col, v)
 		if err != nil {
-			return "", err
+			return err
 		}
-		return TypeJoin, nil
+		checkKind = TypeJoin
 
 	case []interface{}:
-		var str string
-		var err error
 
 		for _, value := range v {
-			str, err = m.checkType(value, kind, dbType, col)
+			err := m.checkType(value, kind, dbType, col)
 			if err != nil {
-				return "", err
-			}
-
-			if str != kind {
-				return "", errors.New("Wrong List Type Wanted " + kind + " got " + str)
+				return err
 			}
 		}
-		return str, nil
-
+		return nil
+	// return str, nil
+	default:
+		errGlobal = errors.New("No matching type found")
 	}
-	return "", errors.New("Checktype no match found")
+
+	if checkKind != kind {
+		return errors.New("Wrong Type Wanted " + kind + " got " + checkKind)
+	}
+
+	return errGlobal
 
 }
