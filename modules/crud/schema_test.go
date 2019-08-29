@@ -1,6 +1,8 @@
 package crud
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/model"
@@ -14,7 +16,7 @@ type Tweet {
 	createdAt: DateTime! @createdAt
 	text: String
 	owner: [Integer!]! @relation(link: INLINE)
-	location: Location!
+	location: location!
   }
   
   type User {
@@ -23,7 +25,7 @@ type Tweet {
 	updatedAt: DateTime! @updatedAt
 	handle: String! @unique
 	name: String
-	tweets: [Tweet!]!
+	tweets: [tweet!]!
   }
   
   type Location {
@@ -36,9 +38,6 @@ var v = config.Crud{
 	"mongo": &config.CrudStub{
 		Collections: map[string]*config.TableRule{
 			"tweet": &config.TableRule{
-				Schema: query,
-			},
-			"location": &config.TableRule{
 				Schema: query,
 			},
 			"user": &config.TableRule{
@@ -57,11 +56,12 @@ func TestParseSchema(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// b, err := json.MarshalIndent(m.schema, "", "  ")
-		// if err != nil {
-		// 	fmt.Println("error:", err)
-		// }
-		// fmt.Print(string(b))
+		// uncomment the below statements to see the reuslt
+		b, err := json.MarshalIndent(m.schema, "", "  ")
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		fmt.Print(string(b))
 		t.Log("Logging Test Output :: ", m.schema)
 	})
 }
@@ -69,8 +69,19 @@ func TestParseSchema(t *testing.T) {
 func TestValidateSchema(t *testing.T) {
 
 	var arr []interface{}
-	// str := []string{"sharad", "regoti", "atharva"}
+	// str := []string{"sharad", "regoti", "atharva"} // tocheck if schema is array of integer but value is string
 	str := []int{1, 2, 3}
+	// str := []map[string]interface{}{
+	// 	{
+	// 		"id":        "locatoinid",
+	// 		"latitude":  5,
+	// 		"longitude": 312.3,
+	// 	}, {
+	// 		"id":        "locatoinid",
+	// 		"latitude":  12.3,
+	// 		"longitude": 13.4,
+	// 	},
+	// }
 	for _, v := range str {
 		arr = append(arr, v)
 	}
@@ -83,7 +94,7 @@ func TestValidateSchema(t *testing.T) {
 				"text":      "Hello World!",
 				"location": map[string]interface{}{
 					"id":        "locatoinid",
-					"latitude":  5,
+					"latitude":  5.5,
 					"longitude": 312.3,
 				},
 				"owner": arr,

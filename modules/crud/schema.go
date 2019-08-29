@@ -137,16 +137,7 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 	return nil
 }
 
-func (m *Module) schemaValidator(dbType, col string, doc map[string]interface{}) error {
-
-	collection, ok := m.schema[dbType]
-	if !ok {
-		return nil
-	}
-	collectionFields, ok := collection[col]
-	if !ok {
-		return nil
-	}
+func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]interface{}) error {
 
 	for fieldKey, fieldValue := range collectionFields {
 		// TODO: check if internal elements of list is required for this we need to change schmea parser
@@ -159,10 +150,11 @@ func (m *Module) schemaValidator(dbType, col string, doc map[string]interface{})
 		}
 
 		// check type
-		err := m.checkType(value, fieldValue.Kind, dbType, fieldValue.TableJoin)
+		val, err := m.checkType(value, fieldValue)
 		if err != nil {
 			return err
 		}
+		doc[fieldKey] = val
 
 	}
 
@@ -172,7 +164,7 @@ func (m *Module) schemaValidator(dbType, col string, doc map[string]interface{})
 // ValidateSchema checks data type
 func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) error {
 
-	v := make([]map[string]interface{}, 1)
+	v := make([]map[string]interface{}, 0)
 
 	switch t := req.Document.(type) {
 	case []map[string]interface{}:
@@ -181,8 +173,17 @@ func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) er
 		v = append(v, t)
 	}
 
+	collection, ok := m.schema[dbType]
+	if !ok {
+		return errors.New("No db was found named " + dbType)
+	}
+	collectionFields, ok := collection[col]
+	if !ok {
+		return errors.New("No collection or table was found named " + col)
+	}
+
 	for _, fields := range v {
-		if err := m.schemaValidator(dbType, col, fields); err != nil {
+		if err := m.schemaValidator(collectionFields, fields); err != nil {
 			return err
 		}
 	}
@@ -190,68 +191,72 @@ func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) er
 	return nil
 }
 
-func (m *Module) checkType(value interface{}, kind, dbType, col string) error {
-	var checkKind string
-	var errGlobal error
+func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
+
 	switch v := value.(type) {
 	case int:
 		// TODO: int64
-		checkKind = TypeInteger
-		switch kind {
+		switch fieldValue.Kind {
 		case TypeDateTime:
 			unitTimeInRFC3339 := time.Unix(int64(v), 0).Format(time.RFC3339)
 			if unitTimeInRFC3339 == "" {
-				return errors.New("Integer Wrong Date-Time Format")
+				return nil, errors.New("Integer Wrong Date-Time Format")
 			}
-			checkKind = TypeDateTime
-		case TypeID:
-			checkKind = TypeID
+			value = unitTimeInRFC3339
+			return value, nil
+		case TypeID, TypeInteger:
+			return value, nil
+		default:
+			return nil, errors.New("Integer wrong type wanted " + fieldValue.Kind + " got Integer")
 		}
 
 	case string:
-		checkKind = TypeString
-		switch kind {
+		switch fieldValue.Kind {
 		case TypeDateTime:
-			_, err := time.Parse(time.RFC3339, v)
+			unitTimeInRFC3339, err := time.Parse(time.RFC3339, v)
 			if err != nil {
-				return errors.New("String Wrong Date-Time Format")
+				return nil, errors.New("String Wrong Date-Time Format")
 			}
-			checkKind = TypeDateTime
-		case TypeID:
-			checkKind = TypeID
+			value = unitTimeInRFC3339
+			return value, nil
+		case TypeID, TypeString:
+			return value, nil
+		default:
+			return nil, errors.New("String wrong type wanted " + fieldValue.Kind + " got String")
 		}
 
 	case float32, float64:
-		checkKind = TypeFloat
-
-	case bool:
-		checkKind = TypeBoolean
-
-	case map[string]interface{}:
-		err := m.schemaValidator(dbType, col, v)
-		if err != nil {
-			return err
+		switch fieldValue.Kind {
+		case TypeFloat:
+			return value, nil
+		default:
+			return nil, errors.New("Float no matching kind")
 		}
-		checkKind = TypeJoin
+	case bool:
+		switch fieldValue.Kind {
+		case TypeBoolean:
+			return value, nil
+		default:
+			return nil, errors.New("Bool no matching kind")
+		}
+	case map[string]interface{}:
+		err := m.schemaValidator(fieldValue.NestedObject, v)
+		if err != nil {
+			return nil, err
+		}
+		return value, nil
 
 	case []interface{}:
-
+		arr := []interface{}{}
 		for _, value := range v {
-			err := m.checkType(value, kind, dbType, col)
+			val, err := m.checkType(value, fieldValue)
 			if err != nil {
-				return err
+				return nil, err
 			}
+			arr = append(arr, val)
 		}
-		return nil
-	// return str, nil
+		return arr, nil
 	default:
-		errGlobal = errors.New("No matching type found")
+		return nil, errors.New("No matching type found")
 	}
-
-	if checkKind != kind {
-		return errors.New("Wrong Type Wanted " + kind + " got " + checkKind)
-	}
-
-	return errGlobal
-
 }
