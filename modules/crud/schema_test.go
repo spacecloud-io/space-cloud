@@ -30,6 +30,15 @@ type Tweet {
 	id: ID! @id
 	latitude: Float!
 	longitude: Float!
+	person : sharad!
+  }
+
+  type Sharad {
+	  name : String!
+	  sirName : String!
+	  age : Integer!
+	  isMale : Boolean!
+	  dob : DateTime!
   }
 `
 var v = config.Crud{
@@ -70,19 +79,7 @@ func TestParseSchema(t *testing.T) {
 func TestValidateSchema(t *testing.T) {
 
 	var arr []interface{}
-	// str := []string{"sharad", "regoti", "atharva"} // tocheck if schema is array of integer but value is string
 	str := []int{1, 2, 3}
-	// str := []map[string]interface{}{
-	// 	{
-	// 		"id":        "locatoinid",
-	// 		"latitude":  5,
-	// 		"longitude": 312.3,
-	// 	}, {
-	// 		"id":        "locatoinid",
-	// 		"latitude":  12.3,
-	// 		"longitude": 13.4,
-	// 	},
-	// }
 	for _, v := range str {
 		arr = append(arr, v)
 	}
@@ -97,6 +94,13 @@ func TestValidateSchema(t *testing.T) {
 					"id":        "locatoinid",
 					"latitude":  5.5,
 					"longitude": 312.3,
+					"person": map[string]interface{}{
+						"name":    "sharad",
+						"sirName": "Regoti",
+						"age":     19,
+						"isMale":  true,
+						"dob":     "1999-10-19T11:45:26.371Z",
+					},
 				},
 				"owner": arr,
 			},

@@ -141,28 +141,27 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 	return nil
 }
 
-func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]interface{}) error {
+func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]interface{}) (map[string]interface{}, error) {
+	mutatedDoc := map[string]interface{}{}
 
 	for fieldKey, fieldValue := range collectionFields {
-		// TODO: check if internal elements of list is required for this we need to change schmea parser
 		// check if key is required
 		value, ok := doc[fieldKey]
 		if fieldValue.IsFieldTypeRequired {
 			if !ok {
-				return errors.New("Field " + fieldKey + " Not Present")
+				return nil, errors.New("Field " + fieldKey + " Not Present")
 			}
 		}
 
 		// check type
 		val, err := m.checkType(value, fieldValue)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		doc[fieldKey] = val
-
+		mutatedDoc[fieldKey] = val
 	}
 
-	return nil
+	return mutatedDoc, nil
 }
 
 // ValidateSchema checks data type
@@ -190,10 +189,13 @@ func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) er
 		return errors.New("No collection or table was found named " + col)
 	}
 
-	for _, fields := range v {
-		if err := m.schemaValidator(collectionFields, fields); err != nil {
+	for index, fields := range v {
+
+		newDoc, err := m.schemaValidator(collectionFields, fields)
+		if err != nil {
 			return err
 		}
+		v[index] = newDoc
 	}
 
 	return nil
@@ -236,21 +238,21 @@ func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 		case TypeFloat:
 			return value, nil
 		default:
-			return nil, errors.New("Float no matching kind")
+			return nil, errors.New("Float wrong type wanted " + fieldValue.Kind + " got Float")
 		}
 	case bool:
 		switch fieldValue.Kind {
 		case TypeBoolean:
 			return value, nil
 		default:
-			return nil, errors.New("Bool no matching kind")
+			return nil, errors.New("Bool wrong type wanted " + fieldValue.Kind + " got Bool")
 		}
 	case map[string]interface{}:
-		err := m.schemaValidator(fieldValue.NestedObject, v)
+		newDoc, err := m.schemaValidator(fieldValue.NestedObject, v)
 		if err != nil {
 			return nil, err
 		}
-		return value, nil
+		return newDoc, nil
 
 	case []interface{}:
 		arr := make([]interface{}, len(v))
