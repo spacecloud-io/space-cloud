@@ -198,6 +198,9 @@ func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) er
 		v[index] = newDoc
 	}
 
+	req.Operation = utils.All
+	req.Document = v
+
 	return nil
 }
 
