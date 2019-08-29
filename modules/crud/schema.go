@@ -18,10 +18,14 @@ import (
 
 // ParseSchema Initializes Schema field in Module struct
 func (m *Module) parseSchema(crud config.Crud) error {
+
 	schema := make(SchemaType, len(crud))
 	for dbName, v := range crud {
 		collection := SchemaCollection{}
 		for collectionName, v := range v.Collections {
+			if v.Schema == "" {
+				return errors.New("Schema is empty")
+			}
 			source := source.NewSource(&source.Source{
 				Body: []byte(v.Schema),
 			})
@@ -164,6 +168,10 @@ func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]in
 // ValidateSchema checks data type
 func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) error {
 
+	if m.schema == nil {
+		return errors.New("Schema not initialized")
+	}
+
 	v := make([]map[string]interface{}, 0)
 
 	switch t := req.Document.(type) {
@@ -202,8 +210,7 @@ func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 			if unitTimeInRFC3339 == "" {
 				return nil, errors.New("Integer Wrong Date-Time Format")
 			}
-			value = unitTimeInRFC3339
-			return value, nil
+			return unitTimeInRFC3339, nil
 		case TypeID, TypeInteger:
 			return value, nil
 		default:
@@ -217,8 +224,7 @@ func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 			if err != nil {
 				return nil, errors.New("String Wrong Date-Time Format")
 			}
-			value = unitTimeInRFC3339
-			return value, nil
+			return unitTimeInRFC3339, nil
 		case TypeID, TypeString:
 			return value, nil
 		default:
@@ -247,13 +253,13 @@ func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 		return value, nil
 
 	case []interface{}:
-		arr := []interface{}{}
-		for _, value := range v {
+		arr := make([]interface{}, len(v))
+		for index, value := range v {
 			val, err := m.checkType(value, fieldValue)
 			if err != nil {
 				return nil, err
 			}
-			arr = append(arr, val)
+			arr[index] = val
 		}
 		return arr, nil
 	default:

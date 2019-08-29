@@ -1,8 +1,6 @@
 package crud
 
 import (
-	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/model"
@@ -43,6 +41,9 @@ var v = config.Crud{
 			"user": &config.TableRule{
 				Schema: query,
 			},
+			"location": &config.TableRule{
+				Schema: query,
+			},
 		},
 	},
 }
@@ -57,11 +58,11 @@ func TestParseSchema(t *testing.T) {
 			t.Fatal(err)
 		}
 		// uncomment the below statements to see the reuslt
-		b, err := json.MarshalIndent(m.schema, "", "  ")
-		if err != nil {
-			fmt.Println("error:", err)
-		}
-		fmt.Print(string(b))
+		// b, err := json.MarshalIndent(m.schema, "", "  ")
+		// if err != nil {
+		// 	fmt.Println("error:", err)
+		// }
+		// fmt.Print(string(b))
 		t.Log("Logging Test Output :: ", m.schema)
 	})
 }
