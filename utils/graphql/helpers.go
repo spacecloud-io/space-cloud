@@ -138,9 +138,9 @@ func (graph *Module) processQueryResult(field *ast.Field, token string, store ut
 
 				f := sel.(*ast.Field)
 
-				if f.Name.Value == "__typename" {
-					continue
-				}
+				// if f.Name.Value == "__typename" {
+				// 	continue
+				// }
 
 				output, err := graph.execGraphQLDocument(f, token, storeNew)
 				if err != nil {
@@ -164,9 +164,9 @@ func (graph *Module) processQueryResult(field *ast.Field, token string, store ut
 			storeNew["coreParentKey"] = getFieldName(field)
 
 			f := sel.(*ast.Field)
-			if f.Name.Value == "__typename" {
-				continue
-			}
+			// if f.Name.Value == "__typename" {
+			// 	continue
+			// }
 			output, err := graph.execGraphQLDocument(f, token, storeNew)
 			if err != nil {
 				return nil, err
