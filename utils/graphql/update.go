@@ -10,15 +10,14 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execUpdateRequest(field *ast.Field, store utils.M) (utils.M, error) {
+func (graph *Module) execUpdateRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
 	dbType := field.Directives[0].Name.Value
 	col := strings.TrimPrefix(field.Name.Value, "update_")
-
 	req, err := generateUpdateRequest(field, store)
 	if err != nil {
 		return nil, err
 	}
-	status, err := graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, "", req)
+	status, err := graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +66,7 @@ func generateUpdateRequest(field *ast.Field, store utils.M) (*model.UpdateReques
 }
 
 func extractUpdateArgs(args []*ast.Argument, store utils.M) (utils.M, error) {
-	var t map[string]interface{}
+	t := map[string]interface{}{}
 	for _, v := range args {
 		switch v.Name.Value {
 		case "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "remove":

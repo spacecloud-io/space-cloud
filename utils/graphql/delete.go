@@ -10,7 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execDeleteRequest(field *ast.Field, store utils.M) (utils.M, error) {
+func (graph *Module) execDeleteRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
 	dbType := field.Directives[0].Name.Value
 	col := strings.TrimPrefix(field.Name.Value, "delete_")
 
@@ -19,7 +19,7 @@ func (graph *Module) execDeleteRequest(field *ast.Field, store utils.M) (utils.M
 		return nil, err
 	}
 
-	status, err := graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, "", req)
+	status, err := graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}

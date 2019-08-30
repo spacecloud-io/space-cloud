@@ -2,6 +2,8 @@ package graphql
 
 import (
 	"errors"
+	"log"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -113,18 +115,21 @@ func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 
 		return val, nil
 
+	case kinds.Variable:
+		t := value.(*ast.Variable)
+		return utils.LoadValue("vars."+t.Name.Value, store)
+
 	default:
 		return nil, errors.New("Invalid data type `" + value.GetKind() + "` for value " + string(value.GetLoc().Source.Body)[value.GetLoc().Start:value.GetLoc().End])
 	}
 }
 
-func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result interface{}) (interface{}, error) {
+func (graph *Module) processQueryResult(field *ast.Field, token string, store utils.M, result interface{}) (interface{}, error) {
 	switch val := result.(type) {
 	case []interface{}:
 		array := make([]interface{}, len(val))
-
 		for i, v := range val {
-			obj := utils.M{}
+			obj := map[string]interface{}{}
 
 			for _, sel := range field.SelectionSet.Selections {
 				storeNew := shallowClone(store)
@@ -133,7 +138,11 @@ func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result 
 
 				f := sel.(*ast.Field)
 
-				output, err := graph.execGraphQLDocument(f, storeNew)
+				// if f.Name.Value == "__typename" {
+				// 	continue
+				// }
+
+				output, err := graph.execGraphQLDocument(f, token, storeNew)
 				if err != nil {
 					return nil, err
 				}
@@ -146,8 +155,8 @@ func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result 
 
 		return array, nil
 
-	case map[string]interface{}:
-		obj := utils.M{}
+	case map[string]interface{}, utils.M:
+		obj := map[string]interface{}{}
 
 		for _, sel := range field.SelectionSet.Selections {
 			storeNew := shallowClone(store)
@@ -155,18 +164,20 @@ func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result 
 			storeNew["coreParentKey"] = getFieldName(field)
 
 			f := sel.(*ast.Field)
-
-			output, err := graph.execGraphQLDocument(f, storeNew)
+			// if f.Name.Value == "__typename" {
+			// 	continue
+			// }
+			output, err := graph.execGraphQLDocument(f, token, storeNew)
 			if err != nil {
 				return nil, err
 			}
 
 			obj[getFieldName(f)] = output
 		}
-
 		return obj, nil
 
 	default:
+		log.Println("Type of val in helpers", reflect.TypeOf(val))
 		return nil, errors.New("Incorrect result type")
 	}
 }

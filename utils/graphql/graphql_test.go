@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
@@ -12,11 +13,11 @@ import (
 func TestMapping(t *testing.T) {
 	query := `
 	query {
-		random(where: {}, skip: 87) @mongo(col: random) {
+		random(where: $find, skip: 87) @mongo(col: random) {
 			key1 {
 				SomeKey:k2
 			}
-			key2
+			key2   
 			
 			users(where:{name: random__key1__k1}) @mongo {
 				_id
@@ -44,7 +45,9 @@ func TestMapping(t *testing.T) {
 	graph := New(a, c, f)
 	graph.SetConfig("todo-app")
 
-	output, err := graph.ExecGraphQLQuery(query)
+	te := model.GraphQLRequest{}
+	te.Query = query
+	output, err := graph.ExecGraphQLQuery(&te, "")
 	if err != nil {
 		t.Fatal(err)
 	}

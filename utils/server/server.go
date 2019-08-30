@@ -18,13 +18,14 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/modules/pubsub"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
-	"github.com/spaceuptech/space-cloud/modules/pubsub"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
+	"github.com/spaceuptech/space-cloud/utils/graphql"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -46,6 +47,7 @@ type Server struct {
 	configFilePath string
 	syncMan        *syncman.SyncManager
 	ssl            *config.SSL
+	graphql        *graphql.Module
 }
 
 // New creates a new server instance
@@ -62,11 +64,12 @@ func New(nodeID string) *Server {
 	p := pubsub.Init(a)
 	adminMan := admin.New()
 	syncMan := syncman.New(adminMan)
+	graphqlMan := graphql.New(a, c, fn)
 
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
-		user: u, file: f, static: s, pubsub: p, syncMan: syncMan, adminMan: adminMan,
+		user: u, file: f, static: s, pubsub: p, syncMan: syncMan, adminMan: adminMan, graphql: graphqlMan,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath}
 }
 
@@ -171,6 +174,9 @@ func (s *Server) LoadConfig(config *config.Config) error {
 
 		// Set the configuration for the crud module
 		s.crud.SetConfig(p.Modules.Crud)
+
+		// Set the configuration for the graphql module
+		s.graphql.SetConfig(p.ID)
 	}
 
 	return nil

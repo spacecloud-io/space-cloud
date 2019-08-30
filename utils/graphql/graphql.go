@@ -10,6 +10,7 @@ import (
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
 
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
@@ -34,28 +35,34 @@ func (graph *Module) SetConfig(project string) {
 	graph.project = project
 }
 
+// SetConfig sets the project configuration
+func (graph *Module) GetProjectID() string {
+	return graph.project
+}
+
 // ExecGraphQLQuery executes the provided graphql query
-func (graph *Module) ExecGraphQLQuery(query string) (interface{}, error) {
+func (graph *Module) ExecGraphQLQuery(req *model.GraphQLRequest, token string) (interface{}, error) {
+
 	source := source.NewSource(&source.Source{
-		Body: []byte(query),
-		Name: "GraphQL request",
+		Body: []byte(req.Query),
+		Name: req.OperationName,
 	})
 	// parse the source
 	doc, err := parser.Parse(parser.ParseParams{Source: source})
 	if err != nil {
 		return nil, err
 	}
-	return graph.execGraphQLDocument(doc, utils.M{})
+
+	return graph.execGraphQLDocument(doc, token, utils.M{"vars": req.Variables})
 }
 
-func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interface{}, error) {
+func (graph *Module) execGraphQLDocument(node ast.Node, token string, store utils.M) (interface{}, error) {
 	switch node.GetKind() {
 
 	case kinds.Document:
 		doc := node.(*ast.Document)
 		for _, v := range doc.Definitions {
-			fmt.Println("For ", v)
-			return graph.execGraphQLDocument(v, store)
+			return graph.execGraphQLDocument(v, token, store)
 		}
 		return nil, errors.New("No definitions provided")
 
@@ -63,11 +70,12 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interfac
 		op := node.(*ast.OperationDefinition)
 		switch op.Operation {
 		case "query", "mutation":
-			obj := utils.M{}
+			obj := map[string]interface{}{}
 			for _, v := range op.SelectionSet.Selections {
 
 				field := v.(*ast.Field)
-				result, err := graph.execGraphQLDocument(field, store)
+
+				result, err := graph.execGraphQLDocument(field, token, store)
 				if err != nil {
 					return nil, err
 				}
@@ -90,42 +98,41 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interfac
 
 			// Insert query function
 			if strings.HasPrefix(field.Name.Value, "insert_") {
-				result, err := graph.execWriteRequest(field, store)
+				result, err := graph.execWriteRequest(field, token, store)
 				if err != nil {
 					return nil, err
 				}
-
-				return graph.processQueryResult(field, store, result)
+				return graph.processQueryResult(field, token, store, result)
 			}
 
 			// Delete query function
 			if strings.HasPrefix(field.Name.Value, "delete_") {
-				result, err := graph.execDeleteRequest(field, store)
+				result, err := graph.execDeleteRequest(field, token, store)
 				if err != nil {
 					return nil, err
 				}
 
-				return graph.processQueryResult(field, store, result)
+				return graph.processQueryResult(field, token, store, result)
 			}
 
 			// Update query function
 			if strings.HasPrefix(field.Name.Value, "update_") {
-				result, err := graph.execUpdateRequest(field, store)
+				result, err := graph.execUpdateRequest(field, token, store)
 				if err != nil {
 					return nil, err
 				}
 
-				return graph.processQueryResult(field, store, result)
+				return graph.processQueryResult(field, token, store, result)
 			}
 
 			kind := getQueryKind(field.Directives[0])
 			if kind == "read" {
-				result, err := graph.execReadRequest(field, store)
+				result, err := graph.execReadRequest(field, token, store)
 				if err != nil {
 					return nil, err
 				}
 
-				return graph.processQueryResult(field, store, result)
+				return graph.processQueryResult(field, token, store, result)
 			}
 
 			if kind == "func" {
@@ -134,7 +141,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interfac
 					return nil, err
 				}
 
-				return graph.processQueryResult(field, store, result)
+				return graph.processQueryResult(field, token, store, result)
 			}
 
 			return nil, errors.New("Incorrect query type")
@@ -156,7 +163,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interfac
 
 			f := sel.(*ast.Field)
 
-			output, err := graph.execGraphQLDocument(f, storeNew)
+			output, err := graph.execGraphQLDocument(f, token, storeNew)
 			if err != nil {
 				return nil, err
 			}

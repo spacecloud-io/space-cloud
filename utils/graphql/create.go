@@ -10,7 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execWriteRequest(field *ast.Field, store utils.M) (utils.M, error) {
+func (graph *Module) execWriteRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
 	dbType := field.Directives[0].Name.Value
 	col := strings.TrimPrefix(field.Name.Value, "insert_")
 
@@ -18,13 +18,12 @@ func (graph *Module) execWriteRequest(field *ast.Field, store utils.M) (utils.M,
 	if err != nil {
 		return nil, err
 	}
-
-	status, err := graph.auth.IsCreateOpAuthorised(graph.project, dbType, col, "", req)
+	status, err := graph.auth.IsCreateOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return utils.M{"status": status}, graph.crud.Create(context.TODO(), dbType, graph.project, col, req)
+	return map[string]interface{}{"status": status}, graph.crud.Create(context.TODO(), dbType, graph.project, col, req)
 }
 
 func generateCreateRequest(field *ast.Field, store utils.M) (*model.CreateRequest, error) {
@@ -48,7 +47,6 @@ func extractDocs(args []*ast.Argument, store utils.M) ([]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-
 			return temp.([]interface{}), nil
 		}
 	}
