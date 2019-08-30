@@ -96,7 +96,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 }
 
 // SetConfig set the rules adn secret key required by the crud block
-func (m *Module) SetConfig(crud config.Crud) {
+func (m *Module) SetConfig(crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -105,6 +105,10 @@ func (m *Module) SetConfig(crud config.Crud) {
 		v.Close()
 	}
 	m.blocks = make(map[string]Crud, len(crud))
+
+	if err := m.parseSchema(crud); err != nil {
+		return err
+	}
 
 	// Create a new crud blocks
 	for k, v := range crud {
@@ -117,4 +121,5 @@ func (m *Module) SetConfig(crud config.Crud) {
 			log.Println("Successfully connected to " + k)
 		}
 	}
+	return nil
 }
