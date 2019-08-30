@@ -11,6 +11,12 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
+var (
+	// ErrInvalidSigningMethod denotes a jwt signing method type not used by Space Cloud.
+	ErrInvalidSigningMethod = errors.New("invalid signing method type")
+	ErrTokenVerification = errors.New("AUTH: JWT token could not be verified")
+)
+
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
@@ -83,7 +89,7 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("invalid signing method type")
+			return nil, ErrInvalidSigningMethod
 		}
 
 		return []byte(m.secret), nil
@@ -102,5 +108,5 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 		return obj, nil
 	}
 
-	return nil, errors.New("AUTH: JWT token could not be verified")
+	return nil, ErrTokenVerification
 }
