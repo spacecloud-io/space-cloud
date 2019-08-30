@@ -10,11 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-<<<<<<< HEAD
-func (graph *Module) execReadRequest(field *ast.Field, token string, store m) (interface{}, error) {
-=======
-func (graph *Module) execReadRequest(field *ast.Field, store utils.M) (interface{}, error) {
->>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
+func (graph *Module) execReadRequest(field *ast.Field, token string, store utils.M) (interface{}, error) {
 	dbType := field.Directives[0].Name.Value
 	col, err := getCollection(field)
 	if err != nil {

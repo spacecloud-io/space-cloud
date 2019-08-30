@@ -10,11 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-<<<<<<< HEAD
-func (graph *Module) execUpdateRequest(field *ast.Field, token string, store m) (m, error) {
-=======
-func (graph *Module) execUpdateRequest(field *ast.Field, store utils.M) (utils.M, error) {
->>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
+func (graph *Module) execUpdateRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
 	dbType := field.Directives[0].Name.Value
 	col := strings.TrimPrefix(field.Name.Value, "update_")
 	req, err := generateUpdateRequest(field, store)
@@ -70,7 +66,7 @@ func generateUpdateRequest(field *ast.Field, store utils.M) (*model.UpdateReques
 }
 
 func extractUpdateArgs(args []*ast.Argument, store utils.M) (utils.M, error) {
-	var t map[string]interface{}
+	t := map[string]interface{}{}
 	for _, v := range args {
 		switch v.Name.Value {
 		case "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "remove":

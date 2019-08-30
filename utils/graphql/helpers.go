@@ -2,6 +2,8 @@ package graphql
 
 import (
 	"errors"
+	"log"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -122,19 +124,12 @@ func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 	}
 }
 
-<<<<<<< HEAD
-func (graph *Module) processQueryResult(field *ast.Field, token string, store m, result interface{}) (interface{}, error) {
-
-=======
-func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result interface{}) (interface{}, error) {
->>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
+func (graph *Module) processQueryResult(field *ast.Field, token string, store utils.M, result interface{}) (interface{}, error) {
 	switch val := result.(type) {
-
-	case []map[string]interface{}:
+	case []interface{}:
 		array := make([]interface{}, len(val))
-
 		for i, v := range val {
-			obj := utils.M{}
+			obj := map[string]interface{}{}
 
 			for _, sel := range field.SelectionSet.Selections {
 				storeNew := shallowClone(store)
@@ -142,6 +137,10 @@ func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result 
 				storeNew["coreParentKey"] = getFieldName(field)
 
 				f := sel.(*ast.Field)
+
+				if f.Name.Value == "__typename" {
+					continue
+				}
 
 				output, err := graph.execGraphQLDocument(f, token, storeNew)
 				if err != nil {
@@ -156,13 +155,8 @@ func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result 
 
 		return array, nil
 
-<<<<<<< HEAD
-	case map[string]interface{}, m:
-		obj := m{}
-=======
-	case map[string]interface{}:
-		obj := utils.M{}
->>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
+	case map[string]interface{}, utils.M:
+		obj := map[string]interface{}{}
 
 		for _, sel := range field.SelectionSet.Selections {
 			storeNew := shallowClone(store)
@@ -170,7 +164,9 @@ func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result 
 			storeNew["coreParentKey"] = getFieldName(field)
 
 			f := sel.(*ast.Field)
-
+			if f.Name.Value == "__typename" {
+				continue
+			}
 			output, err := graph.execGraphQLDocument(f, token, storeNew)
 			if err != nil {
 				return nil, err
@@ -178,10 +174,10 @@ func (graph *Module) processQueryResult(field *ast.Field, store utils.M, result 
 
 			obj[getFieldName(f)] = output
 		}
-
 		return obj, nil
 
 	default:
+		log.Println("Type of val in helpers", reflect.TypeOf(val))
 		return nil, errors.New("Incorrect result type")
 	}
 }

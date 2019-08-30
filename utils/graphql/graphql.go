@@ -35,15 +35,11 @@ func (graph *Module) SetConfig(project string) {
 	graph.project = project
 }
 
-<<<<<<< HEAD
+// SetConfig sets the project configuration
 func (graph *Module) GetProjectID() string {
 	return graph.project
 }
 
-type m map[string]interface{}
-
-=======
->>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
 // ExecGraphQLQuery executes the provided graphql query
 func (graph *Module) ExecGraphQLQuery(req *model.GraphQLRequest, token string) (interface{}, error) {
 
@@ -51,38 +47,22 @@ func (graph *Module) ExecGraphQLQuery(req *model.GraphQLRequest, token string) (
 		Body: []byte(req.Query),
 		Name: req.OperationName,
 	})
-<<<<<<< HEAD
-
-=======
 	// parse the source
->>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
 	doc, err := parser.Parse(parser.ParseParams{Source: source})
 	if err != nil {
 		return nil, err
 	}
-<<<<<<< HEAD
 
-	return graph.execGraphQLDocument(doc, token, m{"vars": req.Variables})
+	return graph.execGraphQLDocument(doc, token, utils.M{"vars": req.Variables})
 }
 
-func (graph *Module) execGraphQLDocument(node ast.Node, token string, store m) (interface{}, error) {
-=======
-	return graph.execGraphQLDocument(doc, utils.M{})
-}
-
-func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interface{}, error) {
->>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
+func (graph *Module) execGraphQLDocument(node ast.Node, token string, store utils.M) (interface{}, error) {
 	switch node.GetKind() {
 
 	case kinds.Document:
 		doc := node.(*ast.Document)
 		for _, v := range doc.Definitions {
-<<<<<<< HEAD
 			return graph.execGraphQLDocument(v, token, store)
-=======
-			fmt.Println("For ", v)
-			return graph.execGraphQLDocument(v, store)
->>>>>>> 9e6cacee503bece605f7e123f7ca4f25c1005c5b
 		}
 		return nil, errors.New("No definitions provided")
 
@@ -90,10 +70,11 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interfac
 		op := node.(*ast.OperationDefinition)
 		switch op.Operation {
 		case "query", "mutation":
-			obj := utils.M{}
+			obj := map[string]interface{}{}
 			for _, v := range op.SelectionSet.Selections {
 
 				field := v.(*ast.Field)
+
 				result, err := graph.execGraphQLDocument(field, token, store)
 				if err != nil {
 					return nil, err
@@ -121,7 +102,6 @@ func (graph *Module) execGraphQLDocument(node ast.Node, store utils.M) (interfac
 				if err != nil {
 					return nil, err
 				}
-
 				return graph.processQueryResult(field, token, store, result)
 			}
 
