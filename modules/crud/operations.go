@@ -20,7 +20,7 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
-	if err := m.ValidateSchema(dbType, col, req); err != nil {
+	if err := m.validateSchema(dbType, col, req); err != nil {
 		return err
 	}
 

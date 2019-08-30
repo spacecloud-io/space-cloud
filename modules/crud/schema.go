@@ -24,7 +24,7 @@ func (m *Module) parseSchema(crud config.Crud) error {
 		collection := SchemaCollection{}
 		for collectionName, v := range v.Collections {
 			if v.Schema == "" {
-				return errors.New("Schema is empty")
+				continue
 			}
 			source := source.NewSource(&source.Source{
 				Body: []byte(v.Schema),
@@ -142,6 +142,10 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 }
 
 func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]interface{}) (map[string]interface{}, error) {
+	if len(collectionFields) == 0 {
+		return doc, nil
+	}
+
 	mutatedDoc := map[string]interface{}{}
 
 	for fieldKey, fieldValue := range collectionFields {
@@ -164,17 +168,16 @@ func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]in
 	return mutatedDoc, nil
 }
 
-// ValidateSchema checks data type
-func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) error {
+func (m *Module) validateSchema(dbType, col string, req *model.CreateRequest) error {
 
 	if m.schema == nil {
 		return errors.New("Schema not initialized")
 	}
 
-	v := make([]map[string]interface{}, 0)
+	v := make([]interface{}, 0)
 
 	switch t := req.Document.(type) {
-	case []map[string]interface{}:
+	case []interface{}:
 		v = t
 	case map[string]interface{}:
 		v = append(v, t)
@@ -189,9 +192,8 @@ func (m *Module) ValidateSchema(dbType, col string, req *model.CreateRequest) er
 		return errors.New("No collection or table was found named " + col)
 	}
 
-	for index, fields := range v {
-
-		newDoc, err := m.schemaValidator(collectionFields, fields)
+	for index, doc := range v {
+		newDoc, err := m.schemaValidator(collectionFields, doc.(map[string]interface{}))
 		if err != nil {
 			return err
 		}
@@ -211,11 +213,7 @@ func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 		// TODO: int64
 		switch fieldValue.Kind {
 		case TypeDateTime:
-			unitTimeInRFC3339 := time.Unix(int64(v), 0).Format(time.RFC3339)
-			if unitTimeInRFC3339 == "" {
-				return nil, errors.New("Integer Wrong Date-Time Format")
-			}
-			return unitTimeInRFC3339, nil
+			return time.Unix(int64(v), 0), nil
 		case TypeID, TypeInteger:
 			return value, nil
 		default:
@@ -251,11 +249,7 @@ func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 			return nil, errors.New("Bool wrong type wanted " + fieldValue.Kind + " got Bool")
 		}
 	case map[string]interface{}:
-		newDoc, err := m.schemaValidator(fieldValue.NestedObject, v)
-		if err != nil {
-			return nil, err
-		}
-		return newDoc, nil
+		return m.schemaValidator(fieldValue.NestedObject, v)
 
 	case []interface{}:
 		arr := make([]interface{}, len(v))

@@ -125,7 +125,7 @@ func TestValidateSchema(t *testing.T) {
 
 	for _, val := range tdd {
 		t.Run(val.description, func(t *testing.T) {
-			err := m.ValidateSchema(val.dbName, val.coll, &val.value)
+			err := m.validateSchema(val.dbName, val.coll, &val.value)
 			if err != nil {
 				t.Fatal(err)
 			}
