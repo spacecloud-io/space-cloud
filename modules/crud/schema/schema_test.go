@@ -1,4 +1,4 @@
-package crud
+package schema
 
 import (
 	"testing"
@@ -15,6 +15,7 @@ type Tweet {
 	text: String
 	owner: [Integer!]! @relation(link: INLINE)
 	location: location!
+	age : Integer!
   }
   
   type User {
@@ -41,7 +42,7 @@ type Tweet {
 	  dob : DateTime!
   }
 `
-var v = config.Crud{
+var ParseData = config.Crud{
 	"mongo": &config.CrudStub{
 		Collections: map[string]*config.TableRule{
 			"tweet": &config.TableRule{
@@ -59,10 +60,10 @@ var v = config.Crud{
 
 func TestParseSchema(t *testing.T) {
 
-	m := Init()
+	s := Init()
 
 	t.Run("Schema Parser", func(t *testing.T) {
-		err := m.parseSchema(v)
+		err := s.ParseSchema(ParseData)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -72,7 +73,7 @@ func TestParseSchema(t *testing.T) {
 		// 	fmt.Println("error:", err)
 		// }
 		// fmt.Print(string(b))
-		t.Log("Logging Test Output :: ", m.schema)
+		t.Log("Logging Test Output :: ", s.SchemaDoc)
 	})
 }
 
@@ -117,15 +118,15 @@ func TestValidateSchema(t *testing.T) {
 		value:       req,
 	}}
 
-	m := Init()
-	err := m.parseSchema(v)
+	s := Init()
+	err := s.ParseSchema(ParseData)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, val := range tdd {
 		t.Run(val.description, func(t *testing.T) {
-			err := m.validateSchema(val.dbName, val.coll, &val.value)
+			err := s.ValidateCreateOperation(val.dbName, val.coll, &val.value)
 			if err != nil {
 				t.Fatal(err)
 			}

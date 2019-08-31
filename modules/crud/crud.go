@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 
 	"github.com/spaceuptech/space-cloud/modules/crud/mgo"
+	"github.com/spaceuptech/space-cloud/modules/crud/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud/sql"
 )
 
@@ -18,43 +19,8 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]Crud
 	primaryDB string
-	schema    SchemaType
+	schema    *schema.Schema
 }
-
-type (
-	// SchemaType is the data structure for storing the parsed values of schema string
-	SchemaType       map[string]SchemaCollection // key is database name
-	SchemaCollection map[string]SchemaField      // key is collection name
-	SchemaField      map[string]*SchemaFieldType // key is field name
-	DirectiveArgs    map[string]string           // key is directive's argument name
-	fieldType        int
-
-	SchemaFieldType struct {
-		IsFieldTypeRequired bool
-		IsList              bool
-		Directive           DirectiveProperties
-		Kind                string
-		NestedObject        SchemaField
-		TableJoin           string
-	}
-	DirectiveProperties struct {
-		Kind  string
-		Value DirectiveArgs
-	}
-)
-
-const (
-	TypeString   string = "String"
-	TypeInteger  string = "Integer"
-	TypeFloat    string = "Float"
-	TypeBoolean  string = "Boolean"
-	TypeDateTime string = "DateTime"
-	TypeEnum     string = "Enum"
-	TypeJSON     string = "Json"
-	TypeID       string = "ID"
-	TypeJoin     string = "Object"
-	TypeRelation string = "Join"
-)
 
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
@@ -106,9 +72,11 @@ func (m *Module) SetConfig(crud config.Crud) error {
 	}
 	m.blocks = make(map[string]Crud, len(crud))
 
-	if err := m.parseSchema(crud); err != nil {
+	s := schema.Init()
+	if err := s.ParseSchema(crud); err != nil {
 		return err
 	}
+	m.schema = s
 
 	// Create a new crud blocks
 	for k, v := range crud {

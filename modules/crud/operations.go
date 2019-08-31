@@ -19,7 +19,7 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
-	if err := m.validateSchema(dbType, col, req); err != nil {
+	if err := m.schema.ValidateCreateOperation(dbType, col, req); err != nil {
 		return err
 	}
 
@@ -54,6 +54,10 @@ func (m *Module) Update(ctx context.Context, dbType, project, col string, req *m
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	if err := m.schema.ValidateUpdateOperation(dbType, col, req.Update); err != nil {
 		return err
 	}
 

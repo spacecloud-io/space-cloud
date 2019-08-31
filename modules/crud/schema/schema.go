@@ -1,4 +1,4 @@
-package crud
+package schema
 
 import (
 	"errors"
@@ -16,8 +16,13 @@ import (
 
 // TODO: check graphql types
 
+// Init creates a new instance of the schema object
+func Init() *Schema {
+	return &Schema{SchemaDoc: SchemaType{}}
+}
+
 // ParseSchema Initializes Schema field in Module struct
-func (m *Module) parseSchema(crud config.Crud) error {
+func (s *Schema) ParseSchema(crud config.Crud) error {
 
 	schema := make(SchemaType, len(crud))
 	for dbName, v := range crud {
@@ -42,7 +47,7 @@ func (m *Module) parseSchema(crud config.Crud) error {
 		}
 		schema[dbName] = collection
 	}
-	m.schema = schema
+	s.SchemaDoc = schema
 	return nil
 }
 
@@ -141,7 +146,7 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 	return nil
 }
 
-func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]interface{}) (map[string]interface{}, error) {
+func (s *Schema) schemaValidator(collectionFields SchemaField, doc map[string]interface{}) (map[string]interface{}, error) {
 	if len(collectionFields) == 0 {
 		return doc, nil
 	}
@@ -158,7 +163,7 @@ func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]in
 		}
 
 		// check type
-		val, err := m.checkType(value, fieldValue)
+		val, err := s.checkType(value, fieldValue)
 		if err != nil {
 			return nil, err
 		}
@@ -168,9 +173,10 @@ func (m *Module) schemaValidator(collectionFields SchemaField, doc map[string]in
 	return mutatedDoc, nil
 }
 
-func (m *Module) validateSchema(dbType, col string, req *model.CreateRequest) error {
+// ValidateCreateOperation
+func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRequest) error {
 
-	if m.schema == nil {
+	if s.SchemaDoc == nil {
 		return errors.New("Schema not initialized")
 	}
 
@@ -183,7 +189,7 @@ func (m *Module) validateSchema(dbType, col string, req *model.CreateRequest) er
 		v = append(v, t)
 	}
 
-	collection, ok := m.schema[dbType]
+	collection, ok := s.SchemaDoc[dbType]
 	if !ok {
 		return errors.New("No db was found named " + dbType)
 	}
@@ -193,7 +199,7 @@ func (m *Module) validateSchema(dbType, col string, req *model.CreateRequest) er
 	}
 
 	for index, doc := range v {
-		newDoc, err := m.schemaValidator(collectionFields, doc.(map[string]interface{}))
+		newDoc, err := s.schemaValidator(collectionFields, doc.(map[string]interface{}))
 		if err != nil {
 			return err
 		}
@@ -206,7 +212,7 @@ func (m *Module) validateSchema(dbType, col string, req *model.CreateRequest) er
 	return nil
 }
 
-func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
+func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
 
 	switch v := value.(type) {
 	case int:
@@ -249,12 +255,12 @@ func (m *Module) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 			return nil, errors.New("Bool wrong type wanted " + fieldValue.Kind + " got Bool")
 		}
 	case map[string]interface{}:
-		return m.schemaValidator(fieldValue.NestedObject, v)
+		return s.schemaValidator(fieldValue.NestedObject, v)
 
 	case []interface{}:
 		arr := make([]interface{}, len(v))
 		for index, value := range v {
-			val, err := m.checkType(value, fieldValue)
+			val, err := s.checkType(value, fieldValue)
 			if err != nil {
 				return nil, err
 			}
