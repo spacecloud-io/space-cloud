@@ -11,24 +11,45 @@ import (
 )
 
 func (graph *Module) execWriteRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbType := field.Directives[0].Name.Value
+	dbType := getDBType(field)
 	col := strings.TrimPrefix(field.Name.Value, "insert_")
 
 	req, err := generateCreateRequest(field, store)
 	if err != nil {
 		return nil, err
 	}
-	status, err := graph.auth.IsCreateOpAuthorised(graph.project, dbType, col, token, req)
+
+	t := model.CreateRequest{Operation: req.Operation, Document: req.Document}
+
+	status, err := graph.auth.IsCreateOpAuthorised(graph.project, dbType, col, token, &t)
 	if err != nil {
 		return nil, err
 	}
 
-	return map[string]interface{}{"status": status}, graph.crud.Create(context.TODO(), dbType, graph.project, col, req)
+	return map[string]interface{}{"status": status}, graph.crud.Create(context.TODO(), dbType, graph.project, col, &t)
 }
 
-func generateCreateRequest(field *ast.Field, store utils.M) (*model.CreateRequest, error) {
+func (graph *Module) generateWriteReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
+	dbType := getDBType(field)
+	col := strings.TrimPrefix(field.Name.Value, "insert_")
+
+	req, err := generateCreateRequest(field, store)
+	if err != nil {
+		return nil, err
+	}
+
+	t := model.CreateRequest{Operation: req.Operation, Document: req.Document}
+
+	_, err = graph.auth.IsCreateOpAuthorised(graph.project, dbType, col, token, &t)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+func generateCreateRequest(field *ast.Field, store utils.M) (*model.AllRequest, error) {
 	// Create a create request object
-	req := model.CreateRequest{Operation: utils.All}
+	req := model.AllRequest{Operation: utils.All}
 
 	var err error
 	req.Document, err = extractDocs(field.Arguments, store)

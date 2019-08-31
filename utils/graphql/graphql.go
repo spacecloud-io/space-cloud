@@ -3,7 +3,6 @@ package graphql
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
@@ -69,7 +68,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 	case kinds.OperationDefinition:
 		op := node.(*ast.OperationDefinition)
 		switch op.Operation {
-		case "query", "mutation":
+		case "query":
 			obj := map[string]interface{}{}
 			for _, v := range op.SelectionSet.Selections {
 
@@ -84,6 +83,9 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 			}
 
 			return obj, nil
+		case "mutation":
+
+			return graph.handleMutation(node, token, store)
 
 		default:
 			return nil, errors.New("Invalid operation: " + op.Operation)
@@ -95,36 +97,6 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 		// No directive means its a nested field
 
 		if len(field.Directives) > 0 {
-
-			// Insert query function
-			if strings.HasPrefix(field.Name.Value, "insert_") {
-				result, err := graph.execWriteRequest(field, token, store)
-				if err != nil {
-					return nil, err
-				}
-				return graph.processQueryResult(field, token, store, result)
-			}
-
-			// Delete query function
-			if strings.HasPrefix(field.Name.Value, "delete_") {
-				result, err := graph.execDeleteRequest(field, token, store)
-				if err != nil {
-					return nil, err
-				}
-
-				return graph.processQueryResult(field, token, store, result)
-			}
-
-			// Update query function
-			if strings.HasPrefix(field.Name.Value, "update_") {
-				result, err := graph.execUpdateRequest(field, token, store)
-				if err != nil {
-					return nil, err
-				}
-
-				return graph.processQueryResult(field, token, store, result)
-			}
-
 			kind := getQueryKind(field.Directives[0])
 			if kind == "read" {
 				result, err := graph.execReadRequest(field, token, store)

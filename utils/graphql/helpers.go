@@ -29,6 +29,17 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
+func getDBType(field *ast.Field) string {
+	dbType := field.Directives[0].Name.Value
+	switch dbType {
+	case "postgres", "mysql":
+		return "sql-" + dbType
+
+	default:
+		return dbType
+	}
+}
+
 func getCollection(field *ast.Field) (string, error) {
 	if len(field.Directives[0].Arguments) > 0 {
 		for _, v := range field.Directives[0].Arguments {
@@ -48,7 +59,7 @@ func getCollection(field *ast.Field) (string, error) {
 func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 	switch value.GetKind() {
 	case kinds.ObjectValue:
-		o := utils.M{}
+		o := map[string]interface{}{}
 
 		obj := value.(*ast.ObjectValue)
 

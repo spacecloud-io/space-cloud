@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) execDeleteRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbType := field.Directives[0].Name.Value
+	dbType := getDBType(field)
 	col := strings.TrimPrefix(field.Name.Value, "delete_")
 
 	req, err := generateDeleteRequest(field, store)
@@ -19,19 +19,39 @@ func (graph *Module) execDeleteRequest(field *ast.Field, token string, store uti
 		return nil, err
 	}
 
-	status, err := graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, req)
+	t := model.DeleteRequest{Operation: req.Operation, Find: req.Find}
+
+	status, err := graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, &t)
 	if err != nil {
 		return nil, err
 	}
 
-	return utils.M{"status": status}, graph.crud.Delete(context.TODO(), dbType, graph.project, col, req)
+	return utils.M{"status": status}, graph.crud.Delete(context.TODO(), dbType, graph.project, col, &t)
 }
 
-func generateDeleteRequest(field *ast.Field, store utils.M) (*model.DeleteRequest, error) {
+func (graph *Module) genrateDeleteReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
+	dbType := field.Directives[0].Name.Value
+	col := strings.TrimPrefix(field.Name.Value, "delete_")
+
+	req, err := generateDeleteRequest(field, store)
+	if err != nil {
+		return nil, err
+	}
+	t := model.DeleteRequest{Operation: req.Operation, Find: req.Find}
+
+	_, err = graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, &t)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
+
+}
+
+func generateDeleteRequest(field *ast.Field, store utils.M) (*model.AllRequest, error) {
 	var err error
 
 	// Create a delete request object
-	deleteRequest := model.DeleteRequest{Operation: utils.All}
+	deleteRequest := model.AllRequest{Operation: utils.All}
 
 	deleteRequest.Find, err = extractWhereClause(field.Arguments, store)
 	if err != nil {
