@@ -30,7 +30,7 @@ func (graph *Module) execDeleteRequest(field *ast.Field, token string, store uti
 }
 
 func (graph *Module) genrateDeleteReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
-	dbType := field.Directives[0].Name.Value
+	dbType := getDBType(field)
 	col := strings.TrimPrefix(field.Name.Value, "delete_")
 
 	req, err := generateDeleteRequest(field, store)
