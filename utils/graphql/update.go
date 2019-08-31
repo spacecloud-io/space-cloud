@@ -18,14 +18,12 @@ func (graph *Module) execUpdateRequest(field *ast.Field, token string, store uti
 		return nil, err
 	}
 
-	t := model.UpdateRequest{Operation: req.Operation, Find: req.Find, Update: req.Update}
-
-	status, err := graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, token, &t)
+	status, err := graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return utils.M{"status": status}, graph.crud.Update(context.TODO(), dbType, graph.project, col, &t)
+	return utils.M{"status": status}, graph.crud.Update(context.TODO(), dbType, graph.project, col, req)
 }
 
 func (graph *Module) genrateUpdateReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
@@ -36,13 +34,15 @@ func (graph *Module) genrateUpdateReq(field *ast.Field, token string, store map[
 		return nil, err
 	}
 
-	t := model.UpdateRequest{Operation: req.Operation, Find: req.Find, Update: req.Update}
-
-	_, err = graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, token, &t)
+	_, err = graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}
-	return req, nil
+	return generateUpdateAllRequest(req), nil
+}
+
+func generateUpdateAllRequest(req *model.UpdateRequest) *model.AllRequest {
+	return &model.AllRequest{Operation: req.Operation, Find: req.Find, Update: req.Update}
 }
 
 func extractUpdateOperation(args []*ast.Argument, store utils.M) (string, error) {
@@ -63,9 +63,9 @@ func extractUpdateOperation(args []*ast.Argument, store utils.M) (string, error)
 	return utils.All, nil
 }
 
-func generateUpdateRequest(field *ast.Field, store utils.M) (*model.AllRequest, error) {
+func generateUpdateRequest(field *ast.Field, store utils.M) (*model.UpdateRequest, error) {
 	var err error
-	var updateRequest model.AllRequest
+	var updateRequest model.UpdateRequest
 
 	updateRequest.Operation, err = extractUpdateOperation(field.Arguments, store)
 	if err != nil {

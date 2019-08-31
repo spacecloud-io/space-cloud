@@ -19,14 +19,12 @@ func (graph *Module) execDeleteRequest(field *ast.Field, token string, store uti
 		return nil, err
 	}
 
-	t := model.DeleteRequest{Operation: req.Operation, Find: req.Find}
-
-	status, err := graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, &t)
+	status, err := graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return utils.M{"status": status}, graph.crud.Delete(context.TODO(), dbType, graph.project, col, &t)
+	return utils.M{"status": status}, graph.crud.Delete(context.TODO(), dbType, graph.project, col, req)
 }
 
 func (graph *Module) genrateDeleteReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
@@ -37,21 +35,24 @@ func (graph *Module) genrateDeleteReq(field *ast.Field, token string, store map[
 	if err != nil {
 		return nil, err
 	}
-	t := model.DeleteRequest{Operation: req.Operation, Find: req.Find}
 
-	_, err = graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, &t)
+	_, err = graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}
-	return req, nil
+	return generateDeleteAllRequest(req), nil
 
 }
 
-func generateDeleteRequest(field *ast.Field, store utils.M) (*model.AllRequest, error) {
+func generateDeleteAllRequest(req *model.DeleteRequest) *model.AllRequest {
+	return &model.AllRequest{Operation: req.Operation, Find: req.Find}
+}
+
+func generateDeleteRequest(field *ast.Field, store utils.M) (*model.DeleteRequest, error) {
 	var err error
 
 	// Create a delete request object
-	deleteRequest := model.AllRequest{Operation: utils.All}
+	deleteRequest := model.DeleteRequest{Operation: utils.All}
 
 	deleteRequest.Find, err = extractWhereClause(field.Arguments, store)
 	if err != nil {
