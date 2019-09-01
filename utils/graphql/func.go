@@ -10,7 +10,7 @@ import (
 )
 
 func (graph *Module) execFuncCall(field *ast.Field, store utils.M) (interface{}, error) {
-	serviceName := field.Directives[0].Name.Value
+	serviceName := getDBType(field)
 	funcName, err := getFuncName(field)
 	if err != nil {
 		return nil, err

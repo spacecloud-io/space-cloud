@@ -11,18 +11,38 @@ import (
 )
 
 func (graph *Module) execUpdateRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbType := field.Directives[0].Name.Value
+	dbType := getDBType(field)
 	col := strings.TrimPrefix(field.Name.Value, "update_")
 	req, err := generateUpdateRequest(field, store)
 	if err != nil {
 		return nil, err
 	}
+
 	status, err := graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}
 
 	return utils.M{"status": status}, graph.crud.Update(context.TODO(), dbType, graph.project, col, req)
+}
+
+func (graph *Module) genrateUpdateReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
+	dbType := getDBType(field)
+	col := strings.TrimPrefix(field.Name.Value, "update_")
+	req, err := generateUpdateRequest(field, store)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = graph.auth.IsUpdateOpAuthorised(graph.project, dbType, col, token, req)
+	if err != nil {
+		return nil, err
+	}
+	return generateUpdateAllRequest(req), nil
+}
+
+func generateUpdateAllRequest(req *model.UpdateRequest) *model.AllRequest {
+	return &model.AllRequest{Operation: req.Operation, Find: req.Find, Update: req.Update}
 }
 
 func extractUpdateOperation(args []*ast.Argument, store utils.M) (string, error) {

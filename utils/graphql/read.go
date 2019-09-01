@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) execReadRequest(field *ast.Field, token string, store utils.M) (interface{}, error) {
-	dbType := field.Directives[0].Name.Value
+	dbType := getDBType(field)
 	col, err := getCollection(field)
 	if err != nil {
 		return nil, err
