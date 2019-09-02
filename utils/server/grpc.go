@@ -677,7 +677,7 @@ func (s *Server) PubsubPublish(ctx context.Context, in *pb.PubsubPublishRequest)
 	if err != nil {
 		return &pb.Response{Status: int32(500), Error: err.Error()}, nil
 	}
-	status, err := s.pubsub.Publish(in.Meta.Project, in.Meta.Token, in.Subject, in.Msg)
+	status, err := s.pubsub.Publish(in.Meta.Project, in.Meta.Token, in.Subject, v)
 	out := pb.Response{}
 	out.Status = int32(status)
 	if err != nil {

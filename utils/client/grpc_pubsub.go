@@ -80,7 +80,7 @@ func (c *GRPCPubsubClient) Read(cb DataCallback) {
 		in, err := c.streamServer.Recv()
 		if err != nil {
 			if err != nil {
-				log.Println("GRPC Service Receive Error -", err)
+				log.Println("GRPC Pubsub Receive Error -", err)
 				return
 			}
 		}
