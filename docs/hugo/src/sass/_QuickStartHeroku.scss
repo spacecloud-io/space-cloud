@@ -1,0 +1,109 @@
+.Quickstart{
+    position: relative;
+    left: 30px;
+    .Heroku{
+        width: 347px;
+        height: 38px;
+        position: relative;
+        left: 0px;
+        top: 40px;
+        font-weight: 600;
+        font-size: 32px;
+        
+        @media #{$medium-and-down}{
+            font-size: 24px;
+            position: relative;
+            left: 20px;
+            top: 20px;
+            
+        }
+        @media screen and(max-width:1024px) {
+            position: relative;
+            left: 20px;
+            font-size: 28px;
+        }
+        @media screen and(max-width:320px) {
+           
+            font-size: 20px;
+        }
+    }
+    .toc{
+        width: 1065px;
+        height: 220px;
+        position: relative;
+        left: 0px;
+        top: 60px;
+        background: #F5F5F5;
+        border-radius: 4px;
+
+
+        .table{
+            font-size: 20px;
+            font-weight: 500;
+            position: relative;
+            left: 30px;
+            top: 30px;
+        }
+         ul li a{
+            list-style-type: square ;
+            position: relative;
+            left: 50px;
+            top: 30px;
+            font-size: 20px;
+         }
+         
+    }
+    .abc{
+        position: relative;
+        top: 80px;
+        font-weight: 500;
+        font-size: 20px;
+
+    .on,.tier{
+        display: none;
+    }
+    }
+    
+
+    @media screen and(max-width:768px )  {
+        .Heroku{
+            position: relative;
+            left:0px;
+        }
+        .toc{
+            position: relative;
+            //left:100px;
+            width: 70vw;
+        }
+        
+    }
+    @media screen and(min-width:769px) {
+        position: relative;
+        left: 0px;
+        width: 80vw;
+        .Heroku{
+            position: relative;
+            left:100px;
+        }
+
+        .toc{
+            position: relative;
+            left:100px;
+            width: 70vw;
+        }
+        .abc{
+            position: relative;
+            left:100px;
+            overflow: hidden;
+        
+           
+        }
+    
+        @media screen and(min-width:1220px) {
+        .abc{
+        .on,.tier{
+            display: block;
+        }}
+    }}
+
+}

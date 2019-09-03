@@ -1,4 +1,199 @@
-.LeftSidenav-white{
-padding: 10px 24px;
+.leftSidenav-white{
+    .desktop-docs-sidebar {
+      width: 300px;
+      height: 700px;
+      position: absolute;
+      top: 105px;
+      left: 0;
+      bottom: 0;
+      background: $default-color;
+      border-right: 1px solid $border-color;
+      overflow: auto;
+      z-index: 1;
+      color: #002C39;
+  
+      @media screen and (max-width: 1024px) {
+        width: 250px;
+      }
+      ul.collapsible {
+        box-shadow: none;
+        border: none;
+        overflow: auto;
+        margin: 20px 0px 80px 40px;
+        font-weight: 600;
+        font-size: 16px;
+        
+        color: #002C39;
+  
+          .collapsible-header {
+          border-bottom: none;
+          padding: 0;
+          border: none;
+          color: $dark-color;
+          font-style: normal;
+          font-weight: 600;
+          font-size: 16px;
+          padding: 12px 20px 12px 0px;
+          transition: .2s ease-out;
+          background: $default-color;
+          
+  
+          &:hover {
+            background: $link-hover;
+            transition: .2s ease-out;
+          }
+        }
+          
+        .collapsible-header.active {
+          color: $link;
+          font-weight: 600;
+          background: $link-selected !important;
+        }
+        
+        div.collapsible-body {
+          padding: 0px;
+          border-bottom: none;
+          font-weight: normal;
+          font-size: 16px;
 
+  
+          a {
+            display: inline-block;
+            width: 100%;
+            color: $sub-heading;
+            padding: 12px 20px 12px 50px;
+            transition: .2s ease-out;
+            background: $default-color;
+           
+          }
+  
+          a:hover {
+            background: $link-hover;
+            transition: .2s ease-out;
+          }
+  
+          a.active {
+            color: #1890FF;
+            font-weight: 600;
+            background: $link-selected !important;
+          }
+        }
+      }
+    }
 }
+  
+  
+    .sidebar-selected-section {
+      background-color: transparent;
+      height: 56px;
+      line-height: 56px;
+      box-shadow: $topbar-shadow;
+      //box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      width:100vw;
+      position: relative;
+      left: -10px; 
+      
+      
+      i {
+        margin-left: 18px;
+        color: $dark-color;
+        vertical-align: middle;
+        position: relative;
+        top: -2px;
+      }
+  
+      .sidebar-title {
+        color: $dark-color;
+        font-family: 'Raleway', sans-serif;
+        font-weight: 600;
+        font-size: 16px;
+        margin-left: 20px;
+      }
+    }
+  
+  
+  
+    .sidebar-dropdown {
+      @media #{$large-and-up} {
+        display: none;
+      }
+    }
+  
+    .sidebar-dropdown.closed-sidebar {
+    display: none;
+    
+      transition: all .2s ease-out;
+    }
+  
+    .sidebar-dropdown.expanded-sidebar {
+      height: 300px;
+      overflow: auto;
+      box-shadow: $topbar-shadow;
+      transition: all .2s ease-out;
+      border:none;
+      width:100vw;
+      position: relative;
+      left: -10px; 
+      
+  
+      .mobile-docs-sidebar {
+        width: 100%;
+  
+        ul.collapsible {
+          box-shadow: none;
+          border: none;
+          overflow: auto;
+          margin: 0;
+  
+          .collapsible-header {
+            border-bottom: none;
+            padding: 0;
+            color: $dark-color;
+            font-weight: 600;
+            padding: 12px 20px 12px 40px;
+            transition: .2s ease-out;
+            background: $default-color;
+            font-size: 14px;
+  
+            &:hover {
+              background: $link-hover;
+              transition: .2s ease-out;
+            }
+          }
+  
+          a.collapsible-header.active {
+            color: $link;
+            font-weight: 600;
+            background: $link-selected !important;
+          }
+  
+          div.collapsible-body {
+            padding: 0px;
+            border-bottom: none;
+  
+            a {
+              display: inline-block;
+              width: 100%;
+              color: $sub-heading;
+              padding: 12px 20px 12px 50px;
+              transition: .2s ease-out;
+              background: $default-color;
+              font-size: 14px;
+            }
+  
+            a:hover {
+              background: $link-hover;
+              transition: .2s ease-out;
+            }
+  
+            a.active {
+              color: $link;
+              font-weight: 600;
+              background: $link-selected !important;
+            }
+          }
+        }
+      }
+    
+  }
