@@ -10,13 +10,16 @@ import (
 func (m *Module) Create(ctx context.Context, dbType, project, col string, req *model.CreateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
-
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
 		return err
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	if err := m.validateSchema(dbType, col, req); err != nil {
 		return err
 	}
 

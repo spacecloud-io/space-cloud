@@ -10,8 +10,8 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execReadRequest(field *ast.Field, store utils.M) (interface{}, error) {
-	dbType := field.Directives[0].Name.Value
+func (graph *Module) execReadRequest(field *ast.Field, token string, store utils.M) (interface{}, error) {
+	dbType := getDBType(field)
 	col, err := getCollection(field)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (graph *Module) execReadRequest(field *ast.Field, store utils.M) (interface
 		return nil, err
 	}
 
-	if _, err := graph.auth.IsReadOpAuthorised(graph.project, dbType, col, "", req); err != nil {
+	if _, err := graph.auth.IsReadOpAuthorised(graph.project, dbType, col, token, req); err != nil {
 		return nil, err
 	}
 
