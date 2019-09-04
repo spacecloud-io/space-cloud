@@ -9,16 +9,27 @@ import (
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
+
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // TODO: check graphql types
+type Schema struct {
+	SchemaDoc SchemaType
+	crud      *crud.Module
+	project   string
+}
 
 // Init creates a new instance of the schema object
-func Init() *Schema {
-	return &Schema{SchemaDoc: SchemaType{}}
+func Init(crud *crud.Module) *Schema {
+	return &Schema{SchemaDoc: SchemaType{}, crud: crud}
+}
+
+func (s *Schema) SetProject(project string) {
+	s.project = project
 }
 
 // ParseSchema Initializes Schema field in Module struct
@@ -195,7 +206,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	}
 	collectionFields, ok := collection[col]
 	if !ok {
-		return nil
+		return errors.New("No collection or table was found named " + col)
 	}
 
 	for index, doc := range v {

@@ -1,9 +1,6 @@
 package schema
 
 type (
-	Schema struct {
-		SchemaDoc SchemaType
-	}
 
 	// SchemaType is the data structure for storing the parsed values of schema string
 	SchemaType       map[string]SchemaCollection // key is database name
@@ -27,8 +24,8 @@ type (
 )
 
 const (
-	TypeString   string = "String"
 	TypeInteger  string = "Integer"
+	TypeString   string = "String"
 	TypeFloat    string = "Float"
 	TypeBoolean  string = "Boolean"
 	TypeDateTime string = "DateTime"

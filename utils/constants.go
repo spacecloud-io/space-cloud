@@ -244,3 +244,22 @@ const (
 	// Subscribe is the type used for subscribe requests
 	Subscribe PubsubType = "subscribe"
 )
+
+// FieldType is the type for storing sql inspection information
+type FieldType struct {
+	FieldName    string  `db:"Field"`
+	FieldType    string  `db:"Type"`
+	FieldNull    string  `db:"Null"`
+	FieldKey     string  `db:"Key"`
+	FieldDefault *string `db:"Default"`
+	FieldExtra   string  `db:"Extra"`
+}
+
+// ForeignKeysType is the type for storing  foreignkeys information of sql inspection
+type ForeignKeysType struct {
+	TableName      string `db:"TABLE_NAME"`
+	ColumnName     string `db:"COLUMN_NAME"`
+	ConstraintName string `db:"CONSTRAINT_NAME"`
+	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
+	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
+}

@@ -2,7 +2,6 @@ package schema
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -11,27 +10,25 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 	if len(updateDoc) == 0 {
 		return nil
 	}
-
 	schemaDb, ok := s.SchemaDoc[dbType]
 	if !ok {
 		return errors.New(dbType + " Db Not present in Schema")
 	}
 	schemaDoc, ok := schemaDb[col]
 	if !ok {
-		return errors.New(col + " Col Not present in Schema of " + dbType)
+		return nil
 	}
 
-	var temp interface{}
-	var err error
 	for key, doc := range updateDoc {
 		switch key {
 		case "set":
-			temp, err = s.validateSetOperation(doc, schemaDoc)
+			newDoc, err := s.validateSetOperation(doc, schemaDoc)
 			if err != nil {
 				return err
 			}
+			updateDoc[key] = newDoc
 		case "push":
-			temp, err = s.validateArrayOperations(doc, schemaDoc)
+			err := s.validateArrayOperations(doc, schemaDoc)
 			if err != nil {
 				return err
 			}
@@ -40,49 +37,49 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 				return err
 			}
 		case "currentDate", "currentTimestamp":
-			temp, err = validateDateOperations(doc, schemaDoc)
+			err := validateDateOperations(doc, schemaDoc)
 			if err != nil {
 				return err
 			}
 		default:
 			return errors.New(key + " Update operator not supported")
 		}
-		updateDoc[key] = temp
 	}
 	return nil
 }
 
-func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc SchemaField) (interface{}, error) {
+func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc SchemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Schema math op wrong type passed expecting map[string]interface{}")
+		return errors.New("Schema math op wrong type passed expecting map[string]interface{}")
 	}
 
 	for fieldKey, fieldValue := range v {
 
 		schemaDocValue, ok := schemaDoc[fieldKey]
 		if !ok {
-			return nil, errors.New("field not found in schemaField")
+			return errors.New("field not found in schemaField")
 		}
 
 		switch t := fieldValue.(type) {
 		case []interface{}:
-			arr := make([]interface{}, len(t))
-			for index, value := range t {
-				newVal, err := s.checkType(value, schemaDocValue)
-				if err != nil {
-					return nil, err
+			for _, value := range t {
+				if _, err := s.checkType(value, schemaDocValue); err != nil {
+					return err
 				}
-				arr[index] = newVal
 			}
-			return arr, nil
+			return nil
+		case interface{}:
+			if _, err := s.checkType(t, schemaDocValue); err != nil {
+				return err
+			}
 		default:
-			return nil, errors.New("Schema Update Math Op. Wrong type ")
+			return errors.New("Schema update array op. wrong type ")
 		}
 	}
 
-	return nil, nil
+	return nil
 }
 
 func validateMathOperations(doc interface{}, schemaDoc SchemaField) error {
@@ -101,73 +98,64 @@ func validateMathOperations(doc interface{}, schemaDoc SchemaField) error {
 
 		switch fieldValue.(type) {
 		case int:
-			switch schemaDocValue.Kind {
-			case TypeInteger:
-			default:
-				return errors.New("Integer wrong type wanted Integer")
+			if schemaDocValue.Kind != TypeInteger {
+				return errors.New("Integer : wrong type wanted " + schemaDocValue.Kind)
 			}
+			return nil
 		case float32, float64:
-			switch schemaDocValue.Kind {
-			case TypeFloat:
-			default:
-				return errors.New("Float wrong type wanted Float")
+			if schemaDocValue.Kind != TypeFloat {
+				return errors.New("Float : wrong type wanted " + schemaDocValue.Kind)
 			}
+			return nil
 		default:
-			return errors.New("Schema Update Math Op. Wrong type ")
+			return errors.New("Schema update math op. wrong type ")
 		}
 	}
 
 	return nil
 }
 
-func validateDateOperations(doc interface{}, schemaDoc SchemaField) (interface{}, error) {
+func validateDateOperations(doc interface{}, schemaDoc SchemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Schema math op wrong type passed expecting map[string]interface{}")
+		return errors.New("Schema math op : wrong type passed expecting map[string]interface{}")
 	}
-	newMap := map[string]interface{}{}
-	var temp interface{}
+
 	for fieldKey, fieldValue := range v {
 
 		schemaDocValue, ok := schemaDoc[fieldKey]
 		if !ok {
-			return nil, errors.New("field not found in schemaField")
+			return errors.New("field not found in schemaField")
 		}
 
-		temp = fieldValue
 		switch t := fieldValue.(type) {
 		case int:
-			switch schemaDocValue.Kind {
-			case TypeDateTime:
-				temp = time.Unix(int64(t), 0)
-			default:
-				return nil, errors.New("Integer wrong type wanted Datetime ")
+			if schemaDocValue.Kind != TypeDateTime {
+				return errors.New("Integer : wrong type wanted " + schemaDocValue.Kind)
 			}
+			return nil
 		case string:
-			switch schemaDocValue.Kind {
-			case TypeDateTime:
-				unitTimeInRFC3339, err := time.Parse(time.RFC3339, t)
-				if err != nil {
-					return nil, errors.New("String Wrong Date-Time Format")
-				}
-				temp = unitTimeInRFC3339
-			default:
-				return nil, errors.New("String wrong type wanted Datetime")
+			if schemaDocValue.Kind != TypeDateTime {
+				return errors.New("String : wrong type, wanted " + schemaDocValue.Kind)
 			}
+			_, err := time.Parse(time.RFC3339, t)
+			if err != nil {
+				return errors.New("String : wrong date-time format")
+			}
+			return nil
 		default:
-			return nil, errors.New("Schema Update Math Op. Wrong type ")
+			return errors.New("Schema update date op. wrong type ")
 		}
-		newMap[fieldKey] = temp
 	}
 
-	return newMap, nil
+	return nil
 }
 
 func (s *Schema) validateSetOperation(doc interface{}, schemaDoc SchemaField) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Schema math op wrong type passed expecting map[string]interface{}")
+		return nil, errors.New("Schema update set op wrong type passed expecting map[string]interface{}")
 	}
 
 	newMap := map[string]interface{}{}
@@ -175,9 +163,8 @@ func (s *Schema) validateSetOperation(doc interface{}, schemaDoc SchemaField) (i
 		// check if key present in schemaDoc if not insert the field
 		schemaDocValue, ok := schemaDoc[key]
 		if !ok {
-			return nil, errors.New("field not found in schemaField")
+			return nil, errors.New("Scheam set op. field not found in schemaField")
 		}
-		fmt.Println("Doc val ", value)
 		// check type
 		newDoc, err := s.checkType(value, schemaDocValue)
 		if err != nil {

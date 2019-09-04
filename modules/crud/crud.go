@@ -10,7 +10,6 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 
 	"github.com/spaceuptech/space-cloud/modules/crud/mgo"
-	"github.com/spaceuptech/space-cloud/modules/crud/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud/sql"
 )
 
@@ -19,7 +18,6 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]Crud
 	primaryDB string
-	schema    *schema.Schema
 }
 
 // Crud abstracts the implementation crud operations of databases
@@ -30,6 +28,7 @@ type Crud interface {
 	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) error
+	DescribeTable(ctc context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
@@ -71,12 +70,6 @@ func (m *Module) SetConfig(crud config.Crud) error {
 		v.Close()
 	}
 	m.blocks = make(map[string]Crud, len(crud))
-
-	s := schema.Init()
-	if err := s.ParseSchema(crud); err != nil {
-		return err
-	}
-	m.schema = s
 
 	// Create a new crud blocks
 	for k, v := range crud {

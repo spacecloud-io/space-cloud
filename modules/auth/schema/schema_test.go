@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/crud"
 
 	"github.com/spaceuptech/space-cloud/config"
 )
@@ -15,7 +16,7 @@ type Tweet {
 	text: String
 	owner: [Integer!]! @relation(link: INLINE)
 	location: location!
-	age : Integer!
+	age : Integer!	
   }
   
   type User {
@@ -59,8 +60,8 @@ var ParseData = config.Crud{
 }
 
 func TestParseSchema(t *testing.T) {
-
-	s := Init()
+	temp := crud.Module{}
+	s := Init(&temp)
 
 	t.Run("Schema Parser", func(t *testing.T) {
 		err := s.ParseSchema(ParseData)
@@ -117,8 +118,8 @@ func TestValidateSchema(t *testing.T) {
 		description: "checking User defined type",
 		value:       req,
 	}}
-
-	s := Init()
+	temp := crud.Module{}
+	s := Init(&temp)
 	err := s.ParseSchema(ParseData)
 	if err != nil {
 		t.Fatal(err)
