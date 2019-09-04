@@ -195,7 +195,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	}
 	collectionFields, ok := collection[col]
 	if !ok {
-		return errors.New("No collection or table was found named " + col)
+		return nil
 	}
 
 	for index, doc := range v {
