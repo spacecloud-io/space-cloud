@@ -75,6 +75,7 @@ type Modules struct {
 	Functions *Functions `json:"functions" yaml:"functions"`
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
+	Pubsub    *Pubsub    `json:"pubsub" yaml:"pubsub"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -177,4 +178,18 @@ type StaticRoute struct {
 	Host      string `json:"host" yaml:"host"`
 	Proxy     string `json:"proxy" yaml:"proxy"`
 	Protocol  string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
+}
+
+// Pubsub holds the config for the realtime module
+type Pubsub struct {
+	Enabled bool         `json:"enabled" yaml:"enabled"`
+	Broker  utils.Broker `json:"broker" yaml:"broker"`
+	Conn    string       `json:"conn" yaml:"conn"`
+	Rules   []*PubsubRule `json:"rules" yaml:"rules"`
+}
+
+// PubsubRule is the authorization object at the pubsub rule level
+type PubsubRule struct {
+	Subject string           `json:"subject" yaml:"subject"` // The channel subject
+	Rule    map[string]*Rule `json:"rule" yaml:"rule"` // The key can be publish or subscribe
 }

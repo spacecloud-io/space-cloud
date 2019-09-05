@@ -1,0 +1,36 @@
+.row-padding {
+  margin: 0 24px;
+  .card {
+    margin-bottom: 32px;
+    color: #000;
+    padding: 24px;
+
+    .card-graphic {
+      height: 60px;
+    }
+
+    .card-desc {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    @media #{$large-and-up} {
+      margin: 0 16px;
+      text-align: center;
+      .card-graphic {
+        height: 100px;
+        margin-bottom: 16px;
+      }
+      .card-desc {
+        font-size: 16px;
+      }
+    }
+  }
+  .card:hover {
+    box-shadow: 2px 6px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  @media #{$large-and-up} {
+    margin: 0 104px;
+  }
+}

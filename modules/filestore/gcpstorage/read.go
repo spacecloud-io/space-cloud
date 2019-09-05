@@ -12,13 +12,15 @@ import (
 	uuid "github.com/satori/go.uuid"
 	
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // ListDir lists a directory in GCPStorage
 func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
 	// path should always start with a backslash
-	path := strings.TrimRight(req.Path, "/") + "/"
+	path := utils.SingleLeadingTrailing(req.Path, "/")
 	// path will always end in single backslash
+
 	it := g.client.Bucket(g.bucket).Objects(context.TODO(), &storage.Query{
 		Prefix: path,
 		Delimiter: "/",
