@@ -48,7 +48,7 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, e
 	return &readRequest, nil
 }
 
-func extractWhereClause(args []*ast.Argument, store utils.M) (utils.M, error) {
+func extractWhereClause(args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "where":
@@ -56,8 +56,13 @@ func extractWhereClause(args []*ast.Argument, store utils.M) (utils.M, error) {
 			if err != nil {
 				return nil, err
 			}
-
-			return temp.(utils.M), nil
+			if obj, ok := temp.(utils.M); ok {
+				return obj, nil
+			}
+			if obj, ok := temp.(map[string]interface{}); ok {
+				return obj, nil
+			}
+			return nil, errors.New("Invalid where clause provided")
 		}
 	}
 
