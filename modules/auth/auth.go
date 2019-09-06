@@ -7,7 +7,9 @@ import (
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+
 	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
@@ -23,15 +25,16 @@ type Module struct {
 	pubsubRules   []*config.PubsubRule
 	project       string
 	fileStoreType string
+	schema        *schema.Schema
 }
 
 // Init creates a new instance of the auth object
 func Init(crud *crud.Module, functions *functions.Module) *Module {
-	return &Module{rules: make(config.Crud), crud: crud, functions: functions}
+	return &Module{rules: make(config.Crud), crud: crud, functions: functions, schema: schema.Init(crud)}
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions, pubsub *config.Pubsub) {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions, pubsub *config.Pubsub) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -50,6 +53,14 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	if pubsub != nil && pubsub.Enabled {
 		m.pubsubRules = pubsub.Rules
 	}
+
+	if err := m.schema.ParseSchema(m.rules); err != nil {
+		return err
+	}
+
+	m.schema.SetProject(project)
+
+	return nil
 }
 
 // SetSecret sets the secret key to be used for JWT authentication

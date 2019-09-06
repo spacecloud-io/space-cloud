@@ -18,43 +18,7 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]Crud
 	primaryDB string
-	schema    SchemaType
 }
-
-type (
-	// SchemaType is the data structure for storing the parsed values of schema string
-	SchemaType       map[string]SchemaCollection // key is database name
-	SchemaCollection map[string]SchemaField      // key is collection name
-	SchemaField      map[string]*SchemaFieldType // key is field name
-	DirectiveArgs    map[string]string           // key is directive's argument name
-	fieldType        int
-
-	SchemaFieldType struct {
-		IsFieldTypeRequired bool
-		IsList              bool
-		Directive           DirectiveProperties
-		Kind                string
-		NestedObject        SchemaField
-		TableJoin           string
-	}
-	DirectiveProperties struct {
-		Kind  string
-		Value DirectiveArgs
-	}
-)
-
-const (
-	TypeString   string = "String"
-	TypeInteger  string = "Integer"
-	TypeFloat    string = "Float"
-	TypeBoolean  string = "Boolean"
-	TypeDateTime string = "DateTime"
-	TypeEnum     string = "Enum"
-	TypeJSON     string = "Json"
-	TypeID       string = "ID"
-	TypeJoin     string = "Object"
-	TypeRelation string = "Join"
-)
 
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
@@ -64,6 +28,7 @@ type Crud interface {
 	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) error
+	DescribeTable(ctc context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
@@ -105,10 +70,6 @@ func (m *Module) SetConfig(crud config.Crud) error {
 		v.Close()
 	}
 	m.blocks = make(map[string]Crud, len(crud))
-
-	if err := m.parseSchema(crud); err != nil {
-		return err
-	}
 
 	// Create a new crud blocks
 	for k, v := range crud {

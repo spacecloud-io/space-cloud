@@ -2,8 +2,10 @@ package crud
 
 import (
 	"context"
+	"errors"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // Create inserts a document (or multiple when op is "all") into the database based on dbType
@@ -16,10 +18,6 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
-		return err
-	}
-
-	if err := m.validateSchema(dbType, col, req); err != nil {
 		return err
 	}
 
@@ -109,4 +107,26 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 	}
 
 	return crud.Batch(ctx, project, req)
+}
+
+// DescribeTable performs a db operation for describing a table
+func (m *Module) DescribeTable(ctx context.Context, dbType, project string, doc interface{}) ([]utils.FieldType, []utils.ForeignKeysType, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return nil, nil, err
+	}
+
+	col, ok := doc.(string)
+	if !ok {
+		return nil, nil, errors.New("Execute query wanted string")
+	}
+
+	return crud.DescribeTable(ctx, project, col)
 }
