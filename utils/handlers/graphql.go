@@ -8,10 +8,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
 )
 
-// HandleCrudCreate creates the create operation endpoint
+// HandleGraphQLRequest creates the graphql operation endpoint
 func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -49,4 +50,29 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 		return
 	}
 
+}
+
+// HandleInspectionRequest creates the schema inspection endpoint
+func HandleInspectionRequest(schema *schema.Schema) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		vars := mux.Vars(r)
+		dbType := vars["dbType"]
+		col := vars["col"]
+		project := vars["project"]
+
+		result, err := schema.SchemaInspection(ctx, dbType, project, col)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{"schema": result})
+		return
+	}
 }

@@ -2,7 +2,6 @@ package sql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -42,7 +41,6 @@ func (s *SQL) getDescribeDetails(ctx context.Context, col string) ([]utils.Field
 }
 
 func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]utils.ForeignKeysType, error) {
-	fmt.Println("Sql", project, col)
 	rows, err := s.client.Queryx("select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = '" + project + "' and TABLE_NAME = '" + col + "'")
 	if err != nil {
 		return nil, err

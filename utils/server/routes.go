@@ -31,6 +31,9 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("POST").Path("/v1/api/config/static").HandlerFunc(handlers.HandleStoreStaticConfig(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
 
+	//Initialize route for graphql schema inspection
+	router.Methods("GET").Path("/v1/api/config/inspect/{dbType}/{project}/{col}").HandlerFunc(handlers.HandleInspectionRequest(s.schema))
+
 	//Initialize route for graphql
 	router.Path("/v1/api/graphql/{project}").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
 

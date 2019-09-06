@@ -75,7 +75,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 				project:   tt.fields.project,
 			}
 
-			result, err := s.schemaInspection(tt.args.ctx, tt.args.dbType, s.project, tt.args.col)
+			result, err := s.SchemaInspection(tt.args.ctx, tt.args.dbType, s.project, tt.args.col)
 			if err != nil {
 				t.Errorf("Schema.schemaInspection() error = %v", err)
 			}
