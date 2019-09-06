@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-// SchemaInspection returns schema in schema definition language (SDL)
 func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col string) (string, error) {
 	if dbType == "mongo" {
 		return "", errors.New("Inspection cannot be performed over mongo")
@@ -65,12 +64,13 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 	if err != nil {
 		return "", nil
 	}
-
 	return schemaInSDL, nil
+
 }
 
 func inspectionCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
 	// TODO: what about my-sql set type
+
 	result := strings.Split(typeName, "(")
 
 	switch result[0] {
@@ -87,6 +87,5 @@ func inspectionCheckFieldType(typeName string, fieldDetails *SchemaFieldType) er
 	default:
 		return errors.New("Inspection type check : no match found")
 	}
-
 	return nil
 }
