@@ -54,11 +54,9 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 		m.pubsubRules = pubsub.Rules
 	}
 
-	s := schema.Init(m.crud)
-	if err := s.ParseSchema(m.rules); err != nil {
+	if err := m.schema.ParseSchema(m.rules); err != nil {
 		return err
 	}
-	m.schema = s
 
 	m.schema.SetProject(project)
 

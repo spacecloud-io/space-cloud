@@ -2,7 +2,6 @@ package schema
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -80,12 +79,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 			if err != nil {
 				t.Errorf("Schema.schemaInspection() error = %v", err)
 			}
-			b, err := json.MarshalIndent(result, "", "  ")
-			if err != nil {
-				fmt.Println("error:", err)
-			}
-			fmt.Print(string(b))
-
+			fmt.Println(result)
 		})
 	}
 }

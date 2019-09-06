@@ -98,7 +98,7 @@ func validateMathOperations(doc interface{}, schemaDoc SchemaField) error {
 
 		switch fieldValue.(type) {
 		case int:
-			if schemaDocValue.Kind != TypeInteger {
+			if schemaDocValue.Kind != TypeInteger && schemaDocValue.Kind != TypeFloat {
 				return errors.New("Integer : wrong type wanted " + schemaDocValue.Kind)
 			}
 			return nil
@@ -160,10 +160,10 @@ func (s *Schema) validateSetOperation(doc interface{}, schemaDoc SchemaField) (i
 
 	newMap := map[string]interface{}{}
 	for key, value := range v {
-		// check if key present in schemaDoc if not insert the field
+		// check if key present in schemaDoc
 		schemaDocValue, ok := schemaDoc[key]
 		if !ok {
-			return nil, errors.New("Scheam set op. field not found in schemaField")
+			return nil, errors.New("Schema set op field not found")
 		}
 		// check type
 		newDoc, err := s.checkType(value, schemaDocValue)

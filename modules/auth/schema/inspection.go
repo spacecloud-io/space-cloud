@@ -3,16 +3,17 @@ package schema
 import (
 	"context"
 	"errors"
+	"strings"
 )
 
-func (s *Schema) schemaInspection(ctx context.Context, dbType, project, col string) (SchemaType, error) {
+func (s *Schema) schemaInspection(ctx context.Context, dbType, project, col string) (string, error) {
 	if dbType == "mongo" {
-		return nil, errors.New("Inspection cannot be performed over mongo")
+		return "", errors.New("Inspection cannot be performed over mongo")
 	}
 	// todo change project ot s.project
 	fields, foreignkeys, err := s.crud.DescribeTable(ctx, dbType, project, col)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	inspectionDb := SchemaType{}
@@ -27,7 +28,7 @@ func (s *Schema) schemaInspection(ctx context.Context, dbType, project, col stri
 		}
 		// field type
 		if err := inspectionCheckFieldType(value.FieldType, &fieldDetails); err != nil {
-			return nil, err
+			return "", err
 		}
 		// check if list
 		if value.FieldKey == "PRI" {
@@ -44,12 +45,6 @@ func (s *Schema) schemaInspection(ctx context.Context, dbType, project, col stri
 				fieldDetails.TableJoin = foreignValue.RefTableName
 				fieldDetails.Kind = TypeJoin
 				fieldDetails.Directive.Kind = "relation"
-				// TODO: recuresive function for nested object
-				result, err := s.schemaInspection(ctx, dbType, project, foreignValue.RefTableName)
-				if err != nil {
-					return nil, err
-				}
-				fieldDetails.NestedObject = result[dbType][foreignValue.RefTableName]
 			}
 		}
 		// field name
@@ -58,16 +53,21 @@ func (s *Schema) schemaInspection(ctx context.Context, dbType, project, col stri
 	inspectionCollection[col] = inspectionFields
 	inspectionDb[dbType] = inspectionCollection
 
-	return inspectionDb, nil
+	schemaInSDL, err := generateSDL(inspectionCollection)
+	if err != nil {
+		return "", nil
+	}
+	return schemaInSDL, nil
 }
 
 func inspectionCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
 	// TODO: what about my-sql set type
 	// TODO: sql types int(11), varchar(255) is there any thing else
-	switch typeName {
-	case "char", "varchar(255)", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
+	result := strings.Split(typeName, "(")
+	switch result[0] {
+	case "char", "varchar", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = TypeString
-	case "tinyint", "smallint", "mediumint", "int(11)", "bigint":
+	case "tinyint", "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = TypeInteger
 	case "float", "double":
 		fieldDetails.Kind = TypeFloat
