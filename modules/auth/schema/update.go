@@ -10,7 +10,7 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 	if len(updateDoc) == 0 {
 		return nil
 	}
-	schemaDb, ok := s.SchemaDoc[dbType]
+	schemaDb, ok := s.schemaDoc[dbType]
 	if !ok {
 		return errors.New(dbType + " Db Not present in Schema")
 	}

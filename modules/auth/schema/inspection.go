@@ -16,7 +16,6 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 	if err != nil {
 		return "", err
 	}
-
 	inspectionDb := schemaType{}
 	inspectionCollection := schemaCollection{}
 	inspectionFields := schemaField{}
@@ -26,7 +25,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 
 		// check if field nullable (!)
 		if value.FieldNull == "NO" {
-			fieldDetails.isFieldTypeRequired = true
+			fieldDetails.IsFieldTypeRequired = true
 		}
 
 		// field type
@@ -36,20 +35,19 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 
 		// check if list
 		if value.FieldKey == "PRI" {
-			fieldDetails.directive.Kind = "id"
+			fieldDetails.Directive = "id"
 			fieldDetails.Kind = typeID
 		} else if value.FieldKey == "UNI" {
-			fieldDetails.directive.Kind = "unique"
-		} else {
-			fieldDetails.isList = true
+			fieldDetails.Directive = "unique"
 		}
 
 		// check foreignKey & identify if relation exists
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == value.FieldName {
-				fieldDetails.tableJoin = foreignValue.RefTableName
-				fieldDetails.Kind = typeJoin
-				fieldDetails.directive.Kind = "relation"
+				fieldDetails.Table.TableName = foreignValue.RefTableName
+				fieldDetails.Table.TableField = foreignValue.RefColumnName
+				fieldDetails.Kind = typeObject
+				fieldDetails.Directive = "relation"
 			}
 		}
 
@@ -73,7 +71,6 @@ func inspectionCheckFieldType(typeName string, fieldDetails *schemaFieldType) er
 	// TODO: what about my-sql set type
 
 	result := strings.Split(typeName, "(")
-
 	switch result[0] {
 	case "char", "varchar", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = typeString

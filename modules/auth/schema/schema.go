@@ -16,18 +16,19 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// TODO: check graphql types
+// Schema data stucture for schema package
 type Schema struct {
-	SchemaDoc schemaType
+	schemaDoc schemaType
 	crud      *crud.Module
 	project   string
 }
 
 // Init creates a new instance of the schema object
 func Init(crud *crud.Module) *Schema {
-	return &Schema{SchemaDoc: schemaType{}, crud: crud}
+	return &Schema{schemaDoc: schemaType{}, crud: crud}
 }
 
+//SetProject sets project field of Schema object
 func (s *Schema) SetProject(project string) {
 	s.project = project
 }
@@ -58,7 +59,7 @@ func (s *Schema) ParseSchema(crud config.Crud) error {
 		}
 		schema[dbName] = collection
 	}
-	s.SchemaDoc = schema
+	s.schemaDoc = schema
 	return nil
 }
 
@@ -73,27 +74,28 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 		for _, ve := range v.(*ast.ObjectDefinition).Fields {
 
 			fieldTypeStuct := schemaFieldType{
-				directive: directiveProperties{
-					Value: directiveArgs{},
-				},
+				Table: tableProperties{},
 			}
 			if len(ve.Directives) > 0 {
 				val := ve.Directives[0]
-				argValue := map[string]string{}
 
 				for _, x := range val.Arguments {
 
 					val, _ := (utils.ParseGraphqlValue(x.Value, nil))
-					argValue[x.Name.Value] = val.(string) // direvtive field name & value name
+					if x.Name.Value == "field" {
+						fieldTypeStuct.Table.TableField = val.(string)
+					}
 				}
 
-				fieldTypeStuct.directive.Kind = val.Name.Value
-				fieldTypeStuct.directive.Value = argValue
+				fieldTypeStuct.Directive = val.Name.Value
 			}
 
 			err := getFieldType(ve.Type, &fieldTypeStuct, doc)
 			if err != nil {
 				return nil, err
+			}
+			if fieldTypeStuct.Kind != typeJoin {
+				fieldTypeStuct.Table.TableField = ""
 			}
 			fieldMap[ve.Name.Value] = &fieldTypeStuct
 		}
@@ -106,12 +108,12 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.
 	switch fieldType.GetKind() {
 	case kinds.NonNull:
 		{
-			fieldTypeStuct.isFieldTypeRequired = true
+			fieldTypeStuct.IsFieldTypeRequired = true
 			getFieldType(fieldType.(*ast.NonNull).Type, fieldTypeStuct, doc)
 		}
 	case kinds.List:
 		{
-			fieldTypeStuct.isList = true
+			fieldTypeStuct.IsList = true
 			getFieldType(fieldType.(*ast.List).Type, fieldTypeStuct, doc)
 
 		}
@@ -135,10 +137,10 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.
 				fieldTypeStuct.Kind = typeJSON
 			default:
 				{
-					fieldTypeStuct.Kind = typeRelation
-					fieldTypeStuct.tableJoin = strings.ToLower(myType[0:1]) + myType[1:]
-					if fieldTypeStuct.directive.Kind != "relation" {
-						fieldTypeStuct.Kind = typeJoin
+					fieldTypeStuct.Kind = typeJoin
+					fieldTypeStuct.Table.TableName = strings.ToLower(myType[0:1]) + myType[1:]
+					if fieldTypeStuct.Directive != "relation" {
+						fieldTypeStuct.Kind = typeObject
 						nestedschemaField, err := getCollectionSchema(doc, myType)
 						if err != nil {
 							return err
@@ -167,7 +169,7 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 	for fieldKey, fieldValue := range collectionFields {
 		// check if key is required
 		value, ok := doc[fieldKey]
-		if fieldValue.isFieldTypeRequired {
+		if fieldValue.IsFieldTypeRequired {
 			if !ok {
 				return nil, errors.New("Field " + fieldKey + " Not Present")
 			}
@@ -184,10 +186,10 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 	return mutatedDoc, nil
 }
 
-// ValidateCreateOperation
+// ValidateCreateOperation validates schema on create operation
 func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRequest) error {
 
-	if s.SchemaDoc == nil {
+	if s.schemaDoc == nil {
 		return errors.New("Schema not initialized")
 	}
 
@@ -200,7 +202,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 		v = append(v, t)
 	}
 
-	collection, ok := s.SchemaDoc[dbType]
+	collection, ok := s.schemaDoc[dbType]
 	if !ok {
 		return errors.New("No db was found named " + dbType)
 	}

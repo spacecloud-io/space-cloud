@@ -6,20 +6,19 @@ type (
 	schemaType       map[string]schemaCollection // key is database name
 	schemaCollection map[string]schemaField      // key is collection name
 	schemaField      map[string]*schemaFieldType // key is field name
-	directiveArgs    map[string]string           // key is directive's argument name
+	directiveArgs    map[string]string           // key is Directive's argument name
 	fieldType        int
 
 	schemaFieldType struct {
-		isFieldTypeRequired bool
-		isList              bool
-		directive           directiveProperties
+		IsFieldTypeRequired bool
+		IsList              bool
+		Directive           string
 		Kind                string
 		nestedObject        schemaField
-		tableJoin           string
+		Table               tableProperties
 	}
-	directiveProperties struct {
-		Kind  string
-		Value directiveArgs
+	tableProperties struct {
+		TableName, TableField string
 	}
 )
 
@@ -32,6 +31,6 @@ const (
 	typeEnum     string = "Enum"
 	typeJSON     string = "Json"
 	typeID       string = "ID"
-	typeJoin     string = "Object"
-	typeRelation string = "Join"
+	typeObject   string = "Object"
+	typeJoin     string = "Join"
 )

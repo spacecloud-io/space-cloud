@@ -33,7 +33,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 						"age": 1999,
 					},
 					"push": map[string]interface{}{
-						"owner": []interface{}{1, 2, 3},
+						"owner": []interface{}{"hello", "go", "java"},
 					},
 					"currentDate": map[string]interface{}{
 						"createdAt": 16641894861,
