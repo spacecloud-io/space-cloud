@@ -74,7 +74,7 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 		for _, ve := range v.(*ast.ObjectDefinition).Fields {
 
 			fieldTypeStuct := schemaFieldType{
-				jointTable: tableProperties{},
+				JointTable: tableProperties{},
 			}
 			if len(ve.Directives) > 0 {
 				val := ve.Directives[0]
@@ -83,7 +83,7 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 
 					val, _ := (utils.ParseGraphqlValue(x.Value, nil))
 					if x.Name.Value == "field" {
-						fieldTypeStuct.jointTable.TableField = val.(string)
+						fieldTypeStuct.JointTable.TableField = val.(string)
 					}
 				}
 
@@ -95,7 +95,7 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 				return nil, err
 			}
 			if fieldTypeStuct.Kind != typeJoin {
-				fieldTypeStuct.jointTable.TableField = ""
+				fieldTypeStuct.JointTable.TableField = ""
 			}
 			fieldMap[ve.Name.Value] = &fieldTypeStuct
 		}
@@ -138,7 +138,7 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.
 			default:
 				{
 					fieldTypeStuct.Kind = typeJoin
-					fieldTypeStuct.jointTable.TableName = strings.ToLower(myType[0:1]) + myType[1:]
+					fieldTypeStuct.JointTable.TableName = strings.ToLower(myType[0:1]) + myType[1:]
 					if fieldTypeStuct.Directive != "relation" {
 						fieldTypeStuct.Kind = typeObject
 						nestedschemaField, err := getCollectionSchema(doc, myType)

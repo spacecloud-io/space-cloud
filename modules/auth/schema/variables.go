@@ -15,7 +15,7 @@ type (
 		Directive           string
 		Kind                string
 		nestedObject        schemaField
-		jointTable          tableProperties
+		JointTable          tableProperties
 	}
 	tableProperties struct {
 		TableName, TableField string

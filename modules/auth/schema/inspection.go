@@ -44,8 +44,8 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 		// check foreignKey & identify if relation exists
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == value.FieldName {
-				fieldDetails.jointTable.TableName = foreignValue.RefTableName
-				fieldDetails.jointTable.TableField = foreignValue.RefColumnName
+				fieldDetails.JointTable.TableName = foreignValue.RefTableName
+				fieldDetails.JointTable.TableField = foreignValue.RefColumnName
 				fieldDetails.Kind = typeJoin
 				fieldDetails.Directive = "relation"
 			}
