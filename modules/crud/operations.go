@@ -2,7 +2,6 @@ package crud
 
 import (
 	"context"
-	"errors"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -110,7 +109,7 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 }
 
 // DescribeTable performs a db operation for describing a table
-func (m *Module) DescribeTable(ctx context.Context, dbType, project string, doc interface{}) ([]utils.FieldType, []utils.ForeignKeysType, error) {
+func (m *Module) DescribeTable(ctx context.Context, dbType, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -121,11 +120,6 @@ func (m *Module) DescribeTable(ctx context.Context, dbType, project string, doc 
 
 	if err := crud.IsClientSafe(); err != nil {
 		return nil, nil, err
-	}
-
-	col, ok := doc.(string)
-	if !ok {
-		return nil, nil, errors.New("Execute query wanted string")
 	}
 
 	return crud.DescribeTable(ctx, project, col)

@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/model"
@@ -14,7 +16,7 @@ type Tweet {
 	id: ID! @id
 	createdAt: DateTime! @createdAt
 	text: String
-	owner: [Integer!]! @relation(link: INLINE)
+	owner: [String!]! @relation(field: INLINE)
 	location: location!
 	age : Integer!	
   }
@@ -69,12 +71,12 @@ func TestParseSchema(t *testing.T) {
 			t.Fatal(err)
 		}
 		// uncomment the below statements to see the reuslt
-		// b, err := json.MarshalIndent(m.schema, "", "  ")
-		// if err != nil {
-		// 	fmt.Println("error:", err)
-		// }
-		// fmt.Print(string(b))
-		t.Log("Logging Test Output :: ", s.SchemaDoc)
+		b, err := json.MarshalIndent(s.schemaDoc, "", "  ")
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		fmt.Print(string(b))
+		t.Log("Logging Test Output :: ", s.schemaDoc)
 	})
 }
 

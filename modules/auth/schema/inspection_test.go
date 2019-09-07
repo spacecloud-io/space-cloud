@@ -11,7 +11,7 @@ import (
 
 func TestSchema_schemaInspection(t *testing.T) {
 	type fields struct {
-		SchemaDoc SchemaType
+		schemaDoc schemaType
 		crud      *crud.Module
 		project   string
 	}
@@ -70,12 +70,12 @@ func TestSchema_schemaInspection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Schema{
-				SchemaDoc: tt.fields.SchemaDoc,
+				schemaDoc: tt.fields.schemaDoc,
 				crud:      crud,
 				project:   tt.fields.project,
 			}
 
-			result, err := s.schemaInspection(tt.args.ctx, tt.args.dbType, s.project, tt.args.col)
+			result, err := s.SchemaInspection(tt.args.ctx, tt.args.dbType, s.project, tt.args.col)
 			if err != nil {
 				t.Errorf("Schema.schemaInspection() error = %v", err)
 			}

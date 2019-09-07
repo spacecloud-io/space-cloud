@@ -2,36 +2,35 @@ package schema
 
 type (
 
-	// SchemaType is the data structure for storing the parsed values of schema string
-	SchemaType       map[string]SchemaCollection // key is database name
-	SchemaCollection map[string]SchemaField      // key is collection name
-	SchemaField      map[string]*SchemaFieldType // key is field name
-	DirectiveArgs    map[string]string           // key is directive's argument name
+	// schemaType is the data structure for storing the parsed values of schema string
+	schemaType       map[string]schemaCollection // key is database name
+	schemaCollection map[string]schemaField      // key is collection name
+	schemaField      map[string]*schemaFieldType // key is field name
+	directiveArgs    map[string]string           // key is Directive's argument name
 	fieldType        int
 
-	SchemaFieldType struct {
+	schemaFieldType struct {
 		IsFieldTypeRequired bool
 		IsList              bool
-		Directive           DirectiveProperties
+		Directive           string
 		Kind                string
-		NestedObject        SchemaField
-		TableJoin           string
+		nestedObject        schemaField
+		JointTable          tableProperties
 	}
-	DirectiveProperties struct {
-		Kind  string
-		Value DirectiveArgs
+	tableProperties struct {
+		TableName, TableField string
 	}
 )
 
 const (
-	TypeInteger  string = "Integer"
-	TypeString   string = "String"
-	TypeFloat    string = "Float"
-	TypeBoolean  string = "Boolean"
-	TypeDateTime string = "DateTime"
-	TypeEnum     string = "Enum"
-	TypeJSON     string = "Json"
-	TypeID       string = "ID"
-	TypeJoin     string = "Object"
-	TypeRelation string = "Join"
+	typeInteger  string = "Integer"
+	typeString   string = "String"
+	typeFloat    string = "Float"
+	typeBoolean  string = "Boolean"
+	typeDateTime string = "DateTime"
+	typeEnum     string = "Enum"
+	typeJSON     string = "Json"
+	typeID       string = "ID"
+	typeObject   string = "Object"
+	typeJoin     string = "Join"
 )

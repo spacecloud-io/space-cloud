@@ -7,8 +7,8 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// not to be exposed externally
-// ExecuteRawQuery return a structure of sql table
+// DescribeTable return a description of sql table & foreign keys in table
+// NOTE: not to be exposed externally
 func (s *SQL) DescribeTable(ctx context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, error) {
 	fields, err := s.getDescribeDetails(ctx, col)
 	if err != nil {
