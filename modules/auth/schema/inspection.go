@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// SchemaInspection resturn schema in schema definition language (SDL)
 func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col string) (string, error) {
 	if dbType == "mongo" {
 		return "", errors.New("Inspection cannot be performed over mongo")
@@ -16,16 +17,16 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 		return "", err
 	}
 
-	inspectionDb := SchemaType{}
-	inspectionCollection := SchemaCollection{}
-	inspectionFields := SchemaField{}
+	inspectionDb := schemaType{}
+	inspectionCollection := schemaCollection{}
+	inspectionFields := schemaField{}
 
 	for _, value := range fields {
-		fieldDetails := SchemaFieldType{}
+		fieldDetails := schemaFieldType{}
 
 		// check if field nullable (!)
 		if value.FieldNull == "NO" {
-			fieldDetails.IsFieldTypeRequired = true
+			fieldDetails.isFieldTypeRequired = true
 		}
 
 		// field type
@@ -35,20 +36,20 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 
 		// check if list
 		if value.FieldKey == "PRI" {
-			fieldDetails.Directive.Kind = "id"
-			fieldDetails.Kind = TypeID
+			fieldDetails.directive.Kind = "id"
+			fieldDetails.Kind = typeID
 		} else if value.FieldKey == "UNI" {
-			fieldDetails.Directive.Kind = "unique"
+			fieldDetails.directive.Kind = "unique"
 		} else {
-			fieldDetails.IsList = true
+			fieldDetails.isList = true
 		}
 
 		// check foreignKey & identify if relation exists
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == value.FieldName {
-				fieldDetails.TableJoin = foreignValue.RefTableName
-				fieldDetails.Kind = TypeJoin
-				fieldDetails.Directive.Kind = "relation"
+				fieldDetails.tableJoin = foreignValue.RefTableName
+				fieldDetails.Kind = typeJoin
+				fieldDetails.directive.Kind = "relation"
 			}
 		}
 
@@ -68,22 +69,22 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 
 }
 
-func inspectionCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
+func inspectionCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
 	// TODO: what about my-sql set type
 
 	result := strings.Split(typeName, "(")
 
 	switch result[0] {
 	case "char", "varchar", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
-		fieldDetails.Kind = TypeString
+		fieldDetails.Kind = typeString
 	case "tinyint", "smallint", "mediumint", "int", "bigint":
-		fieldDetails.Kind = TypeInteger
+		fieldDetails.Kind = typeInteger
 	case "float", "double":
-		fieldDetails.Kind = TypeFloat
+		fieldDetails.Kind = typeFloat
 	case "date", "time", "datetime", "timestamp":
-		fieldDetails.Kind = TypeDateTime
+		fieldDetails.Kind = typeDateTime
 	case "boolean":
-		fieldDetails.Kind = TypeBoolean
+		fieldDetails.Kind = typeBoolean
 	default:
 		return errors.New("Inspection type check : no match found")
 	}

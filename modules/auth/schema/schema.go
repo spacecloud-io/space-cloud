@@ -18,14 +18,14 @@ import (
 
 // TODO: check graphql types
 type Schema struct {
-	SchemaDoc SchemaType
+	SchemaDoc schemaType
 	crud      *crud.Module
 	project   string
 }
 
 // Init creates a new instance of the schema object
 func Init(crud *crud.Module) *Schema {
-	return &Schema{SchemaDoc: SchemaType{}, crud: crud}
+	return &Schema{SchemaDoc: schemaType{}, crud: crud}
 }
 
 func (s *Schema) SetProject(project string) {
@@ -35,9 +35,9 @@ func (s *Schema) SetProject(project string) {
 // ParseSchema Initializes Schema field in Module struct
 func (s *Schema) ParseSchema(crud config.Crud) error {
 
-	schema := make(SchemaType, len(crud))
+	schema := make(schemaType, len(crud))
 	for dbName, v := range crud {
-		collection := SchemaCollection{}
+		collection := schemaCollection{}
 		for collectionName, v := range v.Collections {
 			if v.Schema == "" {
 				continue
@@ -62,8 +62,8 @@ func (s *Schema) ParseSchema(crud config.Crud) error {
 	return nil
 }
 
-func getCollectionSchema(doc *ast.Document, collectionName string) (SchemaField, error) {
-	fieldMap := SchemaField{}
+func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField, error) {
+	fieldMap := schemaField{}
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
 
@@ -72,9 +72,9 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (SchemaField,
 		}
 		for _, ve := range v.(*ast.ObjectDefinition).Fields {
 
-			fieldTypeStuct := SchemaFieldType{
-				Directive: DirectiveProperties{
-					Value: DirectiveArgs{},
+			fieldTypeStuct := schemaFieldType{
+				directive: directiveProperties{
+					Value: directiveArgs{},
 				},
 			}
 			if len(ve.Directives) > 0 {
@@ -87,8 +87,8 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (SchemaField,
 					argValue[x.Name.Value] = val.(string) // direvtive field name & value name
 				}
 
-				fieldTypeStuct.Directive.Kind = val.Name.Value
-				fieldTypeStuct.Directive.Value = argValue
+				fieldTypeStuct.directive.Kind = val.Name.Value
+				fieldTypeStuct.directive.Value = argValue
 			}
 
 			err := getFieldType(ve.Type, &fieldTypeStuct, doc)
@@ -102,16 +102,16 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (SchemaField,
 	return fieldMap, nil
 }
 
-func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.Document) error {
+func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.Document) error {
 	switch fieldType.GetKind() {
 	case kinds.NonNull:
 		{
-			fieldTypeStuct.IsFieldTypeRequired = true
+			fieldTypeStuct.isFieldTypeRequired = true
 			getFieldType(fieldType.(*ast.NonNull).Type, fieldTypeStuct, doc)
 		}
 	case kinds.List:
 		{
-			fieldTypeStuct.IsList = true
+			fieldTypeStuct.isList = true
 			getFieldType(fieldType.(*ast.List).Type, fieldTypeStuct, doc)
 
 		}
@@ -119,31 +119,31 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 		{
 			myType := fieldType.(*ast.Named).Name.Value
 			switch myType {
-			case TypeString, TypeEnum:
-				fieldTypeStuct.Kind = TypeString
-			case TypeID:
-				fieldTypeStuct.Kind = TypeID
-			case TypeDateTime:
-				fieldTypeStuct.Kind = TypeDateTime
-			case TypeFloat:
-				fieldTypeStuct.Kind = TypeFloat
-			case TypeInteger:
-				fieldTypeStuct.Kind = TypeInteger
-			case TypeBoolean:
-				fieldTypeStuct.Kind = TypeBoolean
-			case TypeJSON:
-				fieldTypeStuct.Kind = TypeJSON
+			case typeString, typeEnum:
+				fieldTypeStuct.Kind = typeString
+			case typeID:
+				fieldTypeStuct.Kind = typeID
+			case typeDateTime:
+				fieldTypeStuct.Kind = typeDateTime
+			case typeFloat:
+				fieldTypeStuct.Kind = typeFloat
+			case typeInteger:
+				fieldTypeStuct.Kind = typeInteger
+			case typeBoolean:
+				fieldTypeStuct.Kind = typeBoolean
+			case typeJSON:
+				fieldTypeStuct.Kind = typeJSON
 			default:
 				{
-					fieldTypeStuct.Kind = TypeRelation
-					fieldTypeStuct.TableJoin = strings.ToLower(myType[0:1]) + myType[1:]
-					if fieldTypeStuct.Directive.Kind != "relation" {
-						fieldTypeStuct.Kind = TypeJoin
-						nestedSchemaField, err := getCollectionSchema(doc, myType)
+					fieldTypeStuct.Kind = typeRelation
+					fieldTypeStuct.tableJoin = strings.ToLower(myType[0:1]) + myType[1:]
+					if fieldTypeStuct.directive.Kind != "relation" {
+						fieldTypeStuct.Kind = typeJoin
+						nestedschemaField, err := getCollectionSchema(doc, myType)
 						if err != nil {
 							return err
 						}
-						fieldTypeStuct.NestedObject = nestedSchemaField
+						fieldTypeStuct.nestedObject = nestedschemaField
 					}
 
 				}
@@ -157,7 +157,7 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.
 	return nil
 }
 
-func (s *Schema) schemaValidator(collectionFields SchemaField, doc map[string]interface{}) (map[string]interface{}, error) {
+func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]interface{}) (map[string]interface{}, error) {
 	if len(collectionFields) == 0 {
 		return doc, nil
 	}
@@ -167,7 +167,7 @@ func (s *Schema) schemaValidator(collectionFields SchemaField, doc map[string]in
 	for fieldKey, fieldValue := range collectionFields {
 		// check if key is required
 		value, ok := doc[fieldKey]
-		if fieldValue.IsFieldTypeRequired {
+		if fieldValue.isFieldTypeRequired {
 			if !ok {
 				return nil, errors.New("Field " + fieldKey + " Not Present")
 			}
@@ -223,15 +223,15 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	return nil
 }
 
-func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
+func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (interface{}, error) {
 
 	switch v := value.(type) {
 	case int:
 		// TODO: int64
 		switch fieldValue.Kind {
-		case TypeDateTime:
+		case typeDateTime:
 			return time.Unix(int64(v), 0), nil
-		case TypeID, TypeInteger:
+		case typeID, typeInteger:
 			return value, nil
 		default:
 			return nil, errors.New("Integer wrong type wanted " + fieldValue.Kind + " got Integer")
@@ -239,13 +239,13 @@ func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 
 	case string:
 		switch fieldValue.Kind {
-		case TypeDateTime:
+		case typeDateTime:
 			unitTimeInRFC3339, err := time.Parse(time.RFC3339, v)
 			if err != nil {
 				return nil, errors.New("String Wrong Date-Time Format")
 			}
 			return unitTimeInRFC3339, nil
-		case TypeID, TypeString:
+		case typeID, typeString:
 			return value, nil
 		default:
 			return nil, errors.New("String wrong type wanted " + fieldValue.Kind + " got String")
@@ -253,20 +253,20 @@ func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 
 	case float32, float64:
 		switch fieldValue.Kind {
-		case TypeFloat:
+		case typeFloat:
 			return value, nil
 		default:
 			return nil, errors.New("Float wrong type wanted " + fieldValue.Kind + " got Float")
 		}
 	case bool:
 		switch fieldValue.Kind {
-		case TypeBoolean:
+		case typeBoolean:
 			return value, nil
 		default:
 			return nil, errors.New("Bool wrong type wanted " + fieldValue.Kind + " got Bool")
 		}
 	case map[string]interface{}:
-		return s.schemaValidator(fieldValue.NestedObject, v)
+		return s.schemaValidator(fieldValue.nestedObject, v)
 
 	case []interface{}:
 		arr := make([]interface{}, len(v))

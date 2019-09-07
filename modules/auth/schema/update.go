@@ -48,7 +48,7 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 	return nil
 }
 
-func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc SchemaField) error {
+func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc schemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -82,7 +82,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc SchemaField)
 	return nil
 }
 
-func validateMathOperations(doc interface{}, schemaDoc SchemaField) error {
+func validateMathOperations(doc interface{}, schemaDoc schemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -98,12 +98,12 @@ func validateMathOperations(doc interface{}, schemaDoc SchemaField) error {
 
 		switch fieldValue.(type) {
 		case int:
-			if schemaDocValue.Kind != TypeInteger && schemaDocValue.Kind != TypeFloat {
+			if schemaDocValue.Kind != typeInteger && schemaDocValue.Kind != typeFloat {
 				return errors.New("Integer : wrong type wanted " + schemaDocValue.Kind)
 			}
 			return nil
 		case float32, float64:
-			if schemaDocValue.Kind != TypeFloat {
+			if schemaDocValue.Kind != typeFloat {
 				return errors.New("Float : wrong type wanted " + schemaDocValue.Kind)
 			}
 			return nil
@@ -115,7 +115,7 @@ func validateMathOperations(doc interface{}, schemaDoc SchemaField) error {
 	return nil
 }
 
-func validateDateOperations(doc interface{}, schemaDoc SchemaField) error {
+func validateDateOperations(doc interface{}, schemaDoc schemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -131,12 +131,12 @@ func validateDateOperations(doc interface{}, schemaDoc SchemaField) error {
 
 		switch t := fieldValue.(type) {
 		case int:
-			if schemaDocValue.Kind != TypeDateTime {
+			if schemaDocValue.Kind != typeDateTime {
 				return errors.New("Integer : wrong type wanted " + schemaDocValue.Kind)
 			}
 			return nil
 		case string:
-			if schemaDocValue.Kind != TypeDateTime {
+			if schemaDocValue.Kind != typeDateTime {
 				return errors.New("String : wrong type, wanted " + schemaDocValue.Kind)
 			}
 			_, err := time.Parse(time.RFC3339, t)
@@ -152,7 +152,7 @@ func validateDateOperations(doc interface{}, schemaDoc SchemaField) error {
 	return nil
 }
 
-func (s *Schema) validateSetOperation(doc interface{}, schemaDoc SchemaField) (interface{}, error) {
+func (s *Schema) validateSetOperation(doc interface{}, schemaDoc schemaField) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("Schema update set op wrong type passed expecting map[string]interface{}")

@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth/schema"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
 )
 
@@ -53,8 +55,22 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 }
 
 // HandleInspectionRequest creates the schema inspection endpoint
-func HandleInspectionRequest(schema *schema.Schema) http.HandlerFunc {
+func HandleInspectionRequest(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		tokens, ok := r.Header["Authorization"]
+		if !ok {
+			tokens = []string{""}
+		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
