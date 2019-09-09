@@ -43,8 +43,9 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 
 		op, err := graphql.ExecGraphQLQuery(&req, token)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError) //http status codee
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			errMes := map[string]interface{}{"message": err.Error()}
+			json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+
 			return
 		}
 		w.WriteHeader(http.StatusOK) //http status codee
