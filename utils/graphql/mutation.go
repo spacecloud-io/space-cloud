@@ -83,7 +83,7 @@ func (graph *Module) execAllReq(ctx context.Context, dbType, project string, req
 	return map[string]interface{}{"status": 200}, graph.crud.Batch(context.TODO(), dbType, graph.project, req)
 }
 
-func (graph *Module) handleMutation(node ast.Node, token string, store utils.M) (map[string]interface{}, error) {
+func (graph *Module) handleMutation(node ast.Node, token string, store utils.M, cb callback) {
 	op := node.(*ast.OperationDefinition)
 	fieldDBMapping := map[string]string{}
 
@@ -106,7 +106,8 @@ func (graph *Module) handleMutation(node ast.Node, token string, store utils.M) 
 
 		singleRequest, err := graph.generateAllReq(field, token, store)
 		if err != nil {
-			return nil, err
+			cb(nil, err)
+			return
 		}
 
 		r = append(r, *singleRequest)
@@ -127,5 +128,6 @@ func (graph *Module) handleMutation(node ast.Node, token string, store utils.M) 
 		results[fieldName] = queryResults[dbType]
 	}
 
-	return results, nil
+	cb(results, nil)
+	return
 }
