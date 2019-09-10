@@ -1,6 +1,8 @@
 package graphql
 
 import (
+	"encoding/json"
+	"sync"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -11,23 +13,27 @@ import (
 )
 
 func TestMapping(t *testing.T) {
-	query := `
-	query {
-		random(where: $find, skip: 87) @mongo(col: random) {
+	query := `{
+		random(where: {}) @mongo {
+			random(where: {key2: "random.key2"}) @mongo {
+				key2
+			}
+
+			users(where:{name: "random.key1.k1"}) @mongo {
+				_id
+				email
+				name 
+				random(where:{key2: "random.key2"}) @mongo {
+					key1
+				}
+			}
+
 			key1 {
 				SomeKey:k2
 			}
-			key2   
-			
-			users(where:{name: random__key1__k1}) @mongo {
-				_id
-				email
-				
-			}
+
+			key2		
 		}
-	}
-	mutation {
-		user(where: {}, set: {}, op: upsert)
 	}
 	`
 
@@ -47,9 +53,23 @@ func TestMapping(t *testing.T) {
 
 	te := model.GraphQLRequest{}
 	te.Query = query
-	output, err := graph.ExecGraphQLQuery(&te, "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(output)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	graph.ExecGraphQLQuery(&te, "", func(op interface{}, err error) {
+		defer wg.Done()
+
+		if err != nil {
+
+			t.Fatal(err)
+			return
+		}
+
+		data, _ := json.MarshalIndent(op, "", "  ")
+		t.Log(string(data))
+		return
+	})
+
+	wg.Wait()
 }

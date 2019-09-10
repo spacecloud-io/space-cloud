@@ -9,29 +9,37 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execFuncCall(field *ast.Field, store utils.M) (interface{}, error) {
+func (graph *Module) execFuncCall(field *ast.Field, store utils.M, cb callback) {
 	serviceName := getDBType(field)
 	funcName, err := getFuncName(field)
 	if err != nil {
-		return nil, err
+		cb(nil, err)
+		return
 	}
 
 	timeout, err := getFuncTimeout(field, store)
 	if err != nil {
-		return nil, err
+		cb(nil, err)
+		return
 	}
 
 	params, err := getFuncParams(field, store)
 	if err != nil {
-		return nil, err
+		cb(nil, err)
+		return
 	}
 
 	claims, err := graph.auth.IsFuncCallAuthorised(graph.project, serviceName, funcName, "", params)
 	if err != nil {
-		return nil, err
+		cb(nil, err)
+		return
 	}
 
-	return graph.functions.Call(serviceName, funcName, claims, params, timeout)
+	go func() {
+		result, err := graph.functions.Call(serviceName, funcName, claims, params, timeout)
+		cb(result, err)
+		return
+	}()
 }
 
 func generateFuncCallRequest(field *ast.Field, store utils.M) (*model.FunctionsRequest, error) {
