@@ -25,12 +25,12 @@ type Module struct {
 	pubsubRules   []*config.PubsubRule
 	project       string
 	fileStoreType string
-	schema        *schema.Schema
+	Schema        *schema.Schema
 }
 
 // Init creates a new instance of the auth object
 func Init(crud *crud.Module, functions *functions.Module) *Module {
-	return &Module{rules: make(config.Crud), crud: crud, functions: functions, schema: schema.Init(crud)}
+	return &Module{rules: make(config.Crud), crud: crud, functions: functions, Schema: schema.Init(crud)}
 }
 
 // SetConfig set the rules and secret key required by the auth block
@@ -54,11 +54,11 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 		m.pubsubRules = pubsub.Rules
 	}
 
-	if err := m.schema.ParseSchema(m.rules); err != nil {
+	if err := m.Schema.ParseSchema(m.rules); err != nil {
 		return err
 	}
 
-	m.schema.SetProject(project)
+	m.Schema.SetProject(project)
 
 	return nil
 }

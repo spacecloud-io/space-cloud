@@ -11,7 +11,7 @@ import (
 
 func TestSchema_schemaInspection(t *testing.T) {
 	type fields struct {
-		schemaDoc schemaType
+		SchemaDoc schemaType
 		crud      *crud.Module
 		project   string
 	}
@@ -70,7 +70,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Schema{
-				schemaDoc: tt.fields.schemaDoc,
+				SchemaDoc: tt.fields.SchemaDoc,
 				crud:      crud,
 				project:   tt.fields.project,
 			}

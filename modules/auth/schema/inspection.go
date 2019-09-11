@@ -12,9 +12,20 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 		return "", errors.New("Inspection cannot be performed over mongo")
 	}
 
-	fields, foreignkeys, err := s.crud.DescribeTable(ctx, dbType, project, col)
+	inspectionCollection, err := s.Inspector(ctx, dbType, project, col)
 	if err != nil {
 		return "", err
+	}
+
+	return generateSDL(inspectionCollection)
+
+}
+
+// Inspector does something
+func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (schemaCollection, error) {
+	fields, foreignkeys, err := s.crud.DescribeTable(ctx, dbType, project, col)
+	if err != nil {
+		return nil, err
 	}
 	inspectionDb := schemaType{}
 	inspectionCollection := schemaCollection{}
@@ -30,7 +41,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 
 		// field type
 		if err := inspectionCheckFieldType(value.FieldType, &fieldDetails); err != nil {
-			return "", err
+			return nil, err
 		}
 
 		// check if list
@@ -53,18 +64,11 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 
 		// field name
 		inspectionFields[value.FieldName] = &fieldDetails
-
 	}
 
 	inspectionCollection[col] = inspectionFields
 	inspectionDb[dbType] = inspectionCollection
-
-	schemaInSDL, err := generateSDL(inspectionCollection)
-	if err != nil {
-		return "", nil
-	}
-	return schemaInSDL, nil
-
+	return inspectionCollection, nil
 }
 
 func inspectionCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {

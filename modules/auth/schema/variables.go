@@ -12,8 +12,8 @@ type (
 	schemaFieldType struct {
 		IsFieldTypeRequired bool
 		IsList              bool
-		Directive           string
 		Kind                string
+		Directive           string
 		nestedObject        schemaField
 		JointTable          tableProperties
 	}
@@ -33,4 +33,10 @@ const (
 	typeID       string = "ID"
 	typeObject   string = "Object"
 	typeJoin     string = "Join"
+
+	directiveUnique    string = "unique"
+	directiveRelation  string = "relation"
+	directiveId        string = "id"
+	directiveCreatedAt string = "createdAt"
+	directiveUpdatedAt string = "updatedAt"
 )

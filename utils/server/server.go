@@ -15,7 +15,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
-	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
@@ -49,7 +48,6 @@ type Server struct {
 	syncMan        *syncman.SyncManager
 	ssl            *config.SSL
 	graphql        *graphql.Module
-	schema         *schema.Schema
 }
 
 // New creates a new server instance

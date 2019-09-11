@@ -124,3 +124,20 @@ func (m *Module) DescribeTable(ctx context.Context, dbType, project, col string)
 
 	return crud.DescribeTable(ctx, project, col)
 }
+
+// RawBatch performs a db operaionf for schema creation
+func (m *Module) RawBatch(ctx context.Context, dbType string, batchedQueries []string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	return crud.RawBatch(ctx, batchedQueries)
+}

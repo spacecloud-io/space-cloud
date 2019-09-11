@@ -10,7 +10,7 @@ import (
 // DescribeTable return a description of sql table & foreign keys in table
 // NOTE: not to be exposed externally
 func (s *SQL) DescribeTable(ctx context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, error) {
-	fields, err := s.getDescribeDetails(ctx, col)
+	fields, err := s.getDescribeDetails(ctx, col, project)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -21,8 +21,8 @@ func (s *SQL) DescribeTable(ctx context.Context, project, col string) ([]utils.F
 	return fields, foreignKeys, nil
 }
 
-func (s *SQL) getDescribeDetails(ctx context.Context, col string) ([]utils.FieldType, error) {
-	rows, err := s.client.Queryx("DESCRIBE " + col)
+func (s *SQL) getDescribeDetails(ctx context.Context, col, project string) ([]utils.FieldType, error) {
+	rows, err := s.client.Queryx("DESCRIBE " + project + "." + col)
 	if err != nil {
 		return nil, err
 	}
