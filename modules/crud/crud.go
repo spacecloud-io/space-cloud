@@ -28,7 +28,7 @@ type Crud interface {
 	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) error
-	DescribeTable(ctc context.Context, project, col, dbType string) ([]utils.FieldType, []utils.ForeignKeysType, error)
+	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error

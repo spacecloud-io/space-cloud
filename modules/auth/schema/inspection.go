@@ -36,7 +36,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 				return "", err
 			}
 		} else {
-			if err := inspectionCheckFieldType(value.FieldType, &fieldDetails); err != nil {
+			if err := inspectionMySQLCheckFieldType(value.FieldType, &fieldDetails); err != nil {
 				return "", err
 			}
 		}
@@ -74,7 +74,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 
 }
 
-func inspectionCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
+func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
 
 	result := strings.Split(typeName, "(")
 

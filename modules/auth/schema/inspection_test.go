@@ -30,7 +30,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 			name: "SQL schema Persons",
 			args: args{
 				dbType: "sql-mysql",
-				col:    "Persons",
+				col:    "persons",
 				dbName: "testDB",
 			},
 			fields: fields{
@@ -42,7 +42,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 			name: "SQL schema Orders",
 			args: args{
 				dbType: "sql-mysql",
-				col:    "Orders",
+				col:    "orders",
 				dbName: "testDB",
 			},
 			fields: fields{
@@ -102,7 +102,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 
 	db := config.Crud{
 		"sql-mysql": &config.CrudStub{
-			Conn: "root:1234@tcp(172.17.0.4:3306)/testDB",
+			Conn: "root:1234@tcp(172.17.0.2:3306)/testDB",
 			Collections: map[string]*config.TableRule{
 				"Persons": &config.TableRule{},
 				"Orders":  &config.TableRule{},

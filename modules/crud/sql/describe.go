@@ -8,22 +8,22 @@ import (
 
 // DescribeTable return a description of sql table & foreign keys in table
 // NOTE: not to be exposed externally
-func (s *SQL) DescribeTable(ctx context.Context, project, col, dbType string) ([]utils.FieldType, []utils.ForeignKeysType, error) {
-	fields, err := s.getDescribeDetails(ctx, col, dbType)
+func (s *SQL) DescribeTable(ctx context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error) {
+	fields, err := s.getDescribeDetails(ctx, project, dbType, col)
 	if err != nil {
 		return nil, nil, err
 	}
-	foreignKeys, err := s.getForeignKeyDetails(ctx, project, col, dbType)
+	foreignKeys, err := s.getForeignKeyDetails(ctx, project, dbType, col)
 	if err != nil {
 		return nil, nil, err
 	}
 	return fields, foreignKeys, nil
 }
 
-func (s *SQL) getDescribeDetails(ctx context.Context, col, dbType string) ([]utils.FieldType, error) {
+func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col string) ([]utils.FieldType, error) {
 	queryString := ""
 	if utils.DBType(dbType) == utils.MySQL {
-		queryString = "DESCRIBE " + col
+		queryString = `DESCRIBE ` + project + "." + col
 	} else {
 		queryString = `SELECT  
 		f.attnum AS "Default",  
@@ -47,7 +47,7 @@ func (s *SQL) getDescribeDetails(ctx context.Context, col, dbType string) ([]uti
 		LEFT JOIN pg_constraint p ON p.conrelid = c.oid AND f.attnum = ANY (p.conkey)  
 		LEFT JOIN pg_class AS g ON p.confrelid = g.oid  
 	WHERE c.relkind = 'r'::char    
-		AND c.relname = '` + col + `'  -- Replace with table name  
+		AND c.relname = '` + col + `'
 		AND f.attnum > 0 ORDER BY "Default"`
 	}
 
@@ -70,10 +70,10 @@ func (s *SQL) getDescribeDetails(ctx context.Context, col, dbType string) ([]uti
 	return result, nil
 }
 
-func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col, dbType string) ([]utils.ForeignKeysType, error) {
+func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col string) ([]utils.ForeignKeysType, error) {
 	queryString := ""
 	if utils.DBType(dbType) == utils.MySQL {
-		queryString = "select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = '" + project + "' and TABLE_NAME = '" + col + "'"
+		queryString = "select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = :project and TABLE_NAME = :col"
 	} else {
 		queryString = `SELECT
 		tc.table_name AS "TABLE_NAME", 
@@ -89,11 +89,10 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col, dbType str
 		JOIN information_schema.constraint_column_usage AS ccu
 		  ON ccu.constraint_name = tc.constraint_name
 		  AND ccu.table_schema = tc.table_schema
-	WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name='` + col + `'
+	WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name= :col
 	`
 	}
-
-	rows, err := s.client.Queryx(queryString)
+	rows, err := s.client.NamedQuery(queryString, map[string]interface{}{"col": col, "project": project})
 	if err != nil {
 		return nil, err
 	}
