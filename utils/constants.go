@@ -244,3 +244,31 @@ const (
 	// Subscribe is the type used for subscribe requests
 	Subscribe PubsubType = "subscribe"
 )
+
+// MaxEventTokens describes the maximum number of event workers
+const MaxEventTokens int = 100
+
+const (
+	// EventCreate is fired for create request
+	EventCreate string = "create-crud"
+
+	// EventUpdate is fired for update request
+	EventUpdate string = "update-crud"
+
+	// EventDelete is fired for delete request
+	EventDelete string = "delete-crud"
+)
+
+const (
+	// EventStatusIntent signifies that the event hasn't been stagged yet
+	EventStatusIntent string = "intent"
+
+	// EventStatusStagged signifies that the event can be processed
+	EventStatusStagged string = "stagged"
+
+	// EventStatusProcessed signifies that the event has been successfully been processed and can be deleted
+	EventStatusProcessed string = "processed"
+
+	// EventStatusCancelled signifies that the event has been cancelled and should not be processed
+	EventStatusCancelled string = "cancel"
+)
