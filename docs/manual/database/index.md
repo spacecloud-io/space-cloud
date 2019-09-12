@@ -27,11 +27,12 @@ If any clients had subscribed to realtime changes in database, then the realtime
 
 ## Limitations
 
-There are a few limitations in the queries which can be used while using the realtime module.
+There are a few limitations in the queries which can be used while using the `realtime` module.
 
 - The primary key must be _id in case of MongoDB and id for MySQL and Postgres and of type text, varchar or string.
 - All documents to be inserted must have the _id (for MongoDB) or id (for MySQL and Postgres) fields set.
 - The fields used in the where clause of liveQuery should not be updated by another request.
+- The insert many operation is not allowed. You can only insert one document at a time.
 - All updates and deletes can be made on a single document only using the _id or id field in the where clause.
 
 > **Note:** This limitations are only applicable if you intend to use the realtime functionality.

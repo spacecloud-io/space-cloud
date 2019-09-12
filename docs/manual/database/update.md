@@ -378,8 +378,6 @@ resp, err := db.Update("books").Where(condition).Set(set).Apply()
 
 You can perform different types of update operations like set, push, rename, etc. on your data. Following are the different types of update operations:
 
-> **Note:** In SQL databases, only `set` operation is available.
-
 ### Set operation
 
 You can set the value of any field / column in your data by using `set` method like below: 
@@ -436,6 +434,8 @@ The `set` method accepts an object of key-value pairs where key is the field / c
 
 You can push an element to an array in a document by using the `push` method like below:
 
+> **Note:** `push` operation is only available in MongoDB.
+
 <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
@@ -488,6 +488,8 @@ The `push` method accepts an object of key-value pairs where key is the field na
 
 You can remove / delete a field in a document by using `remove` method like below:
 
+> **Note:** `remove` operation is only available in MongoDB.
+
 <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
     <ul class="tabs">
@@ -536,6 +538,8 @@ The `remove` method accepts multiple inputs each being the name of a field you w
 ### Rename operation
 
 You can rename the name of a field in a document by using `rename` method like below:
+
+> **Note:** `rename` operation is only available in MongoDB.
 
 <div class="row tabs-wrapper">
   <div class="col s12" style="padding:0">
