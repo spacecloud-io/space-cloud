@@ -25,9 +25,9 @@ func AcceptableIDType(id interface{}) (string, bool) {
 }
 
 // GetIDVariable gets the id variable for the provided db type
-func GetIDVariable(dbType DBType) string {
+func GetIDVariable(dbType string) string {
 	idVar := "id"
-	if dbType == Mongo {
+	if DBType(dbType) == Mongo {
 		idVar = "_id"
 	}
 

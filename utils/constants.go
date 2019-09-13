@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.12.0"
+const BuildVersion = "0.11.0"
 
 const (
 	// One operation returns a single document from the database
@@ -260,11 +260,11 @@ const (
 )
 
 const (
-	// EventStatusIntent signifies that the event hasn't been stagged yet
+	// EventStatusIntent signifies that the event hasn't been staged yet
 	EventStatusIntent string = "intent"
 
-	// EventStatusStagged signifies that the event can be processed
-	EventStatusStagged string = "stagged"
+	// EventStatusStaged signifies that the event can be processed
+	EventStatusStaged string = "staged"
 
 	// EventStatusProcessed signifies that the event has been successfully been processed and can be deleted
 	EventStatusProcessed string = "processed"

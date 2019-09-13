@@ -7,6 +7,7 @@ import (
 	"math/rand"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -19,11 +20,11 @@ func (m *Module) HandleCreateIntent(ctx context.Context, dbType, col string, req
 	rows := getCreateRows(req.Document, req.Operation)
 
 	// Create the meta information
-	token := rand.Intn(m.maxTokens)
+	token := rand.Intn(utils.MaxEventTokens)
 	batchID := uuid.NewV1().String()
 
 	// Process the documents
-	eventDocs := m.processCreateDocs(token, batchID, rows)
+	eventDocs := m.processCreateDocs(token, batchID, dbType, col, rows)
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
@@ -40,9 +41,9 @@ func (m *Module) HandleBatchIntent(ctx context.Context, dbType string, req *mode
 	defer m.lock.RUnlock()
 
 	// Create the meta information
-	token := rand.Intn(m.maxTokens)
+	token := rand.Intn(utils.MaxEventTokens)
 	batchID := uuid.NewV1().String()
-	eventDocs := []interface{}{}
+	var eventDocs []*model.EventDocument
 
 	// Iterate over all batched requests
 	for _, r := range req.Requests {
@@ -50,19 +51,21 @@ func (m *Module) HandleBatchIntent(ctx context.Context, dbType string, req *mode
 		case string(utils.Create):
 			// Get the rows
 			rows := getCreateRows(r.Document, r.Operation)
-			docs := m.processCreateDocs(token, batchID, rows)
-			eventDocs = append(eventDocs, docs...)
+			eventDocs := m.processCreateDocs(token, batchID, dbType, r.Col, rows)
+			eventDocs = append(eventDocs, eventDocs...)
 
 		case string(utils.Update):
-			eventDoc, ok := m.processUpdateDeleteHook(token, utils.EventUpdate, batchID, dbType, r.Find)
+			rules := m.getMatchingRules(utils.EventUpdate, map[string]string{"col": r.Col, "db": dbType})
+			eventDocs, ok := m.processUpdateDeleteHook(rules, token, utils.EventUpdate, batchID, dbType, r.Col, r.Find)
 			if ok {
-				eventDocs = append(eventDocs, eventDoc)
+				eventDocs = append(eventDocs, eventDocs...)
 			}
 
 		case string(utils.Delete):
-			eventDoc, ok := m.processUpdateDeleteHook(token, utils.EventDelete, batchID, dbType, r.Find)
+			rules := m.getMatchingRules(utils.EventDelete, map[string]string{"col": r.Col, "db": dbType})
+			eventDocs, ok := m.processUpdateDeleteHook(rules, token, utils.EventDelete, batchID, dbType, r.Col, r.Find)
 			if ok {
-				eventDocs = append(eventDocs, eventDoc)
+				eventDocs = append(eventDocs, eventDocs...)
 			}
 
 		default:
@@ -84,7 +87,10 @@ func (m *Module) HandleUpdateIntent(ctx context.Context, dbType, col string, req
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return m.handleUpdateDeleteIntent(ctx, utils.EventUpdate, dbType, col, req.Find)
+	// Get event listners
+	rules := m.getMatchingRules(utils.EventUpdate, map[string]string{"col": col, "db": dbType})
+
+	return m.handleUpdateDeleteIntent(ctx, rules, utils.EventUpdate, dbType, col, req.Find)
 }
 
 // HandleDeleteIntent handles the delete intent requests
@@ -92,23 +98,26 @@ func (m *Module) HandleDeleteIntent(ctx context.Context, dbType, col string, req
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return m.handleUpdateDeleteIntent(ctx, utils.EventDelete, dbType, col, req.Find)
+	// Get event listners
+	rules := m.getMatchingRules(utils.EventDelete, map[string]string{"col": col, "db": dbType})
+
+	return m.handleUpdateDeleteIntent(ctx, rules, utils.EventDelete, dbType, col, req.Find)
 }
 
-func (m *Module) handleUpdateDeleteIntent(ctx context.Context, eventName, dbType, col string, find map[string]interface{}) (*model.EventIntent, error) {
+func (m *Module) handleUpdateDeleteIntent(ctx context.Context, rules []*config.EventingRule, eventType, dbType, col string, find map[string]interface{}) (*model.EventIntent, error) {
 	// Create a unique batch id and token
 	batchID := uuid.NewV1().String()
-	token := rand.Intn(m.maxTokens)
+	token := rand.Intn(utils.MaxEventTokens)
 
-	eventDoc, ok := m.processUpdateDeleteHook(token, eventName, batchID, dbType, find)
+	eventDocs, ok := m.processUpdateDeleteHook(rules, token, eventType, batchID, dbType, col, find)
 	if ok {
 		// Persist the event intent
-		createRequest := &model.CreateRequest{Document: eventDoc, Operation: utils.One}
+		createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
 		if err := m.crud.Create(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 			return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 		}
 
-		return &model.EventIntent{BatchID: batchID, Token: token, Docs: []interface{}{eventDoc}}, nil
+		return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
 	}
 
 	return &model.EventIntent{Invalid: true}, nil
@@ -131,8 +140,8 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 		set["status"] = utils.EventStatusCancelled
 		set["remark"] = err.Error()
 	} else {
-		// Set the status to stagged if no error occurred
-		set["status"] = utils.EventStatusStagged
+		// Set the status to staged if no error occurred
+		set["status"] = utils.EventStatusStaged
 	}
 
 	// Create the find and update clauses
@@ -142,8 +151,62 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 	updateRequest := model.UpdateRequest{Find: find, Operation: utils.All, Update: update}
 	if err := m.crud.Update(ctx, m.config.DBType, m.project, m.config.Col, &updateRequest); err != nil {
 		log.Println("Eventing Error: event could not be updated", err)
-		return
 	}
 
-	// Broadcast the event so the concerned worker can process the events
+	// Broadcast the event so the concerned worker can process it immediately
+	m.broadcastEvents(intent.Docs)
+}
+
+func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows []interface{}) []*model.EventDocument {
+	// Get event listeners
+	rules := m.getMatchingRules(utils.EventCreate, map[string]string{"col": col, "db": dbType})
+
+	var eventDocs []*model.EventDocument
+	for _, doc := range rows {
+
+		// Skip the doc if id isn't present
+		idTemp, p := doc.(map[string]interface{})[utils.GetIDVariable(dbType)]
+		if !p {
+			continue
+		}
+
+		// Skip the doc if id isn't of type string
+		docID, ok := idTemp.(string)
+		if !ok {
+			continue
+		}
+		// Iterate over all rules
+		for _, rule := range rules {
+			eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
+				batchID, utils.EventStatusIntent, rule.Service, rule.Function, &model.QueueEventRequest{
+					Type:    utils.EventCreate,
+					Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, Doc: doc, DocID: docID},
+				}))
+		}
+	}
+
+	return eventDocs
+}
+
+func (m *Module) processUpdateDeleteHook(rules []*config.EventingRule, token int, eventType, batchID, dbType, col string, find map[string]interface{}) ([]*model.EventDocument, bool) {
+	// Check if id field is valid
+	if idTemp, p := find[utils.GetIDVariable(dbType)]; p {
+		if id, ok := utils.AcceptableIDType(idTemp); ok {
+
+			eventDocs := make([]*model.EventDocument, len(rules))
+
+			for _, rule := range rules {
+				// Create an event doc
+				eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
+					batchID, utils.EventStatusIntent, rule.Service, rule.Function, &model.QueueEventRequest{
+						Type:    eventType,
+						Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, DocID: id},
+					}))
+			}
+
+			return eventDocs, true
+		}
+	}
+
+	return nil, false
 }

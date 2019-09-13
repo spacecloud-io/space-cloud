@@ -76,7 +76,7 @@ type Modules struct {
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
 	Pubsub    *Pubsub    `json:"pubsub" yaml:"pubsub"`
-	Eventing  Eventing   `json:"eventing,omitempty", yaml:"eventing,omitempty"`
+	Eventing  Eventing   `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -197,17 +197,18 @@ type PubsubRule struct {
 
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
-	Enabled bool                    `json:"enabled" yaml:"enabled"`
-	DBType  string                  `json:"dbType" yaml:"dbType"`
-	Col     string                  `json:"col" yaml:"col"`
-	Rules   map[string]EventingRule `json:"rules" yaml:"rules"`
+	Enabled       bool                    `json:"enabled" yaml:"enabled"`
+	DBType        string                  `json:"dbType" yaml:"dbType"`
+	Col           string                  `json:"col" yaml:"col"`
+	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
+	InternalRules map[string]EventingRule `json:"internalRules" yaml:"internalRules"`
 }
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	Kind     string   `json:"kind" yaml:"kind"`
-	Field    string   `json:"field" yaml:"field"`
-	Options  []string `json:"options" yaml:"options"`
-	Service  string   `json:"service" yaml:"service"`
-	Function string   `json:"func" yaml:"func"`
+	Type     string            `json:"type" yaml:"type"`
+	Retries  int               `json:"retries" yaml:"retries"`
+	Service  string            `json:"service" yaml:"service"`
+	Function string            `json:"func" yaml:"func"`
+	Options  map[string]string `json:"options" yaml:"options"`
 }

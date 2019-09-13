@@ -20,7 +20,7 @@ func TestGetRule(t *testing.T) {
 		authModuleRules       config.Crud
 	}{
 		// success condition
-		{testName: "Successful Test", dbType: "my-sql", col: "collectionName", query: "rule1", wantThis: &config.Rule{Rule: "Rule", Eval: "Eval", Type: "Type", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}, authModuleRules: config.Crud{"my-sql": &config.CrudStub{Collections: map[string]*config.TableRule{"collectionName": &config.TableRule{Rules: map[string]*config.Rule{"rule1": &config.Rule{Rule: "Rule", Eval: "Eval", Type: "Type", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}},
+		{testName: "Successful Test", dbType: "my-sql", col: "collectionName", query: "rule1", wantThis: &config.Rule{Rule: "Rule", Eval: "Eval", Type: "Type", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}, authModuleRules: config.Crud{"my-sql": &config.CrudStub{Collections: map[string]*config.TableRule{"collectionName": {Rules: map[string]*config.Rule{"rule1": {Rule: "Rule", Eval: "Eval", Type: "Type", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}},
 		// error condition
 		{testName: "Error : Nothing is Provided"},
 	}
@@ -88,7 +88,7 @@ func TestParseToken(t *testing.T) {
 	authModule := Init(&crud.Module{}, &functions.Module{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			authModule.SetConfig("", test.secretKey, config.Crud{}, &config.FileStore{}, &config.Functions{})
+			authModule.SetConfig("", test.secretKey, config.Crud{}, &config.FileStore{}, &config.Functions{}, &config.Pubsub{})
 			tokenClaims, err := authModule.parseToken(test.token)
 			if test.testType == "Success" {
 				if !cmp.Equal(test.wantThis, tokenClaims) {
@@ -103,7 +103,7 @@ func TestParseToken(t *testing.T) {
 	}
 }
 
-//func TestIsAuthorized(t *testing.T) {
+// func TestIsAuthorized(t *testing.T) {
 //	var authIsAuthorized = []struct {
 //		testName, dbType, col string
 //		project               string

@@ -66,7 +66,7 @@ func New(nodeID string) *Server {
 	syncMan := syncman.New(adminMan)
 
 	// Initialise the eventing module
-	eventing := eventing.New(c)
+	eventing := eventing.New(c, fn, syncMan)
 	c.SetHooks(&model.CrudHooks{
 		Create: eventing.HandleCreateIntent,
 		Update: eventing.HandleUpdateIntent,

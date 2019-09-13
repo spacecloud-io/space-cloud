@@ -5,20 +5,36 @@ import "context"
 // EventKind is the type describing the kind of event
 type EventKind string
 
+// EventDocument is the format in which the event is persistent on disk
+type EventDocument struct {
+	ID             string `json:"_id"`
+	BatchID        string `json:"batchid"`
+	Type           string `json:"type"`
+	Token          int    `json:"token"`
+	Timestamp      int64  `json:"timestamp"`
+	EventTimestamp int64  `json:"event_timestamp"`
+	Payload        string `json:"payload"`
+	Status         string `json:"status"`
+	MaxRetries     int    `json:"max_retries"`
+	Retries        int    `json:"retries"`
+	Delivered      bool   `json:"delivered"`
+	Service        string `json:"service"`
+	Function       string `json:"function"`
+}
+
 // QueueEventRequest is the payload to add a new event to the task queue
 type QueueEventRequest struct {
-	Name      string      `json:"name"`                // The type of the event
+	Type      string      `json:"type"`                // The type of the event
 	Delay     int64       `json:"delay,omitempty"`     // Time in seconds
 	Timestamp int64       `json:"timestamp,omitempty"` // Milliseconds from unix epoch (UTC)
-	Payload   interface{} `json:"Payload,omitempty"`   // Payload contains necessary event data
-	Retries   int         `json:"retries,omitempty"`
+	Payload   interface{} `json:"Payload,omitempty"`   // Payload contains necessary event dat
 }
 
 // EventIntent describes an intent made in the eventing system
 type EventIntent struct {
 	BatchID string
 	Token   int
-	Docs    []interface{}
+	Docs    []*EventDocument
 	Invalid bool
 }
 
@@ -46,23 +62,10 @@ type CrudHooks struct {
 	Stage  StageEventHook
 }
 
-// CreateMessage is the event payload for create message event
-type CreateMessage struct {
-	DBType string        `json:"db"`
-	Col    string        `json:"col"`
-	Docs   []interface{} `json:"docs"`
-}
-
-// UpdateMessage is the event payload for update message event
-type UpdateMessage struct {
-	DBType string `json:"db"`
-	Col    string `json:"col"`
-	DocID  string `json:"docId"`
-}
-
-// DeleteMessage is the event payload for delete message event
-type DeleteMessage struct {
-	DBType string `json:"db"`
-	Col    string `json:"col"`
-	DocID  string `json:"docId"`
+// DatabaseEventMessage is the event payload for create, update and delete events
+type DatabaseEventMessage struct {
+	DBType string      `json:"db"`
+	Col    string      `json:"col"`
+	DocID  string      `json:"docId"`
+	Doc    interface{} `json:"doc"`
 }
