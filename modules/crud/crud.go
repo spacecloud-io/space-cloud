@@ -18,6 +18,9 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]Crud
 	primaryDB string
+
+	// Variables to store the hooks
+	hooks *model.CrudHooks
 }
 
 // Crud abstracts the implementation crud operations of databases
@@ -36,6 +39,11 @@ type Crud interface {
 // Init create a new instance of the Module object
 func Init() *Module {
 	return &Module{blocks: make(map[string]Crud)}
+}
+
+// SetHooks sets the internal hooks
+func (m *Module) SetHooks(hooks *model.CrudHooks) {
+	m.hooks = hooks
 }
 
 func initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {

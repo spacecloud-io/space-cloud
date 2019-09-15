@@ -14,14 +14,16 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/eventing"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/modules/pubsub"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
-	"github.com/spaceuptech/space-cloud/modules/pubsub"
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
@@ -62,6 +64,16 @@ func New(nodeID string) *Server {
 	p := pubsub.Init(a)
 	adminMan := admin.New()
 	syncMan := syncman.New(adminMan)
+
+	// Initialise the eventing module
+	eventing := eventing.New(c, fn, syncMan)
+	c.SetHooks(&model.CrudHooks{
+		Create: eventing.HandleCreateIntent,
+		Update: eventing.HandleUpdateIntent,
+		Delete: eventing.HandleDeleteIntent,
+		Batch:  eventing.HandleBatchIntent,
+		Stage:  eventing.HandleStage,
+	})
 
 	fmt.Println("Creating a new server with id", nodeID)
 

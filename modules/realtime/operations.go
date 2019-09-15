@@ -41,7 +41,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 			if data.DBType == string(utils.Mongo) {
 				idVar = "_id"
 			}
-			if docID, ok := acceptableIDType(payload[idVar]); ok {
+			if docID, ok := utils.AcceptableIDType(payload[idVar]); ok {
 				feedData = append(feedData, &model.FeedData{
 					Group:     data.Group,
 					Type:      utils.RealtimeInitial,

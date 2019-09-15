@@ -76,6 +76,7 @@ type Modules struct {
 	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
 	Pubsub    *Pubsub    `json:"pubsub" yaml:"pubsub"`
+	Eventing  Eventing   `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -182,14 +183,32 @@ type StaticRoute struct {
 
 // Pubsub holds the config for the realtime module
 type Pubsub struct {
-	Enabled bool         `json:"enabled" yaml:"enabled"`
-	Broker  utils.Broker `json:"broker" yaml:"broker"`
-	Conn    string       `json:"conn" yaml:"conn"`
+	Enabled bool          `json:"enabled" yaml:"enabled"`
+	Broker  utils.Broker  `json:"broker" yaml:"broker"`
+	Conn    string        `json:"conn" yaml:"conn"`
 	Rules   []*PubsubRule `json:"rules" yaml:"rules"`
 }
 
 // PubsubRule is the authorization object at the pubsub rule level
 type PubsubRule struct {
 	Subject string           `json:"subject" yaml:"subject"` // The channel subject
-	Rule    map[string]*Rule `json:"rule" yaml:"rule"` // The key can be publish or subscribe
+	Rule    map[string]*Rule `json:"rule" yaml:"rule"`       // The key can be publish or subscribe
+}
+
+// Eventing holds the config for the eventing module (task queue)
+type Eventing struct {
+	Enabled       bool                    `json:"enabled" yaml:"enabled"`
+	DBType        string                  `json:"dbType" yaml:"dbType"`
+	Col           string                  `json:"col" yaml:"col"`
+	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
+	InternalRules map[string]EventingRule `json:"internalRules" yaml:"internalRules"`
+}
+
+// EventingRule holds an eventing rule
+type EventingRule struct {
+	Type     string            `json:"type" yaml:"type"`
+	Retries  int               `json:"retries" yaml:"retries"`
+	Service  string            `json:"service" yaml:"service"`
+	Function string            `json:"func" yaml:"func"`
+	Options  map[string]string `json:"options" yaml:"options"`
 }
