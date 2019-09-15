@@ -27,10 +27,10 @@ func TestSchema_schemaInspection(t *testing.T) {
 		args   args
 	}{
 		{
-			name: "SQL schema Persons",
+			name: "MySQL schema Persons",
 			args: args{
 				dbType: "sql-mysql",
-				col:    "Persons",
+				col:    "persons",
 				dbName: "testDB",
 			},
 			fields: fields{
@@ -39,10 +39,10 @@ func TestSchema_schemaInspection(t *testing.T) {
 			},
 		},
 		{
-			name: "SQL schema Orders",
+			name: "MySQL schema Orders",
 			args: args{
 				dbType: "sql-mysql",
-				col:    "Orders",
+				col:    "orders",
 				dbName: "testDB",
 			},
 			fields: fields{
@@ -50,11 +50,43 @@ func TestSchema_schemaInspection(t *testing.T) {
 				project: "testDB",
 			},
 		},
+		{
+			name: "Postgress schema persons",
+			args: args{
+				dbType: "sql-postgres",
+				col:    "persons",
+				dbName: "testdb",
+			},
+			fields: fields{
+				crud:    &crud.Module{},
+				project: "testdb",
+			},
+		},
+		{
+			name: "Postgress schema orders",
+			args: args{
+				dbType: "sql-postgres",
+				col:    "orders",
+				dbName: "testdb",
+			},
+			fields: fields{
+				crud:    &crud.Module{},
+				project: "testdb",
+			},
+		},
 	}
 
 	db := config.Crud{
 		"sql-mysql": &config.CrudStub{
 			Conn: "root:1234@tcp(172.17.0.2:3306)/testDB",
+			Collections: map[string]*config.TableRule{
+				"Persons": &config.TableRule{},
+				"Orders":  &config.TableRule{},
+			},
+			Enabled: true,
+		},
+		"sql-postgres": &config.CrudStub{
+			Conn: "postgres://postgres:1234@172.17.0.3:5432/testdb?sslmode=disable",
 			Collections: map[string]*config.TableRule{
 				"Persons": &config.TableRule{},
 				"Orders":  &config.TableRule{},
