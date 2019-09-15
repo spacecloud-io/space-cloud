@@ -20,7 +20,18 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
-	return crud.Create(ctx, project, col, req)
+	// Invoke the create intent hook
+	intent, err := m.hooks.Create(ctx, dbType, col, req)
+	if err != nil {
+		return err
+	}
+
+	// Perform the create operation
+	err = crud.Create(ctx, project, col, req)
+
+	// Invoke the stage hook
+	m.hooks.Stage(ctx, intent, err)
+	return err
 }
 
 // Read returns the document(s) which match a query from the database based on dbType
@@ -54,7 +65,18 @@ func (m *Module) Update(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
-	return crud.Update(ctx, project, col, req)
+	// Invoke the update intent hook
+	intent, err := m.hooks.Update(ctx, dbType, col, req)
+	if err != nil {
+		return err
+	}
+
+	// Perform the update operation
+	err = crud.Update(ctx, project, col, req)
+
+	// Invoke the stage hook
+	m.hooks.Stage(ctx, intent, err)
+	return err
 }
 
 // Delete removes the document(s) which match a query from the database based on dbType
@@ -71,7 +93,18 @@ func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
-	return crud.Delete(ctx, project, col, req)
+	// Invoke the delete intent hook
+	intent, err := m.hooks.Delete(ctx, dbType, col, req)
+	if err != nil {
+		return err
+	}
+
+	// Perfrom the delete operation
+	err = crud.Delete(ctx, project, col, req)
+
+	// Invoke the stage hook
+	m.hooks.Stage(ctx, intent, err)
+	return err
 }
 
 // Aggregate performs an aggregation defined via the pipeline
@@ -105,5 +138,16 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 		return err
 	}
 
-	return crud.Batch(ctx, project, req)
+	// Invoke the batch intent hook
+	intent, err := m.hooks.Batch(ctx, dbType, req)
+	if err != nil {
+		return err
+	}
+
+	// Perfrom the batch operation
+	err = crud.Batch(ctx, project, req)
+
+	// Invoke the stage hook
+	m.hooks.Stage(ctx, intent, err)
+	return err
 }
