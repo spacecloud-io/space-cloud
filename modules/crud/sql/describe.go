@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -22,6 +23,7 @@ func (s *SQL) DescribeTable(ctx context.Context, project, dbType, col string) ([
 
 func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col string) ([]utils.FieldType, error) {
 	queryString := ""
+	args := []interface{}{}
 	if utils.DBType(dbType) == utils.MySQL {
 		queryString = `DESCRIBE ` + project + "." + col
 	} else {
@@ -47,11 +49,14 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 		LEFT JOIN pg_constraint p ON p.conrelid = c.oid AND f.attnum = ANY (p.conkey)  
 		LEFT JOIN pg_class AS g ON p.confrelid = g.oid  
 	WHERE c.relkind = 'r'::char    
-		AND c.relname = '` + col + `'
+		AND c.relname = $1
+		AND n.nspname = $2
 		AND f.attnum > 0 ORDER BY "Default"`
-	}
 
-	rows, err := s.client.Queryx(queryString)
+		args = append(args, col, project)
+	}
+	fmt.Println(args)
+	rows, err := s.client.Queryx(queryString, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +94,7 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col str
 		JOIN information_schema.constraint_column_usage AS ccu
 		  ON ccu.constraint_name = tc.constraint_name
 		  AND ccu.table_schema = tc.table_schema
-	WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name= :col
+	WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name= :col AND tc.table_schema = :project
 	`
 	}
 	rows, err := s.client.NamedQuery(queryString, map[string]interface{}{"col": col, "project": project})

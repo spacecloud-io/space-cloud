@@ -51,51 +51,27 @@ func TestSchema_schemaInspection(t *testing.T) {
 			},
 		},
 		{
-			name: "Postgress schema so_headers",
+			name: "Postgress schema persons",
 			args: args{
 				dbType: "sql-postgres",
-				col:    "so_headers",
-				dbName: "testDB",
+				col:    "persons",
+				dbName: "testdb",
 			},
 			fields: fields{
 				crud:    &crud.Module{},
-				project: "testDB",
+				project: "testdb",
 			},
 		},
 		{
-			name: "Postgress schema so_items",
+			name: "Postgress schema orders",
 			args: args{
 				dbType: "sql-postgres",
-				col:    "so_items",
-				dbName: "testDB",
+				col:    "orders",
+				dbName: "testdb",
 			},
 			fields: fields{
 				crud:    &crud.Module{},
-				project: "testDB",
-			},
-		},
-		{
-			name: "Postgress schema account",
-			args: args{
-				dbType: "sql-postgres",
-				col:    "account",
-				dbName: "testDB",
-			},
-			fields: fields{
-				crud:    &crud.Module{},
-				project: "testDB",
-			},
-		},
-		{
-			name: "Postgress schema sandeep",
-			args: args{
-				dbType: "sql-postgres",
-				col:    "sandeep",
-				dbName: "testDB",
-			},
-			fields: fields{
-				crud:    &crud.Module{},
-				project: "testDB",
+				project: "testdb",
 			},
 		},
 	}
