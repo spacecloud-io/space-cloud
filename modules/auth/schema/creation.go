@@ -3,6 +3,7 @@ package schema
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -16,7 +17,6 @@ type creationModule struct {
 
 // SchemaCreation creates or alters tables of sql
 func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schema string) error {
-
 	crudCol := map[string]*config.TableRule{}
 	crudCol[col] = &config.TableRule{
 		Schema: schema,
@@ -111,21 +111,22 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 }
 
 func (c *creationModule) addField(ctx context.Context) ([]string, error) {
-	var queryString string
 	var queries []string
 
 	if c.columnType != "" {
 		// add a new column with data type as columntype
-		queryString = "ALTER TABLE " + c.project + "." + c.ColName + " ADD " + c.FieldKey + " " + c.columnType
-		queries = append(queries, queryString)
+		queries = append(queries, c.addNewColumn())
 	}
 
 	if c.realFieldStruct.IsFieldTypeRequired {
 		// make the new column not null
-		queryString = "ALTER TABLE " + c.project + "." + c.ColName + " MODIFY " + c.FieldKey + " " + c.columnType + " NOT NULL"
-		queries = append(queries, queryString)
+		queries = append(queries, c.addNotNull())
 	}
-	queries = append(queries, c.addDirective(ctx)...)
+	tempQuery, err := c.addDirective(ctx)
+	if err != nil {
+		return nil, err
+	}
+	queries = append(queries, tempQuery...)
 	return queries, nil
 }
 
@@ -136,48 +137,67 @@ func (c *creationModule) removeField() string {
 func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 	var queries []string
 	if c.realFieldStruct.Kind != c.currentFieldStruct.Kind {
+		fmt.Println(c.realFieldStruct.Kind, c.currentFieldStruct.Kind)
 		if c.columnType != "" {
 			queries = append(queries, c.modifyColumnType())
 		}
 	}
 
 	if c.realFieldStruct.IsFieldTypeRequired != c.currentFieldStruct.IsFieldTypeRequired {
-		queries = append(queries, c.modifyNotNull())
+		// fmt.Println(c.realFieldStruct.IsFieldTypeRequired, c.currentFieldStruct.IsFieldTypeRequired)
+		// b, err := json.MarshalIndent(c.currentFieldStruct, "", "  ")
+		// if err != nil {
+		// 	fmt.Println("error:", err)
+		// }
+		// fmt.Print(string(b))
+		if c.realFieldStruct.IsFieldTypeRequired {
+			queries = append(queries, c.addNotNull())
+		} else {
+			queries = append(queries, c.removeNotNull())
+		}
 	}
 
 	if c.realFieldStruct.Directive != c.currentFieldStruct.Directive {
-		queries = append(queries, c.removeDirective()...)
-		queries = append(queries, c.addDirective(ctx)...)
+		fmt.Println(c.realFieldStruct.Directive)
+		if c.realFieldStruct.Directive != "" {
+			tempQuery, err := c.addDirective(ctx)
+			if err != nil {
+				return nil, err
+			}
+			queries = append(queries, tempQuery...)
+		} else {
+			queries = append(queries, c.removeDirective()...)
+		}
 	}
 	return queries, nil
 }
 
-func (c *creationModule) addDirective(ctx context.Context) []string {
+func (c *creationModule) addDirective(ctx context.Context) ([]string, error) {
 	queries := []string{}
 	switch c.realFieldStruct.Directive {
 	case directiveId:
-		return append(queries, c.addPrimaryKey())
+		queries = append(queries, c.addPrimaryKey())
 	case directiveUnique:
-		return append(queries, c.addUniqueKey())
+		queries = append(queries, c.addUniqueKey())
 	case directiveRelation:
 		nestedSchema, err := c.schemaModule.Inspector(ctx, c.dbType, c.project, c.realFieldStruct.JointTable.TableName)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		value, ok := nestedSchema[c.realFieldStruct.JointTable.TableName]
 		if !ok {
-			// error handling
+			return nil, errors.New("schema creation: foreign key referenced table not found")
 		}
 		val, ok := value[c.realFieldStruct.JointTable.TableField]
 		if !ok {
-			// error handling
+			return nil, errors.New("schema creation: field name not found in referenced table for foreign keys")
 		}
 		colType, err := getSQLType(val.Kind)
 		if err != nil {
-			// error handlin
+			return nil, err
 		}
 		if colType == typeObject || colType == typeJoin || val.IsList {
-			// err
+			return nil, errors.New("schema creation: foreign keys incorrect type or found array")
 		}
 		temp := creationModule{
 			dbType:     c.dbType,
@@ -186,20 +206,20 @@ func (c *creationModule) addDirective(ctx context.Context) []string {
 			FieldKey:   c.FieldKey,
 			columnType: colType,
 		}
-		return append(queries, temp.addNewColumn(), c.addForeignKey())
+		queries = append(queries, temp.modifyColumnType(), c.addForeignKey())
 	}
-	return queries
+	return queries, nil
 }
 
 func (c *creationModule) removeDirective() []string {
 	queries := []string{}
 	switch c.currentFieldStruct.Directive {
 	case directiveId:
-		return append(queries, c.removePrimaryKey())
+		queries = append(queries, c.removePrimaryKey())
 	case directiveUnique:
-		return append(queries, c.removeUniqueKey())
+		queries = append(queries, c.removeUniqueKey())
 	case directiveRelation:
-		return append(queries, c.removeForeignKey())
+		queries = append(queries, c.removeForeignKey()...)
 	}
 	return queries
 }

@@ -78,13 +78,13 @@ func inspectionCheckFieldType(typeName string, fieldDetails *schemaFieldType) er
 	switch result[0] {
 	case "char", "varchar", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = typeString
-	case "tinyint", "smallint", "mediumint", "int", "bigint":
+	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = typeInteger
 	case "float", "double":
 		fieldDetails.Kind = typeFloat
 	case "date", "time", "datetime", "timestamp":
 		fieldDetails.Kind = typeDateTime
-	case "boolean":
+	case "tinyint", "boolean": // sql stores boolean valuse as tinyint(1), TODO: what if tinyint(28) then it should come under integer
 		fieldDetails.Kind = typeBoolean
 	default:
 		return errors.New("Inspection type check : no match found")
