@@ -9,6 +9,7 @@ import (
 	"github.com/graphql-go/graphql/language/kinds"
 )
 
+// M is a type for map
 type M map[string]interface{}
 
 // ParseGraphqlValue returns an interface that can be casted to string

@@ -11,6 +11,7 @@ require (
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.0
+	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/graphql-go/graphql v0.7.8
 	github.com/hashicorp/memberlist v0.1.4
 	github.com/hashicorp/raft v1.1.0
@@ -23,6 +24,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nats-io/nats-server/v2 v2.0.2
 	github.com/nats-io/nats.go v1.8.1
+	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/objx v0.2.0 // indirect

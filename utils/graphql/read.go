@@ -10,26 +10,37 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execReadRequest(field *ast.Field, token string, store utils.M) (interface{}, error) {
+func (graph *Module) execReadRequest(field *ast.Field, token string, store utils.M, loader *loaderMap, cb callback) {
 	dbType := getDBType(field)
 	col, err := getCollection(field)
 	if err != nil {
-		return nil, err
+		cb(nil, err)
+		return
 	}
 
-	req, err := generateReadRequest(field, store)
+	req, hasOptions, err := generateReadRequest(field, store)
 	if err != nil {
-		return nil, err
+		cb(nil, err)
+		return
 	}
 
+	// Check if read op is authorised
 	if _, err := graph.auth.IsReadOpAuthorised(graph.project, dbType, col, token, req); err != nil {
-		return nil, err
+		cb(nil, err)
+		return
 	}
 
-	return graph.crud.Read(context.TODO(), dbType, graph.project, col, req)
+	dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string), graph)
+
+	go func() {
+		// Create dataloader key
+		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: hasOptions, Req: *req}
+		result, err := dataLoader.Load(context.TODO(), key)()
+		cb(result, err)
+	}()
 }
 
-func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, error) {
+func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, bool, error) {
 	var err error
 
 	// Create a read request object
@@ -37,15 +48,16 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, e
 
 	readRequest.Find, err = extractWhereClause(field.Arguments, store)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	readRequest.Options, err = generateOptions(field.Arguments, store)
+	var hasOptions bool
+	readRequest.Options, hasOptions, err = generateOptions(field.Arguments, store)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return &readRequest, nil
+	return &readRequest, hasOptions, nil
 }
 
 func extractWhereClause(args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
@@ -69,33 +81,38 @@ func extractWhereClause(args []*ast.Argument, store utils.M) (map[string]interfa
 	return utils.M{}, nil
 }
 
-func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, error) {
+func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, bool, error) {
+	hasOptions := false // Flag to see if options exist
 	options := model.ReadOptions{}
 	for _, v := range args {
 		switch v.Name.Value {
 		case "skip":
+			hasOptions = true // Set the flag to true
+
 			temp, err := ParseValue(v.Value, store)
 			if err != nil {
-				return nil, err
+				return nil, hasOptions, err
 			}
 
 			tempInt, ok := temp.(int)
 			if !ok {
-				return nil, errors.New("Invalid type for skip")
+				return nil, hasOptions, errors.New("Invalid type for skip")
 			}
 
 			tempInt64 := int64(tempInt)
 			options.Skip = &tempInt64
 
 		case "limit":
+			hasOptions = true // Set the flag to true
+
 			temp, err := ParseValue(v.Value, store)
 			if err != nil {
-				return nil, err
+				return nil, hasOptions, err
 			}
 
 			tempInt, ok := temp.(int)
 			if !ok {
-				return nil, errors.New("Invalid type for skip")
+				return nil, hasOptions, errors.New("Invalid type for skip")
 			}
 
 			tempInt64 := int64(tempInt)
@@ -104,5 +121,5 @@ func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, e
 			// TODO: implement sort, distinct, etc.
 		}
 	}
-	return &options, nil
+	return &options, hasOptions, nil
 }

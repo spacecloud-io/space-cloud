@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"strings"
+
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // SchemaInspection resturn schema in schema definition language (SDL)
@@ -40,10 +42,15 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		}
 
 		// field type
-		if err := inspectionCheckFieldType(value.FieldType, &fieldDetails); err != nil {
-			return nil, err
+		if utils.DBType(dbType) == utils.Postgres {
+			if err := inspectionPostgresCheckFieldType(value.FieldType, &fieldDetails); err != nil {
+				return "", err
+			}
+		} else {
+			if err := inspectionMySQLCheckFieldType(value.FieldType, &fieldDetails); err != nil {
+				return "", err
+			}
 		}
-
 		// check if list
 		if value.FieldKey == "PRI" {
 			fieldDetails.Directive = "id"
@@ -66,15 +73,15 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		inspectionFields[value.FieldName] = &fieldDetails
 	}
 
-	inspectionCollection[col] = inspectionFields
+	inspectionCollection[strings.Title(col)] = inspectionFields
 	inspectionDb[dbType] = inspectionCollection
 	return inspectionCollection, nil
 }
 
-func inspectionCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
-	// TODO: what about my-sql set type
+func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
 
 	result := strings.Split(typeName, "(")
+
 	switch result[0] {
 	case "char", "varchar", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = typeString
@@ -87,7 +94,32 @@ func inspectionCheckFieldType(typeName string, fieldDetails *schemaFieldType) er
 	case "tinyint", "boolean": // sql stores boolean valuse as tinyint(1), TODO: what if tinyint(28) then it should come under integer
 		fieldDetails.Kind = typeBoolean
 	default:
-		return errors.New("Inspection type check : no match found")
+		return errors.New("Inspection type check : no match found got " + result[0])
+	}
+	return nil
+}
+
+func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
+
+	result := strings.Split(typeName, " ")
+	result = strings.Split(result[0], "(")
+
+	switch result[0] {
+	case "character", "bit":
+		fieldDetails.Kind = typeString
+	case "bigint", "bigserial", "integer", "numeric", "smallint", "smallserial", "serial", "text":
+		fieldDetails.Kind = typeInteger
+	case "float", "double", "real":
+		fieldDetails.Kind = typeFloat
+	case "date", "time", "datetime", "timestamp", "interval":
+		fieldDetails.Kind = typeDateTime
+	case "boolean":
+		fieldDetails.Kind = typeBoolean
+	case "json":
+		fieldDetails.Kind = typeJSON
+
+	default:
+		return errors.New("Inspection type check : no match found got " + result[0])
 	}
 	return nil
 }

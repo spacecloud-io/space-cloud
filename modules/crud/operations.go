@@ -122,7 +122,7 @@ func (m *Module) DescribeTable(ctx context.Context, dbType, project, col string)
 		return nil, nil, err
 	}
 
-	return crud.DescribeTable(ctx, project, col)
+	return crud.DescribeTable(ctx, project, dbType, col)
 }
 
 // RawBatch performs a db operaionf for schema creation

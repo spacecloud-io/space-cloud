@@ -2,10 +2,9 @@ package graphql
 
 import (
 	"errors"
-	"log"
-	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
@@ -89,20 +88,28 @@ func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 		return array, nil
 
 	case kinds.EnumValue:
-		enumValue := value.(*ast.EnumValue)
-		if strings.Contains(enumValue.Value, "__") {
-			temp := strings.ReplaceAll(enumValue.Value, "__", ".")
-			return utils.LoadValue(temp, store)
+		v := value.(*ast.EnumValue).Value
+		if strings.Contains(v, "__") {
+			v = strings.ReplaceAll(v, "__", ".")
 		}
-		return enumValue.Value, nil
+		val, err := utils.LoadValue(v, store)
+		if err == nil {
+			return val, nil
+		}
+
+		return v, nil
 
 	case kinds.StringValue:
-		stringValue := value.(*ast.StringValue)
-		if strings.Contains(stringValue.Value, "__") {
-			temp := strings.ReplaceAll(stringValue.Value, "__", ".")
-			return utils.LoadValue(temp, store)
+		v := value.(*ast.StringValue).Value
+		if strings.Contains(v, "__") {
+			v = strings.ReplaceAll(v, "__", ".")
 		}
-		return stringValue.Value, nil
+		val, err := utils.LoadValue(v, store)
+		if err == nil {
+			return val, nil
+		}
+
+		return v, nil
 
 	case kinds.IntValue:
 		intValue := value.(*ast.IntValue)
@@ -135,39 +142,66 @@ func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 	}
 }
 
-func (graph *Module) processQueryResult(field *ast.Field, token string, store utils.M, result interface{}) (interface{}, error) {
+func (graph *Module) processQueryResult(field *ast.Field, token string, store utils.M, result interface{}, loader *loaderMap, cb callback) {
+	addFieldPath(store, getFieldName(field))
+
 	switch val := result.(type) {
 	case []interface{}:
-		array := make([]interface{}, len(val))
-		for i, v := range val {
-			obj := map[string]interface{}{}
+		array := utils.NewArray(len(val))
 
-			for _, sel := range field.SelectionSet.Selections {
-				storeNew := shallowClone(store)
-				storeNew[getFieldName(field)] = v
-				storeNew["coreParentKey"] = getFieldName(field)
+		// Create a wait group
+		var wgArray sync.WaitGroup
+		wgArray.Add(len(val))
 
-				f := sel.(*ast.Field)
+		for loopIndex, loopValue := range val {
+			go func(i int, v interface{}) {
+				defer wgArray.Done()
 
-				if f.Name.Value == "__typename" {
-					continue
+				obj := utils.NewObject()
+
+				// Create a wait group
+				var wg sync.WaitGroup
+				wg.Add(len(field.SelectionSet.Selections))
+
+				for _, sel := range field.SelectionSet.Selections {
+					storeNew := shallowClone(store)
+					storeNew[getFieldName(field)] = v
+					storeNew["coreParentKey"] = getFieldName(field)
+
+					f := sel.(*ast.Field)
+
+					if f.Name.Value == "__typename" {
+						obj.Set(f.Name.Value, strings.Title(field.Name.Value))
+						continue
+					}
+
+					graph.execGraphQLDocument(f, token, storeNew, loader, createCallback(func(result interface{}, err error) {
+						defer wg.Done()
+
+						if err != nil {
+							cb(nil, err)
+							return
+						}
+
+						obj.Set(getFieldName(f), result)
+					}))
 				}
 
-				output, err := graph.execGraphQLDocument(f, token, storeNew)
-				if err != nil {
-					return nil, err
-				}
-
-				obj[getFieldName(f)] = output
-			}
-
-			array[i] = obj
+				wg.Wait()
+				array.Set(i, obj.GetAll())
+			}(loopIndex, loopValue)
 		}
 
-		return array, nil
+		wgArray.Wait()
+		cb(array.GetAll(), nil)
+		return
 
 	case map[string]interface{}, utils.M:
-		obj := map[string]interface{}{}
+		obj := utils.NewObject()
+
+		// Create a wait group
+		var wg sync.WaitGroup
+		wg.Add(len(field.SelectionSet.Selections))
 
 		for _, sel := range field.SelectionSet.Selections {
 			storeNew := shallowClone(store)
@@ -175,22 +209,37 @@ func (graph *Module) processQueryResult(field *ast.Field, token string, store ut
 			storeNew["coreParentKey"] = getFieldName(field)
 
 			f := sel.(*ast.Field)
-			// if f.Name.Value == "__typename" {
-			// 	continue
-			// }
-			output, err := graph.execGraphQLDocument(f, token, storeNew)
-			if err != nil {
-				return nil, err
+			if f.Name.Value == "__typename" {
+				obj.Set(f.Name.Value, strings.Title(field.Name.Value))
+				continue
 			}
+			graph.execGraphQLDocument(f, token, storeNew, loader, createCallback(func(result interface{}, err error) {
+				defer wg.Done()
 
-			obj[getFieldName(f)] = output
+				if err != nil {
+					cb(nil, err)
+					return
+				}
+
+				obj.Set(getFieldName(f), result)
+			}))
 		}
-		return obj, nil
+		wg.Wait()
+		cb(obj.GetAll(), nil)
+		return
 
 	default:
-		log.Println("Type of val in helpers", reflect.TypeOf(val))
-		return nil, errors.New("Incorrect result type")
+		cb(nil, errors.New("Incorrect result type"))
+		return
 	}
+}
+
+func addFieldPath(store utils.M, field string) {
+	if _, p := store["path"]; !p {
+		store["path"] = ""
+	}
+
+	store["path"] = store["path"].(string) + "." + field
 }
 
 func adjustObjectKey(key string) string {

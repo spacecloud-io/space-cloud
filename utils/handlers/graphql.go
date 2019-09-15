@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -42,15 +43,24 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		op, err := graphql.ExecGraphQLQuery(&req, token)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError) //http status codee
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		var wg sync.WaitGroup
+		wg.Add(1)
+
+		graphql.ExecGraphQLQuery(&req, token, func(op interface{}, err error) {
+			defer wg.Done()
+
+			if err != nil {
+				errMes := map[string]interface{}{"message": err.Error()}
+				json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+				return
+			}
+
+			w.WriteHeader(http.StatusOK) //http status codee
+			json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
 			return
-		}
-		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
-		return
+		})
+
+		wg.Wait()
 	}
 
 }
