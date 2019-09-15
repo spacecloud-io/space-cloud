@@ -78,7 +78,7 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col string) ([]utils.ForeignKeysType, error) {
 	queryString := ""
 	if utils.DBType(dbType) == utils.MySQL {
-		queryString = "select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = :project and TABLE_NAME = :col"
+		queryString = "select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = $1 and TABLE_NAME = $2"
 	} else {
 		queryString = `SELECT
 		tc.table_name AS "TABLE_NAME", 
@@ -94,10 +94,10 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col str
 		JOIN information_schema.constraint_column_usage AS ccu
 		  ON ccu.constraint_name = tc.constraint_name
 		  AND ccu.table_schema = tc.table_schema
-	WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name= :col AND tc.table_schema = :project
+	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
 	`
 	}
-	rows, err := s.client.NamedQuery(queryString, map[string]interface{}{"col": col, "project": project})
+	rows, err := s.client.Queryx(queryString, []interface{}{project, col})
 	if err != nil {
 		return nil, err
 	}
