@@ -27,7 +27,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 		args   args
 	}{
 		{
-			name: "SQL schema Persons",
+			name: "MySQL schema Persons",
 			args: args{
 				dbType: "sql-mysql",
 				col:    "persons",
@@ -39,7 +39,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 			},
 		},
 		{
-			name: "SQL schema Orders",
+			name: "MySQL schema Orders",
 			args: args{
 				dbType: "sql-mysql",
 				col:    "orders",
