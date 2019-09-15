@@ -11,13 +11,11 @@ type EventDocument struct {
 	BatchID        string `json:"batchid"`
 	Type           string `json:"type"`
 	Token          int    `json:"token"`
-	Timestamp      int64  `json:"timestamp"`
-	EventTimestamp int64  `json:"event_timestamp"`
+	Timestamp      int64  `json:"timestamp"`       // The timestamp of when the event should get executed
+	EventTimestamp int64  `json:"event_timestamp"` // The time stamp of when the event was logged
 	Payload        string `json:"payload"`
 	Status         string `json:"status"`
-	MaxRetries     int    `json:"max_retries"`
 	Retries        int    `json:"retries"`
-	Delivered      bool   `json:"delivered"`
 	Service        string `json:"service"`
 	Function       string `json:"function"`
 }

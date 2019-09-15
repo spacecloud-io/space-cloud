@@ -7,7 +7,7 @@ import (
 	"math/rand"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/spaceuptech/space-cloud/config"
+
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -28,7 +28,7 @@ func (m *Module) HandleCreateIntent(ctx context.Context, dbType, col string, req
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
-	if err := m.crud.Create(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
@@ -55,15 +55,13 @@ func (m *Module) HandleBatchIntent(ctx context.Context, dbType string, req *mode
 			eventDocs = append(eventDocs, eventDocs...)
 
 		case string(utils.Update):
-			rules := m.getMatchingRules(utils.EventUpdate, map[string]string{"col": r.Col, "db": dbType})
-			eventDocs, ok := m.processUpdateDeleteHook(rules, token, utils.EventUpdate, batchID, dbType, r.Col, r.Find)
+			eventDocs, ok := m.processUpdateDeleteHook(token, utils.EventUpdate, batchID, dbType, r.Col, r.Find)
 			if ok {
 				eventDocs = append(eventDocs, eventDocs...)
 			}
 
 		case string(utils.Delete):
-			rules := m.getMatchingRules(utils.EventDelete, map[string]string{"col": r.Col, "db": dbType})
-			eventDocs, ok := m.processUpdateDeleteHook(rules, token, utils.EventDelete, batchID, dbType, r.Col, r.Find)
+			eventDocs, ok := m.processUpdateDeleteHook(token, utils.EventDelete, batchID, dbType, r.Col, r.Find)
 			if ok {
 				eventDocs = append(eventDocs, eventDocs...)
 			}
@@ -75,7 +73,7 @@ func (m *Module) HandleBatchIntent(ctx context.Context, dbType string, req *mode
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
-	if err := m.crud.Create(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
@@ -87,10 +85,7 @@ func (m *Module) HandleUpdateIntent(ctx context.Context, dbType, col string, req
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	// Get event listners
-	rules := m.getMatchingRules(utils.EventUpdate, map[string]string{"col": col, "db": dbType})
-
-	return m.handleUpdateDeleteIntent(ctx, rules, utils.EventUpdate, dbType, col, req.Find)
+	return m.handleUpdateDeleteIntent(ctx, utils.EventUpdate, dbType, col, req.Find)
 }
 
 // HandleDeleteIntent handles the delete intent requests
@@ -98,22 +93,19 @@ func (m *Module) HandleDeleteIntent(ctx context.Context, dbType, col string, req
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	// Get event listners
-	rules := m.getMatchingRules(utils.EventDelete, map[string]string{"col": col, "db": dbType})
-
-	return m.handleUpdateDeleteIntent(ctx, rules, utils.EventDelete, dbType, col, req.Find)
+	return m.handleUpdateDeleteIntent(ctx, utils.EventDelete, dbType, col, req.Find)
 }
 
-func (m *Module) handleUpdateDeleteIntent(ctx context.Context, rules []*config.EventingRule, eventType, dbType, col string, find map[string]interface{}) (*model.EventIntent, error) {
+func (m *Module) handleUpdateDeleteIntent(ctx context.Context, eventType, dbType, col string, find map[string]interface{}) (*model.EventIntent, error) {
 	// Create a unique batch id and token
 	batchID := uuid.NewV1().String()
 	token := rand.Intn(utils.MaxEventTokens)
 
-	eventDocs, ok := m.processUpdateDeleteHook(rules, token, eventType, batchID, dbType, col, find)
+	eventDocs, ok := m.processUpdateDeleteHook(token, eventType, batchID, dbType, col, find)
 	if ok {
 		// Persist the event intent
 		createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
-		if err := m.crud.Create(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+		if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 			return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 		}
 
@@ -134,11 +126,11 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 	}
 
 	set := map[string]interface{}{}
-
 	if err != nil {
 		// Set the status to cancelled if error occurred
 		set["status"] = utils.EventStatusCancelled
 		set["remark"] = err.Error()
+		intent.Invalid = true
 	} else {
 		// Set the status to staged if no error occurred
 		set["status"] = utils.EventStatusStaged
@@ -149,12 +141,15 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 	update := map[string]interface{}{"$set": set}
 
 	updateRequest := model.UpdateRequest{Find: find, Operation: utils.All, Update: update}
-	if err := m.crud.Update(ctx, m.config.DBType, m.project, m.config.Col, &updateRequest); err != nil {
+	if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, &updateRequest); err != nil {
 		log.Println("Eventing Error: event could not be updated", err)
+		return
 	}
 
 	// Broadcast the event so the concerned worker can process it immediately
-	m.broadcastEvents(intent.Docs)
+	if !intent.Invalid {
+		m.broadcastEvents(intent.Docs)
+	}
 }
 
 func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows []interface{}) []*model.EventDocument {
@@ -188,7 +183,10 @@ func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows 
 	return eventDocs
 }
 
-func (m *Module) processUpdateDeleteHook(rules []*config.EventingRule, token int, eventType, batchID, dbType, col string, find map[string]interface{}) ([]*model.EventDocument, bool) {
+func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, col string, find map[string]interface{}) ([]*model.EventDocument, bool) {
+	// Get event listeners
+	rules := m.getMatchingRules(eventType, map[string]string{"col": col, "db": dbType})
+
 	// Check if id field is valid
 	if idTemp, p := find[utils.GetIDVariable(dbType)]; p {
 		if id, ok := utils.AcceptableIDType(idTemp); ok {

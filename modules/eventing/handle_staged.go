@@ -16,7 +16,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	defer m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	start, end := m.syncMan.GetAssignedTokens()
@@ -41,7 +41,12 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	for _, temp := range eventDocs {
 		eventDoc := new(model.EventDocument)
 		if err := mapstructure.Decode(temp, eventDoc); err == nil {
-			m.processStagedEvent(ctx, eventDoc)
+			timestamp := eventDoc.Timestamp
+			currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
+
+			if currentTimestamp > timestamp {
+				go m.processStagedEvent(ctx, eventDoc)
+			}
 		}
 	}
 }
@@ -56,45 +61,64 @@ func (m *Module) processStagedEvent(ctx context.Context, eventDoc *model.EventDo
 	defer m.processingEvents.Delete(eventDoc.ID)
 
 	// Call the function to process the event
-	result, err := m.functions.CallWithContext(ctx, eventDoc.Service, eventDoc.Function, map[string]interface{}{"id": "space-cloud"}, eventDoc)
-	if err != nil {
-		log.Println("Eventing staged event handler could not get response from service:", err)
-		return
-	}
+	ctxLocal, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
-	// Return if the result is not an object
-	obj, ok := result.(map[string]interface{})
-	if !ok {
-		return
-	}
+	// Create a variable to track retries
+	retries := 0
 
-	if ackTemp, p := obj["ack"]; p {
-		if ack, ok := ackTemp.(bool); ack && ok {
-			// Check if response contains an event request
-			var eventRequests []*model.QueueEventRequest
-			if item, p := obj["event"]; p {
-				req := new(model.QueueEventRequest)
-				if err := mapstructure.Decode(item, req); err == nil {
-					eventRequests = append(eventRequests, req)
-				}
-			}
+	for {
+		result, err := m.functions.CallWithContext(ctxLocal, eventDoc.Service, eventDoc.Function, map[string]interface{}{"id": "space-cloud"}, eventDoc)
+		if err == nil {
+			// Check if the result is an object
+			obj, ok := result.(map[string]interface{})
+			if ok {
+				// Check if ack is present in response
+				if ackTemp, p := obj["ack"]; p {
 
-			if items, p := obj["events"]; p {
-				array := items.([]interface{})
-				for _, item := range array {
-					req := new(model.QueueEventRequest)
-					if err := mapstructure.Decode(item, req); err == nil {
-						eventRequests = append(eventRequests, req)
+					// Check if the ack is true
+					if ack, ok := ackTemp.(bool); ok && ack {
+
+						// Check if response contains an event request
+						var eventRequests []*model.QueueEventRequest
+						if item, p := obj["event"]; p {
+							req := new(model.QueueEventRequest)
+							if err := mapstructure.Decode(item, req); err == nil {
+								eventRequests = append(eventRequests, req)
+							}
+						}
+
+						if items, p := obj["events"]; p {
+							array := items.([]interface{})
+							for _, item := range array {
+								req := new(model.QueueEventRequest)
+								if err := mapstructure.Decode(item, req); err == nil {
+									eventRequests = append(eventRequests, req)
+								}
+							}
+						}
+
+						if len(eventRequests) > 0 {
+							if err := m.batchRequests(ctx, eventRequests); err != nil {
+								log.Println("Eventing: Couldn't persist events err -", err)
+							}
+						}
+
+						m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+						return
 					}
 				}
 			}
+		}
 
-			if len(eventRequests) > 0 {
-				if err := m.batchRequests(ctx, eventRequests); err != nil {
-					log.Println("Eventing: Couldn't persist events err -", err)
-				}
-			}
-			return
+		log.Println("Eventing staged event handler could not get response from service:", err)
+		// Increment the retries. Exit the loop if max retries reached.
+		retries += 1
+		if retries >= eventDoc.Retries {
+			// Mark event as failed
+			break
 		}
 	}
+
+	m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached"))
 }

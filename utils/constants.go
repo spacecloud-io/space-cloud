@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.11.0"
+const BuildVersion = "0.12.0"
 
 const (
 	// One operation returns a single document from the database
@@ -268,6 +268,9 @@ const (
 
 	// EventStatusProcessed signifies that the event has been successfully been processed and can be deleted
 	EventStatusProcessed string = "processed"
+
+	// EventStatusCancelled signifies that the event has failed and should not be processed
+	EventStatusFailed string = "failed"
 
 	// EventStatusCancelled signifies that the event has been cancelled and should not be processed
 	EventStatusCancelled string = "cancel"

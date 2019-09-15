@@ -35,11 +35,14 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 
 	// Persist the events
 	createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
-	if err := m.crud.Create(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 		return errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
 	// Broadcast the event so the concerned worker can process it immediately
+	for _, eventDoc := range eventDocs {
+		eventDoc.Status = utils.EventStatusProcessed
+	}
 	m.broadcastEvents(eventDocs)
 	return nil
 }
@@ -72,9 +75,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, 
 		EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond),
 		Payload:        string(data),
 		Status:         status,
-		MaxRetries:     retries,
-		Retries:        0,
-		Delivered:      false,
+		Retries:        retries,
 		Service:        service,
 		Function:       function,
 	}
@@ -82,8 +83,8 @@ func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, 
 
 func (m *Module) generateCancelEventRequest(eventID string) *model.UpdateRequest {
 	return &model.UpdateRequest{
-		Find:      map[string]interface{}{utils.GetIDVariable(m.config.DBType): eventID},
-		Operation: utils.One,
+		Find:      map[string]interface{}{"_id": eventID},
+		Operation: utils.All,
 		Update: map[string]interface{}{
 			"$set": map[string]interface{}{"status": utils.EventStatusCancelled},
 		},
@@ -92,10 +93,30 @@ func (m *Module) generateCancelEventRequest(eventID string) *model.UpdateRequest
 
 func (m *Module) generateStageEventRequest(eventID string) *model.UpdateRequest {
 	return &model.UpdateRequest{
-		Find:      map[string]interface{}{utils.GetIDVariable(m.config.DBType): eventID},
-		Operation: utils.One,
+		Find:      map[string]interface{}{"_id": eventID},
+		Operation: utils.All,
 		Update: map[string]interface{}{
 			"$set": map[string]interface{}{"status": utils.EventStatusStaged},
+		},
+	}
+}
+
+func (m *Module) generateFailedEventRequest(eventID, remark string) *model.UpdateRequest {
+	return &model.UpdateRequest{
+		Find:      map[string]interface{}{"_id": eventID},
+		Operation: utils.All,
+		Update: map[string]interface{}{
+			"$set": map[string]interface{}{"status": utils.EventStatusFailed, "remark": remark},
+		},
+	}
+}
+
+func (m *Module) generateProcessedEventRequest(eventID string) *model.UpdateRequest {
+	return &model.UpdateRequest{
+		Find:      map[string]interface{}{"_id": eventID},
+		Operation: utils.All,
+		Update: map[string]interface{}{
+			"$set": map[string]interface{}{"status": utils.EventStatusProcessed},
 		},
 	}
 }
@@ -140,11 +161,4 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 	}
 
 	return true
-}
-
-func writeSafelyToChannel(ctx context.Context, channel chan error, err error) {
-	select {
-	case <-ctx.Done():
-	case channel <- err:
-	}
 }

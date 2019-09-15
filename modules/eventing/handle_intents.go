@@ -51,7 +51,7 @@ func (m *Module) processIntents(t *time.Time) {
 		currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
 
 		if currentTimestamp > timestamp+(30*1000) {
-			m.processIntent(ctx, eventDoc)
+			go m.processIntent(ctx, eventDoc)
 		}
 	}
 }
@@ -87,6 +87,7 @@ func (m *Module) processIntent(ctx context.Context, eventDoc *model.EventDocumen
 		}
 
 		// Broadcast the event so the concerned worker can process it immediately
+		eventDoc.Status = utils.EventStatusProcessed
 		m.broadcastEvents([]*model.EventDocument{eventDoc})
 
 	case utils.EventUpdate:
@@ -108,7 +109,7 @@ func (m *Module) processIntent(ctx context.Context, eventDoc *model.EventDocumen
 		updateEvent.Doc = result
 		data, _ := json.Marshal(updateEvent)
 		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, &model.UpdateRequest{
-			Find: map[string]interface{}{utils.GetIDVariable(m.config.DBType): eventID},
+			Find: map[string]interface{}{"_id": eventID},
 			Update: map[string]interface{}{
 				"$set": map[string]interface{}{
 					"status":    utils.EventStatusStaged,
@@ -118,6 +119,9 @@ func (m *Module) processIntent(ctx context.Context, eventDoc *model.EventDocumen
 			},
 		}); err == nil {
 			// Broadcast the event so the concerned worker can process it immediately
+			eventDoc.Status = utils.EventStatusProcessed
+			eventDoc.Payload = string(data)
+			eventDoc.Timestamp = timestamp
 			m.broadcastEvents([]*model.EventDocument{eventDoc})
 		}
 
@@ -139,6 +143,7 @@ func (m *Module) processIntent(ctx context.Context, eventDoc *model.EventDocumen
 		// Mark the event as staged if the document doesn't exist
 		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateStageEventRequest(eventID)); err == nil {
 			// Broadcast the event so the concerned worker can process it immediately
+			eventDoc.Status = utils.EventStatusProcessed
 			m.broadcastEvents([]*model.EventDocument{eventDoc})
 		}
 
