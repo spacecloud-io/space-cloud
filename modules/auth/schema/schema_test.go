@@ -16,7 +16,7 @@ type Tweet {
 	id: ID! @id
 	createdAt: DateTime! @createdAt
 	text: String
-	owner: [User!]! @relation
+	owner: [String!]! @relation
 	location: location!
 	age : Integer!	
   }

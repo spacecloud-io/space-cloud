@@ -12,7 +12,7 @@ func getSQLType(typeName string) (string, error) {
 	case typeString:
 		return "text", nil
 	case typeDateTime:
-		return "datetime", nil
+		return "timestamp", nil
 	case typeBoolean:
 		return "boolean", nil
 	case typeFloat:
@@ -47,7 +47,7 @@ func (c *creationModule) modifyColumnType() string {
 	case utils.MySQL:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " MODIFY " + c.FieldKey + " " + c.columnType
 	case utils.Postgres:
-		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " TYPE " + c.columnType
+		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " TYPE " + c.columnType + " USING (" + c.FieldKey + "::" + c.columnType + ")"
 	}
 	return ""
 }
@@ -67,7 +67,7 @@ func (c *creationModule) removeNotNull() string {
 	case utils.MySQL:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " MODIFY " + c.FieldKey + " " + c.columnType + " NULL"
 	case utils.Postgres:
-		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " SET NULL "
+		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " DROP NOT NULL"
 	}
 	return ""
 }
@@ -126,5 +126,11 @@ func (c *creationModule) addForeignKey() string {
 }
 
 func (c *creationModule) removeForeignKey() []string {
-	return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP FOREIGN KEY c_" + c.FieldKey, "ALTER TABLE " + c.project + "." + c.ColName + " DROP INDEX c_" + c.FieldKey}
+	switch utils.DBType(c.dbType) {
+	case utils.MySQL:
+		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP FOREIGN KEY c_" + c.FieldKey, "ALTER TABLE " + c.project + "." + c.ColName + " DROP INDEX c_" + c.FieldKey}
+	case utils.Postgres:
+		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.FieldKey}
+	}
+	return nil
 }

@@ -2,9 +2,7 @@ package schema
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/spaceuptech/space-cloud/config"
 )
@@ -37,7 +35,6 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 	if err != nil {
 		return err
 	}
-
 	realSchema := parsedSchema[dbType]
 
 	batchedQueries := []string{}
@@ -102,11 +99,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 			}
 		}
 	}
-	b, err := json.MarshalIndent(batchedQueries, "", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	fmt.Print(string(b))
+
 	return s.crud.RawBatch(ctx, dbType, batchedQueries)
 }
 
@@ -137,19 +130,12 @@ func (c *creationModule) removeField() string {
 func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 	var queries []string
 	if c.realFieldStruct.Kind != c.currentFieldStruct.Kind {
-		fmt.Println(c.realFieldStruct.Kind, c.currentFieldStruct.Kind)
 		if c.columnType != "" {
 			queries = append(queries, c.modifyColumnType())
 		}
 	}
 
 	if c.realFieldStruct.IsFieldTypeRequired != c.currentFieldStruct.IsFieldTypeRequired {
-		// fmt.Println(c.realFieldStruct.IsFieldTypeRequired, c.currentFieldStruct.IsFieldTypeRequired)
-		// b, err := json.MarshalIndent(c.currentFieldStruct, "", "  ")
-		// if err != nil {
-		// 	fmt.Println("error:", err)
-		// }
-		// fmt.Print(string(b))
 		if c.realFieldStruct.IsFieldTypeRequired {
 			queries = append(queries, c.addNotNull())
 		} else {
@@ -158,7 +144,6 @@ func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 	}
 
 	if c.realFieldStruct.Directive != c.currentFieldStruct.Directive {
-		fmt.Println(c.realFieldStruct.Directive)
 		if c.realFieldStruct.Directive != "" {
 			tempQuery, err := c.addDirective(ctx)
 			if err != nil {
@@ -197,7 +182,7 @@ func (c *creationModule) addDirective(ctx context.Context) ([]string, error) {
 			return nil, err
 		}
 		if colType == typeObject || colType == typeJoin || val.IsList {
-			return nil, errors.New("schema creation: foreign keys incorrect type or found array")
+			return nil, errors.New("schema creation: found incorrect type or array in foreign key")
 		}
 		temp := creationModule{
 			dbType:     c.dbType,

@@ -44,11 +44,11 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		// field type
 		if utils.DBType(dbType) == utils.Postgres {
 			if err := inspectionPostgresCheckFieldType(value.FieldType, &fieldDetails); err != nil {
-				return "", err
+				return nil, err
 			}
 		} else {
 			if err := inspectionMySQLCheckFieldType(value.FieldType, &fieldDetails); err != nil {
-				return "", err
+				return nil, err
 			}
 		}
 		// check if list
@@ -73,7 +73,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		inspectionFields[value.FieldName] = &fieldDetails
 	}
 
-	inspectionCollection[strings.Title(col)] = inspectionFields
+	inspectionCollection[col] = inspectionFields
 	inspectionDb[dbType] = inspectionCollection
 	return inspectionCollection, nil
 }
