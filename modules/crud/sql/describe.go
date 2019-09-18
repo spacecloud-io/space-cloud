@@ -2,7 +2,7 @@ package sql
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -55,7 +55,6 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 
 		args = append(args, col, project)
 	}
-	fmt.Println(args)
 	rows, err := s.client.Queryx(queryString, args...)
 	if err != nil {
 		return nil, err
@@ -63,7 +62,9 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 	defer rows.Close()
 
 	result := []utils.FieldType{}
+	count := 0
 	for rows.Next() {
+		count++
 		fieldType := new(utils.FieldType)
 
 		if err := rows.StructScan(fieldType); err != nil {
@@ -71,6 +72,9 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 		}
 
 		result = append(result, *fieldType)
+	}
+	if count == 0 {
+		return result, errors.New(dbType + "Scheam creation zero rows affected")
 	}
 	return result, nil
 }

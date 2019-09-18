@@ -31,19 +31,25 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 		return err
 	}
 
-	currentSchema, err := s.Inspector(ctx, dbType, project, col)
-	if err != nil {
-		return err
-	}
-	realSchema := parsedSchema[dbType]
+	currentSchema, _ := s.Inspector(ctx, dbType, project, col)
 
+	realSchema := parsedSchema[dbType]
 	batchedQueries := []string{}
 
 	for realColName, realColValue := range realSchema {
 		// check if table exist in current schema
 		currentColValue, ok := currentSchema[realColName]
 		if !ok {
-			return errors.New("Specified table name doesn't exist")
+			// create table with primary key
+			query, err := addNewTable(project, realColName, realColValue)
+			if err != nil {
+				return err
+			}
+			batchedQueries = append(batchedQueries, query)
+			if err := s.crud.RawBatch(ctx, dbType, batchedQueries); err != nil {
+				return err
+			}
+			return s.SchemaCreation(ctx, dbType, col, project, schema)
 		}
 
 		for realFieldKey, realFieldStruct := range realColValue {
@@ -172,6 +178,7 @@ func (c *creationModule) addDirective(ctx context.Context) ([]string, error) {
 	case directiveUnique:
 		queries = append(queries, c.addUniqueKey())
 	case directiveRelation:
+		// get schema of referenced table & check if referenced column exist
 		nestedSchema, err := c.schemaModule.Inspector(ctx, c.dbType, c.project, c.realFieldStruct.JointTable.TableName)
 		if err != nil {
 			return nil, err

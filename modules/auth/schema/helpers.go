@@ -134,3 +134,30 @@ func (c *creationModule) removeForeignKey() []string {
 	}
 	return nil
 }
+
+func addNewTable(project, realColName string, realColValue schemaField) (string, error) {
+	var query string
+	var isID bool
+	for realFieldKey, realFieldStruct := range realColValue {
+		if err := checkErrors(realFieldStruct); err != nil {
+			return "", err
+		}
+		sqlType, err := getSQLType(realFieldStruct.Kind)
+		if err != nil {
+			return "", nil
+		}
+		if realFieldStruct.Kind == typeID && !isID {
+			isID = true
+			primaryKey := "PRIMARY KEY"
+			query += realFieldKey + " " + sqlType + " " + primaryKey + ","
+			continue
+
+		}
+		query += realFieldKey + " " + sqlType + " ,"
+	}
+
+	if !isID {
+		return "", errors.New("Schema creation adding new table type id or primary key was not found")
+	}
+	return `CREATE TABLE ` + project + `.` + realColName + ` (` + query[0:len(query)-1] + `);`, nil
+}

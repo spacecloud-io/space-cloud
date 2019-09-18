@@ -88,6 +88,11 @@ func TestSchema_SchemaCreation(t *testing.T) {
 			args: args{dbType: "sql-mysql", col: "orders", project: "testdb", schema: `type Persons { lastName  : String!     firstName : String     age : Integer     iD : Integer! @id	}	type Orders { address  : Integer    college  : DateTime!     personid : ID! @id     age : Float   }`},
 			fields: fields{crud: crud.Init(), project: "testdb"},
 		},
+		{
+			name:   ": adding new table",
+			args:   args{dbType: "sql-mysql", col: "college", project: "testdb", schema: `  type College { name : String!     sirname : String!     age : ID! @id   ismale : Boolean!     dob : DateTime! }`},
+			fields: fields{crud: crud.Init(), project: "testdb"},
+		},
 	}
 	dbSQL := config.Crud{
 		"sql-mysql": &config.CrudStub{

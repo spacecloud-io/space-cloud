@@ -29,7 +29,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 	if err != nil {
 		return nil, err
 	}
-	inspectionDb := schemaType{}
+
 	inspectionCollection := schemaCollection{}
 	inspectionFields := schemaField{}
 
@@ -72,9 +72,9 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		// field name
 		inspectionFields[value.FieldName] = &fieldDetails
 	}
-
-	inspectionCollection[col] = inspectionFields
-	inspectionDb[dbType] = inspectionCollection
+	if len(inspectionFields) != 0 {
+		inspectionCollection[col] = inspectionFields
+	}
 	return inspectionCollection, nil
 }
 
