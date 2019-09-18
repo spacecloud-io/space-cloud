@@ -245,6 +245,27 @@ const (
 	Subscribe PubsubType = "subscribe"
 )
 
+const (
+	// GqlConnectionInit something
+	GqlConnectionInit string = "connection_init" // Client -> Server
+	// GqlConnectionAck something
+	GqlConnectionAck string = "connection_ack" // Server -> Client
+	// GqlConnectionError something
+	GqlConnectionError string = "connection_error" // Server -> Client
+	// GqlConnectionTerminate something
+	GqlConnectionTerminate string = "connection_terminate" // Client -> Server
+	// GqlStart something
+	GqlStart string = "start" // Client -> Server
+	// GqlData something
+	GqlData string = "data" // Server -> Client
+	// GqlError something
+	GqlError string = "error" // Server -> Client
+	// GqlComplete something
+	GqlComplete string = "complete" // Server -> Client
+	// GqlStop something
+	GqlStop string = "stop" // Client -> Server
+)
+
 // FieldType is the type for storing sql inspection information
 type FieldType struct {
 	FieldName    string  `db:"Field"`

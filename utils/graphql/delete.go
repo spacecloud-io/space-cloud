@@ -54,7 +54,7 @@ func generateDeleteRequest(field *ast.Field, store utils.M) (*model.DeleteReques
 	// Create a delete request object
 	deleteRequest := model.DeleteRequest{Operation: utils.All}
 
-	deleteRequest.Find, err = extractWhereClause(field.Arguments, store)
+	deleteRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}

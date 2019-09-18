@@ -72,7 +72,7 @@ func generateUpdateRequest(field *ast.Field, store utils.M) (*model.UpdateReques
 		return nil, err
 	}
 
-	updateRequest.Find, err = extractWhereClause(field.Arguments, store)
+	updateRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}
