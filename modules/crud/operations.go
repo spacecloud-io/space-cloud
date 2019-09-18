@@ -125,7 +125,7 @@ func (m *Module) DescribeTable(ctx context.Context, dbType, project, col string)
 	return crud.DescribeTable(ctx, project, dbType, col)
 }
 
-// RawBatch performs a db operaionf for schema creation
+// RawBatch performs a db operaion for schema creation
 func (m *Module) RawBatch(ctx context.Context, dbType string, batchedQueries []string) error {
 	m.RLock()
 	defer m.RUnlock()

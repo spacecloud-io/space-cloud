@@ -41,7 +41,10 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 
 	for realColName, realColValue := range realSchema {
 		// check if table exist in current schema
-		currentColValue := currentSchema[realColName]
+		currentColValue, ok := currentSchema[realColName]
+		if !ok {
+			return errors.New("Specified table name doesn't exist")
+		}
 
 		for realFieldKey, realFieldStruct := range realColValue {
 			if err := checkErrors(realFieldStruct); err != nil {
@@ -84,17 +87,21 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 		}
 	}
 	for currentColName, currentColValue := range currentSchema {
-		realColValue := realSchema[currentColName]
+		realColValue, ok := realSchema[currentColName]
+		// if table doesn't exist handle it grace fully
+		if !ok {
+			continue
+		}
 
 		for currentFieldKey := range currentColValue {
-			c := creationModule{
-				project:  project,
-				ColName:  currentColName,
-				FieldKey: currentFieldKey,
-			}
 			_, ok := realColValue[currentFieldKey]
 			if !ok {
 				// remove field from current tabel
+				c := creationModule{
+					project:  project,
+					ColName:  currentColName,
+					FieldKey: currentFieldKey,
+				}
 				batchedQueries = append(batchedQueries, c.removeField())
 			}
 		}
