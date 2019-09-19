@@ -246,6 +246,8 @@ const (
 )
 
 const (
+	// GqlConnectionKeepAlive send every 20 second to client over websocket
+	GqlConnectionKeepAlive = "ka" // Server -> Client
 	// GqlConnectionInit something
 	GqlConnectionInit string = "connection_init" // Client -> Server
 	// GqlConnectionAck something

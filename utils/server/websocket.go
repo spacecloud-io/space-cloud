@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -196,11 +197,25 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 			log.Println("upgrade:", err)
 			return
 		}
+		defer socket.Close()
 
 		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 		channel := make(chan *graphqlMessage)
-		graphqlWs := &graphqlWebsocketClient{channel: channel, ctx: ctx, cancel: cancel, socket: socket}
-		defer graphqlWs.close()
+		defer close(channel)
+
+		go func() {
+			for res := range channel {
+				err := socket.WriteJSON(res)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			}
+		}()
+
+		ticker := time.NewTicker(20 * time.Second)
+		defer ticker.Stop()
 
 		for {
 
@@ -208,16 +223,20 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 			if err := socket.ReadJSON(m); err != nil {
 				return
 			}
+			select {
+			case <-ticker.C:
+				channel <- &graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlConnectionKeepAlive}}
+			}
 			var token string
 			switch m.Type {
 			case utils.GqlConnectionInit:
 				// Check if the request is authorised
 				token = m.Payload.ConnectionParams.Token
 				if err := adminMan.IsTokenValid(token); err != nil {
-					graphqlWs.write(&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlConnectionError, Error: err.Error()}})
+					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlConnectionError, Error: err.Error()}})
 					return
 				}
-				graphqlWs.write(&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlConnectionAck}})
+				channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlConnectionAck}})
 
 			case utils.GqlStart:
 				data := new(model.RealtimeRequest)
@@ -228,7 +247,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				// parse the source
 				doc, err := parser.Parse(parser.ParseParams{Source: source})
 				if err != nil {
-					graphqlWs.write(&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlConnectionError, Error: err.Error()}})
+					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlConnectionError, Error: err.Error()}})
 					return
 				}
 				v := doc.Definitions[0].(*ast.OperationDefinition).SelectionSet.Selections[0].(*ast.Field)
@@ -257,15 +276,15 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 
 				// Subscribe to realtime feed
 				feedData, err := s.realtime.Subscribe(ctx, m.ID, s.auth, s.crud, data, func(feed *model.FeedData) {
-					graphqlWs.write(&graphqlMessage{ID: feed.QueryID, Payload: payloadObject{Status: utils.GqlData, Data: graphqlSucessData{Type: feed.Type, Doc: feed.Payload, DocID: feed.DocID}}})
+					channel <- (&graphqlMessage{ID: feed.QueryID, Payload: payloadObject{Status: utils.GqlData, Data: graphqlSucessData{Type: feed.Type, Doc: feed.Payload, DocID: feed.DocID}}})
 				})
 
 				if err != nil {
-					graphqlWs.write(&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlError, Error: err.Error()}})
+					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlError, Error: err.Error()}})
 					return
 				}
 
-				graphqlWs.write(&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlStart, Data: feedData}})
+				channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlStart, Data: feedData}})
 
 			case utils.GqlStop:
 				// For realtime subscribe event
@@ -278,7 +297,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				data.Group = group.(string)
 
 				s.realtime.Unsubscribe(m.ID, data)
-				graphqlWs.write(&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlStop}})
+				channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GqlStop}})
 
 			}
 		}
