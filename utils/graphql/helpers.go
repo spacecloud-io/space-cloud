@@ -28,7 +28,7 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
-func getDBType(field *ast.Field) string {
+func GetDBType(field *ast.Field) string {
 	dbType := field.Directives[0].Name.Value
 	switch dbType {
 	case "postgres", "mysql":

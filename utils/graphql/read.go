@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) execReadRequest(field *ast.Field, token string, store utils.M, loader *loaderMap, cb callback) {
-	dbType := getDBType(field)
+	dbType := GetDBType(field)
 	col, err := getCollection(field)
 	if err != nil {
 		cb(nil, err)

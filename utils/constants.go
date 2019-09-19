@@ -246,26 +246,26 @@ const (
 )
 
 const (
-	// GqlConnectionKeepAlive send every 20 second to client over websocket
-	GqlConnectionKeepAlive = "ka" // Server -> Client
-	// GqlConnectionInit something
-	GqlConnectionInit string = "connection_init" // Client -> Server
-	// GqlConnectionAck something
-	GqlConnectionAck string = "connection_ack" // Server -> Client
-	// GqlConnectionError something
-	GqlConnectionError string = "connection_error" // Server -> Client
-	// GqlConnectionTerminate something
-	GqlConnectionTerminate string = "connection_terminate" // Client -> Server
-	// GqlStart something
-	GqlStart string = "start" // Client -> Server
-	// GqlData something
-	GqlData string = "data" // Server -> Client
-	// GqlError something
-	GqlError string = "error" // Server -> Client
-	// GqlComplete something
-	GqlComplete string = "complete" // Server -> Client
-	// GqlStop something
-	GqlStop string = "stop" // Client -> Server
+	// GQL_CONNECTION_KEEP_ALIVE send every 20 second to client over websocket
+	GQL_CONNECTION_KEEP_ALIVE string = "ka" // Server -> Client
+	// GQL_CONNECTION_INIT is used by graphql over websocket protocol
+	GQL_CONNECTION_INIT string = "connection_init" // Client -> Server
+	// GQL_CONNECTION_ACK is used by graphql over websocket protocol
+	GQL_CONNECTION_ACK string = "connection_ack" // Server -> Client
+	// GQL_CONNECTION_ERROR is used by graphql over websocket protocol
+	GQL_CONNECTION_ERROR string = "connection_error" // Server -> Client
+	// GQL_CONNECTION_TERMINATE is used by graphql over websocket protocol
+	GQL_CONNECTION_TERMINATE string = "connection_terminate" // Client -> Server
+	// GQL_START is used by graphql over websocket protocol
+	GQL_START string = "start" // Client -> Server
+	// GQL_DATA is used by graphql over websocket protocol
+	GQL_DATA string = "data" // Server -> Client
+	// GQL_ERROR is used by graphql over websocket protocol
+	GQL_ERROR string = "error" // Server -> Client
+	// GQL_COMPLETE is used by graphql over websocket protocol
+	GQL_COMPLETE string = "complete" // Server -> Client
+	// GQL_STOP is used by graphql over websocket protocol
+	GQL_STOP string = "stop" // Client -> Server
 )
 
 // FieldType is the type for storing sql inspection information

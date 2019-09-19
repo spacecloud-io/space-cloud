@@ -95,7 +95,7 @@ func (graph *Module) handleMutation(node ast.Node, token string, store utils.M, 
 
 		field := v.(*ast.Field)
 
-		dbType := getDBType(field)
+		dbType := GetDBType(field)
 
 		fieldDBMapping[getFieldName(field)] = dbType
 
