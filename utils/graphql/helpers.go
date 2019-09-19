@@ -28,14 +28,17 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
-func getDBType(field *ast.Field) string {
+func getDBType(field *ast.Field) (string, error) {
+	if len(field.Directives) == 0 {
+		return "", errors.New("Field does not contain directives")
+	}
 	dbType := field.Directives[0].Name.Value
 	switch dbType {
 	case "postgres", "mysql":
-		return "sql-" + dbType
+		return "sql-" + dbType, nil
 
 	default:
-		return dbType
+		return dbType, nil
 	}
 }
 

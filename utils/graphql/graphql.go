@@ -160,13 +160,13 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 				return
 			}
 
-			cb(nil, errors.New("Incorrect query type"))
+			cb(nil, errors.New("incorrect query type"))
 			return
 		}
 
 		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
 		if err != nil {
-			cb(nil, err)
+			cb(nil, nil)
 			return
 		}
 		if field.SelectionSet == nil {

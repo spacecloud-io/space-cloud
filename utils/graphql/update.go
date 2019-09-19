@@ -11,7 +11,11 @@ import (
 )
 
 func (graph *Module) execUpdateRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbType := getDBType(field)
+	dbType, err := getDBType(field)
+	if err != nil {
+		return nil, err
+	}
+
 	col := strings.TrimPrefix(field.Name.Value, "update_")
 	req, err := generateUpdateRequest(field, store)
 	if err != nil {
@@ -27,7 +31,10 @@ func (graph *Module) execUpdateRequest(field *ast.Field, token string, store uti
 }
 
 func (graph *Module) genrateUpdateReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
-	dbType := getDBType(field)
+	dbType, err := getDBType(field)
+	if err != nil {
+		return nil, err
+	}
 	col := strings.TrimPrefix(field.Name.Value, "update_")
 	req, err := generateUpdateRequest(field, store)
 	if err != nil {
