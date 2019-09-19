@@ -38,7 +38,7 @@ func (m *Module) IsCreateOpAuthorised(project, dbType, col, token string, req *m
 		}
 	}
 
-	if err := m.schema.ValidateCreateOperation(dbType, col, req); err != nil {
+	if err := m.Schema.ValidateCreateOperation(dbType, col, req); err != nil {
 		return http.StatusBadRequest, err
 	}
 
@@ -80,7 +80,7 @@ func (m *Module) IsUpdateOpAuthorised(project, dbType, col, token string, req *m
 		return http.StatusForbidden, err
 	}
 
-	if err := m.schema.ValidateUpdateOperation(dbType, col, req.Update); err != nil {
+	if err := m.Schema.ValidateUpdateOperation(dbType, col, req.Update); err != nil {
 		return http.StatusBadRequest, err
 	}
 

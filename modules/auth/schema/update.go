@@ -10,34 +10,34 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 	if len(updateDoc) == 0 {
 		return nil
 	}
-	schemaDb, ok := s.schemaDoc[dbType]
+	schemaDb, ok := s.SchemaDoc[dbType]
 	if !ok {
 		return errors.New(dbType + " Db Not present in Schema")
 	}
-	schemaDoc, ok := schemaDb[col]
+	SchemaDoc, ok := schemaDb[col]
 	if !ok {
 		return nil
 	}
 
 	for key, doc := range updateDoc {
 		switch key {
-		case "set":
-			newDoc, err := s.validateSetOperation(doc, schemaDoc)
+		case "$set":
+			newDoc, err := s.validateSetOperation(doc, SchemaDoc)
 			if err != nil {
 				return err
 			}
 			updateDoc[key] = newDoc
-		case "push":
-			err := s.validateArrayOperations(doc, schemaDoc)
+		case "$push":
+			err := s.validateArrayOperations(doc, SchemaDoc)
 			if err != nil {
 				return err
 			}
-		case "inc", "min", "max", "mul":
-			if err := validateMathOperations(doc, schemaDoc); err != nil {
+		case "$inc", "$min", "$max", "$mul":
+			if err := validateMathOperations(doc, SchemaDoc); err != nil {
 				return err
 			}
-		case "currentDate", "currentTimestamp":
-			err := validateDateOperations(doc, schemaDoc)
+		case "$currentDate":
+			err := validateDateOperations(doc, SchemaDoc)
 			if err != nil {
 				return err
 			}
@@ -48,7 +48,7 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 	return nil
 }
 
-func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc schemaField) error {
+func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -57,7 +57,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc schemaField)
 
 	for fieldKey, fieldValue := range v {
 
-		schemaDocValue, ok := schemaDoc[fieldKey]
+		SchemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
 			return errors.New("field not found in schemaField")
 		}
@@ -65,13 +65,13 @@ func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc schemaField)
 		switch t := fieldValue.(type) {
 		case []interface{}:
 			for _, value := range t {
-				if _, err := s.checkType(value, schemaDocValue); err != nil {
+				if _, err := s.checkType(value, SchemaDocValue); err != nil {
 					return err
 				}
 			}
 			return nil
 		case interface{}:
-			if _, err := s.checkType(t, schemaDocValue); err != nil {
+			if _, err := s.checkType(t, SchemaDocValue); err != nil {
 				return err
 			}
 		default:
@@ -82,7 +82,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, schemaDoc schemaField)
 	return nil
 }
 
-func validateMathOperations(doc interface{}, schemaDoc schemaField) error {
+func validateMathOperations(doc interface{}, SchemaDoc schemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -91,20 +91,20 @@ func validateMathOperations(doc interface{}, schemaDoc schemaField) error {
 
 	for fieldKey, fieldValue := range v {
 
-		schemaDocValue, ok := schemaDoc[fieldKey]
+		SchemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
 			return errors.New("field not found in schemaField")
 		}
 
 		switch fieldValue.(type) {
 		case int:
-			if schemaDocValue.Kind != typeInteger && schemaDocValue.Kind != typeFloat {
-				return errors.New("Integer : wrong type wanted " + schemaDocValue.Kind)
+			if SchemaDocValue.Kind != typeInteger && SchemaDocValue.Kind != typeFloat {
+				return errors.New("Integer : wrong type wanted " + SchemaDocValue.Kind)
 			}
 			return nil
 		case float32, float64:
-			if schemaDocValue.Kind != typeFloat {
-				return errors.New("Float : wrong type wanted " + schemaDocValue.Kind)
+			if SchemaDocValue.Kind != typeFloat {
+				return errors.New("Float : wrong type wanted " + SchemaDocValue.Kind)
 			}
 			return nil
 		default:
@@ -115,44 +115,29 @@ func validateMathOperations(doc interface{}, schemaDoc schemaField) error {
 	return nil
 }
 
-func validateDateOperations(doc interface{}, schemaDoc schemaField) error {
+func validateDateOperations(doc interface{}, SchemaDoc schemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return errors.New("Schema math op : wrong type passed expecting map[string]interface{}")
 	}
 
-	for fieldKey, fieldValue := range v {
+	for fieldKey := range v {
 
-		schemaDocValue, ok := schemaDoc[fieldKey]
+		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
 			return errors.New("field not found in schemaField")
 		}
 
-		switch t := fieldValue.(type) {
-		case int:
-			if schemaDocValue.Kind != typeDateTime {
-				return errors.New("Integer : wrong type wanted " + schemaDocValue.Kind)
-			}
-			return nil
-		case string:
-			if schemaDocValue.Kind != typeDateTime {
-				return errors.New("String : wrong type, wanted " + schemaDocValue.Kind)
-			}
-			_, err := time.Parse(time.RFC3339, t)
-			if err != nil {
-				return errors.New("String : wrong date-time format")
-			}
-			return nil
-		default:
-			return errors.New("Schema update date op. wrong type ")
+		if schemaDocValue.Kind != typeDateTime {
+			return errors.New("incorrect data type")
 		}
 	}
 
 	return nil
 }
 
-func (s *Schema) validateSetOperation(doc interface{}, schemaDoc schemaField) (interface{}, error) {
+func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc schemaField) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("Schema update set op wrong type passed expecting map[string]interface{}")
@@ -160,17 +145,24 @@ func (s *Schema) validateSetOperation(doc interface{}, schemaDoc schemaField) (i
 
 	newMap := map[string]interface{}{}
 	for key, value := range v {
-		// check if key present in schemaDoc
-		schemaDocValue, ok := schemaDoc[key]
+		// check if key present in SchemaDoc
+		SchemaDocValue, ok := SchemaDoc[key]
 		if !ok {
 			return nil, errors.New("Schema set op field not found")
 		}
 		// check type
-		newDoc, err := s.checkType(value, schemaDocValue)
+		newDoc, err := s.checkType(value, SchemaDocValue)
 		if err != nil {
 			return nil, err
 		}
 		newMap[key] = newDoc
 	}
+
+	for fieldKey, fieldValue := range SchemaDoc {
+		if fieldValue.Directive == directiveUpdatedAt {
+			newMap[fieldKey] = time.Now().UTC()
+		}
+	}
+
 	return newMap, nil
 }

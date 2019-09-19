@@ -11,7 +11,7 @@ import (
 
 func TestSchema_schemaInspection(t *testing.T) {
 	type fields struct {
-		schemaDoc schemaType
+		SchemaDoc schemaType
 		crud      *crud.Module
 		project   string
 	}
@@ -31,11 +31,11 @@ func TestSchema_schemaInspection(t *testing.T) {
 			args: args{
 				dbType: "sql-mysql",
 				col:    "persons",
-				dbName: "testDB",
+				dbName: "testdb",
 			},
 			fields: fields{
 				crud:    &crud.Module{},
-				project: "testDB",
+				project: "testdb",
 			},
 		},
 		{
@@ -43,11 +43,11 @@ func TestSchema_schemaInspection(t *testing.T) {
 			args: args{
 				dbType: "sql-mysql",
 				col:    "orders",
-				dbName: "testDB",
+				dbName: "testdb",
 			},
 			fields: fields{
 				crud:    &crud.Module{},
-				project: "testDB",
+				project: "testdb",
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 
 	db := config.Crud{
 		"sql-mysql": &config.CrudStub{
-			Conn: "root:1234@tcp(172.17.0.2:3306)/testDB",
+			Conn: "root:1234@tcp(172.17.0.2:3306)/testdb",
 			Collections: map[string]*config.TableRule{
 				"Persons": &config.TableRule{},
 				"Orders":  &config.TableRule{},
@@ -102,7 +102,7 @@ func TestSchema_schemaInspection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Schema{
-				schemaDoc: tt.fields.schemaDoc,
+				SchemaDoc: tt.fields.SchemaDoc,
 				crud:      crud,
 				project:   tt.fields.project,
 			}

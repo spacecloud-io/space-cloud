@@ -16,7 +16,7 @@ type Tweet {
 	id: ID! @id
 	createdAt: DateTime! @createdAt
 	text: String
-	owner: [String!]! @relation(field: INLINE)
+	owner: [String!]! @relation
 	location: location!
 	age : Integer!	
   }
@@ -71,12 +71,12 @@ func TestParseSchema(t *testing.T) {
 			t.Fatal(err)
 		}
 		// uncomment the below statements to see the reuslt
-		b, err := json.MarshalIndent(s.schemaDoc, "", "  ")
+		b, err := json.MarshalIndent(s.SchemaDoc, "", "  ")
 		if err != nil {
 			fmt.Println("error:", err)
 		}
 		fmt.Print(string(b))
-		t.Log("Logging Test Output :: ", s.schemaDoc)
+		t.Log("Logging Test Output :: ", s.SchemaDoc)
 	})
 }
 

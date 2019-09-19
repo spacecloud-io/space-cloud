@@ -14,11 +14,22 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 		return "", errors.New("Inspection cannot be performed over mongo")
 	}
 
-	fields, foreignkeys, err := s.crud.DescribeTable(ctx, dbType, project, col)
+	inspectionCollection, err := s.Inspector(ctx, dbType, project, col)
 	if err != nil {
 		return "", err
 	}
-	inspectionDb := schemaType{}
+
+	return generateSDL(inspectionCollection)
+
+}
+
+// Inspector does something
+func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (schemaCollection, error) {
+	fields, foreignkeys, err := s.crud.DescribeTable(ctx, dbType, project, col)
+	if err != nil {
+		return nil, err
+	}
+
 	inspectionCollection := schemaCollection{}
 	inspectionFields := schemaField{}
 
@@ -33,11 +44,11 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 		// field type
 		if utils.DBType(dbType) == utils.Postgres {
 			if err := inspectionPostgresCheckFieldType(value.FieldType, &fieldDetails); err != nil {
-				return "", err
+				return nil, err
 			}
 		} else {
 			if err := inspectionMySQLCheckFieldType(value.FieldType, &fieldDetails); err != nil {
-				return "", err
+				return nil, err
 			}
 		}
 		// check if list
@@ -60,18 +71,11 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col stri
 
 		// field name
 		inspectionFields[value.FieldName] = &fieldDetails
-
 	}
-
-	inspectionCollection[strings.Title(col)] = inspectionFields
-	inspectionDb[dbType] = inspectionCollection
-
-	schemaInSDL, err := generateSDL(inspectionCollection)
-	if err != nil {
-		return "", nil
+	if len(inspectionFields) != 0 {
+		inspectionCollection[col] = inspectionFields
 	}
-	return schemaInSDL, nil
-
+	return inspectionCollection, nil
 }
 
 func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
@@ -81,13 +85,13 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldTyp
 	switch result[0] {
 	case "char", "varchar", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = typeString
-	case "tinyint", "smallint", "mediumint", "int", "bigint":
+	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = typeInteger
 	case "float", "double":
 		fieldDetails.Kind = typeFloat
 	case "date", "time", "datetime", "timestamp":
 		fieldDetails.Kind = typeDateTime
-	case "boolean":
+	case "tinyint", "boolean": // sql stores boolean valuse as tinyint(1), TODO: what if tinyint(28) then it should come under integer
 		fieldDetails.Kind = typeBoolean
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])

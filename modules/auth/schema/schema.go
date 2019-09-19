@@ -18,14 +18,14 @@ import (
 
 // Schema data stucture for schema package
 type Schema struct {
-	schemaDoc schemaType
+	SchemaDoc schemaType
 	crud      *crud.Module
 	project   string
 }
 
 // Init creates a new instance of the schema object
 func Init(crud *crud.Module) *Schema {
-	return &Schema{schemaDoc: schemaType{}, crud: crud}
+	return &Schema{SchemaDoc: schemaType{}, crud: crud}
 }
 
 //SetProject sets project field of Schema object
@@ -35,6 +35,16 @@ func (s *Schema) SetProject(project string) {
 
 // ParseSchema Initializes Schema field in Module struct
 func (s *Schema) ParseSchema(crud config.Crud) error {
+
+	schema, err := s.parser(crud)
+	if err != nil {
+		return err
+	}
+	s.SchemaDoc = schema
+	return nil
+}
+
+func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 
 	schema := make(schemaType, len(crud))
 	for dbName, v := range crud {
@@ -49,18 +59,17 @@ func (s *Schema) ParseSchema(crud config.Crud) error {
 			// parse the source
 			doc, err := parser.Parse(parser.ParseParams{Source: source})
 			if err != nil {
-				return err
+				return nil, err
 			}
 			value, err := getCollectionSchema(doc, collectionName)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			collection[collectionName] = value
+			collection[strings.ToLower(collectionName[0:1])+collectionName[1:]] = value
 		}
 		schema[dbName] = collection
 	}
-	s.schemaDoc = schema
-	return nil
+	return schema, nil
 }
 
 func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField, error) {
@@ -79,11 +88,15 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 			if len(ve.Directives) > 0 {
 				val := ve.Directives[0]
 
-				for _, x := range val.Arguments {
+				if len(val.Arguments) == 0 {
+					fieldTypeStuct.JointTable.TableField = ve.Name.Value
+				} else {
+					for _, x := range val.Arguments {
 
-					val, _ := (utils.ParseGraphqlValue(x.Value, nil))
-					if x.Name.Value == "field" {
-						fieldTypeStuct.JointTable.TableField = val.(string)
+						val, _ := (utils.ParseGraphqlValue(x.Value, nil))
+						if x.Name.Value == "field" {
+							fieldTypeStuct.JointTable.TableField = val.(string)
+						}
 					}
 				}
 
@@ -94,9 +107,9 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 			if err != nil {
 				return nil, err
 			}
-			if fieldTypeStuct.Kind != typeJoin {
-				fieldTypeStuct.JointTable.TableField = ""
-			}
+			// if fieldTypeStuct.Kind != typeJoin {
+			// 	fieldTypeStuct.JointTable.TableField = ""
+			// }
 			fieldMap[ve.Name.Value] = &fieldTypeStuct
 		}
 	}
@@ -175,6 +188,11 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 			}
 		}
 
+		if fieldValue.Directive == directiveCreatedAt || fieldValue.Directive == directiveUpdatedAt {
+			mutatedDoc[fieldKey] = time.Now().UTC()
+			continue
+		}
+
 		// check type
 		val, err := s.checkType(value, fieldValue)
 		if err != nil {
@@ -189,7 +207,7 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 // ValidateCreateOperation validates schema on create operation
 func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRequest) error {
 
-	if s.schemaDoc == nil {
+	if s.SchemaDoc == nil {
 		return errors.New("Schema not initialized")
 	}
 
@@ -202,13 +220,13 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 		v = append(v, t)
 	}
 
-	collection, ok := s.schemaDoc[dbType]
+	collection, ok := s.SchemaDoc[dbType]
 	if !ok {
 		return errors.New("No db was found named " + dbType)
 	}
 	collectionFields, ok := collection[col]
 	if !ok {
-		return errors.New("No collection or table was found named " + col)
+		return nil
 	}
 
 	for index, doc := range v {
@@ -216,6 +234,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 		if err != nil {
 			return err
 		}
+
 		v[index] = newDoc
 	}
 

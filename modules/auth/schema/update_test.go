@@ -24,18 +24,18 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 				dbType: "mongo",
 				col:    "tweet",
 				updateDoc: map[string]interface{}{
-					"set": map[string]interface{}{
+					"$set": map[string]interface{}{
 						"id":        1,
 						"createdAt": 986413662654,
 						"text":      "heelo",
 					},
-					"inc": map[string]interface{}{
+					"$inc": map[string]interface{}{
 						"age": 1999,
 					},
-					"push": map[string]interface{}{
+					"$push": map[string]interface{}{
 						"owner": []interface{}{"hello", "go", "java"},
 					},
-					"currentDate": map[string]interface{}{
+					"$currentDate": map[string]interface{}{
 						"createdAt": 16641894861,
 					},
 				},
