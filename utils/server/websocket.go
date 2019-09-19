@@ -302,7 +302,13 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				}
 				data.Where = whereData
 				data.Token = token
-				data.DBType = graphql.GetDBType(v)
+				dbType, err := graphql.GetDBType(v)
+				if err != nil {
+					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: err.Error()}})
+					closeConnAliveRoutine <- true
+					return
+				}
+				data.DBType = dbType
 				data.Project = project
 				data.Group = v.Name.Value
 				data.Type = m.Type
