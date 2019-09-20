@@ -89,7 +89,6 @@ func getProjectInfo(config *config.Modules, static *config.Static) map[string]in
 
 	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
 	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
-	realtimeConfig := map[string]interface{}{"enabled": false}
 	fileStoreConfig := map[string]interface{}{"enabled": false, "storeTypes": []string{}, "rules": 0}
 	staticConfig := map[string]interface{}{"routes": 0, "internalRoutes": 0}
 	auth := []string{}
@@ -113,7 +112,7 @@ func getProjectInfo(config *config.Modules, static *config.Static) map[string]in
 		}
 	}
 
-	if config.Functions != nil && config.Functions.Enabled {
+	if config.Functions != nil {
 		functionsConfig["enabled"] = true
 		if config.Functions.Services != nil {
 			functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Services)
@@ -123,10 +122,6 @@ func getProjectInfo(config *config.Modules, static *config.Static) map[string]in
 				}
 			}
 		}
-	}
-
-	if config.Realtime != nil && config.Realtime.Enabled {
-		realtimeConfig["enabled"] = true
 	}
 
 	if config.FileStore != nil && config.FileStore.Enabled {
@@ -146,5 +141,5 @@ func getProjectInfo(config *config.Modules, static *config.Static) map[string]in
 		}
 	}
 
-	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "auth": auth, "static": staticConfig}
+	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "fileStore": fileStoreConfig, "auth": auth, "static": staticConfig}
 }

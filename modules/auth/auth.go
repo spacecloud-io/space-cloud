@@ -9,12 +9,13 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 var (
 	// ErrInvalidSigningMethod denotes a jwt signing method type not used by Space Cloud.
 	ErrInvalidSigningMethod = errors.New("invalid signing method type")
-	ErrTokenVerification = errors.New("AUTH: JWT token could not be verified")
+	ErrTokenVerification    = errors.New("AUTH: JWT token could not be verified")
 )
 
 // Module is responsible for authentication and authorisation
@@ -49,7 +50,7 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 		m.fileStoreType = fileStore.StoreType
 	}
 
-	if functions != nil && functions.Enabled {
+	if functions != nil {
 		m.funcRules = functions.Services
 	}
 
@@ -63,6 +64,11 @@ func (m *Module) SetSecret(secret string) {
 	m.Lock()
 	defer m.Unlock()
 	m.secret = secret
+}
+
+// GetInternalAccessToken returns the token that can be used internally by Space Cloud
+func (m *Module) GetInternalAccessToken() (string, error) {
+	return m.CreateToken(map[string]interface{}{"id": utils.InternalUserID})
 }
 
 // CreateToken generates a new JWT Token with the token claims

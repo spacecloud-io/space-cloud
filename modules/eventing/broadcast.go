@@ -1,9 +1,7 @@
 package eventing
 
 import (
-	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/spaceuptech/space-cloud/model"
 )
@@ -16,15 +14,13 @@ func (m *Module) broadcastEvents(eventDocs []*model.EventDocument) {
 }
 
 func (m *Module) processBroadcastEvents(eventDocs []*model.EventDocument) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	// Get the assigned token range
 	start, end := m.syncMan.GetAssignedTokens()
 
 	for _, eventDoc := range eventDocs {
 		if eventDoc.Token >= start && eventDoc.Token <= end {
-			m.processStagedEvent(ctx, eventDoc)
+			go m.processStagedEvent(eventDoc)
 		}
 	}
 }

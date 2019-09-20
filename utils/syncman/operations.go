@@ -48,6 +48,23 @@ func (s *SyncManager) GetAssignedTokens() (start int, end int) {
 	return calcTokens(totalMembers, utils.MaxEventTokens, index)
 }
 
+// GetClusterSize returns the size of the cluster
+func (s *SyncManager) GetClusterSize() int {
+	return s.list.NumNodes()
+}
+
+// GetAliveNodeCount returns the number of alive nodes in the cluster
+func (s *SyncManager) GetAliveNodeCount() int {
+	count := 0
+	for _, member := range s.list.Members() {
+		if member.Status == serf.StatusAlive {
+			count++
+		}
+	}
+
+	return count
+}
+
 func calcTokens(n int, tokens int, i int) (start int, end int) {
 	tokensPerMember := int(math.Ceil(float64(tokens) / float64(n)))
 	start = tokensPerMember * i

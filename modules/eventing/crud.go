@@ -2,9 +2,11 @@ package eventing
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"math/rand"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 
@@ -31,8 +33,15 @@ func (m *Module) HandleCreateIntent(ctx context.Context, dbType, col string, req
 	// Process the documents
 	eventDocs := m.processCreateDocs(token, batchID, dbType, col, rows)
 
+	// Mark event as invalid if no events are generated
+	if len(eventDocs) == 0 {
+		return &model.EventIntent{Invalid: true}, nil
+	}
+
+	log.Println("New events:", eventDocs)
+
 	// Persist the event intent
-	createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
+	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
 	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 	}
@@ -53,7 +62,7 @@ func (m *Module) HandleBatchIntent(ctx context.Context, dbType string, req *mode
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
 	batchID := uuid.NewV1().String()
-	var eventDocs []*model.EventDocument
+	eventDocs := make([]*model.EventDocument, 0)
 
 	// Iterate over all batched requests
 	for _, r := range req.Requests {
@@ -61,19 +70,19 @@ func (m *Module) HandleBatchIntent(ctx context.Context, dbType string, req *mode
 		case string(utils.Create):
 			// Get the rows
 			rows := getCreateRows(r.Document, r.Operation)
-			eventDocs := m.processCreateDocs(token, batchID, dbType, r.Col, rows)
-			eventDocs = append(eventDocs, eventDocs...)
+			docs := m.processCreateDocs(token, batchID, dbType, r.Col, rows)
+			eventDocs = append(eventDocs, docs...)
 
 		case string(utils.Update):
-			eventDocs, ok := m.processUpdateDeleteHook(token, utils.EventUpdate, batchID, dbType, r.Col, r.Find)
+			docs, ok := m.processUpdateDeleteHook(token, utils.EventUpdate, batchID, dbType, r.Col, r.Find)
 			if ok {
-				eventDocs = append(eventDocs, eventDocs...)
+				eventDocs = append(eventDocs, docs...)
 			}
 
 		case string(utils.Delete):
-			eventDocs, ok := m.processUpdateDeleteHook(token, utils.EventDelete, batchID, dbType, r.Col, r.Find)
+			docs, ok := m.processUpdateDeleteHook(token, utils.EventDelete, batchID, dbType, r.Col, r.Find)
 			if ok {
-				eventDocs = append(eventDocs, eventDocs...)
+				eventDocs = append(eventDocs, docs...)
 			}
 
 		default:
@@ -81,8 +90,13 @@ func (m *Module) HandleBatchIntent(ctx context.Context, dbType string, req *mode
 		}
 	}
 
+	// Mark event as invalid if no events are generated
+	if len(eventDocs) == 0 {
+		return &model.EventIntent{Invalid: true}, nil
+	}
+
 	// Persist the event intent
-	createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
+	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
 	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 	}
@@ -124,9 +138,9 @@ func (m *Module) handleUpdateDeleteIntent(ctx context.Context, eventType, dbType
 	eventDocs, ok := m.processUpdateDeleteHook(token, eventType, batchID, dbType, col, find)
 	if ok {
 		// Persist the event intent
-		createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
+		createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
 		if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
-			return nil, errors.New("eventing module couldn't log the request -" + err.Error())
+			return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 		}
 
 		return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
@@ -166,6 +180,42 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 		return
 	}
 
+	for _, doc := range intent.Docs {
+
+		// TODO: Optimise this step
+		if doc.Type == utils.EventUpdate {
+			dbEvent := new(model.DatabaseEventMessage)
+			if err := json.Unmarshal([]byte(doc.Payload), dbEvent); err != nil {
+				log.Println("Eventing Staging Error:", err)
+				continue
+			}
+
+			req := &model.ReadRequest{
+				Find:      map[string]interface{}{utils.GetIDVariable(dbEvent.DBType): dbEvent.DocID},
+				Operation: utils.One,
+			}
+
+			result, err := m.crud.Read(ctx, dbEvent.DBType, m.project, dbEvent.Col, req)
+			if err != nil {
+				log.Println("Eventing Staging Error:", err)
+				continue
+			}
+
+			dbEvent.Doc = result
+
+			data, err := json.Marshal(dbEvent)
+			if err != nil {
+				log.Println("Eventing Staging Error:", err)
+				continue
+			}
+
+			doc.Payload = string(data)
+			doc.Timestamp = time.Now().UTC().UnixNano() / int64(time.Millisecond)
+
+			// TODO: update the event document in the database as well
+		}
+	}
+
 	// Broadcast the event so the concerned worker can process it immediately
 	if !intent.Invalid {
 		m.broadcastEvents(intent.Docs)
@@ -175,8 +225,7 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows []interface{}) []*model.EventDocument {
 	// Get event listeners
 	rules := m.getMatchingRules(utils.EventCreate, map[string]string{"col": col, "db": dbType})
-
-	var eventDocs []*model.EventDocument
+	eventDocs := make([]*model.EventDocument, 0)
 	for _, doc := range rows {
 
 		// Skip the doc if id isn't present
@@ -213,13 +262,18 @@ func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, 
 
 			eventDocs := make([]*model.EventDocument, len(rules))
 
-			for _, rule := range rules {
+			for i, rule := range rules {
 				// Create an event doc
-				eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
+				eventDocs[i] = m.generateQueueEventRequest(token, rule.Retries,
 					batchID, utils.EventStatusIntent, rule.Service, rule.Function, &model.QueueEventRequest{
 						Type:    eventType,
 						Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, DocID: id},
-					}))
+					})
+			}
+
+			// Mark event as invalid if no events are generated
+			if len(eventDocs) == 0 {
+				return nil, false
 			}
 
 			return eventDocs, true

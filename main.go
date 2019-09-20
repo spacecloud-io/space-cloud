@@ -133,7 +133,18 @@ func actionRun(c *cli.Context) error {
 		nodeID = uuid.NewV1().String()
 	}
 
-	s := server.New(nodeID)
+	// Start nats if not disabled
+	if !disableNats {
+		err := server.RunNatsServer(seeds, utils.PortNatsServer, utils.PortNatsCluster)
+		if err != nil {
+			return err
+		}
+	}
+
+	s, err := server.New(nodeID)
+	if err != nil {
+		return err
+	}
 
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)
@@ -172,14 +183,6 @@ func actionRun(c *cli.Context) error {
 
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
-
-	// Start nats if not disabled
-	if !disableNats {
-		err := s.RunNatsServer(seeds, utils.PortNatsServer, utils.PortNatsCluster)
-		if err != nil {
-			return err
-		}
-	}
 
 	return s.Start(seeds, disableMetrics)
 }

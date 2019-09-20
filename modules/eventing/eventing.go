@@ -67,10 +67,6 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		}
 
 		m.initEventWorkers(channel, 10)
-
-		// Create new channel and start worker routines
-		//m.channel = make(chan *nats.Msg, 10)
-		//m.initWorkers(utils.FunctionsWorkerCount)
 	}
 
 	if eventing == nil {
@@ -78,11 +74,21 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		return nil
 	}
 
+	m.config.InternalRules = map[string]config.EventingRule{}
+
 	if eventing.DBType == "" || eventing.Col == "" {
-		return errors.New("Invalid eventing config provided")
+		return errors.New("invalid eventing config provided")
 	}
 
 	m.project = project
 	m.config = eventing
+
+	if m.config.Rules == nil {
+		m.config.Rules = map[string]config.EventingRule{}
+	}
+
+	// Reset the internal rules
+	m.config.InternalRules = map[string]config.EventingRule{}
+
 	return nil
 }

@@ -25,8 +25,8 @@ space-cloud
 raft-store
 publish.sh
 
-test_config.yaml
-config.yaml
+test_yaml
+yaml
 
 # Helper scripts
 kube

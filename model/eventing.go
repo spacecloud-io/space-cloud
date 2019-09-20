@@ -7,17 +7,17 @@ type EventKind string
 
 // EventDocument is the format in which the event is persistent on disk
 type EventDocument struct {
-	ID             string `json:"_id"`
-	BatchID        string `json:"batchid"`
-	Type           string `json:"type"`
-	Token          int    `json:"token"`
-	Timestamp      int64  `json:"timestamp"`       // The timestamp of when the event should get executed
-	EventTimestamp int64  `json:"event_timestamp"` // The time stamp of when the event was logged
-	Payload        string `json:"payload"`
-	Status         string `json:"status"`
-	Retries        int    `json:"retries"`
-	Service        string `json:"service"`
-	Function       string `json:"function"`
+	ID             string `json:"_id" bson:"_id" mapstructure:"_id"`
+	BatchID        string `json:"batchid" bson:"batchid" mapstructure:"batchid"`
+	Type           string `json:"type" bson:"type" mapstructure:"type"`
+	Token          int    `json:"token" bson:"token" mapstructure:"token"`
+	Timestamp      int64  `json:"timestamp" bson:"timestamp" mapstructure:"timestamp"`                   // The timestamp of when the event should get executed
+	EventTimestamp int64  `json:"event_timestamp" bson:"event_timestamp" mapstructure:"event_timestamp"` // The time stamp of when the event was logged
+	Payload        string `json:"payload" bson:"payload" mapstructure:"payload"`
+	Status         string `json:"status" bson:"status" mapstructure:"status"`
+	Retries        int    `json:"retries" bson:"retries" mapstructure:"retries"`
+	Service        string `json:"service" bson:"service" mapstructure:"service"`
+	Function       string `json:"function" bson:"function" mapstructure:"function"`
 }
 
 // QueueEventRequest is the payload to add a new event to the task queue
