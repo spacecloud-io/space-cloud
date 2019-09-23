@@ -143,3 +143,73 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 
 	}
 }
+
+// HandleCollection is an endpoint handler which return all the collection name for specified data base
+func HandleCollection(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		tokens, ok := r.Header["Authorization"]
+		if !ok {
+			tokens = []string{""}
+		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		vars := mux.Vars(r)
+		dbType := vars["dbType"]
+		project := vars["project"]
+
+		collections,err := schema.GetCollectionName(project,dbType)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{"collections": collections})
+		return
+	}
+}
+
+// HandleSchemaCollection is an endpoint handler which return schema for all the collection in the config.crud
+func HandleSchemaCollection(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		tokens, ok := r.Header["Authorization"]
+		if !ok {
+			tokens = []string{""}
+		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		vars := mux.Vars(r)
+		dbType := vars["dbType"]
+		project := vars["project"]
+
+		schemas,err := schema.GetSchemaCollection(ctx,project,dbType)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{"value": schemas})
+		return
+	}
+}

@@ -32,10 +32,17 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
 
 	//Initialize route for graphql schema inspection
+	router.Methods("GET").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.auth.Schema))
+
+	//Initialize route for getting the schema for specified collection even if doesn't exists in config.crud
 	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleInspectionRequest(s.adminMan, s.auth.Schema))
 
-	//Initialize route for graphql schema inspection
-	router.Methods("GET").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.auth.Schema))
+	//Initialize route for getting all column names present in config.crud
+	router.Methods("GET").Path("/v1/api/config/list-collections/{project}/{dbType}").HandlerFunc(handlers.HandleCollection(s.adminMan, s.auth.Schema))
+
+	//Initialize route for getting all schemas for all the columns present in config.crud
+	router.Methods("POST").Path("/v1/api/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleSchemaCollection(s.adminMan, s.auth.Schema))
+
 
 	//Initialize route for graphql
 	router.Path("/v1/api/graphql/{project}").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))

@@ -21,6 +21,7 @@ type Schema struct {
 	SchemaDoc schemaType
 	crud      *crud.Module
 	project   string
+	config config.Crud
 }
 
 // Init creates a new instance of the schema object
@@ -31,6 +32,10 @@ func Init(crud *crud.Module) *Schema {
 //SetProject sets project field of Schema object
 func (s *Schema) SetProject(project string) {
 	s.project = project
+}
+
+func (s *Schema) SetConfig(conf config.Crud)  {
+	s.config = conf
 }
 
 // ParseSchema Initializes Schema field in Module struct

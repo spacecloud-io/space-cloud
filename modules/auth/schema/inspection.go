@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -121,4 +122,39 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaField
 		return errors.New("Inspection type check : no match found got " + result[0])
 	}
 	return nil
+}
+
+// GetCollectionName returns all the collection name for specified database
+func (s *Schema) GetCollectionName(project, dbType string) ([]string,error) {
+	var collections []string
+	for dbName, crudValue := range s.config {
+		if dbName == dbType {
+			for colName, _ := range crudValue.Collections {
+				collections = append(collections, colName)
+			}
+		}
+	}
+	if len(collections) == 0 {
+		return nil, errors.New("no collections found for the specified database")
+	}
+	return collections,nil
+}
+
+func (s *Schema) GetSchemaCollection(ctx context.Context, prject, dbType string) (config.Crud, error) {
+	projectConfig := config.Crud{}
+	collections,err := s.GetCollectionName(prject, dbType)
+	if err != nil {
+		return nil, err
+	}
+	projectConfig[dbType] = &config.CrudStub{}
+	for _, colName := range collections {
+		tableRule := &config.TableRule{}
+		schema, err := s.SchemaInspection(ctx, dbType, prject, colName)
+		if err != nil {
+			return nil, err
+		}
+		tableRule.Schema = schema
+		projectConfig[dbType].Collections[colName] = tableRule
+	}
+	return projectConfig, nil
 }

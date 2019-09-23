@@ -40,6 +40,7 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 
 	m.project = project
 	m.rules = rules
+	m.Schema.SetConfig(rules)
 	m.secret = secret
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
