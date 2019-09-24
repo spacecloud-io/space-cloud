@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -21,7 +22,7 @@ type Schema struct {
 	SchemaDoc schemaType
 	crud      *crud.Module
 	project   string
-	config config.Crud
+	config    config.Crud
 }
 
 // Init creates a new instance of the schema object
@@ -34,8 +35,21 @@ func (s *Schema) SetProject(project string) {
 	s.project = project
 }
 
-func (s *Schema) SetConfig(conf config.Crud)  {
+// SetConfig modifies the tables according to the schema on save
+func (s *Schema) SetConfig(conf config.Crud) error {
 	s.config = conf
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
+	defer cancel()
+
+	for dbName, crudStubValue := range conf {
+		for colName, tablRuleValue := range crudStubValue.Collections {
+			if err := s.SchemaCreation(ctx, dbName, colName, s.project, tablRuleValue.Schema); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // ParseSchema Initializes Schema field in Module struct
@@ -70,6 +84,9 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 			if err != nil {
 				return nil, err
 			}
+			if len(value) <= 1 { // schema might have a id by default
+				continue
+			}
 			collection[strings.ToLower(collectionName[0:1])+collectionName[1:]] = value
 		}
 		schema[dbName] = collection
@@ -93,15 +110,11 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 			if len(ve.Directives) > 0 {
 				val := ve.Directives[0]
 
-				if len(val.Arguments) == 0 {
-					fieldTypeStuct.JointTable.TableField = ve.Name.Value
-				} else {
-					for _, x := range val.Arguments {
+				for _, x := range val.Arguments {
 
-						val, _ := (utils.ParseGraphqlValue(x.Value, nil))
-						if x.Name.Value == "field" {
-							fieldTypeStuct.JointTable.TableField = val.(string)
-						}
+					val, _ := (utils.ParseGraphqlValue(x.Value, nil))
+					if x.Name.Value == "field" {
+						fieldTypeStuct.JointTable.TableField = val.(string)
 					}
 				}
 
@@ -112,9 +125,11 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 			if err != nil {
 				return nil, err
 			}
-			// if fieldTypeStuct.Kind != typeJoin {
-			// 	fieldTypeStuct.JointTable.TableField = ""
-			// }
+
+			// make default referenced column name id if directive is relation
+			if fieldTypeStuct.JointTable.TableField == "" && fieldTypeStuct.Directive == directiveRelation {
+				fieldTypeStuct.JointTable.TableField = "id"
+			}
 			fieldMap[ve.Name.Value] = &fieldTypeStuct
 		}
 	}
@@ -178,9 +193,6 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.
 }
 
 func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]interface{}) (map[string]interface{}, error) {
-	if len(collectionFields) == 0 {
-		return doc, nil
-	}
 
 	mutatedDoc := map[string]interface{}{}
 
@@ -292,9 +304,21 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 			return nil, errors.New("Bool wrong type wanted " + fieldValue.Kind + " got Bool")
 		}
 	case map[string]interface{}:
+		if fieldValue.Directive == directiveRelation {
+			v := fieldValue.nestedObject[fieldValue.JointTable.TableField]
+			switch v.Kind {
+			case typeInteger, typeString, typeFloat, typeDateTime, typeID:
+				break
+			default:
+				return nil, errors.New("object with directive relation has wrong referenced type")
+			}
+		}
 		return s.schemaValidator(fieldValue.nestedObject, v)
 
 	case []interface{}:
+		if fieldValue.Directive == directiveRelation {
+			return nil, errors.New("array with relation directive not supported")
+		}
 		arr := make([]interface{}, len(v))
 		for index, value := range v {
 			val, err := s.checkType(value, fieldValue)

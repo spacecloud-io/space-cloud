@@ -34,7 +34,7 @@ type Tweet {
 	id: ID! @id
 	latitude: Float!
 	longitude: Float!
-	person : sharad!
+	person : sharad! @relation(field:name)
   }
 
   type Sharad {

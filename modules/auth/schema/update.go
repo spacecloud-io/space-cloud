@@ -52,7 +52,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField)
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return errors.New("Schema math op wrong type passed expecting map[string]interface{}")
+		return errors.New("Schema array op wrong type passed expecting map[string]interface{}")
 	}
 
 	for fieldKey, fieldValue := range v {
@@ -64,6 +64,9 @@ func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField)
 
 		switch t := fieldValue.(type) {
 		case []interface{}:
+			if SchemaDocValue.Directive == directiveRelation {
+				return errors.New("Schema update op array with relation directive not supported")
+			}
 			for _, value := range t {
 				if _, err := s.checkType(value, SchemaDocValue); err != nil {
 					return err

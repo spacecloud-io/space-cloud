@@ -124,7 +124,7 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 		}
 
 		// Create a context of execution
-		_, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Load the request from the body
@@ -136,11 +136,18 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 		json.NewDecoder(r.Body).Decode(&schemaDecode)
 		defer r.Body.Close()
 
-		// vars := mux.Vars(r)
-		// dbType := vars["dbType"]
-		// col := vars["col"]
-		// project := vars["project"]
+		vars := mux.Vars(r)
+		dbType := vars["dbType"]
+		col := vars["col"]
+		project := vars["project"]
 
+		if err := schema.SchemaCreation(ctx, dbType, col, project, schemaDecode.Schema); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK) //http status codee
+		return
 	}
 }
 
@@ -164,7 +171,7 @@ func HandleCollection(adminMan *admin.Manager, schema *schema.Schema) http.Handl
 		dbType := vars["dbType"]
 		project := vars["project"]
 
-		collections,err := schema.GetCollectionName(project,dbType)
+		collections, err := schema.GetCollectionName(project, dbType)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -201,7 +208,7 @@ func HandleSchemaCollection(adminMan *admin.Manager, schema *schema.Schema) http
 		dbType := vars["dbType"]
 		project := vars["project"]
 
-		schemas,err := schema.GetSchemaCollection(ctx,project,dbType)
+		schemas, err := schema.GetSchemaCollection(ctx, project, dbType)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
