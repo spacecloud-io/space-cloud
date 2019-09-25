@@ -46,7 +46,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				mapstructure.Decode(req.Data, data)
 
 				// Subscribe to realtime feed
-				feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
+				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					c.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
 				if err != nil {
@@ -90,7 +90,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For pubsub subscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
-	
+
 				// Subscribe to pubsub feed
 				var status int
 				var err error
@@ -108,25 +108,25 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
 					return true
 				}
-	
+
 				// Send response to c
 				res := model.PubsubMsgResponse{Status: int32(status)}
 				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
-	
+
 			case utils.TypePubsubUnsubscribe:
 				// For pubsub unsubscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
-	
+
 				status, err := s.pubsub.Unsubscribe(clientID, data.Subject)
-	
+
 				// Send response to c
 				if err != nil {
 					res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
 					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
 					return true
 				}
-	
+
 				// Send response to c
 				res := model.PubsubMsgResponse{Status: int32(status)}
 				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
@@ -134,16 +134,16 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For pubsub unsubscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
-	
+
 				status, err := s.pubsub.UnsubscribeAll(clientID)
-	
+
 				// Send response to c
 				if err != nil {
 					res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
 					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
 					return true
 				}
-	
+
 				// Send response to c
 				res := model.PubsubMsgResponse{Status: int32(status)}
 				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})

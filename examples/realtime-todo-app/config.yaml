@@ -30,19 +30,13 @@ projects:
         id: ""
         secret: ""
     functions:
-      enabled: false
-      broker: nats
-      conn: nats://localhost:4222
-      rules: {}
-    realtime:
-      enabled: true
-      broker: nats
-      conn: nats://localhost:4222
+      services: {}
     fileStore:
       enabled: false
       storeType: local
       conn: ./
       endpoint: ""
+      bucket: ""
       rules:
       - prefix: /
         rule:
@@ -52,16 +46,16 @@ projects:
             rule: allow
           read:
             rule: allow
+    pubsub: null
+    eventing:
+      enabled: true
+      dbType: mongo
+      col: event_logs
+      rules: {}
 ssl:
   enabled: false
   crt: ""
   key: ""
-static:
-  routes:
-  - path: "."
-    prefix: /
-    host: ""
-    proxy: ""
 admin:
   secret: some-secret
   operation:
@@ -76,3 +70,6 @@ admin:
       - all
 deploy:
   enabled: false
+gateway: null
+cluster: ""
+nodeId: 7a72649c-db78-11e9-9d97-60f81dd0a692

@@ -136,7 +136,7 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 }
 
 func (m *Module) getMatchingRules(name string, options map[string]string) []*config.EventingRule {
-	rules := []*config.EventingRule{}
+	rules := make([]*config.EventingRule, 0)
 
 	for _, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
@@ -144,7 +144,7 @@ func (m *Module) getMatchingRules(name string, options map[string]string) []*con
 		}
 	}
 
-	for _, rule := range m.config.Rules {
+	for _, rule := range m.config.InternalRules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
 			rules = append(rules, &rule)
 		}
@@ -153,9 +153,36 @@ func (m *Module) getMatchingRules(name string, options map[string]string) []*con
 	return rules
 }
 
+func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) bool {
+
+	if rule1.Type != rule2.Type {
+		return false
+	}
+
+	if !isOptionsValid(rule1.Options, rule2.Options) {
+		return false
+	}
+
+	if rule1.Service != rule2.Service || rule1.Function != rule2.Function {
+		return false
+	}
+
+	return true
+}
+
+func convertToArray(eventDocs []*model.EventDocument) []interface{} {
+	docs := make([]interface{}, len(eventDocs))
+
+	for i, doc := range eventDocs {
+		docs[i] = doc
+	}
+
+	return docs
+}
+
 func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
-	for k, v := range providedOptions {
-		if v2, p := ruleOptions[k]; !p || v != v2 {
+	for k, v := range ruleOptions {
+		if v2, p := providedOptions[k]; !p || v != v2 {
 			return false
 		}
 	}

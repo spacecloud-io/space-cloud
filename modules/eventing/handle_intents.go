@@ -16,6 +16,11 @@ func (m *Module) processIntents(t *time.Time) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
+	// Return if module is not enabled
+	if !m.config.Enabled {
+		return
+	}
+
 	// Create a context with 5 second timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -51,12 +56,16 @@ func (m *Module) processIntents(t *time.Time) {
 		currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
 
 		if currentTimestamp > timestamp+(30*1000) {
-			go m.processIntent(ctx, eventDoc)
+			go m.processIntent(eventDoc)
 		}
 	}
 }
 
-func (m *Module) processIntent(ctx context.Context, eventDoc *model.EventDocument) {
+func (m *Module) processIntent(eventDoc *model.EventDocument) {
+	// Create a context with 5 second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	// Get the eventID
 	eventID := eventDoc.ID
 
@@ -76,7 +85,9 @@ func (m *Module) processIntent(ctx context.Context, eventDoc *model.EventDocumen
 		if _, err := m.crud.Read(ctx, createEvent.DBType, m.project, createEvent.Col, readRequest); err != nil {
 
 			// Mark event as cancelled if it document doesn't exist
-			m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID))
+			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID)); err != nil {
+				log.Println("Eventing: Couldn't cancel intent -", err)
+			}
 			return
 		}
 

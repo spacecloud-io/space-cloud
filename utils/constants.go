@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.12.0"
+const BuildVersion = "0.11.0"
 
 const (
 	// One operation returns a single document from the database
@@ -181,6 +181,12 @@ const (
 
 	// RaftCommandAddInternalRouteOperation is used to add internal routes
 	RaftCommandAddInternalRouteOperation RaftCommandType = "add-internal-route"
+
+	// RaftCommandAddInternalEventOperation is used to add internal routes
+	RaftCommandAddInternalEventOperation RaftCommandType = "add-internal-event"
+
+	// RaftCommandRemoveInternalEventOperation is used to add internal routes
+	RaftCommandRemoveInternalEventOperation RaftCommandType = "remove-internal-event"
 
 	// RaftCommandDelete is used to delete a projects config
 	RaftCommandDelete RaftCommandType = "delete"

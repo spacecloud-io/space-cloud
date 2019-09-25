@@ -15,6 +15,11 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
+	// Return if module is not enabled
+	if !m.config.Enabled {
+		return
+	}
+
 	// Create a context with 5 second timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
@@ -45,13 +50,17 @@ func (m *Module) processStagedEvents(t *time.Time) {
 			currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
 
 			if currentTimestamp > timestamp {
-				go m.processStagedEvent(ctx, eventDoc)
+				go m.processStagedEvent(eventDoc)
 			}
 		}
 	}
 }
 
-func (m *Module) processStagedEvent(ctx context.Context, eventDoc *model.EventDocument) {
+func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
+	// Create a context with 5 second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	// Return if the event is already being processed
 	if _, loaded := m.processingEvents.LoadOrStore(eventDoc.ID, true); loaded {
 		return
@@ -61,14 +70,14 @@ func (m *Module) processStagedEvent(ctx context.Context, eventDoc *model.EventDo
 	defer m.processingEvents.Delete(eventDoc.ID)
 
 	// Call the function to process the event
-	ctxLocal, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctxLocal, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	// Create a variable to track retries
 	retries := 0
 
 	for {
-		result, err := m.functions.CallWithContext(ctxLocal, eventDoc.Service, eventDoc.Function, map[string]interface{}{"id": "space-cloud"}, eventDoc)
+		result, err := m.functions.CallWithContext(ctxLocal, eventDoc.Service, eventDoc.Function, map[string]interface{}{"id": "space-cloud-eventing"}, eventDoc)
 		if err == nil {
 			// Check if the result is an object
 			obj, ok := result.(map[string]interface{})
@@ -120,5 +129,7 @@ func (m *Module) processStagedEvent(ctx context.Context, eventDoc *model.EventDo
 		}
 	}
 
-	m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached"))
+	if err := m.crud.InternalUpdate(context.TODO(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+		log.Println("Eventing staged event handler could not update event doc:", err)
+	}
 }

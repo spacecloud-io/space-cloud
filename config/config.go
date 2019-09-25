@@ -73,7 +73,6 @@ type Modules struct {
 	Crud      Crud       `json:"crud" yaml:"crud"`
 	Auth      Auth       `json:"auth" yaml:"auth"`
 	Functions *Functions `json:"functions" yaml:"functions"`
-	Realtime  *Realtime  `json:"realtime" yaml:"realtime"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
 	Pubsub    *Pubsub    `json:"pubsub" yaml:"pubsub"`
 	Eventing  Eventing   `json:"eventing,omitempty" yaml:"eventing,omitempty"`
@@ -123,10 +122,7 @@ type AuthStub struct {
 
 // Functions holds the config for the functions module
 type Functions struct {
-	Enabled  bool         `json:"enabled" yaml:"enabled"`
-	Broker   utils.Broker `json:"broker" yaml:"broker"`
-	Conn     string       `json:"conn" yaml:"conn"`
-	Services Services     `json:"services" yaml:"services"`
+	Services Services `json:"services" yaml:"services"`
 }
 
 // Services holds the config of services
@@ -140,13 +136,6 @@ type Service struct {
 // Function holds the config of a function
 type Function struct {
 	Rule *Rule `json:"rule" yaml:"rule"`
-}
-
-// Realtime holds the config for the realtime module
-type Realtime struct {
-	Enabled bool         `json:"enabled" yaml:"enabled"`
-	Broker  utils.Broker `json:"broker" yaml:"broker"`
-	Conn    string       `json:"conn" yaml:"conn"`
 }
 
 // FileStore holds the config for the file store module
@@ -201,7 +190,7 @@ type Eventing struct {
 	DBType        string                  `json:"dbType" yaml:"dbType"`
 	Col           string                  `json:"col" yaml:"col"`
 	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
-	InternalRules map[string]EventingRule `json:"internalRules" yaml:"internalRules"`
+	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
 }
 
 // EventingRule holds an eventing rule

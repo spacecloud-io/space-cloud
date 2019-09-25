@@ -19,7 +19,7 @@ func (m *Module) initEventWorkers(channel chan *nats.Msg, workers int) {
 func (m *Module) routineEvents(channel chan *nats.Msg) {
 	for msg := range channel {
 		var eventDocs []*model.EventDocument
-		if err := json.Unmarshal(msg.Data, eventDocs); err != nil {
+		if err := json.Unmarshal(msg.Data, &eventDocs); err != nil {
 			log.Println("Eventing: Unable to unmarshal event documents -", err)
 			continue
 		}
