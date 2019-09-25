@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) execReadRequest(field *ast.Field, token string, store utils.M, loader *loaderMap, cb callback) {
-	dbType, err := getDBType(field)
+	dbType, err := GetDBType(field)
 	if err != nil {
 		cb(nil, err)
 		return
@@ -51,7 +51,7 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 	// Create a read request object
 	readRequest := model.ReadRequest{Operation: utils.All, Options: new(model.ReadOptions)}
 
-	readRequest.Find, err = extractWhereClause(field.Arguments, store)
+	readRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, false, err
 	}
@@ -65,7 +65,8 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 	return &readRequest, hasOptions, nil
 }
 
-func extractWhereClause(args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
+// ExtractWhereClause return the where arg of graphql schema
+func ExtractWhereClause(args []*ast.Argument, store utils.M) (map[string]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "where":

@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) execUpdateRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbType, err := getDBType(field)
+	dbType, err := GetDBType(field)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (graph *Module) execUpdateRequest(field *ast.Field, token string, store uti
 }
 
 func (graph *Module) genrateUpdateReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
-	dbType, err := getDBType(field)
+	dbType, err := GetDBType(field)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func generateUpdateRequest(field *ast.Field, store utils.M) (*model.UpdateReques
 		return nil, err
 	}
 
-	updateRequest.Find, err = extractWhereClause(field.Arguments, store)
+	updateRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}

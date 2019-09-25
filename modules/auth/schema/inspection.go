@@ -29,7 +29,6 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 	if err != nil {
 		return nil, err
 	}
-
 	inspectionCollection := schemaCollection{}
 	inspectionFields := schemaField{}
 

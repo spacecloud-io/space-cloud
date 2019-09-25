@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) execDeleteRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbType, err := getDBType(field)
+	dbType, err := GetDBType(field)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (graph *Module) execDeleteRequest(field *ast.Field, token string, store uti
 }
 
 func (graph *Module) genrateDeleteReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
-	dbType, err := getDBType(field)
+	dbType, err := GetDBType(field)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func generateDeleteRequest(field *ast.Field, store utils.M) (*model.DeleteReques
 	// Create a delete request object
 	deleteRequest := model.DeleteRequest{Operation: utils.All}
 
-	deleteRequest.Find, err = extractWhereClause(field.Arguments, store)
+	deleteRequest.Find, err = ExtractWhereClause(field.Arguments, store)
 	if err != nil {
 		return nil, err
 	}

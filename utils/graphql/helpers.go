@@ -28,7 +28,7 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
-func getDBType(field *ast.Field) (string, error) {
+func GetDBType(field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("Field does not contain directives")
 	}

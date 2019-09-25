@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) execWriteRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbType, err := getDBType(field)
+	dbType, err := GetDBType(field)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (graph *Module) execWriteRequest(field *ast.Field, token string, store util
 }
 
 func (graph *Module) generateWriteReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
-	dbType, err := getDBType(field)
+	dbType, err := GetDBType(field)
 	if err != nil {
 		return nil, err
 	}

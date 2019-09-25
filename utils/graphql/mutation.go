@@ -95,7 +95,7 @@ func (graph *Module) handleMutation(node ast.Node, token string, store utils.M, 
 
 		field := v.(*ast.Field)
 
-		dbType, err := getDBType(field)
+		dbType, err := GetDBType(field)
 		if err != nil {
 			cb(nil, err)
 			return
