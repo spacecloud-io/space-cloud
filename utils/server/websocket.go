@@ -276,14 +276,14 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 
 				opDefinition, ok := doc.Definitions[0].(*ast.OperationDefinition)
 				if !ok {
-					channel <- &graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ERROR, Error: []gqlError{{Message:errors.New("erros in operation definition of schema").Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ERROR, Error: []gqlError{{Message: errors.New("erros in operation definition of schema").Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
 				v, ok := opDefinition.SelectionSet.Selections[0].(*ast.Field)
 				if !ok {
-					channel <- &graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ERROR, Error:[]gqlError{{Message: errors.New("error in selection set of schema").Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ERROR, Error: []gqlError{{Message: errors.New("error in selection set of schema").Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
@@ -330,7 +330,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					return
 				}
 
-				subscribeData := make([]graphqlSucessData, len(feedData))
+				subscribeData := make([]graphqlSuccessData, len(feedData))
 				for key, value := range feedData {
 					subscribeData[key].Type = value.Type
 					subscribeData[key].Doc = value.Payload
