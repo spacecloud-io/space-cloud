@@ -218,7 +218,6 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				err := socket.WriteJSON(res)
 				if err != nil {
 					log.Println(err)
-					return
 				}
 			}
 		}()
@@ -226,7 +225,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 		for {
 
 			m := graphqlMessage{}
-			if err := socket.ReadJSON(m); err != nil {
+			if err := socket.ReadJSON(&m); err != nil {
 				return
 			}
 
@@ -259,7 +258,6 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				}
 
 			case utils.GQL_START:
-				data := new(model.RealtimeRequest)
 
 				source := source.NewSource(&source.Source{
 					Body: []byte(m.Payload.Query),
@@ -286,6 +284,20 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					return
 				}
 
+				whereData, err := graphql.ExtractWhereClause(v.Arguments, utils.M{})
+				if err != nil {
+					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: err.Error()}})
+					closeConnAliveRoutine <- true
+					return
+				}
+				dbType, err := graphql.GetDBType(v)
+				if err != nil {
+					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: err.Error()}})
+					closeConnAliveRoutine <- true
+					return
+				}
+
+				data := new(model.RealtimeRequest)
 				for _, dirValue := range v.Arguments {
 					if dirValue.Name.Value == "skipInitial" {
 						if dirValue.Value.(*ast.BooleanValue).Value {
@@ -294,20 +306,8 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					}
 				}
 
-				whereData, err := graphql.ExtractWhereClause(v.Arguments, utils.M{})
-				if err != nil {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: err.Error()}})
-					closeConnAliveRoutine <- true
-					return
-				}
 				data.Where = whereData
 				data.Token = token
-				dbType, err := graphql.GetDBType(v)
-				if err != nil {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: err.Error()}})
-					closeConnAliveRoutine <- true
-					return
-				}
 				data.DBType = dbType
 				data.Project = project
 				data.Group = v.Name.Value
@@ -326,7 +326,14 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					return
 				}
 
-				channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_START, Data: feedData}})
+				subscribeData := make([]graphqlSucessData, len(feedData))
+				for key, value := range feedData {
+					subscribeData[key].Type = value.Type
+					subscribeData[key].Doc = value.Payload
+					subscribeData[key].DocID = value.DocID
+				}
+
+				channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_START, Data: subscribeData}})
 
 			case utils.GQL_STOP:
 				group, ok := graphqlIDMapper.Load(m.ID)
