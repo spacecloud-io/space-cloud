@@ -172,21 +172,18 @@ type graphqlMessage struct {
 }
 
 type payloadObject struct {
-	ConnectionParams token       `json:"connectionParams"`
-	Query            string      `json:"query"`
-	Error            string      `json:"error"`
-	Status           string      `json:"status"`
-	Data             interface{} `json:"data"`
+	ConnectionParams token       `json:"connectionParams,omitempty"`
+	Query            string      `json:"query,omitempty"`
+	Error            []gqlError  `json:"error,omitempty"`
+	Data             interface{} `json:"data,omitempty"`
 }
 
 type token struct {
-	Token string `json:"token"`
+	Token string `json:"token,omitempty"`
 }
 
-type graphqlSucessData struct {
-	Type  string                 `json:"type"`
-	Doc   map[string]interface{} `json:"doc"`
-	DocID string                 `json:"docId`
+type gqlError struct {
+	Message string `json:"message"`
 }
 
 var graphqlIDMapper sync.Map
@@ -194,7 +191,10 @@ var graphqlIDMapper sync.Map
 func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		project := mux.Vars(r)["project"]
-		socket, err := upgrader.Upgrade(w, r, nil)
+
+		respHeader := make(http.Header)
+		respHeader.Add("Sec-WebSocket-Protocol", "graphql-ws")
+		socket, err := upgrader.Upgrade(w, r, respHeader)
 		if err != nil {
 			log.Println("upgrade:", err)
 			return
@@ -218,7 +218,6 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				err := socket.WriteJSON(res)
 				if err != nil {
 					log.Println(err)
-					return
 				}
 			}
 		}()
@@ -226,7 +225,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 		for {
 
 			m := graphqlMessage{}
-			if err := socket.ReadJSON(m); err != nil {
+			if err := socket.ReadJSON(&m); err != nil {
 				return
 			}
 
@@ -236,11 +235,11 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				// Check if the request is authorised
 				token = m.Payload.ConnectionParams.Token
 				if err := adminMan.IsTokenValid(token); err != nil {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ERROR, Error: err.Error()}})
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_CONNECTION_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					return
 				}
 
-				channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ACK}})
+				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GQL_CONNECTION_ACK, Payload: payloadObject{}})
 
 				if onlyOnce {
 					onlyOnce = false
@@ -252,40 +251,53 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 							case <-closeConnAliveRoutine:
 								return
 							case <-ticker.C:
-								channel <- &graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_KEEP_ALIVE}}
+								channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_CONNECTION_KEEP_ALIVE, Payload: payloadObject{}}
 							}
 						}
 					}()
 				}
 
 			case utils.GQL_START:
-				data := new(model.RealtimeRequest)
 
-				source := source.NewSource(&source.Source{
+				parserSource := source.NewSource(&source.Source{
 					Body: []byte(m.Payload.Query),
 				})
 				// parse the source
-				doc, err := parser.Parse(parser.ParseParams{Source: source})
+				doc, err := parser.Parse(parser.ParseParams{Source: parserSource})
 				if err != nil {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ERROR, Error: err.Error()}})
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
-				opDefintion, ok := doc.Definitions[0].(*ast.OperationDefinition)
+				opDefinition, ok := doc.Definitions[0].(*ast.OperationDefinition)
 				if !ok {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ERROR, Error: errors.New("Error in operation definition of schema").Error()}})
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: errors.New("erros in operation definition of schema").Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
-				v, ok := opDefintion.SelectionSet.Selections[0].(*ast.Field)
+				v, ok := opDefinition.SelectionSet.Selections[0].(*ast.Field)
 				if !ok {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_CONNECTION_ERROR, Error: errors.New("Error in selection set of schema").Error()}})
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: errors.New("error in selection set of schema").Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
+				whereData, err := graphql.ExtractWhereClause(v.Arguments, utils.M{})
+				if err != nil {
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					closeConnAliveRoutine <- true
+					return
+				}
+				dbType, err := graphql.GetDBType(v)
+				if err != nil {
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					closeConnAliveRoutine <- true
+					return
+				}
+
+				data := &model.RealtimeRequest{Token: token, Where: whereData, DBType: dbType, Project: project, Group: v.Name.Value, Type: m.Type, ID: m.ID}
 				for _, dirValue := range v.Arguments {
 					if dirValue.Name.Value == "skipInitial" {
 						if dirValue.Value.(*ast.BooleanValue).Value {
@@ -294,44 +306,29 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					}
 				}
 
-				whereData, err := graphql.ExtractWhereClause(v.Arguments, utils.M{})
-				if err != nil {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: err.Error()}})
-					closeConnAliveRoutine <- true
-					return
-				}
-				data.Where = whereData
-				data.Token = token
-				dbType, err := graphql.GetDBType(v)
-				if err != nil {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: err.Error()}})
-					closeConnAliveRoutine <- true
-					return
-				}
-				data.DBType = dbType
-				data.Project = project
-				data.Group = v.Name.Value
-				data.Type = m.Type
-				data.ID = m.ID
 				graphqlIDMapper.Store(m.ID, data.Group)
 
 				// Subscribe to realtime feed
 				feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
-					channel <- (&graphqlMessage{ID: feed.QueryID, Payload: payloadObject{Status: utils.GQL_DATA, Data: graphqlSucessData{Type: feed.Type, Doc: feed.Payload, DocID: feed.DocID}}})
+					feed.TypeName = feed.Group
+					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: feed, "__typename": feed.Group}}}
 				})
 
 				if err != nil {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: err.Error()}})
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
-				channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_START, Data: feedData}})
+				for _, feed := range feedData {
+					feed.TypeName = feed.Group
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: feed, "__typename": feed.Group}}}
+				}
 
 			case utils.GQL_STOP:
 				group, ok := graphqlIDMapper.Load(m.ID)
 				if !ok {
-					channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_ERROR, Error: errors.New("Got " + utils.GQL_STOP + " wanted " + utils.GQL_START).Error()}})
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: errors.New("got " + utils.GQL_STOP + " wanted " + utils.GQL_START).Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
@@ -340,7 +337,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				data.Group = group.(string)
 
 				s.realtime.Unsubscribe(clientID, data)
-				channel <- (&graphqlMessage{ID: m.ID, Payload: payloadObject{Status: utils.GQL_STOP}})
+				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GQL_STOP, Payload: payloadObject{}})
 				graphqlIDMapper.Delete(m.ID)
 			}
 		}
