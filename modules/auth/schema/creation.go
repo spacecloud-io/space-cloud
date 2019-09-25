@@ -56,7 +56,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 			if err := checkErrors(realFieldStruct); err != nil {
 				return err
 			}
-			if realFieldStruct.IsList { // as directive is relation for array type don't generate queries
+			if realFieldStruct.IsList && (realFieldStruct.Directive == directiveRelation) { // as directive is relation for array type don't generate queries
 				continue
 			}
 			currentFieldStruct, ok := currentColValue[realFieldKey]

@@ -65,7 +65,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField)
 		switch t := fieldValue.(type) {
 		case []interface{}:
 			if SchemaDocValue.Directive == directiveRelation {
-				return errors.New("Schema update op array with relation directive not supported")
+				return errors.New("Schema update op array with relation directive not allowed")
 			}
 			for _, value := range t {
 				if _, err := s.checkType(value, SchemaDocValue); err != nil {

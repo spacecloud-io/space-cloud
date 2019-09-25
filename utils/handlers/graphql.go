@@ -151,8 +151,8 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 	}
 }
 
-// HandleCollection is an endpoint handler which return all the collection name for specified data base
-func HandleCollection(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
+// HandleGetCollections is an endpoint handler which return all the collection name for specified data base
+func HandleGetCollections(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
@@ -167,24 +167,29 @@ func HandleCollection(adminMan *admin.Manager, schema *schema.Schema) http.Handl
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
 		project := vars["project"]
 
-		collections, err := schema.GetCollectionName(project, dbType)
+		collections, err := schema.GetCollectionName(ctx, project, dbType)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK) //http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{"collections": collections})
 		return
 	}
 }
 
-// HandleSchemaCollection is an endpoint handler which return schema for all the collection in the config.crud
-func HandleSchemaCollection(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
+// HandleGetCollectionSchemas is an endpoint handler which return schema for all the collection in the config.crud
+func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]

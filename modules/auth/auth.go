@@ -34,22 +34,11 @@ func Init(crud *crud.Module, functions *functions.Module) *Module {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(config *config.Config) error {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions, pubsub *config.Pubsub) error {
 	m.Lock()
 	defer m.Unlock()
 
-	p := config.Projects[0]
-	project := p.ID
-	secret := p.Secret
-	rules := p.Modules.Crud
-	fileStore := p.Modules.FileStore
-	functions := p.Modules.Functions
-	pubsub := p.Modules.Pubsub
-	static := config.Static
-
 	sortFileRule(fileStore.Rules)
-	sortStatic(static.Routes)
-	sortStatic(static.InternalRoutes)
 	sortPubsubRule(pubsub.Rules)
 
 	m.project = project
@@ -69,10 +58,6 @@ func (m *Module) SetConfig(config *config.Config) error {
 
 	if pubsub != nil && pubsub.Enabled {
 		m.pubsubRules = pubsub.Rules
-	}
-
-	if err := m.Schema.ParseSchema(m.rules); err != nil {
-		return err
 	}
 
 	m.Schema.SetProject(project)

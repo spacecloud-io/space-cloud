@@ -49,6 +49,11 @@ func (s *Schema) SetConfig(conf config.Crud) error {
 			}
 		}
 	}
+
+	if err := s.ParseSchema(conf); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -84,7 +89,7 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 			if err != nil {
 				return nil, err
 			}
-			if len(value) <= 1 { // schema might have a id by default
+			if len(value) <= 1 { // schema might have an id by default
 				continue
 			}
 			collection[strings.ToLower(collectionName[0:1])+collectionName[1:]] = value
@@ -112,8 +117,8 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 
 				for _, x := range val.Arguments {
 
-					val, _ := (utils.ParseGraphqlValue(x.Value, nil))
 					if x.Name.Value == "field" {
+						val, _ := (utils.ParseGraphqlValue(x.Value, nil))
 						fieldTypeStuct.JointTable.TableField = val.(string)
 					}
 				}
@@ -263,6 +268,13 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 
 func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (interface{}, error) {
 
+	if fieldValue.Kind == typeJoin {
+		_, ok := value.(string)
+		if !ok {
+			return nil, errors.New("object with directive relation wrong referenced type")
+		}
+	}
+
 	switch v := value.(type) {
 	case int:
 		// TODO: int64
@@ -304,15 +316,6 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 			return nil, errors.New("Bool wrong type wanted " + fieldValue.Kind + " got Bool")
 		}
 	case map[string]interface{}:
-		if fieldValue.Directive == directiveRelation {
-			v := fieldValue.nestedObject[fieldValue.JointTable.TableField]
-			switch v.Kind {
-			case typeInteger, typeString, typeFloat, typeDateTime, typeID:
-				break
-			default:
-				return nil, errors.New("object with directive relation has wrong referenced type")
-			}
-		}
 		return s.schemaValidator(fieldValue.nestedObject, v)
 
 	case []interface{}:

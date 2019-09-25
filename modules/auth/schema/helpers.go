@@ -27,7 +27,7 @@ func getSQLType(typeName string) (string, error) {
 }
 
 func checkErrors(realFieldStruct *schemaFieldType) error {
-	if realFieldStruct.IsList && (realFieldStruct.Directive != directiveRelation) { // array with directive relation not allowed
+	if realFieldStruct.IsList && (realFieldStruct.Directive != directiveRelation) { // array without directive relation not allowed
 		return errors.New("Graphql : array type without relation directive not supported in sql creation")
 	}
 	if realFieldStruct.Kind == typeObject {

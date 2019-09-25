@@ -142,7 +142,7 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		p := config.Projects[0]
 
 		// Set the configuration for the auth module
-		s.auth.SetConfig(config)
+		s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions, p.Modules.Pubsub)
 
 		// Set the configuration for the user management module
 		s.user.SetConfig(p.Modules.Auth)

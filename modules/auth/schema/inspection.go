@@ -125,36 +125,37 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaField
 }
 
 // GetCollectionName returns all the collection name for specified database
-func (s *Schema) GetCollectionName(project, dbType string) ([]string,error) {
-	var collections []string
-	for dbName, crudValue := range s.config {
-		if dbName == dbType {
-			for colName, _ := range crudValue.Collections {
-				collections = append(collections, colName)
-			}
+func (s *Schema) GetCollectionName(ctx context.Context, project, dbType string) ([]string, error) {
+	switch utils.DBType(dbType) {
+	case utils.Mongo, utils.MySQL, utils.Postgres:
+		collections, err := s.crud.GetCollections(ctx, project, dbType)
+		if err != nil {
+			return nil, err
 		}
+		col := make([]string, len(collections))
+		for key, value := range collections {
+			col[key] = value.TableName
+		}
+		return col, nil
+	default:
+		return nil, errors.New("collections wrongs database")
 	}
-	if len(collections) == 0 {
-		return nil, errors.New("no collections found for the specified database")
-	}
-	return collections,nil
 }
 
-func (s *Schema) GetSchemaCollection(ctx context.Context, prject, dbType string) (config.Crud, error) {
+// GetSchemaCollection returns schemas of collection aka tables for specified project & database
+func (s *Schema) GetSchemaCollection(ctx context.Context, project, dbType string) (config.Crud, error) {
 	projectConfig := config.Crud{}
-	collections,err := s.GetCollectionName(prject, dbType)
+	collections, err := s.GetCollectionName(ctx, project, dbType)
 	if err != nil {
 		return nil, err
 	}
 	projectConfig[dbType] = &config.CrudStub{}
 	for _, colName := range collections {
-		tableRule := &config.TableRule{}
-		schema, err := s.SchemaInspection(ctx, dbType, prject, colName)
+		schema, err := s.SchemaInspection(ctx, dbType, project, colName)
 		if err != nil {
 			return nil, err
 		}
-		tableRule.Schema = schema
-		projectConfig[dbType].Collections[colName] = tableRule
+		projectConfig[dbType].Collections[colName] = &config.TableRule{Schema: schema}
 	}
 	return projectConfig, nil
 }
