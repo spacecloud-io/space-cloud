@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,6 +13,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth/schema"
+	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
 )
@@ -152,7 +155,7 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 }
 
 // HandleGetCollections is an endpoint handler which return all the collection name for specified data base
-func HandleGetCollections(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
+func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
@@ -175,16 +178,27 @@ func HandleGetCollections(adminMan *admin.Manager, schema *schema.Schema) http.H
 		dbType := vars["dbType"]
 		project := vars["project"]
 
-		collections, err := schema.GetCollectionName(ctx, project, dbType)
-		if err != nil {
+		switch utils.DBType(dbType) {
+		case utils.Mongo, utils.MySQL, utils.Postgres:
+			collections, err := crud.GetCollections(ctx, project, dbType)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
+			}
+			col := make([]string, len(collections))
+			for key, value := range collections {
+				col[key] = value.TableName
+			}
+			w.WriteHeader(http.StatusOK) //http status codee
+			json.NewEncoder(w).Encode(map[string]interface{}{"collections": col})
+			return
+
+		default:
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			json.NewEncoder(w).Encode(map[string]string{"error": errors.New("collections wrong database").Error()})
 			return
 		}
-
-		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"collections": collections})
-		return
 	}
 }
 
@@ -213,7 +227,7 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) 
 		dbType := vars["dbType"]
 		project := vars["project"]
 
-		schemas, err := schema.GetSchemaCollection(ctx, project, dbType)
+		schemas, err := schema.GetCollectionSchema(ctx, project, dbType)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

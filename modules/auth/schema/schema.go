@@ -30,13 +30,8 @@ func Init(crud *crud.Module) *Schema {
 	return &Schema{SchemaDoc: schemaType{}, crud: crud}
 }
 
-//SetProject sets project field of Schema object
-func (s *Schema) SetProject(project string) {
-	s.project = project
-}
-
 // SetConfig modifies the tables according to the schema on save
-func (s *Schema) SetConfig(conf config.Crud) error {
+func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	s.config = conf
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
@@ -49,6 +44,8 @@ func (s *Schema) SetConfig(conf config.Crud) error {
 			}
 		}
 	}
+
+	s.project = project
 
 	if err := s.ParseSchema(conf); err != nil {
 		return err

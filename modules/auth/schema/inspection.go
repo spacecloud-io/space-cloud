@@ -124,31 +124,20 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaField
 	return nil
 }
 
-// GetCollectionName returns all the collection name for specified database
-func (s *Schema) GetCollectionName(ctx context.Context, project, dbType string) ([]string, error) {
-	switch utils.DBType(dbType) {
-	case utils.Mongo, utils.MySQL, utils.Postgres:
-		collections, err := s.crud.GetCollections(ctx, project, dbType)
-		if err != nil {
-			return nil, err
-		}
-		col := make([]string, len(collections))
-		for key, value := range collections {
-			col[key] = value.TableName
-		}
-		return col, nil
-	default:
-		return nil, errors.New("collections wrongs database")
-	}
-}
+// GetCollectionSchema returns schemas of collection aka tables for specified project & database
+func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbType string) (config.Crud, error) {
 
-// GetSchemaCollection returns schemas of collection aka tables for specified project & database
-func (s *Schema) GetSchemaCollection(ctx context.Context, project, dbType string) (config.Crud, error) {
-	projectConfig := config.Crud{}
-	collections, err := s.GetCollectionName(ctx, project, dbType)
-	if err != nil {
-		return nil, err
+	collections := []string{}
+	for dbName, crudValue := range s.config {
+		if dbName == dbType {
+			for colName := range crudValue.Collections {
+				collections = append(collections, colName)
+			}
+			break
+		}
 	}
+
+	projectConfig := config.Crud{}
 	projectConfig[dbType] = &config.CrudStub{}
 	for _, colName := range collections {
 		schema, err := s.SchemaInspection(ctx, dbType, project, colName)
