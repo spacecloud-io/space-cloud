@@ -286,3 +286,8 @@ type ForeignKeysType struct {
 	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }
+
+// DatabaseCollections stores all callections of sql or postgres or mongo
+type DatabaseCollections struct {
+	TableName string `db:"TABLE_NAME"`
+}

@@ -141,3 +141,20 @@ func (m *Module) RawBatch(ctx context.Context, dbType string, batchedQueries []s
 
 	return crud.RawBatch(ctx, batchedQueries)
 }
+
+// GetCollections returns collection / tables name of specified database
+func (m *Module) GetCollections(ctx context.Context, project, dbType string) ([]utils.DatabaseCollections, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return nil, err
+	}
+
+	return crud.GetCollections(ctx, project)
+}

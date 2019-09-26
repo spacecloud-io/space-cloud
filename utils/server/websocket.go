@@ -226,7 +226,6 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 
 			m := graphqlMessage{}
 			if err := socket.ReadJSON(&m); err != nil {
-				//				log.Println("Graphql websocket handler error:", err)
 				return
 			}
 

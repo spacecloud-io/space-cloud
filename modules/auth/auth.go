@@ -38,8 +38,14 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	m.Lock()
 	defer m.Unlock()
 
+	sortFileRule(fileStore.Rules)
+	sortPubsubRule(pubsub.Rules)
+
 	m.project = project
 	m.rules = rules
+	if err := m.Schema.SetConfig(rules, project); err != nil {
+		return err
+	}
 	m.secret = secret
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
@@ -53,12 +59,6 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	if pubsub != nil && pubsub.Enabled {
 		m.pubsubRules = pubsub.Rules
 	}
-
-	if err := m.Schema.ParseSchema(m.rules); err != nil {
-		return err
-	}
-
-	m.Schema.SetProject(project)
 
 	return nil
 }

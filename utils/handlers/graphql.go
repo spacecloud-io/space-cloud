@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth/schema"
+	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
 )
@@ -124,7 +125,7 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 		}
 
 		// Create a context of execution
-		_, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Load the request from the body
@@ -136,10 +137,95 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 		json.NewDecoder(r.Body).Decode(&schemaDecode)
 		defer r.Body.Close()
 
-		// vars := mux.Vars(r)
-		// dbType := vars["dbType"]
-		// col := vars["col"]
-		// project := vars["project"]
+		vars := mux.Vars(r)
+		dbType := vars["dbType"]
+		col := vars["col"]
+		project := vars["project"]
 
+		if err := schema.SchemaCreation(ctx, dbType, col, project, schemaDecode.Schema); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK) //http status codee
+		return
+	}
+}
+
+// HandleGetCollections is an endpoint handler which return all the collection name for specified data base
+func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		tokens, ok := r.Header["Authorization"]
+		if !ok {
+			tokens = []string{""}
+		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		vars := mux.Vars(r)
+		dbType := vars["dbType"]
+		project := vars["project"]
+
+		collections, err := crud.GetCollections(ctx, project, dbType)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		col := make([]string, len(collections))
+		for i, value := range collections {
+			col[i] = value.TableName
+		}
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{"collections": col})
+	}
+}
+
+// HandleGetCollectionSchemas is an endpoint handler which return schema for all the collection in the config.crud
+func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		tokens, ok := r.Header["Authorization"]
+		if !ok {
+			tokens = []string{""}
+		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		vars := mux.Vars(r)
+		dbType := vars["dbType"]
+		project := vars["project"]
+
+		schemas, err := schema.GetCollectionSchema(ctx, project, dbType)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{"value": schemas})
+		return
 	}
 }
