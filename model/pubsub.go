@@ -24,3 +24,8 @@ type PubsubMsgResponse struct {
 	Error  string `json:"error"`
 	Msg    []byte `json:"msg"`
 }
+
+type PubsubPublishRequest struct {
+	Subject string      `json:"subject"`
+	Data    interface{} `json:"data"`
+}

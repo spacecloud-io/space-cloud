@@ -1,113 +1,94 @@
 package realtime
 
 import (
-	"errors"
-	"strconv"
 	"sync"
-	"time"
 
-	nats "github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/modules/eventing"
+	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/utils/admin"
+	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
 // Module is responsible for managing the realtime module
 type Module struct {
 	sync.RWMutex
-	feed            chan *nats.Msg
-	enabled         bool
-	project         string
-	groups          sync.Map
-	nc              *nats.Conn
-	pendingRequests sync.Map
-	crud            *crud.Module
+
+	// The static configuration required by the realtime module
+	nodeID string
+	groups sync.Map
+	ec     *nats.EncodedConn
+
+	// Dynamic configuration that can change over time
+	project string
+
+	// The external module realtime depends on
+	eventing  *eventing.Module
+	auth      *auth.Module
+	crud      *crud.Module
+	functions *functions.Module
+	adminMan  *admin.Manager
+	syncMan   *syncman.SyncManager
 }
 
 // Init creates a new instance of the realtime module
-func Init(crud *crud.Module) *Module {
-	m := &Module{enabled: false, crud: crud}
-	go m.removeStaleRequests()
-	return m
+func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *crud.Module,
+	functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.SyncManager) (*Module, error) {
+
+	m := &Module{nodeID: nodeID, adminMan: adminMan, syncMan: syncMan,
+		eventing: eventing, auth: auth, crud: crud, functions: functions}
+
+	// Register the realtime service handler
+	if err := m.registerEventHandlerService(); err != nil {
+		return nil, err
+	}
+
+	// Create a nats connection
+	nc, err := nats.Connect(nats.DefaultURL)
+	if err != nil {
+		return nil, err
+	}
+
+	ec, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
+	if err != nil {
+		return nil, err
+	}
+	m.ec = ec
+
+	if _, err := ec.Subscribe(pubSubTopic, m.handleRealtimeRequests); err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 // SendFeed is the function called whenever a data point (feed) is to be sent
 type SendFeed func(*model.FeedData)
 
 const (
-	typeIntent string = "intent"
-	typeAck    string = "ack"
+	serviceName string = "realtime-handler"
+	funcName    string = "handle"
+	pubSubTopic string = "realtime-message"
 )
 
-// Message is the message sent over nats
-type Message struct {
-	ID   string          `json:"id"`
-	Type string          `json:"type"`
-	Ack  bool            `json:"ack"`
-	Data *model.FeedData `json:"feed"`
-}
-
-type pendingRequest struct {
-	data *model.FeedData
-	time time.Time
+type handlerAck struct {
+	Ack bool
 }
 
 // SetConfig set the rules and secret key required by the crud block
-func (m *Module) SetConfig(project string, conf *config.Realtime) error {
+func (m *Module) SetConfig(project string, crudConfig config.Crud) {
 	m.Lock()
 	defer m.Unlock()
 
+	// Store the project id
 	m.project = project
 
-	if conf == nil || !conf.Enabled {
-		m.enabled = false
-		return nil
-	}
-
-	// Connect and create a new nats client
-	if conf.Broker != utils.Nats {
-		return errors.New("Realtime Error: Broker is not supported")
-	}
-
-	if m.nc == nil {
-		nc, err := nats.Connect(conf.Conn)
-		if err != nil {
-			return err
-		}
-
-		// Create new channel and start worker routines
-		m.feed = make(chan *nats.Msg, utils.RealtimeWorkerCount)
-		m.initWorkers(utils.RealtimeWorkerCount)
-		m.nc = nc
-	}
-
-	m.enabled = true
-	return nil
-}
-
-func getSubjectName(project, col string) string {
-	return "realtime:" + project + ":" + col
-}
-
-func acceptableIDType(id interface{}) (string, bool) {
-	switch v := id.(type) {
-	case string:
-		return v, true
-	case int:
-		return strconv.Itoa(v), true
-	case int32:
-		return strconv.FormatInt(int64(v), 10), true
-	case int64:
-		return strconv.FormatInt(v, 10), true
-	case float64:
-		// json.Unmarshal converts all numbers to float64
-		if float64(int64(v)) == v { // v is actually an int
-			return strconv.FormatInt(int64(v), 10), true
-		}
-		return "", false
-	default:
-		return "", false
-	}
+	// add the rules to the eventing module
+	m.eventing.AddInternalRules(generateEventRules(crudConfig))
+	return
 }

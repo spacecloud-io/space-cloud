@@ -14,17 +14,14 @@
 	</strong>
 </p>
 <p align="center">
-    <a href="https://travis-ci.com/spaceuptech/space-cloud"><img
-		alt="Build Status"
-		src="https://travis-ci.com/spaceuptech/space-cloud.svg?branch=master"></a>
-	<a href="https://goreportcard.com/report/github.com/spaceuptech/space-cloud">
-		<img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/spaceuptech/space-cloud">
-	</a>
+    <a href="https://discord.gg/ypXEEBr"><img src="https://img.shields.io/badge/chat-discord-brightgreen.svg?logo=discord&%20style=flat"></a>
     <br/>
+		<a href="https://goreportcard.com/report/github.com/spaceuptech/space-cloud">
+		<img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/spaceuptech/space-cloud">
+	  </a>
     <a href="https://opensource.org/licenses/Apache-2.0"><img
 		alt="Apache License"
 		src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"></a>
-    <a href="https://discord.gg/ypXEEBr"><img src="https://img.shields.io/badge/chat-discord-brightgreen.svg?logo=discord&%20style=flat"></a>
     <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/                 Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
 </p>
 
@@ -132,55 +129,36 @@ We are working hard to document every aspect of Space Cloud to give you the best
 
 ## Quick start
 
-Let's see how to build a realtime todo app using Space Cloud and MongoDB
+### Using Docker Compose
+Docker compose is the easiest way to get started with Space Cloud. Let's see how to quickly get started with MongoDB and Space Cloud using Docker Compose.
 
-### Prerequisites
+> **Note:** MongoDB is not a dependency of Space Cloud. Space Cloud can run with any of it's supported databases.
 
-- [MongoDB database](https://docs.mongodb.com/manual/installation/)
+**Prerequisites:**
 
-> **Note:** MongoDB is not a dependency of Space Cloud. The sample app in this quick start uses MongoDB as it's database.
+- [Docker](https://docs.docker.com/install/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-### Step 1: Download Space Cloud
+1. Get the docker-compose file.
+```bash
+wget https://raw.githubusercontent.com/spaceuptech/space-cloud/master/install-manifests/quick-start/docker-compose/mongo/docker-compose.yaml
+```
 
-The first step is to download the `space-cloud` binary. This binary is the server connecting to your database and creating the endpoints for it. You need to download a binary for your operating system or you could build it directly from its source code. You will need go version 1.11.2 or later to build it from the source.
+2. Run Space Cloud & MongoDB.
+```bash
+docker-compose up -d
+```
 
-Download the binary for your OS from here:
+3. Head over to http://localhost:4122/mission-control to open Mission Control and configure Space Cloud.
 
-- [Mac](https://spaceuptech.com/downloads/darwin/space-cloud.zip)
-- [Linux](https://spaceuptech.com/downloads/linux/space-cloud.zip)
-- [Windows](https://spaceuptech.com/downloads/windows/space-cloud.zip)
+4. Create a project.
 
-You can unzip the compressed archive
+5. Head over to the Database section in Mission Control and copy paste `mongodb://mongo:27017` in the connection string.
 
-**For Linux / Mac:** `unzip space-cloud.zip`
+6. Head over to the `Explorer` section and follow this [guide](https://spaceuptech.com/docs/quick-start/docker-compose) to insert and read data with Space APIs.
 
-**For Windows:** Right click on the archive and select `extract here`.
-
-Make the `space-cloud` binary executable and add it to your path.
-
-**For Linux / Mac:** `chmod +x space-cloud`
-
-### Step 2: Download the config file
-
-Space Cloud needs a config file in order to function properly. It relies on the config file to load information like the database connection string, security rules, etc.
-
-You can find a sample config for the todo app [here](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/config.yaml). Feel free to explore the file.
-
-### Step 3: Start Space Cloud
-
-You can start `space-cloud` with the following command. Make sure MongoDB is running before this step.
-
-**For Linux / Mac:** `./space-cloud run --config config.yaml`
-
-**For Windows:** `space-cloud.exe run --config config.yaml`
-
-That's it. Your backend is up and running!
-
-### Step 4: Download the TODO App
-
-Our backend is up and running. Time to show off its awesome powers. We have built a [realtime todo app](https://raw.githubusercontent.com/spaceuptech/space-cloud/master/examples/realtime-todo-app/index.html) using HTML and javascript which uses the backend you have just set up.
-
-Open it in two different windows by double clicking the HTML file twice, login into both and then try adding some todos to see the magic.
+### Other guides
+To get started with Space Cloud without Docker compose, check out the [manual](https://spaceuptech.com/docs/quick-start/manual) guide. For production settings, checkout the [deployments](https://spaceuptech.com/docs/deployment/overview) guide.
 
 ## Support & Troubleshooting
 

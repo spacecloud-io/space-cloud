@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.12.0"
+const BuildVersion = "0.11.0"
 
 const (
 	// One operation returns a single document from the database
@@ -182,6 +182,12 @@ const (
 	// RaftCommandAddInternalRouteOperation is used to add internal routes
 	RaftCommandAddInternalRouteOperation RaftCommandType = "add-internal-route"
 
+	// RaftCommandAddInternalEventOperation is used to add internal routes
+	RaftCommandAddInternalEventOperation RaftCommandType = "add-internal-event"
+
+	// RaftCommandRemoveInternalEventOperation is used to add internal routes
+	RaftCommandRemoveInternalEventOperation RaftCommandType = "remove-internal-event"
+
 	// RaftCommandDelete is used to delete a projects config
 	RaftCommandDelete RaftCommandType = "delete"
 )
@@ -291,3 +297,34 @@ type ForeignKeysType struct {
 type DatabaseCollections struct {
 	TableName string `db:"TABLE_NAME"`
 }
+
+// MaxEventTokens describes the maximum number of event workers
+const MaxEventTokens int = 100
+
+const (
+	// EventCreate is fired for create request
+	EventCreate string = "create-crud"
+
+	// EventUpdate is fired for update request
+	EventUpdate string = "update-crud"
+
+	// EventDelete is fired for delete request
+	EventDelete string = "delete-crud"
+)
+
+const (
+	// EventStatusIntent signifies that the event hasn't been staged yet
+	EventStatusIntent string = "intent"
+
+	// EventStatusStaged signifies that the event can be processed
+	EventStatusStaged string = "staged"
+
+	// EventStatusProcessed signifies that the event has been successfully been processed and can be deleted
+	EventStatusProcessed string = "processed"
+
+	// EventStatusCancelled signifies that the event has failed and should not be processed
+	EventStatusFailed string = "failed"
+
+	// EventStatusCancelled signifies that the event has been cancelled and should not be processed
+	EventStatusCancelled string = "cancel"
+)

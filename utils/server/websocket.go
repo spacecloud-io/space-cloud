@@ -58,7 +58,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				mapstructure.Decode(req.Data, data)
 
 				// Subscribe to realtime feed
-				feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
+				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					c.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
 				if err != nil {

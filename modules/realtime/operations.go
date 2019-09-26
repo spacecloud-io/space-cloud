@@ -5,33 +5,31 @@ import (
 	"time"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/modules/auth"
-	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // Subscribe performs the realtime subscribe operation.
-func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Module, crud *crud.Module, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
+func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
 
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 
-	// Check if the user is authenthorised to make the request
-	_, err := auth.IsReadOpAuthorised(data.Project, data.DBType, data.Group, data.Token, readReq)
+	// Check if the user is authorised to make the request
+	_, err := m.auth.IsReadOpAuthorised(data.Project, data.DBType, data.Group, data.Token, readReq)
 	if err != nil {
 		return nil, err
 	}
 
 	if data.Options.SkipInitial {
-		m.AddLiveQuery(data.ID, data.Project, data.Group, clientID, data.Where, sendFeed)
+		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, sendFeed)
 		return []*model.FeedData{}, nil
 	}
 
-	result, err := crud.Read(ctx, data.DBType, data.Project, data.Group, readReq)
+	result, err := m.crud.Read(ctx, data.DBType, data.Project, data.Group, readReq)
 	if err != nil {
 		return nil, err
 	}
 
-	feedData := []*model.FeedData{}
+	feedData := make([]*model.FeedData, 0)
 	array, ok := result.([]interface{})
 	if ok {
 		timeStamp := time.Now().Unix()
@@ -41,7 +39,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 			if data.DBType == string(utils.Mongo) {
 				idVar = "_id"
 			}
-			if docID, ok := acceptableIDType(payload[idVar]); ok {
+			if docID, ok := utils.AcceptableIDType(payload[idVar]); ok {
 				feedData = append(feedData, &model.FeedData{
 					Group:     data.Group,
 					Type:      utils.RealtimeInitial,
@@ -56,11 +54,11 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, auth *auth.Modu
 	}
 
 	// Add the live query
-	m.AddLiveQuery(data.ID, data.Project, data.Group, clientID, data.Where, sendFeed)
+	m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, sendFeed)
 	return feedData, nil
 }
 
 // Unsubscribe performs the realtime unsubscribe operation.
 func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) {
-	m.RemoveLiveQuery(data.Group, clientID, data.ID)
+	m.RemoveLiveQuery(data.DBType, data.Group, clientID, data.ID)
 }

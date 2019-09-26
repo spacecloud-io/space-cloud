@@ -14,8 +14,10 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/eventing"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/pubsub"
@@ -44,6 +46,7 @@ type Server struct {
 	adminMan       *admin.Manager
 	nats           *nats.Server
 	pubsub         *pubsub.Module
+	eventing       *eventing.Module
 	configFilePath string
 	syncMan        *syncman.SyncManager
 	ssl            *config.SSL
@@ -51,26 +54,47 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID string) *Server {
+func New(nodeID string) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
+
+	// Create the fundamental modules
 	c := crud.Init()
-	rt := realtime.Init(c)
-	s := static.Init()
-	fn := functions.Init()
+	adminMan := admin.New()
+	syncMan := syncman.New(adminMan)
+	fn, err := functions.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialise the eventing module and set the crud module hooks
+	eventing := eventing.New(c, fn, syncMan)
+	c.SetHooks(&model.CrudHooks{
+		Create: eventing.HandleCreateIntent,
+		Update: eventing.HandleUpdateIntent,
+		Delete: eventing.HandleDeleteIntent,
+		Batch:  eventing.HandleBatchIntent,
+		Stage:  eventing.HandleStage,
+	})
+
 	a := auth.Init(c, fn)
+	rt, err := realtime.Init(nodeID, eventing, a, c, fn, adminMan, syncMan)
+	if err != nil {
+		return nil, err
+	}
+
+	s := static.Init()
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
 	p := pubsub.Init(a)
-	adminMan := admin.New()
-	syncMan := syncman.New(adminMan)
 	graphqlMan := graphql.New(a, c, fn)
 
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
-		user: u, file: f, static: s, pubsub: p, syncMan: syncMan, adminMan: adminMan, graphql: graphqlMan,
-		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath}
+		user: u, file: f, static: s, pubsub: p, syncMan: syncMan, adminMan: adminMan,
+		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
+		eventing: eventing, graphql: graphqlMan}, nil
 }
 
 // Start begins the server operations
@@ -147,14 +171,12 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		// Set the configuration for the user management module
 		s.user.SetConfig(p.Modules.Auth)
 
+		// Set the configuration for the crud module
+		s.crud.SetConfig(p.Modules.Crud)
+
 		// Set the configuration for the file storage module
 		if err := s.file.SetConfig(p.Modules.FileStore); err != nil {
 			log.Println("Error in files module config: ", err)
-		}
-
-		// Set the configuration for the functions module
-		if err := s.functions.SetConfig(p.Modules.Functions); err != nil {
-			log.Println("Error in functions module config: ", err)
 		}
 
 		// Set the configuration for the pubsub module
@@ -162,18 +184,17 @@ func (s *Server) LoadConfig(config *config.Config) error {
 			log.Println("Error in pubsub module config: ", err)
 		}
 
-		// Set the configuration for the realtime module
-		if err := s.realtime.SetConfig(p.ID, p.Modules.Realtime); err != nil {
-			log.Println("Error in realtime module config", err)
+		if err := s.eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
+			log.Println("Error in eventing module config: ", err)
 		}
+
+		// Set the configuration for the realtime module
+		s.realtime.SetConfig(p.ID, p.Modules.Crud)
 
 		// Set the configuration for static module
 		if err := s.static.SetConfig(config.Static); err != nil {
 			log.Println("Error in static module config", err)
 		}
-
-		// Set the configuration for the crud module
-		s.crud.SetConfig(p.Modules.Crud)
 
 		// Set the configuration for the graphql module
 		s.graphql.SetConfig(p.ID)

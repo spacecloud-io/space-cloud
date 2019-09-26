@@ -11,6 +11,13 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/crud"
 
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/utils"
+)
+
+var (
+	// ErrInvalidSigningMethod denotes a jwt signing method type not used by Space Cloud.
+	ErrInvalidSigningMethod = errors.New("invalid signing method type")
+	ErrTokenVerification    = errors.New("AUTH: JWT token could not be verified")
 )
 
 // Module is responsible for authentication and authorisation
@@ -52,7 +59,7 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 		m.fileStoreType = fileStore.StoreType
 	}
 
-	if functions != nil && functions.Enabled {
+	if functions != nil {
 		m.funcRules = functions.Services
 	}
 
@@ -68,6 +75,11 @@ func (m *Module) SetSecret(secret string) {
 	m.Lock()
 	defer m.Unlock()
 	m.secret = secret
+}
+
+// GetInternalAccessToken returns the token that can be used internally by Space Cloud
+func (m *Module) GetInternalAccessToken() (string, error) {
+	return m.CreateToken(map[string]interface{}{"id": utils.InternalUserID})
 }
 
 // CreateToken generates a new JWT Token with the token claims
@@ -94,7 +106,7 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, errors.New("invalid signing method type")
+			return nil, ErrInvalidSigningMethod
 		}
 
 		return []byte(m.secret), nil
@@ -113,5 +125,5 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 		return obj, nil
 	}
 
-	return nil, errors.New("AUTH: JWT token could not be verified")
+	return nil, ErrTokenVerification
 }

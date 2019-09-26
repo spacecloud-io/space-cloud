@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"time"
@@ -55,6 +56,22 @@ func (m *Module) Call(service, function string, auth map[string]interface{}, par
 	m.RLock()
 	defer m.RUnlock()
 
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(timeout)*time.Second)
+	defer cancel()
+
+	return m.handleCall(ctx, service, function, auth, params)
+}
+
+// CallWithContext invokes function on a service. The response from the function is returned back along with
+// any errors if they occurred.
+func (m *Module) CallWithContext(ctx context.Context, service, function string, auth map[string]interface{}, params interface{}) (interface{}, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	return m.handleCall(ctx, service, function, auth, params)
+}
+
+func (m *Module) handleCall(ctx context.Context, service, function string, auth map[string]interface{}, params interface{}) (interface{}, error) {
 	req := &model.FunctionsPayload{Service: service, Func: function, Auth: auth, Params: params}
 
 	// Marshal the object into json
@@ -65,7 +82,7 @@ func (m *Module) Call(service, function string, auth map[string]interface{}, par
 
 	// Send request over nats
 	subject := getSubjectName(service)
-	msg, err := m.nc.Request(subject, data, time.Duration(timeout)*time.Second)
+	msg, err := m.nc.RequestWithContext(ctx, subject, data)
 	if err != nil {
 		return nil, err
 	}
