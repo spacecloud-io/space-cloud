@@ -31,6 +31,9 @@ type Crud interface {
 	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) error
+	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
+	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
+	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
@@ -68,7 +71,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 }
 
 // SetConfig set the rules adn secret key required by the crud block
-func (m *Module) SetConfig(crud config.Crud) {
+func (m *Module) SetConfig(crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -89,4 +92,5 @@ func (m *Module) SetConfig(crud config.Crud) {
 			log.Println("Successfully connected to " + k)
 		}
 	}
+	return nil
 }

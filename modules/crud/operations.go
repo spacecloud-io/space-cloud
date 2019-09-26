@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // Create inserts a document (or multiple when op is "all") into the database based on dbType
 func (m *Module) Create(ctx context.Context, dbType, project, col string, req *model.CreateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
-
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
 		return err
@@ -150,4 +150,55 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 	// Invoke the stage hook
 	m.hooks.Stage(ctx, intent, err)
 	return err
+}
+
+// DescribeTable performs a db operation for describing a table
+func (m *Module) DescribeTable(ctx context.Context, dbType, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return nil, nil, err
+	}
+
+	return crud.DescribeTable(ctx, project, dbType, col)
+}
+
+// RawBatch performs a db operaion for schema creation
+func (m *Module) RawBatch(ctx context.Context, dbType string, batchedQueries []string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	return crud.RawBatch(ctx, batchedQueries)
+}
+
+// GetCollections returns collection / tables name of specified database
+func (m *Module) GetCollections(ctx context.Context, project, dbType string) ([]utils.DatabaseCollections, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return nil, err
+	}
+
+	return crud.GetCollections(ctx, project)
 }

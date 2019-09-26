@@ -27,6 +27,7 @@ import (
 	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
+	"github.com/spaceuptech/space-cloud/utils/graphql"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -49,6 +50,7 @@ type Server struct {
 	configFilePath string
 	syncMan        *syncman.SyncManager
 	ssl            *config.SSL
+	graphql        *graphql.Module
 }
 
 // New creates a new server instance
@@ -85,13 +87,14 @@ func New(nodeID string) (*Server, error) {
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
 	p := pubsub.Init(a)
+	graphqlMan := graphql.New(a, c, fn)
 
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
 		user: u, file: f, static: s, pubsub: p, syncMan: syncMan, adminMan: adminMan,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
-		eventing: eventing}, nil
+		eventing: eventing, graphql: graphqlMan}, nil
 }
 
 // Start begins the server operations
@@ -192,6 +195,9 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		if err := s.static.SetConfig(config.Static); err != nil {
 			log.Println("Error in static module config", err)
 		}
+
+		// Set the configuration for the graphql module
+		s.graphql.SetConfig(p.ID)
 	}
 
 	return nil

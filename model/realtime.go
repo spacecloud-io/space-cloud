@@ -9,6 +9,7 @@ type FeedData struct {
 	TimeStamp int64       `json:"time"`
 	Group     string      `json:"group"`
 	DBType    string      `json:"dbType"`
+	TypeName  string      `json:"__typename,omitempty"`
 }
 
 // RealtimeRequest is the object sent for realtime requests
