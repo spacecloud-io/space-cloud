@@ -7,6 +7,6 @@ import (
 
 // RawBatch performs a batch operation for schema creation
 // NOTE: not to be exposed externally
-func (s *Mongo) RawBatch(ctx context.Context, queries []string) error {
-	return errors.New("Schema creation operation cannot be performed over mongo")
+func (m *Mongo) RawBatch(ctx context.Context, queries []string) error {
+	return errors.New("schema creation operation cannot be performed over mongo")
 }

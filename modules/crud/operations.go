@@ -156,5 +156,5 @@ func (m *Module) GetCollections(ctx context.Context, project, dbType string) ([]
 		return nil, err
 	}
 
-	return crud.GetCollections(ctx, project, dbType)
+	return crud.GetCollections(ctx, project)
 }

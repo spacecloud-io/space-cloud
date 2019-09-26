@@ -37,18 +37,18 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
 	defer cancel()
 
-	for dbName, crudStubValue := range conf {
-		for colName, tablRuleValue := range crudStubValue.Collections {
-			if err := s.SchemaCreation(ctx, dbName, colName, s.project, tablRuleValue.Schema); err != nil {
-				return err
-			}
-		}
-	}
-
 	s.project = project
 
 	if err := s.ParseSchema(conf); err != nil {
 		return err
+	}
+
+	for dbName, crudStubValue := range conf {
+		for colName, tableRule := range crudStubValue.Collections {
+			if err := s.SchemaCreation(ctx, dbName, colName, s.project, tableRule.Schema); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -227,7 +227,7 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRequest) error {
 
 	if s.SchemaDoc == nil {
-		return errors.New("Schema not initialized")
+		return errors.New("schema not initialized")
 	}
 
 	v := make([]interface{}, 0)
@@ -312,13 +312,19 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		default:
 			return nil, errors.New("Bool wrong type wanted " + fieldValue.Kind + " got Bool")
 		}
+
 	case map[string]interface{}:
+		if fieldValue.Directive == directiveRelation {
+			return nil, errors.New("object with relation not allowed")
+		}
+
 		return s.schemaValidator(fieldValue.nestedObject, v)
 
 	case []interface{}:
 		if fieldValue.Directive == directiveRelation {
-			return nil, errors.New("array with relation directive not supported")
+			return nil, errors.New("array with relations not allowed")
 		}
+
 		arr := make([]interface{}, len(v))
 		for index, value := range v {
 			val, err := s.checkType(value, fieldValue)

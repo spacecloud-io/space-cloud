@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-// ValidateUpdateOperation valides the types of schema during a update request
+// ValidateUpdateOperation validates the types of schema during a update request
 func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[string]interface{}) error {
 	if len(updateDoc) == 0 {
 		return nil
 	}
 	schemaDb, ok := s.SchemaDoc[dbType]
 	if !ok {
-		return errors.New(dbType + " Db Not present in Schema")
+		return errors.New(dbType + " not present in Schema")
 	}
 	SchemaDoc, ok := schemaDb[col]
 	if !ok {
@@ -52,7 +52,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField)
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return errors.New("Schema array op wrong type passed expecting map[string]interface{}")
+		return errors.New("schema array op wrong type passed expecting map[string]interface{}")
 	}
 
 	for fieldKey, fieldValue := range v {
@@ -65,7 +65,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField)
 		switch t := fieldValue.(type) {
 		case []interface{}:
 			if SchemaDocValue.Directive == directiveRelation {
-				return errors.New("Schema update op array with relation directive not allowed")
+				return errors.New("schema update op array with relation directive not allowed")
 			}
 			for _, value := range t {
 				if _, err := s.checkType(value, SchemaDocValue); err != nil {
@@ -89,7 +89,7 @@ func validateMathOperations(doc interface{}, SchemaDoc schemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return errors.New("Schema math op wrong type passed expecting map[string]interface{}")
+		return errors.New("schema math op wrong type passed expecting map[string]interface{}")
 	}
 
 	for fieldKey, fieldValue := range v {
@@ -111,7 +111,7 @@ func validateMathOperations(doc interface{}, SchemaDoc schemaField) error {
 			}
 			return nil
 		default:
-			return errors.New("Schema update math op. wrong type ")
+			return errors.New("schema update math op. wrong type ")
 		}
 	}
 
@@ -122,7 +122,7 @@ func validateDateOperations(doc interface{}, SchemaDoc schemaField) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return errors.New("Schema math op : wrong type passed expecting map[string]interface{}")
+		return errors.New("schema math op : wrong type passed expecting map[string]interface{}")
 	}
 
 	for fieldKey := range v {
@@ -143,7 +143,7 @@ func validateDateOperations(doc interface{}, SchemaDoc schemaField) error {
 func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc schemaField) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Schema update set op wrong type passed expecting map[string]interface{}")
+		return nil, errors.New("schema update set op wrong type passed expecting map[string]interface{}")
 	}
 
 	newMap := map[string]interface{}{}
@@ -151,7 +151,7 @@ func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc schemaField) (i
 		// check if key present in SchemaDoc
 		SchemaDocValue, ok := SchemaDoc[key]
 		if !ok {
-			return nil, errors.New("Schema set op field not found")
+			return nil, errors.New("schema set op field not found")
 		}
 		// check type
 		newDoc, err := s.checkType(value, SchemaDocValue)

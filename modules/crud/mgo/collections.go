@@ -1,4 +1,4 @@
-package sql
+package mgo
 
 import (
 	"context"
@@ -7,27 +7,17 @@ import (
 )
 
 // GetCollections returns collection / tables name of specified database
-func (s *Mongo) GetCollections(ctx context.Context, project, dbType string) ([]utils.DatabaseCollections, error) {
-	// queryString := `SELECT table_name FROM information_schema.tables WHERE table_schema = $1`
+func (m *Mongo) GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error) {
 
-	// rows, err := s.client.Queryx(queryString, []interface{}{project}...)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer rows.Close()
+	collections, err := m.client.Database(project).ListCollectionNames(ctx, map[string]interface{}{})
+	if err != nil {
+		return nil, err
+	}
 
-	// result := []utils.DatabaseCollections{}
-	// count := 0
-	// for rows.Next() {
-	// 	count++
-	// 	fieldType := new(utils.DatabaseCollections)
+	dbCols := make([]utils.DatabaseCollections, len(collections))
+	for i, col := range collections {
+		dbCols[i] = utils.DatabaseCollections{TableName: col}
+	}
 
-	// 	if err := rows.StructScan(fieldType); err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	result = append(result, *fieldType)
-	// }
-
-	return nil, nil
+	return dbCols, nil
 }

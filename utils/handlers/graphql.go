@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -14,7 +13,6 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
 )
@@ -178,27 +176,19 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module) http.Handl
 		dbType := vars["dbType"]
 		project := vars["project"]
 
-		switch utils.DBType(dbType) {
-		case utils.Mongo, utils.MySQL, utils.Postgres:
-			collections, err := crud.GetCollections(ctx, project, dbType)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
-			col := make([]string, len(collections))
-			for key, value := range collections {
-				col[key] = value.TableName
-			}
-			w.WriteHeader(http.StatusOK) //http status codee
-			json.NewEncoder(w).Encode(map[string]interface{}{"collections": col})
-			return
-
-		default:
+		collections, err := crud.GetCollections(ctx, project, dbType)
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": errors.New("collections wrong database").Error()})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		col := make([]string, len(collections))
+		for i, value := range collections {
+			col[i] = value.TableName
+		}
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{"collections": col})
 	}
 }
 
