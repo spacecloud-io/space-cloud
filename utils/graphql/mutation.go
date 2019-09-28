@@ -131,7 +131,48 @@ func (graph *Module) handleMutation(node ast.Node, token string, store utils.M, 
 	for fieldName, dbType := range fieldDBMapping {
 		results[fieldName] = queryResults[dbType]
 	}
+	// field, ok := op.SelectionSet.Selections[0].(*ast.Field)
+	// if !ok {
 
-	cb(results, nil)
+	// }
+
+	filteredResults := map[string]interface{}{}
+	for _, selectionResult := range op.SelectionSet.Selections {
+		v, ok := selectionResult.(*ast.Field)
+		if !ok {
+
+		}
+		filteredResults[getFieldName(v)] = filterResults(v, results)
+	}
+
+	cb(filteredResults, nil)
 	return
+}
+
+func filterResults(field *ast.Field, results map[string]interface{}) map[string]interface{} {
+
+	filteredResults := map[string]interface{}{}
+	for _, resultValue := range results {
+
+		v, ok := resultValue.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		for _, returnField := range field.SelectionSet.Selections {
+			returnFieldName := returnField.(*ast.Field).Name.Value
+			value, ok := v[returnFieldName]
+			if ok {
+				filteredResults[returnFieldName] = value
+			}
+		}
+
+		value, ok := v["__typename"]
+		if ok {
+			filteredResults["__typename"] = value
+		}
+
+	}
+
+	return filteredResults
 }

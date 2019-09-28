@@ -165,14 +165,17 @@ func (s *Server) LoadConfig(config *config.Config) error {
 
 		p := config.Projects[0]
 
+		// Always set the config of the crud module first
+		// Set the configuration for the crud module
+		s.crud.SetConfig(p.Modules.Crud)
+
 		// Set the configuration for the auth module
-		s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions, p.Modules.Pubsub)
+		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions, p.Modules.Pubsub); err != nil {
+			log.Println("Error in auth module config: ", err)
+		}
 
 		// Set the configuration for the user management module
 		s.user.SetConfig(p.Modules.Auth)
-
-		// Set the configuration for the crud module
-		s.crud.SetConfig(p.Modules.Crud)
 
 		// Set the configuration for the file storage module
 		if err := s.file.SetConfig(p.Modules.FileStore); err != nil {

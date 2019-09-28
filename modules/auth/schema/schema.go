@@ -34,7 +34,7 @@ func Init(crud *crud.Module) *Schema {
 func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	s.config = conf
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	s.project = project
@@ -86,6 +86,7 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			if len(value) <= 1 { // schema might have an id by default
 				continue
 			}
@@ -101,7 +102,7 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
 
-		if colName != strings.Title(collectionName) {
+		if colName != collectionName {
 			continue
 		}
 		for _, ve := range v.(*ast.ObjectDefinition).Fields {

@@ -44,7 +44,7 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("POST").Path("/v1/api/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.auth.Schema))
 
 	//Initialize route for graphql
-	router.Path("/v1/api/graphql/{project}").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
+	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
 
 	// Initialize the route for websocket
 	router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
