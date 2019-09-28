@@ -147,7 +147,8 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) //http status code
+		json.NewEncoder(w).Encode(map[string]string{})
 		return
 	}
 }
