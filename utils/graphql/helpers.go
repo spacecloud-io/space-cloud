@@ -246,7 +246,7 @@ func addFieldPath(store utils.M, field string) {
 }
 
 func adjustObjectKey(key string) string {
-	if strings.HasPrefix(key, "_") {
+	if strings.HasPrefix(key, "_") && key != "_id" {
 		key = "$" + key[1:]
 	}
 

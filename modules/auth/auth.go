@@ -45,8 +45,13 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	m.Lock()
 	defer m.Unlock()
 
-	sortFileRule(fileStore.Rules)
-	sortPubsubRule(pubsub.Rules)
+	if fileStore != nil {
+		sortFileRule(fileStore.Rules)
+	}
+
+	if pubsub != nil {
+		sortPubsubRule(pubsub.Rules)
+	}
 
 	m.project = project
 	m.rules = rules
