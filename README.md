@@ -55,7 +55,6 @@ Supported databases:heart::
 - [Quick Start](#quick-start)
 - [Client-side tooling](#client-side-tooling)
 - [How it works](#how-it-works)
-- [Resources](#resources)
 - [Support & Troubleshooting](#support--troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -124,17 +123,6 @@ We understand that not every app can be built using only CRUD operations. Someti
 </div>
 
 Apart from these, Space Cloud also integrates with tons of cloud technologies to give you several other features like `realtime database` (changes in the database are synced with all concerned clients in realtime), `file storage`, etc.
-
-## Resources
-
-We are working hard to document every aspect of Space Cloud to give you the best onboarding experience. Here are links to the various docs we have:
-
-- [Space Cloud](https://spaceuptech.com/docs/)
-- Client APIs:
-  - [JavaScript client](https://github.com/spaceuptech/space-api-js)
-  - [Python client](https://github.com/spaceuptech/space-api-python)
-  - [Go client](https://github.com/spaceuptech/space-api-go)
-  - [Java client](https://github.com/spaceuptech/space-api-java) (In Progress)
 
 ## Support & Troubleshooting
 
