@@ -9,9 +9,9 @@ import (
 	goqu "github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
 
+	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
-	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -20,7 +20,7 @@ import (
 // generateReadQuery makes a query for read operation
 func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(col).Prepared(true)
+	query := dialect.From(project + "." + col).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object
@@ -30,7 +30,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 			return "", nil, err
 		}
 	}
-	
+
 	selArray := []interface{}{}
 
 	if req.Options != nil {
@@ -71,7 +71,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 			query = query.Order(orderBys...)
 		}
 	}
-	
+
 	switch req.Operation {
 	case utils.Count:
 		query = query.Select(goqu.COUNT("*"))
@@ -94,13 +94,14 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 	return sqlString, args, nil
 }
+
 // Read query document(s) from the database
 func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error) {
 	sqlString, args, err := s.generateReadQuery(ctx, project, col, req)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	stmt, err := s.client.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return nil, err

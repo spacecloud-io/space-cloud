@@ -12,7 +12,7 @@ import (
 )
 
 var query = `
-type Tweet {
+type tweet {
 	id: ID! @id
 	createdAt: DateTime! @createdAt
 	text: String
@@ -21,7 +21,7 @@ type Tweet {
 	age : Integer!	
   }
   
-  type User {
+  type user {
 	id: ID! @id
 	createdAt: DateTime! @createdAt
 	updatedAt: DateTime! @updatedAt
@@ -30,31 +30,29 @@ type Tweet {
 	tweets: [tweet!]!
   }
   
-  type Location {
+  type location {
 	id: ID! @id
 	latitude: Float!
 	longitude: Float!
 	person : sharad! @relation(field:name)
   }
 
-  type Sharad {
+  type sharad {
 	  name : String!
 	  sirName : String!
 	  age : Integer!
 	  isMale : Boolean!
 	  dob : DateTime!
   }
+  type event_logs {
+	id: ID! @id
+	name: String!
+  }
 `
 var ParseData = config.Crud{
 	"mongo": &config.CrudStub{
 		Collections: map[string]*config.TableRule{
-			"tweet": &config.TableRule{
-				Schema: query,
-			},
-			"user": &config.TableRule{
-				Schema: query,
-			},
-			"location": &config.TableRule{
+			"event_logs": &config.TableRule{
 				Schema: query,
 			},
 		},

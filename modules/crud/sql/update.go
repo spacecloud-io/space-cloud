@@ -1,16 +1,16 @@
 package sql
 
 import (
-	"fmt"
 	"context"
-	"strings"
+	"fmt"
 	"strconv"
+	"strings"
 
 	goqu "github.com/doug-martin/goqu/v8"
 
-	_ "github.com/go-sql-driver/mysql"                 // Import for MySQL
-	_ "github.com/lib/pq"                              // Import for postgres
-	_ "github.com/doug-martin/goqu/v8/dialect/postgres"  // Dialect for postgres
+	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
+	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
+	_ "github.com/lib/pq"                               // Import for postgres
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -59,7 +59,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 		if err != nil {
 			return err
 		}
-		
+
 		stmt, err := executor.PreparexContext(ctx, sqlString)
 		if err != nil {
 			return err
@@ -71,7 +71,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			return err
 		}
 		defer rows.Close()
-		
+
 		if !rows.Next() {
 			// not found. So, insert
 			doc := make(map[string]interface{})
@@ -104,9 +104,9 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			}
 			for k, v := range dates {
 				f := strings.Index(sqlQuery, ")")
-				sqlQuery = sqlQuery[:f]+", "+k+sqlQuery[f:]
+				sqlQuery = sqlQuery[:f] + ", " + k + sqlQuery[f:]
 				l := strings.LastIndex(sqlQuery, ")")
-				sqlQuery = sqlQuery[:l]+", "+v.(string)+sqlQuery[l:]
+				sqlQuery = sqlQuery[:l] + ", " + v.(string) + sqlQuery[l:]
 			}
 			_, err = doExecContext(ctx, sqlQuery, args, executor)
 			if err != nil {
@@ -126,7 +126,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest, op string) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(col)
+	query := dialect.From(project + "." + col)
 	if op == "$set" {
 		query = query.Prepared(true)
 	}
@@ -154,7 +154,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			return "", nil, err
 		}
 	}
-	
+
 	record, err := generateRecord(req.Update[op])
 	if err != nil {
 		return "", nil, err
@@ -224,7 +224,7 @@ func numToString(v interface{}) (string, error) {
 }
 
 func flattenForDate(m *map[string]interface{}) error {
-	for k,v := range *m {
+	for k, v := range *m {
 		mm, ok := v.(map[string]interface{})
 		if !ok {
 			return utils.ErrInvalidParams
