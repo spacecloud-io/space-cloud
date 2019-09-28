@@ -309,7 +309,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				graphqlIDMapper.Store(m.ID, data.Group)
 
 				// Subscribe to realtime feed
-				feedData, err := s.realtime.Subscribe(ctx, clientID, s.auth, s.crud, data, func(feed *model.FeedData) {
+				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					feed.TypeName = feed.Group
 					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: feed, "__typename": feed.Group}}}
 				})

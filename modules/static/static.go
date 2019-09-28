@@ -26,8 +26,10 @@ func (m *Module) SetConfig(s *config.Static) error {
 	m.Lock()
 	defer m.Unlock()
 
-	sortStatic(s.Routes)
-	sortStatic(s.InternalRoutes)
+	if s != nil {
+		sortStatic(s.Routes)
+		sortStatic(s.InternalRoutes)
+	}
 
 	m.Enabled = true
 
