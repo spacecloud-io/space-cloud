@@ -8,14 +8,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/mitchellh/mapstructure"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -310,8 +310,9 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 
 				// Subscribe to realtime feed
 				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
-					feed.TypeName = feed.Group
-					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: feed, "__typename": feed.Group}}}
+					feed.TypeName = "subscribe_" + feed.Group
+
+					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed)}}}
 				})
 
 				if err != nil {
@@ -321,8 +322,9 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				}
 
 				for _, feed := range feedData {
-					feed.TypeName = feed.Group
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: feed, "__typename": feed.Group}}}
+					feed.TypeName = "subscribe_" + feed.Group
+
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed)}}}
 				}
 
 			case utils.GQL_STOP:
@@ -342,4 +344,45 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 			}
 		}
 	}
+}
+
+func filterGraphqlSubscriptionResults(field *ast.Field, feed *model.FeedData) map[string]interface{} {
+
+	filteredResults := map[string]interface{}{}
+	feedMap := structs.Map(feed)
+
+	for _, returnField := range field.SelectionSet.Selections {
+		returnFieldName := returnField.(*ast.Field).Name.Value
+
+		if returnFieldName == "payload" {
+			result := map[string]interface{}{}
+			for _, value := range returnField.GetSelectionSet().Selections {
+				valueName := value.(*ast.Field).Name.Value
+				v, ok := feedMap[returnFieldName]
+				if !ok {
+					continue
+				}
+				val, ok := v.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				a, ok := val[valueName]
+				if ok {
+					result[valueName] = a
+				}
+			}
+
+			result["__typename"] = feed.Group
+			filteredResults[returnFieldName] = result
+			continue
+		}
+
+		value, ok := feedMap[returnFieldName]
+		if ok {
+			filteredResults[returnFieldName] = value
+		}
+
+	}
+
+	return filteredResults
 }
