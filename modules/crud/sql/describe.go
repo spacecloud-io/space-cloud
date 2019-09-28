@@ -74,7 +74,7 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 		result = append(result, *fieldType)
 	}
 	if count == 0 {
-		return result, errors.New(dbType + "Scheam creation zero rows affected")
+		return result, errors.New(dbType + ":" + col + " not found during inspection")
 	}
 	return result, nil
 }

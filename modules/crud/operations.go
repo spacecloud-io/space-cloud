@@ -202,3 +202,31 @@ func (m *Module) GetCollections(ctx context.Context, project, dbType string) ([]
 
 	return crud.GetCollections(ctx, project)
 }
+
+// GetCollections returns collection / tables name of specified database
+func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	var sql string
+	switch utils.DBType(dbType) {
+	case utils.MySQL:
+		sql = "create database if not exists " + project
+	case utils.Postgres:
+		sql = "create schema if not exists " + project
+
+	default:
+		return nil
+	}
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	return crud.RawExec(ctx, sql)
+}
