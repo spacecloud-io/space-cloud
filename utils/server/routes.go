@@ -33,13 +33,34 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan))
 
 	// Initialize routes for the deployment module
-	router.Methods("POST").Path("/v1/api/deploy").HandlerFunc(handlers.HandleUploadAndDeploy(s.adminMan, s.deploy, s.projects))
+	// router.Methods("POST").Path("/v1/api/deploy").HandlerFunc(handlers.HandleUploadAndDeploy(s.adminMan, s.deploy, s.projects))
+
+	// Initialize route for graphql schema inspection
+	router.Methods("POST").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.projects))
+
+	// Initialize route for getting the schema for specified collection even if doesn't exists in config.crud
+	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleInspectionRequest(s.adminMan, s.projects))
+
+	// Initialize route for getting all collection names present in config.crud
+	router.Methods("GET").Path("/v1/api/config/list-collections/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.projects))
+
+	// Initialize route for getting all schemas for all the collections present in config.crud
+	router.Methods("POST").Path("/v1/api/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.projects))
+
+	// Initialize route for graphql
+	router.Path("/v1/api/graphql/{project}").HandlerFunc(handlers.HandleGraphQLRequest(s.projects))
 
 	// Initialize the route for websocket
 	router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
 
+	// Initialize the route for graphql websocket
+	router.HandleFunc("/v1/api/{project}/graphql/socket", s.handleGraphqlSocket())
+
 	// Initialize the routes for functions service
 	router.Methods("POST").Path("/v1/api/{project}/functions/{service}/{func}").HandlerFunc(handlers.HandleFunctionCall(s.projects))
+
+	// Initialize the routes for pubsub service
+	router.Methods("POST").Path("/v1/api/{project}/pubsub").HandlerFunc(handlers.HandlePublishCall(s.projects))
 
 	// Initialize the routes for the crud operations
 	router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.projects))

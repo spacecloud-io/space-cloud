@@ -15,7 +15,6 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/utils/admin"
-	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
 // Driver is the main kubernetes driver
@@ -48,7 +47,7 @@ func New(registry *config.Registry, a *admin.Manager, s *static.Module) (*Driver
 }
 
 // Deploy deploys the service in kubernetes
-func (d *Driver) Deploy(ctx context.Context, c *model.Deploy, projects *projects.Projects) error {
+func (d *Driver) Deploy(ctx context.Context, c *model.Deploy) error {
 	// Create deployment and service objects
 	deployment := d.generateDeployment(c)
 	service := generateService(c)

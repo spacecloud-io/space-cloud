@@ -112,7 +112,7 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 		// Set project config in projects manager
-		go s.projects.StoreProject(c.Project)
+		go s.projects.Store(c.Project)
 
 	case utils.RaftCommandDelete:
 		for i, p := range s.projectConfig.Projects {
@@ -126,15 +126,15 @@ func (s *SyncManager) Apply(l *raft.Log) interface{} {
 		config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 		// Delete the project from config
-		s.projects.DeleteProject(c.ID)
+		s.projects.Delete(c.ID)
 
-	case utils.RaftCommandSetDeploy:
-		s.projectConfig.Deploy = *c.Deploy
-
-		// Write the config to file
-		config.StoreConfigToFile(s.projectConfig, s.configFile)
-
-		s.deploy.SetConfig(c.Deploy)
+	// case utils.RaftCommandSetDeploy:
+	// 	s.projectConfig.Deploy = *c.Deploy
+	//
+	// 	// Write the config to file
+	// 	config.StoreConfigToFile(s.projectConfig, s.configFile)
+	//
+	// 	s.deploy.SetConfig(c.Deploy)
 
 	case utils.RaftCommandSetOperation:
 		s.projectConfig.Admin.Operation = *c.Operation

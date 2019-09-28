@@ -12,7 +12,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
-	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
 // Module is the main object for handling all deployments
@@ -27,7 +26,7 @@ type Module struct {
 
 // Driver is the interface every deployment driver must implement
 type Driver interface {
-	Deploy(ctx context.Context, conf *model.Deploy, projects *projects.Projects) error
+	Deploy(ctx context.Context, conf *model.Deploy) error
 }
 
 // New creates a new instance of the deploy module

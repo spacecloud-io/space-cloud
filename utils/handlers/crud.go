@@ -49,23 +49,15 @@ func HandleCrudCreate(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Send realtime message intent
-		msgID := state.Realtime.SendCreateIntent(meta.project, meta.dbType, meta.col, &req)
-
 		// Perform the write operation
 		err = state.Crud.Create(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
-			// Send realtime nack
-			state.Realtime.SendAck(msgID, meta.project, meta.col, false)
 
 			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		// Send realtime message ack
-		state.Realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -155,23 +147,15 @@ func HandleCrudUpdate(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Send realtime message intent
-		msgID := state.Realtime.SendUpdateIntent(meta.project, meta.dbType, meta.col, &req)
-
 		// Perform the update operation
 		err = state.Crud.Update(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
-			// Send realtime nack
-			state.Realtime.SendAck(msgID, meta.project, meta.col, false)
 
 			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		// Send realtime message ack
-		state.Realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -210,23 +194,14 @@ func HandleCrudDelete(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Send realtime message intent
-		msgID := state.Realtime.SendDeleteIntent(meta.project, meta.dbType, meta.col, &req)
-
 		// Perform the delete operation
 		err = state.Crud.Delete(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
-			// Send realtime nack
-			state.Realtime.SendAck(msgID, meta.project, meta.col, false)
-
 			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		// Send realtime message ack
-		state.Realtime.SendAck(msgID, meta.project, meta.col, true)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
@@ -320,13 +295,7 @@ func HandleCrudBatch(projects *projects.Projects) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&txRequest)
 		defer r.Body.Close()
 
-		type msg struct {
-			id, col string
-		}
-
-		msgIDs := make([]*msg, len(txRequest.Requests))
-
-		for i, req := range txRequest.Requests {
+		for _, req := range txRequest.Requests {
 
 			// Make status and error variables
 			var status int
@@ -336,38 +305,19 @@ func HandleCrudBatch(projects *projects.Projects) http.HandlerFunc {
 			case string(utils.Create):
 				r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
 				status, err = state.Auth.IsCreateOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
-				if err == nil {
-					// Send realtime message intent if user is authorised (no error)
-					msgID := state.Realtime.SendCreateIntent(meta.project, meta.dbType, req.Col, &r)
-					msgIDs[i] = &msg{id: msgID, col: req.Col}
-				}
 
 			case string(utils.Update):
 				r := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
 				status, err = state.Auth.IsUpdateOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
-				if err == nil {
-					// Send realtime message intent if user is authorised (no error)
-					msgID := state.Realtime.SendUpdateIntent(meta.project, meta.dbType, req.Col, &r)
-					msgIDs[i] = &msg{id: msgID, col: req.Col}
-				}
 
 			case string(utils.Delete):
 				r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
 				status, err = state.Auth.IsDeleteOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
-				if err == nil {
-					// Send realtime message intent if user is authorised (no error)
-					msgID := state.Realtime.SendDeleteIntent(meta.project, meta.dbType, req.Col, &r)
-					msgIDs[i] = &msg{id: msgID, col: req.Col}
-				}
+
 			}
 
 			// Send error response
 			if err != nil {
-				// Send realtime nack
-				for j := 0; j < i; j++ {
-					state.Realtime.SendAck(msgIDs[j].id, meta.project, msgIDs[j].col, false)
-				}
-
 				// Send http response
 				w.WriteHeader(status)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -381,11 +331,6 @@ func HandleCrudBatch(projects *projects.Projects) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
-		}
-
-		// Send realtime nack
-		for _, m := range msgIDs {
-			state.Realtime.SendAck(m.id, meta.project, m.col, false)
 		}
 
 		// Give positive acknowledgement
