@@ -39,7 +39,7 @@ func (m *Module) processIntents(t *time.Time) {
 
 	results, err := m.crud.Read(ctx, dbType, m.project, col, &readRequest)
 	if err != nil {
-		log.Fatalln("Eventing intent routine error:", err)
+		log.Println("Eventing intent routine error:", err)
 		return
 	}
 
