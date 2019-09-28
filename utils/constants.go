@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.12.0"
+const BuildVersion = "0.11.0"
 
 const (
 	// SpaceCloudProject is the default project to store the config in
@@ -139,6 +139,18 @@ const (
 
 	// TypeServiceRequest is type triggering a service's function
 	TypeServiceRequest string = "service-request"
+
+	// TypePubsubSubscribe is type triggering a pubsub subscribe
+	TypePubsubSubscribe string = "pubsub-subscribe"
+
+	// TypePubsubSubscribeFeed is type having a pubsub subscribe feed
+	TypePubsubSubscribeFeed string = "pubsub-subscribe-feed"
+
+	// TypePubsubUnsubscribe is type triggering a pubsub unsubscribe
+	TypePubsubUnsubscribe string = "pubsub-unsubscribe"
+
+	// TypePubsubUnsubscribeAll is type triggering a pubsub unsubscribe all
+	TypePubsubUnsubscribeAll string = "pubsub-unsubscribe-all"
 )
 
 // RealTimeProtocol is the type of protocol requested for realtime.
@@ -176,6 +188,12 @@ const (
 
 	// RaftCommandAddInternalRouteOperation is used to add internal routes
 	RaftCommandAddInternalRouteOperation RaftCommandType = "add-internal-route"
+
+	// RaftCommandAddInternalEventOperation is used to add internal routes
+	RaftCommandAddInternalEventOperation RaftCommandType = "add-internal-event"
+
+	// RaftCommandRemoveInternalEventOperation is used to add internal routes
+	RaftCommandRemoveInternalEventOperation RaftCommandType = "remove-internal-event"
 
 	// RaftCommandDelete is used to delete a projects config
 	RaftCommandDelete RaftCommandType = "delete"
@@ -228,3 +246,92 @@ const (
 
 // InternalUserID is the auth.id used for internal requests
 const InternalUserID string = "internal-sc-user"
+
+// PubsubType is the type of pubsub request
+type PubsubType string
+
+const (
+	// Publish is the type used for publish requests
+	Publish PubsubType = "publish"
+
+	// Subscribe is the type used for subscribe requests
+	Subscribe PubsubType = "subscribe"
+)
+
+const (
+	// GQL_CONNECTION_KEEP_ALIVE send every 20 second to client over websocket
+	GQL_CONNECTION_KEEP_ALIVE string = "ka" // Server -> Client
+	// GQL_CONNECTION_INIT is used by graphql over websocket protocol
+	GQL_CONNECTION_INIT string = "connection_init" // Client -> Server
+	// GQL_CONNECTION_ACK is used by graphql over websocket protocol
+	GQL_CONNECTION_ACK string = "connection_ack" // Server -> Client
+	// GQL_CONNECTION_ERROR is used by graphql over websocket protocol
+	GQL_CONNECTION_ERROR string = "connection_error" // Server -> Client
+	// GQL_CONNECTION_TERMINATE is used by graphql over websocket protocol
+	GQL_CONNECTION_TERMINATE string = "connection_terminate" // Client -> Server
+	// GQL_START is used by graphql over websocket protocol
+	GQL_START string = "start" // Client -> Server
+	// GQL_DATA is used by graphql over websocket protocol
+	GQL_DATA string = "data" // Server -> Client
+	// GQL_ERROR is used by graphql over websocket protocol
+	GQL_ERROR string = "error" // Server -> Client
+	// GQL_COMPLETE is used by graphql over websocket protocol
+	GQL_COMPLETE string = "complete" // Server -> Client
+	// GQL_STOP is used by graphql over websocket protocol
+	GQL_STOP string = "stop" // Client -> Server
+)
+
+// FieldType is the type for storing sql inspection information
+type FieldType struct {
+	FieldName    string  `db:"Field"`
+	FieldType    string  `db:"Type"`
+	FieldNull    string  `db:"Null"`
+	FieldKey     string  `db:"Key"`
+	FieldDefault *string `db:"Default"`
+	FieldExtra   string  `db:"Extra"`
+}
+
+// ForeignKeysType is the type for storing  foreignkeys information of sql inspection
+type ForeignKeysType struct {
+	TableName      string `db:"TABLE_NAME"`
+	ColumnName     string `db:"COLUMN_NAME"`
+	ConstraintName string `db:"CONSTRAINT_NAME"`
+	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
+	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
+}
+
+// DatabaseCollections stores all callections of sql or postgres or mongo
+type DatabaseCollections struct {
+	TableName string `db:"TABLE_NAME"`
+}
+
+// MaxEventTokens describes the maximum number of event workers
+const MaxEventTokens int = 100
+
+const (
+	// EventCreate is fired for create request
+	EventCreate string = "create-crud"
+
+	// EventUpdate is fired for update request
+	EventUpdate string = "update-crud"
+
+	// EventDelete is fired for delete request
+	EventDelete string = "delete-crud"
+)
+
+const (
+	// EventStatusIntent signifies that the event hasn't been staged yet
+	EventStatusIntent string = "intent"
+
+	// EventStatusStaged signifies that the event can be processed
+	EventStatusStaged string = "staged"
+
+	// EventStatusProcessed signifies that the event has been successfully been processed and can be deleted
+	EventStatusProcessed string = "processed"
+
+	// EventStatusCancelled signifies that the event has failed and should not be processed
+	EventStatusFailed string = "failed"
+
+	// EventStatusCancelled signifies that the event has been cancelled and should not be processed
+	EventStatusCancelled string = "cancel"
+)

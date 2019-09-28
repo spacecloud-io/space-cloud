@@ -141,10 +141,20 @@ func actionRun(c *cli.Context) error {
 		nodeID = uuid.NewV1().String()
 	}
 
+	// Start nats if not disabled
+	if !disableNats {
+		err := server.RunNatsServer(seeds, utils.PortNatsServer, utils.PortNatsCluster)
+		if err != nil {
+			return err
+		}
+	}
+
 	time.Sleep(time.Duration(delay) * time.Second)
 
-	// Project and env cannot be changed once space cloud has started
-	s := server.New(nodeID)
+	s, err := server.New(nodeID)
+	if err != nil {
+		return err
+	}
 
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)
@@ -183,14 +193,6 @@ func actionRun(c *cli.Context) error {
 
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
-
-	// Start nats if not disabled
-	if !disableNats {
-		err := s.RunNatsServer(seeds, utils.PortNatsServer, utils.PortNatsCluster)
-		if err != nil {
-			return err
-		}
-	}
 
 	return s.Start(seeds, disableMetrics)
 }

@@ -4,13 +4,19 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
+	"github.com/spaceuptech/space-cloud/modules/eventing"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/modules/pubsub"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/modules/userman"
+	"github.com/spaceuptech/space-cloud/utils/admin"
+	"github.com/spaceuptech/space-cloud/utils/graphql"
+	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
 // ProjectState holds the module state of a project
@@ -22,18 +28,26 @@ type ProjectState struct {
 	FileStore      *filestore.Module
 	Functions      *functions.Module
 	Realtime       *realtime.Module
+	Pubsub         *pubsub.Module
+	Eventing       *eventing.Module
+	Graph          *graphql.Module
 }
 
 // Projects is the stub to manage the state of the various modules
 type Projects struct {
 	lock     sync.RWMutex
+	nodeID   string
 	projects map[string]*ProjectState
 	h        *driver.Handler
+
+	// Global managers
+	syncMan  *syncman.SyncManager
+	adminMan *admin.Manager
 }
 
 // New creates a new Projects instance
-func New(h *driver.Handler) *Projects {
-	return &Projects{projects: map[string]*ProjectState{}, h: h}
+func New(nodeID string, h *driver.Handler, adminMan *admin.Manager, syncMan *syncman.SyncManager) *Projects {
+	return &Projects{nodeID: nodeID, projects: map[string]*ProjectState{}, h: h, syncMan: syncMan, adminMan: adminMan}
 }
 
 // LoadProject returns the state of the project specified
@@ -73,19 +87,39 @@ func (p *Projects) Iter(fn func(string, *ProjectState) bool) bool {
 
 // NewProject creates a new project with all modules in the default state.
 // It will overwrite the existing project if any
-func (p *Projects) NewProject(project string) *ProjectState {
+func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
 	c := crud.Init(p.h)
-	f := functions.Init()
-	a := auth.Init(c, nil)
+	f, err := functions.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	a := auth.Init(c, f)
 	u := userman.Init(c, a)
 	file := filestore.Init(a)
-	r := realtime.Init(c)
+	eventing := eventing.New(c, f, p.syncMan)
 
-	state := &ProjectState{Crud: c, Functions: f, Auth: a, UserManagement: u, FileStore: file, Realtime: r}
+	c.SetHooks(&model.CrudHooks{
+		Create: eventing.HandleCreateIntent,
+		Update: eventing.HandleUpdateIntent,
+		Delete: eventing.HandleDeleteIntent,
+		Batch:  eventing.HandleBatchIntent,
+		Stage:  eventing.HandleStage,
+	})
+
+	r, err := realtime.Init(p.nodeID, eventing, a, c, f, p.adminMan, p.syncMan)
+	if err != nil {
+		return nil, err
+	}
+
+	graph := graphql.New(a, c, f)
+
+	state := &ProjectState{Crud: c, Functions: f, Auth: a, UserManagement: u, FileStore: file, Realtime: r,
+		Eventing: eventing, Graph: graph}
 	p.projects[project] = state
 
-	return state
+	return state, nil
 }

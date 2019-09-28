@@ -9,10 +9,9 @@ import (
 	"github.com/hashicorp/serf/serf"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/deploy"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/utils/admin"
-	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
 // SyncManager syncs the project config between folders
@@ -21,12 +20,11 @@ type SyncManager struct {
 	membersLock   sync.Mutex
 	raft          *raft.Raft
 	projectConfig *config.Config
+	projects      *model.ProjectCallbacks
 	configFile    string
 	gossipPort    string
 	raftPort      string
 	list          *serf.Serf
-	projects      *projects.Projects
-	deploy        *deploy.Module
 	myIP          string
 	serfEvents    chan serf.Event
 	bootstrap     string
@@ -45,12 +43,19 @@ type node struct {
 }
 
 // New creates a new instance of the sync manager
-func New(projects *projects.Projects, d *deploy.Module, adminMan *admin.Manager, s *static.Module) *SyncManager {
+func New(adminMan *admin.Manager, s *static.Module) *SyncManager {
 	// Create a SyncManger instance
 	syncMan := &SyncManager{adminMan: adminMan, myIP: getOutboundIP(), serfEvents: make(chan serf.Event, 16),
-		bootstrap: bootstrapPending, deploy: d, projects: projects, static: s}
+		bootstrap: bootstrapPending, static: s}
 	syncMan.static.AddInternalRoute = syncMan.AddInternalRoutes
 	return syncMan
+}
+
+func (s *SyncManager) SetProjectCallbacks(projects *model.ProjectCallbacks) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.projects = projects
 }
 
 // Start begins the sync manager operations
@@ -69,7 +74,7 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 
 	if len(s.projectConfig.Projects) > 0 {
 		for _, p := range s.projectConfig.Projects {
-			if err := s.projects.StoreProject(p); err != nil {
+			if err := s.projects.Store(p); err != nil {
 				log.Println("Load Project Error: ", err)
 			}
 		}

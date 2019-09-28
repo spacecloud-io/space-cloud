@@ -38,21 +38,13 @@ func (s *Server) Create(ctx context.Context, in *pb.CreateRequest) (*pb.Response
 		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
 
-	// Send realtime message intent
-	msgID := state.Realtime.SendCreateIntent(in.Meta.Project, in.Meta.DbType, in.Meta.Col, &req)
-
 	// Perform the write operation
 	err = state.Crud.Create(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
-		// Send realtime nack
-		state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
 
 		// Send gRPC Response
 		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
-
-	// Send realtime ack
-	state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
 	return &pb.Response{Status: http.StatusOK}, nil
@@ -135,20 +127,12 @@ func (s *Server) Update(ctx context.Context, in *pb.UpdateRequest) (*pb.Response
 		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
 
-	// Send realtime message intent
-	msgID := state.Realtime.SendUpdateIntent(in.Meta.Project, in.Meta.DbType, in.Meta.Col, &req)
-
 	err = state.Crud.Update(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
-		// Send realtime nack
-		state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
 
 		// Send gRPC Response
 		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
-
-	// Send realtime ack
-	state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
 	return &pb.Response{Status: http.StatusOK}, nil
@@ -177,21 +161,13 @@ func (s *Server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.Response
 		return &pb.Response{Status: int32(status), Error: err.Error()}, nil
 	}
 
-	// Send realtime message intent
-	msgID := state.Realtime.SendDeleteIntent(in.Meta.Project, in.Meta.DbType, in.Meta.Col, &req)
-
 	// Perform the delete operation
 	err = state.Crud.Delete(ctx, in.Meta.DbType, in.Meta.Project, in.Meta.Col, &req)
 	if err != nil {
-		// Send realtime nack
-		state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, false)
 
 		// Send gRPC Response
 		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
 	}
-
-	// Send realtime ack
-	state.Realtime.SendAck(msgID, in.Meta.Project, in.Meta.Col, true)
 
 	// Give positive acknowledgement
 	return &pb.Response{Status: http.StatusOK}, nil
@@ -242,14 +218,8 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 		return &pb.Response{Status: 400, Error: err.Error()}, nil
 	}
 
-	type msg struct {
-		id, col string
-	}
-
-	msgIDs := make([]*msg, len(in.Batchrequest))
-
 	allRequests := []model.AllRequest{}
-	for i, req := range in.Batchrequest {
+	for _, req := range in.Batchrequest {
 		// Make status and error variables
 		var status int
 		var err error
@@ -275,11 +245,6 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			// Check if the user is authenticated
 			status, err = state.Auth.IsCreateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err == nil {
-				// Send realtime message intent
-				msgID := state.Realtime.SendCreateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-				msgIDs[i] = &msg{id: msgID, col: req.Col}
-			}
 
 		case string(utils.Update):
 			eachReq := model.AllRequest{}
@@ -308,11 +273,6 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			// Check if the user is authenticated
 			status, err = state.Auth.IsUpdateOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err == nil {
-				// Send realtime message intent
-				msgID := state.Realtime.SendUpdateIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-				msgIDs[i] = &msg{id: msgID, col: req.Col}
-			}
 
 		case string(utils.Delete):
 			eachReq := model.AllRequest{}
@@ -334,16 +294,6 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 
 			// Check if the user is authenticated
 			status, err = state.Auth.IsDeleteOpAuthorised(in.Meta.Project, in.Meta.DbType, req.Col, in.Meta.Token, &r)
-			if err == nil {
-				// Send realtime message intent
-				msgID := state.Realtime.SendDeleteIntent(in.Meta.Project, in.Meta.DbType, req.Col, &r)
-				msgIDs[i] = &msg{id: msgID, col: req.Col}
-			}
-		}
-
-		// Send negative acks and send error response
-		for j := 0; j < i; j++ {
-			state.Realtime.SendAck(msgIDs[j].id, in.Meta.Project, msgIDs[j].col, false)
 		}
 
 		if err != nil {
@@ -359,18 +309,9 @@ func (s *Server) Batch(ctx context.Context, in *pb.BatchRequest) (*pb.Response, 
 	batch.Requests = allRequests
 	err = state.Crud.Batch(ctx, in.Meta.DbType, in.Meta.Project, &batch)
 	if err != nil {
-		// Send realtime nack
-		for _, m := range msgIDs {
-			state.Realtime.SendAck(m.id, in.Meta.Project, m.col, false)
-		}
 
 		// Send gRPC Response
 		return &pb.Response{Status: http.StatusInternalServerError, Error: err.Error()}, nil
-	}
-
-	// Send realtime nack
-	for _, m := range msgIDs {
-		state.Realtime.SendAck(m.id, in.Meta.Project, m.col, true)
 	}
 
 	// Give positive acknowledgement
@@ -517,7 +458,7 @@ func (s *Server) RealTime(stream pb.SpaceCloud_RealTimeServer) error {
 			}
 
 			// Subscribe to relaitme feed
-			feedData, err := state.Realtime.Subscribe(ctx, clientID, state.Auth, state.Crud, data, func(feed *model.FeedData) {
+			feedData, err := state.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 				c.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeFeed, Data: feed})
 			})
 			if err != nil {
@@ -706,7 +647,7 @@ func (s *Server) CreateFolder(ctx context.Context, in *pb.CreateFolderRequest) (
 	return &out, nil
 }
 
-// DeleteFile delete a file
+// DeleteFile deletes a file
 func (s *Server) DeleteFile(ctx context.Context, in *pb.DeleteFileRequest) (*pb.Response, error) {
 	// Load the project state
 	state, err := s.projects.LoadProject(in.Meta.Project)
@@ -842,5 +783,160 @@ func (s *Server) DownloadFile(in *pb.DownloadFileRequest, stream pb.SpaceCloud_D
 		req := pb.FilePayload{Payload: buf, Status: int32(http.StatusOK)}
 		stream.Send(&req)
 	}
+	return nil
+}
+
+// PubsubPublish publishes to the pubsub module, using the pubsub module
+func (s *Server) PubsubPublish(ctx context.Context, in *pb.PubsubPublishRequest) (*pb.Response, error) {
+	state, err := s.projects.LoadProject(in.Meta.Project)
+	if err != nil {
+		return &pb.Response{Status: int32(http.StatusBadRequest), Error: err.Error()}, nil
+	}
+
+	var v interface{}
+	if err := json.Unmarshal(in.Msg, &v); err != nil {
+		return &pb.Response{Status: int32(500), Error: err.Error()}, nil
+	}
+
+	status, err := state.Pubsub.Publish(in.Meta.Project, in.Meta.Token, in.Subject, v)
+	out := pb.Response{}
+	out.Status = int32(status)
+	if err != nil {
+		out.Error = err.Error()
+	}
+	return &out, nil
+}
+
+// PubsubSubscribe subscribes to a particular subject, using the pubsub module
+func (s *Server) PubsubSubscribe(stream pb.SpaceCloud_PubsubSubscribeServer) error {
+
+	// Create a project variable
+	var project string
+
+	c := client.CreateGRPCPubsubClient(stream)
+
+	defer func() {
+		// Unregister service if project could be loaded
+		state, err := s.projects.LoadProject(project)
+		if err == nil {
+			// Unsubscribe the client
+			state.Pubsub.UnsubscribeAll(c.ClientID())
+		}
+	}()
+
+	defer c.Close()
+	go c.RoutineWrite()
+
+	// Get GRPC Service client details
+	clientID := c.ClientID()
+	c.Read(func(req *model.Message) bool {
+		switch req.Type {
+		case utils.TypePubsubSubscribe:
+			// For pubsub subscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			// Load the project state
+			state, err := s.projects.LoadProject(data.Project)
+			if err != nil {
+				stream.Send(&pb.PubsubMsgResponse{
+					Status: int32(http.StatusBadRequest),
+					Error:  err.Error(),
+				})
+
+				return false
+			}
+
+			// Save the project for future use
+			if project == "" {
+				project = data.Project
+			} else if project != data.Project {
+				stream.Send(&pb.PubsubMsgResponse{
+					Status: int32(http.StatusBadRequest),
+					Error:  "Incorrect project id provided",
+				})
+
+				return false
+			}
+
+			// Subscribe to pubsub feed
+			var status int
+			if data.Queue == "" {
+				status, err = state.Pubsub.Subscribe(data.Project, data.Token, clientID, data.Subject, func(msg *model.PubsubMsg) {
+					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribeFeed, Data: msg})
+				})
+			} else {
+				status, err = state.Pubsub.QueueSubscribe(data.Project, data.Token, clientID, data.Subject, data.Queue, func(msg *model.PubsubMsg) {
+					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribeFeed, Data: msg})
+				})
+			}
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
+
+		case utils.TypePubsubUnsubscribe:
+			// For pubsub unsubscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			// Load the project state
+			state, err := s.projects.LoadProject(data.Project)
+			if err != nil {
+				stream.Send(&pb.PubsubMsgResponse{
+					Status: int32(http.StatusBadRequest),
+					Error:  err.Error(),
+				})
+
+				return false
+			}
+
+			status, err := state.Pubsub.Unsubscribe(clientID, data.Subject)
+
+			// Send response to c
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
+		case utils.TypePubsubUnsubscribeAll:
+			// For pubsub unsubscribe event
+			data := new(model.PubsubSubscribeRequest)
+			mapstructure.Decode(req.Data, data)
+
+			// Load the project state
+			state, err := s.projects.LoadProject(data.Project)
+			if err != nil {
+				stream.Send(&pb.PubsubMsgResponse{
+					Status: int32(http.StatusBadRequest),
+					Error:  err.Error(),
+				})
+
+				return false
+			}
+
+			// Send response to c
+			status, err := state.Pubsub.UnsubscribeAll(clientID)
+			if err != nil {
+				res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
+				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
+				return true
+			}
+
+			// Send response to c
+			res := model.PubsubMsgResponse{Status: int32(status)}
+			c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
+		}
+		return true
+	})
 	return nil
 }

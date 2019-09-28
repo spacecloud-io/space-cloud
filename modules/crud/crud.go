@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
@@ -15,7 +16,12 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]*stub
 	primaryDB string
-	h         *driver.Handler
+
+	// Variables to store the hooks
+	hooks *model.CrudHooks
+
+	// Drivers handler
+	h *driver.Handler
 }
 
 // Init create a new instance of the Module object
@@ -24,7 +30,7 @@ func Init(h *driver.Handler) *Module {
 }
 
 // SetConfig set the rules adn secret key required by the crud block
-func (m *Module) SetConfig(crud config.Crud) {
+func (m *Module) SetConfig(crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -47,6 +53,12 @@ func (m *Module) SetConfig(crud config.Crud) {
 			log.Println("Successfully connected to " + dbType)
 		}
 	}
+	return nil
+}
+
+// SetHooks sets the internal hooks
+func (m *Module) SetHooks(hooks *model.CrudHooks) {
+	m.hooks = hooks
 }
 
 type stub struct {

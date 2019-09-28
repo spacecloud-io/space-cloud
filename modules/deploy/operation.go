@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-
-	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
 // UploadAndDeploy uploads a service to the registry then deploys it
-func (m *Module) UploadAndDeploy(r *http.Request, projects *projects.Projects) error {
+func (m *Module) UploadAndDeploy(r *http.Request) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -22,5 +20,5 @@ func (m *Module) UploadAndDeploy(r *http.Request, projects *projects.Projects) e
 		return err
 	}
 
-	return m.driver.Deploy(context.TODO(), c, projects)
+	return m.driver.Deploy(context.TODO(), c)
 }

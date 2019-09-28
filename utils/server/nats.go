@@ -24,7 +24,7 @@ var DefaultNatsOptions = &nats.Options{
 }
 
 // RunNatsServer starts a nats server in a separate goroutine
-func (s *Server) RunNatsServer(seeds string, port, clusterPort int) error {
+func RunNatsServer(seeds string, port, clusterPort int) error {
 	// TODO read nats config from the yaml file if it exists
 	if seeds != "" {
 		array := strings.Split(seeds, ",")
@@ -43,12 +43,15 @@ func (s *Server) RunNatsServer(seeds string, port, clusterPort int) error {
 	DefaultNatsOptions.Port = port
 	DefaultNatsOptions.Cluster.Port = clusterPort
 
-	s.nats = nats.New(DefaultNatsOptions)
+	server, err := nats.NewServer(DefaultNatsOptions)
+	if err != nil {
+		return err
+	}
 
 	fmt.Println("Starting Nats Server")
-	go s.nats.Start()
+	go server.Start()
 	// Wait for accept loop(s) to be started
-	if !s.nats.ReadyForConnections(10 * time.Second) {
+	if !server.ReadyForConnections(10 * time.Second) {
 		log.Fatal("Unable to start NATS Server in Go Routine")
 	}
 	return nil

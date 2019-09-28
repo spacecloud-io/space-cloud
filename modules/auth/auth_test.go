@@ -4,10 +4,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -19,7 +20,7 @@ func TestGetRule(t *testing.T) {
 		authModuleRules       config.Crud
 	}{
 		// success condition
-		{testName: "Successful Test", dbType: "my-sql", col: "collectionName", query: "rule1", wantThis: &config.Rule{Rule: "Rule", Eval: "Eval", Type: "Type", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}, authModuleRules: config.Crud{"my-sql": &config.CrudStub{Collections: map[string]*config.TableRule{"collectionName": &config.TableRule{Rules: map[string]*config.Rule{"rule1": &config.Rule{Rule: "Rule", Eval: "Eval", Type: "Type", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}},
+		{testName: "Successful Test", dbType: "my-sql", col: "collectionName", query: "rule1", wantThis: &config.Rule{Rule: "Rule", Eval: "Eval", Type: "Type", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}, authModuleRules: config.Crud{"my-sql": &config.CrudStub{Collections: map[string]*config.TableRule{"collectionName": {Rules: map[string]*config.Rule{"rule1": {Rule: "Rule", Eval: "Eval", Type: "Type", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}},
 		// error condition
 		{testName: "Error : Nothing is Provided"},
 	}
@@ -30,16 +31,14 @@ func TestGetRule(t *testing.T) {
 			(*authModule).rules = test.authModuleRules
 			gotThisRule, err := authModule.getCrudRule(test.dbType, test.col, test.query)
 			if i <= successTestCases {
-				if !reflect.DeepEqual(gotThisRule, test.wantThis) || err != nil {
+				if !cmp.Equal(gotThisRule, test.wantThis) || err != nil {
 					t.Error("Success Test ", "Got This ", gotThisRule, "Wanted This ", test.wantThis, "Error ", err)
 				}
 			} else {
-
 				if (gotThisRule != nil && reflect.DeepEqual(gotThisRule, test.wantThis)) || err == nil {
 					t.Error("Error Test", "Got This ", gotThisRule, "Wanted This ", test.wantThis, "Error ", err)
 				}
 			}
-
 		})
 	}
 }
@@ -66,12 +65,45 @@ func TestCreateToken(t *testing.T) {
 					t.Error("Success Test ", "Got This ", tokenString, "Wanted This ", test.wantThis, "Error ", err)
 				}
 			}
-
 		})
 	}
 }
 
-//func TestIsAuthorized(t *testing.T) {
+func TestParseToken(t *testing.T) {
+	var testCases = []struct {
+		name      string
+		testType  string
+		secretKey string
+		token     string
+		wantThis  TokenClaims
+		reason    error
+	}{
+		// success test
+		{name: "Test should successfully parse a token", testType: "Success", secretKey: "mySecretkey", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
+		// error test
+		{name: "Test should fail if signing method not HS256", testType: "Fail", secretKey: "mySecretkey", token: "eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.nakZ1JcYWHcXcG1ZfIY7mJNwcVPQ7U1HvuLEsG9fyz-H9ig3ql8BiI3T-7A2PHe-lBIxjS7hXx8O8lxMg7y7rqUHtPLAGOuCd4Ft88KupgPcF5w-KVpeSgWl598zNLWqJpjcwiPewt3gsU6pwSaTz24JmfZQRrDX8KOtejaGs5OECdk2dDW2rwO98npNX39yYx6eSfZbXCLJ7wIhT3UDbuaOGHnD3wyEtih013NDrnkvVXJRKXUwF7F-g31NWgEgVt-tWkR5vcBBSRYKzIbD7-wxpV4ifLp_XdbVNl3Uf7ja6FeUnGq1Pb9AnAY7lD4Rk7sYQe4P-ATHtkgSg5levw", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}, reason: ErrInvalidSigningMethod},
+		{name: "Test should fail for an invalid token", testType: "Fail", secretKey: "mySecretkey", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjic", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}, reason: ErrInvalidSigningMethod},
+	}
+
+	authModule := Init(&crud.Module{}, &functions.Module{})
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			authModule.SetConfig("", test.secretKey, config.Crud{}, &config.FileStore{}, &config.Functions{}, &config.Pubsub{})
+			tokenClaims, err := authModule.parseToken(test.token)
+			if test.testType == "Success" {
+				if !cmp.Equal(test.wantThis, tokenClaims) {
+					t.Error(test.name, ": Got:", tokenClaims, "Want:", test.wantThis, "Reason:", err)
+				}
+			} else {
+				if cmp.Equal(err, test.reason) {
+					t.Error(test.name, ": Got:", err, "Want:", test.reason)
+				}
+			}
+		})
+	}
+}
+
+// func TestIsAuthorized(t *testing.T) {
 //	var authIsAuthorized = []struct {
 //		testName, dbType, col string
 //		project               string
