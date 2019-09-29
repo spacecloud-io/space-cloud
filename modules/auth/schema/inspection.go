@@ -37,7 +37,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		fieldDetails := schemaFieldType{}
 
 		// check if field nullable (!)
-		if value.FieldNull == "NO" {
+		if value.FieldNull == "YES" {
 			fieldDetails.IsFieldTypeRequired = true
 		}
 
