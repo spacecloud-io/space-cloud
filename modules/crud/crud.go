@@ -2,7 +2,7 @@ package crud
 
 import (
 	"context"
-	"errors"
+	"log"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -18,6 +18,9 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]Crud
 	primaryDB string
+
+	// Variables to store the hooks
+	hooks *model.CrudHooks
 }
 
 // Crud abstracts the implementation crud operations of databases
@@ -28,7 +31,12 @@ type Crud interface {
 	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) error
+	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
+	RawExec(ctx context.Context, project string) error
+	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
+	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
+	IsClientSafe() error
 	Close() error
 }
 
@@ -37,30 +45,22 @@ func Init() *Module {
 	return &Module{blocks: make(map[string]Crud)}
 }
 
-func initBlock(dbType utils.DBType, connection string) (Crud, error) {
+// SetHooks sets the internal hooks
+func (m *Module) SetHooks(hooks *model.CrudHooks) {
+	m.hooks = hooks
+}
+
+func initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
 	switch dbType {
 	case utils.Mongo:
-		return mgo.Init(connection)
+		return mgo.Init(enabled, connection)
 
 	case utils.MySQL, utils.Postgres:
-		return sql.Init(dbType, connection)
+		return sql.Init(dbType, enabled, connection)
 
 	default:
 		return nil, utils.ErrInvalidParams
 	}
-}
-
-// GetPrimaryDB get the database configured as primary
-func (m *Module) GetPrimaryDB() (Crud, error) {
-	m.RLock()
-	defer m.RUnlock()
-
-	c, p := m.blocks[m.primaryDB]
-	if !p {
-		return nil, errors.New("CRUD: Primary DB not configured")
-	}
-
-	return c, nil
 }
 
 func (m *Module) getCrudBlock(dbType string) (Crud, error) {
@@ -68,7 +68,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 		return crud, nil
 	}
 
-	return nil, errors.New("CRUD: No crud block present for db")
+	return nil, utils.ErrDatabaseConfigAbsent
 }
 
 // SetConfig set the rules adn secret key required by the crud block
@@ -84,20 +84,14 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 	// Create a new crud blocks
 	for k, v := range crud {
-		// Skip this block if it is not enabled
-		if !v.Enabled {
-			continue
-		}
-
-		c, err := initBlock(utils.DBType(k), v.Conn)
-		if err != nil {
-			return errors.New("CRUD: Error - " + k + " could not be initialised")
-		}
-		if v.IsPrimary {
-			m.primaryDB = k
-		}
+		c, err := initBlock(utils.DBType(k), v.Enabled, v.Conn)
 		m.blocks[k] = c
-	}
 
+		if err != nil {
+			log.Println("Error connecting to " + k + " : " + err.Error())
+		} else {
+			log.Println("Successfully connected to " + k)
+		}
+	}
 	return nil
 }

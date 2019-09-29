@@ -46,6 +46,17 @@ projects:
         enabled: true
         broker: nats
         conn: nats://localhost:4222
+      pubsub:
+        enabled: false
+        broker: nats
+        conn: nats://localhost:4222
+        rules:
+          - subject: /
+            rule:
+              publish:
+                rule: allow
+              subscribe:
+                rule: allow
       fileStore:
         enabled: false
         storeType: local

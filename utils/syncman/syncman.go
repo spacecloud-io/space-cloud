@@ -283,8 +283,3 @@ func (s *SyncManager) GetConfig(projectID string) (*config.Project, error) {
 
 	return nil, errors.New("Given project is not present in state")
 }
-
-// GetClusterSize returns the size of the cluster
-func (s *SyncManager) GetClusterSize() int {
-	return s.list.NumNodes()
-}

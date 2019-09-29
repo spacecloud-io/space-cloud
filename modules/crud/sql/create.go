@@ -6,9 +6,9 @@ import (
 
 	goqu "github.com/doug-martin/goqu/v8"
 
+	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
-	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -28,7 +28,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(col).Prepared(true)
+	query := dialect.From(project + "." + col).Prepared(true)
 
 	var insert []interface{}
 	if req.Operation == "one" {

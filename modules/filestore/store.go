@@ -59,12 +59,7 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	if conf == nil || !conf.Enabled {
 		m.enabled = false
 
-		// Close the store if present
-		if m.store != nil {
-			m.store.Close()
-		}
-
-		// Clear th store object
+		// Clear the store object
 		m.store = nil
 		return nil
 	}
