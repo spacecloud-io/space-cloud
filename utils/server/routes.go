@@ -35,23 +35,26 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// Initialize routes for the deployment module
 	// router.Methods("POST").Path("/v1/api/deploy").HandlerFunc(handlers.HandleUploadAndDeploy(s.adminMan, s.deploy, s.projects))
 
-	// Initialize route for graphql schema inspection
+	//Initialize route for graphql schema inspection
 	router.Methods("POST").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.projects))
+	router.Methods("POST").Path("/v1/api/config/modify/{project}").HandlerFunc(handlers.HandleModifySchemas(s.projects, s.adminMan))
+
+	// Initialize route for graphql schema inspection
 
 	// Initialize route for getting the schema for specified collection even if doesn't exists in config.crud
 	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleInspectionRequest(s.adminMan, s.projects))
 
 	// Initialize route for getting all collection names present in config.crud
-	router.Methods("GET").Path("/v1/api/config/list-collections/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.projects))
+	router.Methods("GET").Path("/v1/api/config/list-collections/{project}").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.syncMan, s.projects))
 
 	// Initialize route for getting all schemas for all the collections present in config.crud
 	router.Methods("POST").Path("/v1/api/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.projects))
 
 	// Initialize route for graphql
-	router.Path("/v1/api/graphql/{project}").HandlerFunc(handlers.HandleGraphQLRequest(s.projects))
+	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.projects))
 
 	// Initialize the route for websocket
-	router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
+	router.HandleFunc("/v1/api/{project}/socket/json", s.handleWebsocket())
 
 	// Initialize the route for graphql websocket
 	router.HandleFunc("/v1/api/{project}/graphql/socket", s.handleGraphqlSocket())

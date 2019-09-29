@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/projects"
+	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
 // HandleGraphQLRequest creates the graphql operation endpoint
@@ -156,13 +158,14 @@ func HandleCreationRequest(adminMan *admin.Manager, p *projects.Projects) http.H
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) //http status code
+		json.NewEncoder(w).Encode(map[string]string{})
 		return
 	}
 }
 
 // HandleGetCollections is an endpoint handler which return all the collection name for specified data base
-func HandleGetCollections(adminMan *admin.Manager, p *projects.Projects) http.HandlerFunc {
+func HandleGetCollections(adminMan *admin.Manager, syncMan *syncman.SyncManager, p *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
@@ -182,7 +185,6 @@ func HandleGetCollections(adminMan *admin.Manager, p *projects.Projects) http.Ha
 		defer cancel()
 
 		vars := mux.Vars(r)
-		dbType := vars["dbType"]
 		project := vars["project"]
 
 		state, err := p.LoadProject(project)
@@ -192,19 +194,34 @@ func HandleGetCollections(adminMan *admin.Manager, p *projects.Projects) http.Ha
 			return
 		}
 
-		collections, err := state.Crud.GetCollections(ctx, project, dbType)
+		conf, err := syncMan.GetConfig(project)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		col := make([]string, len(collections))
-		for i, value := range collections {
-			col[i] = value.TableName
+		collectionsMap := map[string][]string{}
+
+		for dbType, stub := range conf.Modules.Crud {
+			if stub.Enabled {
+				collections, err := state.Crud.GetCollections(ctx, project, dbType)
+				if err != nil {
+					log.Println("Get collections error:", err)
+					continue
+				}
+
+				cols := make([]string, len(collections))
+				for i, value := range collections {
+					cols[i] = value.TableName
+				}
+
+				collectionsMap[dbType] = cols
+			}
 		}
+
 		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"collections": col})
+		json.NewEncoder(w).Encode(collectionsMap)
 	}
 }
 
@@ -248,7 +265,7 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, p *projects.Projects) h
 		}
 
 		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"value": schemas})
+		json.NewEncoder(w).Encode(map[string]interface{}{"collections": schemas})
 		return
 	}
 }

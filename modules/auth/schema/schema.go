@@ -1,9 +1,9 @@
 package schema
 
 import (
-	"context"
 	"errors"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/graphql-go/graphql/language/ast"
@@ -19,6 +19,7 @@ import (
 
 // Schema data stucture for schema package
 type Schema struct {
+	lock      sync.RWMutex
 	SchemaDoc schemaType
 	crud      *crud.Module
 	project   string
@@ -32,30 +33,21 @@ func Init(crud *crud.Module) *Schema {
 
 // SetConfig modifies the tables according to the schema on save
 func (s *Schema) SetConfig(conf config.Crud, project string) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
 	s.config = conf
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
-	defer cancel()
-
 	s.project = project
 
-	if err := s.ParseSchema(conf); err != nil {
+	if err := s.parseSchema(conf); err != nil {
 		return err
-	}
-
-	for dbName, crudStubValue := range conf {
-		for colName, tableRule := range crudStubValue.Collections {
-			if err := s.SchemaCreation(ctx, dbName, colName, s.project, tableRule.Schema); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil
 }
 
-// ParseSchema Initializes Schema field in Module struct
-func (s *Schema) ParseSchema(crud config.Crud) error {
+// parseSchema Initializes Schema field in Module struct
+func (s *Schema) parseSchema(crud config.Crud) error {
 
 	schema, err := s.parser(crud)
 	if err != nil {
@@ -86,6 +78,7 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			if len(value) <= 1 { // schema might have an id by default
 				continue
 			}
@@ -101,7 +94,7 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
 
-		if colName != strings.Title(collectionName) {
+		if colName != collectionName {
 			continue
 		}
 		for _, ve := range v.(*ast.ObjectDefinition).Fields {
@@ -292,7 +285,7 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 				return nil, errors.New("String Wrong Date-Time Format")
 			}
 			return unitTimeInRFC3339, nil
-		case typeID, typeString:
+		case typeID, typeString, typeJoin:
 			return value, nil
 		default:
 			return nil, errors.New("String wrong type wanted " + fieldValue.Kind + " got String")

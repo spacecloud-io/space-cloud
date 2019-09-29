@@ -2,9 +2,9 @@ package schema
 
 import (
 	"context"
-	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type creationModule struct {
@@ -13,8 +13,30 @@ type creationModule struct {
 	schemaModule                                   *Schema
 }
 
+func (s *Schema) ModifyAllCollections(ctx context.Context, conf config.Crud) error {
+	for dbName, crudStubValue := range conf {
+		if utils.DBType(dbName) == utils.Mongo {
+			continue
+		}
+		if !crudStubValue.Enabled {
+			continue
+		}
+
+		for colName, tableRule := range crudStubValue.Collections {
+			if err := s.SchemaCreation(ctx, dbName, colName, s.project, tableRule.Schema); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // SchemaCreation creates or alters tables of sql
 func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schema string) error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
 	crudCol := map[string]*config.TableRule{}
 	crudCol[col] = &config.TableRule{
 		Schema: schema,
@@ -28,6 +50,15 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 
 	parsedSchema, err := s.parser(crud)
 	if err != nil {
+		return nil
+	}
+
+	// Return if no tables are present in schema
+	if len(parsedSchema[dbType]) == 0 {
+		return nil
+	}
+
+	if err := s.crud.CreateProjectIfNotExists(ctx, project, dbType); err != nil {
 		return err
 	}
 
@@ -45,13 +76,13 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 			if err != nil {
 				return err
 			}
+
 			batchedQueries = append(batchedQueries, query)
 			if err := s.crud.RawBatch(ctx, dbType, batchedQueries); err != nil {
 				return err
 			}
 			return s.SchemaCreation(ctx, dbType, col, project, schema)
 		}
-
 		for realFieldKey, realFieldStruct := range realColValue {
 			if err := checkErrors(realFieldStruct); err != nil {
 				return err
@@ -102,15 +133,22 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 			continue
 		}
 
-		for currentFieldKey := range currentColValue {
+		for currentFieldKey, currentFieldStruct := range currentColValue {
 			_, ok := realColValue[currentFieldKey]
 			if !ok {
 				// remove field from current tabel
 				c := creationModule{
-					project:  project,
-					ColName:  currentColName,
-					FieldKey: currentFieldKey,
+					dbType:             dbType,
+					project:            project,
+					ColName:            currentColName,
+					FieldKey:           currentFieldKey,
+					currentFieldStruct: currentFieldStruct,
 				}
+
+				if c.currentFieldStruct.Directive == directiveRelation {
+					batchedQueries = append(batchedQueries, c.removeForeignKey()...)
+				}
+
 				batchedQueries = append(batchedQueries, c.removeField())
 			}
 		}
@@ -145,6 +183,16 @@ func (c *creationModule) removeField() string {
 
 func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 	var queries []string
+
+	if c.realFieldStruct.Directive != c.currentFieldStruct.Directive {
+		if c.realFieldStruct.Directive == "" {
+			queries = append(queries, c.removeDirective()...)
+		}
+	}
+
+	if c.realFieldStruct.Kind == typeJoin {
+		c.realFieldStruct.Kind = c.realFieldStruct.JointTable.TableName
+	}
 	if c.realFieldStruct.Kind != c.currentFieldStruct.Kind {
 		if c.columnType != "" {
 			queries = append(queries, c.modifyColumnType())
@@ -158,7 +206,6 @@ func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 			queries = append(queries, c.removeNotNull())
 		}
 	}
-
 	if c.realFieldStruct.Directive != c.currentFieldStruct.Directive {
 		if c.realFieldStruct.Directive != "" {
 			tempQuery, err := c.addDirective(ctx)
@@ -166,8 +213,6 @@ func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 				return nil, err
 			}
 			queries = append(queries, tempQuery...)
-		} else {
-			queries = append(queries, c.removeDirective()...)
 		}
 	}
 	return queries, nil
@@ -181,34 +226,7 @@ func (c *creationModule) addDirective(ctx context.Context) ([]string, error) {
 	case directiveUnique:
 		queries = append(queries, c.addUniqueKey())
 	case directiveRelation:
-		// get schema of referenced table & check if referenced column exist
-		nestedSchema, err := c.schemaModule.Inspector(ctx, c.dbType, c.project, c.realFieldStruct.JointTable.TableName)
-		if err != nil {
-			return nil, err
-		}
-		value, ok := nestedSchema[c.realFieldStruct.JointTable.TableName]
-		if !ok {
-			return nil, errors.New("schema creation: foreign key referenced table not found")
-		}
-		val, ok := value[c.realFieldStruct.JointTable.TableField]
-		if !ok {
-			return nil, errors.New("schema creation: field name not found in referenced table for foreign keys")
-		}
-		colType, err := getSQLType(val.Kind)
-		if err != nil {
-			return nil, err
-		}
-		if colType == typeObject || colType == typeJoin || val.IsList {
-			return nil, errors.New("schema creation: found incorrect type or array in foreign key")
-		}
-		temp := creationModule{
-			dbType:     c.dbType,
-			project:    c.project,
-			ColName:    c.ColName,
-			FieldKey:   c.FieldKey,
-			columnType: colType,
-		}
-		queries = append(queries, temp.modifyColumnType(), c.addForeignKey())
+		queries = append(queries, c.addForeignKey())
 	}
 	return queries, nil
 }
@@ -225,3 +243,7 @@ func (c *creationModule) removeDirective() []string {
 	}
 	return queries
 }
+
+// func (s *Schema) createProject(dbType string) {
+// 	s.crud.
+// }

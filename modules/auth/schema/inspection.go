@@ -64,7 +64,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 			if foreignValue.ColumnName == value.FieldName {
 				fieldDetails.JointTable.TableName = foreignValue.RefTableName
 				fieldDetails.JointTable.TableField = foreignValue.RefColumnName
-				fieldDetails.Kind = typeJoin
+				fieldDetails.Kind = foreignValue.RefTableName
 				fieldDetails.Directive = "relation"
 			}
 		}
@@ -105,9 +105,9 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaField
 	result = strings.Split(result[0], "(")
 
 	switch result[0] {
-	case "character", "bit":
+	case "character", "bit", "text":
 		fieldDetails.Kind = typeString
-	case "bigint", "bigserial", "integer", "numeric", "smallint", "smallserial", "serial", "text":
+	case "bigint", "bigserial", "integer", "numeric", "smallint", "smallserial", "serial":
 		fieldDetails.Kind = typeInteger
 	case "float", "double", "real":
 		fieldDetails.Kind = typeFloat
@@ -125,7 +125,7 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaField
 }
 
 // GetCollectionSchema returns schemas of collection aka tables for specified project & database
-func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbType string) (config.Crud, error) {
+func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbType string) (map[string]*config.TableRule, error) {
 
 	collections := []string{}
 	for dbName, crudValue := range s.config {
@@ -140,11 +140,18 @@ func (s *Schema) GetCollectionSchema(ctx context.Context, project, dbType string
 	projectConfig := config.Crud{}
 	projectConfig[dbType] = &config.CrudStub{}
 	for _, colName := range collections {
+		if colName == "default" {
+			continue
+		}
 		schema, err := s.SchemaInspection(ctx, dbType, project, colName)
 		if err != nil {
 			return nil, err
 		}
+
+		if projectConfig[dbType].Collections == nil {
+			projectConfig[dbType].Collections = map[string]*config.TableRule{}
+		}
 		projectConfig[dbType].Collections[colName] = &config.TableRule{Schema: schema}
 	}
-	return projectConfig, nil
+	return projectConfig[dbType].Collections, nil
 }

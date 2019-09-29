@@ -48,7 +48,7 @@ func (s *SyncManager) initRaft(seeds []node) error {
 	config := raft.DefaultConfig()
 	config.LocalID = raft.ServerID(s.myIP)
 	config.LogOutput = ioutil.Discard
-	config.SnapshotThreshold = 3
+	config.SnapshotThreshold = 2
 
 	// Check if config is valid
 	if err := raft.ValidateConfig(config); err != nil {

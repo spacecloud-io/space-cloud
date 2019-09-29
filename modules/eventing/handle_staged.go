@@ -38,7 +38,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 
 	results, err := m.crud.Read(ctx, dbType, m.project, col, &readRequest)
 	if err != nil {
-		log.Fatalln("Eventing stage routine error:", err)
+		log.Println("Eventing stage routine error:", err)
 		return
 	}
 

@@ -8,7 +8,7 @@
 	<strong>
 		<a href="https://spaceuptech.com/">Website</a>
 		•
-		<a href="https://spaceuptech.com/docs/">Docs</a>
+		<a href="https://docs.spaceuptech.com/">Docs</a>
 		•
 		<a href="https://discord.gg/ypXEEBr">Support</a>
 	</strong>
@@ -25,58 +25,90 @@
     <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/                 Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
 </p>
 
-Space Cloud replaces your traditional backend servers and simplifies app development:
+Space Cloud is a cloud native backend server that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.spaceuptech.com/advanced/event-triggers) and [space functions](https://docs.spaceuptech.com/essentials/custom-logic) for custom business logic.
 
-- **_Instant_**: Various pre-built modules such as User Management, Realtime CRUD and File Storage
-- **_Secure_**: Authentication and authorization baked in by default
-- **_Extensible_**: Provision to write custom backend logic
+Space Cloud helps you build modern applications without having to write any backend code in most cases.
 
+It provides **GraphQL** and **REST** APIs which can be consumed directly by your frontend in a [secure manner](https://docs.spaceuptech.com/auth).
+
+
+## Features 
+
+View complete feature set [here](https://docs.spaceuptech.com/getting-started/introduction/features).
+
+- **Powerful CRUD**: Flexible queries, transactions and cross database joins
+- **Realtime**: Make live queries to your database
+- **File storage**: Upload/download files to scalable file stores (eg: Amazon S3, Google Cloud Storage)
+- **Extensible**: Write custom business logic in form of simple functions
+- **Event driven**: Trigger webhooks or serverless functions on database or file storage events
+- **Fine-grained access control**: Dynamic access control that integrates with your auth system (eg: auth0, firebase-auth)
+- **Scalable**: Written in golang, it follows cloud native practices and scales horizontally
 
 Supported databases:heart::
+
 - **MongoDB**
-- **PostgreSQL** and PostgreSQL compatible databases (For eg. CockroachDB, Yugabyte etc.)
-- **MySQL** and MySQL compatible databases (For eg. TiDB)
+- **PostgreSQL** and PostgreSQL compatible databases (For eg. CockroachDB, Yugabyte, etc.)
+- **MySQL** and MySQL compatible databases (For eg. TiDB, MariaDB, etc.)
 
 ## Table of Contents
 
-- [Motivation](#motivation)
-- [About Space Cloud](#about-space-cloud)
+- [Quick Start](#quick-start)
+- [Client-side tooling](#client-side-tooling)
 - [How it works](#how-it-works)
-- [Design Goals](#design-goals)
-  - [Ease of use](#ease-of-use)
-  - [Security](#security)
-  - [Enterprise-ready](#enterprise-ready)
-  - [Leverage the existing tools](#leverage-the-existing-tools)
-- [Documentation](#documentation)
-- [Quick start](#quick-start)
 - [Support & Troubleshooting](#support--troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
 
-## Motivation
+## Quick start
 
-Making enterprise scale apps at the speed of **prototyping** is still a distant dream for many of us. Even a simple chat app becomes complicated **at scale**. Following best practices when starting something from scratch is very time consuming. Securing your app is a different ball game altogether.
+### Using Docker Compose
 
-Well, there are some excellent tools out there which help simplify app development like [Google Firebase](https://firebase.google.com/). But these tools come with their own **vendor lock-ins**. They either force you to use their own cloud or only work with a particular database. The next-gen apps on the other hand always require multiple task-specific databases and should even run on a private cloud.
+Docker compose is the easiest way to get started with Space Cloud. Let's see how to quickly get started with MongoDB and Space Cloud using Docker Compose.
 
-We believed that **technology should adapt to your needs** and not the other way around. You should be able to choose any **database**, **cloud vendor** or **technology** of your preference. Agility should not come at the cost of flexibility. Space Cloud was born to solve precisely these problems.
+> **Note:** MongoDB is not a dependency of Space Cloud. Space Cloud can run with any of it's supported databases.
 
-## About Space Cloud
+**Prerequisites:**
 
-> **Note:** Space Cloud is still in Beta.
+- [Docker](https://docs.docker.com/install/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-Space Cloud is essentially a web server that automatically integrates with an existing or a new database to provide instant realtime APIs over REST, websockets, gRPC, etc. Written in Golang, it provides a high throughput data access layer which can be consumed directly from the frontend. It's completely unopinionated and works with the tech stack of your choice.
+1. Get the docker-compose file.
 
-<div style="text-align: center">
-<img src="https://spaceuptech.com/icons/space-cloud-basic.png"  style="max-width: 80%" alt="Basic Space Cloud architecture" />
-</div>
+```bash
+wget https://raw.githubusercontent.com/spaceuptech/space-cloud/master/install-manifests/quick-start/docker-compose/mongo/docker-compose.yaml
+```
 
-In a nutshell, Space Cloud provides you with all of the following **without having to write a single line of backend code**:
+2. Run Space Cloud & MongoDB.
 
-- Ready to use functionalities like User Management, Realtime CRUD and File Storage.
-- Baked-in security.
-- Freedom from vendor lock-ins.
-- Flexibility to work with the tech stack of your choice.
+```bash
+docker-compose up -d
+```
+
+3. Head over to http://localhost:4122/mission-control to open Mission Control and configure Space Cloud.
+
+4. Create a project.
+
+5. Head over to the Database section in Mission Control and copy paste `mongodb://mongo:27017` in the connection string.
+
+6. Head over to the `Explorer` section and follow this guide to [insert and read data via Space Cloud using GraphQL](https://docs.spaceuptech.com/getting-started/quick-start/explore-graphql).
+
+### Other guides
+
+To get started with Space Cloud without Docker compose, check out the [manual](https://docs.spaceuptech.com/getting-started/quick-start/manual) guide. For production settings, checkout the [deployments](https://docs.spaceuptech.com/getting-started/deployment) guide.
+
+## Client-side tooling
+Space Cloud exposes GraphQL, HTTP, websockets and gRPC endpoints. See [setting up project](https://docs.spaceuptech.com/getting-started/setting-up-project) guide to choose a client and set it up. 
+
+### GraphQL APIs
+Space Cloud works with any GraphQL client. We recommend using [Apollo Client](https://github.com/apollographql/apollo-client). See [awesome-graphql](https://github.com/chentsulin/awesome-graphql) for a list of clients.
+
+### Client SDKs
+
+If you don't want to use graphql, we have made following client SDKs for you:
+
+- [Javascript](https://docs.spaceuptech.com/getting-started/setting-up-project/javascript) for web and Nodejs projects
+- [Golang](https://docs.spaceuptech.com/getting-started/setting-up-project/golang) for Golang projects
+
 
 ## How it works
 
@@ -91,74 +123,6 @@ We understand that not every app can be built using only CRUD operations. Someti
 </div>
 
 Apart from these, Space Cloud also integrates with tons of cloud technologies to give you several other features like `realtime database` (changes in the database are synced with all concerned clients in realtime), `file storage`, etc.
-
-## Design Goals
-
-There are a lot of design decisions taken by us while creating Space Cloud. These form the guiding principles which heavily influence the roadmap ahead. Understanding them would also make our **objectives of creating Space Cloud** a lot more clear.
-
-### Ease of use
-
-The main reason Space Cloud was born was to simplify the app/web development process. Right from making simple CRUD operations to syncing data reliably in a distributed environment, **everything must be as simple as a function call**. This is the prime reason we chose to have a consistent API across all the databases/technologies we support.
-
-This also means that Space Cloud needs to be as unopinionated as possible to reuse the existing skill sets and tech you might be well versed with.
-
-### Security
-
-We take security a bit too seriously. In fact, we are close to being paranoid about it. All products built with Space Cloud must be highly secure.
-
-The idea of exposing your database over a public API doesn't sound like a good one. But to make sure we can do it in a secure manner, we have added a powerful yet flexible feature called `security rules`. These `security rules` (written in JSON or YAML) along with JWT tokens help you take care of a wide variety of authentication and authorization problems.
-
-### Enterprise-ready
-
-We believe that each app built with Space Cloud must be extremely robust and future proof. We shall never comprise on the robustness of the platform at any cost. This also implies that we need to maintain strict backward compatibility.
-
-### Leverage the existing tools
-
-The goal of this project is not to re-invent the wheel over and over again. In fact, integration with proven technologies is preferred over implementing them ourselves. For example, we are using [Nats](https://nats.io/) under the hood, to implement `realtime`  and `functions` modules for high throughput and scale.
-
-## Documentation
-
-We are working hard to document every aspect of Space Cloud to give you the best onboarding experience. Here are links to the various docs we have:
-
-- [Space Cloud](https://spaceuptech.com/docs/)
-- Client APIs:
-  - [JavaScript client](https://github.com/spaceuptech/space-api-js)
-  - [Python client](https://github.com/spaceuptech/space-api-python)
-  - [Go client](https://github.com/spaceuptech/space-api-go)
-  - [Java client](https://github.com/spaceuptech/space-api-java) (In Progress)
-
-## Quick start
-
-### Using Docker Compose
-Docker compose is the easiest way to get started with Space Cloud. Let's see how to quickly get started with MongoDB and Space Cloud using Docker Compose.
-
-> **Note:** MongoDB is not a dependency of Space Cloud. Space Cloud can run with any of it's supported databases.
-
-**Prerequisites:**
-
-- [Docker](https://docs.docker.com/install/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-
-1. Get the docker-compose file.
-```bash
-wget https://raw.githubusercontent.com/spaceuptech/space-cloud/master/install-manifests/quick-start/docker-compose/mongo/docker-compose.yaml
-```
-
-2. Run Space Cloud & MongoDB.
-```bash
-docker-compose up -d
-```
-
-3. Head over to http://localhost:4122/mission-control to open Mission Control and configure Space Cloud.
-
-4. Create a project.
-
-5. Head over to the Database section in Mission Control and copy paste `mongodb://mongo:27017` in the connection string.
-
-6. Head over to the `Explorer` section and follow this [guide](https://spaceuptech.com/docs/quick-start/docker-compose) to insert and read data with Space APIs.
-
-### Other guides
-To get started with Space Cloud without Docker compose, check out the [manual](https://spaceuptech.com/docs/quick-start/manual) guide. For production settings, checkout the [deployments](https://spaceuptech.com/docs/deployment/overview) guide.
 
 ## Support & Troubleshooting
 

@@ -12,7 +12,7 @@ import (
 // GetCollections returns collection / tables name of specified database
 func (s *SQL) GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error) {
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From("information_schema.tables").Prepared(true).Select("TABLE_NAME").Where(goqu.Ex{"table_schema": project})
+	query := dialect.From("information_schema.tables").Prepared(true).Select("table_name").Where(goqu.Ex{"table_schema": project})
 
 	sqlString, args, err := query.ToSQL()
 	if err != nil {
@@ -28,13 +28,13 @@ func (s *SQL) GetCollections(ctx context.Context, project string) ([]utils.Datab
 
 	result := make([]utils.DatabaseCollections, 0)
 	for rows.Next() {
-		fieldType := new(utils.DatabaseCollections)
+		var tableName string
 
-		if err := rows.StructScan(fieldType); err != nil {
+		if err := rows.Scan(&tableName); err != nil {
 			return nil, err
 		}
 
-		result = append(result, *fieldType)
+		result = append(result, utils.DatabaseCollections{TableName: tableName})
 	}
 
 	return result, nil

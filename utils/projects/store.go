@@ -19,6 +19,11 @@ func (p *Projects) StoreProject(config *config.Project) error {
 		}
 	}
 
+	// Set the configuration for the crud module
+	if err := state.Crud.SetConfig(config.Modules.Crud); err != nil {
+		log.Println("Crud module config error:", err)
+	}
+
 	// Set the configuration for the auth module
 	if err := state.Auth.SetConfig(config.ID, config.Secret, config.Modules.Crud,
 		config.Modules.FileStore, config.Modules.Functions, config.Modules.Pubsub); err != nil {
@@ -27,11 +32,6 @@ func (p *Projects) StoreProject(config *config.Project) error {
 
 	if err := state.Pubsub.SetConfig(config.Modules.Pubsub); err != nil {
 		log.Println("Pubsub module config error:", err)
-	}
-
-	// Set the configuration for the crud module
-	if err := state.Crud.SetConfig(config.Modules.Crud); err != nil {
-		log.Println("Crud module config error:", err)
 	}
 
 	if err := state.Eventing.SetConfig(config.ID, &config.Modules.Eventing); err != nil {

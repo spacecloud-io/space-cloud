@@ -8,14 +8,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
-	uuid "github.com/satori/go.uuid"
-
 	"github.com/mitchellh/mapstructure"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -31,28 +31,28 @@ var upgrader = websocket.Upgrader{
 
 func (s *Server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		project := vars["project"]
+
 		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("upgrade:", err)
 			return
 		}
 
-		// Create an empty project variable
-		var project string
-
 		// Create a new client
 		c := client.CreateWebsocketClient(socket)
 
-		defer func() {
-			// Unregister service if project could be loaded
-			state, err := s.projects.LoadProject(project)
-			if err == nil {
-				// Unregister the service
-				state.Realtime.RemoveClient(c.ClientID())
-				state.Functions.UnregisterService(c.ClientID())
-				state.Pubsub.UnsubscribeAll(c.ClientID())
-			}
-		}()
+		state, err := s.projects.LoadProject(project)
+		if err != nil {
+			log.Panicln("Websocket error:", err)
+			return
+		}
+
+		// Unregister the service
+		defer state.Realtime.RemoveClient(c.ClientID())
+		defer state.Functions.UnregisterService(c.ClientID())
+		defer state.Pubsub.UnsubscribeAll(c.ClientID())
 
 		// Close the client to free up resources
 		defer c.Close()
@@ -71,17 +71,8 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				mapstructure.Decode(req.Data, data)
+				data.Project = project
 
-				// Set the clients project
-				project = data.Project
-
-				// Load the project state
-				state, err := s.projects.LoadProject(project)
-				if err != nil {
-					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-					c.Write(&model.Message{ID: req.ID, Type: utils.TypeRealtimeSubscribe, Data: res})
-					return true
-				}
 				// Subscribe to the realtime feed
 				feedData, err := state.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					c.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
@@ -100,14 +91,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				mapstructure.Decode(req.Data, data)
-
-				// Load the project state
-				state, err := s.projects.LoadProject(project)
-				if err != nil {
-					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
-					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-					return true
-				}
+				data.Project = project
 
 				state.Realtime.Unsubscribe(clientID, data)
 
@@ -119,15 +103,8 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// TODO add security rule for functions registered as well
 				data := new(model.ServiceRegisterRequest)
 				mapstructure.Decode(req.Data, data)
+				data.Project = project
 
-				// Set the clients project
-				project = data.Project
-
-				state, err := s.projects.LoadProject(project)
-				if err != nil {
-					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": false}})
-					return true
-				}
 				state.Functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
 					c.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
 				})
@@ -138,27 +115,13 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				data := new(model.FunctionsPayload)
 				mapstructure.Decode(req.Data, data)
 
-				// Handle response if project could be loaded
-				state, err := s.projects.LoadProject(project)
-				if err == nil {
-					state.Functions.HandleServiceResponse(data)
-				}
+				state.Functions.HandleServiceResponse(data)
 
 			case utils.TypePubsubSubscribe:
 				// For pubsub subscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
-
-				// Set the clients project
-				project = data.Project
-
-				// Load the project state
-				state, err := s.projects.LoadProject(project)
-				if err != nil {
-					res := model.PubsubMsgResponse{Status: int32(400), Error: err.Error()}
-					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
-					return true
-				}
+				data.Project = project
 
 				// Subscribe to pubsub feed
 				var status int
@@ -185,14 +148,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For pubsub unsubscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
-
-				// Load the project state
-				state, err := s.projects.LoadProject(project)
-				if err != nil {
-					res := model.PubsubMsgResponse{Status: int32(400), Error: err.Error()}
-					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
-					return true
-				}
+				data.Project = project
 
 				// Send response to c
 				status, err := state.Pubsub.Unsubscribe(clientID, data.Subject)
@@ -209,14 +165,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For pubsub unsubscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
-
-				// Load the project state
-				state, err := s.projects.LoadProject(project)
-				if err != nil {
-					res := model.PubsubMsgResponse{Status: int32(400), Error: err.Error()}
-					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
-					return true
-				}
+				data.Project = project
 
 				// Send response to c
 				status, err := state.Pubsub.UnsubscribeAll(clientID)
@@ -387,8 +336,9 @@ func (s *Server) handleGraphqlSocket() http.HandlerFunc {
 
 				// Subscribe to realtime feed
 				feedData, err := state.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
-					feed.TypeName = feed.Group
-					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: feed, "__typename": feed.Group}}}
+					feed.TypeName = "subscribe_" + feed.Group
+
+					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed)}}}
 				})
 
 				if err != nil {
@@ -398,8 +348,9 @@ func (s *Server) handleGraphqlSocket() http.HandlerFunc {
 				}
 
 				for _, feed := range feedData {
-					feed.TypeName = feed.Group
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: feed, "__typename": feed.Group}}}
+					feed.TypeName = "subscribe_" + feed.Group
+
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed)}}}
 				}
 
 			case utils.GQL_STOP:
@@ -419,4 +370,45 @@ func (s *Server) handleGraphqlSocket() http.HandlerFunc {
 			}
 		}
 	}
+}
+
+func filterGraphqlSubscriptionResults(field *ast.Field, feed *model.FeedData) map[string]interface{} {
+
+	filteredResults := map[string]interface{}{}
+	feedMap := structs.Map(feed)
+
+	for _, returnField := range field.SelectionSet.Selections {
+		returnFieldName := returnField.(*ast.Field).Name.Value
+
+		if returnFieldName == "payload" {
+			result := map[string]interface{}{}
+			for _, value := range returnField.GetSelectionSet().Selections {
+				valueName := value.(*ast.Field).Name.Value
+				v, ok := feedMap[returnFieldName]
+				if !ok {
+					continue
+				}
+				val, ok := v.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				a, ok := val[valueName]
+				if ok {
+					result[valueName] = a
+				}
+			}
+
+			result["__typename"] = feed.Group
+			filteredResults[returnFieldName] = result
+			continue
+		}
+
+		value, ok := feedMap[returnFieldName]
+		if ok {
+			filteredResults[returnFieldName] = value
+		}
+
+	}
+
+	return filteredResults
 }

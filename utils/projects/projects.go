@@ -101,6 +101,7 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	u := userman.Init(c, a)
 	file := filestore.Init(a)
 	eventing := eventing.New(c, f, p.syncMan)
+	pub := pubsub.Init(a)
 
 	c.SetHooks(&model.CrudHooks{
 		Create: eventing.HandleCreateIntent,
@@ -118,7 +119,7 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	graph := graphql.New(a, c, f)
 
 	state := &ProjectState{Crud: c, Functions: f, Auth: a, UserManagement: u, FileStore: file, Realtime: r,
-		Eventing: eventing, Graph: graph}
+		Eventing: eventing, Graph: graph, Pubsub: pub}
 	p.projects[project] = state
 
 	return state, nil

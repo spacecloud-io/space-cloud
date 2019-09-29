@@ -13,7 +13,7 @@ import (
 type resultsHolder struct {
 	sync.Mutex
 	results      []*dataloader.Result
-	whereClauses []map[string]interface{}
+	whereClauses []interface{}
 }
 
 func (holder *resultsHolder) getResults() []*dataloader.Result {
@@ -29,7 +29,7 @@ func (holder *resultsHolder) addResult(i int, result *dataloader.Result) {
 	holder.Unlock()
 }
 
-func (holder *resultsHolder) getWhereClauses() []map[string]interface{} {
+func (holder *resultsHolder) getWhereClauses() []interface{} {
 	holder.Lock()
 	defer holder.Unlock()
 
@@ -62,7 +62,7 @@ func (holder *resultsHolder) fillResults(res []interface{}) {
 
 		docs := []interface{}{}
 		for _, doc := range res {
-			if utils.Validate(whereClause, doc) {
+			if utils.Validate(whereClause.(map[string]interface{}), doc) {
 				docs = append(docs, doc)
 			}
 		}
@@ -127,7 +127,7 @@ func (graph *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) 
 
 	holder := resultsHolder{
 		results:      make([]*dataloader.Result, len(keys)),
-		whereClauses: []map[string]interface{}{},
+		whereClauses: []interface{}{},
 	}
 
 	for index, key := range keys {
