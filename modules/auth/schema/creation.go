@@ -13,8 +13,27 @@ type creationModule struct {
 	schemaModule                                   *Schema
 }
 
+func (s *Schema) ModifyAllCollections(ctx context.Context, conf config.Crud) error {
+	for dbName, crudStubValue := range conf {
+		if !crudStubValue.Enabled {
+			continue
+		}
+
+		for colName, tableRule := range crudStubValue.Collections {
+			if err := s.SchemaCreation(ctx, dbName, colName, s.project, tableRule.Schema); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // SchemaCreation creates or alters tables of sql
 func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schema string) error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
 	crudCol := map[string]*config.TableRule{}
 	crudCol[col] = &config.TableRule{
 		Schema: schema,
@@ -26,13 +45,18 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 		Collections: crudCol,
 	}
 
-	if err := s.crud.CreateProjectIfNotExists(ctx, project, dbType); err != nil {
-		return err
-	}
-
 	parsedSchema, err := s.parser(crud)
 	if err != nil {
 		return nil
+	}
+
+	// Return if no tables are present in schema
+	if len(parsedSchema[dbType]) == 0 {
+		return nil
+	}
+
+	if err := s.crud.CreateProjectIfNotExists(ctx, project, dbType); err != nil {
+		return err
 	}
 
 	currentSchema, _ := s.Inspector(ctx, dbType, project, col)
