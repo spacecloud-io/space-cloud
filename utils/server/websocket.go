@@ -32,6 +32,9 @@ var upgrader = websocket.Upgrader{
 
 func (s *Server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		project := vars["project"]
+
 		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("upgrade:", err)
@@ -56,6 +59,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				mapstructure.Decode(req.Data, data)
+				data.Project = project
 
 				// Subscribe to realtime feed
 				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
@@ -75,6 +79,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				mapstructure.Decode(req.Data, data)
+				data.Project = project
 
 				s.realtime.Unsubscribe(clientID, data)
 
@@ -86,6 +91,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// TODO add security rule for functions registered as well
 				data := new(model.ServiceRegisterRequest)
 				mapstructure.Decode(req.Data, data)
+				data.Project = project
 
 				s.functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
 					c.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
@@ -102,6 +108,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For pubsub subscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
+				data.Project = project
 
 				// Subscribe to pubsub feed
 				var status int
@@ -129,6 +136,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For pubsub unsubscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
+				data.Project = project
 
 				status, err := s.pubsub.Unsubscribe(clientID, data.Subject)
 
@@ -146,6 +154,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For pubsub unsubscribe event
 				data := new(model.PubsubSubscribeRequest)
 				mapstructure.Decode(req.Data, data)
+				data.Project = project
 
 				status, err := s.pubsub.UnsubscribeAll(clientID)
 

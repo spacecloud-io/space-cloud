@@ -33,12 +33,13 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 
 	//Initialize route for graphql schema inspection
 	router.Methods("POST").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.auth.Schema))
+	router.Methods("POST").Path("/v1/api/config/modify/{project}").HandlerFunc(handlers.HandleModifySchemas(s.auth, s.adminMan))
 
 	//Initialize route for getting the schema for specified collection even if doesn't exists in config.crud
 	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleInspectionRequest(s.adminMan, s.auth.Schema))
 
 	//Initialize route for getting all collection names present in config.crud
-	router.Methods("GET").Path("/v1/api/config/list-collections/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.crud))
+	router.Methods("GET").Path("/v1/api/config/list-collections/{project}").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.crud, s.syncMan))
 
 	//Initialize route for getting all schemas for all the collections present in config.crud
 	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.auth.Schema))
@@ -47,7 +48,7 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
 
 	// Initialize the route for websocket
-	router.HandleFunc("/v1/api/socket/json", s.handleWebsocket())
+	router.HandleFunc("/v1/api/{project}/socket/json", s.handleWebsocket())
 
 	// Initialize the route for graphql websocket
 	router.HandleFunc("/v1/api/{project}/graphql/socket", s.handleGraphqlSocket(s.adminMan))
