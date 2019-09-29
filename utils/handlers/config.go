@@ -157,7 +157,11 @@ func HandleModifySchemas(auth *auth.Module, adminMan *admin.Manager) http.Handle
 
 		// Load the body of the request
 		c := config.Crud{}
-		json.NewDecoder(r.Body).Decode(c)
+		if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 		defer r.Body.Close()
 
 		if err := auth.Schema.ModifyAllCollections(ctx, c); err != nil {

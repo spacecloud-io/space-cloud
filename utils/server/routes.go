@@ -39,7 +39,7 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleInspectionRequest(s.adminMan, s.auth.Schema))
 
 	//Initialize route for getting all collection names present in config.crud
-	router.Methods("GET").Path("/v1/api/config/list-collections/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.crud))
+	router.Methods("GET").Path("/v1/api/config/list-collections/{project}").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.crud, s.syncMan))
 
 	//Initialize route for getting all schemas for all the collections present in config.crud
 	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.auth.Schema))
