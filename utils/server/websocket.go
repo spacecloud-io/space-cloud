@@ -45,7 +45,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 
 		state, err := s.projects.LoadProject(project)
 		if err != nil {
-			log.Panicln("Websocket error:", err)
+			log.Println("Websocket error:", err)
 			return
 		}
 
