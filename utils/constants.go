@@ -295,7 +295,7 @@ type ForeignKeysType struct {
 
 // DatabaseCollections stores all callections of sql or postgres or mongo
 type DatabaseCollections struct {
-	TableName string `db:"TABLE_NAME"`
+	TableName string `db:"table_name" json:"tableName"`
 }
 
 // MaxEventTokens describes the maximum number of event workers

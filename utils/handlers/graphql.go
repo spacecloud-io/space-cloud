@@ -226,7 +226,7 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) 
 		}
 
 		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"value": schemas})
+		json.NewEncoder(w).Encode(map[string]interface{}{"collections": schemas})
 		return
 	}
 }
