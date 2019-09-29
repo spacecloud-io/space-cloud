@@ -38,7 +38,10 @@ func checkErrors(realFieldStruct *schemaFieldType) error {
 	}
 	if realFieldStruct.Kind == typeID && realFieldStruct.Directive != directiveId {
 		return errors.New("Graphql : directive id should have type id")
+	} else if realFieldStruct.IsFieldTypeRequired {
+		return errors.New("Graphql : id type is not nullable required (!)")
 	}
+
 	return nil
 }
 

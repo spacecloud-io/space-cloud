@@ -44,7 +44,6 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 		// check if table exist in current schema
 		currentColValue, ok := currentSchema[realColName]
 		if !ok {
-
 			// create table with primary key
 			query, err := addNewTable(project, realColName, realColValue)
 			if err != nil {
@@ -56,7 +55,6 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 			}
 			return s.SchemaCreation(ctx, dbType, col, project, schema)
 		}
-
 		for realFieldKey, realFieldStruct := range realColValue {
 			if err := checkErrors(realFieldStruct); err != nil {
 				return err
