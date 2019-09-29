@@ -9,7 +9,7 @@ import (
 // GetSQLType return sql type
 func getSQLType(typeName string) (string, error) {
 	switch typeName {
-	case typeString:
+	case typeString, typeID:
 		return "text", nil
 	case typeDateTime:
 		return "timestamp", nil
@@ -17,8 +17,8 @@ func getSQLType(typeName string) (string, error) {
 		return "boolean", nil
 	case typeFloat:
 		return "float", nil
-	case typeInteger, typeID:
-		return "int", nil
+	case typeInteger:
+		return "bigint", nil
 	case typeJoin:
 		return "", nil
 	default:

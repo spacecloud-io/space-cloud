@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/fatih/structs"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -174,7 +175,7 @@ func convertToArray(eventDocs []*model.EventDocument) []interface{} {
 	docs := make([]interface{}, len(eventDocs))
 
 	for i, doc := range eventDocs {
-		docs[i] = doc
+		docs[i] = structs.Map(doc)
 	}
 
 	return docs

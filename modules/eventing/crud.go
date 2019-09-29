@@ -38,12 +38,10 @@ func (m *Module) HandleCreateIntent(ctx context.Context, dbType, col string, req
 		return &model.EventIntent{Invalid: true}, nil
 	}
 
-	log.Println("New events:", eventDocs)
-
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
 	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
-		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
+		return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 	}
 
 	return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
