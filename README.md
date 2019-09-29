@@ -8,7 +8,7 @@
 	<strong>
 		<a href="https://spaceuptech.com/">Website</a>
 		•
-		<a href="https://spaceuptech.com/docs/">Docs</a>
+		<a href="https://docs.spaceuptech.com/">Docs</a>
 		•
 		<a href="https://discord.gg/ypXEEBr">Support</a>
 	</strong>
