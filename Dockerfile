@@ -9,21 +9,14 @@ COPY space-cloud .
 RUN set -ex  \
   && apk add --no-cache ca-certificates \
   && chmod +x space-cloud \ 
-  && mkdir -p /root/.space-cloud/mission-control-v0.10.3
+  && mkdir -p /root/.space-cloud/mission-control-v0.12.0
 
-COPY mission-control /root/.space-cloud/mission-control-v0.10.3
+COPY mission-control /root/.space-cloud/mission-control-v0.12.0
 
 ENV PROD=false
 ENV PATH="/space-cloud:${PATH}"
 
 # ports for the http and https servers
-EXPOSE 4122 4124
-EXPOSE 4126 4128
-
-# ports for nats
-EXPOSE 4222 4248
-
-# ports for gossip and raft
-EXPOSE 4232 4234
+EXPOSE 4122 4124 4126 4128 4222 4248 4232 4234
 
 CMD ./space-cloud run

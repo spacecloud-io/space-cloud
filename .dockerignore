@@ -13,7 +13,10 @@
 *.out
 
 **/node_modules/**
-css
+mission-control/public/**
+mission-control/src/**
+mission-control/node_modules/**
+
 .sass-cache
 
 raft-store/**
