@@ -18,7 +18,12 @@ type Crud interface {
 	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) error
+	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
+	RawExec(ctx context.Context, project string) error
+	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
+	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
+	IsClientSafe() error
 	Close() error
 }
 
@@ -34,7 +39,7 @@ func New() *Handler {
 }
 
 // InitBlock creates and returns a new crud object. If the driver already exists, it returns that instead
-func (h *Handler) InitBlock(dbType utils.DBType, connection string) (Crud, error) {
+func (h *Handler) InitBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -45,7 +50,7 @@ func (h *Handler) InitBlock(dbType utils.DBType, connection string) (Crud, error
 		return s.getCrud(), nil
 	}
 
-	return h.addBlock(dbType, connection)
+	return h.addBlock(dbType, enabled, connection)
 }
 
 // RemoveBlock removes a crud object if other module is referencing it
@@ -74,28 +79,23 @@ func (h *Handler) getBlock(dbType utils.DBType, connection string) (s *stub, p b
 	return
 }
 
-func (h *Handler) addBlock(dbType utils.DBType, connection string) (Crud, error) {
+func (h *Handler) addBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
 	var c Crud
 	var err error
 
 	switch dbType {
 	case utils.Mongo:
-		c, err = mgo.Init(connection)
+		c, err = mgo.Init(enabled, connection)
 
 	case utils.MySQL, utils.Postgres:
-		c, err = sql.Init(dbType, connection)
+		c, err = sql.Init(dbType, enabled, connection)
 
 	default:
 		c, err = nil, utils.ErrInvalidParams
 	}
 
-	// Return the error of exists
-	if err != nil {
-		return nil, err
-	}
-
 	h.drivers[generateKey(dbType, connection)] = newStub(c)
-	return c, nil
+	return c, err
 }
 
 func generateKey(dbType utils.DBType, connection string) string {

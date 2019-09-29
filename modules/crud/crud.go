@@ -1,10 +1,11 @@
 package crud
 
 import (
-	"errors"
+	"log"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
@@ -15,25 +16,17 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]*stub
 	primaryDB string
-	h         *driver.Handler
+
+	// Variables to store the hooks
+	hooks *model.CrudHooks
+
+	// Drivers handler
+	h *driver.Handler
 }
 
 // Init create a new instance of the Module object
 func Init(h *driver.Handler) *Module {
 	return &Module{blocks: make(map[string]*stub), h: h}
-}
-
-// GetPrimaryDB get the database configured as primary
-func (m *Module) GetPrimaryDB() (driver.Crud, error) {
-	m.RLock()
-	defer m.RUnlock()
-
-	c, p := m.blocks[m.primaryDB]
-	if !p {
-		return nil, errors.New("CRUD: Primary DB not configured")
-	}
-
-	return c.c, nil
 }
 
 // SetConfig set the rules adn secret key required by the crud block
@@ -50,24 +43,22 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 	// Create a new crud blocks
 	for dbType, v := range crud {
-		// Skip this block if it is not enabled
-		if !v.Enabled {
-			continue
-		}
-
 		// Initialise a new block
-		c, err := m.h.InitBlock(utils.DBType(dbType), v.Conn)
-		if err != nil {
-			return errors.New("CRUD: Error - " + dbType + " could not be initialised - " + err.Error())
-		}
-
-		if v.IsPrimary {
-			m.primaryDB = dbType
-		}
+		c, err := m.h.InitBlock(utils.DBType(dbType), v.Enabled, v.Conn)
 		m.blocks[dbType] = &stub{c: c, conn: v.Conn, dbType: utils.DBType(dbType)}
-	}
 
+		if err != nil {
+			log.Println("Error connecting to " + dbType + " : " + err.Error())
+		} else {
+			log.Println("Successfully connected to " + dbType)
+		}
+	}
 	return nil
+}
+
+// SetHooks sets the internal hooks
+func (m *Module) SetHooks(hooks *model.CrudHooks) {
+	m.hooks = hooks
 }
 
 type stub struct {
@@ -81,5 +72,5 @@ func (m *Module) getCrudBlock(dbType string) (driver.Crud, error) {
 		return crud.c, nil
 	}
 
-	return nil, errors.New("CRUD: No crud block present for db")
+	return nil, utils.ErrDatabaseConfigAbsent
 }

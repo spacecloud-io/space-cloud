@@ -25,12 +25,43 @@ func appendIfMissing(slice []string, s string) []string {
 	return append(slice, s)
 }
 
-func updateSCMetrics(find, update map[string]interface{}, upsert bool) error {
-	op := "one"
-	if upsert {
-		op = "upsert"
+func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) {
+	// Create the find and update clauses
+	find = map[string]interface{}{"_id": s.nodeID}
+	set := map[string]interface{}{
+		"os":           runtime.GOOS,
+		"isProd":       s.adminMan.LoadEnv(),
+		"version":      utils.BuildVersion,
+		"clusterSize":  s.syncMan.GetClusterSize(),
+		"distribution": "ee",
+		"lastUpdated":  currentTimeInMillis(),
 	}
-	req := map[string]interface{}{"find": find, "update": update, "op": op}
+	min := map[string]interface{}{"startTime": currentTimeInMillis()}
+
+	c := s.syncMan.GetGlobalConfig()
+	if c != nil {
+		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
+		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
+		if c.Admin != nil {
+			set["mode"] = c.Admin.Operation.Mode
+		}
+		if c.Projects != nil && len(c.Projects) > 0 {
+			set["modules"] = getProjectInfo(c.Projects, c.Static)
+			projects := []string{}
+			for _, project := range c.Projects {
+				projects = append(projects, project.ID)
+			}
+			set["projects"] = projects
+		}
+	}
+
+	update = map[string]interface{}{"$set": set, "$min": min}
+	return
+}
+
+func updateSCMetrics(find, update map[string]interface{}) error {
+
+	req := map[string]interface{}{"find": find, "update": update, "op": "upsert"}
 	jsonValue, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -52,67 +83,15 @@ func (s *Server) RoutineMetrics() {
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 
-	// Create the find and update clauses
-	find := map[string]interface{}{"_id": s.nodeID}
-	set := map[string]interface{}{
-		"os":           runtime.GOOS,
-		"isProd":       s.adminMan.LoadEnv(),
-		"version":      utils.BuildVersion,
-		"clusterSize":  s.syncMan.GetClusterSize(),
-		"distribution": "ee",
-		"startTime":    currentTimeInMillis(),
-		"lastUpdated":  currentTimeInMillis(),
-	}
-
-	c := s.syncMan.GetGlobalConfig()
-	if c != nil {
-		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
-		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
-		if c.Admin != nil {
-			set["mode"] = c.Admin.Operation.Mode
-		}
-		if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-			set["modules"] = getProjectInfo(c.Projects, c.Static)
-			projects := []string{}
-			for _, project := range c.Projects {
-				projects = append(projects, project.ID)
-			}
-			set["projects"] = projects
-		}
-	}
-
-	update := map[string]interface{}{"$set": set}
-	err := updateSCMetrics(find, update, true)
+	find, update := s.generateMetricsRequest()
+	err := updateSCMetrics(find, update)
 	if err != nil {
 		// fmt.Println("Metrics Error -", err)
 	}
 
 	for range ticker.C {
-		set := map[string]interface{}{
-			"lastUpdated": currentTimeInMillis(),
-			"clusterSize": s.syncMan.GetClusterSize(),
-			"isProd":      s.adminMan.LoadEnv(),
-		}
-
-		c := s.syncMan.GetGlobalConfig()
-		if c != nil {
-			set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
-			set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
-			if c.Admin != nil {
-				set["mode"] = c.Admin.Operation.Mode
-			}
-			if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-				set["modules"] = getProjectInfo(c.Projects, c.Static)
-				projects := []string{}
-				for _, project := range c.Projects {
-					projects = append(projects, project.ID)
-				}
-				set["projects"] = projects
-			}
-		}
-
-		update := map[string]interface{}{"$set": set}
-		err := updateSCMetrics(find, update, false)
+		find, update := s.generateMetricsRequest()
+		err := updateSCMetrics(find, update)
 		if err != nil {
 			// fmt.Println("Metrics Error -", err)
 		}
@@ -123,7 +102,6 @@ func getProjectInfo(projects []*config.Project, static *config.Static) map[strin
 
 	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
 	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
-	realtimeConfig := map[string]interface{}{"enabled": false}
 	fileStoreConfig := map[string]interface{}{"enabled": false, "storeTypes": []string{}, "rules": 0}
 	staticConfig := map[string]interface{}{"routes": 0, "internalRoutes": 0}
 	auth := []string{}
@@ -149,7 +127,7 @@ func getProjectInfo(projects []*config.Project, static *config.Static) map[strin
 				}
 			}
 
-			if config.Functions != nil && config.Functions.Enabled {
+			if config.Functions != nil {
 				functionsConfig["enabled"] = true
 				if config.Functions.Services != nil {
 					functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Services)
@@ -159,10 +137,6 @@ func getProjectInfo(projects []*config.Project, static *config.Static) map[strin
 						}
 					}
 				}
-			}
-
-			if config.Realtime != nil && config.Realtime.Enabled {
-				realtimeConfig["enabled"] = true
 			}
 
 			if config.FileStore != nil && config.FileStore.Enabled {
@@ -185,5 +159,5 @@ func getProjectInfo(projects []*config.Project, static *config.Static) map[strin
 		}
 	}
 
-	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "realtime": realtimeConfig, "fileStore": fileStoreConfig, "auth": auth, "static": staticConfig}
+	return map[string]interface{}{"crud": crudConfig, "functions": functionsConfig, "fileStore": fileStoreConfig, "auth": auth, "static": staticConfig}
 }

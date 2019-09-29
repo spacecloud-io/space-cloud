@@ -11,11 +11,32 @@ func (p *Projects) StoreProject(config *config.Project) error {
 	// Get the project. Create if not exists
 	state, err := p.LoadProject(config.ID)
 	if err != nil {
-		state = p.NewProject(config.ID)
+
+		// Create a new project
+		state, err = p.NewProject(config.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Set the configuration for the crud module
+	if err := state.Crud.SetConfig(config.Modules.Crud); err != nil {
+		log.Println("Crud module config error:", err)
 	}
 
 	// Set the configuration for the auth module
-	state.Auth.SetConfig(config.ID, config.Secret, config.Modules.Crud, config.Modules.FileStore, config.Modules.Functions)
+	if err := state.Auth.SetConfig(config.ID, config.Secret, config.Modules.Crud,
+		config.Modules.FileStore, config.Modules.Functions, config.Modules.Pubsub); err != nil {
+		log.Println("Auth module config error:", err)
+	}
+
+	if err := state.Pubsub.SetConfig(config.Modules.Pubsub); err != nil {
+		log.Println("Pubsub module config error:", err)
+	}
+
+	if err := state.Eventing.SetConfig(config.ID, &config.Modules.Eventing); err != nil {
+		log.Println("Eventing module config error:", err)
+	}
 
 	// Set the configuration for the user management module
 	state.UserManagement.SetConfig(config.Modules.Auth)
@@ -25,20 +46,10 @@ func (p *Projects) StoreProject(config *config.Project) error {
 		log.Println("File storage module config error:", err)
 	}
 
-	// Set the configuration for the functions module
-	if err := state.Functions.SetConfig(config.Modules.Functions); err != nil {
-		log.Println("Functions module config error:", err)
-	}
-
 	// Set the configuration for the Realtime module
-	if err := state.Realtime.SetConfig(config.ID, config.Modules.Realtime); err != nil {
-		log.Println("Realtime module config error:", err)
-	}
+	state.Realtime.SetConfig(config.ID, config.Modules.Crud)
 
-	// Set the configuration for the crud module
-	if err := state.Crud.SetConfig(config.Modules.Crud); err != nil {
-		log.Println("Database module config error:", err)
-	}
+	state.Graph.SetConfig(config.ID)
 
 	return nil
 }

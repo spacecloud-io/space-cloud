@@ -15,8 +15,8 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
-	"github.com/spaceuptech/space-cloud/modules/deploy"
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -34,26 +34,31 @@ type Server struct {
 	nats           *nats.Server
 	projects       *projects.Projects
 	ssl            *config.SSL
-	syncMan        *syncman.SyncManager
 	configFilePath string
+	syncMan        *syncman.SyncManager
 	adminMan       *admin.Manager
-	deploy         *deploy.Module
 	static         *static.Module
 }
 
 // New creates a new server instance
-func New(nodeID string) *Server {
+func New(nodeID string) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
-	adminMan := admin.New(nodeID)
 	s := static.Init()
-	d := deploy.New(adminMan, s)
-	projects := projects.New(driver.New())
-	syncMan := syncman.New(projects, d, adminMan, s)
+	adminMan := admin.New(nodeID)
+	syncMan := syncman.New(adminMan, s)
+
+	projects := projects.New(nodeID, driver.New(), adminMan, syncMan)
+
+	syncMan.SetProjectCallbacks(&model.ProjectCallbacks{
+		Store:  projects.StoreProject,
+		Delete: projects.DeleteProject,
+	})
+
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: projects,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
-		deploy: d, static: s,
-	}
+		static: s,
+	}, nil
 }
 
 // Start begins the server operations
@@ -115,7 +120,6 @@ func (s *Server) SetConfig(c *config.Config, isProd bool) {
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetEnv(isProd)
 	s.adminMan.SetConfig(c.Admin)
-	s.deploy.SetConfig(&c.Deploy)
 	s.static.SetConfig(c.Static)
 	s.static.SetInternalRoutes(c.Static)
 }

@@ -1,10 +1,9 @@
 package realtime
 
 import (
-	"log"
 	"sync"
 
-	nats "github.com/nats-io/nats.go"
+	"github.com/nats-io/nats.go"
 )
 
 type queryStub struct {
@@ -19,22 +18,11 @@ type clientsStub struct {
 }
 
 // AddLiveQuery tracks a client for a live query
-func (m *Module) AddLiveQuery(id, project, group, clientID string, whereObj map[string]interface{}, sendFeed SendFeed) {
+func (m *Module) AddLiveQuery(id, project, dbType, group, clientID string, whereObj map[string]interface{}, sendFeed SendFeed) {
 	// Load clients in a particular group
 	clients := new(clientsStub)
-	t, loaded := m.groups.LoadOrStore(group, clients)
+	t, _ := m.groups.LoadOrStore(createGroupKey(dbType, group), clients)
 	clients = t.(*clientsStub)
-
-	if !loaded {
-		clients.Lock()
-		sub, err := m.nc.ChanSubscribe(getSubjectName(project, group), m.feed)
-		if err != nil {
-			log.Println("Realtime Subscription Error:", err)
-			return
-		}
-		clients.subscription = sub
-		clients.Unlock()
-	}
 
 	// Load the queries of a particular client
 	queries := new(sync.Map)
@@ -46,9 +34,9 @@ func (m *Module) AddLiveQuery(id, project, group, clientID string, whereObj map[
 }
 
 // RemoveLiveQuery removes a particular live query
-func (m *Module) RemoveLiveQuery(group, clientID, queryID string) {
+func (m *Module) RemoveLiveQuery(dbType, group, clientID, queryID string) {
 	// Load clients in a particular group
-	clientsTemp, ok := m.groups.Load(group)
+	clientsTemp, ok := m.groups.Load(createGroupKey(dbType, group))
 	if !ok {
 		return
 	}
@@ -71,8 +59,7 @@ func (m *Module) RemoveLiveQuery(group, clientID, queryID string) {
 
 	// Delete group if no clients present
 	if mapLen(&clients.clients) == 0 {
-		m.groups.Delete(group)
-		clients.subscription.Unsubscribe()
+		m.groups.Delete(createGroupKey(dbType, group))
 	}
 }
 
@@ -84,7 +71,6 @@ func (m *Module) RemoveClient(clientID string) {
 		clients.clients.Delete(clientID)
 		if mapLen(&clients.clients) == 0 {
 			m.groups.Delete(key)
-			clients.subscription.Unsubscribe()
 		}
 		return true
 	})
