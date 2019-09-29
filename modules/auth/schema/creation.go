@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type creationModule struct {
@@ -14,6 +15,9 @@ type creationModule struct {
 
 func (s *Schema) ModifyAllCollections(ctx context.Context, conf config.Crud) error {
 	for dbName, crudStubValue := range conf {
+		if utils.DBType(dbName) == utils.Mongo {
+			continue
+		}
 		if !crudStubValue.Enabled {
 			continue
 		}
