@@ -285,7 +285,7 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 				return nil, errors.New("String Wrong Date-Time Format")
 			}
 			return unitTimeInRFC3339, nil
-		case typeID, typeString:
+		case typeID, typeString, typeJoin:
 			return value, nil
 		default:
 			return nil, errors.New("String wrong type wanted " + fieldValue.Kind + " got String")

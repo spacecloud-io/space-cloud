@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -190,6 +191,7 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 			if stub.Enabled {
 				collections, err := crud.GetCollections(ctx, project, dbType)
 				if err != nil {
+					log.Println("Get collections error:", err)
 					continue
 				}
 

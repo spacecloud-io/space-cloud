@@ -37,7 +37,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		fieldDetails := schemaFieldType{}
 
 		// check if field nullable (!)
-		if value.FieldNull == "YES" {
+		if value.FieldNull == "NO" {
 			fieldDetails.IsFieldTypeRequired = true
 		}
 
@@ -64,7 +64,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 			if foreignValue.ColumnName == value.FieldName {
 				fieldDetails.JointTable.TableName = foreignValue.RefTableName
 				fieldDetails.JointTable.TableField = foreignValue.RefColumnName
-				fieldDetails.Kind = typeJoin
+				fieldDetails.Kind = foreignValue.RefTableName
 				fieldDetails.Directive = "relation"
 			}
 		}
@@ -105,9 +105,9 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaField
 	result = strings.Split(result[0], "(")
 
 	switch result[0] {
-	case "character", "bit":
+	case "character", "bit", "text":
 		fieldDetails.Kind = typeString
-	case "bigint", "bigserial", "integer", "numeric", "smallint", "smallserial", "serial", "text":
+	case "bigint", "bigserial", "integer", "numeric", "smallint", "smallserial", "serial":
 		fieldDetails.Kind = typeInteger
 	case "float", "double", "real":
 		fieldDetails.Kind = typeFloat

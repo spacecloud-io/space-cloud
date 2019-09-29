@@ -17,7 +17,7 @@ type EventDocument struct {
 	Status         string `structs:"status" json:"status" bson:"status" mapstructure:"status"`
 	Retries        int    `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
 	Service        string `structs:"service" json:"service" bson:"service" mapstructure:"service"`
-	Function       string `structs:"function" json:"function" bson:"function" mapstructure:"function"`
+	Function       string `structs:"func" json:"func" bson:"function" mapstructure:"func"`
 }
 
 // QueueEventRequest is the payload to add a new event to the task queue

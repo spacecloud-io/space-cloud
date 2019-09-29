@@ -38,8 +38,8 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 			ELSE 'f'  
 		END AS "Key",
 		CASE
-			WHEN f.attnotnull = 't' THEN 'YES'
-			ELSE 'NO'
+			WHEN f.attnotnull = 't' THEN 'NO'
+			ELSE 'YES'
 		END AS "Null"
 	FROM pg_attribute f  
 		JOIN pg_class c ON c.oid = f.attrelid  

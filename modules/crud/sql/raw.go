@@ -7,6 +7,12 @@ import (
 // RawBatch performs a batch operation for schema creation
 // NOTE: not to be exposed externally
 func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
+
+	// Skip if length of queries == 0
+	if len(queries) == 0 {
+		return nil
+	}
+
 	tx, err := s.client.Beginx()
 	if err != nil {
 		return err

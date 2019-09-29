@@ -9,7 +9,9 @@ import (
 // GetSQLType return sql type
 func getSQLType(typeName string) (string, error) {
 	switch typeName {
-	case typeString, typeID:
+	case typeID, typeJoin:
+		return "varchar(50)", nil
+	case typeString:
 		return "text", nil
 	case typeDateTime:
 		return "timestamp", nil
@@ -19,8 +21,6 @@ func getSQLType(typeName string) (string, error) {
 		return "float", nil
 	case typeInteger:
 		return "bigint", nil
-	case typeJoin:
-		return "", nil
 	default:
 		return "", errors.New("type not allowed")
 	}
@@ -28,18 +28,18 @@ func getSQLType(typeName string) (string, error) {
 
 func checkErrors(realFieldStruct *schemaFieldType) error {
 	if realFieldStruct.IsList && (realFieldStruct.Directive != directiveRelation) { // array without directive relation not allowed
-		return errors.New("Graphql : array type without relation directive not supported in sql creation")
+		return errors.New("schema: array type without relation directive not supported in sql creation")
 	}
 	if realFieldStruct.Kind == typeObject {
-		return errors.New("Graphql : object type not supported in sql creation")
+		return errors.New("schema: object type not supported in sql creation")
 	}
 	if realFieldStruct.Directive == directiveRelation && realFieldStruct.Kind != typeJoin {
-		return errors.New("Graphql : directive relation should contain user defined type got " + realFieldStruct.Kind)
+		return errors.New("schema : directive relation should contain user defined type got " + realFieldStruct.Kind)
 	}
 	if realFieldStruct.Kind == typeID && realFieldStruct.Directive != directiveId {
-		return errors.New("Graphql : directive id should have type id")
-	} else if realFieldStruct.IsFieldTypeRequired {
-		return errors.New("Graphql : id type is not nullable required (!)")
+		return errors.New("schema : directive id should have type id")
+	} else if realFieldStruct.Kind == typeID && !realFieldStruct.IsFieldTypeRequired {
+		return errors.New("schema : id type is must be not nullable (!)")
 	}
 
 	return nil
@@ -94,7 +94,7 @@ func (c *creationModule) addPrimaryKey() string {
 	case utils.MySQL:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD PRIMARY KEY (" + c.FieldKey + ")"
 	case utils.Postgres:
-		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD CONSTRAINT c_" + c.FieldKey + " PRIMARY KEY (" + c.FieldKey + ")"
+		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " PRIMARY KEY (" + c.FieldKey + ")"
 	}
 	return ""
 }
@@ -104,36 +104,36 @@ func (c *creationModule) removePrimaryKey() string {
 	case utils.MySQL:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP PRIMARY KEY"
 	case utils.Postgres:
-		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.FieldKey
+		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey
 	}
 	return ""
 
 }
 
 func (c *creationModule) addUniqueKey() string {
-	return "ALTER TABLE " + c.project + "." + c.ColName + " ADD CONSTRAINT c_" + c.FieldKey + " UNIQUE (" + c.FieldKey + ")"
+	return "ALTER TABLE " + c.project + "." + c.ColName + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " UNIQUE (" + c.FieldKey + ")"
 }
 
 func (c *creationModule) removeUniqueKey() string {
 	switch utils.DBType(c.dbType) {
 	case utils.MySQL:
-		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP INDEX c_" + c.FieldKey
+		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP INDEX c_" + c.ColName + "_" + c.FieldKey
 	case utils.Postgres:
-		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.FieldKey
+		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey
 	}
 	return ""
 }
 
 func (c *creationModule) addForeignKey() string {
-	return "ALTER TABLE " + c.project + "." + c.ColName + " ADD CONSTRAINT c_" + c.FieldKey + " FOREIGN KEY (" + c.FieldKey + ") REFERENCES " + c.project + "." + c.realFieldStruct.JointTable.TableName + "(" + c.realFieldStruct.JointTable.TableField + ")"
+	return "ALTER TABLE " + c.project + "." + c.ColName + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " FOREIGN KEY (" + c.FieldKey + ") REFERENCES " + c.project + "." + c.realFieldStruct.JointTable.TableName + "(" + c.realFieldStruct.JointTable.TableField + ")"
 }
 
 func (c *creationModule) removeForeignKey() []string {
 	switch utils.DBType(c.dbType) {
 	case utils.MySQL:
-		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP FOREIGN KEY c_" + c.FieldKey, "ALTER TABLE " + c.project + "." + c.ColName + " DROP INDEX c_" + c.FieldKey}
+		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP FOREIGN KEY c_" + c.ColName + "_" + c.FieldKey, "ALTER TABLE " + c.project + "." + c.ColName + " DROP INDEX c_" + c.ColName + "_" + c.FieldKey}
 	case utils.Postgres:
-		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.FieldKey}
+		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey}
 	}
 	return nil
 }
