@@ -31,3 +31,8 @@ func (m *Mongo) Delete(ctx context.Context, project, col string, req *model.Dele
 
 	return nil
 }
+
+// DeleteCollection removes a collection from database`
+func (m Mongo) DeleteCollection(ctx context.Context, project, col string) error {
+	return 	m.client.Database(project).Drop(ctx)
+}
