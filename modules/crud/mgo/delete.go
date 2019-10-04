@@ -3,6 +3,7 @@ package mgo
 import (
 	"context"
 	"errors"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -34,5 +35,5 @@ func (m *Mongo) Delete(ctx context.Context, project, col string, req *model.Dele
 
 // DeleteCollection removes a collection from database`
 func (m Mongo) DeleteCollection(ctx context.Context, project, col string) error {
-	return 	m.client.Database(project).Drop(ctx)
+	return 	m.client.Database(project).Collection(col,&options.CollectionOptions{}).Drop(ctx)
 }
