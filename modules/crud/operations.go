@@ -230,3 +230,20 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 
 	return crud.RawExec(ctx, sql)
 }
+
+// DeleteTable drop specified table from database
+func (m *Module) DeleteTable(ctx context.Context, project, dbType, col string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	return crud.DeleteCollection(ctx, project, col)
+}

@@ -47,6 +47,8 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	//Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
 
+	router.Methods("DELETE").Path("/v1/api/config/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleDeleteCollection(s.adminMan,s.crud))
+
 	// Initialize the route for websocket
 	router.HandleFunc("/v1/api/{project}/socket/json", s.handleWebsocket())
 
