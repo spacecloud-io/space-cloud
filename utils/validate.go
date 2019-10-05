@@ -1,6 +1,48 @@
 package utils
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/google/go-cmp/cmp"
+)
+
+func attemptConvertBoolToInt64(val interface{}) interface{} {
+	if tempBool, ok := val.(bool); ok {
+		val = int64(0)
+		if tempBool {
+			val = int64(1)
+		}
+	}
+	return val
+}
+
+func attemptConvertIntToInt64(val interface{}) interface{} {
+	if tempInt, ok := val.(int); ok {
+		val = int64(tempInt)
+	} else if tempInt, ok := val.(int32); ok {
+		val = int64(tempInt)
+	}
+	return val
+}
+
+func compare(v1, v2 interface{}) bool {
+	if reflect.TypeOf(v1).String() == reflect.Int64.String() {
+		return fmt.Sprintf("%v", v1) == fmt.Sprintf("%v", v2)
+	}
+
+	return cmp.Equal(v1, v2)
+}
+
+func adjustValTypes(v1, v2 interface{}) (interface{}, interface{}) {
+	v1 = attemptConvertBoolToInt64(v1)
+	v2 = attemptConvertBoolToInt64(v2)
+
+	v1 = attemptConvertIntToInt64(v1)
+	v2 = attemptConvertIntToInt64(v2)
+
+	return v1, v2
+}
 
 // Validate checks if the provided document matches with the where clause
 func Validate(where map[string]interface{}, obj interface{}) bool {
@@ -24,10 +66,12 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 			if !p {
 				return false
 			}
+
 			// And clause
 			cond, ok := temp.(map[string]interface{})
 			if !ok {
-				if temp != val {
+				temp, val = adjustValTypes(temp, val)
+				if !compare(temp, val) {
 					return false
 				}
 				continue
@@ -35,16 +79,17 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 
 			// match condition
 			for k2, v2 := range cond {
+				v2, val = adjustValTypes(v2, val)
 				if reflect.TypeOf(val) != reflect.TypeOf(v2) {
 					return false
 				}
 				switch k2 {
 				case "$eq":
-					if val != v2 {
+					if !compare(val, v2) {
 						return false
 					}
 				case "$neq":
-					if val == v2 {
+					if compare(val, v2) {
 						return false
 					}
 				case "$gt":
