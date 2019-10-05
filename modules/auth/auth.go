@@ -55,6 +55,7 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 
 	m.project = project
 	m.rules = rules
+
 	if err := m.Schema.SetConfig(rules, project); err != nil {
 		return err
 	}
