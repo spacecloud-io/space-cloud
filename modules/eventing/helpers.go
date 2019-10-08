@@ -41,9 +41,6 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	}
 
 	// Broadcast the event so the concerned worker can process it immediately
-	for _, eventDoc := range eventDocs {
-		eventDoc.Status = utils.EventStatusProcessed
-	}
 	m.broadcastEvents(eventDocs)
 	return nil
 }

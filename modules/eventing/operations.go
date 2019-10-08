@@ -1,11 +1,36 @@
 package eventing
 
 import (
+	"context"
+
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/model"
 )
 
+// IsEnabled returns whether the eventing module is enabled or not
+func (m *Module) IsEnabled() bool {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	// Return false if config isn't present
+	if m.config == nil {
+		return false
+	}
+
+	return m.config.Enabled
+}
+
+// QueueEvent queues a new event
+func (m *Module) QueueEvent(ctx context.Context, req *model.QueueEventRequest) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	return m.batchRequests(ctx, []*model.QueueEventRequest{req})
+}
+
+// AddInternalRules adds triggers which are used for space cloud internally
 func (m *Module) AddInternalRules(eventingRules []config.EventingRule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
