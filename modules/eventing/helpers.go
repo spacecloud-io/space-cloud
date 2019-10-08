@@ -35,7 +35,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	}
 
 	// Persist the events
-	createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
+	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
 	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 		return errors.New("eventing module couldn't log the request -" + err.Error())
 	}
@@ -133,21 +133,20 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 	return rows
 }
 
-func (m *Module) getMatchingRules(name string, options map[string]string) []*config.EventingRule {
-	rules := make([]*config.EventingRule, 0)
+func (m *Module) getMatchingRules(name string, options map[string]string) []config.EventingRule {
+	var rules []config.EventingRule
 
 	for _, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rules = append(rules, &rule)
+			rules = append(rules, rule)
 		}
 	}
 
 	for _, rule := range m.config.InternalRules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rules = append(rules, &rule)
+			rules = append(rules, rule)
 		}
 	}
-
 	return rules
 }
 
