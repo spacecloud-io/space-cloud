@@ -16,7 +16,7 @@ func (a *AmazonS3) DeleteFile(path string) error {
 
 	return svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(a.bucket),
-		Key:    aws.String(a.bucket + path),
+		Key:    aws.String(path),
 	})
 }
 

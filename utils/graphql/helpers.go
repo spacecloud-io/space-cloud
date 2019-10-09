@@ -28,6 +28,7 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
+// GetDBType returns the dbType of the request
 func GetDBType(field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("Field does not contain directives")
@@ -135,6 +136,10 @@ func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 		}
 
 		return val, nil
+
+	case kinds.BooleanValue:
+		boolValue := value.(*ast.BooleanValue)
+		return boolValue.Value, nil
 
 	case kinds.Variable:
 		t := value.(*ast.Variable)

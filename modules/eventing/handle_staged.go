@@ -121,12 +121,16 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		}
 
 		log.Println("Eventing staged event handler could not get response from service:", err)
+
 		// Increment the retries. Exit the loop if max retries reached.
-		retries += 1
+		retries++
 		if retries >= eventDoc.Retries {
 			// Mark event as failed
 			break
 		}
+
+		// Sleep for 5 seconds
+		time.Sleep(5 * time.Second)
 	}
 
 	if err := m.crud.InternalUpdate(context.TODO(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {

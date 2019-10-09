@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -16,6 +17,11 @@ import (
 // ListDir lists a directory in S3
 func (a *AmazonS3) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
 	svc := s3.New(a.client)
+
+	// Add a backslash if not there already
+	if !strings.HasSuffix(req.Path, "/") {
+		req.Path = req.Path + "/"
+	}
 
 	resp, _ := svc.ListObjects(&s3.ListObjectsInput{
 		Bucket:    aws.String(a.bucket),

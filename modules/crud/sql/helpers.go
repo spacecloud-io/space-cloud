@@ -10,21 +10,21 @@ import (
 )
 
 func generator(find map[string]interface{}) goqu.Expression {
-	orTemp, isOr := find["$or"]
-	if isOr {
-		orArray := orTemp.([]interface{})
-		orFinalArray := []goqu.Expression{}
-
-		for _, item := range orArray {
-			exp := generator(item.(map[string]interface{}))
-			orFinalArray = append(orFinalArray, exp)
-		}
-
-		return goqu.Or(orFinalArray...)
-	}
 
 	array := []goqu.Expression{}
 	for k, v := range find {
+		if k == "$or" {
+			orArray := v.([]interface{})
+
+			orFinalArray := []goqu.Expression{}
+			for _, item := range orArray {
+				exp := generator(item.(map[string]interface{}))
+				orFinalArray = append(orFinalArray, exp)
+			}
+
+			array = append(array, goqu.Or(orFinalArray...))
+			continue
+		}
 		val, isObj := v.(map[string]interface{})
 		if isObj {
 			for k2, v2 := range val {
