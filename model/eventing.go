@@ -22,10 +22,11 @@ type EventDocument struct {
 
 // QueueEventRequest is the payload to add a new event to the task queue
 type QueueEventRequest struct {
-	Type      string      `json:"type"`                // The type of the event
-	Delay     int64       `json:"delay,omitempty"`     // Time in seconds
-	Timestamp int64       `json:"timestamp,omitempty"` // Milliseconds from unix epoch (UTC)
-	Payload   interface{} `json:"Payload,omitempty"`   // Payload contains necessary event dat
+	Type      string            `json:"type"`                // The type of the event
+	Delay     int64             `json:"delay,omitempty"`     // Time in seconds
+	Timestamp int64             `json:"timestamp,omitempty"` // Milliseconds from unix epoch (UTC)
+	Payload   interface{}       `json:"payload,omitempty"`   // Payload contains necessary event dat
+	Options   map[string]string `json:"options"`
 }
 
 // EventIntent describes an intent made in the eventing system

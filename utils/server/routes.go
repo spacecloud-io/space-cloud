@@ -65,6 +65,9 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// Initialize the routes for pubsub service
 	router.Methods("POST").Path("/v1/api/{project}/pubsub").HandlerFunc(handlers.HandlePublishCall(s.projects))
 
+	// Initialize the routes for eventing service
+	router.Methods("POST").Path("/v1/api/{project}/eventing/queue").HandlerFunc(handlers.HandleQueueEvent(s.adminMan, s.eventing))
+
 	// Initialize the routes for the crud operations
 	router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.projects))
 
