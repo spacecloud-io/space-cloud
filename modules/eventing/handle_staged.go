@@ -77,46 +77,45 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	retries := 0
 
 	for {
-		result, err := m.functions.CallWithContext(ctxLocal, eventDoc.Service, eventDoc.Function, map[string]interface{}{"id": "space-cloud-eventing"}, eventDoc)
+		token, err := m.auth.GetInternalAccessToken()
+		if err != nil {
+			log.Println("Eventing: Couldn't trigger functions -", err)
+			return
+		}
+
+		result, err := m.functions.CallWithContext(ctxLocal, eventDoc.Service, eventDoc.Function, token, eventDoc)
 		if err == nil {
+
 			// Check if the result is an object
 			obj, ok := result.(map[string]interface{})
 			if ok {
-				// Check if ack is present in response
-				if ackTemp, p := obj["ack"]; p {
-
-					// Check if the ack is true
-					if ack, ok := ackTemp.(bool); ok && ack {
-
-						// Check if response contains an event request
-						var eventRequests []*model.QueueEventRequest
-						if item, p := obj["event"]; p {
-							req := new(model.QueueEventRequest)
-							if err := mapstructure.Decode(item, req); err == nil {
-								eventRequests = append(eventRequests, req)
-							}
-						}
-
-						if items, p := obj["events"]; p {
-							array := items.([]interface{})
-							for _, item := range array {
-								req := new(model.QueueEventRequest)
-								if err := mapstructure.Decode(item, req); err == nil {
-									eventRequests = append(eventRequests, req)
-								}
-							}
-						}
-
-						if len(eventRequests) > 0 {
-							if err := m.batchRequests(ctx, eventRequests); err != nil {
-								log.Println("Eventing: Couldn't persist events err -", err)
-							}
-						}
-
-						m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
-						return
+				// Check if response contains an event request
+				var eventRequests []*model.QueueEventRequest
+				if item, p := obj["event"]; p {
+					req := new(model.QueueEventRequest)
+					if err := mapstructure.Decode(item, req); err == nil {
+						eventRequests = append(eventRequests, req)
 					}
 				}
+
+				if items, p := obj["events"]; p {
+					array := items.([]interface{})
+					for _, item := range array {
+						req := new(model.QueueEventRequest)
+						if err := mapstructure.Decode(item, req); err == nil {
+							eventRequests = append(eventRequests, req)
+						}
+					}
+				}
+
+				if len(eventRequests) > 0 {
+					if err := m.batchRequests(ctx, eventRequests); err != nil {
+						log.Println("Eventing: Couldn't persist events err -", err)
+					}
+				}
+
+				m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+				return
 			}
 		}
 

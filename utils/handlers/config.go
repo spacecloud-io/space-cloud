@@ -23,7 +23,7 @@ func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 }
 
 // HandleAdminLogin creates the admin login endpoint
-func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
+func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 
 	type Request struct {
 		User string `json:"user"`
@@ -53,7 +53,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.SyncManager) htt
 }
 
 // HandleLoadProjects returns the handler to load the projects via a REST endpoint
-func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -99,7 +99,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.SyncManager, c
 }
 
 // HandleStoreProjectConfig returns the handler to store the config of a project via a REST endpoint
-func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -130,7 +130,7 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncMana
 		}
 
 		// Sync the config
-		if err := syncMan.SetProjectConfig(token, c); err != nil {
+		if err := syncMan.SetProjectConfig(c); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -184,7 +184,7 @@ func HandleModifySchemas(auth *auth.Module, adminMan *admin.Manager) http.Handle
 }
 
 // HandleLoadStaticConfig returns the handler to load the projects via a REST endpoint
-func HandleLoadStaticConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
+func HandleLoadStaticConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -211,7 +211,7 @@ func HandleLoadStaticConfig(adminMan *admin.Manager, syncMan *syncman.SyncManage
 }
 
 // HandleStoreStaticConfig returns the handler to store the config of a project via a REST endpoint
-func HandleStoreStaticConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager) http.HandlerFunc {
+func HandleStoreStaticConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -242,7 +242,7 @@ func HandleStoreStaticConfig(adminMan *admin.Manager, syncMan *syncman.SyncManag
 		}
 
 		// Sync the config
-		err = syncMan.SetStaticConfig(token, c)
+		err = syncMan.SetStaticConfig(c)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -256,7 +256,7 @@ func HandleStoreStaticConfig(adminMan *admin.Manager, syncMan *syncman.SyncManag
 }
 
 // HandleLoadDeploymentConfig returns the handler to load the deployment config via a REST endpoint
-func HandleLoadDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleLoadDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Give negative acknowledgement
@@ -266,7 +266,7 @@ func HandleLoadDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncMa
 }
 
 // HandleStoreDeploymentConfig returns the handler to store the deployment config via a REST endpoint
-func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Give negative acknowledgement
@@ -276,7 +276,7 @@ func HandleStoreDeploymentConfig(adminMan *admin.Manager, syncMan *syncman.SyncM
 }
 
 // HandleLoadOperationModeConfig returns the handler to load the operation config via a REST endpoint
-func HandleLoadOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleLoadOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Give negative acknowledgement
@@ -286,7 +286,7 @@ func HandleLoadOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.Syn
 }
 
 // HandleStoreOperationModeConfig returns the handler to store the operation config via a REST endpoint
-func HandleStoreOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleStoreOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Give negative acknowledgement
@@ -296,7 +296,7 @@ func HandleStoreOperationModeConfig(adminMan *admin.Manager, syncMan *syncman.Sy
 }
 
 // HandleDeleteProjectConfig returns the handler to delete the config of a project via a REST endpoint
-func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.SyncManager, configPath string) http.HandlerFunc {
+func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Give negative acknowledgement

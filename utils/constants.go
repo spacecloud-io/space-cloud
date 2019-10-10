@@ -96,11 +96,6 @@ const (
 )
 
 const (
-	// RealtimeWorkerCount are the number of goroutines to process realtime data
-	RealtimeWorkerCount int = 10
-
-	// FunctionsWorkerCount are the number of goroutines to process functions data
-	FunctionsWorkerCount int = 10
 
 	// RealtimeInsert is for create operations
 	RealtimeInsert string = "insert"
@@ -123,77 +118,10 @@ const (
 
 	// TypeRealtimeFeed is the response type for realtime feed
 	TypeRealtimeFeed string = "realtime-feed"
-
-	// TypeServiceRegister is the request type for service registration
-	TypeServiceRegister string = "service-register"
-
-	// TypeServiceUnregister is the request type for service removal
-	TypeServiceUnregister string = "service-unregister"
-
-	// TypeServiceRequest is type triggering a service's function
-	TypeServiceRequest string = "service-request"
-
-	// TypePubsubSubscribe is type triggering a pubsub subscribe
-	TypePubsubSubscribe string = "pubsub-subscribe"
-
-	// TypePubsubSubscribeFeed is type having a pubsub subscribe feed
-	TypePubsubSubscribeFeed string = "pubsub-subscribe-feed"
-
-	// TypePubsubUnsubscribe is type triggering a pubsub unsubscribe
-	TypePubsubUnsubscribe string = "pubsub-unsubscribe"
-
-	// TypePubsubUnsubscribeAll is type triggering a pubsub unsubscribe all
-	TypePubsubUnsubscribeAll string = "pubsub-unsubscribe-all"
-)
-
-// RealTimeProtocol is the type of protocol requested for realtime.
-type RealTimeProtocol string
-
-const (
-	// Websocket for realtime implementation.
-	Websocket RealTimeProtocol = "Websocket"
-
-	// GRPC for realtime implementation.
-	GRPC RealTimeProtocol = "GRPC"
-
-	// GRPCService for Service implementation.
-	GRPCService RealTimeProtocol = "GRPC-Service"
 )
 
 // DefaultConfigFilePath is the default path to load / store the config file
 const DefaultConfigFilePath string = "config.yaml"
-
-// RaftCommandType is the type received in the raft commands
-type RaftCommandType string
-
-const (
-	// RaftCommandSet is used to set a projects config
-	RaftCommandSet RaftCommandType = "set"
-
-	// RaftCommandSetDeploy is used to set the deploy config
-	RaftCommandSetDeploy RaftCommandType = "set-deploy"
-
-	// RaftCommandSetOperation is used to set the deploy config
-	RaftCommandSetOperation RaftCommandType = "set-operation"
-
-	// RaftCommandSetStatic is used to set the deploy config
-	RaftCommandSetStatic RaftCommandType = "set-static"
-
-	// RaftCommandAddInternalRouteOperation is used to add internal routes
-	RaftCommandAddInternalRouteOperation RaftCommandType = "add-internal-route"
-
-	// RaftCommandAddInternalEventOperation is used to add internal routes
-	RaftCommandAddInternalEventOperation RaftCommandType = "add-internal-event"
-
-	// RaftCommandRemoveInternalEventOperation is used to add internal routes
-	RaftCommandRemoveInternalEventOperation RaftCommandType = "remove-internal-event"
-
-	// RaftCommandDelete is used to delete a projects config
-	RaftCommandDelete RaftCommandType = "delete"
-)
-
-// RaftSnapshotDirectory is where the snapshot of the log is stored
-const RaftSnapshotDirectory string = "raft-store"
 
 // OrchestratorType is the type of the orchestrator
 type OrchestratorType string
@@ -204,52 +132,15 @@ const (
 )
 
 const (
-	// ScopeDeploy is te scope used for the deploy module
-	ScopeDeploy string = "deploy"
-)
-
-// TypeRegisterRequest is the space cloud register request
-const TypeRegisterRequest string = "register"
-
-const (
 	// PortHTTP is the port used for the http server
 	PortHTTP string = "4122"
 
-	// PortGRPC is the port used for the grpc server
-	PortGRPC string = "4124"
-
 	// PortHTTPSecure is the port used for the http server with tls
 	PortHTTPSecure string = "4126"
-
-	// PortGRPCSecure is the port used for the grpc server with tls
-	PortGRPCSecure string = "4128"
-
-	// PortNatsServer is the port used for nats
-	PortNatsServer int = 4222
-
-	// PortNatsCluster is the port used by nats for clustering
-	PortNatsCluster int = 4248
-
-	// PortGossip is used for the membership protocol
-	PortGossip string = "4232"
-
-	// PortRaft is used internally by raft
-	PortRaft string = "4234"
 )
 
 // InternalUserID is the auth.id used for internal requests
 const InternalUserID string = "internal-sc-user"
-
-// PubsubType is the type of pubsub request
-type PubsubType string
-
-const (
-	// Publish is the type used for publish requests
-	Publish PubsubType = "publish"
-
-	// Subscribe is the type used for subscribe requests
-	Subscribe PubsubType = "subscribe"
-)
 
 const (
 	// GQL_CONNECTION_KEEP_ALIVE send every 20 second to client over websocket
@@ -322,7 +213,7 @@ const (
 	// EventStatusProcessed signifies that the event has been successfully been processed and can be deleted
 	EventStatusProcessed string = "processed"
 
-	// EventStatusCancelled signifies that the event has failed and should not be processed
+	// EventStatusFailed signifies that the event has failed and should not be processed
 	EventStatusFailed string = "failed"
 
 	// EventStatusCancelled signifies that the event has been cancelled and should not be processed

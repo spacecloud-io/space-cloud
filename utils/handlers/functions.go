@@ -3,25 +3,18 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// HandleFunctionCall creates a functions request endpoint
+// HandleRealtimeEvent creates a functions request endpoint
 func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Return if the functions module is not enabled
-		if !functions.IsEnabled() {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
-			return
-		}
 
 		// Get the path parameters
 		vars := mux.Vars(r)
@@ -35,20 +28,16 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 		defer r.Body.Close()
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := utils.GetTokenFromHeader(r)
 
-		authObj, err := auth.IsFuncCallAuthorised(project, service, function, token, req.Params)
+		_, err := auth.IsFuncCallAuthorised(project, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		result, err := functions.Call(service, function, authObj, req.Params, int(req.Timeout))
+		result, err := functions.Call(service, function, token, req.Params, int(req.Timeout))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

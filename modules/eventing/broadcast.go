@@ -1,19 +1,11 @@
 package eventing
 
 import (
-	"encoding/json"
-
 	"github.com/spaceuptech/space-cloud/model"
 )
 
-func (m *Module) broadcastEvents(eventDocs []*model.EventDocument) {
-	data, err := json.Marshal(eventDocs)
-	if err == nil {
-		m.nc.Publish(internalEventingSubject, data)
-	}
-}
-
-func (m *Module) processBroadcastEvents(eventDocs []*model.EventDocument) {
+// ProcessTransmittedEvents processes the event received
+func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 
 	// Get the assigned token range
 	start, end := m.syncMan.GetAssignedTokens()

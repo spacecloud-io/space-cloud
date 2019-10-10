@@ -216,7 +216,7 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 
 	// Broadcast the event so the concerned worker can process it immediately
 	if !intent.Invalid {
-		m.broadcastEvents(intent.Docs)
+		m.transmitEvents(intent.Token, intent.Docs)
 	}
 }
 

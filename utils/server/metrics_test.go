@@ -34,7 +34,6 @@ func Test(t *testing.T) {
 				},
 			},
 			Functions: &config.Functions{
-				Enabled: true,
 				Services: config.Services{
 					"service1": &config.Service{
 						Functions: map[string]config.Function{
@@ -59,9 +58,6 @@ func Test(t *testing.T) {
 					&config.FileRule{},
 					&config.FileRule{},
 				},
-			},
-			Realtime: &config.Realtime{
-				Enabled: true,
 			},
 			Auth: map[string]*config.AuthStub{
 				"email": &config.AuthStub{

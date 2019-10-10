@@ -149,7 +149,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 			}
 
 			if kind == "func" {
-				graph.execFuncCall(field, store, createCallback(func(result interface{}, err error) {
+				graph.execFuncCall(token, field, store, createCallback(func(result interface{}, err error) {
 					if err != nil {
 						cb(nil, err)
 						return

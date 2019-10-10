@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"math/rand"
 	"time"
 
@@ -14,6 +15,24 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
+
+func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	url := m.syncMan.GetAssignedSpaceCloudURL(m.project, eventToken)
+	token, err := m.adminMan.GetInternalAccessToken()
+	if err != nil {
+		log.Println("Eventing module could not transmit event:", err)
+		return
+	}
+
+	var res interface{}
+	if err := utils.MakeHTTPRequest(ctx, "POST", url, token, eventDocs, &res); err != nil {
+		log.Println("Eventing module could not transmit event:", err)
+		log.Println(res)
+	}
+}
 
 func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest) error {
 	// Create the meta information
@@ -41,7 +60,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	}
 
 	// Broadcast the event so the concerned worker can process it immediately
-	m.broadcastEvents(eventDocs)
+	m.transmitEvents(token, eventDocs)
 	return nil
 }
 

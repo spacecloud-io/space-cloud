@@ -7,7 +7,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/proto"
 )
 
 // Client is the inteface for the websocket and grpc sockets
@@ -29,28 +28,4 @@ func CreateWebsocketClient(socket *websocket.Conn) *WebsocketClient {
 	ctx, cancel := context.WithCancel(context.Background())
 	id := uuid.NewV1().String()
 	return &WebsocketClient{id, channel, ctx, cancel, socket}
-}
-
-// CreateGRPCRealtimeClient makes a client object to manage the grpc for realtime
-func CreateGRPCRealtimeClient(stream proto.SpaceCloud_RealTimeServer) *GRPCRealtimeClient {
-	channel := make(chan *model.Message, 5)
-	ctx, cancel := context.WithCancel(context.Background())
-	id := uuid.NewV1().String()
-	return &GRPCRealtimeClient{id, channel, ctx, cancel, stream}
-}
-
-// CreateGRPCServiceClient makes a client object to manage the grpc for services
-func CreateGRPCServiceClient(stream proto.SpaceCloud_ServiceServer) *GRPCServiceClient {
-	channel := make(chan *model.Message, 5)
-	ctx, cancel := context.WithCancel(context.Background())
-	id := uuid.NewV1().String()
-	return &GRPCServiceClient{id, channel, ctx, cancel, stream}
-}
-
-// CreateGRPCPubsubClient makes a client object to manage the grpc for pubsub
-func CreateGRPCPubsubClient(stream proto.SpaceCloud_PubsubSubscribeServer) *GRPCPubsubClient {
-	channel := make(chan *model.Message, 5)
-	ctx, cancel := context.WithCancel(context.Background())
-	id := uuid.NewV1().String()
-	return &GRPCPubsubClient{id, channel, ctx, cancel, stream}
 }
