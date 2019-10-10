@@ -74,7 +74,6 @@ type Modules struct {
 	Auth      Auth       `json:"auth" yaml:"auth"`
 	Functions *Functions `json:"functions" yaml:"functions"`
 	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
-	Pubsub    *Pubsub    `json:"pubsub" yaml:"pubsub"`
 	Eventing  Eventing   `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 }
 
@@ -123,7 +122,8 @@ type AuthStub struct {
 
 // Functions holds the config for the functions module
 type Functions struct {
-	Services Services `json:"services" yaml:"services"`
+	Services         Services `json:"services" yaml:"services"`
+	InternalServices Services `json:"internalServices" yaml:"internalServices"`
 }
 
 // Services holds the config of services
@@ -131,12 +131,16 @@ type Services map[string]*Service
 
 // Service holds the config of service
 type Service struct {
+	Kind      string              `json:"kind" yaml:"kind"`                   // direct or consul
+	URL       string              `json:"url,omitempty" yaml:"url,omitempty"` // eg. localhost:8080
+	Scheme    string              `json:"scheme" yaml:"scheme"`               // http or http
 	Functions map[string]Function `json:"functions" yaml:"functions"`
 }
 
 // Function holds the config of a function
 type Function struct {
-	Rule *Rule `json:"rule" yaml:"rule"`
+	Path string `json:"path" yaml:"path"`
+	Rule *Rule  `json:"rule" yaml:"rule"`
 }
 
 // FileStore holds the config for the file store module
@@ -169,20 +173,6 @@ type StaticRoute struct {
 	Host      string `json:"host" yaml:"host"`
 	Proxy     string `json:"proxy" yaml:"proxy"`
 	Protocol  string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
-}
-
-// Pubsub holds the config for the realtime module
-type Pubsub struct {
-	Enabled bool          `json:"enabled" yaml:"enabled"`
-	Broker  utils.Broker  `json:"broker" yaml:"broker"`
-	Conn    string        `json:"conn" yaml:"conn"`
-	Rules   []*PubsubRule `json:"rules" yaml:"rules"`
-}
-
-// PubsubRule is the authorization object at the pubsub rule level
-type PubsubRule struct {
-	Subject string           `json:"subject" yaml:"subject"` // The channel subject
-	Rule    map[string]*Rule `json:"rule" yaml:"rule"`       // The key can be publish or subscribe
 }
 
 // Eventing holds the config for the eventing module (task queue)

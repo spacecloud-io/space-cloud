@@ -28,8 +28,7 @@ type Module struct {
 	crud          *crud.Module
 	functions     *functions.Module
 	fileRules     []*config.FileRule
-	funcRules     config.Services
-	pubsubRules   []*config.PubsubRule
+	funcRules     *config.Functions
 	project       string
 	fileStoreType string
 	Schema        *schema.Schema
@@ -41,7 +40,7 @@ func Init(crud *crud.Module, functions *functions.Module) *Module {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions, pubsub *config.Pubsub) error {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -49,12 +48,9 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 		sortFileRule(fileStore.Rules)
 	}
 
-	if pubsub != nil {
-		sortPubsubRule(pubsub.Rules)
-	}
-
 	m.project = project
 	m.rules = rules
+
 	if err := m.Schema.SetConfig(rules, project); err != nil {
 		return err
 	}
@@ -65,11 +61,7 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	}
 
 	if functions != nil {
-		m.funcRules = functions.Services
-	}
-
-	if pubsub != nil && pubsub.Enabled {
-		m.pubsubRules = pubsub.Rules
+		m.funcRules = functions
 	}
 
 	return nil
@@ -104,6 +96,24 @@ func (m *Module) CreateToken(tokenClaims TokenClaims) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+// IsTokenInternal checks if the provided token is internally generated
+func (m *Module) IsTokenInternal(token string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	claims, err := m.parseToken(token)
+	if err != nil {
+		return err
+	}
+
+	if idTemp, p := claims["id"]; p {
+		if id, ok := idTemp.(string); ok && id == utils.InternalUserID {
+			return nil
+		}
+	}
+	return errors.New("token has not been created internally")
 }
 
 func (m *Module) parseToken(token string) (TokenClaims, error) {

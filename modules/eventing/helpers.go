@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"math/rand"
 	"time"
 
@@ -14,6 +15,24 @@ import (
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
+
+func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	url := m.syncMan.GetAssignedSpaceCloudURL(m.project, eventToken)
+	token, err := m.adminMan.GetInternalAccessToken()
+	if err != nil {
+		log.Println("Eventing module could not transmit event:", err)
+		return
+	}
+
+	var res interface{}
+	if err := utils.MakeHTTPRequest(ctx, "POST", url, token, eventDocs, &res); err != nil {
+		log.Println("Eventing module could not transmit event:", err)
+		log.Println(res)
+	}
+}
 
 func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest) error {
 	// Create the meta information
@@ -35,16 +54,13 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	}
 
 	// Persist the events
-	createRequest := &model.CreateRequest{Document: eventDocs, Operation: utils.All}
+	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
 	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
 		return errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
 	// Broadcast the event so the concerned worker can process it immediately
-	for _, eventDoc := range eventDocs {
-		eventDoc.Status = utils.EventStatusProcessed
-	}
-	m.broadcastEvents(eventDocs)
+	m.transmitEvents(token, eventDocs)
 	return nil
 }
 
@@ -136,21 +152,20 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 	return rows
 }
 
-func (m *Module) getMatchingRules(name string, options map[string]string) []*config.EventingRule {
-	rules := make([]*config.EventingRule, 0)
+func (m *Module) getMatchingRules(name string, options map[string]string) []config.EventingRule {
+	var rules []config.EventingRule
 
 	for _, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rules = append(rules, &rule)
+			rules = append(rules, rule)
 		}
 	}
 
 	for _, rule := range m.config.InternalRules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rules = append(rules, &rule)
+			rules = append(rules, rule)
 		}
 	}
-
 	return rules
 }
 

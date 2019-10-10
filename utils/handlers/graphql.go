@@ -156,7 +156,7 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 }
 
 // HandleGetCollections is an endpoint handler which return all the collection name for specified data base
-func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *syncman.SyncManager) http.HandlerFunc {
+func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]

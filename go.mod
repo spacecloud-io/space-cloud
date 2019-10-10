@@ -15,10 +15,6 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/graphql-go/graphql v0.7.8
-	github.com/hashicorp/memberlist v0.1.4
-	github.com/hashicorp/raft v1.1.0
-	github.com/hashicorp/raft-boltdb v0.0.0-20190605210249-ef2e128ed477
-	github.com/hashicorp/serf v0.8.3
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.2.0

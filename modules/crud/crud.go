@@ -90,6 +90,7 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 		if err != nil {
 			log.Println("Error connecting to " + k + " : " + err.Error())
+			return err
 		} else {
 			log.Println("Successfully connected to " + k)
 		}

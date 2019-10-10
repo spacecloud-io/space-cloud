@@ -53,10 +53,10 @@ func (m *Module) matchRule(project string, rule *config.Rule, args map[string]in
 
 func matchFunc(rule *config.Rule, functions *functions.Module, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
-	auth := obj["auth"].(map[string]interface{})
-	delete(obj, "auth")
+	token := obj["token"].(string)
+	delete(obj, "token")
 
-	res, err := functions.Call(rule.Service, rule.Func, auth, obj, 5)
+	res, err := functions.Call(rule.Service, rule.Func, token, obj, 5)
 	if err != nil {
 		return err
 	}

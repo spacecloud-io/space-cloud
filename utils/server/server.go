@@ -3,15 +3,11 @@ package server
 import (
 	"fmt"
 	"log"
-	"net"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 	nats "github.com/nats-io/nats-server/v2/server"
 	"github.com/rs/cors"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -20,11 +16,9 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/eventing"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
-	"github.com/spaceuptech/space-cloud/modules/pubsub"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
 	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
-	pb "github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
@@ -45,10 +39,9 @@ type Server struct {
 	static         *static.Module
 	adminMan       *admin.Manager
 	nats           *nats.Server
-	pubsub         *pubsub.Module
 	eventing       *eventing.Module
 	configFilePath string
-	syncMan        *syncman.SyncManager
+	syncMan        *syncman.Manager
 	ssl            *config.SSL
 	graphql        *graphql.Module
 }
@@ -60,25 +53,25 @@ func New(nodeID string) (*Server, error) {
 
 	// Create the fundamental modules
 	c := crud.Init()
-	adminMan := admin.New()
-	syncMan := syncman.New(adminMan)
-	fn, err := functions.Init()
-	if err != nil {
-		return nil, err
-	}
 
-	// Initialise the eventing module and set the crud module hooks
-	eventing := eventing.New(c, fn, syncMan)
-	c.SetHooks(&model.CrudHooks{
-		Create: eventing.HandleCreateIntent,
-		Update: eventing.HandleUpdateIntent,
-		Delete: eventing.HandleDeleteIntent,
-		Batch:  eventing.HandleBatchIntent,
-		Stage:  eventing.HandleStage,
-	})
+	adminMan := admin.New()
+	syncMan := syncman.New()
+	fn := functions.Init(syncMan)
 
 	a := auth.Init(c, fn)
-	rt, err := realtime.Init(nodeID, eventing, a, c, fn, adminMan, syncMan)
+
+	// Initialise the eventing module and set the crud module hooks
+	e := eventing.New(a, c, fn, adminMan, syncMan)
+
+	c.SetHooks(&model.CrudHooks{
+		Create: e.HandleCreateIntent,
+		Update: e.HandleUpdateIntent,
+		Delete: e.HandleDeleteIntent,
+		Batch:  e.HandleBatchIntent,
+		Stage:  e.HandleStage,
+	})
+
+	rt, err := realtime.Init(nodeID, e, a, c, fn, syncMan)
 	if err != nil {
 		return nil, err
 	}
@@ -86,28 +79,21 @@ func New(nodeID string) (*Server, error) {
 	s := static.Init()
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
-	p := pubsub.Init(a)
 	graphqlMan := graphql.New(a, c, fn)
 
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
-		user: u, file: f, static: s, pubsub: p, syncMan: syncMan, adminMan: adminMan,
+		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
-		eventing: eventing, graphql: graphqlMan}, nil
+		eventing: e, graphql: graphqlMan}, nil
 }
 
 // Start begins the server operations
-func (s *Server) Start(seeds string, disableMetrics bool) error {
-	// Start gRPC server in a separate goroutine
-	go s.initGRPCServer()
+func (s *Server) Start(disableMetrics bool) error {
 
 	// Start the sync manager
-	if seeds == "" {
-		seeds = "127.0.0.1"
-	}
-	array := strings.Split(seeds, ",")
-	if err := s.syncMan.Start(s.nodeID, s.configFilePath, utils.PortGossip, utils.PortRaft, array, s.LoadConfig); err != nil {
+	if err := s.syncMan.Start(s.nodeID, s.configFilePath, s.LoadConfig); err != nil {
 		return err
 	}
 
@@ -167,12 +153,19 @@ func (s *Server) LoadConfig(config *config.Config) error {
 
 		// Always set the config of the crud module first
 		// Set the configuration for the crud module
-		s.crud.SetConfig(p.Modules.Crud)
+		if err := s.crud.SetConfig(p.Modules.Crud); err != nil {
+			log.Println("Error in crud module config: ", err)
+			return err
+		}
 
 		// Set the configuration for the auth module
-		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions, p.Modules.Pubsub); err != nil {
+		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions); err != nil {
 			log.Println("Error in auth module config: ", err)
+			return err
 		}
+
+		// Set the configuration for the functions module
+		s.functions.SetConfig(p.ID, p.Modules.Functions)
 
 		// Set the configuration for the user management module
 		s.user.SetConfig(p.Modules.Auth)
@@ -180,23 +173,24 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		// Set the configuration for the file storage module
 		if err := s.file.SetConfig(p.Modules.FileStore); err != nil {
 			log.Println("Error in files module config: ", err)
-		}
-
-		// Set the configuration for the pubsub module
-		if err := s.pubsub.SetConfig(p.Modules.Pubsub); err != nil {
-			log.Println("Error in pubsub module config: ", err)
+			return err
 		}
 
 		if err := s.eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
 			log.Println("Error in eventing module config: ", err)
+			return err
 		}
 
 		// Set the configuration for the realtime module
-		s.realtime.SetConfig(p.ID, p.Modules.Crud)
+		if err := s.realtime.SetConfig(p.ID, p.Modules.Crud); err != nil {
+			log.Println("Error in realtime module config: ", err)
+			return err
+		}
 
 		// Set the configuration for static module
 		if err := s.static.SetConfig(config.Static); err != nil {
 			log.Println("Error in static module config", err)
+			return err
 		}
 
 		// Set the configuration for the graphql module
@@ -204,45 +198,6 @@ func (s *Server) LoadConfig(config *config.Config) error {
 	}
 
 	return nil
-}
-
-func (s *Server) initGRPCServer() {
-
-	if s.ssl != nil && s.ssl.Enabled {
-		lis, err := net.Listen("tcp", ":"+utils.PortGRPCSecure)
-		if err != nil {
-			log.Fatal("Failed to listen:", err)
-		}
-		creds, err := credentials.NewServerTLSFromFile(s.ssl.Crt, s.ssl.Key)
-		if err != nil {
-			log.Fatalln("Error: ", err)
-		}
-		options := []grpc.ServerOption{grpc.Creds(creds)}
-
-		grpcServer := grpc.NewServer(options...)
-		pb.RegisterSpaceCloudServer(grpcServer, s)
-
-		fmt.Println("Starting grpc secure server on port: " + utils.PortGRPCSecure)
-		go func() {
-			if err := grpcServer.Serve(lis); err != nil {
-				log.Fatal("Error starting grpc secure server:", err)
-			}
-		}()
-	}
-
-	lis, err := net.Listen("tcp", ":"+utils.PortGRPC)
-	if err != nil {
-		log.Fatal("Failed to listen:", err)
-	}
-
-	options := []grpc.ServerOption{}
-	grpcServer := grpc.NewServer(options...)
-	pb.RegisterSpaceCloudServer(grpcServer, s)
-
-	fmt.Println("Starting grpc server on port: " + utils.PortGRPC)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal("Error starting grpc server:", err)
-	}
 }
 
 // SetConfigFilePath sets the config file path

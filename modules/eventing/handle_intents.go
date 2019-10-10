@@ -99,7 +99,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		// Broadcast the event so the concerned worker can process it immediately
 		eventDoc.Status = utils.EventStatusProcessed
-		m.broadcastEvents([]*model.EventDocument{eventDoc})
+		m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 
 	case utils.EventUpdate:
 		// Unmarshal the payload
@@ -133,7 +133,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 			eventDoc.Status = utils.EventStatusProcessed
 			eventDoc.Payload = string(data)
 			eventDoc.Timestamp = timestamp
-			m.broadcastEvents([]*model.EventDocument{eventDoc})
+			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 		}
 
 	case utils.EventDelete:
@@ -155,7 +155,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateStageEventRequest(eventID)); err == nil {
 			// Broadcast the event so the concerned worker can process it immediately
 			eventDoc.Status = utils.EventStatusProcessed
-			m.broadcastEvents([]*model.EventDocument{eventDoc})
+			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 		}
 
 	}

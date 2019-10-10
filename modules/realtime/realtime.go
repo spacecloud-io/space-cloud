@@ -1,9 +1,8 @@
 package realtime
 
 import (
+	"fmt"
 	"sync"
-
-	"github.com/nats-io/nats.go"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -11,7 +10,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/eventing"
 	"github.com/spaceuptech/space-cloud/modules/functions"
-	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -22,9 +20,8 @@ type Module struct {
 	// The static configuration required by the realtime module
 	nodeID string
 	groups sync.Map
-	ec     *nats.EncodedConn
 
-	// Dynamic configuration that can change over time
+	// Dynamic configuration
 	project string
 
 	// The external module realtime depends on
@@ -32,37 +29,15 @@ type Module struct {
 	auth      *auth.Module
 	crud      *crud.Module
 	functions *functions.Module
-	adminMan  *admin.Manager
-	syncMan   *syncman.SyncManager
+	syncMan   *syncman.Manager
 }
 
 // Init creates a new instance of the realtime module
 func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *crud.Module,
-	functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.SyncManager) (*Module, error) {
+	functions *functions.Module, syncMan *syncman.Manager) (*Module, error) {
 
-	m := &Module{nodeID: nodeID, adminMan: adminMan, syncMan: syncMan,
+	m := &Module{nodeID: nodeID, syncMan: syncMan,
 		eventing: eventing, auth: auth, crud: crud, functions: functions}
-
-	// Register the realtime service handler
-	if err := m.registerEventHandlerService(); err != nil {
-		return nil, err
-	}
-
-	// Create a nats connection
-	nc, err := nats.Connect(nats.DefaultURL)
-	if err != nil {
-		return nil, err
-	}
-
-	ec, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
-	if err != nil {
-		return nil, err
-	}
-	m.ec = ec
-
-	if _, err := ec.Subscribe(pubSubTopic, m.handleRealtimeRequests); err != nil {
-		return nil, err
-	}
 
 	return m, nil
 }
@@ -71,9 +46,8 @@ func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *cru
 type SendFeed func(*model.FeedData)
 
 const (
-	serviceName string = "realtime-handler"
+	serviceName string = "sc-realtime"
 	funcName    string = "handle"
-	pubSubTopic string = "realtime-message"
 )
 
 type handlerAck struct {
@@ -81,7 +55,7 @@ type handlerAck struct {
 }
 
 // SetConfig set the rules and secret key required by the crud block
-func (m *Module) SetConfig(project string, crudConfig config.Crud) {
+func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -90,5 +64,18 @@ func (m *Module) SetConfig(project string, crudConfig config.Crud) {
 
 	// add the rules to the eventing module
 	m.eventing.AddInternalRules(generateEventRules(crudConfig))
-	return
+
+	// add the rule to the functions module
+	m.functions.AddInternalRule(serviceName, &config.Service{
+		Kind:   "direct",
+		URL:    "localhost:4122",
+		Scheme: "http",
+		Functions: map[string]config.Function{
+			funcName: {
+				Path: fmt.Sprintf("/v1/api/%s/realtime/handle", m.project),
+				Rule: &config.Rule{Rule: "allow"},
+			},
+		},
+	})
+	return nil
 }

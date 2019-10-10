@@ -1,68 +1,127 @@
 package syncman
 
 import (
-	"hash/fnv"
+	"errors"
+	"fmt"
 	"math"
-	"sort"
+	"strings"
 
-	"github.com/hashicorp/serf/serf"
+	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func hash(value string) uint64 {
-	h := fnv.New64a()
-	h.Write([]byte(value))
-	return h.Sum64()
+// ResolveURL returns an url for the provided service config
+func (s *Manager) ResolveURL(kind, url, scheme string) string {
+	if strings.HasSuffix(url, "/") {
+		url = url[:len(url)-1]
+	}
+
+	// TODO: implement integration with consul
+	return fmt.Sprintf("%s://%s", scheme, url)
 }
 
-type memRange []uint64
+// GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
+func (s *Manager) GetAssignedSpaceCloudURL(project string, token int) string {
+	// TODO: implement integration with consul to get correct SC url
+	return fmt.Sprintf("http://localhost:4122/v1/api/%s/eventing/process", project)
+}
 
-func (a memRange) Len() int           { return len(a) }
-func (a memRange) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a memRange) Less(i, j int) bool { return a[i] < a[j] }
+// GetSpaceCloudNodeURLs returns the array of space cloud urls
+func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
+	// TODO: implement integration with consul to get SC urls of current cluster
+	return []string{fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/process", project)}
+}
 
 // GetAssignedTokens returns the array or tokens assigned to this node
-func (s *SyncManager) GetAssignedTokens() (start int, end int) {
+func (s *Manager) GetAssignedTokens() (start int, end int) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	myHash := hash(s.list.LocalMember().Name)
+	// myHash := hash(s.list.LocalMember().Name)
+	// index := 0
+
+	// members := memRange{}
+	// for _, m := range s.list.Members() {
+	// 	if m.Status == serf.StatusAlive {
+	// 		members = append(members, hash(m.Name))
+	// 	}
+	// }
+	// sort.Stable(members)
+
+	// for i, v := range members {
+	// 	if v == myHash {
+	// 		index = i
+	// 		break
+	// 	}
+	// }
+
+	// totalMembers := len(members)
+	totalMembers := 1
 	index := 0
-
-	members := memRange{}
-	for _, m := range s.list.Members() {
-		if m.Status == serf.StatusAlive {
-			members = append(members, hash(m.Name))
-		}
-	}
-	sort.Stable(members)
-
-	for i, v := range members {
-		if v == myHash {
-			index = i
-			break
-		}
-	}
-
-	totalMembers := len(members)
 	return calcTokens(totalMembers, utils.MaxEventTokens, index)
 }
 
 // GetClusterSize returns the size of the cluster
-func (s *SyncManager) GetClusterSize() int {
-	return s.list.NumNodes()
+func (s *Manager) GetClusterSize() int {
+	// TODO implement this function
+	return 1
 }
 
-// GetAliveNodeCount returns the number of alive nodes in the cluster
-func (s *SyncManager) GetAliveNodeCount() int {
-	count := 0
-	for _, member := range s.list.Members() {
-		if member.Status == serf.StatusAlive {
-			count++
+// SetProjectConfig applies the set project config command to the raft log
+func (s *Manager) SetProjectConfig(project *config.Project) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.setProjectConfig(project)
+	if err := s.cb(s.projectConfig); err != nil {
+		return err
+	}
+
+	return config.StoreConfigToFile(s.projectConfig, s.configFile)
+}
+
+// SetStaticConfig applies the set project config command to the raft log
+func (s *Manager) SetStaticConfig(static *config.Static) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.projectConfig.Static = static
+	if err := s.cb(s.projectConfig); err != nil {
+		return err
+	}
+
+	return config.StoreConfigToFile(s.projectConfig, s.configFile)
+}
+
+// DeleteProjectConfig applies delete project config command to the raft log
+func (s *Manager) DeleteProjectConfig(projectID string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.delete(projectID)
+	if err := s.cb(s.projectConfig); err != nil {
+		return err
+	}
+
+	return config.StoreConfigToFile(s.projectConfig, s.configFile)
+}
+
+// GetConfig returns the config present in the state
+func (s *Manager) GetConfig(projectID string) (*config.Project, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Iterate over all projects stored
+	for _, p := range s.projectConfig.Projects {
+		if projectID == p.ID {
+			return p, nil
 		}
 	}
 
-	return count
+	return nil, errors.New("given project is not present in state")
 }
 
 func calcTokens(n int, tokens int, i int) (start int, end int) {
