@@ -80,6 +80,13 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.SyncManager) h
 			if err == nil {
 				projects = append(projects, p)
 			}
+
+			// Add an empty collections object is not present already
+			for k, v := range p.Modules.Crud {
+				if v.Collections == nil {
+					p.Modules.Crud[k].Collections = map[string]*config.TableRule{}
+				}
+			}
 		}
 
 		// Give positive acknowledgement

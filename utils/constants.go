@@ -1,7 +1,7 @@
 package utils
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.12.0"
+const BuildVersion = "0.12.1"
 
 const (
 	// SpaceCloudProject is the default project to store the config in

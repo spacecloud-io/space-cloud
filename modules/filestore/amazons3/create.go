@@ -16,7 +16,7 @@ func (a *AmazonS3) CreateFile(req *model.CreateFileRequest, file io.Reader) erro
 	uploader := s3manager.NewUploader(a.client)
 	_, err := uploader.Upload(&s3manager.UploadInput{
 		Bucket: aws.String(a.bucket),
-		Key:    aws.String(utils.JoinLeading(req.Name, req.Path, "/")),
+		Key:    aws.String(utils.JoinLeading(req.Path, req.Name, "/")),
 		Body:   file,
 	})
 	return err
@@ -28,7 +28,7 @@ func (a *AmazonS3) CreateDir(req *model.CreateFileRequest) error {
 	svc := s3.New(a.client)
 	request := &s3.PutObjectInput{
 		Bucket: aws.String(a.bucket),
-		Key:    aws.String(utils.JoinLeadingTrailing(req.Name, req.Path, "/")),
+		Key:    aws.String(utils.JoinLeadingTrailing(req.Path, req.Name, "/")),
 	}
 	_, err := svc.PutObject(request)
 	return err
