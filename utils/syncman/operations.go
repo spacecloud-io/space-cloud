@@ -156,7 +156,7 @@ func (s *SyncManager) SetProjectConfig(token string, project *config.Project) er
 
 	// Validate the operation
 	if !s.adminMan.ValidateSyncOperation(s.projectConfig, project) {
-		return errors.New("Please upgrade your instance")
+		return errors.New("please upgrade your instance")
 	}
 
 	// Create a raft command

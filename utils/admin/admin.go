@@ -2,6 +2,7 @@ package admin
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"sync"
 
@@ -33,6 +34,8 @@ func (m *Manager) SetConfig(admin *config.Admin) {
 	if admin.Operation.Mode > 0 {
 		// Start the validation process for higher op modes
 		if err := m.validator.startValidation(m.nodeID, admin.Operation.UserID, admin.Operation.Key, admin.Operation.Mode); err != nil {
+			log.Println("Could not start in enterprise mode:", err)
+			log.Println("Switching to community edition")
 			admin.Operation.Mode = 0
 		}
 	}

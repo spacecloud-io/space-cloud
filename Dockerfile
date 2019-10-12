@@ -9,11 +9,10 @@ COPY space-cloud .
 RUN set -ex  \
   && apk add --no-cache ca-certificates \
   && chmod +x space-cloud \ 
-  && mkdir -p /root/.space-cloud/mission-control-v0.12.0
+  && mkdir -p /root/.space-cloud/mission-control-v0.12.1
 
-COPY mission-control /root/.space-cloud/mission-control-v0.12.0
+COPY mission-control /root/.space-cloud/mission-control-v0.12.1
 
-ENV PROD=false
 ENV PATH="/space-cloud:${PATH}"
 
 # ports for the http and https servers
