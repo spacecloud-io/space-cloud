@@ -10,6 +10,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql" // Import for MySQL
 	_ "github.com/lib/pq"              // Import for postgres
+	_ "github.com/denisenkom/go-mssqldb"				//Import for MsSQL
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -32,6 +33,9 @@ func Init(dbType utils.DBType, enabled bool, connection string) (s *SQL, err err
 
 	case utils.MySQL:
 		s.dbType = "mysql"
+	
+	case utils.MsSQL:
+		s.dbType = "mssql"
 
 	default:
 		err = utils.ErrUnsupportedDatabase
@@ -61,6 +65,8 @@ func (s *SQL) GetDBType() utils.DBType {
 		return utils.Postgres
 	case "mysql":
 		return utils.MySQL
+	case "mssql":
+		return utils.MsSQL	
 	}
 
 	return utils.MySQL

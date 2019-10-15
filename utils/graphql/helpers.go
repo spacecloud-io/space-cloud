@@ -35,7 +35,7 @@ func GetDBType(field *ast.Field) (string, error) {
 	}
 	dbType := field.Directives[0].Name.Value
 	switch dbType {
-	case "postgres", "mysql":
+	case "postgres", "mysql", "mssql":
 		return "sql-" + dbType, nil
 
 	default:

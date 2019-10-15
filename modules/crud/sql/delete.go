@@ -10,6 +10,7 @@ import (
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
+	_ "github.com/denisenkom/go-mssqldb"				//Import for MsSQL
 )
 
 // Delete removes the document(s) from the database which match the condition
