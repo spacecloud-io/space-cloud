@@ -34,7 +34,7 @@ func Init(dbType utils.DBType, enabled bool, connection string) (s *SQL, err err
 	case utils.MySQL:
 		s.dbType = "mysql"
 	
-	case utils.MsSQL:
+	case utils.SqlServer:
 		s.dbType = "mssql"
 
 	default:
@@ -65,8 +65,8 @@ func (s *SQL) GetDBType() utils.DBType {
 		return utils.Postgres
 	case "mysql":
 		return utils.MySQL
-	case "mssql":
-		return utils.MsSQL	
+	case "sqlserver":
+		return utils.SqlServer	
 	}
 
 	return utils.MySQL

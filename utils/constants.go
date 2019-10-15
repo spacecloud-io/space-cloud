@@ -33,8 +33,8 @@ const (
 	// Postgres is the type used for PostgresQL
 	Postgres DBType = "sql-postgres"
 
-	//MsSQL is the type used for MsSQL
-	MsSQL DBType = "sql-mssql"
+	// SqlServer is the type used for MsSQL
+	SqlServer DBType = "sql-sqlserver"
 )
 
 // Broker is the type of broker used by Space Cloud
