@@ -35,7 +35,7 @@ func Init(dbType utils.DBType, enabled bool, connection string) (s *SQL, err err
 		s.dbType = "mysql"
 	
 	case utils.SqlServer:
-		s.dbType = "mssql"
+		s.dbType = "sqlserver"
 
 	default:
 		err = utils.ErrUnsupportedDatabase

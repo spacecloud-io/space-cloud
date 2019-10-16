@@ -3,8 +3,8 @@ module github.com/spaceuptech/space-cloud
 require (
 	cloud.google.com/go v0.38.0
 	github.com/aws/aws-sdk-go v1.19.7
+	github.com/denisenkom/go-mssqldb v0.0.0-20191001013358-cfbb681360f0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/denisenkom/go-mssqldb  //latest
 	github.com/doug-martin/goqu/v8 v8.1.0
 	github.com/fatih/structs v1.1.0
 	github.com/go-sql-driver/mysql v1.4.1

@@ -214,7 +214,8 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 		sql = "create database if not exists " + project
 	case utils.Postgres:
 		sql = "create schema if not exists " + project
-
+	case utils.SqlServer:
+		sql = "create schema if not exists " + project
 	default:
 		return nil
 	}
