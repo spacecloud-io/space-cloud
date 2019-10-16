@@ -56,9 +56,8 @@ func initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, erro
 	case utils.Mongo:
 		return mgo.Init(enabled, connection)
 
-	case utils.MySQL, utils.Postgres:
+	case utils.MySQL, utils.Postgres, utils.SqlServer:
 		return sql.Init(dbType, enabled, connection)
-
 	default:
 		return nil, utils.ErrInvalidParams
 	}
