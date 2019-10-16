@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -93,8 +92,6 @@ func HandleInspectionRequest(adminMan *admin.Manager, schemaArg *schema.Schema) 
 		dbType := vars["dbType"]
 		col := vars["col"]
 		project := vars["project"]
-
-		fmt.Println("schema", schemaArg)
 
 		result, err := schemaArg.SchemaInspection(ctx, dbType, project, col)
 		if err != nil {
@@ -227,7 +224,7 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) 
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 1*time.Minute)
 		defer cancel()
 
 		vars := mux.Vars(r)
