@@ -1,0 +1,462 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://spaceuptech.com/space-cloud/config",
+  "$ref": "#/definitions/Config",
+  "definitions": {
+    "Config": {
+      "type": "object",
+      "properties": {
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Project"
+          }
+        },
+        "ssl": {
+          "$ref": "#/definitions/SSL"
+        },
+        "admin": {
+          "$ref": "#/definitions/Admin"
+        },
+        "deploy": {
+          "$ref": "#/definitions/Deploy"
+        },
+        "gateway": {
+          "$ref": "#/definitions/Static"
+        },
+        "cluster": {
+          "type": "string"
+        },
+        "nodeId": {
+          "type": "string"
+        }
+      }
+    },
+    "Deploy": {
+      "type": "object",
+      "properties": {
+        "orchestrator": {
+          "$ref": "#/definitions/OrchestratorType"
+        },
+        "registry": {
+          "$ref": "#/definitions/Registry"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Registry": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        }
+      }
+    },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "secret": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "modules": {
+          "$ref": "#/definitions/Modules"
+        }
+      }
+    },
+    "Admin": {
+      "type": "object",
+      "properties": {
+        "secret": {
+          "type": "string"
+        },
+        "operation": {
+          "$ref": "#/definitions/OperationConfig"
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AdminUser"
+          }
+        }
+      }
+    },
+    "OperationConfig": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "integer"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        }
+      }
+    },
+    "AdminUser": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "string"
+        },
+        "pass": {
+          "type": "string"
+        },
+        "scopes": {
+          "$ref": "#/definitions/ProjectScope"
+        }
+      }
+    },
+    "ProjectScope": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "SSL": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "crt": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        }
+      }
+    },
+    "Modules": {
+      "type": "object",
+      "properties": {
+        "crud": {
+          "$ref": "#/definitions/Crud"
+        },
+        "auth": {
+          "$ref": "#/definitions/Auth"
+        },
+        "functions": {
+          "$ref": "#/definitions/Functions"
+        },
+        "fileStore": {
+          "$ref": "#/definitions/FileStore"
+        },
+        "eventing": {
+          "$ref": "#/definitions/Eventing"
+        }
+      }
+    },
+    "Crud": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/CrudStub"
+      }
+    },
+    "CrudStub": {
+      "type": "object",
+      "properties": {
+        "conn": {
+          "type": "string"
+        },
+        "collections": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TableRule"
+          }
+        },
+        "isPrimary": {
+          "type": "boolean"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "TableRule": {
+      "type": "object",
+      "properties": {
+        "isRealtimeEnabled": {
+          "type": "boolean"
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Rule"
+          }
+        },
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "type": "string"
+        },
+        "eval": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "F1": {
+          "$comment": "TODO"
+        },
+        "F2": {
+          "$comment": "TODO"
+        },
+        "clauses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Rule"
+          }
+        },
+        "db": {
+          "type": "string"
+        },
+        "col": {
+          "type": "string"
+        },
+        "find": {
+          "type": "object"
+        },
+        "service": {
+          "type": "string"
+        },
+        "func": {
+          "type": "string"
+        }
+      }
+    },
+    "Auth": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/AuthStub"
+      }
+    },
+    "AuthStub": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "secret": {
+          "type": "string"
+        }
+      }
+    },
+    "Functions": {
+      "type": "object",
+      "properties": {
+        "services": {
+          "$ref": "#/definitions/Services"
+        },
+        "internalServices": {
+          "$ref": "#/definitions/Services"
+        }
+      }
+    },
+    "Services": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/Service"
+      }
+    },
+    "Service": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "scheme": {
+          "type": "string"
+        },
+        "functions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Function"
+          }
+        }
+      }
+    },
+    "Function": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/definitions/Rule"
+        }
+      }
+    },
+    "FileStore": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "storeType": {
+          "type": "string"
+        },
+        "conn": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "bucket": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FileRule"
+          }
+        }
+      }
+    },
+    "FileRule": {
+      "type": "object",
+      "properties": {
+        "prefix": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Rule"
+          }
+        }
+      }
+    },
+    "Static": {
+      "type": "object",
+      "properties": {
+        "routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StaticRoute"
+          }
+        },
+        "internalRoutes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StaticRoute"
+          }
+        }
+      }
+    },
+    "StaticRoute": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "proxy": {
+          "type": "string"
+        },
+        "protocol": {
+          "type": "string"
+        }
+      }
+    },
+    "Eventing": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "dbType": {
+          "type": "string"
+        },
+        "col": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EventingRule"
+          }
+        },
+        "internalRules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EventingRule"
+          }
+        }
+      }
+    },
+    "EventingRule": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "retries": {
+          "type": "integer"
+        },
+        "service": {
+          "type": "string"
+        },
+        "func": {
+          "type": "string"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "OrchestratorType": {
+      "type": "string"
+    },
+    "Broker": {
+      "type": "string"
+    }
+  }
+}
