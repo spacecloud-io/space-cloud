@@ -55,7 +55,7 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 
 		args = append(args, col, project)
 	}
-	rows, err := s.client.Queryx(queryString, args...)
+	rows, err := s.client.QueryxContext(ctx, queryString, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col str
 	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
 	`
 	}
-	rows, err := s.client.Queryx(queryString, []interface{}{project, col}...)
+	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
 	if err != nil {
 		return nil, err
 	}
