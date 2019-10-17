@@ -270,7 +270,7 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		// TODO: int64
 		switch fieldValue.Kind {
 		case typeDateTime:
-			return time.Unix(int64(v), 0), nil
+			return time.Unix(int64(v)/1000, 0), nil
 		case typeID, typeInteger:
 			return value, nil
 		default:
@@ -293,6 +293,8 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 
 	case float32, float64:
 		switch fieldValue.Kind {
+		case typeDateTime:
+			return time.Unix(int64(v.(float64))/1000, 0), nil
 		case typeFloat:
 			return value, nil
 		default:

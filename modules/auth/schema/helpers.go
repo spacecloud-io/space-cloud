@@ -7,13 +7,16 @@ import (
 )
 
 // GetSQLType return sql type
-func getSQLType(typeName string) (string, error) {
+func getSQLType(dbType, typeName string) (string, error) {
 	switch typeName {
 	case typeID, typeJoin:
 		return "varchar(50)", nil
 	case typeString:
 		return "text", nil
 	case typeDateTime:
+		if dbType == string(utils.MySQL) {
+			return "datetime", nil
+		}
 		return "timestamp", nil
 	case typeBoolean:
 		return "boolean", nil
@@ -138,14 +141,14 @@ func (c *creationModule) removeForeignKey() []string {
 	return nil
 }
 
-func addNewTable(project, realColName string, realColValue schemaField) (string, error) {
+func addNewTable(project, dbType, realColName string, realColValue schemaField) (string, error) {
 	var query string
 	var isID bool
 	for realFieldKey, realFieldStruct := range realColValue {
 		if err := checkErrors(realFieldStruct); err != nil {
 			return "", err
 		}
-		sqlType, err := getSQLType(realFieldStruct.Kind)
+		sqlType, err := getSQLType(dbType, realFieldStruct.Kind)
 		if err != nil {
 			return "", nil
 		}

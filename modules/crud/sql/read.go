@@ -9,10 +9,10 @@ import (
 	goqu "github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
 
+	_ "github.com/denisenkom/go-mssqldb"                //Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
-	_ "github.com/denisenkom/go-mssqldb"				//Import for MsSQL
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -136,7 +136,7 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 
 		switch s.GetDBType() {
 		case utils.MySQL, utils.Postgres:
-			mysqlTypeCheck(rowTypes, mapping)
+			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 		}
 
 		for _, v := range mapping {
@@ -157,7 +157,7 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 
 		switch s.GetDBType() {
 		case utils.MySQL, utils.Postgres:
-			mysqlTypeCheck(rowTypes, mapping)
+			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 		}
 
 		return mapping, nil
@@ -173,7 +173,7 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 
 			switch s.GetDBType() {
 			case utils.MySQL, utils.Postgres:
-				mysqlTypeCheck(rowTypes, mapping)
+				mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 			}
 
 			array = append(array, mapping)
