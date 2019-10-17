@@ -213,7 +213,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 func getQueryKind(directive *ast.Directive) string {
 	switch directive.Name.Value {
 
-	case "postgres", "mysql", "mongo":
+	case "postgres", "mysql", "mongo", "sqlserver":
 		return "read"
 
 	default:

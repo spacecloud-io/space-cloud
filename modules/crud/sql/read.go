@@ -12,6 +12,7 @@ import (
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
+	_ "github.com/denisenkom/go-mssqldb"				//Import for MsSQL
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"

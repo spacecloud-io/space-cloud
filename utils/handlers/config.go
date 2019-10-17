@@ -145,7 +145,7 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 // HandleModifySchemas creates the schema for all databases present in the config
 func HandleModifySchemas(auth *auth.Module, adminMan *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 1*time.Minute)
 		defer cancel()
 
 		// Get the JWT token from header
