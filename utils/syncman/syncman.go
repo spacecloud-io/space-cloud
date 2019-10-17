@@ -92,14 +92,16 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error) er
 		cb(s.projectConfig)
 	}
 
-	// Start routine to observe active space-cloud services
-	if err := s.watchService(); err != nil {
-		return err
-	}
+	if s.isConsulEnabled {
+		// Start routine to observe active space-cloud services
+		if err := s.watchService(); err != nil {
+			return err
+		}
 
-	// Start routine to observe space cloud projects
-	if err := s.watchProjects(); err != nil {
-		return err
+		// Start routine to observe space cloud projects
+		if err := s.watchProjects(); err != nil {
+			return err
+		}
 	}
 
 	return nil
