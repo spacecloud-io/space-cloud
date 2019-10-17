@@ -1,70 +1,87 @@
 package syncman
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
-	"strings"
+	"time"
+
+	"github.com/hashicorp/consul/api"
+	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// ResolveURL returns an url for the provided service config
-func (s *Manager) ResolveURL(kind, url, scheme string) string {
-	if strings.HasSuffix(url, "/") {
-		url = url[:len(url)-1]
+// GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
+func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	if !s.isConsulEnabled {
+		return fmt.Sprintf("http://localhost:4122/v1/api/%s/eventing/process", project), nil
 	}
 
-	// TODO: implement integration with consul
-	return fmt.Sprintf("%s://%s", scheme, url)
-}
+	opts := &api.QueryOptions{AllowStale: true}
+	opts = opts.WithContext(ctx)
 
-// GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
-func (s *Manager) GetAssignedSpaceCloudURL(project string, token int) string {
-	// TODO: implement integration with consul to get correct SC url
-	return fmt.Sprintf("http://localhost:4122/v1/api/%s/eventing/process", project)
+	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
+
+	return fmt.Sprintf("http://%s:%d/v1/api/%s/eventing/process", s.services[index].Node.Address, s.services[index].Service.Port, project), nil
 }
 
 // GetSpaceCloudNodeURLs returns the array of space cloud urls
 func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
-	// TODO: implement integration with consul to get SC urls of current cluster
-	return []string{fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/process", project)}
-}
-
-// GetAssignedTokens returns the array or tokens assigned to this node
-func (s *Manager) GetAssignedTokens() (start int, end int) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	// myHash := hash(s.list.LocalMember().Name)
-	// index := 0
+	if !s.isConsulEnabled {
+		return []string{fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/process", project)}
+	}
 
-	// members := memRange{}
-	// for _, m := range s.list.Members() {
-	// 	if m.Status == serf.StatusAlive {
-	// 		members = append(members, hash(m.Name))
-	// 	}
-	// }
-	// sort.Stable(members)
+	urls := make([]string, len(s.services))
 
-	// for i, v := range members {
-	// 	if v == myHash {
-	// 		index = i
-	// 		break
-	// 	}
-	// }
+	for i, addr := range s.services {
+		urls[i] = fmt.Sprintf("http://%s:%d/v1/api/%s/realtime/process", addr.Node.Address, addr.Service.Port, project)
+	}
 
-	// totalMembers := len(members)
-	totalMembers := 1
+	return urls
+}
+
+// GetAssignedTokens returns the array or tokens assigned to this node
+func (s *Manager) GetAssignedTokens() (start, end int) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Always return true if running in single mode
+	if !s.isConsulEnabled {
+		return calcTokens(1, utils.MaxEventTokens, 0)
+	}
+
 	index := 0
+
+	for i, v := range s.services {
+		if v.Service.ID == s.nodeID || (s.nodeID == v.Node.ID && s.port == v.Service.Port) {
+			index = i
+			break
+		}
+	}
+
+	totalMembers := len(s.services)
 	return calcTokens(totalMembers, utils.MaxEventTokens, index)
 }
 
 // GetClusterSize returns the size of the cluster
-func (s *Manager) GetClusterSize() int {
-	// TODO implement this function
-	return 1
+func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Return 1 if not running with consul
+	if !s.isConsulEnabled {
+		return 1, nil
+	}
+
+	return len(s.services), nil
 }
 
 // SetProjectConfig applies the set project config command to the raft log
@@ -78,7 +95,23 @@ func (s *Manager) SetProjectConfig(project *config.Project) error {
 		return err
 	}
 
-	return config.StoreConfigToFile(s.projectConfig, s.configFile)
+	if !s.isConsulEnabled {
+		return config.StoreConfigToFile(s.projectConfig, s.configFile)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	data, _ := json.Marshal(project)
+
+	_, err := s.consulClient.KV().Put(&api.KVPair{
+		Key:   fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID),
+		Value: data,
+	}, opts)
+	return err
 }
 
 // SetStaticConfig applies the set project config command to the raft log
@@ -101,12 +134,23 @@ func (s *Manager) DeleteProjectConfig(projectID string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.delete(projectID)
-	if err := s.cb(s.projectConfig); err != nil {
-		return err
+	if !s.isConsulEnabled {
+		s.delete(projectID)
+		if err := s.cb(s.projectConfig); err != nil {
+			return err
+		}
+
+		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	return config.StoreConfigToFile(s.projectConfig, s.configFile)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	_, err := s.consulClient.KV().Delete(fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID), opts)
+	return err
 }
 
 // GetConfig returns the config present in the state
@@ -122,14 +166,4 @@ func (s *Manager) GetConfig(projectID string) (*config.Project, error) {
 	}
 
 	return nil, errors.New("given project is not present in state")
-}
-
-func calcTokens(n int, tokens int, i int) (start int, end int) {
-	tokensPerMember := int(math.Ceil(float64(tokens) / float64(n)))
-	start = tokensPerMember * i
-	end = start + tokensPerMember - 1
-	if end > tokens {
-		end = tokens - 1
-	}
-	return
 }

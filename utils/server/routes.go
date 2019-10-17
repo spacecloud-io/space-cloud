@@ -8,13 +8,17 @@ import (
 )
 
 // InitRoutes initialises the http routes
-func (s Server) InitRoutes(profiler bool, staticPath string) {
+func (s *Server) InitRoutes(profiler bool, staticPath string) {
 	s.routes(s.router, profiler, staticPath)
 }
 
 // InitSecureRoutes initialises the http routes
-func (s Server) InitSecureRoutes(profiler bool, staticPath string) {
+func (s *Server) InitSecureRoutes(profiler bool, staticPath string) {
 	s.routes(s.routerSecure, profiler, staticPath)
+}
+
+func (s *Server) InitConnectRoutes(profiler bool, staticPath string) {
+	s.routes(s.routerConnect, profiler, staticPath)
 }
 
 func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {

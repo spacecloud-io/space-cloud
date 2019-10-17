@@ -13,11 +13,11 @@ func (m *Module) handleCall(ctx context.Context, service, function, token string
 	s := m.loadService(service)
 
 	// Generate the url
-	url := m.manager.ResolveURL(s.Kind, s.URL, s.Scheme)
+	url := utils.ResolveURL(s.URL, s.Scheme)
 	url = url + s.Functions[function].Path
 
 	var res interface{}
-	if err := utils.MakeHTTPRequest(ctx, "POST", url, token, params, &res); err != nil {
+	if err := m.manager.MakeHTTPRequest(ctx, s.Kind, "POST", url, token, params, &res); err != nil {
 		return nil, err
 	}
 
