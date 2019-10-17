@@ -8,13 +8,13 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/golang/protobuf v1.3.2
-	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/google/go-cmp v0.3.0
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.0
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/graphql-go/graphql v0.7.8
+	github.com/hashicorp/consul v1.6.1
+	github.com/hashicorp/consul/api v1.2.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.2.0
@@ -33,11 +33,9 @@ require (
 	go.mongodb.org/mongo-driver v1.1.1
 	go.opencensus.io v0.22.0 // indirect
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80 // indirect
-	golang.org/x/sys v0.0.0-20190726091711-fc99dfbffb4e // indirect
+	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 	google.golang.org/api v0.7.0
 	google.golang.org/genproto v0.0.0-20190530194941-fb225487d101 // indirect
-	google.golang.org/grpc v1.21.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/yaml.v2 v2.2.2
 )

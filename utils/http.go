@@ -1,47 +1,12 @@
 package utils
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"errors"
+	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
+
+	"github.com/rs/cors"
 )
-
-// MakeHTTPRequest fires an http request and returns a response
-func MakeHTTPRequest(ctx context.Context, method, url, token string, params, vPtr interface{}) error {
-	// Marshal json into byte array
-	data, _ := json.Marshal(params)
-
-	// Make a request object
-	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-
-	// Add token header
-	req.Header.Add("Authorization", "Bearer "+token)
-
-	// Create a http client and fire the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if err := json.NewDecoder(resp.Body).Decode(vPtr); err != nil {
-		return err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
-	}
-
-	return nil
-}
 
 // GetTokenFromHeader returns the token from the request header
 func GetTokenFromHeader(r *http.Request) string {
@@ -52,4 +17,26 @@ func GetTokenFromHeader(r *http.Request) string {
 	}
 
 	return strings.TrimPrefix(tokens[0], "Bearer ")
+}
+
+// ResolveURL returns an url for the provided service config
+func ResolveURL(url, scheme string) string {
+
+	if strings.HasSuffix(url, "/") {
+		url = url[:len(url)-1]
+	}
+
+	return fmt.Sprintf("%s://%s", scheme, url)
+}
+
+func CreateCorsObject() *cors.Cors {
+	return cors.New(cors.Options{
+		AllowCredentials: true,
+		AllowOriginFunc: func(s string) bool {
+			return true
+		},
+		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
+		AllowedHeaders: []string{"Authorization", "Content-Type"},
+		ExposedHeaders: []string{"Authorization", "Content-Type"},
+	})
 }

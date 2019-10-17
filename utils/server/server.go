@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	nats "github.com/nats-io/nats-server/v2/server"
-	"github.com/rs/cors"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -30,6 +30,7 @@ type Server struct {
 	nodeID         string
 	router         *mux.Router
 	routerSecure   *mux.Router
+	routerConnect  *mux.Router
 	auth           *auth.Module
 	crud           *crud.Module
 	user           *userman.Module
@@ -47,15 +48,20 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID string) (*Server, error) {
+func New(nodeID, clusterID string, isConsulEnabled bool) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
+	r3 := mux.NewRouter()
 
 	// Create the fundamental modules
 	c := crud.Init()
 
 	adminMan := admin.New()
-	syncMan := syncman.New()
+	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled)
+	if err != nil {
+		return nil, err
+	}
+
 	fn := functions.Init(syncMan)
 
 	a := auth.Init(c, fn)
@@ -83,17 +89,17 @@ func New(nodeID string) (*Server, error) {
 
 	fmt.Println("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, routerConnect: r3, auth: a, crud: c,
 		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
 		eventing: e, graphql: graphqlMan}, nil
 }
 
 // Start begins the server operations
-func (s *Server) Start(disableMetrics bool) error {
+func (s *Server) Start(disableMetrics bool, port int) error {
 
 	// Start the sync manager
-	if err := s.syncMan.Start(s.nodeID, s.configFilePath, s.LoadConfig); err != nil {
+	if err := s.syncMan.Start(s.configFilePath, s.LoadConfig); err != nil {
 		return err
 	}
 
@@ -103,37 +109,31 @@ func (s *Server) Start(disableMetrics bool) error {
 	}
 
 	// Allow cors
-	corsObj := cors.New(cors.Options{
-		AllowCredentials: true,
-		AllowOriginFunc: func(s string) bool {
-			return true
-		},
-		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
-		AllowedHeaders: []string{"Authorization", "Content-Type"},
-		ExposedHeaders: []string{"Authorization", "Content-Type"},
-	})
+	corsObj := utils.CreateCorsObject()
 
-	fmt.Println("Starting http server on port: " + utils.PortHTTP)
+	fmt.Println("Starting http server on port: " + strconv.Itoa(port))
 
 	if s.ssl != nil && s.ssl.Enabled {
 		handler := corsObj.Handler(s.routerSecure)
-		fmt.Println("Starting https server on port: " + utils.PortHTTPSecure)
+		fmt.Println("Starting https server on port: " + strconv.Itoa(port+4))
 		go func() {
 
-			if err := http.ListenAndServeTLS(":"+utils.PortHTTPSecure, s.ssl.Crt, s.ssl.Key, handler); err != nil {
+			if err := http.ListenAndServeTLS(":"+strconv.Itoa(port+4), s.ssl.Crt, s.ssl.Key, handler); err != nil {
 				fmt.Println("Error starting https server:", err)
 			}
 		}()
 	}
 
+	go s.syncMan.StartConnectServer(port, corsObj.Handler(s.routerConnect))
+
 	handler := corsObj.Handler(s.router)
 
 	fmt.Println()
-	fmt.Println("\t Hosting mission control on http://localhost:" + utils.PortHTTP + "/mission-control/")
+	fmt.Println("\t Hosting mission control on http://localhost:" + strconv.Itoa(port) + "/mission-control/")
 	fmt.Println()
 
 	fmt.Println("Space cloud is running on the specified ports :D")
-	return http.ListenAndServe(":"+utils.PortHTTP, handler)
+	return http.ListenAndServe(":"+strconv.Itoa(port), handler)
 }
 
 // SetConfig sets the config

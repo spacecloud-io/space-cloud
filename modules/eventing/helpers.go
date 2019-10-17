@@ -20,7 +20,12 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	url := m.syncMan.GetAssignedSpaceCloudURL(m.project, eventToken)
+	url, err := m.syncMan.GetAssignedSpaceCloudURL(ctx, m.project, eventToken)
+	if err != nil {
+		log.Println("Eventing module could not get space-cloud url:", err)
+		return
+	}
+
 	token, err := m.adminMan.GetInternalAccessToken()
 	if err != nil {
 		log.Println("Eventing module could not transmit event:", err)
@@ -28,7 +33,7 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	}
 
 	var res interface{}
-	if err := utils.MakeHTTPRequest(ctx, "POST", url, token, eventDocs, &res); err != nil {
+	if err := m.syncMan.MakeHTTPRequest(ctx, utils.RequestKindDirect, "POST", url, token, eventDocs, &res); err != nil {
 		log.Println("Eventing module could not transmit event:", err)
 		log.Println(res)
 	}

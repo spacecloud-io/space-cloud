@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -17,13 +18,19 @@ func currentTimeInMillis() int64 {
 }
 
 func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) {
+	// Get the cluster size
+	clusterSize, err := s.syncMan.GetClusterSize(context.Background())
+	if err != nil {
+		clusterSize = 1
+	}
+
 	// Create the find and update clauses
 	find = map[string]interface{}{"_id": s.nodeID}
 	set := map[string]interface{}{
 		"os":           runtime.GOOS,
 		"isProd":       s.adminMan.LoadEnv(),
 		"version":      utils.BuildVersion,
-		"clusterSize":  s.syncMan.GetClusterSize(),
+		"clusterSize":  clusterSize,
 		"distribution": "ce",
 		"lastUpdated":  currentTimeInMillis(),
 	}

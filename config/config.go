@@ -9,8 +9,6 @@ type Config struct {
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 	Deploy   Deploy     `json:"deploy" yaml:"deploy"`
 	Static   *Static    `json:"gateway" yaml:"gateway"`
-	Cluster  string     `json:"cluster" yaml:"cluster"`
-	NodeID   string     `json:"nodeId" yaml:"nodeId"`
 }
 
 // Deploy holds the deployment environment config
@@ -131,7 +129,7 @@ type Services map[string]*Service
 
 // Service holds the config of service
 type Service struct {
-	Kind      string              `json:"kind" yaml:"kind"`                   // direct or consul
+	Kind      utils.RequestKind   `json:"kind" yaml:"kind"`                   // direct or consul
 	URL       string              `json:"url,omitempty" yaml:"url,omitempty"` // eg. localhost:8080
 	Scheme    string              `json:"scheme" yaml:"scheme"`               // http or http
 	Functions map[string]Function `json:"functions" yaml:"functions"`

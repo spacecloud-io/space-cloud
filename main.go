@@ -70,6 +70,22 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
 	},
+	cli.StringFlag{
+		Name:   "cluster",
+		Usage:  "The cluster id to start space-cloud with",
+		EnvVar: "CLUSTER_ID",
+		Value:  "default-cluster",
+	},
+	cli.BoolFlag{
+		Name:   "enable-consul",
+		Usage:  "Enable consul integration",
+		EnvVar: "ENABLE_CONSUL",
+	},
+	cli.IntFlag{
+		Name:   "port",
+		EnvVar: "PORT",
+		Value:  4122,
+	},
 }
 
 func main() {
@@ -106,6 +122,9 @@ func actionRun(c *cli.Context) error {
 	disableMetrics := c.Bool("disable-metrics")
 	profiler := c.Bool("profiler")
 
+	// Load flag related to the port
+	port := c.Int("port")
+
 	// Load flags related to ssl
 	sslCert := c.String("ssl-cert")
 	sslKey := c.String("ssl-key")
@@ -115,12 +134,16 @@ func actionRun(c *cli.Context) error {
 	adminPass := c.String("admin-pass")
 	adminSecret := c.String("admin-secret")
 
+	// Load flags related to clustering
+	clusterID := c.String("cluster")
+	enableConsul := c.Bool("enable-consul")
+
 	// Generate a new id if not provided
 	if nodeID == "none" {
-		nodeID = uuid.NewV1().String()
+		nodeID = "auto-" + uuid.NewV1().String()
 	}
 
-	s, err := server.New(nodeID)
+	s, err := server.New(nodeID, clusterID, enableConsul)
 	if err != nil {
 		return err
 	}
@@ -160,10 +183,14 @@ func actionRun(c *cli.Context) error {
 		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
+	if enableConsul {
+		s.InitConnectRoutes(profiler, staticPath)
+	}
+
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(disableMetrics)
+	return s.Start(disableMetrics, port)
 }
 
 func actionInit(*cli.Context) error {
