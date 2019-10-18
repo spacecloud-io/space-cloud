@@ -74,7 +74,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	case utils.EventCreate:
 		// Unmarshal the payload
 		createEvent := model.DatabaseEventMessage{}
-		if err := json.Unmarshal([]byte(eventDoc.Payload), &createEvent); err != nil {
+		if err := json.Unmarshal([]byte(eventDoc.Payload.(string)), &createEvent); err != nil {
 			return
 		}
 
@@ -104,7 +104,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	case utils.EventUpdate:
 		// Unmarshal the payload
 		updateEvent := model.DatabaseEventMessage{}
-		json.Unmarshal([]byte(eventDoc.Payload), &updateEvent)
+		json.Unmarshal([]byte(eventDoc.Payload.(string)), &updateEvent)
 		idVar := utils.GetIDVariable(updateEvent.DBType)
 
 		// Get the document from the database
@@ -139,7 +139,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	case utils.EventDelete:
 		// Unmarshal the payload
 		deleteEvent := model.DatabaseEventMessage{}
-		json.Unmarshal([]byte(eventDoc.Payload), &deleteEvent)
+		json.Unmarshal([]byte(eventDoc.Payload.(string)), &deleteEvent)
 		idVar := utils.GetIDVariable(deleteEvent.DBType)
 
 		// Check if document exists in database

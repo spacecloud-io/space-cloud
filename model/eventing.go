@@ -7,17 +7,17 @@ type EventKind string
 
 // EventDocument is the format in which the event is persistent on disk
 type EventDocument struct {
-	ID             string `structs:"_id" json:"_id" bson:"_id" mapstructure:"_id"`
-	BatchID        string `structs:"batchid" json:"batchid" bson:"batchid" mapstructure:"batchid"`
-	Type           string `structs:"type" json:"type" bson:"type" mapstructure:"type"`
-	Token          int    `structs:"token" json:"token" bson:"token" mapstructure:"token"`
-	Timestamp      int64  `structs:"timestamp" json:"timestamp" bson:"timestamp" mapstructure:"timestamp"`                         // The timestamp of when the event should get executed
-	EventTimestamp int64  `structs:"event_timestamp" json:"event_timestamp" bson:"event_timestamp" mapstructure:"event_timestamp"` // The time stamp of when the event was logged
-	Payload        string `structs:"payload" json:"payload" bson:"payload" mapstructure:"payload"`
-	Status         string `structs:"status" json:"status" bson:"status" mapstructure:"status"`
-	Retries        int    `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
-	Service        string `structs:"service" json:"service" bson:"service" mapstructure:"service"`
-	Function       string `structs:"func" json:"func" bson:"function" mapstructure:"func"`
+	ID             string      `structs:"_id" json:"_id" bson:"_id" mapstructure:"_id"`
+	BatchID        string      `structs:"batchid" json:"batchid" bson:"batchid" mapstructure:"batchid"`
+	Type           string      `structs:"type" json:"type" bson:"type" mapstructure:"type"`
+	Token          int         `structs:"token" json:"token" bson:"token" mapstructure:"token"`
+	Timestamp      int64       `structs:"timestamp" json:"timestamp" bson:"timestamp" mapstructure:"timestamp"`                         // The timestamp of when the event should get executed
+	EventTimestamp int64       `structs:"event_timestamp" json:"event_timestamp" bson:"event_timestamp" mapstructure:"event_timestamp"` // The time stamp of when the event was logged
+	Payload        interface{} `structs:"payload" json:"payload" bson:"payload" mapstructure:"payload"`
+	Status         string      `structs:"status" json:"status" bson:"status" mapstructure:"status"`
+	Retries        int         `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
+	Service        string      `structs:"service" json:"service" bson:"service" mapstructure:"service"`
+	Function       string      `structs:"func" json:"func" bson:"function" mapstructure:"func"`
 }
 
 // QueueEventRequest is the payload to add a new event to the task queue
@@ -63,8 +63,8 @@ type CrudHooks struct {
 
 // DatabaseEventMessage is the event payload for create, update and delete events
 type DatabaseEventMessage struct {
-	DBType string      `json:"db"`
-	Col    string      `json:"col"`
-	DocID  string      `json:"docId"`
-	Doc    interface{} `json:"doc"`
+	DBType string      `json:"db" mapstructure:"db"`
+	Col    string      `json:"col" mapstructure:"col"`
+	DocID  string      `json:"docId" mapstructure:"docId"`
+	Doc    interface{} `json:"doc" mapstructure:"doc"`
 }

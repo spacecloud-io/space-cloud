@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -75,6 +76,11 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 	// Create a variable to track retries
 	retries := 0
+
+	// Payload will be of type json. Unmarshal it before sending
+	var doc interface{}
+	json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
+	eventDoc.Payload = doc
 
 	for {
 		token, err := m.auth.GetInternalAccessToken()
