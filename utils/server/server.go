@@ -22,6 +22,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
+	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -38,23 +39,29 @@ type Server struct {
 	functions      *functions.Module
 	realtime       *realtime.Module
 	static         *static.Module
-	adminMan       *admin.Manager
 	nats           *nats.Server
 	eventing       *eventing.Module
 	configFilePath string
+	adminMan       *admin.Manager
 	syncMan        *syncman.Manager
+	metrics        *metrics.Module
 	ssl            *config.SSL
 	graphql        *graphql.Module
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID string, isConsulEnabled bool) (*Server, error) {
+func New(nodeID, clusterID string, isConsulEnabled bool, metricsConfig *metrics.Config) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 	r3 := mux.NewRouter()
 
 	// Create the fundamental modules
 	c := crud.Init()
+
+	m, err := metrics.New(nodeID, metricsConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	adminMan := admin.New()
 	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled)
@@ -75,7 +82,7 @@ func New(nodeID, clusterID string, isConsulEnabled bool) (*Server, error) {
 		Delete: e.HandleDeleteIntent,
 		Batch:  e.HandleBatchIntent,
 		Stage:  e.HandleStage,
-	})
+	}, m.AddDBOperation)
 
 	rt, err := realtime.Init(nodeID, e, a, c, fn, syncMan)
 	if err != nil {
@@ -90,7 +97,7 @@ func New(nodeID, clusterID string, isConsulEnabled bool) (*Server, error) {
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, routerConnect: r3, auth: a, crud: c,
-		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
+		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan, metrics: m,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
 		eventing: e, graphql: graphqlMan}, nil
 }
@@ -153,7 +160,7 @@ func (s *Server) LoadConfig(config *config.Config) error {
 
 		// Always set the config of the crud module first
 		// Set the configuration for the crud module
-		if err := s.crud.SetConfig(p.Modules.Crud); err != nil {
+		if err := s.crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			log.Println("Error in crud module config: ", err)
 			return err
 		}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/server"
 )
 
@@ -86,6 +87,28 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "PORT",
 		Value:  4122,
 	},
+
+	// Flags for the metrics module
+	cli.BoolFlag{
+		Name:   "enable-metrics",
+		Usage:  "Enable the metrics module",
+		EnvVar: "ENABLE_METRICS",
+	},
+	cli.StringFlag{
+		Name:   "metrics-sink",
+		Usage:  "The sink to output metrics data to",
+		EnvVar: "METRICS_SINK",
+	},
+	cli.StringFlag{
+		Name:   "metrics-conn",
+		Usage:  "The connection string of the sink",
+		EnvVar: "METRICS_CONN",
+	},
+	cli.StringFlag{
+		Name:   "metrics-scope",
+		Usage:  "The database / topic to push the metrics to",
+		EnvVar: "METRICS_SCOPE",
+	},
 }
 
 func main() {
@@ -138,12 +161,19 @@ func actionRun(c *cli.Context) error {
 	clusterID := c.String("cluster")
 	enableConsul := c.Bool("enable-consul")
 
+	// Load the flags for the metrics module
+	enableMetrics := c.Bool("enable-metrics")
+	metricsSink := c.String("metrics-sink")
+	metricsConn := c.String("metrics-conn")
+	metricsScope := c.String("metrics-scope")
+
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + uuid.NewV1().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, enableConsul)
+	s, err := server.New(nodeID, clusterID, enableConsul,
+		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope})
 	if err != nil {
 		return err
 	}

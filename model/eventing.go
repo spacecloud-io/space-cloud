@@ -1,7 +1,5 @@
 package model
 
-import "context"
-
 // EventKind is the type describing the kind of event
 type EventKind string
 
@@ -35,30 +33,6 @@ type EventIntent struct {
 	Token   int
 	Docs    []*EventDocument
 	Invalid bool
-}
-
-// CreateIntentHook is used to log a create intent
-type CreateIntentHook func(ctx context.Context, dbType, col string, req *CreateRequest) (*EventIntent, error)
-
-// UpdateIntentHook is used to log a create intent
-type UpdateIntentHook func(ctx context.Context, dbType, col string, req *UpdateRequest) (*EventIntent, error)
-
-// DeleteIntentHook is used to log a create intent
-type DeleteIntentHook func(ctx context.Context, dbType, col string, req *DeleteRequest) (*EventIntent, error)
-
-// BatchIntentHook is used to log a create intent
-type BatchIntentHook func(ctx context.Context, dbType string, req *BatchRequest) (*EventIntent, error)
-
-// StageEventHook is used to stage an intended event
-type StageEventHook func(ctx context.Context, intent *EventIntent, err error)
-
-// CrudHooks is the struct to store the hooks related to the crud module
-type CrudHooks struct {
-	Create CreateIntentHook
-	Update UpdateIntentHook
-	Delete DeleteIntentHook
-	Batch  BatchIntentHook
-	Stage  StageEventHook
 }
 
 // DatabaseEventMessage is the event payload for create, update and delete events
