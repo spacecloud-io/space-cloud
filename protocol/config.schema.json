@@ -18,53 +18,18 @@
         "admin": {
           "$ref": "#/definitions/Admin"
         },
-        "deploy": {
-          "$ref": "#/definitions/Deploy"
-        },
-        "gateway": {
-          "$ref": "#/definitions/Static"
-        },
         "cluster": {
-          "type": "string"
+          "type": "string",
+          "default": "default-cluster"
         },
         "nodeId": {
           "type": "string"
         }
-      }
-    },
-    "Deploy": {
-      "type": "object",
-      "properties": {
-        "orchestrator": {
-          "$ref": "#/definitions/OrchestratorType"
-        },
-        "registry": {
-          "$ref": "#/definitions/Registry"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "enabled": {
-          "type": "boolean"
-        }
-      }
-    },
-    "Registry": {
-      "type": "object",
-      "properties": {
-        "url": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "key": {
-          "type": "string"
-        },
-        "token": {
-          "type": "string"
-        }
-      }
+      },
+      "required": [
+        "projects",
+        "admin"
+      ]
     },
     "Project": {
       "type": "object",
@@ -81,7 +46,12 @@
         "modules": {
           "$ref": "#/definitions/Modules"
         }
-      }
+      },
+      "required": [
+        "secret",
+        "id",
+        "modules"
+      ]
     },
     "Admin": {
       "type": "object",
@@ -98,13 +68,22 @@
             "$ref": "#/definitions/AdminUser"
           }
         }
-      }
+      },
+      "required": [
+        "secret",
+        "operation"
+      ]
     },
     "OperationConfig": {
       "type": "object",
       "properties": {
         "mode": {
-          "type": "integer"
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2
+          ]
         },
         "userId": {
           "type": "string"
@@ -112,6 +91,22 @@
         "key": {
           "type": "string"
         }
+      },
+      "required": [
+        "mode"
+      ],
+      "if": {
+        "properties": {
+          "mode": {
+            "exclusiveMinimum": 0
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "userId",
+          "key"
+        ]
       }
     },
     "AdminUser": {
@@ -133,7 +128,8 @@
       "additionalProperties": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minItems": 1
         }
       }
     },
@@ -141,7 +137,8 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "crt": {
           "type": "string"
@@ -149,6 +146,19 @@
         "key": {
           "type": "string"
         }
+      },
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "crt",
+          "key"
+        ]
       }
     },
     "Modules": {
@@ -160,8 +170,8 @@
         "auth": {
           "$ref": "#/definitions/Auth"
         },
-        "functions": {
-          "$ref": "#/definitions/Functions"
+        "services": {
+          "$ref": "#/definitions/Services"
         },
         "fileStore": {
           "$ref": "#/definitions/FileStore"
@@ -190,18 +200,33 @@
           }
         },
         "isPrimary": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         }
+      },
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "conn"
+        ]
       }
     },
     "TableRule": {
       "type": "object",
       "properties": {
         "isRealtimeEnabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "rules": {
           "type": "object",
@@ -212,54 +237,169 @@
         "schema": {
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "isRealtimeEnabled"
+      ]
     },
     "Rule": {
       "type": "object",
       "properties": {
         "rule": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "allow",
+            "deny",
+            "match",
+            "and",
+            "or",
+            "service",
+            "query",
+            "authenticated"
+          ]
         },
         "eval": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "==",
+            "!=",
+            "<=",
+            ">=",
+            "<",
+            ">"
+          ]
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "bool"
+          ]
         },
         "F1": {
-          "$comment": "TODO"
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
         },
         "F2": {
-          "$comment": "TODO"
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
         },
         "clauses": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/Rule"
-          }
+          },
+          "minItems": 2
         },
         "db": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "mongo",
+            "sql-mysql",
+            "sql-postgres",
+            "sql-sqlserver"
+          ]
         },
         "col": {
           "type": "string"
         },
         "find": {
-          "type": "object"
+          "type": "object",
+          "description": "MongoDB query DSL"
         },
-        "service": {
-          "type": "string"
-        },
-        "func": {
+        "url": {
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "rule"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "const": "match"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "eval",
+              "type",
+              "f1",
+              "f2"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "anyOf": [
+                  {
+                    "const": "and"
+                  },
+                  {
+                    "const": "or"
+                  }
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "clauses"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "const": "query"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "db",
+              "col",
+              "find"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "const": "service"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "url"
+            ]
+          }
+        }
+      ]
     },
     "Auth": {
       "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/AuthStub"
-      }
+      "patternProperties": {
+        "~email$": {
+          "$ref": "#/definitions/AuthStub"
+        }
+      },
+      "additionalProperties": false
     },
     "AuthStub": {
       "type": "object",
@@ -273,21 +413,14 @@
         "secret": {
           "type": "string"
         }
-      }
-    },
-    "Functions": {
-      "type": "object",
-      "properties": {
-        "services": {
-          "$ref": "#/definitions/Services"
-        },
-        "internalServices": {
-          "$ref": "#/definitions/Services"
-        }
-      }
+      },
+      "required": [
+        "enabled"
+      ]
     },
     "Services": {
       "type": "object",
+      "description": "The name of service must be url compatible.",
       "additionalProperties": {
         "$ref": "#/definitions/Service"
       }
@@ -295,22 +428,21 @@
     "Service": {
       "type": "object",
       "properties": {
-        "kind": {
-          "type": "string"
-        },
         "url": {
-          "type": "string"
-        },
-        "scheme": {
           "type": "string"
         },
         "functions": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/Function"
-          }
+          },
+          "minProperties": 1
         }
-      }
+      },
+      "required": [
+        "url",
+        "functions"
+      ]
     },
     "Function": {
       "type": "object",
@@ -321,7 +453,11 @@
         "rule": {
           "$ref": "#/definitions/Rule"
         }
-      }
+      },
+      "required": [
+        "path",
+        "rule"
+      ]
     },
     "FileStore": {
       "type": "object",
@@ -330,7 +466,12 @@
           "type": "boolean"
         },
         "storeType": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "local",
+            "amazon-s3",
+            "gcp-storage"
+          ]
         },
         "conn": {
           "type": "string"
@@ -347,7 +488,67 @@
             "$ref": "#/definitions/FileRule"
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "storeType",
+              "rules"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "local"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "conn"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "amazon-s3"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "conn",
+              "bucket"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "gcp-storage"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "bucket"
+            ]
+          }
+        }
+      ]
     },
     "FileRule": {
       "type": "object",
@@ -359,49 +560,14 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/Rule"
-          }
+          },
+          "$comment": "key can be one of create | read | delete"
         }
-      }
-    },
-    "Static": {
-      "type": "object",
-      "properties": {
-        "routes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/StaticRoute"
-          }
-        },
-        "internalRoutes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/StaticRoute"
-          }
-        }
-      }
-    },
-    "StaticRoute": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "path": {
-          "type": "string"
-        },
-        "prefix": {
-          "type": "string"
-        },
-        "host": {
-          "type": "string"
-        },
-        "proxy": {
-          "type": "string"
-        },
-        "protocol": {
-          "type": "string"
-        }
-      }
+      },
+      "required": [
+        "prefix",
+        "rule"
+      ]
     },
     "Eventing": {
       "type": "object",
@@ -427,7 +593,24 @@
             "$ref": "#/definitions/EventingRule"
           }
         }
-      }
+      },
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "dbType",
+          "col",
+          "rules"
+        ]
+      },
+      "required": [
+        "enabled"
+      ]
     },
     "EventingRule": {
       "type": "object",
@@ -436,13 +619,15 @@
           "type": "string"
         },
         "retries": {
-          "type": "integer"
+          "type": "integer",
+          "default": 3
         },
-        "service": {
+        "url": {
           "type": "string"
         },
-        "func": {
-          "type": "string"
+        "timeout": {
+          "type": "integer",
+          "default": 5000
         },
         "options": {
           "type": "object",
@@ -450,13 +635,12 @@
             "type": "string"
           }
         }
-      }
-    },
-    "OrchestratorType": {
-      "type": "string"
-    },
-    "Broker": {
-      "type": "string"
+      },
+      "required": [
+        "type",
+        "url",
+        "options"
+      ]
     }
   }
 }
