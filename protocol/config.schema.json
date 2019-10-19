@@ -558,10 +558,11 @@
         },
         "rule": {
           "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/Rule"
-          },
-          "$comment": "key can be one of create | read | delete"
+          "patternProperties": {
+            "^(create|read|delete)$": {
+              "$ref": "#/definitions/Rule"
+            }
+          }
         }
       },
       "required": [
