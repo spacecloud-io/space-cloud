@@ -230,3 +230,19 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 
 	return crud.RawExec(ctx, sql)
 }
+
+//  GetConnectionState of client
+func (m *Module) GetConnectionState(ctx context.Context, dbType string) (bool, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return false, err
+	}
+	connStatus, err := crud.GetConnectionState(ctx, dbType), nil
+	if err != nil {
+		return false, err
+	}
+	return connStatus, nil
+}

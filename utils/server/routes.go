@@ -30,7 +30,7 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("GET").Path("/v1/api/config/static").HandlerFunc(handlers.HandleLoadStaticConfig(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/api/config/static").HandlerFunc(handlers.HandleStoreStaticConfig(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
-
+	router.Methods("GET").Path("/v1/api/database/{dbType}/connstate").HandlerFunc(handlers.HandleGetConnectionState(s.adminMan, s.crud))
 	//Initialize route for graphql schema inspection
 	router.Methods("POST").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.auth.Schema))
 	router.Methods("POST").Path("/v1/api/config/modify/{project}").HandlerFunc(handlers.HandleModifySchemas(s.auth, s.adminMan))
@@ -101,4 +101,5 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 
 	// Initialize the route for handling static files
 	router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.static))
+
 }
