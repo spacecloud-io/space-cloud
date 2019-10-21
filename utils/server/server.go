@@ -48,7 +48,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID string, isConsulEnabled bool) (*Server, error) {
+func New(nodeID, clusterID string, isConsulEnabled, isConsulConnectEnabled bool) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 	r3 := mux.NewRouter()
@@ -57,7 +57,7 @@ func New(nodeID, clusterID string, isConsulEnabled bool) (*Server, error) {
 	c := crud.Init()
 
 	adminMan := admin.New()
-	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled)
+	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled, isConsulConnectEnabled)
 	if err != nil {
 		return nil, err
 	}

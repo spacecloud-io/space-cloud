@@ -30,14 +30,15 @@ type Manager struct {
 	port      int
 
 	// Configuration for clustering
-	isConsulEnabled bool
-	consulClient    *api.Client
-	consulService   *connect.Service
-	services        []*api.ServiceEntry
+	isConsulEnabled        bool
+	isConsulConnectEnabled bool
+	consulClient           *api.Client
+	consulService          *connect.Service
+	services               []*api.ServiceEntry
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID string, isConsulEnabled bool) (*Manager, error) {
+func New(nodeID, clusterID string, isConsulEnabled, isConsulConnectEnabled bool) (*Manager, error) {
 
 	// Create a new manager instance
 	m := &Manager{nodeID: nodeID, clusterID: clusterID}

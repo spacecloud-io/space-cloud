@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"golang.org/x/net/context"
 
@@ -29,7 +30,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, kind utils.RequestKind, m
 	// Create a http client and fire the request
 	client := &http.Client{}
 
-	if kind == utils.RequestKindConsulConnect {
+	if s.isConsulEnabled && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
 		client = s.consulService.HTTPClient()
 	}
 

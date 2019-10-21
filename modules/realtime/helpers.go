@@ -44,10 +44,11 @@ func generateEventRules(crudConfig config.Crud) []config.EventingRule {
 					// Add a new event for each db event type
 					for _, eventType := range dbEvents {
 						rule := config.EventingRule{
-							Type:     eventType,
-							Service:  serviceName,
-							Function: funcName,
-							Options:  map[string]string{"db": dbType, "col": col},
+							Type: eventType,
+							//Service:  serviceName,
+							//Function: funcName,
+							Url:     "",
+							Options: map[string]string{"db": dbType, "col": col},
 						}
 						eventingRules = append(eventingRules, rule)
 					}
