@@ -77,7 +77,7 @@ func New(nodeID, clusterID string, isConsulEnabled, isConsulConnectEnabled bool)
 		Stage:  e.HandleStage,
 	})
 
-	rt, err := realtime.Init(nodeID, e, a, c, fn, syncMan)
+	rt, err := realtime.Init(nodeID, e, a, c, syncMan)
 	if err != nil {
 		return nil, err
 	}

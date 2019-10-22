@@ -9,12 +9,10 @@ import (
 	"strings"
 
 	"golang.org/x/net/context"
-
-	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // MakeHTTPRequest fires an http request and returns a response
-func (s *Manager) MakeHTTPRequest(ctx context.Context, kind utils.RequestKind, method, url, token string, params, vPtr interface{}) error {
+func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token string, params, vPtr interface{}) error {
 	// Marshal json into byte array
 	data, _ := json.Marshal(params)
 

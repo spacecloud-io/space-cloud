@@ -33,7 +33,7 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	}
 
 	var res interface{}
-	if err := m.syncMan.MakeHTTPRequest(ctx, utils.RequestKindDirect, "POST", url, token, eventDocs, &res); err != nil {
+	if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, eventDocs, &res); err != nil {
 		log.Println("Eventing module could not transmit event:", err)
 		log.Println(res)
 	}
