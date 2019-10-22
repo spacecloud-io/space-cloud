@@ -240,9 +240,6 @@ func (m *Module) GetConnectionState(ctx context.Context, dbType string) (bool, e
 	if err != nil {
 		return false, err
 	}
-	connStatus, err := crud.GetConnectionState(ctx, dbType), nil
-	if err != nil {
-		return false, err
-	}
-	return connStatus, nil
+
+	return crud.GetConnectionState(ctx, dbType), nil
 }
