@@ -34,6 +34,10 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("GET").Path("/v1/api/config/static").HandlerFunc(handlers.HandleLoadStaticConfig(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/api/config/static").HandlerFunc(handlers.HandleStoreStaticConfig(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
+	router.Methods("POST").Path("/v1/api/config/{project}/set_files").HandlerFunc(handlers.SetFileStore(s.adminMan, s.syncMan))
+	router.Methods("GET").Path("/v1/api/config/{project}/get_files_state").HandlerFunc(handlers.GetFileState(s.adminMan, s.syncMan))
+	router.Methods("POST").Path("/v1/api/config/{project}/filerule").HandlerFunc(handlers.SetFileRule(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/api/config/{project}/{filename}/filerule").HandlerFunc(handlers.DeleteFileRule(s.adminMan, s.syncMan))
 
 	//Initialize route for graphql schema inspection
 	router.Methods("POST").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.auth.Schema))

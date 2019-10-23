@@ -153,6 +153,7 @@ type FileStore struct {
 
 // FileRule is the authorization object at the file rule level
 type FileRule struct {
+	Name   string           `json:"name" yaml:"name"`
 	Prefix string           `json:"prefix" yaml:"prefix"`
 	Rule   map[string]*Rule `json:"rule" yaml:"rule"` // The key can be create, read, delete
 }
