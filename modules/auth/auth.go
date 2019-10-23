@@ -28,7 +28,7 @@ type Module struct {
 	crud          *crud.Module
 	functions     *functions.Module
 	fileRules     []*config.FileRule
-	funcRules     *config.Functions
+	funcRules     *config.ServicesModule
 	project       string
 	fileStoreType string
 	Schema        *schema.Schema
@@ -40,7 +40,7 @@ func Init(crud *crud.Module, functions *functions.Module) *Module {
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions) error {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule) error {
 	m.Lock()
 	defer m.Unlock()
 

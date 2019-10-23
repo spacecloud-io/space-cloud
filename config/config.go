@@ -68,11 +68,11 @@ type SSL struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud      Crud       `json:"crud" yaml:"crud"`
-	Auth      Auth       `json:"auth" yaml:"auth"`
-	Functions *Functions `json:"functions" yaml:"functions"`
-	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
-	Eventing  Eventing   `json:"eventing,omitempty" yaml:"eventing,omitempty"`
+	Crud      Crud            `json:"crud" yaml:"crud"`
+	Auth      Auth            `json:"auth" yaml:"auth"`
+	Services  *ServicesModule `json:"services" yaml:"services"`
+	FileStore *FileStore      `json:"fileStore" yaml:"fileStore"`
+	Eventing  Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -118,8 +118,8 @@ type AuthStub struct {
 	Secret  string `json:"secret" yaml:"secret"`
 }
 
-// Functions holds the config for the functions module
-type Functions struct {
+// ServicesModule holds the config for the service module
+type ServicesModule struct {
 	Services         Services `json:"services" yaml:"services"`
 	InternalServices Services `json:"internalServices" yaml:"internalServices"`
 }
@@ -129,14 +129,12 @@ type Services map[string]*Service
 
 // Service holds the config of service
 type Service struct {
-	Kind      utils.RequestKind   `json:"kind" yaml:"kind"`                   // direct or consul
-	URL       string              `json:"url,omitempty" yaml:"url,omitempty"` // eg. localhost:8080
-	Scheme    string              `json:"scheme" yaml:"scheme"`               // http or http
-	Functions map[string]Function `json:"functions" yaml:"functions"`
+	URL       string              `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
+	Endpoints map[string]Endpoint `json:"endpoints" yaml:"endpoints"`
 }
 
-// Function holds the config of a function
-type Function struct {
+// Endpoint holds the config of a endpoint
+type Endpoint struct {
 	Path string `json:"path" yaml:"path"`
 	Rule *Rule  `json:"rule" yaml:"rule"`
 }

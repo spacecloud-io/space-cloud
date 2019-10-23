@@ -159,13 +159,13 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		}
 
 		// Set the configuration for the auth module
-		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions); err != nil {
+		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services); err != nil {
 			log.Println("Error in auth module config: ", err)
 			return err
 		}
 
 		// Set the configuration for the functions module
-		s.functions.SetConfig(p.ID, p.Modules.Functions)
+		s.functions.SetConfig(p.ID, p.Modules.Services)
 
 		// Set the configuration for the user management module
 		s.user.SetConfig(p.Modules.Auth)

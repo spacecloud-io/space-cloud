@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/utils"
 )
 
 func (m *Module) handleCall(ctx context.Context, service, function, token string, params interface{}) (interface{}, error) {
@@ -13,8 +12,8 @@ func (m *Module) handleCall(ctx context.Context, service, function, token string
 	s := m.loadService(service)
 
 	// Generate the url
-	url := utils.ResolveURL(s.URL, s.Scheme)
-	url = url + s.Functions[function].Path
+	url := s.URL
+	url = url + s.Endpoints[function].Path
 
 	var res interface{}
 	if err := m.manager.MakeHTTPRequest(ctx, "POST", url, token, params, &res); err != nil {
