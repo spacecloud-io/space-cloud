@@ -34,7 +34,9 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("GET").Path("/v1/api/config/static").HandlerFunc(handlers.HandleLoadStaticConfig(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/api/config/static").HandlerFunc(handlers.HandleStoreStaticConfig(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
-
+	router.Methods("POST").Path("/v1/api/config/{project}/eventing/{name}/add-eventing-rule").HandlerFunc(handlers.HandleAddRule(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/api/config/{project}/eventing/{name}/remove-eventing-rule").HandlerFunc(handlers.HandleDeleteRule(s.adminMan, s.syncMan))
+	router.Methoda("GET").Path("/v1/api/config/{project}/eventing/{name}/get-eventing-status").HandlerFunc(handlers).HandleGetEventingStatus(s.adminMan, s.syncMan))
 	//Initialize route for graphql schema inspection
 	router.Methods("POST").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.auth.Schema))
 	router.Methods("POST").Path("/v1/api/config/modify/{project}").HandlerFunc(handlers.HandleModifySchemas(s.auth, s.adminMan))
