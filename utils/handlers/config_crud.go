@@ -35,7 +35,7 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
 
-		_, err := crud.GetConnectionState(ctx, dbType)
+		connState, err := crud.GetConnectionState(ctx, dbType)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -43,7 +43,7 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 			return
 		}
 		w.WriteHeader(http.StatusOK) //http status code
-		json.NewEncoder(w).Encode(map[string]string{})
+		json.NewEncoder(w).Encode(map[string]bool{connstate})
 		return
 	}
 }
