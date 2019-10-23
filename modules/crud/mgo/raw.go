@@ -16,3 +16,9 @@ func (m *Mongo) RawBatch(ctx context.Context, queries []string) error {
 func (m *Mongo) RawExec(ctx context.Context, query string) error {
 	return errors.New("raw exec operation cannot be performed on mongo")
 }
+
+func (m *Mongo) Connect(ctx context.Context, connection string, enabled bool) error {
+	m.connection = connection
+	m.enabled = enabled
+	return m.connect()
+}

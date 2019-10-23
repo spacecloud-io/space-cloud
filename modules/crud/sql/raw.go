@@ -39,3 +39,9 @@ func (s *SQL) RawExec(ctx context.Context, query string) error {
 	_, err := s.client.ExecContext(ctx, query, []interface{}{}...)
 	return err
 }
+
+func (s *SQL) Connect(ctx context.Context, connection string, enabled bool) error {
+	s.connection = connection
+	s.enabled = enabled
+	return s.connect()
+}
