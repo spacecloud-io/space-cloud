@@ -82,10 +82,9 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 			log.Println("Eventing: Couldn't trigger functions -", err)
 			return
 		}
-
-		result, err := m.functions.CallWithContext(ctxLocal, eventDoc.Service, eventDoc.Function, token, eventDoc)
+		var result interface{}
+		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, token, eventDoc, &result)
 		if err == nil {
-
 			// Check if the result is an object
 			obj, ok := result.(map[string]interface{})
 			if ok {

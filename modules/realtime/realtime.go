@@ -1,7 +1,6 @@
 package realtime
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -9,7 +8,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/eventing"
-	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -25,19 +23,17 @@ type Module struct {
 	project string
 
 	// The external module realtime depends on
-	eventing  *eventing.Module
-	auth      *auth.Module
-	crud      *crud.Module
-	functions *functions.Module
-	syncMan   *syncman.Manager
+	eventing *eventing.Module
+	auth     *auth.Module
+	crud     *crud.Module
+	syncMan  *syncman.Manager
 }
 
 // Init creates a new instance of the realtime module
-func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *crud.Module,
-	functions *functions.Module, syncMan *syncman.Manager) (*Module, error) {
+func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *crud.Module, syncMan *syncman.Manager) (*Module, error) {
 
 	m := &Module{nodeID: nodeID, syncMan: syncMan,
-		eventing: eventing, auth: auth, crud: crud, functions: functions}
+		eventing: eventing, auth: auth, crud: crud}
 
 	return m, nil
 }
@@ -63,19 +59,7 @@ func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 	m.project = project
 
 	// add the rules to the eventing module
-	m.eventing.AddInternalRules(generateEventRules(crudConfig))
+	m.eventing.AddInternalRules(generateEventRules(crudConfig, project))
 
-	// add the rule to the functions module
-	m.functions.AddInternalRule(serviceName, &config.Service{
-		Kind:   "direct",
-		URL:    "localhost:4122",
-		Scheme: "http",
-		Functions: map[string]config.Function{
-			funcName: {
-				Path: fmt.Sprintf("/v1/api/%s/realtime/handle", m.project),
-				Rule: &config.Rule{Rule: "allow"},
-			},
-		},
-	})
 	return nil
 }
