@@ -41,7 +41,7 @@ type Manager struct {
 func New(nodeID, clusterID string, isConsulEnabled, isConsulConnectEnabled bool) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, isConsulConnectEnabled: isConsulConnectEnabled}
 
 	// Initialise the consul client if enabled
 	if isConsulEnabled {

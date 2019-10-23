@@ -83,7 +83,7 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.BoolFlag{
 		Name:   "enable-consul-connect",
-		Usage:  "",
+		Usage:  "Enable consul connect integration",
 		EnvVar: "ENABLE_CONSUL_CONNECT",
 	},
 	cli.IntFlag{
