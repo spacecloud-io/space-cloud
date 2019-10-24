@@ -4,12 +4,13 @@ import (
 	"context"
 	"strings"
 
-	goqu "github.com/doug-martin/goqu/v8"
+	"github.com/doug-martin/goqu/v8"
 	"github.com/spaceuptech/space-cloud/model"
 
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
+	_ "github.com/denisenkom/go-mssqldb"				//Import for MsSQL
 )
 
 // Delete removes the document(s) from the database which match the condition
@@ -44,4 +45,10 @@ func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req 
 	}
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 	return sqlString, args, nil
+}
+
+func (s *SQL) DeleteCollection(ctx context.Context, project, col string) error {
+	query := "DROP TABLE " + project + "." + col
+	_, err := s.client.ExecContext(ctx, query, []interface{}{}...)
+	return err
 }

@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"database/sql"
 )
 
 // RawBatch performs a batch operation for schema creation
@@ -12,12 +13,12 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 		return nil
 	}
 
-	tx, err := s.client.Beginx()
+	tx, err := s.client.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return err
 	}
 	for _, query := range queries {
-		_, err := tx.Exec(query)
+		_, err := tx.ExecContext(ctx, query)
 		if err != nil {
 			tx.Rollback()
 			return err

@@ -34,6 +34,7 @@ type Crud interface {
 	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
 	RawExec(ctx context.Context, project string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
+	DeleteCollection(ctx context.Context, project, col string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
@@ -56,9 +57,8 @@ func initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, erro
 	case utils.Mongo:
 		return mgo.Init(enabled, connection)
 
-	case utils.MySQL, utils.Postgres:
+	case utils.MySQL, utils.Postgres, utils.SqlServer:
 		return sql.Init(dbType, enabled, connection)
-
 	default:
 		return nil, utils.ErrInvalidParams
 	}
@@ -90,6 +90,7 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 		if err != nil {
 			log.Println("Error connecting to " + k + " : " + err.Error())
+			return err
 		} else {
 			log.Println("Successfully connected to " + k)
 		}

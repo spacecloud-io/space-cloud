@@ -214,7 +214,8 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 		sql = "create database if not exists " + project
 	case utils.Postgres:
 		sql = "create schema if not exists " + project
-
+	case utils.SqlServer:
+		sql = "create schema if not exists " + project
 	default:
 		return nil
 	}
@@ -231,7 +232,7 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 	return crud.RawExec(ctx, sql)
 }
 
-//  GetConnectionState of client
+// GetConnectionState gets the current state of client
 func (m *Module) GetConnectionState(ctx context.Context, dbType string) (bool, error) {
 	m.RLock()
 	defer m.RUnlock()
@@ -242,4 +243,21 @@ func (m *Module) GetConnectionState(ctx context.Context, dbType string) (bool, e
 	}
 
 	return crud.GetConnectionState(ctx, dbType), nil
+}
+
+// DeleteTable drop specified table from database
+func (m *Module) DeleteTable(ctx context.Context, project, dbType, col string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	return crud.DeleteCollection(ctx, project, col)
 }

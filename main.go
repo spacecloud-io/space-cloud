@@ -48,17 +48,6 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "DISABLE_METRICS",
 	},
 	cli.BoolFlag{
-		Name:   "disable-nats",
-		Usage:  "Disable embedded nats server",
-		EnvVar: "DISABLE_NATS",
-	},
-	cli.StringFlag{
-		Name:   "seeds",
-		Value:  "127.0.0.1",
-		Usage:  "Seed nodes to cluster with",
-		EnvVar: "SEEDS",
-	},
-	cli.BoolFlag{
 		Name:   "profiler",
 		Usage:  "Enable profiler endpoints for profiling",
 		EnvVar: "PROFILER",
@@ -80,6 +69,27 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Set the admin secret",
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "cluster",
+		Usage:  "The cluster id to start space-cloud with",
+		EnvVar: "CLUSTER_ID",
+		Value:  "default-cluster",
+	},
+	cli.BoolFlag{
+		Name:   "enable-consul",
+		Usage:  "Enable consul integration",
+		EnvVar: "ENABLE_CONSUL",
+	},
+	cli.BoolFlag{
+		Name:   "enable-consul-connect",
+		Usage:  "Enable consul connect integration",
+		EnvVar: "ENABLE_CONSUL_CONNECT",
+	},
+	cli.IntFlag{
+		Name:   "port",
+		EnvVar: "PORT",
+		Value:  4122,
 	},
 }
 
@@ -115,9 +125,10 @@ func actionRun(c *cli.Context) error {
 	configPath := c.String("config")
 	isDev := c.Bool("dev")
 	disableMetrics := c.Bool("disable-metrics")
-	disableNats := c.Bool("disable-nats")
-	seeds := c.String("seeds")
 	profiler := c.Bool("profiler")
+
+	// Load flag related to the port
+	port := c.Int("port")
 
 	// Load flags related to ssl
 	sslCert := c.String("ssl-cert")
@@ -128,20 +139,17 @@ func actionRun(c *cli.Context) error {
 	adminPass := c.String("admin-pass")
 	adminSecret := c.String("admin-secret")
 
+	// Load flags related to clustering
+	clusterID := c.String("cluster")
+	enableConsul := c.Bool("enable-consul")
+	enableConsulConnect := c.Bool("enable-consul-connect")
+
 	// Generate a new id if not provided
 	if nodeID == "none" {
-		nodeID = uuid.NewV1().String()
+		nodeID = "auto-" + uuid.NewV1().String()
 	}
 
-	// Start nats if not disabled
-	if !disableNats {
-		err := server.RunNatsServer(seeds, utils.PortNatsServer, utils.PortNatsCluster)
-		if err != nil {
-			return err
-		}
-	}
-
-	s, err := server.New(nodeID)
+	s, err := server.New(nodeID, clusterID, enableConsul, enableConsulConnect)
 	if err != nil {
 		return err
 	}
@@ -181,10 +189,14 @@ func actionRun(c *cli.Context) error {
 		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
+	if enableConsul {
+		s.InitConnectRoutes(profiler, staticPath)
+	}
+
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(seeds, disableMetrics)
+	return s.Start(disableMetrics, port)
 }
 
 func actionInit(*cli.Context) error {

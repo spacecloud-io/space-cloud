@@ -18,7 +18,7 @@ func (m *Module) IsCreateOpAuthorised(project, dbType, col, token string, req *m
 		return http.StatusUnauthorized, err
 	}
 
-	args := map[string]interface{}{"op": req.Operation, "auth": auth}
+	args := map[string]interface{}{"op": req.Operation, "auth": auth, "token": token}
 
 	var rows []interface{}
 	switch req.Operation {
@@ -55,7 +55,7 @@ func (m *Module) IsReadOpAuthorised(project, dbType, col, token string, req *mod
 		return http.StatusUnauthorized, err
 	}
 
-	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find}
+	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
 	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
@@ -74,7 +74,7 @@ func (m *Module) IsUpdateOpAuthorised(project, dbType, col, token string, req *m
 		return http.StatusUnauthorized, err
 	}
 
-	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update}
+	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update, "token": token}
 	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
@@ -97,7 +97,7 @@ func (m *Module) IsDeleteOpAuthorised(project, dbType, col, token string, req *m
 		return http.StatusUnauthorized, err
 	}
 
-	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find}
+	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
 	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
@@ -116,7 +116,7 @@ func (m *Module) IsAggregateOpAuthorised(project, dbType, col, token string, req
 		return http.StatusUnauthorized, err
 	}
 
-	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline}
+	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline, "token": token}
 	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err

@@ -12,7 +12,7 @@ import (
 // Module is responsible for user management
 type Module struct {
 	sync.RWMutex
-	methods map[string]struct{}
+	methods map[string]*config.AuthStub
 	crud    *crud.Module
 	auth    *auth.Module
 }
@@ -27,10 +27,10 @@ func (m *Module) SetConfig(auth config.Auth) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.methods = make(map[string]struct{}, len(auth))
+	m.methods = make(map[string]*config.AuthStub, len(auth))
 
-	for k := range auth {
-		m.methods[k] = struct{}{}
+	for k, v := range auth {
+		m.methods[k] = v
 	}
 }
 
@@ -39,8 +39,8 @@ func (m *Module) IsActive(method string) bool {
 	m.RLock()
 	defer m.RUnlock()
 
-	_, p := m.methods[method]
-	return p
+	s, p := m.methods[method]
+	return p && s.Enabled
 }
 
 // IsEnabled shows if the user management module is enabled

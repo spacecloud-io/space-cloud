@@ -72,7 +72,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 		currentColValue, ok := currentSchema[realColName]
 		if !ok {
 			// create table with primary key
-			query, err := addNewTable(project, realColName, realColValue)
+			query, err := addNewTable(project, dbType, realColName, realColValue)
 			if err != nil {
 				return err
 			}
@@ -91,7 +91,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 				continue
 			}
 			currentFieldStruct, ok := currentColValue[realFieldKey]
-			columnType, err := getSQLType(realFieldStruct.Kind)
+			columnType, err := getSQLType(dbType, realFieldStruct.Kind)
 			if err != nil {
 				return err
 			}
