@@ -12,6 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/admin"
 )
 
+// HandleGetConnectionState gives the status of connection state of client
 func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
@@ -35,15 +36,10 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
 
-		connState, err := crud.GetConnectionState(ctx, dbType)
+		connState := crud.GetConnectionState(ctx, dbType)
 
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
 		w.WriteHeader(http.StatusOK) //http status code
-		json.NewEncoder(w).Encode(map[string]bool{connstate})
+		json.NewEncoder(w).Encode(map[string]bool{"status": connState})
 		return
 	}
 }
