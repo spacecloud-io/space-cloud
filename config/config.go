@@ -120,7 +120,7 @@ type AuthStub struct {
 
 // ServicesModule holds the config for the service module
 type ServicesModule struct {
-	Services         Services `json:"services" yaml:"services"`
+	Services         Services `json:"externalServices" yaml:"externalServices"`
 	InternalServices Services `json:"internalServices" yaml:"internalServices"`
 }
 
