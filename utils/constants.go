@@ -1,5 +1,9 @@
 package utils
 
+import (
+	"golang.org/x/net/context"
+)
+
 // BuildVersion is the current version of Space Cloud
 const BuildVersion = "0.12.1"
 
@@ -238,3 +242,5 @@ const (
 
 // SpaceCloudServiceName is the service name space cloud will register itself with in service discovery mechanisms
 const SpaceCloudServiceName string = "space-cloud"
+
+type MakeHttpRequest func(ctx context.Context, method, url, token string, params, vPtr interface{}) error
