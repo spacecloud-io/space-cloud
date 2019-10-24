@@ -11,7 +11,8 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
-func SetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleSetFileStore set the file storage config
+func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
@@ -34,7 +35,8 @@ func SetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handle
 
 		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
-
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
 		projectConfig.Modules.FileStore.Enabled = value.Enabled
 		projectConfig.Modules.FileStore.StoreType = value.StoreType
@@ -42,7 +44,10 @@ func SetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handle
 		projectConfig.Modules.FileStore.Endpoint = value.Endpoint
 		projectConfig.Modules.FileStore.Bucket = value.Bucket
 
-		syncMan.SetProjectConfig(projectConfig)
+		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		w.WriteHeader(http.StatusOK) //http status code
 		json.NewEncoder(w).Encode(map[string]interface{}{})
@@ -51,7 +56,8 @@ func SetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handle
 	}
 }
 
-func GetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleGetFileState gets file state
+func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
@@ -72,22 +78,24 @@ func GetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handle
 
 		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
-
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
 
 		if projectConfig.Modules.FileStore.Enabled && projectConfig.Modules.FileStore.Conn != "" {
 			w.WriteHeader(http.StatusOK) //http status code
-			json.NewEncoder(w).Encode(map[string]interface{}{"status": true})
+			json.NewEncoder(w).Encode(map[string]interface{}{})
 		} else {
-			w.WriteHeader(http.StatusOK) //http status code
-			json.NewEncoder(w).Encode(map[string]interface{}{"status": false})
+			w.WriteHeader(http.StatusInternalServerError) //http status code
+			json.NewEncoder(w).Encode(map[string]interface{}{})
 		}
 
 		return
 	}
 }
 
-func SetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleSetFileRule sets file rule
+func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
@@ -107,14 +115,21 @@ func SetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handler
 
 		vars := mux.Vars(r)
 		project := vars["project"]
+		ruleName := vars["ruleName"]
+		value.Name = ruleName
 
 		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
-
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+
 		projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
 
-		syncMan.SetProjectConfig(projectConfig)
+		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		w.WriteHeader(http.StatusOK) //http status code
 		json.NewEncoder(w).Encode(map[string]interface{}{})
@@ -123,7 +138,8 @@ func SetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handler
 	}
 }
 
-func DeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleDeleteFileRule deletes file rule
+func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		tokens, ok := r.Header["Authorization"]
@@ -147,7 +163,8 @@ func DeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Hand
 
 		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
-
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
 		temp := projectConfig.Modules.FileStore.Rules
 		for i, v := range projectConfig.Modules.FileStore.Rules {
@@ -157,7 +174,10 @@ func DeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Hand
 		}
 		projectConfig.Modules.FileStore.Rules = temp
 
-		syncMan.SetProjectConfig(projectConfig)
+		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		w.WriteHeader(http.StatusOK) //http status code
 		json.NewEncoder(w).Encode(map[string]interface{}{})
