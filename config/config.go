@@ -184,9 +184,8 @@ type Eventing struct {
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	Type     string            `json:"type" yaml:"type"`
-	Retries  int               `json:"retries" yaml:"retries"`
-	Service  string            `json:"service" yaml:"service"`
-	Function string            `json:"func" yaml:"func"`
-	Options  map[string]string `json:"options" yaml:"options"`
+	Type    string            `json:"type" yaml:"type"`
+	Retries int               `json:"retries" yaml:"retries"`
+	Url     string            `json:"url" yaml:"url"`
+	Options map[string]string `json:"options" yaml:"options"`
 }
