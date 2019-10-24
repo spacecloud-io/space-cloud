@@ -35,6 +35,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -45,6 +46,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		projectConfig.Modules.FileStore.Bucket = value.Bucket
 
 		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -78,16 +80,17 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if projectConfig.Modules.FileStore.Enabled && projectConfig.Modules.FileStore.Conn != "" {
 			w.WriteHeader(http.StatusOK) //http status code
-			json.NewEncoder(w).Encode(map[string]interface{}{})
+			json.NewEncoder(w).Encode(map[string]bool{"status": true})
 		} else {
-			w.WriteHeader(http.StatusInternalServerError) //http status code
-			json.NewEncoder(w).Encode(map[string]interface{}{})
+			w.WriteHeader(http.StatusOK) //http status code
+			json.NewEncoder(w).Encode(map[string]bool{"status": false})
 		}
 
 		return
@@ -120,6 +123,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -127,6 +131,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
 
 		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
