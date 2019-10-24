@@ -20,6 +20,7 @@ require (
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
+	github.com/miolini/datacounter v0.0.0-20190724021726-aa48df3a02c1
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nats-io/nats-server/v2 v2.0.2
 	github.com/nats-io/nats.go v1.8.1
@@ -39,6 +40,7 @@ require (
 	google.golang.org/genproto v0.0.0-20190530194941-fb225487d101 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/yaml.v2 v2.2.2
+
 )
 
 go 1.13

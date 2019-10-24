@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/spaceuptech/space-cloud/utils/handlers"
 	"log"
 	"net/http"
 	"strconv"
@@ -125,13 +126,13 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 		fmt.Println("Starting https server on port: " + strconv.Itoa(port+4))
 		go func() {
 
-			if err := http.ListenAndServeTLS(":"+strconv.Itoa(port+4), s.ssl.Crt, s.ssl.Key, handler); err != nil {
+			if err := http.ListenAndServeTLS(":"+strconv.Itoa(port+4), s.ssl.Crt, s.ssl.Key, handlers.HandleMetricMiddleWare(handler, s.metrics)); err != nil {
 				fmt.Println("Error starting https server:", err)
 			}
 		}()
 	}
 
-	go s.syncMan.StartConnectServer(port, corsObj.Handler(s.routerConnect))
+	go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.router)
 
@@ -140,7 +141,7 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 	fmt.Println()
 
 	fmt.Println("Space cloud is running on the specified ports :D")
-	return http.ListenAndServe(":"+strconv.Itoa(port), handler)
+	return http.ListenAndServe(":"+strconv.Itoa(port), handlers.HandleMetricMiddleWare(handler, s.metrics))
 }
 
 // SetConfig sets the config
