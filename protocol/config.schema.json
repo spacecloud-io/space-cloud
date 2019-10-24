@@ -253,7 +253,7 @@
             "match",
             "and",
             "or",
-            "service",
+            "webhook",
             "query",
             "authenticated"
           ]
@@ -380,7 +380,7 @@
           "if": {
             "properties": {
               "rule": {
-                "const": "service"
+                "const": "webhook"
               }
             }
           },
