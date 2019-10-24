@@ -103,7 +103,6 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 				columnType:         columnType,
 				currentFieldStruct: currentFieldStruct,
 				realFieldStruct:    realFieldStruct,
-				schemaModule:       s,
 			}
 
 			if !ok {
@@ -221,7 +220,7 @@ func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 func (c *creationModule) addDirective(ctx context.Context) ([]string, error) {
 	queries := []string{}
 	switch c.realFieldStruct.Directive {
-	case directiveId:
+	case directivePrimary:
 		queries = append(queries, c.addPrimaryKey())
 	case directiveUnique:
 		queries = append(queries, c.addUniqueKey())
@@ -234,7 +233,7 @@ func (c *creationModule) addDirective(ctx context.Context) ([]string, error) {
 func (c *creationModule) removeDirective() []string {
 	queries := []string{}
 	switch c.currentFieldStruct.Directive {
-	case directiveId:
+	case directivePrimary:
 		queries = append(queries, c.removePrimaryKey())
 	case directiveUnique:
 		queries = append(queries, c.removeUniqueKey())
@@ -243,7 +242,3 @@ func (c *creationModule) removeDirective() []string {
 	}
 	return queries
 }
-
-// func (s *Schema) createProject(dbType string) {
-// 	s.crud.
-// }

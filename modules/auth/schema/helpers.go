@@ -39,7 +39,7 @@ func checkErrors(realFieldStruct *schemaFieldType) error {
 	if realFieldStruct.Directive == directiveRelation && realFieldStruct.Kind != typeJoin {
 		return errors.New("schema : directive relation should contain user defined type got " + realFieldStruct.Kind)
 	}
-	if realFieldStruct.Kind == typeID && realFieldStruct.Directive != directiveId {
+	if realFieldStruct.Kind == typeID && realFieldStruct.Directive != directivePrimary {
 		return errors.New("schema : directive id should have type id")
 	} else if realFieldStruct.Kind == typeID && !realFieldStruct.IsFieldTypeRequired {
 		return errors.New("schema : id type is must be not nullable (!)")
@@ -143,7 +143,6 @@ func (c *creationModule) removeForeignKey() []string {
 
 func addNewTable(project, dbType, realColName string, realColValue schemaField) (string, error) {
 	var query string
-	var isID bool
 	for realFieldKey, realFieldStruct := range realColValue {
 		if err := checkErrors(realFieldStruct); err != nil {
 			return "", err
@@ -152,18 +151,13 @@ func addNewTable(project, dbType, realColName string, realColValue schemaField) 
 		if err != nil {
 			return "", nil
 		}
-		if realFieldStruct.Kind == typeID && !isID {
-			isID = true
+		if realFieldStruct.Directive == directivePrimary {
 			primaryKey := "PRIMARY KEY"
 			query += realFieldKey + " " + sqlType + " " + primaryKey + ","
 			continue
-
 		}
 		query += realFieldKey + " " + sqlType + " ,"
 	}
 
-	if !isID {
-		return "", errors.New("Schema creation adding new table type id or primary key was not found")
-	}
 	return `CREATE TABLE ` + project + `.` + realColName + ` (` + query[0:len(query)-1] + `);`, nil
 }
