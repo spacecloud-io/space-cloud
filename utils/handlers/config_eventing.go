@@ -11,8 +11,8 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
-// HandleAddService is an endpoint handler which deletes a table in specified database
-func HandleAddRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleAddEventingRule is an endpoint handler which adds a rule to eventing
+func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -30,7 +30,7 @@ func HandleAddRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 		}
 
 		vars := mux.Vars(r)
-		name := vars["name"]
+		ruleName := vars["ruleName"]
 		project := vars["project"]
 
 		conf, err := syncMan.GetConfig(project)
@@ -40,13 +40,12 @@ func HandleAddRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			return
 		}
 
-		value := &config.EventingRule{}
+		value := config.EventingRule{}
 		json.NewDecoder(r.Body).Decode(&value)
 
-		conf.Modules.Eventing.Rules[name] = *value
+		conf.Modules.Eventing.Rules[ruleName] = value
 
-		syncMan.SetProjectConfig(conf)
-		if err != nil {
+		if err := syncMan.SetProjectConfig(conf); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -59,8 +58,8 @@ func HandleAddRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 	}
 }
 
-// HandleDeleteService is an endpoint handler which deletes a table in specified database
-func HandleDeleteRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleDeleteEventingRule is an endpoint handler which deletes a rule in eventing
+func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -78,7 +77,7 @@ func HandleDeleteRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		}
 
 		vars := mux.Vars(r)
-		name := vars["name"]
+		ruleName := vars["ruleName"]
 		project := vars["project"]
 
 		conf, err := syncMan.GetConfig(project)
@@ -88,10 +87,9 @@ func HandleDeleteRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			return
 		}
 
-		delete(conf.Modules.Eventing.Rules, name)
+		delete(conf.Modules.Eventing.Rules, ruleName)
 
-		syncMan.SetProjectConfig(conf)
-		if err != nil {
+		if err := syncMan.SetProjectConfig(conf); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -104,6 +102,7 @@ func HandleDeleteRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 	}
 }
 
+// HandleGetEventingStatus is an endpoint handler which sets col and dytype in eventing according to body
 func HandleGetEventingStatus(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -122,13 +121,14 @@ func HandleGetEventingStatus(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		type temp struct {
-			DBType string `json:"dbType" yaml:"dbType"`
+			DBType string `json:"db" yaml:"db"`
 			Col    string `json:"col" yaml:"col"`
 		}
-		c := &temp{}
+		c := temp{}
+		json.NewDecoder(r.Body).Decode(&c)
+
 		vars := mux.Vars(r)
 		project := vars["project"]
-
 		conf, err := syncMan.GetConfig(project)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -136,13 +136,10 @@ func HandleGetEventingStatus(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
-		json.NewDecoder(r.Body).Decode(&c)
-
 		conf.Modules.Eventing.DBType = c.DBType
 		conf.Modules.Eventing.Col = c.Col
 
-		syncMan.SetProjectConfig(conf)
-		if err != nil {
+		if err := syncMan.SetProjectConfig(conf); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
