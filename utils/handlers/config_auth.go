@@ -9,7 +9,7 @@ import(
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 	"github.com/spaceuptech/space-cloud/config"
 )
-// HandleUserManagement returns the handler to set the config of a project via a REST endpoint
+// HandleUserManagement returns the handler to get the project config and validate the user via a REST endpoint
 func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -32,16 +32,17 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		defer r.Body.Close()
 		vars := mux.Vars(r)
 		project := vars["project"]
-		authname := vars["authname"]
+		provider := vars["provider"]
 
 		projectConfig,err := syncMan.GetConfig(project)
 		if err != nil{
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error":err.Error()})
 			return
-		}
+        }
 
-		projectConfig.Modules.Auth[authname]=value
-		syncMan.SetProjectConfig(projectConfig)
-
+		projectConfig.Modules.Auth[provider]=value
+		
 		// Sync the config
 		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -49,7 +50,7 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 			return
 		}
 
-		// Give positive acknowledgement
+		// Give a positive acknowledgement
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
