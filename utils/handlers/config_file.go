@@ -168,6 +168,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -180,6 +181,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		projectConfig.Modules.FileStore.Rules = temp
 
 		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
