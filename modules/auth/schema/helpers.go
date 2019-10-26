@@ -54,6 +54,8 @@ func (c *creationModule) modifyColumnType() string {
 		return "ALTER TABLE " + c.project + "." + c.ColName + " MODIFY " + c.FieldKey + " " + c.columnType
 	case utils.Postgres:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " TYPE " + c.columnType + " USING (" + c.FieldKey + "::" + c.columnType + ")"
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " " + c.columnType
 	}
 	return ""
 }
@@ -64,6 +66,9 @@ func (c *creationModule) addNotNull() string {
 		return "ALTER TABLE " + c.project + "." + c.ColName + " MODIFY " + c.FieldKey + " " + c.columnType + " NOT NULL"
 	case utils.Postgres:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " SET NOT NULL "
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " " + c.columnType + " NOT NULL"
+
 	}
 	return ""
 }
@@ -74,6 +79,8 @@ func (c *creationModule) removeNotNull() string {
 		return "ALTER TABLE " + c.project + "." + c.ColName + " MODIFY " + c.FieldKey + " " + c.columnType + " NULL"
 	case utils.Postgres:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " DROP NOT NULL"
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.ColName + " ALTER COLUMN " + c.FieldKey + " " + c.columnType + " NULL"
 	}
 	return ""
 }
@@ -84,6 +91,8 @@ func (c *creationModule) addNewColumn() string {
 		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD " + c.FieldKey + " " + c.columnType
 	case utils.Postgres:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD COLUMN " + c.FieldKey + " " + c.columnType
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD " + c.FieldKey + " " + c.columnType
 	}
 	return ""
 }
@@ -98,6 +107,8 @@ func (c *creationModule) addPrimaryKey() string {
 		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD PRIMARY KEY (" + c.FieldKey + ")"
 	case utils.Postgres:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " PRIMARY KEY (" + c.FieldKey + ")"
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.ColName + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " PRIMARY KEY CLUSTERED (" + c.FieldKey + ")"
 	}
 	return ""
 }
@@ -107,6 +118,8 @@ func (c *creationModule) removePrimaryKey() string {
 	case utils.MySQL:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP PRIMARY KEY"
 	case utils.Postgres:
+		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey
+	case utils.SqlServer:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey
 	}
 	return ""
@@ -123,6 +136,8 @@ func (c *creationModule) removeUniqueKey() string {
 		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP INDEX c_" + c.ColName + "_" + c.FieldKey
 	case utils.Postgres:
 		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey
 	}
 	return ""
 }
@@ -136,6 +151,8 @@ func (c *creationModule) removeForeignKey() []string {
 	case utils.MySQL:
 		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP FOREIGN KEY c_" + c.ColName + "_" + c.FieldKey, "ALTER TABLE " + c.project + "." + c.ColName + " DROP INDEX c_" + c.ColName + "_" + c.FieldKey}
 	case utils.Postgres:
+		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey}
+	case utils.SqlServer:
 		return []string{"ALTER TABLE " + c.project + "." + c.ColName + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey}
 	}
 	return nil
