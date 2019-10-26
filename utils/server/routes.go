@@ -38,8 +38,9 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("GET").Path("/v1/config/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/config/{project}/file-storage/rules/{ruleName}").HandlerFunc(handlers.HandleSetFileRule(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/{project}/file-storage/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteFileRule(s.adminMan, s.syncMan))
+	router.Methods("GET").Path("/v1/config/{project}/database/{dbType}/connection-state").HandlerFunc(handlers.HandleGetConnectionState(s.adminMan, s.crud))
 
-	//Initialize route for graphql schema inspection
+  //Initialize route for graphql schema inspection
 	router.Methods("POST").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.auth.Schema))
 	router.Methods("POST").Path("/v1/api/config/modify/{project}").HandlerFunc(handlers.HandleModifySchemas(s.auth, s.adminMan))
 
@@ -113,4 +114,5 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 
 	// Initialize the route for handling static files
 	router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.static))
+
 }
