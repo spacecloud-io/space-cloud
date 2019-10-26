@@ -104,8 +104,7 @@ type Rule struct {
 	DB      string                 `json:"db,omitempty" yaml:"db,omitempty"`
 	Col     string                 `json:"col,omitempty" yaml:"col,omitempty"`
 	Find    map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
-	Service string                 `json:"service,omitempty" yaml:"service,omitempty"`
-	Func    string                 `json:"func,omitempty" yaml:"func,omitempty"`
+	Url     string                 `json:"url,omitempty" yaml:"url,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -153,6 +152,7 @@ type FileStore struct {
 
 // FileRule is the authorization object at the file rule level
 type FileRule struct {
+	Name   string           `json:"name" yaml:"name"`
 	Prefix string           `json:"prefix" yaml:"prefix"`
 	Rule   map[string]*Rule `json:"rule" yaml:"rule"` // The key can be create, read, delete
 }

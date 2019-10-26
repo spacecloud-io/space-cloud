@@ -11,6 +11,15 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
+type cloudEventPayload struct {
+	Spaceversion string `json:"spaceversion"`
+	Type         string `json:"type"`
+	Source       string `json:"source"`
+	Id           string `json:"id"`
+	Time         int64  `json:"time"`
+	Data         string `json:"data"`
+}
+
 func (m *Module) processStagedEvents(t *time.Time) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -35,7 +44,6 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}}
 
 	dbType, col := m.config.DBType, m.config.Col
-
 	results, err := m.crud.Read(ctx, dbType, m.project, col, &readRequest)
 	if err != nil {
 		log.Println("Eventing stage routine error:", err)
@@ -83,7 +91,8 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 			return
 		}
 		var result interface{}
-		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, token, eventDoc, &result)
+		cloudEvent := cloudEventPayload{Spaceversion: "1.0.rc1", Type: eventDoc.Type, Source: eventDoc.BatchID, Id: eventDoc.ID, Time: eventDoc.Timestamp, Data: eventDoc.Payload}
+		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, token, cloudEvent, &result)
 		if err == nil {
 			// Check if the result is an object
 			obj, ok := result.(map[string]interface{})

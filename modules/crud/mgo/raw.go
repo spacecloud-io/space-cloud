@@ -22,3 +22,10 @@ func (m *Mongo) Connect(ctx context.Context, connection string, enabled bool) er
 	m.enabled = enabled
 	return m.connect()
 }
+// GetConnectionState : function to check connection state
+func (m *Mongo) GetConnectionState(ctx context.Context, dbType string) bool {
+	if m.enabled && m.client != nil {
+		return true
+	}
+	return false
+}

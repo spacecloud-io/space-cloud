@@ -8,7 +8,6 @@ import (
 // RawBatch performs a batch operation for schema creation
 // NOTE: not to be exposed externally
 func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
-
 	// Skip if length of queries == 0
 	if len(queries) == 0 {
 		return nil
@@ -44,4 +43,12 @@ func (s *SQL) Connect(ctx context.Context, connection string, enabled bool) erro
 	s.connection = connection
 	s.enabled = enabled
 	return s.connect()
+}
+
+// GetConnectionState : Function to get connection state
+func (s *SQL) GetConnectionState(ctx context.Context, dbType string) bool {
+	if s.enabled && s.client != nil {
+		return true
+	}
+	return false
 }
