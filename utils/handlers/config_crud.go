@@ -329,6 +329,7 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
+			// set new schema in config & return in response body
 			colValue.Schema = result
 			colResult[colName] = result
 		}
@@ -364,6 +365,7 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 
 		projectConfig := config.Project{}
 		json.NewDecoder(r.Body).Decode(&projectConfig)
+		defer r.Body.Close()
 
 		if err := syncman.SetProjectConfig(&projectConfig); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -428,6 +430,72 @@ func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, s
 
 		w.WriteHeader(http.StatusOK) //http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
+		return
+	}
+}
+
+// HandleModifySchema is an endpoint handler which updates the existing schema & updates the config
+func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		tokens, ok := r.Header["Authorization"]
+		if !ok {
+			tokens = []string{""}
+		}
+		token := strings.TrimPrefix(tokens[0], "Bearer ")
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		v := config.CrudStub{}
+		json.NewDecoder(r.Body).Decode(&v)
+		defer r.Body.Close()
+
+		vars := mux.Vars(r)
+		dbType := vars["dbType"]
+		project := vars["project"]
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		projectConfig, err := syncman.GetConfig(project)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		// update schema in config
+		collection := projectConfig.Modules.Crud[dbType]
+
+		for colName, colValue := range v.Collections {
+			parsedColValue, err := schemaArg.Inspector(ctx, dbType, project, colName)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
+			}
+			schemaArg.SchemaJoin(ctx, parsedColValue, dbType, colName, project, v)
+			temp, ok := collection.Collections[colName]
+			// if collection doesn't exist then add to config
+			if !ok {
+				collection.Collections[colName] = &config.TableRule{} // TODO: rule field here is null
+			}
+			temp.Schema = colValue.Schema
+		}
+
+		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
 		return
 	}
 }
