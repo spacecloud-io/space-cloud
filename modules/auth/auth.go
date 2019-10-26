@@ -28,7 +28,7 @@ type Module struct {
 	crud            *crud.Module
 	functions       *functions.Module
 	fileRules       []*config.FileRule
-	funcRules       *config.Functions
+	funcRules       *config.ServicesModule
 	project         string
 	fileStoreType   string
 	Schema          *schema.Schema

@@ -27,6 +27,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
 		value := new(config.FileStore)
 		json.NewDecoder(r.Body).Decode(&value)
 
@@ -39,13 +40,8 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		projectConfig.Modules.FileStore.Enabled = value.Enabled
-		projectConfig.Modules.FileStore.StoreType = value.StoreType
-		projectConfig.Modules.FileStore.Conn = value.Conn
-		projectConfig.Modules.FileStore.Endpoint = value.Endpoint
-		projectConfig.Modules.FileStore.Bucket = value.Bucket
 
-		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+		if err := syncMan.SetFileStore(projectConfig, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -130,7 +126,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
 
-		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+		if err := syncMan.SetFileRule(projectConfig, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -172,15 +168,8 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		temp := projectConfig.Modules.FileStore.Rules
-		for i, v := range projectConfig.Modules.FileStore.Rules {
-			if v.Name == filename {
-				temp = append(temp[:i], temp[i+1:]...)
-			}
-		}
-		projectConfig.Modules.FileStore.Rules = temp
 
-		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
+		if err := syncMan.SetDeleteFileRule(projectConfig, filename); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -188,7 +177,6 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		w.WriteHeader(http.StatusOK) //http status code
 		json.NewEncoder(w).Encode(map[string]interface{}{})
-
 		return
 	}
 }

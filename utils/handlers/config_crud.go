@@ -125,11 +125,8 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		// remove collection from config
-		coll := projectConfig.Modules.Crud[dbType]
-		delete(coll.Collections, col)
 
-		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+		if err := syncman.SetDeleteCollection(projectConfig, dbType, col); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -162,8 +159,8 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 			connection string `json:"conn"`
 			enabled    bool   `json:"enable"`
 		}
-		v := &databaseConnection{}
-		json.NewDecoder(r.Body).Decode(v)
+		v := databaseConnection{}
+		json.NewDecoder(r.Body).Decode(&v)
 		defer r.Body.Close()
 
 		vars := mux.Vars(r)
@@ -185,12 +182,8 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		// update database config
-		coll := projectConfig.Modules.Crud[dbType]
-		coll.Conn = v.connection
-		coll.Enabled = v.enabled
 
-		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+		if err := syncman.SetDatabaseConnection(projectConfig, dbType, v.connection, v.enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -244,16 +237,8 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		// update schema in config
-		collection := projectConfig.Modules.Crud[dbType]
-		temp, ok := collection.Collections[col]
-		// if collection doesn't exist then add to config
-		if !ok {
-			collection.Collections[col] = &config.TableRule{} // TODO: rule field here is null
-		}
-		temp.Schema = v.Schema
 
-		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+		if err := syncman.SetModifySchema(projectConfig, dbType, col, v.Schema); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -298,16 +283,7 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 			return
 		}
 
-		// update collection rules & is realtime in config
-		collection, ok := projectConfig.Modules.Crud[dbType].Collections[col]
-		if !ok {
-			projectConfig.Modules.Crud[dbType].Collections[col] = &v
-		} else {
-			collection.IsRealTimeEnabled = v.IsRealTimeEnabled
-			collection.Rules = v.Rules
-		}
-
-		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+		if err := syncman.SetCollectionRules(projectConfig, dbType, col, &v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -352,21 +328,8 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 			return
 		}
 
-		collectionConfig, ok := projectConfig.Modules.Crud[dbType]
-		colResult := map[string]interface{}{}
-		for colName, colValue := range collectionConfig.Collections {
-			result, err := schemaArg.SchemaInspection(ctx, dbType, project, col)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
-			// set new schema in config & return in response body
-			colValue.Schema = result
-			colResult[colName] = result
-		}
-
-		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+		colResult, err := syncman.SetReloadSchema(ctx, projectConfig, dbType, col, project, schemaArg);
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -451,9 +414,7 @@ func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, s
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		// update schema in config
-		coll := projectConfig.Modules.Crud[dbType]
-		coll.Collections[col].Schema = schema
+
 		if err := syncman.SetProjectConfig(projectConfig); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -501,26 +462,8 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		// update schema in config
-		collection := projectConfig.Modules.Crud[dbType]
 
-		for colName, colValue := range v.Collections {
-			parsedColValue, err := schemaArg.Inspector(ctx, dbType, project, colName)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
-			schemaArg.SchemaJoin(ctx, parsedColValue, dbType, colName, project, v)
-			temp, ok := collection.Collections[colName]
-			// if collection doesn't exist then add to config
-			if !ok {
-				collection.Collections[colName] = &config.TableRule{} // TODO: rule field here is null
-			}
-			temp.Schema = colValue.Schema
-		}
-
-		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+		if err := syncman.SetModifyAllSchema(ctx, projectConfig, dbType, project, schemaArg, v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

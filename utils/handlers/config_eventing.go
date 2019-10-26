@@ -29,6 +29,9 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			return
 		}
 
+		value := config.EventingRule{}
+		json.NewDecoder(r.Body).Decode(&value)
+
 		vars := mux.Vars(r)
 		ruleName := vars["ruleName"]
 		project := vars["project"]
@@ -40,12 +43,7 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			return
 		}
 
-		value := config.EventingRule{}
-		json.NewDecoder(r.Body).Decode(&value)
-
-		conf.Modules.Eventing.Rules[ruleName] = value
-
-		if err := syncMan.SetProjectConfig(conf); err != nil {
+		if err := syncMan.SetEventingRule(conf, ruleName, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -80,16 +78,14 @@ func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager)
 		ruleName := vars["ruleName"]
 		project := vars["project"]
 
-		conf, err := syncMan.GetConfig(project)
+		projectConfig, err := syncMan.GetConfig(project)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		delete(conf.Modules.Eventing.Rules, ruleName)
-
-		if err := syncMan.SetProjectConfig(conf); err != nil {
+		if err := syncMan.SetDeleteEventingRule(projectConfig, ruleName); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -137,11 +133,7 @@ func HandleSetEventingStatus(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
-		conf.Modules.Eventing.DBType = c.DBType
-		conf.Modules.Eventing.Col = c.Col
-		conf.Modules.Eventing.Enabled = c.Enabled
-
-		if err := syncMan.SetProjectConfig(conf); err != nil {
+		if err := syncMan.SetEventingStatus(conf, c.DBType, c.Col, c.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

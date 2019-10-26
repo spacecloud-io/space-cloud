@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 	"github.com/spaceuptech/space-cloud/utils/admin"
@@ -91,14 +90,8 @@ func HandleInspectionRequest(adminMan *admin.Manager, schemaArg *schema.Schema, 
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		coll, ok := projectConfig.Modules.Crud[dbType]
-		if !ok {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": errors.New("error could not find " + dbType + " in crud").Error()})
-			return
-		}
-		coll.Collections[col].Schema = schema
-		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+
+		if err := syncman.SetSchemaInspection(projectConfig, dbType, col, schema); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

@@ -1,14 +1,15 @@
 package handlers
 
-import(
+import (
 	"encoding/json"
-	"net/http"
-	"strings"
 	"github.com/gorilla/mux"
+	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
-	"github.com/spaceuptech/space-cloud/config"
+	"net/http"
+	"strings"
 )
+
 // HandleUserManagement returns the handler to get the project config and validate the user via a REST endpoint
 func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -20,9 +21,9 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		}
 		token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-		if err:=adminMan.IsTokenValid(token);err!=nil{
+		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error":err.Error()})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -34,18 +35,16 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		project := vars["project"]
 		provider := vars["provider"]
 
-		projectConfig,err := syncMan.GetConfig(project)
-		if err != nil{
+		projectConfig, err := syncMan.GetConfig(project)
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error":err.Error()})
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
-        }
+		}
 
-		projectConfig.Modules.Auth[provider]=value
-		
 		// Sync the config
-		if err := syncMan.SetProjectConfig(projectConfig); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+		if err := syncMan.SetUserManagement(projectConfig, provider, value); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}

@@ -89,7 +89,10 @@ func (s *Manager) SetProjectConfig(project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	return s.setProject(project)
+}
 
+func (s *Manager) setProject(project *config.Project) error {
 	s.setProjectConfig(project)
 	if err := s.cb(s.projectConfig); err != nil {
 		return err
