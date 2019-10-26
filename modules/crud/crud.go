@@ -34,11 +34,13 @@ type Crud interface {
 	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
 	RawExec(ctx context.Context, project string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
+	Connect(ctx context.Context, connection string, enalbed bool) error
 	DeleteCollection(ctx context.Context, project, col string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
+	GetConnectionState(ctx context.Context, dbType string) bool
 }
 
 // Init create a new instance of the Module object

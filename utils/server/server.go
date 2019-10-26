@@ -142,6 +142,7 @@ func (s *Server) SetConfig(c *config.Config, isProd bool) {
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetEnv(isProd)
 	s.adminMan.SetConfig(c.Admin)
+	s.auth.SetMakeHttpRequest(s.syncMan.MakeHTTPRequest)
 }
 
 // LoadConfig configures each module to to use the provided config
