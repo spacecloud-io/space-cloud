@@ -39,6 +39,7 @@ type Crud interface {
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
+	GetConnectionState(ctx context.Context, dbType string) bool
 }
 
 // Init create a new instance of the Module object

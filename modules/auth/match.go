@@ -3,13 +3,13 @@ package auth
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/functions"
 )
 
 func (m *Module) matchRule(project string, rule *config.Rule, args map[string]interface{}, auth map[string]interface{}) error {
@@ -40,8 +40,8 @@ func (m *Module) matchRule(project string, rule *config.Rule, args map[string]in
 	case "or":
 		return matchOr(rule, args)
 
-	case "func":
-		return matchFunc(rule, m.functions, args)
+	case "webhook":
+		return matchFunc(rule, m.MakeHttpRequest, args)
 
 	case "query":
 		return matchQuery(project, rule, m.crud, args)
@@ -51,24 +51,16 @@ func (m *Module) matchRule(project string, rule *config.Rule, args map[string]in
 	}
 }
 
-func matchFunc(rule *config.Rule, functions *functions.Module, args map[string]interface{}) error {
+func matchFunc(rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
 	delete(obj, "token")
 
-	res, err := functions.Call(rule.Service, rule.Func, token, obj, 5)
-	if err != nil {
-		return err
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	if resObj, ok := res.(map[string]interface{}); ok {
-		if ackTemp, p := resObj["ack"]; p {
-			if ack, ok := ackTemp.(bool); ok && ack {
-				return nil
-			}
-		}
-	}
-	return ErrIncorrectMatch
+	var result interface{}
+	return MakeHttpRequest(ctx, "POST", rule.Url, token, obj, &result)
 }
 
 func matchQuery(project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
