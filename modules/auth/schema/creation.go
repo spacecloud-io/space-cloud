@@ -157,93 +157,15 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 	return s.crud.RawBatch(ctx, dbType, batchedQueries)
 }
 
-func (c *creationModule) addField(ctx context.Context) ([]string, error) {
-	var queries []string
-
-	if c.columnType != "" {
-		// add a new column with data type as columntype
-		queries = append(queries, c.addNewColumn())
-	}
-
-	if c.realFieldStruct.IsFieldTypeRequired {
-		// make the new column not null
-		queries = append(queries, c.addNotNull())
-	}
-	tempQuery, err := c.addDirective(ctx)
-	if err != nil {
-		return nil, err
-	}
-	queries = append(queries, tempQuery...)
-	return queries, nil
-}
-
-func (c *creationModule) removeField() string {
-	return c.removeColumn()
-}
-
-func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
-	var queries []string
-
-	if c.realFieldStruct.Directive != c.currentFieldStruct.Directive {
-		if c.realFieldStruct.Directive == "" {
-			queries = append(queries, c.removeDirective()...)
-		}
-	}
-
-	if c.realFieldStruct.Kind == typeJoin {
-		c.realFieldStruct.Kind = c.realFieldStruct.JointTable.TableName
-	}
-	if c.realFieldStruct.Kind != c.currentFieldStruct.Kind {
-		if c.columnType != "" {
-			queries = append(queries, c.modifyColumnType())
-		}
-	}
-
-	if c.realFieldStruct.IsFieldTypeRequired != c.currentFieldStruct.IsFieldTypeRequired {
-		if c.realFieldStruct.IsFieldTypeRequired {
-			queries = append(queries, c.addNotNull())
-		} else {
-			queries = append(queries, c.removeNotNull())
-		}
-	}
-	if c.realFieldStruct.Directive != c.currentFieldStruct.Directive {
-		if c.realFieldStruct.Directive != "" {
-			tempQuery, err := c.addDirective(ctx)
-			if err != nil {
-				return nil, err
+func (s *Schema) SchemaJoin(ctx context.Context, parsedColValue schemaCollection, dbType, colName, project string, v config.CrudStub) error {
+	temp := &schemaFieldType{}
+	for _, fieldValue := range parsedColValue[colName] {
+		temp = fieldValue
+		if fieldValue.Kind == typeJoin && fieldValue.Directive == directiveRelation && !fieldValue.IsList {
+			if err := s.SchemaJoin(ctx, parsedColValue, dbType, fieldValue.JointTable.TableName, project, v); err != nil {
+				return err
 			}
-			queries = append(queries, tempQuery...)
 		}
 	}
-	return queries, nil
+	return s.SchemaCreation(ctx, dbType, temp.JointTable.TableName, project, v.Collections[temp.JointTable.TableName].Schema)
 }
-
-func (c *creationModule) addDirective(ctx context.Context) ([]string, error) {
-	queries := []string{}
-	switch c.realFieldStruct.Directive {
-	case directiveId:
-		queries = append(queries, c.addPrimaryKey())
-	case directiveUnique:
-		queries = append(queries, c.addUniqueKey())
-	case directiveRelation:
-		queries = append(queries, c.addForeignKey())
-	}
-	return queries, nil
-}
-
-func (c *creationModule) removeDirective() []string {
-	queries := []string{}
-	switch c.currentFieldStruct.Directive {
-	case directiveId:
-		queries = append(queries, c.removePrimaryKey())
-	case directiveUnique:
-		queries = append(queries, c.removeUniqueKey())
-	case directiveRelation:
-		queries = append(queries, c.removeForeignKey()...)
-	}
-	return queries
-}
-
-// func (s *Schema) createProject(dbType string) {
-// 	s.crud.
-// }

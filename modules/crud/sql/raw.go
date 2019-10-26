@@ -39,6 +39,12 @@ func (s *SQL) RawExec(ctx context.Context, query string) error {
 	return err
 }
 
+func (s *SQL) Connect(ctx context.Context, connection string, enabled bool) error {
+	s.connection = connection
+	s.enabled = enabled
+	return s.connect()
+}
+
 // GetConnectionState : Function to get connection state
 func (s *SQL) GetConnectionState(ctx context.Context, dbType string) bool {
 	if s.enabled && s.client != nil {

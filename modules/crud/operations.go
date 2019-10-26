@@ -265,3 +265,18 @@ func (m *Module) DeleteTable(ctx context.Context, project, dbType, col string) e
 
 	return crud.DeleteCollection(ctx, project, col)
 }
+
+func (m *Module) Connect(ctx context.Context, dbType, connection string, enalbed bool) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+	return crud.Connect(ctx, connection, enalbed)
+}
