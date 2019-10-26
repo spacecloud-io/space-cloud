@@ -17,7 +17,7 @@ func (m *Module) handleCall(ctx context.Context, service, function, token string
 	url = url + s.Functions[function].Path
 
 	var res interface{}
-	if err := m.manager.MakeHTTPRequest(ctx, s.Kind, "POST", url, token, params, &res); err != nil {
+	if err := m.manager.MakeHTTPRequest(ctx, "POST", url, token, params, &res); err != nil {
 		return nil, err
 	}
 

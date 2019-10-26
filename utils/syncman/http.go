@@ -6,14 +6,13 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"golang.org/x/net/context"
-
-	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // MakeHTTPRequest fires an http request and returns a response
-func (s *Manager) MakeHTTPRequest(ctx context.Context, kind utils.RequestKind, method, url, token string, params, vPtr interface{}) error {
+func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token string, params, vPtr interface{}) error {
 	// Marshal json into byte array
 	data, _ := json.Marshal(params)
 
@@ -29,7 +28,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, kind utils.RequestKind, m
 	// Create a http client and fire the request
 	client := &http.Client{}
 
-	if kind == utils.RequestKindConsulConnect {
+	if s.isConsulEnabled && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
 		client = s.consulService.HTTPClient()
 	}
 

@@ -153,6 +153,7 @@ type FileStore struct {
 
 // FileRule is the authorization object at the file rule level
 type FileRule struct {
+	Name   string           `json:"name" yaml:"name"`
 	Prefix string           `json:"prefix" yaml:"prefix"`
 	Rule   map[string]*Rule `json:"rule" yaml:"rule"` // The key can be create, read, delete
 }
@@ -184,9 +185,8 @@ type Eventing struct {
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	Type     string            `json:"type" yaml:"type"`
-	Retries  int               `json:"retries" yaml:"retries"`
-	Service  string            `json:"service" yaml:"service"`
-	Function string            `json:"func" yaml:"func"`
-	Options  map[string]string `json:"options" yaml:"options"`
+	Type    string            `json:"type" yaml:"type"`
+	Retries int               `json:"retries" yaml:"retries"`
+	Url     string            `json:"url" yaml:"url"`
+	Options map[string]string `json:"options" yaml:"options"`
 }

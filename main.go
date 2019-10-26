@@ -81,6 +81,11 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Enable consul integration",
 		EnvVar: "ENABLE_CONSUL",
 	},
+	cli.BoolFlag{
+		Name:   "enable-consul-connect",
+		Usage:  "Enable consul connect integration",
+		EnvVar: "ENABLE_CONSUL_CONNECT",
+	},
 	cli.IntFlag{
 		Name:   "port",
 		EnvVar: "PORT",
@@ -137,13 +142,14 @@ func actionRun(c *cli.Context) error {
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	enableConsul := c.Bool("enable-consul")
+	enableConsulConnect := c.Bool("enable-consul-connect")
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + uuid.NewV1().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, enableConsul)
+	s, err := server.New(nodeID, clusterID, enableConsul, enableConsulConnect)
 	if err != nil {
 		return err
 	}
