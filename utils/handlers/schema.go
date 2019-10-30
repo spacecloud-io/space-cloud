@@ -83,22 +83,8 @@ func HandleInspectionRequest(adminMan *admin.Manager, schemaArg *schema.Schema, 
 			return
 		}
 
-		// update schema in config
-		projectConfig, err := syncman.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncman.SetSchemaInspection(projectConfig, dbType, col, schema); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
 		return
 	}
 }
