@@ -29,6 +29,10 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	if c == nil {
+		return
+	}
+
 	m.project = project
 	m.config = c
 

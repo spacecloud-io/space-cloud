@@ -2,22 +2,30 @@ package syncman
 
 import "github.com/spaceuptech/space-cloud/config"
 
-func (s *Manager) SetService(project *config.Project, service string, value *config.Service) error {
+func (s *Manager) SetService(project , service string, value *config.Service) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	project.Modules.Services.Services[service] = value
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	projectConfig.Modules.Services.Services[service] = value
 
-	return s.setProject(project)
+	return s.setProject(projectConfig)
 }
 
-func (s *Manager) SetDeleteService(project *config.Project, service string) error {
+func (s *Manager) SetDeleteService(project , service string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	delete(project.Modules.Services.Services, service)
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	delete(projectConfig.Modules.Services.Services, service)
 
-	return s.setProject(project)
+	return s.setProject(projectConfig)
 }

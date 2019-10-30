@@ -36,14 +36,7 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		ruleName := vars["ruleName"]
 		project := vars["project"]
 
-		conf, err := syncMan.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncMan.SetEventingRule(conf, ruleName, value); err != nil {
+		if err := syncMan.SetEventingRule(project, ruleName, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -78,14 +71,7 @@ func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager)
 		ruleName := vars["ruleName"]
 		project := vars["project"]
 
-		projectConfig, err := syncMan.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncMan.SetDeleteEventingRule(projectConfig, ruleName); err != nil {
+		if err := syncMan.SetDeleteEventingRule(project, ruleName); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -126,14 +112,8 @@ func HandleSetEventingStatus(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		vars := mux.Vars(r)
 		project := vars["project"]
-		conf, err := syncMan.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
 
-		if err := syncMan.SetEventingStatus(conf, c.DBType, c.Col, c.Enabled); err != nil {
+		if err := syncMan.SetEventingStatus(project, c.DBType, c.Col, c.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

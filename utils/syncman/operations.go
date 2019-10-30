@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/hashicorp/consul/api"
@@ -82,6 +83,39 @@ func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
 	}
 
 	return len(s.services), nil
+}
+
+func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for _, p := range s.projectConfig.Projects {
+		if p.ID == project.ID {
+			return errors.New("project already exists in config"), http.StatusConflict
+		}
+	}
+
+	s.projectConfig.Projects = append(s.projectConfig.Projects, project)
+
+	s.cb(s.projectConfig)
+
+	if !s.isConsulEnabled {
+		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	data, _ := json.Marshal(project)
+
+	_, err := s.consulClient.KV().Put(&api.KVPair{
+		Key:   fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID),
+		Value: data,
+	}, opts)
+	return err, http.StatusInternalServerError
 }
 
 // SetProjectConfig applies the set project config command to the raft log

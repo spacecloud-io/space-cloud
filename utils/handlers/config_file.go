@@ -34,14 +34,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		vars := mux.Vars(r)
 		project := vars["project"]
 
-		projectConfig, err := syncMan.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncMan.SetFileStore(projectConfig, value); err != nil {
+		if err := syncMan.SetFileStore(project, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -117,16 +110,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		ruleName := vars["ruleName"]
 		value.Name = ruleName
 
-		projectConfig, err := syncMan.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
-
-		if err := syncMan.SetFileRule(projectConfig, value); err != nil {
+		if err := syncMan.SetFileRule(project, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -160,16 +144,9 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		vars := mux.Vars(r)
 		project := vars["project"]
-		filename := vars["filename"]
+		ruleName := vars["ruleName"]
 
-		projectConfig, err := syncMan.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncMan.SetDeleteFileRule(projectConfig, filename); err != nil {
+		if err := syncMan.SetDeleteFileRule(project, ruleName); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

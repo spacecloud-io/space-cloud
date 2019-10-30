@@ -2,34 +2,45 @@ package syncman
 
 import "github.com/spaceuptech/space-cloud/config"
 
-func (s *Manager) SetEventingRule(project *config.Project, ruleName string, value config.EventingRule) error {
+func (s *Manager) SetEventingRule(project, ruleName string, value config.EventingRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	projectConfig.Modules.Eventing.Rules[ruleName] = value
 
-	project.Modules.Eventing.Rules[ruleName] = value
-
-	return s.setProject(project)
+	return s.setProject(projectConfig)
 }
 
-func (s *Manager) SetDeleteEventingRule(project *config.Project, ruleName string) error {
+func (s *Manager) SetDeleteEventingRule(project, ruleName string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	delete(project.Modules.Eventing.Rules, ruleName)
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	delete(projectConfig.Modules.Eventing.Rules, ruleName)
 
-	return s.setProject(project)
+	return s.setProject(projectConfig)
 }
 
-func (s *Manager) SetEventingStatus(project *config.Project, dbType, col string, enabled bool) error {
+func (s *Manager) SetEventingStatus(project , dbType, col string, enabled bool) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	project.Modules.Eventing.DBType = dbType
-	project.Modules.Eventing.Col = col
-	project.Modules.Eventing.Enabled = enabled
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	projectConfig.Modules.Eventing.DBType = dbType
+	projectConfig.Modules.Eventing.Col = col
+	projectConfig.Modules.Eventing.Enabled = enabled
 
-	return s.setProject(project)
+	return s.setProject(projectConfig)
 }

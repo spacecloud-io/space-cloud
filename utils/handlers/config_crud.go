@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -119,14 +120,7 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 			return
 		}
 
-		projectConfig, err := syncman.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncman.SetDeleteCollection(projectConfig, dbType, col); err != nil {
+		if err := syncman.SetDeleteCollection(project, dbType, col); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -155,42 +149,23 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 			return
 		}
 
-		type databaseConnection struct {
-			connection string `json:"conn"`
-			enabled    bool   `json:"enable"`
-		}
-		v := databaseConnection{}
+		v := config.CrudStub{}
 		json.NewDecoder(r.Body).Decode(&v)
 		defer r.Body.Close()
 
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
 		project := vars["project"]
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
+		log.Println("dbtype", dbType)
 
-		if err := crud.Connect(ctx, dbType, v.connection, v.enabled); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		projectConfig, err := syncman.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncman.SetDatabaseConnection(projectConfig, dbType, v.connection, v.enabled); err != nil {
+		if err := syncman.SetDatabaseConnection(project, dbType, v.Conn, v.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
+		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 	}
 }
@@ -224,28 +199,21 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-
-		if err := schemaArg.SchemaCreation(ctx, dbType, col, project, v.Schema); err != nil {
+		log.Println("handler", dbType, col, project, v.Schema)
+		if _, err := schemaArg.SchemaCreation(ctx, dbType, col, project, v.Schema, ""); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		projectConfig, err := syncman.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncman.SetModifySchema(projectConfig, dbType, col, v.Schema); err != nil {
+		if err := syncman.SetModifySchema(project, dbType, col, v.Schema); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) //http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
+		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 	}
 }
@@ -276,14 +244,7 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		project := vars["project"]
 		col := vars["col"]
 
-		projectConfig, err := syncman.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncman.SetCollectionRules(projectConfig, dbType, col, &v); err != nil {
+		if err := syncman.SetCollectionRules(project, dbType, col, &v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -315,20 +276,12 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
 		project := vars["project"]
-		col := vars["col"]
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		projectConfig, err := syncman.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		colResult, err := syncman.SetReloadSchema(ctx, projectConfig, dbType, col, project, schemaArg);
+		colResult, err := syncman.SetReloadSchema(ctx, dbType, project, schemaArg);
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -362,13 +315,14 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 		json.NewDecoder(r.Body).Decode(&projectConfig)
 		defer r.Body.Close()
 
-		if err := syncman.SetProjectConfig(&projectConfig); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+		err, statusCode := syncman.CreateProjectConfig(&projectConfig);
+		if err != nil {
+			w.WriteHeader(statusCode)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(statusCode) //http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 	}
@@ -407,15 +361,7 @@ func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, s
 			return
 		}
 
-		// update schema in config
-		projectConfig, err := syncman.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncman.SetProjectConfig(projectConfig); err != nil {
+		if err := syncman.SetSchemaInspection(project, dbType, col, schema); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -451,19 +397,11 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
 		project := vars["project"]
-
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		projectConfig, err := syncman.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		if err := syncman.SetModifyAllSchema(ctx, projectConfig, dbType, project, schemaArg, v); err != nil {
+		if err := syncman.SetModifyAllSchema(ctx, dbType, project, schemaArg, v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

@@ -29,21 +29,14 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		// Load the body of the request
 		value := new(config.AuthStub)
-		err := json.NewDecoder(r.Body).Decode(value)
+		json.NewDecoder(r.Body).Decode(value)
 		defer r.Body.Close()
 		vars := mux.Vars(r)
 		project := vars["project"]
 		provider := vars["provider"]
 
-		projectConfig, err := syncMan.GetConfig(project)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Sync the config
-		if err := syncMan.SetUserManagement(projectConfig, provider, value); err != nil {
+		if err := syncMan.SetUserManagement(project, provider, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

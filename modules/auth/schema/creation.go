@@ -2,6 +2,8 @@ package schema
 
 import (
 	"context"
+	"errors"
+	"log"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -23,7 +25,7 @@ func (s *Schema) ModifyAllCollections(ctx context.Context, conf config.Crud) err
 		}
 
 		for colName, tableRule := range crudStubValue.Collections {
-			if err := s.SchemaCreation(ctx, dbName, colName, s.project, tableRule.Schema); err != nil {
+			if _, err := s.SchemaCreation(ctx, dbName, colName, s.project, tableRule.Schema, ""); err != nil {
 				return err
 			}
 		}
@@ -33,9 +35,10 @@ func (s *Schema) ModifyAllCollections(ctx context.Context, conf config.Crud) err
 }
 
 // SchemaCreation creates or alters tables of sql
-func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schema string) error {
+func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schema, skipTable string) (string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
+	log.Println("creation", dbType, col, project, schema)
 
 	crudCol := map[string]*config.TableRule{}
 	crudCol[col] = &config.TableRule{
@@ -50,16 +53,17 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 
 	parsedSchema, err := s.parser(crud)
 	if err != nil {
-		return nil
+		return "", nil
 	}
 
 	// Return if no tables are present in schema
 	if len(parsedSchema[dbType]) == 0 {
-		return nil
+		return "", nil
+
 	}
 
 	if err := s.crud.CreateProjectIfNotExists(ctx, project, dbType); err != nil {
-		return err
+		return "", nil
 	}
 
 	currentSchema, _ := s.Inspector(ctx, dbType, project, col)
@@ -74,26 +78,29 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 			// create table with primary key
 			query, err := addNewTable(project, dbType, realColName, realColValue)
 			if err != nil {
-				return err
+				return "", nil
 			}
 
 			batchedQueries = append(batchedQueries, query)
 			if err := s.crud.RawBatch(ctx, dbType, batchedQueries); err != nil {
-				return err
+				return "", nil
 			}
-			return s.SchemaCreation(ctx, dbType, col, project, schema)
+			return s.SchemaCreation(ctx, dbType, col, project, schema, "")
 		}
 		for realFieldKey, realFieldStruct := range realColValue {
 			if err := checkErrors(realFieldStruct); err != nil {
-				return err
+				return "", nil
 			}
 			if realFieldStruct.IsList && (realFieldStruct.Directive == directiveRelation) { // as directive is relation for array type don't generate queries
 				continue
 			}
+			if !realFieldStruct.IsList && realFieldStruct.Directive == directiveRelation && realFieldStruct.Kind == typeJoin && realFieldStruct.JointTable.TableName != skipTable {
+				return realFieldStruct.JointTable.TableName, nil
+			}
 			currentFieldStruct, ok := currentColValue[realFieldKey]
 			columnType, err := getSQLType(dbType, realFieldStruct.Kind)
 			if err != nil {
-				return err
+				return "", nil
 			}
 			c := creationModule{
 				dbType:             dbType,
@@ -112,7 +119,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 				queries, err := c.addField(ctx)
 				batchedQueries = append(batchedQueries, queries...)
 				if err != nil {
-					return err
+					return "", nil
 				}
 
 			} else {
@@ -120,7 +127,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 				queries, err := c.modifyField(ctx)
 				batchedQueries = append(batchedQueries, queries...)
 				if err != nil {
-					return err
+					return "", nil
 				}
 
 			}
@@ -154,18 +161,49 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 		}
 	}
 
-	return s.crud.RawBatch(ctx, dbType, batchedQueries)
+	return "", s.crud.RawBatch(ctx, dbType, batchedQueries)
 }
 
-func (s *Schema) SchemaJoin(ctx context.Context, parsedColValue schemaCollection, dbType, colName, project string, v config.CrudStub) error {
-	temp := &schemaFieldType{}
-	for _, fieldValue := range parsedColValue[colName] {
-		temp = fieldValue
-		if fieldValue.Kind == typeJoin && fieldValue.Directive == directiveRelation && !fieldValue.IsList {
-			if err := s.SchemaJoin(ctx, parsedColValue, dbType, fieldValue.JointTable.TableName, project, v); err != nil {
+func (s *Schema) SchemaCreationWithObject(ctx context.Context, dbType, project string, tables map[string]*config.TableRule) error {
+	tablesDone := map[string]bool{}
+	var err error
+	for tableName, tableInfo := range tables {
+		log.Println("called creation object", tablesDone)
+		_, ok := tablesDone[tableName]
+		if !ok {
+			if err = s.recursiveSchemaCreation(ctx, dbType, project, tableName, tableInfo.Schema, tables, tablesDone); err != nil {
 				return err
 			}
 		}
 	}
-	return s.SchemaCreation(ctx, dbType, temp.JointTable.TableName, project, v.Collections[temp.JointTable.TableName].Schema)
+	return nil
+}
+
+func (s *Schema) recursiveSchemaCreation(ctx context.Context, dbType, project, colName, schema string, collectionMap map[string]*config.TableRule, tablesDone map[string]bool) error {
+	skipTable := ""
+	for {
+		tableName, err := s.SchemaCreation(ctx, dbType, colName, project, schema, skipTable)
+		if err != nil {
+			return err
+		}
+		_, ok := tablesDone[tableName]
+		if ok {
+			skipTable = tableName
+			continue
+		}
+		if tableName != "" && !ok {
+			collection, ok := collectionMap[tableName]
+			if !ok {
+				return errors.New("Schema not provided for " + tableName)
+			}
+			if err = s.recursiveSchemaCreation(ctx, dbType, project, tableName, collection.Schema, collectionMap, tablesDone); err != nil {
+				return err
+			}
+			skipTable = tableName
+		} else {
+			break
+		}
+	}
+	tablesDone[colName] = true
+	return nil
 }
