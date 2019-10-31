@@ -16,7 +16,10 @@ func (m *Module) AddEgress(project string, bytes uint64) {
 	if !m.config.IsEnabled {
 		return
 	}
-
+	if !m.config.DisableBandwidth {
+		return
+	}
+	
 	metricsTemp, _ := m.projects.LoadOrStore(project, newMetrics())
 	metrics := metricsTemp.(*metrics)
 
