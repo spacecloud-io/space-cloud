@@ -290,6 +290,7 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 			if value == "" {
 				return ksuid.New().String(), nil
 			}
+			return value, nil
 		case typeString, typeJoin:
 			return value, nil
 		default:

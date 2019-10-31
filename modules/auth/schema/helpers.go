@@ -2,14 +2,14 @@ package schema
 
 import (
 	"errors"
-
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // GetSQLType return sql type
-func getSQLType(dbType, typeName string) (string, error) {
-	switch typeName {
-	case typeID, typeJoin:
+func getSQLType(dbType, typename string) (string, error) {
+
+	switch typename {
+	case typeID,typeJoin:
 		return "varchar(50)", nil
 	case typeString:
 		return "text", nil
@@ -30,6 +30,13 @@ func getSQLType(dbType, typeName string) (string, error) {
 }
 
 func checkErrors(realFieldStruct *schemaFieldType) error {
+	switch realFieldStruct.Directive {
+	case "", directivePrimary, directiveRelation, directiveUnique, directiveCreatedAt, directiveUpdatedAt:
+		break
+	default:
+		//TODO: uncomment after removing id form events_log
+		//return errors.New("unknown directive " + realFieldStruct.Directive)
+	}
 	if realFieldStruct.IsList && (realFieldStruct.Directive != directiveRelation) { // array without directive relation not allowed
 		return errors.New("schema: array type without relation directive not supported in sql creation")
 	}
@@ -39,10 +46,10 @@ func checkErrors(realFieldStruct *schemaFieldType) error {
 	if realFieldStruct.Directive == directiveRelation && realFieldStruct.Kind != typeJoin {
 		return errors.New("schema : directive relation should contain user defined type got " + realFieldStruct.Kind)
 	}
-	if realFieldStruct.Kind == typeID && realFieldStruct.Directive != directivePrimary {
-		return errors.New("schema : directive id should have type id")
-	} else if realFieldStruct.Kind == typeID && !realFieldStruct.IsFieldTypeRequired {
-		return errors.New("schema : id type is must be not nullable (!)")
+	if realFieldStruct.Directive == directivePrimary && !realFieldStruct.IsFieldTypeRequired {
+		return errors.New("schema directive primary cannot be null require(!)")
+	} else if realFieldStruct.Directive == directivePrimary && realFieldStruct.Kind != typeID {
+		return  errors.New("schema directive primary should have type id")
 	}
 
 	return nil
@@ -153,7 +160,7 @@ func addNewTable(project, dbType, realColName string, realColValue schemaField) 
 		}
 		if realFieldStruct.Directive == directivePrimary {
 			primaryKey := "PRIMARY KEY"
-			query += realFieldKey + " " + sqlType + " " + primaryKey + ","
+			query += realFieldKey + " " + sqlType + " " + primaryKey + " NOT NULL,"
 			continue
 		}
 		query += realFieldKey + " " + sqlType + " ,"

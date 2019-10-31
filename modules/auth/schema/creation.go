@@ -2,7 +2,6 @@ package schema
 
 import (
 	"context"
-
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
