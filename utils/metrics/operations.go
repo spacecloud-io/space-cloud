@@ -12,14 +12,11 @@ func (m *Module) AddEgress(project string, bytes uint64) {
 	m.lock.RLock()
 	defer m.lock.Unlock()
 
-	// Return if the metrics module is disabled
-	if !m.config.IsEnabled {
+	// Return if the metrics module or bandwidth measurement is disabled
+	if !m.config.IsEnabled || m.config.DisableBandwidth {
 		return
 	}
-	if !m.config.DisableBandwidth {
-		return
-	}
-	
+
 	metricsTemp, _ := m.projects.LoadOrStore(project, newMetrics())
 	metrics := metricsTemp.(*metrics)
 
@@ -31,11 +28,8 @@ func (m *Module) AddIngress(project string, bytes uint64) {
 	m.lock.RLock()
 	defer m.lock.Unlock()
 
-	// Return if the metrics module is disabled
-	if !m.config.IsEnabled {
-		return
-	}
-	if !m.config.DisableBandwidth {
+	// Return if the metrics module or bandwidth measurement is disabled
+	if !m.config.IsEnabled || m.config.DisableBandwidth {
 		return
 	}
 
