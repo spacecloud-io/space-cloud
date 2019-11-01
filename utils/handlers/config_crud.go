@@ -281,7 +281,7 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		colResult, err := syncman.SetReloadSchema(ctx, dbType, project, schemaArg);
+		colResult, err := syncman.SetReloadSchema(ctx, dbType, project, schemaArg)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -315,7 +315,7 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 		json.NewDecoder(r.Body).Decode(&projectConfig)
 		defer r.Body.Close()
 
-		err, statusCode := syncman.CreateProjectConfig(&projectConfig);
+		err, statusCode := syncman.CreateProjectConfig(&projectConfig)
 		if err != nil {
 			w.WriteHeader(statusCode)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

@@ -14,13 +14,17 @@ import (
 )
 
 // Delete removes the document(s) from the database which match the condition
-func (s *SQL) Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error {
+func (s *SQL) Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error) {
 	sqlString, args, err := s.generateDeleteQuery(ctx, project, col, req)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	_, err = doExecContext(ctx, sqlString, args, s.client)
-	return err
+	res, err := doExecContext(ctx, sqlString, args, s.client)
+	if err != nil {
+		return 0, nil
+	}
+
+	return res.RowsAffected()
 }
 
 //genrateDeleteQuery makes query for delete operation

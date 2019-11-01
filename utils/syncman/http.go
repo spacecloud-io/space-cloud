@@ -42,7 +42,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token string
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode < 200 && resp.StatusCode >= 300 {
 		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
 	}
 

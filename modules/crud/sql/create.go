@@ -16,13 +16,16 @@ import (
 )
 
 // Create inserts a document (or multiple when op is "all") into the database
-func (s *SQL) Create(ctx context.Context, project, col string, req *model.CreateRequest) error {
+func (s *SQL) Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error) {
 	sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, req)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	_, err = doExecContext(ctx, sqlQuery, args, s.client)
-	return err
+	res, err := doExecContext(ctx, sqlQuery, args, s.client)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
 //generateCreateQuery makes query for create operation

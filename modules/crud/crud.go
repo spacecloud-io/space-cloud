@@ -18,20 +18,22 @@ type Module struct {
 	sync.RWMutex
 	blocks             map[string]Crud
 	primaryDB          string
+	project            string
 	removeProjectScope bool
 
 	// Variables to store the hooks
-	hooks *model.CrudHooks
+	hooks      *model.CrudHooks
+	metricHook model.MetricCrudHook
 }
 
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
-	Create(ctx context.Context, project, col string, req *model.CreateRequest) error
-	Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error)
-	Update(ctx context.Context, project, col string, req *model.UpdateRequest) error
-	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
+	Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error)
+	Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error)
+	Update(ctx context.Context, project, col string, req *model.UpdateRequest) (int64, error)
+	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error)
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
-	Batch(ctx context.Context, project string, req *model.BatchRequest) error
+	Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
 	RawExec(ctx context.Context, project string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
@@ -49,8 +51,9 @@ func Init(removeProjectScope bool) *Module {
 }
 
 // SetHooks sets the internal hooks
-func (m *Module) SetHooks(hooks *model.CrudHooks) {
+func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHook) {
 	m.hooks = hooks
+	m.metricHook = metricHook
 }
 
 func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
@@ -74,9 +77,11 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 }
 
 // SetConfig set the rules adn secret key required by the crud block
-func (m *Module) SetConfig(crud config.Crud) error {
+func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
+
+	m.project = project
 
 	// Close the previous database connections
 	for _, v := range m.blocks {

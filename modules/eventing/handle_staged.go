@@ -36,6 +36,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}}
 
 	dbType, col := m.config.DBType, m.config.Col
+
 	results, err := m.crud.Read(ctx, dbType, m.project, col, &readRequest)
 	if err != nil {
 		log.Println("Eventing stage routine error:", err)
@@ -76,11 +77,13 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	// Create a variable to track retries
 	retries := 0
 
-	// Unmarshal the payload
-	var payload interface{}
-	json.Unmarshal([]byte(eventDoc.Payload), &payload)
+	// Payload will be of type json. Unmarshal it before sending
+	var doc interface{}
+	json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
+	eventDoc.Payload = doc
+
 	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0.rc1", Type: eventDoc.Type,
-		Source: m.syncMan.GetEventSource(), Id: eventDoc.ID, Time: eventDoc.Timestamp, Data: payload}
+		Source: m.syncMan.GetEventSource(), Id: eventDoc.ID, Time: eventDoc.Timestamp, Data: eventDoc.Payload}
 
 	for {
 		token, err := m.auth.GetInternalAccessToken()

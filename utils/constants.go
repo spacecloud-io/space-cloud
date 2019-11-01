@@ -98,6 +98,9 @@ const (
 	// Delete is the type used for delete operations
 	Delete OperationType = "delete"
 
+	// Batch is the type used for batch operations
+	Batch OperationType = "batch"
+
 	// Aggregation is the type used for aggregations
 	Aggregation OperationType = "aggr"
 )

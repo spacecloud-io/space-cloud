@@ -124,7 +124,7 @@ func HandleCreationRequest(adminMan *admin.Manager, schema *schema.Schema) http.
 		col := vars["col"]
 		project := vars["project"]
 
-		if _,err := schema.SchemaCreation(ctx, dbType, col, project, schemaDecode.Schema,""); err != nil {
+		if _, err := schema.SchemaCreation(ctx, dbType, col, project, schemaDecode.Schema, ""); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

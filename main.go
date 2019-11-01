@@ -10,6 +10,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/server"
 )
 
@@ -81,11 +82,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Enable consul integration",
 		EnvVar: "ENABLE_CONSUL",
 	},
-	cli.BoolFlag{
-		Name:   "enable-consul-connect",
-		Usage:  "Enable consul connect integration",
-		EnvVar: "ENABLE_CONSUL_CONNECT",
-	},
 	cli.IntFlag{
 		Name:   "port",
 		EnvVar: "PORT",
@@ -95,6 +91,33 @@ var essentialFlags = []cli.Flag{
 		Name:   "remove-project-scope",
 		Usage:  "Removes the project level scope in the database and file storage modules",
 		EnvVar: "REMOVE_PROJECT_SCOPE",
+	},
+
+	// Flags for the metrics module
+	cli.BoolFlag{
+		Name:   "enable-metrics",
+		Usage:  "Enable the metrics module",
+		EnvVar: "ENABLE_METRICS",
+	},
+	cli.BoolFlag{
+		Name:   "disable-bandwidth",
+		Usage:  "disable the bandwidth measurement",
+		EnvVar: "DISABLE_BANDWIDTH",
+	},
+	cli.StringFlag{
+		Name:   "metrics-sink",
+		Usage:  "The sink to output metrics data to",
+		EnvVar: "METRICS_SINK",
+	},
+	cli.StringFlag{
+		Name:   "metrics-conn",
+		Usage:  "The connection string of the sink",
+		EnvVar: "METRICS_CONN",
+	},
+	cli.StringFlag{
+		Name:   "metrics-scope",
+		Usage:  "The database / topic to push the metrics to",
+		EnvVar: "METRICS_SCOPE",
 	},
 }
 
@@ -130,6 +153,7 @@ func actionRun(c *cli.Context) error {
 	configPath := c.String("config")
 	isDev := c.Bool("dev")
 	disableMetrics := c.Bool("disable-metrics")
+	disableBandwidth := c.Bool("disable-bandwidth")
 	profiler := c.Bool("profiler")
 
 	// Load flag related to the port
@@ -149,12 +173,19 @@ func actionRun(c *cli.Context) error {
 	clusterID := c.String("cluster")
 	enableConsul := c.Bool("enable-consul")
 
+	// Load the flags for the metrics module
+	enableMetrics := c.Bool("enable-metrics")
+	metricsSink := c.String("metrics-sink")
+	metricsConn := c.String("metrics-conn")
+	metricsScope := c.String("metrics-scope")
+
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + uuid.NewV1().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, enableConsul, removeProjectScope)
+	s, err := server.New(nodeID, clusterID, enableConsul, removeProjectScope,
+		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
 	}

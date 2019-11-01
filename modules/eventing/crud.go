@@ -183,7 +183,7 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 		// TODO: Optimise this step
 		if doc.Type == utils.EventUpdate {
 			dbEvent := new(model.DatabaseEventMessage)
-			if err := json.Unmarshal([]byte(doc.Payload), dbEvent); err != nil {
+			if err := json.Unmarshal([]byte(doc.Payload.(string)), dbEvent); err != nil {
 				log.Println("Eventing Staging Error:", err)
 				continue
 			}

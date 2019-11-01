@@ -97,21 +97,21 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 }
 
 // Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error) {
+func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error) {
 	sqlString, args, err := s.generateReadQuery(ctx, project, col, req)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 
 	stmt, err := s.client.PreparexContext(ctx, sqlString)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.QueryxContext(ctx, args...)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 	defer rows.Close()
 
@@ -126,12 +126,12 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 	case utils.Count:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return nil, errors.New("SQL: No response from db")
+			return 0, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 
 		switch s.GetDBType() {
@@ -140,19 +140,20 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 		}
 
 		for _, v := range mapping {
-			return v, nil
+			return v.(int64), v, nil
 		}
-		return nil, nil
+
+		return 0, nil, errors.New("unknown error occurred")
 
 	case utils.One:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return nil, errors.New("SQL: No response from db")
+			return 0, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 
 		switch s.GetDBType() {
@@ -160,15 +161,20 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 		}
 
-		return mapping, nil
+		return 1, mapping, nil
 
 	case utils.All, utils.Distinct:
 		array := []interface{}{}
+		var count int64
 		for rows.Next() {
+
+			// Increment the counter
+			count++
+
 			mapping := make(map[string]interface{})
 			err := rows.MapScan(mapping)
 			if err != nil {
-				return nil, err
+				return 0, nil, err
 			}
 
 			switch s.GetDBType() {
@@ -179,9 +185,9 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 			array = append(array, mapping)
 		}
 
-		return array, nil
+		return count, array, nil
 
 	default:
-		return nil, utils.ErrInvalidParams
+		return 0, nil, utils.ErrInvalidParams
 	}
 }

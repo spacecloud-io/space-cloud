@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/spaceuptech/space-cloud/utils/handlers"
+
 	"github.com/gorilla/mux"
 	nats "github.com/nats-io/nats-server/v2/server"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
+	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -38,23 +41,29 @@ type Server struct {
 	functions      *functions.Module
 	realtime       *realtime.Module
 	static         *static.Module
-	adminMan       *admin.Manager
 	nats           *nats.Server
 	eventing       *eventing.Module
 	configFilePath string
+	adminMan       *admin.Manager
 	syncMan        *syncman.Manager
+	metrics        *metrics.Module
 	ssl            *config.SSL
 	graphql        *graphql.Module
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool) (*Server, error) {
+func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 	r3 := mux.NewRouter()
 
 	// Create the fundamental modules
 	c := crud.Init(removeProjectScope)
+
+	m, err := metrics.New(nodeID, metricsConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	adminMan := admin.New()
 	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled)
@@ -75,7 +84,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool) (*S
 		Delete: e.HandleDeleteIntent,
 		Batch:  e.HandleBatchIntent,
 		Stage:  e.HandleStage,
-	})
+	}, m.AddDBOperation)
 
 	rt, err := realtime.Init(nodeID, e, a, c, syncMan)
 	if err != nil {
@@ -90,7 +99,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool) (*S
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, routerConnect: r3, auth: a, crud: c,
-		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
+		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan, metrics: m,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
 		eventing: e, graphql: graphqlMan}, nil
 }
@@ -118,13 +127,13 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 		fmt.Println("Starting https server on port: " + strconv.Itoa(port+4))
 		go func() {
 
-			if err := http.ListenAndServeTLS(":"+strconv.Itoa(port+4), s.ssl.Crt, s.ssl.Key, handler); err != nil {
+			if err := http.ListenAndServeTLS(":"+strconv.Itoa(port+4), s.ssl.Crt, s.ssl.Key, handlers.HandleMetricMiddleWare(handler, s.metrics)); err != nil {
 				fmt.Println("Error starting https server:", err)
 			}
 		}()
 	}
 
-	//go s.syncMan.StartConnectServer(port, corsObj.Handler(s.routerConnect))
+	//go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.router)
 
@@ -133,7 +142,7 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 	fmt.Println()
 
 	fmt.Println("Space cloud is running on the specified ports :D")
-	return http.ListenAndServe(":"+strconv.Itoa(port), handler)
+	return http.ListenAndServe(":"+strconv.Itoa(port), handlers.HandleMetricMiddleWare(handler, s.metrics))
 }
 
 // SetConfig sets the config
@@ -154,7 +163,7 @@ func (s *Server) LoadConfig(config *config.Config) error {
 
 		// Always set the config of the crud module first
 		// Set the configuration for the crud module
-		if err := s.crud.SetConfig(p.Modules.Crud); err != nil {
+		if err := s.crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			log.Println("Error in crud module config: ", err)
 			return err
 		}
