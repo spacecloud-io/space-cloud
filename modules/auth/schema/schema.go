@@ -210,7 +210,10 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 		if err != nil {
 			return nil, err
 		}
-		mutatedDoc[fieldKey] = val
+
+		if mutatedDoc != nil {
+			mutatedDoc[fieldKey] = val
+		}
 	}
 
 	return mutatedDoc, nil
@@ -273,6 +276,8 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 			return time.Unix(int64(v)/1000, 0), nil
 		case typeID, typeInteger:
 			return value, nil
+		case typeFloat:
+			return float64(v), nil
 		default:
 			return nil, errors.New("Integer wrong type wanted " + fieldValue.Kind + " got Integer")
 		}
@@ -297,6 +302,8 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 			return time.Unix(int64(v.(float64))/1000, 0), nil
 		case typeFloat:
 			return value, nil
+		case typeInteger:
+			return int64(value.(float64)), nil
 		default:
 			return nil, errors.New("Float wrong type wanted " + fieldValue.Kind + " got Float")
 		}
@@ -330,6 +337,10 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		}
 		return arr, nil
 	default:
+		if !fieldValue.IsFieldTypeRequired {
+			return nil, nil
+		}
+
 		return nil, errors.New("No matching type found")
 	}
 }
