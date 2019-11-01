@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -35,7 +36,6 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}}
 
 	dbType, col := m.config.DBType, m.config.Col
-
 	results, err := m.crud.Read(ctx, dbType, m.project, col, &readRequest)
 	if err != nil {
 		log.Println("Eventing stage routine error:", err)
@@ -76,46 +76,41 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	// Create a variable to track retries
 	retries := 0
 
+	// Unmarshal the payload
+	var payload interface{}
+	json.Unmarshal([]byte(eventDoc.Payload), &payload)
+	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0.rc1", Type: eventDoc.Type,
+		Source: m.syncMan.GetEventSource(), Id: eventDoc.ID, Time: eventDoc.Timestamp, Data: payload}
+
 	for {
 		token, err := m.auth.GetInternalAccessToken()
 		if err != nil {
 			log.Println("Eventing: Couldn't trigger functions -", err)
 			return
 		}
-		var result interface{}
-		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, token, eventDoc, &result)
+
+		var eventResponse model.EventResponse
+		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, token, cloudEvent, &eventResponse)
 		if err == nil {
-			// Check if the result is an object
-			obj, ok := result.(map[string]interface{})
-			if ok {
-				// Check if response contains an event request
-				var eventRequests []*model.QueueEventRequest
-				if item, p := obj["event"]; p {
-					req := new(model.QueueEventRequest)
-					if err := mapstructure.Decode(item, req); err == nil {
-						eventRequests = append(eventRequests, req)
-					}
-				}
+			var eventRequests []*model.QueueEventRequest
 
-				if items, p := obj["events"]; p {
-					array := items.([]interface{})
-					for _, item := range array {
-						req := new(model.QueueEventRequest)
-						if err := mapstructure.Decode(item, req); err == nil {
-							eventRequests = append(eventRequests, req)
-						}
-					}
-				}
-
-				if len(eventRequests) > 0 {
-					if err := m.batchRequests(ctx, eventRequests); err != nil {
-						log.Println("Eventing: Couldn't persist events err -", err)
-					}
-				}
-
-				m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
-				return
+			// Check if response contains an event request
+			if eventResponse.Event != nil {
+				eventRequests = append(eventRequests, eventResponse.Event)
 			}
+
+			if eventResponse.Events != nil {
+				eventRequests = append(eventRequests, eventResponse.Events...)
+			}
+
+			if len(eventRequests) > 0 {
+				if err := m.batchRequests(ctx, eventRequests); err != nil {
+					log.Println("Eventing: Couldn't persist events err -", err)
+				}
+			}
+
+			m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+			return
 		}
 
 		log.Println("Eventing staged event handler could not get response from service:", err)

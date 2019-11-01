@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -19,16 +18,7 @@ func GetTokenFromHeader(r *http.Request) string {
 	return strings.TrimPrefix(tokens[0], "Bearer ")
 }
 
-// ResolveURL returns an url for the provided service config
-func ResolveURL(url, scheme string) string {
-
-	if strings.HasSuffix(url, "/") {
-		url = url[:len(url)-1]
-	}
-
-	return fmt.Sprintf("%s://%s", scheme, url)
-}
-
+// CreateCorsObject creates a cors object with the required config
 func CreateCorsObject() *cors.Cors {
 	return cors.New(cors.Options{
 		AllowCredentials: true,

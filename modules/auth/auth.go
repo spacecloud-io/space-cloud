@@ -23,15 +23,16 @@ var (
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
-	rules         config.Crud
-	secret        string
-	crud          *crud.Module
-	functions     *functions.Module
-	fileRules     []*config.FileRule
-	funcRules     *config.Functions
-	project       string
-	fileStoreType string
-	Schema        *schema.Schema
+	rules           config.Crud
+	secret          string
+	crud            *crud.Module
+	functions       *functions.Module
+	fileRules       []*config.FileRule
+	funcRules       *config.ServicesModule
+	project         string
+	fileStoreType   string
+	Schema          *schema.Schema
+	makeHttpRequest utils.MakeHttpRequest
 }
 
 // Init creates a new instance of the auth object
@@ -40,7 +41,7 @@ func Init(crud *crud.Module, functions *functions.Module, removeProjectScope boo
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions) error {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -141,4 +142,11 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 	}
 
 	return nil, ErrTokenVerification
+}
+
+func (m *Module) SetMakeHttpRequest(function utils.MakeHttpRequest) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.makeHttpRequest = function
 }

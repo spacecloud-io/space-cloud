@@ -20,6 +20,22 @@ type EventDocument struct {
 	Remark         string `structs:"remark" json:"remark" bson:"remark" mapstructure:"remark"`
 }
 
+// CloudEventPayload is the the JSON event spec by Cloud Events Specification
+type CloudEventPayload struct {
+	SpecVersion string      `json:"specversion"`
+	Type        string      `json:"type"`
+	Source      string      `json:"source"`
+	Id          string      `json:"id"`
+	Time        int64       `json:"time"`
+	Data        interface{} `json:"data"`
+}
+
+type EventResponse struct {
+	Event  *QueueEventRequest   `json:"event"`
+	Events []*QueueEventRequest `json:"events"`
+	Error  string               `json:"error"`
+}
+
 // QueueEventRequest is the payload to add a new event to the task queue
 type QueueEventRequest struct {
 	Type      string            `json:"type"`                // The type of the event

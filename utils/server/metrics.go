@@ -119,13 +119,13 @@ func getProjectInfo(config *config.Modules, static *config.Static) map[string]in
 		}
 	}
 
-	if config.Functions != nil {
+	if config.Services != nil {
 		functionsConfig["enabled"] = true
-		if config.Functions.Services != nil {
-			functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Services)
-			for _, v := range config.Functions.Services {
-				if v != nil && v.Functions != nil {
-					functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v.Functions)
+		if config.Services.Services != nil {
+			functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Services.Services)
+			for _, v := range config.Services.Services {
+				if v != nil && v.Endpoints != nil {
+					functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v.Endpoints)
 				}
 			}
 		}
