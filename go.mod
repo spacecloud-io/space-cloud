@@ -39,6 +39,7 @@ require (
 	google.golang.org/genproto v0.0.0-20190530194941-fb225487d101 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
 	gopkg.in/yaml.v2 v2.2.2
+
 )
 
 go 1.13

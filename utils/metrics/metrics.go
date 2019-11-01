@@ -23,6 +23,7 @@ type Module struct {
 // The configuration required by the metrics module
 type Config struct {
 	IsEnabled bool
+	DisableBandwidth bool
 	SinkType  string
 	SinkConn  string
 	Scope     string

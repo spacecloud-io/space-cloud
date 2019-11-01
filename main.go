@@ -94,6 +94,11 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Enable the metrics module",
 		EnvVar: "ENABLE_METRICS",
 	},
+	cli.BoolFlag{
+		Name:   "disable-bandwidth",
+		Usage:  "disable the bandwidth measurement",
+		EnvVar: "DISABLE_BANDWIDTH",
+	},
 	cli.StringFlag{
 		Name:   "metrics-sink",
 		Usage:  "The sink to output metrics data to",
@@ -143,6 +148,7 @@ func actionRun(c *cli.Context) error {
 	configPath := c.String("config")
 	isDev := c.Bool("dev")
 	disableMetrics := c.Bool("disable-metrics")
+	disableBandwidth := c.Bool("disable-bandwidth")
 	profiler := c.Bool("profiler")
 
 	// Load flag related to the port
@@ -173,7 +179,7 @@ func actionRun(c *cli.Context) error {
 	}
 
 	s, err := server.New(nodeID, clusterID, enableConsul,
-		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope})
+		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
 	}
