@@ -19,16 +19,17 @@ import (
 
 // Schema data stucture for schema package
 type Schema struct {
-	lock      sync.RWMutex
-	SchemaDoc schemaType
-	crud      *crud.Module
-	project   string
-	config    config.Crud
+	lock               sync.RWMutex
+	SchemaDoc          schemaType
+	crud               *crud.Module
+	project            string
+	config             config.Crud
+	removeProjectScope bool
 }
 
 // Init creates a new instance of the schema object
-func Init(crud *crud.Module) *Schema {
-	return &Schema{SchemaDoc: schemaType{}, crud: crud}
+func Init(crud *crud.Module, removeProjectScope bool) *Schema {
+	return &Schema{SchemaDoc: schemaType{}, crud: crud, removeProjectScope: removeProjectScope}
 }
 
 // SetConfig modifies the tables according to the schema on save

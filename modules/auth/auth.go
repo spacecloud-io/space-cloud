@@ -35,8 +35,8 @@ type Module struct {
 }
 
 // Init creates a new instance of the auth object
-func Init(crud *crud.Module, functions *functions.Module) *Module {
-	return &Module{rules: make(config.Crud), crud: crud, functions: functions, Schema: schema.Init(crud)}
+func Init(crud *crud.Module, functions *functions.Module, removeProjectScope bool) *Module {
+	return &Module{rules: make(config.Crud), crud: crud, functions: functions, Schema: schema.Init(crud, removeProjectScope)}
 }
 
 // SetConfig set the rules and secret key required by the auth block

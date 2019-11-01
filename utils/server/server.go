@@ -64,7 +64,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool) (*S
 
 	fn := functions.Init(syncMan)
 
-	a := auth.Init(c, fn)
+	a := auth.Init(c, fn, removeProjectScope)
 
 	// Initialise the eventing module and set the crud module hooks
 	e := eventing.New(a, c, fn, adminMan, syncMan)
