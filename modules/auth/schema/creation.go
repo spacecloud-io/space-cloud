@@ -2,6 +2,7 @@ package schema
 
 import (
 	"context"
+
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -10,6 +11,7 @@ type creationModule struct {
 	dbType, project, ColName, FieldKey, columnType string
 	currentFieldStruct, realFieldStruct            *schemaFieldType
 	schemaModule                                   *Schema
+	removeProjectScope                             bool
 }
 
 func (s *Schema) ModifyAllCollections(ctx context.Context, conf config.Crud) error {
@@ -71,7 +73,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 		currentColValue, ok := currentSchema[realColName]
 		if !ok {
 			// create table with primary key
-			query, err := addNewTable(project, dbType, realColName, realColValue)
+			query, err := addNewTable(project, dbType, realColName, realColValue, s.removeProjectScope)
 			if err != nil {
 				return err
 			}
@@ -102,6 +104,8 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 				columnType:         columnType,
 				currentFieldStruct: currentFieldStruct,
 				realFieldStruct:    realFieldStruct,
+				schemaModule:       s,
+				removeProjectScope: s.removeProjectScope,
 			}
 
 			if !ok {
@@ -141,6 +145,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schem
 					ColName:            currentColName,
 					FieldKey:           currentFieldKey,
 					currentFieldStruct: currentFieldStruct,
+					removeProjectScope: s.removeProjectScope,
 				}
 
 				if c.currentFieldStruct.Directive == directiveRelation {
