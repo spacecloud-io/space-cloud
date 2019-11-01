@@ -32,7 +32,7 @@ type Module struct {
 	project         string
 	fileStoreType   string
 	Schema          *schema.Schema
-	MakeHttpRequest utils.MakeHttpRequest
+	makeHttpRequest utils.MakeHttpRequest
 }
 
 // Init creates a new instance of the auth object
@@ -145,7 +145,8 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 }
 
 func (m *Module) SetMakeHttpRequest(function utils.MakeHttpRequest) {
-	m.RLock()
-	m.MakeHttpRequest = function
-	defer m.RUnlock()
+	m.Lock()
+	defer m.Unlock()
+
+	m.makeHttpRequest = function
 }

@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
+	"strings"
+
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
-	"net/http"
-	"strings"
 )
 
 // HandleUserManagement returns the handler to get the project config and validate the user via a REST endpoint
@@ -31,6 +32,7 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		value := new(config.AuthStub)
 		json.NewDecoder(r.Body).Decode(value)
 		defer r.Body.Close()
+
 		vars := mux.Vars(r)
 		project := vars["project"]
 		provider := vars["provider"]

@@ -17,15 +17,13 @@ func (m *Mongo) RawExec(ctx context.Context, query string) error {
 	return errors.New("raw exec operation cannot be performed on mongo")
 }
 
-func (m *Mongo) Connect(ctx context.Context, connection string, enabled bool) error {
-	m.connection = connection
-	m.enabled = enabled
-	return m.connect()
-}
 // GetConnectionState : function to check connection state
 func (m *Mongo) GetConnectionState(ctx context.Context, dbType string) bool {
-	if m.enabled && m.client != nil {
-		return true
+	if !m.enabled || m.client == nil {
+		return false
 	}
-	return false
+
+	// Ping to check if connection is established
+	err := m.client.Ping(ctx, nil)
+	return err == nil
 }

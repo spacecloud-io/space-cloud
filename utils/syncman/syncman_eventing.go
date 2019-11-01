@@ -29,7 +29,7 @@ func (s *Manager) SetDeleteEventingRule(project, ruleName string) error {
 	return s.setProject(projectConfig)
 }
 
-func (s *Manager) SetEventingStatus(project , dbType, col string, enabled bool) error {
+func (s *Manager) SetEventingConfig(project, dbType, col string, enabled bool) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

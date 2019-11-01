@@ -41,7 +41,7 @@ func (m *Module) matchRule(project string, rule *config.Rule, args map[string]in
 		return matchOr(rule, args)
 
 	case "webhook":
-		return matchFunc(rule, m.MakeHttpRequest, args)
+		return matchFunc(rule, m.makeHttpRequest, args)
 
 	case "query":
 		return matchQuery(project, rule, m.crud, args)

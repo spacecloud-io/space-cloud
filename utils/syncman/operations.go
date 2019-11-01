@@ -14,6 +14,11 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
+// GetEventSource returns the source id for the space cloud instance
+func (s *Manager) GetEventSource() string {
+	return fmt.Sprintf("sc-%s", s.nodeID)
+}
+
 // GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
 func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
 	s.lock.RLock()

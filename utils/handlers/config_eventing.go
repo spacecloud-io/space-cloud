@@ -84,8 +84,8 @@ func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager)
 	}
 }
 
-// HandleGetEventingStatus is an endpoint handler which sets col and dytype in eventing according to body
-func HandleSetEventingStatus(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleSetEventingConfig is an endpoint handler which sets col and dytype in eventing according to body
+func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -102,18 +102,13 @@ func HandleSetEventingStatus(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
-		type temp struct {
-			Enabled bool   `json:"enabled" yaml:"enabled"`
-			DBType  string `json:"db" yaml:"db"`
-			Col     string `json:"col" yaml:"col"`
-		}
-		c := temp{}
+		c := config.Eventing{}
 		json.NewDecoder(r.Body).Decode(&c)
 
 		vars := mux.Vars(r)
 		project := vars["project"]
 
-		if err := syncMan.SetEventingStatus(project, c.DBType, c.Col, c.Enabled); err != nil {
+		if err := syncMan.SetEventingConfig(project, c.DBType, c.Col, c.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

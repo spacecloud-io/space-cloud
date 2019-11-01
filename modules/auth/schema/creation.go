@@ -38,7 +38,6 @@ func (s *Schema) ModifyAllCollections(ctx context.Context, conf config.Crud) err
 func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project, schema, skipTable string) (string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	log.Println("creation", dbType, col, project, schema)
 
 	crudCol := map[string]*config.TableRule{}
 	crudCol[col] = &config.TableRule{

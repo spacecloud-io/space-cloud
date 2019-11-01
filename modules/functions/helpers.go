@@ -2,6 +2,7 @@ package functions
 
 import (
 	"context"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
 )
@@ -12,8 +13,8 @@ func (m *Module) handleCall(ctx context.Context, service, function, token string
 	s := m.loadService(service)
 
 	// Generate the url
-	url := s.URL
-	url = url + s.Endpoints[function].Path
+	s.URL = strings.TrimSuffix(s.URL, "/")
+	url := s.URL + s.Endpoints[function].Path
 
 	var res interface{}
 	if err := m.manager.MakeHTTPRequest(ctx, "POST", url, token, params, &res); err != nil {
