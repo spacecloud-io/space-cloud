@@ -91,6 +91,11 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "PORT",
 		Value:  4122,
 	},
+	cli.BoolFlag{
+		Name:   "remove-project-scope",
+		Usage:  "Removes the project level scope in the database and file storage modules",
+		EnvVar: "REMOVE_PROJECT_SCOPE",
+	},
 }
 
 func main() {
@@ -129,6 +134,7 @@ func actionRun(c *cli.Context) error {
 
 	// Load flag related to the port
 	port := c.Int("port")
+	removeProjectScope := c.Bool("remove-project-scope")
 
 	// Load flags related to ssl
 	sslCert := c.String("ssl-cert")
@@ -142,14 +148,13 @@ func actionRun(c *cli.Context) error {
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	enableConsul := c.Bool("enable-consul")
-	enableConsulConnect := c.Bool("enable-consul-connect")
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + uuid.NewV1().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, enableConsul, enableConsulConnect)
+	s, err := server.New(nodeID, clusterID, enableConsul, removeProjectScope)
 	if err != nil {
 		return err
 	}

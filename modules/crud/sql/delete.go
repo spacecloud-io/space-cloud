@@ -7,10 +7,10 @@ import (
 	"github.com/doug-martin/goqu/v8"
 	"github.com/spaceuptech/space-cloud/model"
 
+	_ "github.com/denisenkom/go-mssqldb"                //Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
-	_ "github.com/denisenkom/go-mssqldb"				//Import for MsSQL
 )
 
 // Delete removes the document(s) from the database which match the condition
@@ -27,7 +27,7 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(project + "." + col).Prepared(true)
+	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object

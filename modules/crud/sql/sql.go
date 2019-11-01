@@ -8,24 +8,25 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	_ "github.com/go-sql-driver/mysql" // Import for MySQL
-	_ "github.com/lib/pq"              // Import for postgres
-	_ "github.com/denisenkom/go-mssqldb"				//Import for MsSQL
+	_ "github.com/denisenkom/go-mssqldb" //Import for MsSQL
+	_ "github.com/go-sql-driver/mysql"   // Import for MySQL
+	_ "github.com/lib/pq"                // Import for postgres
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // SQL holds the sql db object
 type SQL struct {
-	enabled    bool
-	connection string
-	client     *sqlx.DB
-	dbType     string
+	enabled            bool
+	connection         string
+	client             *sqlx.DB
+	dbType             string
+	removeProjectScope bool
 }
 
 // Init initialises a new sql instance
-func Init(dbType utils.DBType, enabled bool, connection string) (s *SQL, err error) {
-	s = &SQL{enabled: enabled, connection: connection, client: nil}
+func Init(dbType utils.DBType, enabled, removeProjectScope bool, connection string) (s *SQL, err error) {
+	s = &SQL{enabled: enabled, removeProjectScope: removeProjectScope, connection: connection, client: nil}
 
 	switch dbType {
 	case utils.Postgres:
@@ -33,7 +34,7 @@ func Init(dbType utils.DBType, enabled bool, connection string) (s *SQL, err err
 
 	case utils.MySQL:
 		s.dbType = "mysql"
-	
+
 	case utils.SqlServer:
 		s.dbType = "sqlserver"
 
@@ -66,7 +67,7 @@ func (s *SQL) GetDBType() utils.DBType {
 	case "mysql":
 		return utils.MySQL
 	case "sqlserver":
-		return utils.SqlServer	
+		return utils.SqlServer
 	}
 
 	return utils.MySQL

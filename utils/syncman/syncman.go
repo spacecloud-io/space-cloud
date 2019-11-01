@@ -1,10 +1,6 @@
 package syncman
 
 import (
-	"errors"
-	"fmt"
-	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -30,18 +26,17 @@ type Manager struct {
 	port      int
 
 	// Configuration for clustering
-	isConsulEnabled        bool
-	isConsulConnectEnabled bool
-	consulClient           *api.Client
-	consulService          *connect.Service
-	services               []*api.ServiceEntry
+	isConsulEnabled bool
+	consulClient    *api.Client
+	consulService   *connect.Service
+	services        []*api.ServiceEntry
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID string, isConsulEnabled, isConsulConnectEnabled bool) (*Manager, error) {
+func New(nodeID, clusterID string, isConsulEnabled bool) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, isConsulConnectEnabled: isConsulConnectEnabled}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID}
 
 	// Initialise the consul client if enabled
 	if isConsulEnabled {
@@ -108,23 +103,23 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error) er
 	return nil
 }
 
-func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
-	if !s.isConsulEnabled {
-		return errors.New("consul is not enabled")
-	}
-
-	s.port = port
-
-	// Creating an HTTP server that serves via Connect
-	server := &http.Server{
-		Addr:      ":" + strconv.Itoa(s.port+2),
-		TLSConfig: s.consulService.ServerTLSConfig(),
-		Handler:   handler,
-	}
-
-	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
-	return server.ListenAndServeTLS("", "")
-}
+//func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
+//	if !s.isConsulEnabled {
+//		return errors.New("consul is not enabled")
+//	}
+//
+//	s.port = port
+//
+//	// Creating an HTTP server that serves via Connect
+//	server := &http.Server{
+//		Addr:      ":" + strconv.Itoa(s.port+2),
+//		TLSConfig: s.consulService.ServerTLSConfig(),
+//		Handler:   handler,
+//	}
+//
+//	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
+//	return server.ListenAndServeTLS("", "")
+//}
 
 // SetGlobalConfig sets the global config. This must be called before the Start command.
 func (s *Manager) SetGlobalConfig(c *config.Config) {

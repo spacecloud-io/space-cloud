@@ -8,10 +8,10 @@ import (
 
 	goqu "github.com/doug-martin/goqu/v8"
 
+	_ "github.com/denisenkom/go-mssqldb"                //Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
-	_ "github.com/lib/pq"                               // Import for 
-	_ "github.com/denisenkom/go-mssqldb"				//Import for MsSQL
+	_ "github.com/lib/pq"                               // Import for
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -127,7 +127,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest, op string) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(project + "." + col)
+	query := dialect.From(s.getDBName(project, col))
 	if op == "$set" {
 		query = query.Prepared(true)
 	}

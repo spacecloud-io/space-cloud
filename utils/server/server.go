@@ -48,23 +48,23 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID string, isConsulEnabled, isConsulConnectEnabled bool) (*Server, error) {
+func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 	r3 := mux.NewRouter()
 
 	// Create the fundamental modules
-	c := crud.Init()
+	c := crud.Init(removeProjectScope)
 
 	adminMan := admin.New()
-	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled, isConsulConnectEnabled)
+	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled)
 	if err != nil {
 		return nil, err
 	}
 
 	fn := functions.Init(syncMan)
 
-	a := auth.Init(c, fn)
+	a := auth.Init(c, fn, removeProjectScope)
 
 	// Initialise the eventing module and set the crud module hooks
 	e := eventing.New(a, c, fn, adminMan, syncMan)
@@ -124,7 +124,7 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 		}()
 	}
 
-	go s.syncMan.StartConnectServer(port, corsObj.Handler(s.routerConnect))
+	//go s.syncMan.StartConnectServer(port, corsObj.Handler(s.routerConnect))
 
 	handler := corsObj.Handler(s.router)
 
