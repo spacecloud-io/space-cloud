@@ -94,7 +94,6 @@ func (s *Manager) SetProjectConfig(project *config.Project) error {
 	if err := s.cb(s.projectConfig); err != nil {
 		return err
 	}
-
 	if !s.isConsulEnabled {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}

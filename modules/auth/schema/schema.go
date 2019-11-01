@@ -2,6 +2,7 @@ package schema
 
 import (
 	"errors"
+	"github.com/segmentio/ksuid"
 	"strings"
 	"sync"
 	"time"
@@ -275,7 +276,7 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		switch fieldValue.Kind {
 		case typeDateTime:
 			return time.Unix(int64(v)/1000, 0), nil
-		case typeID, typeInteger:
+		case typeInteger:
 			return value, nil
 		case typeFloat:
 			return float64(v), nil
@@ -291,7 +292,12 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 				return nil, errors.New("String Wrong Date-Time Format")
 			}
 			return unitTimeInRFC3339, nil
-		case typeID, typeString, typeJoin:
+		case typeID:
+			if value == "" {
+				return ksuid.New().String(), nil
+			}
+			return value, nil
+		case typeString, typeJoin:
 			return value, nil
 		default:
 			return nil, errors.New("String wrong type wanted " + fieldValue.Kind + " got String")
@@ -344,4 +350,5 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 
 		return nil, errors.New("No matching type found")
 	}
+	return "", nil
 }
