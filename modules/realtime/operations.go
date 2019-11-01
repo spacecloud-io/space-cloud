@@ -94,7 +94,7 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Ev
 			}
 
 			var res interface{}
-			if err := m.syncMan.MakeHTTPRequest(ctx, utils.RequestKindDirect, "POST", url, token, eventDoc, &res); err != nil {
+			if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, eventDoc, &res); err != nil {
 				errCh <- err
 				return
 			}

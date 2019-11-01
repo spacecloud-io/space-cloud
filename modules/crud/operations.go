@@ -261,6 +261,23 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 	return crud.RawExec(ctx, sql)
 }
 
+// GetConnectionState gets the current state of client
+func (m *Module) GetConnectionState(ctx context.Context, dbType string) bool {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return false
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return false
+	}
+
+	return crud.GetConnectionState(ctx, dbType)
+}
+
 // DeleteTable drop specified table from database
 func (m *Module) DeleteTable(ctx context.Context, project, dbType, col string) error {
 	m.RLock()

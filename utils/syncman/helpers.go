@@ -1,6 +1,7 @@
 package syncman
 
 import (
+	"errors"
 	"math"
 	"sort"
 
@@ -83,4 +84,16 @@ func calcTokens(n int, tokens int, i int) (start int, end int) {
 func calcIndex(token, totalTokens, n int) int {
 	bucketSize := totalTokens / n
 	return token / bucketSize
+}
+
+// getConfigWithoutLock returns the config present in the state
+func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error) {
+	// Iterate over all projects stored
+	for _, p := range s.projectConfig.Projects {
+		if projectID == p.ID {
+			return p, nil
+		}
+	}
+
+	return nil, errors.New("given project is not present in state")
 }

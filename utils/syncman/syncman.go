@@ -1,10 +1,6 @@
 package syncman
 
 import (
-	"errors"
-	"fmt"
-	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -107,23 +103,23 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error) er
 	return nil
 }
 
-func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
-	if !s.isConsulEnabled {
-		return errors.New("consul is not enabled")
-	}
-
-	s.port = port
-
-	// Creating an HTTP server that serves via Connect
-	server := &http.Server{
-		Addr:      ":" + strconv.Itoa(s.port+2),
-		TLSConfig: s.consulService.ServerTLSConfig(),
-		Handler:   handler,
-	}
-
-	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
-	return server.ListenAndServeTLS("", "")
-}
+//func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
+//	if !s.isConsulEnabled {
+//		return errors.New("consul is not enabled")
+//	}
+//
+//	s.port = port
+//
+//	// Creating an HTTP server that serves via Connect
+//	server := &http.Server{
+//		Addr:      ":" + strconv.Itoa(s.port+2),
+//		TLSConfig: s.consulService.ServerTLSConfig(),
+//		Handler:   handler,
+//	}
+//
+//	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
+//	return server.ListenAndServeTLS("", "")
+//}
 
 // SetGlobalConfig sets the global config. This must be called before the Start command.
 func (s *Manager) SetGlobalConfig(c *config.Config) {

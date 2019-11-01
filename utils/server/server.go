@@ -2,10 +2,11 @@ package server
 
 import (
 	"fmt"
-	"github.com/spaceuptech/space-cloud/utils/handlers"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/spaceuptech/space-cloud/utils/handlers"
 
 	"github.com/gorilla/mux"
 	nats "github.com/nats-io/nats-server/v2/server"
@@ -51,13 +52,13 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID string, isConsulEnabled bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 	r3 := mux.NewRouter()
 
 	// Create the fundamental modules
-	c := crud.Init()
+	c := crud.Init(removeProjectScope)
 
 	m, err := metrics.New(nodeID, metricsConfig)
 	if err != nil {
@@ -72,7 +73,7 @@ func New(nodeID, clusterID string, isConsulEnabled bool, metricsConfig *metrics.
 
 	fn := functions.Init(syncMan)
 
-	a := auth.Init(c, fn)
+	a := auth.Init(c, fn, removeProjectScope)
 
 	// Initialise the eventing module and set the crud module hooks
 	e := eventing.New(a, c, fn, adminMan, syncMan)
@@ -85,7 +86,7 @@ func New(nodeID, clusterID string, isConsulEnabled bool, metricsConfig *metrics.
 		Stage:  e.HandleStage,
 	}, m.AddDBOperation)
 
-	rt, err := realtime.Init(nodeID, e, a, c, fn, syncMan)
+	rt, err := realtime.Init(nodeID, e, a, c, syncMan)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +133,7 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 		}()
 	}
 
-	go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
+	//go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.router)
 
@@ -150,6 +151,7 @@ func (s *Server) SetConfig(c *config.Config, isProd bool) {
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetEnv(isProd)
 	s.adminMan.SetConfig(c.Admin)
+	s.auth.SetMakeHttpRequest(s.syncMan.MakeHTTPRequest)
 }
 
 // LoadConfig configures each module to to use the provided config
@@ -167,13 +169,13 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		}
 
 		// Set the configuration for the auth module
-		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions); err != nil {
+		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services); err != nil {
 			log.Println("Error in auth module config: ", err)
 			return err
 		}
 
 		// Set the configuration for the functions module
-		s.functions.SetConfig(p.ID, p.Modules.Functions)
+		s.functions.SetConfig(p.ID, p.Modules.Services)
 
 		// Set the configuration for the user management module
 		s.user.SetConfig(p.Modules.Auth)

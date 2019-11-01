@@ -32,7 +32,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(project + "." + col).Prepared(true)
+	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	var insert []interface{}
 	if req.Operation == "one" {

@@ -14,8 +14,24 @@ type EventDocument struct {
 	Payload        interface{} `structs:"payload" json:"payload" bson:"payload" mapstructure:"payload"`
 	Status         string      `structs:"status" json:"status" bson:"status" mapstructure:"status"`
 	Retries        int         `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
-	Service        string      `structs:"service" json:"service" bson:"service" mapstructure:"service"`
-	Function       string      `structs:"func" json:"func" bson:"function" mapstructure:"func"`
+	Url            string      `structs:"url" json:"url" bson:"url" mapstructure:"url"`
+	Remark         string      `structs:"remark" json:"remark" bson:"remark" mapstructure:"remark"`
+}
+
+// CloudEventPayload is the the JSON event spec by Cloud Events Specification
+type CloudEventPayload struct {
+	SpecVersion string      `json:"specversion"`
+	Type        string      `json:"type"`
+	Source      string      `json:"source"`
+	Id          string      `json:"id"`
+	Time        int64       `json:"time"`
+	Data        interface{} `json:"data"`
+}
+
+type EventResponse struct {
+	Event  *QueueEventRequest   `json:"event"`
+	Events []*QueueEventRequest `json:"events"`
+	Error  string               `json:"error"`
 }
 
 // QueueEventRequest is the payload to add a new event to the task queue

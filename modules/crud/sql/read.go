@@ -21,7 +21,7 @@ import (
 // generateReadQuery makes a query for read operation
 func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(project + "." + col).Prepared(true)
+	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object

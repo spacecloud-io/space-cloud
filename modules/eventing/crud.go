@@ -240,7 +240,7 @@ func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows 
 		// Iterate over all rules
 		for _, rule := range rules {
 			eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
-				batchID, utils.EventStatusIntent, rule.Service, rule.Function, &model.QueueEventRequest{
+				batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 					Type:    utils.EventCreate,
 					Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, Doc: doc, DocID: docID},
 				}))
@@ -263,7 +263,7 @@ func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, 
 			for i, rule := range rules {
 				// Create an event doc
 				eventDocs[i] = m.generateQueueEventRequest(token, rule.Retries,
-					batchID, utils.EventStatusIntent, rule.Service, rule.Function, &model.QueueEventRequest{
+					batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 						Type:    eventType,
 						Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, DocID: id},
 					})

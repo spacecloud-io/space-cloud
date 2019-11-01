@@ -16,7 +16,7 @@ type Module struct {
 
 	// Variable configuration
 	project string
-	config  *config.Functions
+	config  *config.ServicesModule
 }
 
 // Init returns a new instance of the Functions module
@@ -24,10 +24,14 @@ func Init(manager *syncman.Manager) *Module {
 	return &Module{manager: manager}
 }
 
-// Set config sets the configuration of the functions module
-func (m *Module) SetConfig(project string, c *config.Functions) {
+// SetConfig sets the configuration of the functions module
+func (m *Module) SetConfig(project string, c *config.ServicesModule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
+	if c == nil {
+		return
+	}
 
 	m.project = project
 	m.config = c

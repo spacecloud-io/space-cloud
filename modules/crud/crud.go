@@ -16,9 +16,10 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	blocks    map[string]Crud
-	primaryDB string
-	project   string
+	blocks             map[string]Crud
+	primaryDB          string
+	project            string
+	removeProjectScope bool
 
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
@@ -41,11 +42,12 @@ type Crud interface {
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
+	GetConnectionState(ctx context.Context, dbType string) bool
 }
 
 // Init create a new instance of the Module object
-func Init() *Module {
-	return &Module{blocks: make(map[string]Crud)}
+func Init(removeProjectScope bool) *Module {
+	return &Module{blocks: make(map[string]Crud), removeProjectScope: removeProjectScope}
 }
 
 // SetHooks sets the internal hooks
@@ -54,13 +56,13 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 	m.metricHook = metricHook
 }
 
-func initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
+func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
 	switch dbType {
 	case utils.Mongo:
 		return mgo.Init(enabled, connection)
 
 	case utils.MySQL, utils.Postgres, utils.SqlServer:
-		return sql.Init(dbType, enabled, connection)
+		return sql.Init(dbType, enabled, m.removeProjectScope, connection)
 	default:
 		return nil, utils.ErrInvalidParams
 	}
@@ -89,7 +91,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 	// Create a new crud blocks
 	for k, v := range crud {
-		c, err := initBlock(utils.DBType(k), v.Enabled, v.Conn)
+		c, err := m.initBlock(utils.DBType(k), v.Enabled, v.Conn)
 		m.blocks[k] = c
 
 		if err != nil {

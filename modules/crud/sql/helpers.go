@@ -87,6 +87,14 @@ func generateRecord(temp interface{}) (goqu.Record, error) {
 	return record, nil
 }
 
+func (s *SQL) getDBName(project, col string) string {
+	if s.removeProjectScope {
+		return col
+	}
+
+	return project + "." + col
+}
+
 func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[string]interface{}) {
 	for _, colType := range types {
 		typeName := colType.DatabaseTypeName()

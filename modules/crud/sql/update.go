@@ -138,7 +138,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest, op string) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(project + "." + col)
+	query := dialect.From(s.getDBName(project, col))
 	if op == "$set" {
 		query = query.Prepared(true)
 	}
