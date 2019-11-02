@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -52,7 +52,7 @@ func (m *Module) createCrudDocuments(project string, dbMetrics *sync.Map, t *tim
 
 func (m *Module) createCrudDocument(project, dbType, col string, op utils.OperationType, count uint64, t *time.Time) interface{} {
 	return map[string]interface{}{
-		"id":         uuid.NewV1().String(),
+		"id":         ksuid.New().String(),
 		"project_id": project,
 		"module":     "db",
 		"type":       op,
@@ -66,7 +66,7 @@ func (m *Module) createCrudDocument(project, dbType, col string, op utils.Operat
 
 func (m *Module) createFileDocument(project string, storeType utils.FileStoreType, op utils.FileOpType, count uint64, t time.Time) interface{} {
 	return map[string]interface{}{
-		"id":         uuid.NewV1().String(),
+		"id":         ksuid.New().String(),
 		"project_id": project,
 		"module":     "file",
 		"type":       op,
@@ -94,7 +94,7 @@ func (m *Module) createBWDocuments(project string, bw *bwMetrics, t *time.Time) 
 
 func (m *Module) createBWDocument(project, op string, count uint64, t *time.Time) interface{} {
 	return map[string]interface{}{
-		"id":         uuid.NewV1().String(),
+		"id":         ksuid.New().String(),
 		"project_id": project,
 		"module":     "bw",
 		"type":       op,

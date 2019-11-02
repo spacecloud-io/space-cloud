@@ -160,12 +160,19 @@ func addNewTable(project, dbType, realColName string, realColValue schemaField, 
 		if err != nil {
 			return "", nil
 		}
+
+		query += realFieldKey + " " + sqlType
+
 		if realFieldStruct.Directive == directivePrimary {
 			primaryKey := "PRIMARY KEY"
-			query += realFieldKey + " " + sqlType + " " + primaryKey + " NOT NULL,"
-			continue
+			query += " " + primaryKey
 		}
-		query += realFieldKey + " " + sqlType + " ,"
+
+		if realFieldStruct.IsFieldTypeRequired {
+			query += " NOT NULL"
+		}
+
+		query += " ,"
 	}
 
 	return `CREATE TABLE ` + getTableName(project, realColName, removeProjectScope) + ` (` + query[0:len(query)-1] + `);`, nil

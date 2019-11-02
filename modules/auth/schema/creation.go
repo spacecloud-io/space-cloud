@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type creationModule struct {
@@ -16,6 +17,12 @@ type creationModule struct {
 
 // SchemaCreation creates or alters tables of sql
 func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string, parsedSchema schemaType) error {
+
+	// Return gracefully if db type is mongo
+	if dbType == string(utils.Mongo) {
+		return nil
+	}
+
 	// Return if no tables are present in schema
 	if len(parsedSchema[dbType]) == 0 {
 		return nil

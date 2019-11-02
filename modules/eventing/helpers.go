@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/fatih/structs"
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -42,7 +42,7 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest) error {
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := uuid.NewV1().String()
+	batchID := ksuid.New().String()
 
 	// Create an eventDocs array
 	var eventDocs []*model.EventDocument
@@ -89,7 +89,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, 
 	}
 
 	return &model.EventDocument{
-		ID:             uuid.NewV1().String(),
+		ID:             ksuid.New().String(),
 		BatchID:        batchID,
 		Type:           event.Type,
 		Token:          token,
