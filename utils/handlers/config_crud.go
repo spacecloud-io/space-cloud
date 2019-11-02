@@ -3,16 +3,17 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
-	"log"
-	"net/http"
-	"strings"
-	"time"
 )
 
 // HandleGetCollections is an endpoint handler which return all the collection(table) names for specified data base
@@ -199,8 +200,7 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-		log.Println("handler", dbType, col, project, v.Schema)
-		if _, err := schemaArg.SchemaCreation(ctx, dbType, col, project, v.Schema, ""); err != nil {
+		if err := schemaArg.SchemaModifyAll(ctx, dbType, project, map[string]*config.TableRule{col: &v}); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -322,7 +322,7 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 			return
 		}
 
-		w.WriteHeader(statusCode) //http status codee
+		w.WriteHeader(http.StatusOK) //http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 	}

@@ -10,7 +10,7 @@ import (
 // AddEgress add the bytes to the egress counter of that project
 func (m *Module) AddEgress(project string, bytes uint64) {
 	m.lock.RLock()
-	defer m.lock.Unlock()
+	defer m.lock.RUnlock()
 
 	// Return if the metrics module or bandwidth measurement is disabled
 	if !m.config.IsEnabled || m.config.DisableBandwidth {
@@ -26,7 +26,7 @@ func (m *Module) AddEgress(project string, bytes uint64) {
 // AddIngress add the bytes to the ingress counter of that project
 func (m *Module) AddIngress(project string, bytes uint64) {
 	m.lock.RLock()
-	defer m.lock.Unlock()
+	defer m.lock.RUnlock()
 
 	// Return if the metrics module or bandwidth measurement is disabled
 	if !m.config.IsEnabled || m.config.DisableBandwidth {
@@ -41,7 +41,7 @@ func (m *Module) AddIngress(project string, bytes uint64) {
 
 func (m *Module) AddDBOperation(project, dbType, col string, count int64, op utils.OperationType) {
 	m.lock.RLock()
-	defer m.lock.Unlock()
+	defer m.lock.RUnlock()
 
 	// Return if the metrics module is disabled
 	if !m.config.IsEnabled {
@@ -90,7 +90,7 @@ func (m *Module) LoadMetrics() []interface{} {
 		metrics := value.(*metrics)
 
 		metricDocs = append(metricDocs, m.createBWDocuments(project, &metrics.bw, &t)...)
-		metricDocs = append(metricDocs, m.createCrudDocuments(project, metrics.crud, &t)...)
+		metricDocs = append(metricDocs, m.createCrudDocuments(project, &metrics.crud, &t)...)
 
 		// Delete the project
 		m.projects.Delete(key)

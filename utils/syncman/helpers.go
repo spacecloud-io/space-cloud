@@ -5,6 +5,7 @@ import (
 	"math"
 	"sort"
 
+	"github.com/getlantern/deepcopy"
 	"github.com/hashicorp/consul/api"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -91,7 +92,9 @@ func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {
 		if projectID == p.ID {
-			return p, nil
+			proj := new(config.Project)
+			deepcopy.Copy(proj, p)
+			return proj, nil
 		}
 	}
 

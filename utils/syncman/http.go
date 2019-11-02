@@ -23,6 +23,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token string
 
 	// Add token header
 	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Content-Type", "application/json")
 
 	// Create a http client and fire the request
 	client := &http.Client{}

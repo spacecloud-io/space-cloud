@@ -237,6 +237,11 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 	m.RLock()
 	defer m.RUnlock()
 
+	// Skip if project scope is disabled
+	if m.removeProjectScope {
+		return nil
+	}
+
 	var sql string
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
