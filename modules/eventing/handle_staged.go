@@ -82,8 +82,8 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
 	eventDoc.Payload = doc
 
-	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0.rc1", Type: eventDoc.Type,
-		Source: m.syncMan.GetEventSource(), Id: eventDoc.ID, Time: eventDoc.Timestamp, Data: eventDoc.Payload}
+	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: eventDoc.Type, Source: m.syncMan.GetEventSource(), Id: eventDoc.ID,
+		Time: time.Unix(0, eventDoc.Timestamp*int64(time.Millisecond)).Format(time.RFC3339), Data: eventDoc.Payload}
 
 	for {
 		token, err := m.auth.GetInternalAccessToken()

@@ -86,7 +86,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 		Stage:  e.HandleStage,
 	}, m.AddDBOperation)
 
-	rt, err := realtime.Init(nodeID, e, a, c, syncMan)
+	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
 	if err != nil {
 		return nil, err
 	}

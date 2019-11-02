@@ -14,7 +14,7 @@ func newMetrics() *metrics {
 	return &metrics{bw: bwMetrics{}}
 }
 
-func (m *Module) createCrudDocuments(project string, dbMetrics sync.Map, t *time.Time) []interface{} {
+func (m *Module) createCrudDocuments(project string, dbMetrics *sync.Map, t *time.Time) []interface{} {
 	docs := make([]interface{}, 0)
 
 	dbMetrics.Range(func(key, value interface{}) bool {

@@ -207,13 +207,13 @@ const MaxEventTokens int = 100
 
 const (
 	// EventCreate is fired for create request
-	EventCreate string = "create-crud"
+	EventCreate string = "DB_INSERT"
 
 	// EventUpdate is fired for update request
-	EventUpdate string = "update-crud"
+	EventUpdate string = "DB_UPDATE"
 
 	// EventDelete is fired for delete request
-	EventDelete string = "delete-crud"
+	EventDelete string = "DB_DELETE"
 )
 
 const (

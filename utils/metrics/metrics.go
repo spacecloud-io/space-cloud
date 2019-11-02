@@ -14,7 +14,7 @@ type Module struct {
 	projects sync.Map // key -> project; value -> *metrics
 
 	// Variables to store the configuration
-	config *Config
+	config Config
 
 	// Variables to interact with the sink
 	sink *crud.Module
@@ -22,11 +22,11 @@ type Module struct {
 
 // The configuration required by the metrics module
 type Config struct {
-	IsEnabled bool
+	IsEnabled        bool
 	DisableBandwidth bool
-	SinkType  string
-	SinkConn  string
-	Scope     string
+	SinkType         string
+	SinkConn         string
+	Scope            string
 }
 
 func New(nodeID string, config *Config) (*Module, error) {
@@ -43,7 +43,7 @@ func New(nodeID string, config *Config) (*Module, error) {
 	}
 
 	// Create a new metrics module
-	m := &Module{nodeID: nodeID, sink: c, config: config}
+	m := &Module{nodeID: nodeID, sink: c, config: *config}
 
 	// Start routine to flush metrics to the sink
 	go m.routineFlushMetricsToSink()

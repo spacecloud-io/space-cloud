@@ -7,6 +7,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/doug-martin/goqu/v8 v8.1.0
 	github.com/fatih/structs v1.1.0
+	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/google/go-cmp v0.3.0

@@ -24,7 +24,7 @@ type CloudEventPayload struct {
 	Type        string      `json:"type"`
 	Source      string      `json:"source"`
 	Id          string      `json:"id"`
-	Time        int64       `json:"time"`
+	Time        string      `json:"time"`
 	Data        interface{} `json:"data"`
 }
 

@@ -3,6 +3,7 @@ package syncman
 import (
 	"context"
 	"errors"
+
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 )
@@ -36,6 +37,7 @@ func (s *Manager) SetDatabaseConnection(project, dbType string, connection strin
 	if err != nil {
 		return err
 	}
+
 	// update database config
 	coll, ok := projectConfig.Modules.Crud[dbType]
 	if !ok {
@@ -114,6 +116,9 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 	}
 	colResult := map[string]interface{}{}
 	for colName, colValue := range collectionConfig.Collections {
+		if colName == "default" {
+			continue
+		}
 		result, err := schemaArg.SchemaInspection(ctx, dbType, project, colName)
 		if err != nil {
 			return nil, err
@@ -162,7 +167,7 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string
 		return errors.New("specified database not present in config")
 	}
 
-	if err := schemaArg.SchemaCreationWithObject(ctx, dbType, project, v.Collections); err != nil {
+	if err := schemaArg.SchemaModifyAll(ctx, dbType, project, v.Collections); err != nil {
 		return err
 	}
 
