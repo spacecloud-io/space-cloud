@@ -3,7 +3,7 @@ package eventing
 import (
 	"context"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -47,7 +47,7 @@ func (m *Module) AddInternalRules(eventingRules []config.EventingRule) {
 		}
 
 		if !isPresent {
-			key := uuid.NewV1().String()
+			key := ksuid.New().String()
 			m.config.InternalRules[key] = incomingRule
 		}
 	}

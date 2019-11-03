@@ -1,227 +1,214 @@
 package syncman
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"hash/fnv"
-	"math"
+	"fmt"
 	"net/http"
-	"sort"
-	"strings"
+	"time"
 
-	"github.com/hashicorp/serf/serf"
+	"github.com/hashicorp/consul/api"
+	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// SetGlobalConfig sets the global config. This must be called before the Start command.
-func (s *SyncManager) SetGlobalConfig(c *config.Config) {
-	s.lock.Lock()
-	s.projectConfig = c
-	s.lock.Unlock()
+// GetEventSource returns the source id for the space cloud instance
+func (s *Manager) GetEventSource() string {
+	return fmt.Sprintf("sc-%s", s.nodeID)
 }
 
-// GetGlobalConfig gets the global config
-func (s *SyncManager) GetGlobalConfig() *config.Config {
+// GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
+func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	return s.projectConfig
+
+	if !s.isConsulEnabled {
+		return fmt.Sprintf("http://localhost:4122/v1/api/%s/eventing/process", project), nil
+	}
+
+	opts := &api.QueryOptions{AllowStale: true}
+	opts = opts.WithContext(ctx)
+
+	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
+
+	return fmt.Sprintf("http://%s:%d/v1/api/%s/eventing/process", s.services[index].Node.Address, s.services[index].Service.Port, project), nil
 }
 
-func makeRequest(method, token, url string, data *bytes.Buffer) error {
+// GetSpaceCloudNodeURLs returns the array of space cloud urls
+func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 
-	// Create the http request
-	req, err := http.NewRequest(method, url, data)
-	if err != nil {
-		return err
+	if !s.isConsulEnabled {
+		return []string{fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/process", project)}
 	}
 
-	// Add token header
-	req.Header.Add("Authorization", "Bearer "+token)
+	urls := make([]string, len(s.services))
 
-	// Create a http client and fire the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	m := map[string]interface{}{}
-	if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
-		return err
+	for i, addr := range s.services {
+		urls[i] = fmt.Sprintf("http://%s:%d/v1/api/%s/realtime/process", addr.Node.Address, addr.Service.Port, project)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.New(m["error"].(string))
-	}
-
-	return nil
+	return urls
 }
 
-// SetStaticConfig applies the set project config command to the raft log
-func (s *SyncManager) SetStaticConfig(token string, static *config.Static) error {
+// GetAssignedTokens returns the array or tokens assigned to this node
+func (s *Manager) GetAssignedTokens() (start, end int) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Always return true if running in single mode
+	if !s.isConsulEnabled {
+		return calcTokens(1, utils.MaxEventTokens, 0)
+	}
+
+	index := 0
+
+	for i, v := range s.services {
+		if v.Service.ID == s.nodeID || (s.nodeID == v.Node.ID && s.port == v.Service.Port) {
+			index = i
+			break
+		}
+	}
+
+	totalMembers := len(s.services)
+	return calcTokens(totalMembers, utils.MaxEventTokens, index)
+}
+
+// GetClusterSize returns the size of the cluster
+func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Return 1 if not running with consul
+	if !s.isConsulEnabled {
+		return 1, nil
+	}
+
+	return len(s.services), nil
+}
+
+func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if s.raft.VerifyLeader().Error() != nil {
-		// Marshal json into byte array
-		data, _ := json.Marshal(static)
-
-		// Get the raft leader addr
-		addr := strings.Split(string(s.raft.Leader()), ":")[0]
-
-		// Make the http request
-		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/static", bytes.NewBuffer(data))
+	if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), project); !ok {
+		return errors.New("Cannot create new project. Upgrade your plan"), http.StatusBadRequest
 	}
 
-	// Create a raft command
-	c := &model.RaftCommand{Kind: utils.RaftCommandSetStatic, Static: static}
-	data, _ := json.Marshal(c)
+	for _, p := range s.projectConfig.Projects {
+		if p.ID == project.ID {
+			return errors.New("project already exists in config"), http.StatusConflict
+		}
+	}
 
-	// Apply the command to the raft log
-	return s.raft.Apply(data, 0).Error()
+	s.projects.Store(project)
+
+	if !s.isConsulEnabled {
+		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	data, _ := json.Marshal(project)
+
+	_, err := s.consulClient.KV().Put(&api.KVPair{
+		Key:   fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID),
+		Value: data,
+	}, opts)
+	return err, http.StatusInternalServerError
 }
 
-// AddInternalRoutes adds the provided routes to the internal routes
-func (s *SyncManager) AddInternalRoutes(token string, static *config.Static) error {
+// SetProjectGlobalConfig applies the set project config command to the raft log
+func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if s.raft.VerifyLeader().Error() != nil {
-		// Marshal json into byte array
-		data, _ := json.Marshal(static)
-
-		// Get the raft leader addr
-		addr := strings.Split(string(s.raft.Leader()), ":")[0]
-
-		// Make the http request
-		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/static/internal", bytes.NewBuffer(data))
-	}
-
-	// Create a raft command
-	c := &model.RaftCommand{Kind: utils.RaftCommandAddInternalRouteOperation, Static: static}
-	data, _ := json.Marshal(c)
-
-	// Apply the command to the raft log
-	return s.raft.Apply(data, 0).Error()
-}
-
-// SetOperationModeConfig applies the operation config to the raft log
-func (s *SyncManager) SetOperationModeConfig(token string, op *config.OperationConfig) error {
-	// Acquire a lock to make sure only a single operation occurs at any given point of time
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	if s.raft.VerifyLeader().Error() != nil {
-		// Marshal json into byte array
-		data, _ := json.Marshal(op)
-
-		// Get the raft leader addr
-		addr := strings.Split(string(s.raft.Leader()), ":")[0]
-
-		// Make the http request
-		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/operation", bytes.NewBuffer(data))
-	}
-
-	// Create a raft command
-	c := &model.RaftCommand{Kind: utils.RaftCommandSetOperation, Operation: op}
-	data, _ := json.Marshal(c)
-
-	// Apply the command to the raft log
-	return s.raft.Apply(data, 0).Error()
-}
-
-// SetProjectConfig applies the config to the raft log
-func (s *SyncManager) SetProjectConfig(token string, project *config.Project) error {
-	// Acquire a lock to make sure only a single operation occurs at any given point of time
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	if s.raft.VerifyLeader().Error() != nil {
-		// Marshal json into byte array
-		data, _ := json.Marshal(project)
-
-		// Get the raft leader addr
-		addr := strings.Split(string(s.raft.Leader()), ":")[0]
-
-		// Make the http request
-		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/projects", bytes.NewBuffer(data))
-	}
-
-	// Validate the operation
-	if !s.adminMan.ValidateSyncOperation(s.projectConfig, project) {
-		return errors.New("please upgrade your instance")
-	}
-
-	// Create a raft command
-	c := &model.RaftCommand{Kind: utils.RaftCommandSet, Project: project, ID: project.ID}
-	data, err := json.Marshal(c)
+	projectConfig, err := s.getConfigWithoutLock(project.ID)
 	if err != nil {
 		return err
 	}
 
-	// Apply the command to the raft log
-	return s.raft.Apply(data, 0).Error()
+	projectConfig.Secret = project.Secret
+	projectConfig.Name = project.Name
+
+	return s.setProject(projectConfig)
 }
 
-// SetDeployConfig applies the config to the raft log
-func (s *SyncManager) SetDeployConfig(token string, deploy *config.Deploy) error {
-	// Acquire a lock to make sure only a single operation occurs at any given point of time
+// SetProjectConfig applies the set project config command to the raft log
+func (s *Manager) SetProjectConfig(project *config.Project) error {
+	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if s.raft.VerifyLeader().Error() != nil {
-		// Marshal json into byte array
-		data, _ := json.Marshal(deploy)
-
-		// Get the raft leader addr
-		addr := strings.Split(string(s.raft.Leader()), ":")[0]
-
-		// Make the http request
-		return makeRequest("POST", token, "http://"+string(addr)+":4122/v1/api/config/deploy", bytes.NewBuffer(data))
+	if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), project); !ok {
+		return errors.New("Cannot create new project. Upgrade your plan")
 	}
 
-	// Create a raft command
-	c := &model.RaftCommand{Kind: utils.RaftCommandSetDeploy, Deploy: deploy}
-	data, _ := json.Marshal(c)
-
-	// Apply the command to the raft log
-	return s.raft.Apply(data, 0).Error()
+	return s.setProject(project)
 }
 
-// DeleteConfig applies the config to the raft log
-func (s *SyncManager) DeleteConfig(token, projectID string) error {
-	// Acquire a lock to make sure only a single operation occurs at any given point of time
+func (s *Manager) setProject(project *config.Project) error {
+	if err := s.projects.Store(project); err != nil {
+		return err
+	}
+
+	s.setProjectConfig(project)
+
+	if !s.isConsulEnabled {
+		return config.StoreConfigToFile(s.projectConfig, s.configFile)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	data, _ := json.Marshal(project)
+
+	_, err := s.consulClient.KV().Put(&api.KVPair{
+		Key:   fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID),
+		Value: data,
+	}, opts)
+	return err
+}
+
+// DeleteProjectConfig applies delete project config command to the raft log
+func (s *Manager) DeleteProjectConfig(projectID string) error {
+	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if s.raft.VerifyLeader().Error() != nil {
+	if !s.isConsulEnabled {
+		s.delete(projectID)
+		s.projects.Delete(projectID)
 
-		// Get the raft leader addr
-		addr := strings.Split(string(s.raft.Leader()), ":")[0]
-
-		// Make the http request
-		return makeRequest("DELETE", token, "http://"+string(addr)+":4122/v1/api/config/"+projectID, nil)
+		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	// Create a raft command
-	c := &model.RaftCommand{Kind: utils.RaftCommandDelete, ID: projectID}
-	data, _ := json.Marshal(c)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	// Apply the command to the raft log
-	return s.raft.Apply(data, 0).Error()
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	_, err := s.consulClient.KV().Delete(fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID), opts)
+	return err
 }
 
 // GetConfig returns the config present in the state
-func (s *SyncManager) GetConfig(projectID string) (*config.Project, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+func (s *Manager) GetConfig(projectID string) (*config.Project, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {
@@ -230,71 +217,5 @@ func (s *SyncManager) GetConfig(projectID string) (*config.Project, error) {
 		}
 	}
 
-	return nil, errors.New("Given project is not present in state")
-}
-
-func hash(value string) uint64 {
-	h := fnv.New64a()
-	h.Write([]byte(value))
-	return h.Sum64()
-}
-
-type memRange []uint64
-
-func (a memRange) Len() int           { return len(a) }
-func (a memRange) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a memRange) Less(i, j int) bool { return a[i] < a[j] }
-
-// GetAssignedTokens returns the array or tokens assigned to this node
-func (s *SyncManager) GetAssignedTokens() (start int, end int) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	myHash := hash(s.list.LocalMember().Name)
-	index := 0
-
-	members := memRange{}
-	for _, m := range s.list.Members() {
-		if m.Status == serf.StatusAlive {
-			members = append(members, hash(m.Name))
-		}
-	}
-	sort.Stable(members)
-
-	for i, v := range members {
-		if v == myHash {
-			index = i
-			break
-		}
-	}
-
-	totalMembers := len(members)
-	return calcTokens(totalMembers, utils.MaxEventTokens, index)
-}
-
-// GetClusterSize returns the size of the cluster
-func (s *SyncManager) GetClusterSize() int {
-	return s.list.NumNodes()
-}
-
-// GetAliveNodeCount returns the number of alive nodes in the cluster
-func (s *SyncManager) GetAliveNodeCount() int {
-	count := 0
-	for _, member := range s.list.Members() {
-		if member.Status == serf.StatusAlive {
-			count++
-		}
-	}
-
-	return count
-}
-
-func calcTokens(n int, tokens int, i int) (start int, end int) {
-	tokensPerMember := int(math.Ceil(float64(tokens) / float64(n)))
-	start = tokensPerMember * i
-	end = start + tokensPerMember - 1
-	if end > tokens {
-		end = tokens - 1
-	}
-	return
+	return nil, errors.New("given project is not present in state")
 }

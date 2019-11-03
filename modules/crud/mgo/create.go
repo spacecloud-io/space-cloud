@@ -8,7 +8,7 @@ import (
 )
 
 // Create inserts a document (or multiple when op is "all") into the database
-func (m *Mongo) Create(ctx context.Context, project, col string, req *model.CreateRequest) error {
+func (m *Mongo) Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error) {
 	// Create a collection object
 	collection := m.client.Database(project).Collection(col)
 
@@ -17,24 +17,26 @@ func (m *Mongo) Create(ctx context.Context, project, col string, req *model.Crea
 		// Insert single document
 		_, err := collection.InsertOne(ctx, req.Document)
 		if err != nil {
-			return err
+			return 0, err
 		}
+
+		return 1, nil
 
 	case utils.All:
 		// Insert multiple documents
 		objs, ok := req.Document.([]interface{})
 		if !ok {
-			return utils.ErrInvalidParams
+			return 0, utils.ErrInvalidParams
 		}
 
-		_, err := collection.InsertMany(ctx, objs)
+		res, err := collection.InsertMany(ctx, objs)
 		if err != nil {
-			return err
+			return 0, err
 		}
+
+		return int64(len(res.InsertedIDs)), nil
 
 	default:
-		return utils.ErrInvalidParams
+		return 0, utils.ErrInvalidParams
 	}
-
-	return nil
 }

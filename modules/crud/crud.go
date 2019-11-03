@@ -16,9 +16,11 @@ type Module struct {
 	sync.RWMutex
 	blocks    map[string]*stub
 	primaryDB string
+	project   string
 
 	// Variables to store the hooks
-	hooks *model.CrudHooks
+	hooks      *model.CrudHooks
+	metricHook model.MetricCrudHook
 
 	// Drivers handler
 	h *driver.Handler
@@ -30,9 +32,11 @@ func Init(h *driver.Handler) *Module {
 }
 
 // SetConfig set the rules adn secret key required by the crud block
-func (m *Module) SetConfig(crud config.Crud) error {
+func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
+
+	m.project = project
 
 	// Close the previous database connections
 	for _, v := range m.blocks {
@@ -49,6 +53,7 @@ func (m *Module) SetConfig(crud config.Crud) error {
 
 		if err != nil {
 			log.Println("Error connecting to " + dbType + " : " + err.Error())
+			return err
 		} else {
 			log.Println("Successfully connected to " + dbType)
 		}
@@ -57,8 +62,9 @@ func (m *Module) SetConfig(crud config.Crud) error {
 }
 
 // SetHooks sets the internal hooks
-func (m *Module) SetHooks(hooks *model.CrudHooks) {
+func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHook) {
 	m.hooks = hooks
+	m.metricHook = metricHook
 }
 
 type stub struct {

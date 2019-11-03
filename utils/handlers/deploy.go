@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/modules/deploy"
+	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 )
 
@@ -13,7 +14,7 @@ func HandleUploadAndDeploy(adminMan *admin.Manager, deploy *deploy.Module) http.
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
-		token := getToken(r)
+		token := utils.GetTokenFromHeader(r)
 
 		// Check if the request is authorised
 		status, err := adminMan.IsAdminOpAuthorised(token, "deploy")

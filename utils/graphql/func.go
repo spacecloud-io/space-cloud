@@ -9,7 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execFuncCall(field *ast.Field, store utils.M, cb callback) {
+func (graph *Module) execFuncCall(token string, field *ast.Field, store utils.M, cb callback) {
 	serviceName, err := GetDBType(field)
 	if err != nil {
 		cb(nil, err)
@@ -34,14 +34,13 @@ func (graph *Module) execFuncCall(field *ast.Field, store utils.M, cb callback) 
 		return
 	}
 
-	claims, err := graph.auth.IsFuncCallAuthorised(graph.project, serviceName, funcName, "", params)
-	if err != nil {
+	if _, err := graph.auth.IsFuncCallAuthorised(graph.project, serviceName, funcName, token, params); err != nil {
 		cb(nil, err)
 		return
 	}
 
 	go func() {
-		result, err := graph.functions.Call(serviceName, funcName, claims, params, timeout)
+		result, err := graph.functions.Call(serviceName, funcName, token, params, timeout)
 		cb(result, err)
 		return
 	}()

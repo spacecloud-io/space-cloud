@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 
+	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 )
 
@@ -34,11 +34,7 @@ func HandleProfile(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := utils.GetTokenFromHeader(r)
 
 		status, result, err := state.UserManagement.Profile(ctx, token, dbType, project, id)
 
@@ -72,11 +68,7 @@ func HandleProfiles(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := utils.GetTokenFromHeader(r)
 
 		status, result, err := state.UserManagement.Profiles(ctx, token, dbType, project)
 		if err != nil {
@@ -181,11 +173,7 @@ func HandleEmailEditProfile(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := utils.GetTokenFromHeader(r)
 
 		// Load the request from the body
 		req := map[string]interface{}{}

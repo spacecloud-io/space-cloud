@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -26,13 +27,19 @@ func appendIfMissing(slice []string, s string) []string {
 }
 
 func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) {
+	// Get the cluster size
+	clusterSize, err := s.syncMan.GetClusterSize(context.Background())
+	if err != nil {
+		clusterSize = 1
+	}
+
 	// Create the find and update clauses
 	find = map[string]interface{}{"_id": s.nodeID}
 	set := map[string]interface{}{
 		"os":           runtime.GOOS,
 		"isProd":       s.adminMan.LoadEnv(),
 		"version":      utils.BuildVersion,
-		"clusterSize":  s.syncMan.GetClusterSize(),
+		"clusterSize":  clusterSize,
 		"distribution": "ee",
 		"lastUpdated":  currentTimeInMillis(),
 	}
@@ -127,13 +134,13 @@ func getProjectInfo(projects []*config.Project, static *config.Static) map[strin
 				}
 			}
 
-			if config.Functions != nil {
+			if config.Services != nil {
 				functionsConfig["enabled"] = true
-				if config.Functions.Services != nil {
-					functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Services)
-					for _, v := range config.Functions.Services {
-						if v != nil && v.Functions != nil {
-							functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v.Functions)
+				if config.Services.Services != nil {
+					functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Services.Services)
+					for _, v := range config.Services.Services {
+						if v != nil && v.Endpoints != nil {
+							functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v.Endpoints)
 						}
 					}
 				}

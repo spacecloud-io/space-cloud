@@ -7,49 +7,56 @@ import (
 )
 
 // StoreProject stores the provided project config
-func (p *Projects) StoreProject(config *config.Project) error {
+func (p *Projects) StoreProject(project *config.Project) error {
 	// Get the project. Create if not exists
-	state, err := p.LoadProject(config.ID)
+	s, err := p.LoadProject(project.ID)
 	if err != nil {
 
 		// Create a new project
-		state, err = p.NewProject(config.ID)
+		s, err = p.NewProject(project.ID)
 		if err != nil {
 			return err
 		}
 	}
 
+	// Always set the config of the crud module first
 	// Set the configuration for the crud module
-	if err := state.Crud.SetConfig(config.Modules.Crud); err != nil {
-		log.Println("Crud module config error:", err)
+	if err := s.Crud.SetConfig(project.ID, project.Modules.Crud); err != nil {
+		log.Println("Error in crud module config: ", err)
+		return err
 	}
 
 	// Set the configuration for the auth module
-	if err := state.Auth.SetConfig(config.ID, config.Secret, config.Modules.Crud,
-		config.Modules.FileStore, config.Modules.Functions, config.Modules.Pubsub); err != nil {
-		log.Println("Auth module config error:", err)
+	if err := s.Auth.SetConfig(project.ID, project.Secret, project.Modules.Crud, project.Modules.FileStore, project.Modules.Services); err != nil {
+		log.Println("Error in auth module config: ", err)
+		return err
 	}
 
-	if err := state.Pubsub.SetConfig(config.Modules.Pubsub); err != nil {
-		log.Println("Pubsub module config error:", err)
-	}
-
-	if err := state.Eventing.SetConfig(config.ID, &config.Modules.Eventing); err != nil {
-		log.Println("Eventing module config error:", err)
-	}
+	// Set the configuration for the functions module
+	s.Functions.SetConfig(project.ID, project.Modules.Services)
 
 	// Set the configuration for the user management module
-	state.UserManagement.SetConfig(config.Modules.Auth)
+	s.UserManagement.SetConfig(project.Modules.Auth)
 
 	// Set the configuration for the file storage module
-	if err := state.FileStore.SetConfig(config.Modules.FileStore); err != nil {
-		log.Println("File storage module config error:", err)
+	if err := s.FileStore.SetConfig(project.Modules.FileStore); err != nil {
+		log.Println("Error in files module config: ", err)
+		return err
 	}
 
-	// Set the configuration for the Realtime module
-	state.Realtime.SetConfig(config.ID, config.Modules.Crud)
+	if err := s.Eventing.SetConfig(project.ID, &project.Modules.Eventing); err != nil {
+		log.Println("Error in eventing module config: ", err)
+		return err
+	}
 
-	state.Graph.SetConfig(config.ID)
+	// Set the configuration for the realtime module
+	if err := s.Realtime.SetConfig(project.ID, project.Modules.Crud); err != nil {
+		log.Println("Error in realtime module config: ", err)
+		return err
+	}
+
+	// Set the configuration for the graphql module
+	s.Graph.SetConfig(project.ID)
 
 	return nil
 }

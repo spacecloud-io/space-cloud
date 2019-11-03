@@ -15,7 +15,7 @@ import (
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
 	"github.com/mitchellh/mapstructure"
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -49,10 +49,8 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 			return
 		}
 
-		// Unregister the service
+		// Unregister the client
 		defer state.Realtime.RemoveClient(c.ClientID())
-		defer state.Functions.UnregisterService(c.ClientID())
-		defer state.Pubsub.UnsubscribeAll(c.ClientID())
 
 		// Close the client to free up resources
 		defer c.Close()
@@ -99,85 +97,6 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
 				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
-			case utils.TypeServiceRegister:
-				// TODO add security rule for functions registered as well
-				data := new(model.ServiceRegisterRequest)
-				mapstructure.Decode(req.Data, data)
-				data.Project = project
-
-				state.Functions.RegisterService(clientID, data, func(payload *model.FunctionsPayload) {
-					c.Write(&model.Message{Type: utils.TypeServiceRequest, Data: payload})
-				})
-
-				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]interface{}{"ack": true}})
-
-			case utils.TypeServiceRequest:
-				data := new(model.FunctionsPayload)
-				mapstructure.Decode(req.Data, data)
-
-				state.Functions.HandleServiceResponse(data)
-
-			case utils.TypePubsubSubscribe:
-				// For pubsub subscribe event
-				data := new(model.PubsubSubscribeRequest)
-				mapstructure.Decode(req.Data, data)
-				data.Project = project
-
-				// Subscribe to pubsub feed
-				var status int
-				if data.Queue == "" {
-					status, err = state.Pubsub.Subscribe(data.Project, data.Token, clientID, data.Subject, func(msg *model.PubsubMsg) {
-						c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribeFeed, Data: msg})
-					})
-				} else {
-					status, err = state.Pubsub.QueueSubscribe(data.Project, data.Token, clientID, data.Subject, data.Queue, func(msg *model.PubsubMsg) {
-						c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribeFeed, Data: msg})
-					})
-				}
-				if err != nil {
-					res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
-					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
-					return true
-				}
-
-				// Send response to c
-				res := model.PubsubMsgResponse{Status: int32(status)}
-				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubSubscribe, Data: res})
-
-			case utils.TypePubsubUnsubscribe:
-				// For pubsub unsubscribe event
-				data := new(model.PubsubSubscribeRequest)
-				mapstructure.Decode(req.Data, data)
-				data.Project = project
-
-				// Send response to c
-				status, err := state.Pubsub.Unsubscribe(clientID, data.Subject)
-				if err != nil {
-					res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
-					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
-					return true
-				}
-
-				// Send response to c
-				res := model.PubsubMsgResponse{Status: int32(status)}
-				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribe, Data: res})
-			case utils.TypePubsubUnsubscribeAll:
-				// For pubsub unsubscribe event
-				data := new(model.PubsubSubscribeRequest)
-				mapstructure.Decode(req.Data, data)
-				data.Project = project
-
-				// Send response to c
-				status, err := state.Pubsub.UnsubscribeAll(clientID)
-				if err != nil {
-					res := model.PubsubMsgResponse{Status: int32(status), Error: err.Error()}
-					c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
-					return true
-				}
-
-				// Send response to c
-				res := model.PubsubMsgResponse{Status: int32(status)}
-				c.Write(&model.Message{ID: req.ID, Type: utils.TypePubsubUnsubscribeAll, Data: res})
 			}
 			return true
 		})
@@ -227,7 +146,7 @@ func (s *Server) handleGraphqlSocket() http.HandlerFunc {
 		}
 		defer socket.Close()
 
-		clientID := uuid.NewV1().String()
+		clientID := ksuid.New().String()
 		defer state.Realtime.RemoveClient(clientID)
 
 		ctx, cancel := context.WithCancel(context.Background())

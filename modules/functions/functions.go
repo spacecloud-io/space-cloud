@@ -3,55 +3,38 @@ package functions
 import (
 	"sync"
 
-	"github.com/nats-io/nats.go"
-
-	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
 // Module is responsible for functions
 type Module struct {
-	sync.RWMutex
-	nc              *nats.Conn
-	enabled         bool
-	services        sync.Map
-	channel         chan *nats.Msg
-	pendingRequests sync.Map
-}
+	lock sync.RWMutex
 
-// SendPayload is the function called whenever a data point (payload) is to be sent
-type SendPayload func(*model.FunctionsPayload)
+	// Dependencies
+	manager *syncman.Manager
+
+	// Variable configuration
+	project string
+	config  *config.ServicesModule
+}
 
 // Init returns a new instance of the Functions module
-func Init() (*Module, error) {
-	m := new(Module)
-	go m.removeStaleRequests()
+func Init(manager *syncman.Manager) *Module {
+	return &Module{manager: manager}
+}
 
-	// Create a nats client
-	nc, err := nats.Connect(nats.DefaultURL)
-	if err != nil {
-		return nil, err
+// SetConfig sets the configuration of the functions module
+func (m *Module) SetConfig(project string, c *config.ServicesModule) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if c == nil {
+		return
 	}
-	m.nc = nc
 
-	// Create new channel and start worker routines
-	m.channel = make(chan *nats.Msg, 10)
-	m.initWorkers(utils.FunctionsWorkerCount)
+	m.project = project
+	m.config = c
 
-	// Enable the module
-	m.enabled = true
-
-	return m, nil
-}
-
-// IsEnabled checks if the Functions module is enabled
-func (m *Module) IsEnabled() bool {
-	m.RLock()
-	defer m.RUnlock()
-
-	return m.enabled
-}
-
-func getSubjectName(service string) string {
-	return "functions:" + service
+	m.config.InternalServices = config.Services{}
 }

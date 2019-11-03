@@ -9,6 +9,7 @@ import (
 	goqu "github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
 
+	_ "github.com/denisenkom/go-mssqldb"                //Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
@@ -20,7 +21,7 @@ import (
 // generateReadQuery makes a query for read operation
 func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(project + "." + col).Prepared(true)
+	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object
@@ -96,21 +97,21 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 }
 
 // Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error) {
+func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error) {
 	sqlString, args, err := s.generateReadQuery(ctx, project, col, req)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 
 	stmt, err := s.client.PreparexContext(ctx, sqlString)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.QueryxContext(ctx, args...)
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 	defer rows.Close()
 
@@ -125,62 +126,68 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 	case utils.Count:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return nil, errors.New("SQL: No response from db")
+			return 0, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 
 		switch s.GetDBType() {
 		case utils.MySQL, utils.Postgres:
-			mysqlTypeCheck(rowTypes, mapping)
+			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 		}
 
 		for _, v := range mapping {
-			return v, nil
+			return v.(int64), v, nil
 		}
-		return nil, nil
+
+		return 0, nil, errors.New("unknown error occurred")
 
 	case utils.One:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {
-			return nil, errors.New("SQL: No response from db")
+			return 0, nil, errors.New("SQL: No response from db")
 		}
 
 		err := rows.MapScan(mapping)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 
 		switch s.GetDBType() {
 		case utils.MySQL, utils.Postgres:
-			mysqlTypeCheck(rowTypes, mapping)
+			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 		}
 
-		return mapping, nil
+		return 1, mapping, nil
 
 	case utils.All, utils.Distinct:
 		array := []interface{}{}
+		var count int64
 		for rows.Next() {
+
+			// Increment the counter
+			count++
+
 			mapping := make(map[string]interface{})
 			err := rows.MapScan(mapping)
 			if err != nil {
-				return nil, err
+				return 0, nil, err
 			}
 
 			switch s.GetDBType() {
 			case utils.MySQL, utils.Postgres:
-				mysqlTypeCheck(rowTypes, mapping)
+				mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 			}
 
 			array = append(array, mapping)
 		}
 
-		return array, nil
+		return count, array, nil
 
 	default:
-		return nil, utils.ErrInvalidParams
+		return 0, nil, utils.ErrInvalidParams
 	}
 }

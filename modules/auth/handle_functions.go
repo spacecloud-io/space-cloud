@@ -28,7 +28,7 @@ func (m *Module) IsFuncCallAuthorised(project, service, function, token string, 
 	}
 
 	if err = m.matchRule(project, rule, map[string]interface{}{
-		"args": map[string]interface{}{"auth": auth, "params": params},
+		"args": map[string]interface{}{"auth": auth, "params": params, "token": token},
 	}, auth); err != nil {
 		return nil, err
 	}
@@ -41,17 +41,13 @@ func (m *Module) getFunctionRule(service, function string) (*config.Rule, error)
 		return nil, ErrRuleNotFound
 	}
 
-	if serviceStub, p := m.funcRules[service]; p && serviceStub.Functions != nil {
-		if funcStub, p := serviceStub.Functions[function]; p && funcStub.Rule != nil {
+	if serviceStub, p := m.funcRules.InternalServices[service]; p && serviceStub.Endpoints != nil {
+		if funcStub, p := serviceStub.Endpoints[function]; p && funcStub.Rule != nil {
 			return funcStub.Rule, nil
-		} else if defaultFuncStub, p := serviceStub.Functions["default"]; p && defaultFuncStub.Rule != nil {
-			return defaultFuncStub.Rule, nil
 		}
-	} else if defaultServiceStub, p := m.funcRules["default"]; p && defaultServiceStub.Functions != nil {
-		if funcStub, p := defaultServiceStub.Functions[function]; p && funcStub.Rule != nil {
+	} else if defaultServiceStub, p := m.funcRules.Services[service]; p && defaultServiceStub.Endpoints != nil {
+		if funcStub, p := defaultServiceStub.Endpoints[function]; p && funcStub.Rule != nil {
 			return funcStub.Rule, nil
-		} else if defaultFuncStub, p := defaultServiceStub.Functions["default"]; p && defaultFuncStub.Rule != nil {
-			return defaultFuncStub.Rule, nil
 		}
 	}
 

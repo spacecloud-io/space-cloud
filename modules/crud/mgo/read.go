@@ -10,30 +10,32 @@ import (
 )
 
 // Read querys document(s) from the database
-func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error) {
+func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error) {
 	collection := m.client.Database(project).Collection(col)
 
-	var result interface{}
-	var err error
 	switch req.Operation {
 	case utils.Count:
 		countOptions := options.Count()
 
-		result, err = collection.CountDocuments(ctx, req.Find, countOptions)
+		count, err := collection.CountDocuments(ctx, req.Find, countOptions)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
+
+		return count, count, nil
 
 	case utils.Distinct:
 		distinct := req.Options.Distinct
 		if distinct == nil {
-			return nil, utils.ErrInvalidParams
+			return 0, nil, utils.ErrInvalidParams
 		}
 
-		result, err = collection.Distinct(ctx, *distinct, req.Find)
+		result, err := collection.Distinct(ctx, *distinct, req.Find)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
+
+		return int64(len(result)), result, nil
 
 	case utils.All:
 		findOptions := options.Find()
@@ -59,27 +61,32 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 		results := []interface{}{}
 		cur, err := collection.Find(ctx, req.Find, findOptions)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 		defer cur.Close(ctx)
 
+		var count int64
 		// Finding multiple documents returns a cursor
 		// Iterating through the cursor allows us to decode documents one at a time
 		for cur.Next(ctx) {
+			// Increment the counter
+			count++
+
+			// Read the document
 			var doc map[string]interface{}
 			err := cur.Decode(&doc)
 			if err != nil {
-				return nil, err
+				return 0, nil, err
 			}
 
 			results = append(results, doc)
 		}
 
 		if err := cur.Err(); err != nil {
-			return nil, err
+			return 0, nil, err
 		}
 
-		result = results
+		return count, results, nil
 
 	case utils.One:
 		findOneOptions := options.FindOne()
@@ -101,13 +108,12 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 		var res map[string]interface{}
 		err := collection.FindOne(ctx, req.Find, findOneOptions).Decode(&res)
 		if err != nil {
-			return nil, err
+			return 0, nil, err
 		}
-		result = res
+
+		return 1, res, nil
 
 	default:
-		return nil, utils.ErrInvalidParams
+		return 0, nil, utils.ErrInvalidParams
 	}
-
-	return result, nil
 }

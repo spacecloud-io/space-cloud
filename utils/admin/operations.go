@@ -30,12 +30,12 @@ func (m *Manager) IsTokenValid(token string) error {
 }
 
 // ValidateSyncOperation validates if an operation is permitted based on the mode
-func (m *Manager) ValidateSyncOperation(c *config.Config, project *config.Project) bool {
+func (m *Manager) ValidateSyncOperation(projects []string, project *config.Project) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	for _, p := range c.Projects {
-		if p.ID == project.ID {
+	for _, p := range projects {
+		if p == project.ID {
 			return true
 		}
 	}
@@ -47,7 +47,7 @@ func (m *Manager) ValidateSyncOperation(c *config.Config, project *config.Projec
 		maxProjects = 5
 	}
 
-	if len(c.Projects) < maxProjects {
+	if len(projects) < maxProjects {
 		return true
 	}
 
@@ -59,12 +59,6 @@ func (m *Manager) ValidateSyncOperation(c *config.Config, project *config.Projec
 func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-
-	if scope == utils.ScopeDeploy {
-		if m.admin.Operation.Mode < 1 {
-			return http.StatusForbidden, errors.New("Please upgrade your instance")
-		}
-	}
 
 	if !m.isProd {
 		return http.StatusOK, nil

@@ -4,11 +4,11 @@ import (
 	"errors"
 	"sync"
 
-	nats "github.com/nats-io/nats.go"
-
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -24,20 +24,23 @@ type Module struct {
 	processingEvents sync.Map
 
 	// Variables defined during initialisation
-	nc        *nats.Conn
+	auth      *auth.Module
 	crud      *crud.Module
 	functions *functions.Module
-	syncMan   *syncman.SyncManager
+	adminMan  *admin.Manager
+	syncMan   *syncman.Manager
 }
 
 // New creates a new instance of the eventing module
-func New(crud *crud.Module, functions *functions.Module, syncMan *syncman.SyncManager) *Module {
+func New(auth *auth.Module, crud *crud.Module, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager) *Module {
 
 	m := &Module{
+		auth:      auth,
 		crud:      crud,
 		functions: functions,
+		adminMan:  adminMan,
 		syncMan:   syncMan,
-		config:    &config.Eventing{Enabled: false},
+		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
 
 	// Start the internal processes
@@ -47,34 +50,15 @@ func New(crud *crud.Module, functions *functions.Module, syncMan *syncman.SyncMa
 	return m
 }
 
-const internalEventingSubject string = "core-eventing"
-
 // SetConfig sets the module config
 func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if m.nc == nil {
-		nc, err := nats.Connect(nats.DefaultURL)
-		if err != nil {
-			return err
-		}
-		m.nc = nc
-		channel := make(chan *nats.Msg, 10)
-
-		if _, err := m.nc.ChanSubscribe(internalEventingSubject, channel); err != nil {
-			return err
-		}
-
-		m.initEventWorkers(channel, 10)
-	}
-
-	if eventing == nil {
+	if eventing == nil || !eventing.Enabled {
 		m.config.Enabled = false
 		return nil
 	}
-
-	m.config.InternalRules = map[string]config.EventingRule{}
 
 	if eventing.DBType == "" || eventing.Col == "" {
 		return errors.New("invalid eventing config provided")

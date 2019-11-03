@@ -36,7 +36,7 @@ const (
 
 	directiveUnique    string = "unique"
 	directiveRelation  string = "relation"
-	directiveId        string = "id"
+	directivePrimary   string = "primary"
 	directiveCreatedAt string = "createdAt"
 	directiveUpdatedAt string = "updatedAt"
 )

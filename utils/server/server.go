@@ -2,76 +2,77 @@ package server
 
 import (
 	"fmt"
-	"log"
-	"net"
 	"net/http"
-	"strings"
+	"strconv"
 	"sync"
 
+	"github.com/spaceuptech/space-cloud/modules/crud/driver"
+	"github.com/spaceuptech/space-cloud/utils/handlers"
+
 	"github.com/gorilla/mux"
-	nats "github.com/nats-io/nats-server/v2/server"
-	"github.com/rs/cors"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/modules/crud/driver"
-	"github.com/spaceuptech/space-cloud/modules/static"
-	"github.com/spaceuptech/space-cloud/proto"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
+	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/projects"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
-// Server is the main server object
+// Server is the object which sets up the server and handles all server operations
 type Server struct {
+	lock sync.RWMutex
+
 	nodeID         string
-	lock           sync.RWMutex
-	router         *mux.Router
-	routerSecure   *mux.Router
-	nats           *nats.Server
-	projects       *projects.Projects
-	ssl            *config.SSL
 	configFilePath string
-	syncMan        *syncman.SyncManager
-	adminMan       *admin.Manager
-	static         *static.Module
+
+	router       *mux.Router
+	routerSecure *mux.Router
+
+	adminMan *admin.Manager
+	syncMan  *syncman.Manager
+	metrics  *metrics.Module
+
+	projects *projects.Projects
+	ssl      *config.SSL
 }
 
 // New creates a new server instance
-func New(nodeID string) (*Server, error) {
+func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
-	s := static.Init()
+
+	m, err := metrics.New(nodeID, metricsConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	adminMan := admin.New(nodeID)
-	syncMan := syncman.New(adminMan, s)
+	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled, adminMan)
+	if err != nil {
+		return nil, err
+	}
 
-	projects := projects.New(nodeID, driver.New(), adminMan, syncMan)
-
+	p := projects.New(nodeID, removeProjectScope, driver.New(removeProjectScope), adminMan, syncMan, m)
 	syncMan.SetProjectCallbacks(&model.ProjectCallbacks{
-		Store:  projects.StoreProject,
-		Delete: projects.DeleteProject,
+		Store:      p.StoreProject,
+		Delete:     p.DeleteProject,
+		ProjectIDs: p.GetProjectIDs,
 	})
 
-	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: projects,
+	fmt.Println("Creating a new server with id", nodeID)
+
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, projects: p,
 		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
-		static: s,
 	}, nil
 }
 
 // Start begins the server operations
-func (s *Server) Start(seeds string, disableMetrics bool) error {
-	// Start gRPC server in a separate goroutine
-	go s.initGRPCServer()
+func (s *Server) Start(disableMetrics bool, port int) error {
 
 	// Start the sync manager
-	if seeds == "" {
-		seeds = "127.0.0.1"
-	}
-	array := strings.Split(seeds, ",")
-	if err := s.syncMan.Start(s.nodeID, s.configFilePath, utils.PortGossip, utils.PortRaft, array); err != nil {
+	if err := s.syncMan.Start(s.configFilePath); err != nil {
 		return err
 	}
 
@@ -81,24 +82,16 @@ func (s *Server) Start(seeds string, disableMetrics bool) error {
 	}
 
 	// Allow cors
-	corsObj := cors.New(cors.Options{
-		AllowCredentials: true,
-		AllowOriginFunc: func(s string) bool {
-			return true
-		},
-		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
-		AllowedHeaders: []string{"Authorization", "Content-Type"},
-		ExposedHeaders: []string{"Authorization", "Content-Type"},
-	})
+	corsObj := utils.CreateCorsObject()
 
-	fmt.Println("Starting http server on port: " + utils.PortHTTP)
+	fmt.Println("Starting http server on port: " + strconv.Itoa(port))
 
 	if s.ssl != nil && s.ssl.Enabled {
 		handler := corsObj.Handler(s.routerSecure)
-		fmt.Println("Starting https server on port: " + utils.PortHTTPSecure)
+		fmt.Println("Starting https server on port: " + strconv.Itoa(port+4))
 		go func() {
 
-			if err := http.ListenAndServeTLS(":"+utils.PortHTTPSecure, s.ssl.Crt, s.ssl.Key, handler); err != nil {
+			if err := http.ListenAndServeTLS(":"+strconv.Itoa(port+4), s.ssl.Crt, s.ssl.Key, handlers.HandleMetricMiddleWare(handler, s.metrics)); err != nil {
 				fmt.Println("Error starting https server:", err)
 			}
 		}()
@@ -107,11 +100,11 @@ func (s *Server) Start(seeds string, disableMetrics bool) error {
 	handler := corsObj.Handler(s.router)
 
 	fmt.Println()
-	fmt.Println("\t Hosting mission control on http://localhost:" + utils.PortHTTP + "/mission-control/")
+	fmt.Println("\t Hosting mission control on http://localhost:" + strconv.Itoa(port) + "/mission-control/")
 	fmt.Println()
 
 	fmt.Println("Space cloud is running on the specified ports :D")
-	return http.ListenAndServe(":"+utils.PortHTTP, handler)
+	return http.ListenAndServe(":"+strconv.Itoa(port), handlers.HandleMetricMiddleWare(handler, s.metrics))
 }
 
 // SetConfig sets the config
@@ -120,57 +113,6 @@ func (s *Server) SetConfig(c *config.Config, isProd bool) {
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetEnv(isProd)
 	s.adminMan.SetConfig(c.Admin)
-	s.static.SetConfig(c.Static)
-	s.static.SetInternalRoutes(c.Static)
-}
-
-func (s *Server) initGRPCServer() {
-
-	if s.ssl != nil && s.ssl.Enabled {
-		lis, err := net.Listen("tcp", ":"+utils.PortGRPCSecure)
-		if err != nil {
-			log.Fatal("Failed to listen:", err)
-		}
-		creds, err := credentials.NewServerTLSFromFile(s.ssl.Crt, s.ssl.Key)
-		if err != nil {
-			log.Fatalln("Error: ", err)
-		}
-		options := []grpc.ServerOption{grpc.Creds(creds)}
-
-		grpcServer := grpc.NewServer(options...)
-		proto.RegisterSpaceCloudServer(grpcServer, s)
-
-		fmt.Println("Starting grpc secure server on port: " + utils.PortGRPCSecure)
-		go func() {
-			if err := grpcServer.Serve(lis); err != nil {
-				log.Fatal("Error starting grpc secure server:", err)
-			}
-		}()
-	}
-
-	lis, err := net.Listen("tcp", ":"+utils.PortGRPC)
-	if err != nil {
-		log.Fatal("Failed to listen:", err)
-	}
-
-	options := []grpc.ServerOption{}
-	grpcServer := grpc.NewServer(options...)
-	proto.RegisterSpaceCloudServer(grpcServer, s)
-
-	fmt.Println("Starting grpc server on port: " + utils.PortGRPC)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal("Error starting grpc server:", err)
-	}
-}
-
-// GetProjects returns a copy of the projects
-func (s *Server) GetProjects() *projects.Projects {
-	return s.projects
-}
-
-// GetID returns the server id
-func (s *Server) GetID() string {
-	return s.nodeID
 }
 
 // SetConfigFilePath sets the config file path

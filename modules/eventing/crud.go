@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -28,7 +28,7 @@ func (m *Module) HandleCreateIntent(ctx context.Context, dbType, col string, req
 
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := uuid.NewV1().String()
+	batchID := ksuid.New().String()
 
 	// Process the documents
 	eventDocs := m.processCreateDocs(token, batchID, dbType, col, rows)
@@ -59,7 +59,7 @@ func (m *Module) HandleBatchIntent(ctx context.Context, dbType string, req *mode
 
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := uuid.NewV1().String()
+	batchID := ksuid.New().String()
 	eventDocs := make([]*model.EventDocument, 0)
 
 	// Iterate over all batched requests
@@ -130,7 +130,7 @@ func (m *Module) HandleDeleteIntent(ctx context.Context, dbType, col string, req
 
 func (m *Module) handleUpdateDeleteIntent(ctx context.Context, eventType, dbType, col string, find map[string]interface{}) (*model.EventIntent, error) {
 	// Create a unique batch id and token
-	batchID := uuid.NewV1().String()
+	batchID := ksuid.New().String()
 	token := rand.Intn(utils.MaxEventTokens)
 
 	eventDocs, ok := m.processUpdateDeleteHook(token, eventType, batchID, dbType, col, find)
@@ -183,7 +183,7 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 		// TODO: Optimise this step
 		if doc.Type == utils.EventUpdate {
 			dbEvent := new(model.DatabaseEventMessage)
-			if err := json.Unmarshal([]byte(doc.Payload), dbEvent); err != nil {
+			if err := json.Unmarshal([]byte(doc.Payload.(string)), dbEvent); err != nil {
 				log.Println("Eventing Staging Error:", err)
 				continue
 			}
@@ -216,7 +216,7 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 
 	// Broadcast the event so the concerned worker can process it immediately
 	if !intent.Invalid {
-		m.broadcastEvents(intent.Docs)
+		m.transmitEvents(intent.Token, intent.Docs)
 	}
 }
 
@@ -240,7 +240,7 @@ func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows 
 		// Iterate over all rules
 		for _, rule := range rules {
 			eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
-				batchID, utils.EventStatusIntent, rule.Service, rule.Function, &model.QueueEventRequest{
+				batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 					Type:    utils.EventCreate,
 					Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, Doc: doc, DocID: docID},
 				}))
@@ -263,7 +263,7 @@ func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, 
 			for i, rule := range rules {
 				// Create an event doc
 				eventDocs[i] = m.generateQueueEventRequest(token, rule.Retries,
-					batchID, utils.EventStatusIntent, rule.Service, rule.Function, &model.QueueEventRequest{
+					batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 						Type:    eventType,
 						Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, DocID: id},
 					})
