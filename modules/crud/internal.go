@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // InternalCreate inserts a document (or multiple when op is "all") into the database based on dbType.
@@ -22,7 +23,14 @@ func (m *Module) InternalCreate(ctx context.Context, dbType, project, col string
 	}
 
 	// Perform the create operation
-	return crud.Create(ctx, project, col, req)
+	n, err := crud.Create(ctx, project, col, req)
+
+	// Invoke the metric hook if the operation was successful
+	if err == nil {
+		m.metricHook(m.project, dbType, col, n, utils.Create)
+	}
+
+	return err
 }
 
 // InternalUpdate updates the document(s) which match a query from the database based on dbType.
@@ -41,7 +49,14 @@ func (m *Module) InternalUpdate(ctx context.Context, dbType, project, col string
 	}
 
 	// Perform the update operation
-	return crud.Update(ctx, project, col, req)
+	n, err := crud.Update(ctx, project, col, req)
+
+	// Invoke the metric hook if the operation was successful
+	if err == nil {
+		m.metricHook(m.project, dbType, col, n, utils.Update)
+	}
+
+	return err
 }
 
 // InternalDelete removes the document(s) which match a query from the database based on dbType.
@@ -59,6 +74,13 @@ func (m *Module) InternalDelete(ctx context.Context, dbType, project, col string
 		return err
 	}
 
-	// Perfrom the delete operation
-	return crud.Delete(ctx, project, col, req)
+	// Perform the delete operation
+	n, err := crud.Delete(ctx, project, col, req)
+
+	// Invoke the metric hook if the operation was successful
+	if err == nil {
+		m.metricHook(m.project, dbType, col, n, utils.Update)
+	}
+
+	return err
 }

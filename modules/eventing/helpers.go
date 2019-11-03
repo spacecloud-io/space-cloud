@@ -20,7 +20,12 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	url := m.syncMan.GetAssignedSpaceCloudURL(m.project, eventToken)
+	url, err := m.syncMan.GetAssignedSpaceCloudURL(ctx, m.project, eventToken)
+	if err != nil {
+		log.Println("Eventing module could not get space-cloud url:", err)
+		return
+	}
+
 	token, err := m.adminMan.GetInternalAccessToken()
 	if err != nil {
 		log.Println("Eventing module could not transmit event:", err)
@@ -28,7 +33,7 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	}
 
 	var res interface{}
-	if err := utils.MakeHTTPRequest(ctx, "POST", url, token, eventDocs, &res); err != nil {
+	if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, eventDocs, &res); err != nil {
 		log.Println("Eventing module could not transmit event:", err)
 		log.Println(res)
 	}
@@ -48,7 +53,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, batchID, utils.EventStatusStaged, r.Service, r.Function, req)
+			eventDoc := m.generateQueueEventRequest(token, r.Retries, batchID, utils.EventStatusStaged, r.Url, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -64,7 +69,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, service, function string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
 
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 
@@ -93,8 +98,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, 
 		Payload:        string(data),
 		Status:         status,
 		Retries:        retries,
-		Service:        service,
-		Function:       function,
+		Url:            url,
 	}
 }
 
@@ -179,7 +183,7 @@ func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) boo
 		return false
 	}
 
-	if rule1.Service != rule2.Service || rule1.Function != rule2.Function {
+	if rule1.Url != rule2.Url {
 		return false
 	}
 

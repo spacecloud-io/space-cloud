@@ -86,7 +86,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 // EmailSignIn signins the user and returns a JWT token
 func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, password string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
-	if !m.IsEnabled() {
+	if !m.IsActive("email") {
 		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
 	}
 
@@ -130,7 +130,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 // EmailSignUp signs up a user and return a JWT token
 func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, password, role string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
-	if !m.IsEnabled() {
+	if !m.IsActive("email") {
 		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
 	}
 

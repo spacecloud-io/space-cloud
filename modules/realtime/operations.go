@@ -2,10 +2,11 @@ package realtime
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -93,7 +94,7 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Ev
 			}
 
 			var res interface{}
-			if err := utils.MakeHTTPRequest(ctx, "POST", url, token, eventDoc, &res); err != nil {
+			if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, eventDoc, &res); err != nil {
 				errCh <- err
 				return
 			}
@@ -120,7 +121,7 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Ev
 func (m *Module) ProcessRealtimeRequests(eventDoc *model.EventDocument) error {
 
 	dbEvent := new(model.DatabaseEventMessage)
-	if err := json.Unmarshal([]byte(eventDoc.Payload), dbEvent); err != nil {
+	if err := mapstructure.Decode(eventDoc.Payload, dbEvent); err != nil {
 		log.Println("Realtime Module Request Handler Error:", err)
 		return err
 	}

@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/spaceuptech/space-cloud/utils/handlers"
 
 	"github.com/gorilla/mux"
 	nats "github.com/nats-io/nats-server/v2/server"
-	"github.com/rs/cors"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
@@ -22,6 +24,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
+	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -30,6 +33,7 @@ type Server struct {
 	nodeID         string
 	router         *mux.Router
 	routerSecure   *mux.Router
+	routerConnect  *mux.Router
 	auth           *auth.Module
 	crud           *crud.Module
 	user           *userman.Module
@@ -37,28 +41,39 @@ type Server struct {
 	functions      *functions.Module
 	realtime       *realtime.Module
 	static         *static.Module
-	adminMan       *admin.Manager
 	nats           *nats.Server
 	eventing       *eventing.Module
 	configFilePath string
+	adminMan       *admin.Manager
 	syncMan        *syncman.Manager
+	metrics        *metrics.Module
 	ssl            *config.SSL
 	graphql        *graphql.Module
 }
 
 // New creates a new server instance
-func New(nodeID string) (*Server, error) {
+func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
+	r3 := mux.NewRouter()
 
 	// Create the fundamental modules
-	c := crud.Init()
+	c := crud.Init(removeProjectScope)
+
+	m, err := metrics.New(nodeID, metricsConfig)
+	if err != nil {
+		return nil, err
+	}
 
 	adminMan := admin.New()
-	syncMan := syncman.New()
+	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled)
+	if err != nil {
+		return nil, err
+	}
+
 	fn := functions.Init(syncMan)
 
-	a := auth.Init(c, fn)
+	a := auth.Init(c, fn, removeProjectScope)
 
 	// Initialise the eventing module and set the crud module hooks
 	e := eventing.New(a, c, fn, adminMan, syncMan)
@@ -69,9 +84,9 @@ func New(nodeID string) (*Server, error) {
 		Delete: e.HandleDeleteIntent,
 		Batch:  e.HandleBatchIntent,
 		Stage:  e.HandleStage,
-	})
+	}, m.AddDBOperation)
 
-	rt, err := realtime.Init(nodeID, e, a, c, fn, syncMan)
+	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
 	if err != nil {
 		return nil, err
 	}
@@ -83,17 +98,17 @@ func New(nodeID string) (*Server, error) {
 
 	fmt.Println("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
-		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan,
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, routerConnect: r3, auth: a, crud: c,
+		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan, metrics: m,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
 		eventing: e, graphql: graphqlMan}, nil
 }
 
 // Start begins the server operations
-func (s *Server) Start(disableMetrics bool) error {
+func (s *Server) Start(disableMetrics bool, port int) error {
 
 	// Start the sync manager
-	if err := s.syncMan.Start(s.nodeID, s.configFilePath, s.LoadConfig); err != nil {
+	if err := s.syncMan.Start(s.configFilePath, s.LoadConfig); err != nil {
 		return err
 	}
 
@@ -103,37 +118,31 @@ func (s *Server) Start(disableMetrics bool) error {
 	}
 
 	// Allow cors
-	corsObj := cors.New(cors.Options{
-		AllowCredentials: true,
-		AllowOriginFunc: func(s string) bool {
-			return true
-		},
-		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE"},
-		AllowedHeaders: []string{"Authorization", "Content-Type"},
-		ExposedHeaders: []string{"Authorization", "Content-Type"},
-	})
+	corsObj := utils.CreateCorsObject()
 
-	fmt.Println("Starting http server on port: " + utils.PortHTTP)
+	fmt.Println("Starting http server on port: " + strconv.Itoa(port))
 
 	if s.ssl != nil && s.ssl.Enabled {
 		handler := corsObj.Handler(s.routerSecure)
-		fmt.Println("Starting https server on port: " + utils.PortHTTPSecure)
+		fmt.Println("Starting https server on port: " + strconv.Itoa(port+4))
 		go func() {
 
-			if err := http.ListenAndServeTLS(":"+utils.PortHTTPSecure, s.ssl.Crt, s.ssl.Key, handler); err != nil {
+			if err := http.ListenAndServeTLS(":"+strconv.Itoa(port+4), s.ssl.Crt, s.ssl.Key, handlers.HandleMetricMiddleWare(handler, s.metrics)); err != nil {
 				fmt.Println("Error starting https server:", err)
 			}
 		}()
 	}
 
+	//go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
+
 	handler := corsObj.Handler(s.router)
 
 	fmt.Println()
-	fmt.Println("\t Hosting mission control on http://localhost:" + utils.PortHTTP + "/mission-control/")
+	fmt.Println("\t Hosting mission control on http://localhost:" + strconv.Itoa(port) + "/mission-control/")
 	fmt.Println()
 
 	fmt.Println("Space cloud is running on the specified ports :D")
-	return http.ListenAndServe(":"+utils.PortHTTP, handler)
+	return http.ListenAndServe(":"+strconv.Itoa(port), handlers.HandleMetricMiddleWare(handler, s.metrics))
 }
 
 // SetConfig sets the config
@@ -142,6 +151,7 @@ func (s *Server) SetConfig(c *config.Config, isProd bool) {
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetEnv(isProd)
 	s.adminMan.SetConfig(c.Admin)
+	s.auth.SetMakeHttpRequest(s.syncMan.MakeHTTPRequest)
 }
 
 // LoadConfig configures each module to to use the provided config
@@ -153,19 +163,19 @@ func (s *Server) LoadConfig(config *config.Config) error {
 
 		// Always set the config of the crud module first
 		// Set the configuration for the crud module
-		if err := s.crud.SetConfig(p.Modules.Crud); err != nil {
+		if err := s.crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			log.Println("Error in crud module config: ", err)
 			return err
 		}
 
 		// Set the configuration for the auth module
-		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Functions); err != nil {
+		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services); err != nil {
 			log.Println("Error in auth module config: ", err)
 			return err
 		}
 
 		// Set the configuration for the functions module
-		s.functions.SetConfig(p.ID, p.Modules.Functions)
+		s.functions.SetConfig(p.ID, p.Modules.Services)
 
 		// Set the configuration for the user management module
 		s.user.SetConfig(p.Modules.Auth)

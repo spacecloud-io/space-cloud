@@ -10,6 +10,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/server"
 )
 
@@ -70,6 +71,54 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
 	},
+	cli.StringFlag{
+		Name:   "cluster",
+		Usage:  "The cluster id to start space-cloud with",
+		EnvVar: "CLUSTER_ID",
+		Value:  "default-cluster",
+	},
+	cli.BoolFlag{
+		Name:   "enable-consul",
+		Usage:  "Enable consul integration",
+		EnvVar: "ENABLE_CONSUL",
+	},
+	cli.IntFlag{
+		Name:   "port",
+		EnvVar: "PORT",
+		Value:  4122,
+	},
+	cli.BoolFlag{
+		Name:   "remove-project-scope",
+		Usage:  "Removes the project level scope in the database and file storage modules",
+		EnvVar: "REMOVE_PROJECT_SCOPE",
+	},
+
+	// Flags for the metrics module
+	cli.BoolFlag{
+		Name:   "enable-metrics",
+		Usage:  "Enable the metrics module",
+		EnvVar: "ENABLE_METRICS",
+	},
+	cli.BoolFlag{
+		Name:   "disable-bandwidth",
+		Usage:  "disable the bandwidth measurement",
+		EnvVar: "DISABLE_BANDWIDTH",
+	},
+	cli.StringFlag{
+		Name:   "metrics-sink",
+		Usage:  "The sink to output metrics data to",
+		EnvVar: "METRICS_SINK",
+	},
+	cli.StringFlag{
+		Name:   "metrics-conn",
+		Usage:  "The connection string of the sink",
+		EnvVar: "METRICS_CONN",
+	},
+	cli.StringFlag{
+		Name:   "metrics-scope",
+		Usage:  "The database / topic to push the metrics to",
+		EnvVar: "METRICS_SCOPE",
+	},
 }
 
 func main() {
@@ -104,7 +153,12 @@ func actionRun(c *cli.Context) error {
 	configPath := c.String("config")
 	isDev := c.Bool("dev")
 	disableMetrics := c.Bool("disable-metrics")
+	disableBandwidth := c.Bool("disable-bandwidth")
 	profiler := c.Bool("profiler")
+
+	// Load flag related to the port
+	port := c.Int("port")
+	removeProjectScope := c.Bool("remove-project-scope")
 
 	// Load flags related to ssl
 	sslCert := c.String("ssl-cert")
@@ -115,12 +169,23 @@ func actionRun(c *cli.Context) error {
 	adminPass := c.String("admin-pass")
 	adminSecret := c.String("admin-secret")
 
+	// Load flags related to clustering
+	clusterID := c.String("cluster")
+	enableConsul := c.Bool("enable-consul")
+
+	// Load the flags for the metrics module
+	enableMetrics := c.Bool("enable-metrics")
+	metricsSink := c.String("metrics-sink")
+	metricsConn := c.String("metrics-conn")
+	metricsScope := c.String("metrics-scope")
+
 	// Generate a new id if not provided
 	if nodeID == "none" {
-		nodeID = uuid.NewV1().String()
+		nodeID = "auto-" + uuid.NewV1().String()
 	}
 
-	s, err := server.New(nodeID)
+	s, err := server.New(nodeID, clusterID, enableConsul, removeProjectScope,
+		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
 	}
@@ -160,10 +225,14 @@ func actionRun(c *cli.Context) error {
 		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
+	if enableConsul {
+		s.InitConnectRoutes(profiler, staticPath)
+	}
+
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(disableMetrics)
+	return s.Start(disableMetrics, port)
 }
 
 func actionInit(*cli.Context) error {

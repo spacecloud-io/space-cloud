@@ -1,23 +1,37 @@
 package model
 
-import "context"
-
 // EventKind is the type describing the kind of event
 type EventKind string
 
 // EventDocument is the format in which the event is persistent on disk
 type EventDocument struct {
-	ID             string `structs:"_id" json:"_id" bson:"_id" mapstructure:"_id"`
-	BatchID        string `structs:"batchid" json:"batchid" bson:"batchid" mapstructure:"batchid"`
-	Type           string `structs:"type" json:"type" bson:"type" mapstructure:"type"`
-	Token          int    `structs:"token" json:"token" bson:"token" mapstructure:"token"`
-	Timestamp      int64  `structs:"timestamp" json:"timestamp" bson:"timestamp" mapstructure:"timestamp"`                         // The timestamp of when the event should get executed
-	EventTimestamp int64  `structs:"event_timestamp" json:"event_timestamp" bson:"event_timestamp" mapstructure:"event_timestamp"` // The time stamp of when the event was logged
-	Payload        string `structs:"payload" json:"payload" bson:"payload" mapstructure:"payload"`
-	Status         string `structs:"status" json:"status" bson:"status" mapstructure:"status"`
-	Retries        int    `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
-	Service        string `structs:"service" json:"service" bson:"service" mapstructure:"service"`
-	Function       string `structs:"func" json:"func" bson:"function" mapstructure:"func"`
+	ID             string      `structs:"_id" json:"_id" bson:"_id" mapstructure:"_id"`
+	BatchID        string      `structs:"batchid" json:"batchid" bson:"batchid" mapstructure:"batchid"`
+	Type           string      `structs:"type" json:"type" bson:"type" mapstructure:"type"`
+	Token          int         `structs:"token" json:"token" bson:"token" mapstructure:"token"`
+	Timestamp      int64       `structs:"timestamp" json:"timestamp" bson:"timestamp" mapstructure:"timestamp"`                         // The timestamp of when the event should get executed
+	EventTimestamp int64       `structs:"event_timestamp" json:"event_timestamp" bson:"event_timestamp" mapstructure:"event_timestamp"` // The time stamp of when the event was logged
+	Payload        interface{} `structs:"payload" json:"payload" bson:"payload" mapstructure:"payload"`
+	Status         string      `structs:"status" json:"status" bson:"status" mapstructure:"status"`
+	Retries        int         `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
+	Url            string      `structs:"url" json:"url" bson:"url" mapstructure:"url"`
+	Remark         string      `structs:"remark" json:"remark" bson:"remark" mapstructure:"remark"`
+}
+
+// CloudEventPayload is the the JSON event spec by Cloud Events Specification
+type CloudEventPayload struct {
+	SpecVersion string      `json:"specversion"`
+	Type        string      `json:"type"`
+	Source      string      `json:"source"`
+	Id          string      `json:"id"`
+	Time        string      `json:"time"`
+	Data        interface{} `json:"data"`
+}
+
+type EventResponse struct {
+	Event  *QueueEventRequest   `json:"event"`
+	Events []*QueueEventRequest `json:"events"`
+	Error  string               `json:"error"`
 }
 
 // QueueEventRequest is the payload to add a new event to the task queue
@@ -37,34 +51,10 @@ type EventIntent struct {
 	Invalid bool
 }
 
-// CreateIntentHook is used to log a create intent
-type CreateIntentHook func(ctx context.Context, dbType, col string, req *CreateRequest) (*EventIntent, error)
-
-// UpdateIntentHook is used to log a create intent
-type UpdateIntentHook func(ctx context.Context, dbType, col string, req *UpdateRequest) (*EventIntent, error)
-
-// DeleteIntentHook is used to log a create intent
-type DeleteIntentHook func(ctx context.Context, dbType, col string, req *DeleteRequest) (*EventIntent, error)
-
-// BatchIntentHook is used to log a create intent
-type BatchIntentHook func(ctx context.Context, dbType string, req *BatchRequest) (*EventIntent, error)
-
-// StageEventHook is used to stage an intended event
-type StageEventHook func(ctx context.Context, intent *EventIntent, err error)
-
-// CrudHooks is the struct to store the hooks related to the crud module
-type CrudHooks struct {
-	Create CreateIntentHook
-	Update UpdateIntentHook
-	Delete DeleteIntentHook
-	Batch  BatchIntentHook
-	Stage  StageEventHook
-}
-
 // DatabaseEventMessage is the event payload for create, update and delete events
 type DatabaseEventMessage struct {
-	DBType string      `json:"db"`
-	Col    string      `json:"col"`
-	DocID  string      `json:"docId"`
-	Doc    interface{} `json:"doc"`
+	DBType string      `json:"db" mapstructure:"db"`
+	Col    string      `json:"col" mapstructure:"col"`
+	DocID  string      `json:"docId" mapstructure:"docId"`
+	Doc    interface{} `json:"doc" mapstructure:"doc"`
 }

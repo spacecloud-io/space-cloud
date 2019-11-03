@@ -40,7 +40,7 @@ func New(auth *auth.Module, crud *crud.Module, functions *functions.Module, admi
 		functions: functions,
 		adminMan:  adminMan,
 		syncMan:   syncMan,
-		config:    &config.Eventing{Enabled: false},
+		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
 
 	// Start the internal processes
@@ -55,7 +55,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if eventing == nil {
+	if eventing == nil || !eventing.Enabled {
 		m.config.Enabled = false
 		return nil
 	}

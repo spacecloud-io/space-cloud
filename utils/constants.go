@@ -1,5 +1,9 @@
 package utils
 
+import (
+	"golang.org/x/net/context"
+)
+
 // BuildVersion is the current version of Space Cloud
 const BuildVersion = "0.12.1"
 
@@ -94,6 +98,9 @@ const (
 	// Delete is the type used for delete operations
 	Delete OperationType = "delete"
 
+	// Batch is the type used for batch operations
+	Batch OperationType = "batch"
+
 	// Aggregation is the type used for aggregations
 	Aggregation OperationType = "aggr"
 )
@@ -137,6 +144,9 @@ const (
 const (
 	// PortHTTP is the port used for the http server
 	PortHTTP string = "4122"
+
+	// PortHTTPConnect is the port used for the http server with consul connect
+	PortHTTPConnect string = "4124"
 
 	// PortHTTPSecure is the port used for the http server with tls
 	PortHTTPSecure string = "4126"
@@ -197,13 +207,13 @@ const MaxEventTokens int = 100
 
 const (
 	// EventCreate is fired for create request
-	EventCreate string = "create-crud"
+	EventCreate string = "DB_INSERT"
 
 	// EventUpdate is fired for update request
-	EventUpdate string = "update-crud"
+	EventUpdate string = "DB_UPDATE"
 
 	// EventDelete is fired for delete request
-	EventDelete string = "delete-crud"
+	EventDelete string = "DB_DELETE"
 )
 
 const (
@@ -222,3 +232,18 @@ const (
 	// EventStatusCancelled signifies that the event has been cancelled and should not be processed
 	EventStatusCancelled string = "cancel"
 )
+
+type RequestKind string
+
+const (
+	// RequestKindDirect is used when an http request is to be made directly
+	RequestKindDirect RequestKind = "direct"
+
+	// RequestKindConsulConnect is used when an http request is to be made via consul connect
+	RequestKindConsulConnect RequestKind = "consul-connect"
+)
+
+// SpaceCloudServiceName is the service name space cloud will register itself with in service discovery mechanisms
+const SpaceCloudServiceName string = "space-cloud"
+
+type MakeHttpRequest func(ctx context.Context, method, url, token string, params, vPtr interface{}) error

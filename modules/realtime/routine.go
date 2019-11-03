@@ -29,10 +29,12 @@ func (m *Module) helperSendFeed(data *model.FeedData) {
 			switch data.Type {
 			case utils.RealtimeDelete:
 				query.sendFeed(dataPoint)
+				m.metrics.AddDBOperation(m.project, data.DBType, data.Group, 1, utils.Read)
 
 			case utils.RealtimeInsert, utils.RealtimeUpdate:
 				if utils.Validate(query.whereObj, data.Payload) {
 					query.sendFeed(dataPoint)
+					m.metrics.AddDBOperation(m.project, data.DBType, data.Group, 1, utils.Read)
 				}
 
 			default:
