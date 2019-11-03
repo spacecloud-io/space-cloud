@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -157,7 +156,6 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
 		project := vars["project"]
-		log.Println("dbtype", dbType)
 
 		if err := syncman.SetDatabaseConnection(project, dbType, v.Conn, v.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

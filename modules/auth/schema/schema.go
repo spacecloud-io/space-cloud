@@ -2,10 +2,11 @@ package schema
 
 import (
 	"errors"
-	"github.com/segmentio/ksuid"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/segmentio/ksuid"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
@@ -196,15 +197,21 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 	for fieldKey, fieldValue := range collectionFields {
 		// check if key is required
 		value, ok := doc[fieldKey]
-		if fieldValue.IsFieldTypeRequired {
-			if !ok {
-				return nil, errors.New("Field " + fieldKey + " Not Present")
-			}
+
+		if fieldValue.Kind == typeID && !ok {
+			value = ksuid.New().String()
+			ok = true
 		}
 
 		if fieldValue.Directive == directiveCreatedAt || fieldValue.Directive == directiveUpdatedAt {
 			mutatedDoc[fieldKey] = time.Now().UTC()
 			continue
+		}
+
+		if fieldValue.IsFieldTypeRequired {
+			if !ok {
+				return nil, errors.New("Field " + fieldKey + " Not Present")
+			}
 		}
 
 		// check type
@@ -293,9 +300,6 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 			}
 			return unitTimeInRFC3339, nil
 		case typeID:
-			if value == "" {
-				return ksuid.New().String(), nil
-			}
 			return value, nil
 		case typeString, typeJoin:
 			return value, nil

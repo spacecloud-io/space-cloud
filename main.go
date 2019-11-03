@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -181,7 +181,7 @@ func actionRun(c *cli.Context) error {
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
-		nodeID = "auto-" + uuid.NewV1().String()
+		nodeID = "auto-" + ksuid.New().String()
 	}
 
 	s, err := server.New(nodeID, clusterID, enableConsul, removeProjectScope,

@@ -123,6 +123,23 @@ func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 	return err, http.StatusInternalServerError
 }
 
+// SetProjectGlobalConfig applies the set project config command to the raft log
+func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project.ID)
+	if err != nil {
+		return err
+	}
+
+	projectConfig.Secret = project.Secret
+	projectConfig.Name = project.Name
+
+	return s.setProject(projectConfig)
+}
+
 // SetProjectConfig applies the set project config command to the raft log
 func (s *Manager) SetProjectConfig(project *config.Project) error {
 	// Acquire a lock
