@@ -107,6 +107,8 @@ func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 
 	s.projects.Store(project)
 
+	s.setProjectConfig(project)
+
 	if !s.isConsulEnabled {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
 	}

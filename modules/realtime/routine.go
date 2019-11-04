@@ -11,7 +11,7 @@ import (
 func (m *Module) helperSendFeed(data *model.FeedData) {
 	clientsTemp, ok := m.groups.Load(createGroupKey(data.DBType, data.Group))
 	if !ok {
-		log.Println("Realtime hanlder could not find key:", createGroupKey(data.DBType, data.Group))
+		log.Println("Realtime handler could not find key:", createGroupKey(data.DBType, data.Group))
 		return
 	}
 
