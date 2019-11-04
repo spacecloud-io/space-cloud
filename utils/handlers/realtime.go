@@ -15,7 +15,7 @@ func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.Hand
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Load the params from the body
-		eventDoc := model.EventDocument{}
+		eventDoc := model.CloudEventPayload{}
 		json.NewDecoder(r.Body).Decode(&eventDoc)
 		defer r.Body.Close()
 
@@ -43,7 +43,7 @@ func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.Hand
 func HandleRealtimeProcessRequest(auth *auth.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Load the params from the body
-		eventDoc := model.EventDocument{}
+		eventDoc := model.CloudEventPayload{}
 		json.NewDecoder(r.Body).Decode(&eventDoc)
 		defer r.Body.Close()
 
