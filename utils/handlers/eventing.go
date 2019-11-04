@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/eventing"
+	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 )
 
@@ -23,11 +23,7 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 		}
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := utils.GetTokenFromHeader(r)
 
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusForbidden)
@@ -69,11 +65,7 @@ func HandleQueueEvent(adminMan *admin.Manager, eventing *eventing.Module) http.H
 		defer r.Body.Close()
 
 		// Get the JWT token from header
-		tokens, ok := r.Header["Authorization"]
-		if !ok {
-			tokens = []string{""}
-		}
-		token := strings.TrimPrefix(tokens[0], "Bearer ")
+		token := utils.GetTokenFromHeader(r)
 
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusForbidden)
