@@ -13,6 +13,6 @@ ENV PROD=false
 ENV PATH="/space-cloud:${PATH}"
 
 # ports for the http and https servers
-EXPOSE 4122 4124
+EXPOSE 4122 4126
 
 CMD ./space-cloud run
