@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/segmentio/ksuid"
+
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
@@ -19,16 +21,17 @@ import (
 
 // Schema data stucture for schema package
 type Schema struct {
-	lock      sync.RWMutex
-	SchemaDoc schemaType
-	crud      *crud.Module
-	project   string
-	config    config.Crud
+	lock               sync.RWMutex
+	SchemaDoc          schemaType
+	crud               *crud.Module
+	project            string
+	config             config.Crud
+	removeProjectScope bool
 }
 
 // Init creates a new instance of the schema object
-func Init(crud *crud.Module) *Schema {
-	return &Schema{SchemaDoc: schemaType{}, crud: crud}
+func Init(crud *crud.Module, removeProjectScope bool) *Schema {
+	return &Schema{SchemaDoc: schemaType{}, crud: crud, removeProjectScope: removeProjectScope}
 }
 
 // SetConfig modifies the tables according to the schema on save
@@ -194,10 +197,10 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 	for fieldKey, fieldValue := range collectionFields {
 		// check if key is required
 		value, ok := doc[fieldKey]
-		if fieldValue.IsFieldTypeRequired {
-			if !ok {
-				return nil, errors.New("Field " + fieldKey + " Not Present")
-			}
+
+		if fieldValue.Kind == typeID && !ok {
+			value = ksuid.New().String()
+			ok = true
 		}
 
 		if fieldValue.Directive == directiveCreatedAt || fieldValue.Directive == directiveUpdatedAt {
@@ -205,12 +208,21 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 			continue
 		}
 
+		if fieldValue.IsFieldTypeRequired {
+			if !ok {
+				return nil, errors.New("Field " + fieldKey + " Not Present")
+			}
+		}
+
 		// check type
 		val, err := s.checkType(value, fieldValue)
 		if err != nil {
 			return nil, err
 		}
-		mutatedDoc[fieldKey] = val
+
+		if mutatedDoc != nil {
+			mutatedDoc[fieldKey] = val
+		}
 	}
 
 	return mutatedDoc, nil
@@ -270,9 +282,11 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		// TODO: int64
 		switch fieldValue.Kind {
 		case typeDateTime:
-			return time.Unix(int64(v), 0), nil
-		case typeID, typeInteger:
+			return time.Unix(int64(v)/1000, 0), nil
+		case typeInteger:
 			return value, nil
+		case typeFloat:
+			return float64(v), nil
 		default:
 			return nil, errors.New("Integer wrong type wanted " + fieldValue.Kind + " got Integer")
 		}
@@ -285,7 +299,9 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 				return nil, errors.New("String Wrong Date-Time Format")
 			}
 			return unitTimeInRFC3339, nil
-		case typeID, typeString, typeJoin:
+		case typeID:
+			return value, nil
+		case typeString, typeJoin:
 			return value, nil
 		default:
 			return nil, errors.New("String wrong type wanted " + fieldValue.Kind + " got String")
@@ -293,8 +309,12 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 
 	case float32, float64:
 		switch fieldValue.Kind {
+		case typeDateTime:
+			return time.Unix(int64(v.(float64))/1000, 0), nil
 		case typeFloat:
 			return value, nil
+		case typeInteger:
+			return int64(value.(float64)), nil
 		default:
 			return nil, errors.New("Float wrong type wanted " + fieldValue.Kind + " got Float")
 		}
@@ -328,6 +348,11 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		}
 		return arr, nil
 	default:
+		if !fieldValue.IsFieldTypeRequired {
+			return nil, nil
+		}
+
 		return nil, errors.New("No matching type found")
 	}
+	return "", nil
 }

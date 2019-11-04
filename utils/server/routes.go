@@ -8,41 +8,54 @@ import (
 )
 
 // InitRoutes initialises the http routes
-func (s Server) InitRoutes(profiler bool, staticPath string) {
+func (s *Server) InitRoutes(profiler bool, staticPath string) {
 	s.routes(s.router, profiler, staticPath)
 }
 
 // InitSecureRoutes initialises the http routes
-func (s Server) InitSecureRoutes(profiler bool, staticPath string) {
+func (s *Server) InitSecureRoutes(profiler bool, staticPath string) {
 	s.routes(s.routerSecure, profiler, staticPath)
 }
 
 func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// Initialize the routes for config management
-	router.Methods("GET").Path("/v1/api/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
-	router.Methods("POST").Path("/v1/api/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
-	router.Methods("GET").Path("/v1/api/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("POST").Path("/v1/api/config/projects").HandlerFunc(handlers.HandleStoreProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("GET").Path("/v1/api/config/deploy").HandlerFunc(handlers.HandleLoadDeploymentConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("POST").Path("/v1/api/config/deploy").HandlerFunc(handlers.HandleStoreDeploymentConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("GET").Path("/v1/api/config/operation").HandlerFunc(handlers.HandleLoadOperationModeConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("POST").Path("/v1/api/config/operation").HandlerFunc(handlers.HandleStoreOperationModeConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("GET").Path("/v1/api/config/static").HandlerFunc(handlers.HandleLoadStaticConfig(s.adminMan, s.syncMan))
-	router.Methods("POST").Path("/v1/api/config/static").HandlerFunc(handlers.HandleStoreStaticConfig(s.adminMan, s.syncMan))
-	router.Methods("DELETE").Path("/v1/api/config/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
+	router.Methods("GET").Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
+	router.Methods("POST").Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects").HandlerFunc(handlers.HandleCreateProject(s.adminMan, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/config").HandlerFunc(handlers.HandleGlobalConfig(s.adminMan, s.syncMan))
+	router.Methods("GET").Path("/v1/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan, s.configFilePath))
+	router.Methods("PUT").Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleStoreProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
+	router.Methods("DELETE").Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
 
+	// added endpoints for service
+	router.Methods("POST").Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleAddService(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleDeleteService(s.adminMan, s.syncMan))
 	//Initialize route for graphql schema inspection
-	router.Methods("POST").Path("/v1/api/config/modify/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleCreationRequest(s.adminMan, s.auth.Schema))
-	router.Methods("POST").Path("/v1/api/config/modify/{project}").HandlerFunc(handlers.HandleModifySchemas(s.auth, s.adminMan))
+	//Initialize route for user management config
+	router.Methods("POST").Path("/v1/config/projects/{project}/user-management/{provider}").HandlerFunc(handlers.HandleUserManagement(s.adminMan, s.syncMan))
+	//Initialize route for eventing config
+	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleAddEventingRule(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteEventingRule(s.adminMan, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
+	//Initialize route for file storage config
+	router.Methods("POST").Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
+	router.Methods("GET").Path("/v1/config/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/file-storage/rules/{ruleName}").HandlerFunc(handlers.HandleSetFileRule(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/config/projects/{project}/file-storage/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteFileRule(s.adminMan, s.syncMan))
 
-	//Initialize route for getting the schema for specified collection even if doesn't exists in config.crud
-	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}/{col}").HandlerFunc(handlers.HandleInspectionRequest(s.adminMan, s.auth.Schema))
-
-	//Initialize route for getting all collection names present in config.crud
-	router.Methods("GET").Path("/v1/api/config/list-collections/{project}").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.crud, s.syncMan))
+	//Initialize route for getting database config
+	router.Methods("GET").Path("/v1/config/projects/{project}/database/{dbType}/connection-state").HandlerFunc(handlers.HandleGetConnectionState(s.adminMan, s.crud))
+	router.Methods("GET").Path("/v1/config/projects/{project}/database/{dbType}/list-collections").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.crud, s.syncMan)) // TODO: Check response type
+	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/rules").HandlerFunc(handlers.HandleCollectionRules(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}").HandlerFunc(handlers.HandleDeleteCollection(s.adminMan, s.crud, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/config").HandlerFunc(handlers.HandleDatabaseConnection(s.adminMan, s.crud, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/modify-schema").HandlerFunc(handlers.HandleModifyAllSchema(s.adminMan, s.auth.Schema, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/modify-schema").HandlerFunc(handlers.HandleModifySchema(s.adminMan, s.auth.Schema, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/reload-schema").HandlerFunc(handlers.HandleReloadSchema(s.adminMan, s.auth.Schema, s.syncMan))
+	router.Methods("GET").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/inspect-schema").HandlerFunc(handlers.HandleSchemaInspection(s.adminMan, s.auth.Schema, s.syncMan))
 
 	//Initialize route for getting all schemas for all the collections present in config.crud
-	router.Methods("GET").Path("/v1/api/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.auth.Schema))
+	router.Methods("GET").Path("/v1/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.auth.Schema))
 
 	//Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
@@ -56,11 +69,13 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// Initialize the routes for functions service
 	router.Methods("POST").Path("/v1/api/{project}/functions/{service}/{func}").HandlerFunc(handlers.HandleFunctionCall(s.functions, s.auth))
 
-	// Initialize the routes for pubsub service
-	router.Methods("POST").Path("/v1/api/{project}/pubsub").HandlerFunc(handlers.HandlePublishCall(s.pubsub, s.auth))
+	// Initialize the routes for realtime service
+	router.Methods("POST").Path("/v1/api/{project}/realtime/handle").HandlerFunc(handlers.HandleRealtimeEvent(s.auth, s.realtime))
+	router.Methods("POST").Path("/v1/api/{project}/realtime/process").HandlerFunc(handlers.HandleRealtimeProcessRequest(s.auth, s.realtime))
 
 	// Initialize the routes for eventing service
-	router.Methods("POST").Path("/v1/api/{project}/eventing/queue").HandlerFunc(handlers.HandleQueueEvent(s.adminMan, s.eventing))
+	router.Methods("POST").Path("/v1/api/{project}/event-triggers/queue").HandlerFunc(handlers.HandleQueueEvent(s.adminMan, s.eventing))
+	router.Methods("POST").Path("/v1/api/{project}/eventing/process").HandlerFunc(handlers.HandleProcessEvent(s.adminMan, s.eventing))
 
 	// Initialize the routes for the crud operations
 	router.Methods("POST").Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.auth, s.crud, s.realtime))
@@ -98,7 +113,4 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	}
 
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
-
-	// Initialize the route for handling static files
-	router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.static))
 }

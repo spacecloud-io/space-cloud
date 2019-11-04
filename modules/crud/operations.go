@@ -27,7 +27,12 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 	}
 
 	// Perform the create operation
-	err = crud.Create(ctx, project, col, req)
+	n, err := crud.Create(ctx, project, col, req)
+
+	// Invoke the metric hook if the operation was successful
+	if err == nil {
+		m.metricHook(m.project, dbType, col, n, utils.Create)
+	}
 
 	// Invoke the stage hook
 	m.hooks.Stage(ctx, intent, err)
@@ -48,7 +53,14 @@ func (m *Module) Read(ctx context.Context, dbType, project, col string, req *mod
 		return nil, err
 	}
 
-	return crud.Read(ctx, project, col, req)
+	n, result, err := crud.Read(ctx, project, col, req)
+
+	// Invoke the metric hook if the operation was successful
+	if err == nil {
+		m.metricHook(m.project, dbType, col, n, utils.Read)
+	}
+
+	return result, err
 }
 
 // Update updates the document(s) which match a query from the database based on dbType
@@ -72,7 +84,12 @@ func (m *Module) Update(ctx context.Context, dbType, project, col string, req *m
 	}
 
 	// Perform the update operation
-	err = crud.Update(ctx, project, col, req)
+	n, err := crud.Update(ctx, project, col, req)
+
+	// Invoke the metric hook if the operation was successful
+	if err == nil {
+		m.metricHook(m.project, dbType, col, n, utils.Update)
+	}
 
 	// Invoke the stage hook
 	m.hooks.Stage(ctx, intent, err)
@@ -99,8 +116,13 @@ func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *m
 		return err
 	}
 
-	// Perfrom the delete operation
-	err = crud.Delete(ctx, project, col, req)
+	// Perform the delete operation
+	n, err := crud.Delete(ctx, project, col, req)
+
+	// Invoke the metric hook if the operation was successful
+	if err == nil {
+		m.metricHook(m.project, dbType, col, n, utils.Delete)
+	}
 
 	// Invoke the stage hook
 	m.hooks.Stage(ctx, intent, err)
@@ -144,8 +166,15 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 		return err
 	}
 
-	// Perfrom the batch operation
-	err = crud.Batch(ctx, project, req)
+	// Perform the batch operation
+	counts, err := crud.Batch(ctx, project, req)
+
+	// Invoke the metric hook if the operation was successful
+	if err == nil {
+		for i, r := range req.Requests {
+			m.metricHook(m.project, dbType, r.Col, counts[i], utils.OperationType(r.Operation))
+		}
+	}
 
 	// Invoke the stage hook
 	m.hooks.Stage(ctx, intent, err)
@@ -208,13 +237,19 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 	m.RLock()
 	defer m.RUnlock()
 
+	// Skip if project scope is disabled
+	if m.removeProjectScope {
+		return nil
+	}
+
 	var sql string
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		sql = "create database if not exists " + project
 	case utils.Postgres:
 		sql = "create schema if not exists " + project
-
+	case utils.SqlServer:
+		sql = "create schema if not exists " + project
 	default:
 		return nil
 	}
@@ -229,4 +264,38 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 	}
 
 	return crud.RawExec(ctx, sql)
+}
+
+// GetConnectionState gets the current state of client
+func (m *Module) GetConnectionState(ctx context.Context, dbType string) bool {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return false
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return false
+	}
+
+	return crud.GetConnectionState(ctx, dbType)
+}
+
+// DeleteTable drop specified table from database
+func (m *Module) DeleteTable(ctx context.Context, project, dbType, col string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	return crud.DeleteCollection(ctx, project, col)
 }
