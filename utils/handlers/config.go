@@ -170,28 +170,6 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager)
 	}
 }
 
-// HandleLoadStaticConfig returns the handler to load the projects via a REST endpoint
-func HandleLoadStaticConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		// Load config from file
-		c := syncMan.GetGlobalConfig()
-
-		// Give positive acknowledgement
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"static": c.Static})
-	}
-}
 
 // HandleDeleteProjectConfig returns the handler to delete the config of a project via a REST endpoint
 func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
@@ -223,3 +201,4 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
+
