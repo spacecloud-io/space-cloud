@@ -170,7 +170,6 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager)
 	}
 }
 
-
 // HandleDeleteProjectConfig returns the handler to delete the config of a project via a REST endpoint
 func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -201,4 +200,3 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
-

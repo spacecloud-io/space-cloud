@@ -48,12 +48,11 @@ func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) 
 	c := s.syncMan.GetGlobalConfig()
 	if c != nil {
 		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
-		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
 		if c.Admin != nil {
 			set["mode"] = c.Admin.Operation.Mode
 		}
 		if c.Projects != nil && len(c.Projects) > 0 {
-			set["modules"] = getProjectInfo(c.Projects, c.Static)
+			set["modules"] = getProjectInfo(c.Projects)
 			projects := []string{}
 			for _, project := range c.Projects {
 				projects = append(projects, project.ID)
@@ -105,7 +104,7 @@ func (s *Server) RoutineMetrics() {
 	}
 }
 
-func getProjectInfo(projects []*config.Project, static *config.Static) map[string]interface{} {
+func getProjectInfo(projects []*config.Project) map[string]interface{} {
 
 	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
 	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
@@ -154,15 +153,6 @@ func getProjectInfo(projects []*config.Project, static *config.Static) map[strin
 				}
 			}
 
-		}
-	}
-
-	if static != nil {
-		if static.Routes != nil {
-			staticConfig["routes"] = len(static.Routes)
-		}
-		if static.InternalRoutes != nil {
-			staticConfig["internalRoutes"] = len(static.InternalRoutes)
 		}
 	}
 
