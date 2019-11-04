@@ -11,18 +11,16 @@ import (
 
 // Manager manages all admin transactions
 type Manager struct {
-	lock      sync.RWMutex
-	nodeID    string
-	admin     *config.Admin
-	validator *validator
-	isProd    bool
+	lock   sync.RWMutex
+	nodeID string
+	admin  *config.Admin
+	isProd bool
 }
 
 // New creates a new admin manager instance
 func New(nodeID string) *Manager {
 	m := new(Manager)
 	m.nodeID = nodeID
-	m.validator = newValidator(m.reduceOpMode)
 	return m
 }
 
@@ -33,11 +31,8 @@ func (m *Manager) SetConfig(admin *config.Admin) {
 
 	if admin.Operation.Mode > 0 {
 		// Start the validation process for higher op modes
-		if err := m.validator.startValidation(m.nodeID, admin.Operation.UserID, admin.Operation.Key, admin.Operation.Mode); err != nil {
-			log.Println("Could not start in enterprise mode:", err)
-			log.Println("Switching to community edition")
-			admin.Operation.Mode = 0
-		}
+		log.Println("Could not start in enterprise mode:", "Not supported")
+		admin.Operation.Mode = 0
 	}
 
 	m.admin = admin
@@ -61,12 +56,10 @@ func (m *Manager) SetOperationMode(op *config.OperationConfig) error {
 
 	if op.Mode > 0 {
 		// Start the validation process for higher op modes
-		if err := m.validator.startValidation(m.nodeID, op.UserID, op.Key, op.Mode); err != nil {
-			return err
-		}
+		log.Println("Could not start in enterprise mode:", "Not supported")
+		m.admin.Operation.Mode = 0
 	} else {
 		// Stop validation for open source mode
-		m.validator.stopValidation()
 	}
 
 	m.admin.Operation = *op

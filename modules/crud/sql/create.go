@@ -6,6 +6,7 @@ import (
 
 	goqu "github.com/doug-martin/goqu/v8"
 
+	_ "github.com/denisenkom/go-mssqldb"                //Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
@@ -15,20 +16,23 @@ import (
 )
 
 // Create inserts a document (or multiple when op is "all") into the database
-func (s *SQL) Create(ctx context.Context, project, col string, req *model.CreateRequest) error {
+func (s *SQL) Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error) {
 	sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, req)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	_, err = doExecContext(ctx, sqlQuery, args, s.client)
-	return err
+	res, err := doExecContext(ctx, sqlQuery, args, s.client)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
 //generateCreateQuery makes query for create operation
 func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(project + "." + col).Prepared(true)
+	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	var insert []interface{}
 	if req.Operation == "one" {

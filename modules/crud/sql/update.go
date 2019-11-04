@@ -8,67 +8,76 @@ import (
 
 	goqu "github.com/doug-martin/goqu/v8"
 
+	_ "github.com/denisenkom/go-mssqldb"                //Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
-	_ "github.com/lib/pq"                               // Import for postgres
+	_ "github.com/lib/pq"                               // Import for
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // Update updates the document(s) which match the condition provided.
-func (s *SQL) Update(ctx context.Context, project, col string, req *model.UpdateRequest) error {
+func (s *SQL) Update(ctx context.Context, project, col string, req *model.UpdateRequest) (int64, error) {
 	tx, err := s.client.BeginTxx(ctx, nil) //TODO - Write *sqlx.TxOption instead of nil
 	if err != nil {
 		fmt.Println("Error in initiating Batch")
-		return err
+		return 0, err
 	}
-	err = s.update(ctx, project, col, req, tx)
+	count, err := s.update(ctx, project, col, req, tx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return tx.Commit() // commit the Batch
+	return count, tx.Commit() // commit the Batch
 }
 
-func (s *SQL) update(ctx context.Context, project, col string, req *model.UpdateRequest, executor executor) error {
+func (s *SQL) update(ctx context.Context, project, col string, req *model.UpdateRequest, executor executor) (int64, error) {
 	if req == nil {
-		return utils.ErrInvalidParams
+		return 0, utils.ErrInvalidParams
 	}
 	if req.Update == nil {
-		return utils.ErrInvalidParams
+		return 0, utils.ErrInvalidParams
 	}
 	switch req.Operation {
 	case utils.All:
+		var count int64
 		for k := range req.Update {
 			switch k {
 			case "$set", "$inc", "$mul", "$max", "$min", "$currentDate":
 				sqlQuery, args, err := s.generateUpdateQuery(ctx, project, col, req, k)
 				if err != nil {
-					return err
+					return 0, err
 				}
-				_, err = doExecContext(ctx, sqlQuery, args, executor)
+				res, err := doExecContext(ctx, sqlQuery, args, executor)
 				if err != nil {
-					return err
+					return 0, err
 				}
+
+				c, _ := res.RowsAffected()
+				count += c
+
 			default: // (case "$push", "$unset", "$rename")
-				return utils.ErrInvalidParams
+				return 0, utils.ErrInvalidParams
 			}
 		}
+
+		return count, nil
+
 	case utils.Upsert:
 		sqlString, args, err := s.generateReadQuery(ctx, project, col, &model.ReadRequest{Find: req.Find, Operation: utils.One})
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		stmt, err := executor.PreparexContext(ctx, sqlString)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		defer stmt.Close()
 
 		rows, err := stmt.QueryxContext(ctx, args...)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		defer rows.Close()
 
@@ -82,12 +91,12 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			for op := range req.Update {
 				m, ok := req.Update[op].(map[string]interface{})
 				if !ok {
-					return utils.ErrInvalidParams
+					return 0, utils.ErrInvalidParams
 				}
 				if op == "$currentDate" {
 					err := flattenForDate(&m)
 					if err != nil {
-						return err
+						return 0, err
 					}
 					for k, v := range m { // k -> column name, v -> function name
 						dates[k] = v
@@ -100,33 +109,36 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			}
 			sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, &model.CreateRequest{Document: doc, Operation: utils.One})
 			if err != nil {
-				return err
+				return 0, err
 			}
+
 			for k, v := range dates {
 				f := strings.Index(sqlQuery, ")")
 				sqlQuery = sqlQuery[:f] + ", " + k + sqlQuery[f:]
 				l := strings.LastIndex(sqlQuery, ")")
 				sqlQuery = sqlQuery[:l] + ", " + v.(string) + sqlQuery[l:]
 			}
-			_, err = doExecContext(ctx, sqlQuery, args, executor)
+
+			res, err := doExecContext(ctx, sqlQuery, args, executor)
 			if err != nil {
-				return err
+				return 0, err
 			}
+
+			return res.RowsAffected()
 		} else {
 			req.Operation = utils.All
 			return s.update(ctx, project, col, req, executor)
 		}
 	default: // (case utils.One)
-		return utils.ErrInvalidParams
+		return 0, utils.ErrInvalidParams
 	}
-	return nil
 }
 
 //generateUpdateQuery makes query for update operations
 func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest, op string) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From(project + "." + col)
+	query := dialect.From(s.getDBName(project, col))
 	if op == "$set" {
 		query = query.Prepared(true)
 	}

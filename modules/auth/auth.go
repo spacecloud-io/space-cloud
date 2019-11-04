@@ -23,34 +23,30 @@ var (
 // Module is responsible for authentication and authorisation
 type Module struct {
 	sync.RWMutex
-	rules         config.Crud
-	secret        string
-	crud          *crud.Module
-	functions     *functions.Module
-	fileRules     []*config.FileRule
-	funcRules     config.Services
-	pubsubRules   []*config.PubsubRule
-	project       string
-	fileStoreType string
-	Schema        *schema.Schema
+	rules           config.Crud
+	secret          string
+	crud            *crud.Module
+	functions       *functions.Module
+	fileRules       []*config.FileRule
+	funcRules       *config.ServicesModule
+	project         string
+	fileStoreType   string
+	Schema          *schema.Schema
+	makeHttpRequest utils.MakeHttpRequest
 }
 
 // Init creates a new instance of the auth object
-func Init(crud *crud.Module, functions *functions.Module) *Module {
-	return &Module{rules: make(config.Crud), crud: crud, functions: functions, Schema: schema.Init(crud)}
+func Init(crud *crud.Module, functions *functions.Module, removeProjectScope bool) *Module {
+	return &Module{rules: make(config.Crud), crud: crud, functions: functions, Schema: schema.Init(crud, removeProjectScope)}
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.Functions, pubsub *config.Pubsub) error {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule) error {
 	m.Lock()
 	defer m.Unlock()
 
 	if fileStore != nil {
 		sortFileRule(fileStore.Rules)
-	}
-
-	if pubsub != nil {
-		sortPubsubRule(pubsub.Rules)
 	}
 
 	m.project = project
@@ -66,11 +62,7 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	}
 
 	if functions != nil {
-		m.funcRules = functions.Services
-	}
-
-	if pubsub != nil && pubsub.Enabled {
-		m.pubsubRules = pubsub.Rules
+		m.funcRules = functions
 	}
 
 	return nil
@@ -107,6 +99,24 @@ func (m *Module) CreateToken(tokenClaims TokenClaims) (string, error) {
 	return tokenString, nil
 }
 
+// IsTokenInternal checks if the provided token is internally generated
+func (m *Module) IsTokenInternal(token string) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	claims, err := m.parseToken(token)
+	if err != nil {
+		return err
+	}
+
+	if idTemp, p := claims["id"]; p {
+		if id, ok := idTemp.(string); ok && id == utils.InternalUserID {
+			return nil
+		}
+	}
+	return errors.New("token has not been created internally")
+}
+
 func (m *Module) parseToken(token string) (TokenClaims, error) {
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
@@ -132,4 +142,11 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 	}
 
 	return nil, ErrTokenVerification
+}
+
+func (m *Module) SetMakeHttpRequest(function utils.MakeHttpRequest) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.makeHttpRequest = function
 }

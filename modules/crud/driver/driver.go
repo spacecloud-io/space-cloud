@@ -12,30 +12,33 @@ import (
 
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
-	Create(ctx context.Context, project, col string, req *model.CreateRequest) error
-	Read(ctx context.Context, project, col string, req *model.ReadRequest) (interface{}, error)
-	Update(ctx context.Context, project, col string, req *model.UpdateRequest) error
-	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) error
+	Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error)
+	Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error)
+	Update(ctx context.Context, project, col string, req *model.UpdateRequest) (int64, error)
+	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error)
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
-	Batch(ctx context.Context, project string, req *model.BatchRequest) error
+	Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
 	RawExec(ctx context.Context, project string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
+	DeleteCollection(ctx context.Context, project, col string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
+	GetConnectionState(ctx context.Context, dbType string) bool
 }
 
 // Handler is the object managing the database connections
 type Handler struct {
-	lock    sync.Mutex
-	drivers map[string]*stub
+	lock               sync.Mutex
+	drivers            map[string]*stub
+	RemoveProjectScope bool
 }
 
 // New creates a new driver handler
-func New() *Handler {
-	return &Handler{drivers: map[string]*stub{}}
+func New(removeProjectScope bool) *Handler {
+	return &Handler{drivers: map[string]*stub{}, RemoveProjectScope: removeProjectScope}
 }
 
 // InitBlock creates and returns a new crud object. If the driver already exists, it returns that instead
@@ -87,8 +90,8 @@ func (h *Handler) addBlock(dbType utils.DBType, enabled bool, connection string)
 	case utils.Mongo:
 		c, err = mgo.Init(enabled, connection)
 
-	case utils.MySQL, utils.Postgres:
-		c, err = sql.Init(dbType, enabled, connection)
+	case utils.MySQL, utils.Postgres, utils.SqlServer:
+		c, err = sql.Init(dbType, enabled, h.RemoveProjectScope, connection)
 
 	default:
 		c, err = nil, utils.ErrInvalidParams

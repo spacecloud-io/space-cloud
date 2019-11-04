@@ -2,56 +2,81 @@ package syncman
 
 import (
 	"log"
-	"net"
+	"strings"
 	"sync"
 
-	"github.com/hashicorp/raft"
-	"github.com/hashicorp/serf/serf"
+	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/connect"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/modules/static"
+	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 )
 
-// SyncManager syncs the project config between folders
-type SyncManager struct {
-	lock          sync.RWMutex
-	membersLock   sync.Mutex
-	raft          *raft.Raft
+// Manager syncs the project config between folders
+type Manager struct {
+	lock sync.RWMutex
+
+	// Config related to cluster config
 	projectConfig *config.Config
 	projects      *model.ProjectCallbacks
 	configFile    string
-	gossipPort    string
-	raftPort      string
-	list          *serf.Serf
-	myIP          string
-	serfEvents    chan serf.Event
-	bootstrap     string
-	adminMan      *admin.Manager
-	static        *static.Module
-}
 
-const (
-	bootstrapPending string = "pending"
-	bootstrapDone    string = "done"
-	bootstrapEvent   string = "bootstrap"
-)
+	// Configuration for cluster information
+	nodeID    string
+	clusterID string
+	port      int
 
-type node struct {
-	Addr string `json:"addr"`
+	// Configuration for clustering
+	isConsulEnabled bool
+	consulClient    *api.Client
+	consulService   *connect.Service
+	services        []*api.ServiceEntry
+
+	// Global servers
+	adminMan *admin.Manager
 }
 
 // New creates a new instance of the sync manager
-func New(adminMan *admin.Manager, s *static.Module) *SyncManager {
-	// Create a SyncManger instance
-	syncMan := &SyncManager{adminMan: adminMan, myIP: getOutboundIP(), serfEvents: make(chan serf.Event, 16),
-		bootstrap: bootstrapPending, static: s}
-	syncMan.static.AddInternalRoute = syncMan.AddInternalRoutes
-	return syncMan
+func New(nodeID, clusterID string, isConsulEnabled bool, adminMan *admin.Manager) (*Manager, error) {
+
+	// Create a new manager instance
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, adminMan: adminMan}
+
+	// Initialise the consul client if enabled
+	if isConsulEnabled {
+		client, err := api.NewClient(api.DefaultConfig())
+		if err != nil {
+			return nil, err
+		}
+
+		service, err := connect.NewService(utils.SpaceCloudServiceName, client)
+		if err != nil {
+			return nil, err
+		}
+
+		m.isConsulEnabled = true
+		m.consulClient = client
+		m.consulService = service
+
+		// Set the node id if not already exists
+		if m.nodeID == "" || strings.HasPrefix(m.nodeID, "auto") {
+			info, err := client.Agent().Self()
+			if err != nil {
+				return nil, err
+			}
+
+			m.nodeID = info["Config"]["NodeID"].(string)
+		}
+
+		return m, nil
+	}
+
+	return m, nil
 }
 
-func (s *SyncManager) SetProjectCallbacks(projects *model.ProjectCallbacks) {
+func (s *Manager) SetProjectCallbacks(projects *model.ProjectCallbacks) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -59,16 +84,13 @@ func (s *SyncManager) SetProjectCallbacks(projects *model.ProjectCallbacks) {
 }
 
 // Start begins the sync manager operations
-func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string, seeds []string) error {
+func (s *Manager) Start(configFilePath string) error {
 	// Save the ports
 	s.lock.Lock()
-	s.gossipPort = gossipPort
-	s.raftPort = raftPort
+	defer s.lock.Unlock()
 
 	s.configFile = configFilePath
-	if s.projectConfig.NodeID == "" {
-		s.projectConfig.NodeID = nodeID
-	}
+
 	// Write the config to file
 	config.StoreConfigToFile(s.projectConfig, s.configFile)
 
@@ -80,30 +102,49 @@ func (s *SyncManager) Start(nodeID, configFilePath, gossipPort, raftPort string,
 		}
 	}
 
-	s.lock.Unlock()
-
-	nodes := []node{}
-	for _, m := range seeds {
-		if m == "127.0.0.1" {
-			m = s.myIP
+	if s.isConsulEnabled {
+		// Start routine to observe active space-cloud services
+		if err := s.watchService(); err != nil {
+			return err
 		}
-		addrs, err := net.LookupHost(m)
-		if err != nil {
-			log.Fatalf("Syncman: Cant look up host %s error %v\n", m, err)
+
+		// Start routine to observe space cloud projects
+		if err := s.watchProjects(); err != nil {
+			return err
 		}
-		nodes = append(nodes, node{Addr: addrs[0]})
-	}
-
-	go s.handleSerfEvents()
-
-	// Start the membership protocol
-	if err := s.initMembership(nodes); err != nil {
-		return err
-	}
-
-	if err := s.initRaft(nodes); err != nil {
-		return err
 	}
 
 	return nil
+}
+
+//func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
+//	if !s.isConsulEnabled {
+//		return errors.New("consul is not enabled")
+//	}
+//
+//	s.port = port
+//
+//	// Creating an HTTP server that serves via Connect
+//	server := &http.Server{
+//		Addr:      ":" + strconv.Itoa(s.port+2),
+//		TLSConfig: s.consulService.ServerTLSConfig(),
+//		Handler:   handler,
+//	}
+//
+//	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
+//	return server.ListenAndServeTLS("", "")
+//}
+
+// SetGlobalConfig sets the global config. This must be called before the Start command.
+func (s *Manager) SetGlobalConfig(c *config.Config) {
+	s.lock.Lock()
+	s.projectConfig = c
+	s.lock.Unlock()
+}
+
+// GetGlobalConfig gets the global config
+func (s *Manager) GetGlobalConfig() *config.Config {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.projectConfig
 }

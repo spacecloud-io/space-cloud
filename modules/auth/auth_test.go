@@ -88,7 +88,7 @@ func TestParseToken(t *testing.T) {
 	authModule := Init(&crud.Module{}, &functions.Module{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			authModule.SetConfig("", test.secretKey, config.Crud{}, &config.FileStore{}, &config.Functions{}, &config.Pubsub{})
+			authModule.SetConfig("", test.secretKey, config.Crud{}, &config.FileStore{}, &config.Functions{})
 			tokenClaims, err := authModule.parseToken(test.token)
 			if test.testType == "Success" {
 				if !cmp.Equal(test.wantThis, tokenClaims) {

@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -26,13 +27,19 @@ func appendIfMissing(slice []string, s string) []string {
 }
 
 func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) {
+	// Get the cluster size
+	clusterSize, err := s.syncMan.GetClusterSize(context.Background())
+	if err != nil {
+		clusterSize = 1
+	}
+
 	// Create the find and update clauses
 	find = map[string]interface{}{"_id": s.nodeID}
 	set := map[string]interface{}{
 		"os":           runtime.GOOS,
 		"isProd":       s.adminMan.LoadEnv(),
 		"version":      utils.BuildVersion,
-		"clusterSize":  s.syncMan.GetClusterSize(),
+		"clusterSize":  clusterSize,
 		"distribution": "ee",
 		"lastUpdated":  currentTimeInMillis(),
 	}
@@ -41,12 +48,11 @@ func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) 
 	c := s.syncMan.GetGlobalConfig()
 	if c != nil {
 		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
-		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
 		if c.Admin != nil {
 			set["mode"] = c.Admin.Operation.Mode
 		}
 		if c.Projects != nil && len(c.Projects) > 0 {
-			set["modules"] = getProjectInfo(c.Projects, c.Static)
+			set["modules"] = getProjectInfo(c.Projects)
 			projects := []string{}
 			for _, project := range c.Projects {
 				projects = append(projects, project.ID)
@@ -98,7 +104,7 @@ func (s *Server) RoutineMetrics() {
 	}
 }
 
-func getProjectInfo(projects []*config.Project, static *config.Static) map[string]interface{} {
+func getProjectInfo(projects []*config.Project) map[string]interface{} {
 
 	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
 	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
@@ -127,13 +133,13 @@ func getProjectInfo(projects []*config.Project, static *config.Static) map[strin
 				}
 			}
 
-			if config.Functions != nil {
+			if config.Services != nil {
 				functionsConfig["enabled"] = true
-				if config.Functions.Services != nil {
-					functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Functions.Services)
-					for _, v := range config.Functions.Services {
-						if v != nil && v.Functions != nil {
-							functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v.Functions)
+				if config.Services.Services != nil {
+					functionsConfig["services"] = functionsConfig["services"].(int) + len(config.Services.Services)
+					for _, v := range config.Services.Services {
+						if v != nil && v.Endpoints != nil {
+							functionsConfig["functions"] = functionsConfig["functions"].(int) + len(v.Endpoints)
 						}
 					}
 				}
@@ -147,15 +153,6 @@ func getProjectInfo(projects []*config.Project, static *config.Static) map[strin
 				}
 			}
 
-		}
-	}
-
-	if static != nil {
-		if static.Routes != nil {
-			staticConfig["routes"] = len(static.Routes)
-		}
-		if static.InternalRoutes != nil {
-			staticConfig["internalRoutes"] = len(static.InternalRoutes)
 		}
 	}
 

@@ -12,7 +12,7 @@ import (
 // SchemaInspection resturn schema in schema definition language (SDL)
 func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col string) (string, error) {
 	if dbType == "mongo" {
-		return "", errors.New("Inspection cannot be performed over mongo")
+		return "", nil
 	}
 
 	inspectionCollection, err := s.Inspector(ctx, dbType, project, col)
@@ -53,10 +53,10 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		}
 		// check if list
 		if value.FieldKey == "PRI" {
-			fieldDetails.Directive = "id"
+			fieldDetails.Directive = directivePrimary
 			fieldDetails.Kind = typeID
 		} else if value.FieldKey == "UNI" {
-			fieldDetails.Directive = "unique"
+			fieldDetails.Directive = directiveUnique
 		}
 
 		// check foreignKey & identify if relation exists
@@ -91,7 +91,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldTyp
 		fieldDetails.Kind = typeFloat
 	case "date", "time", "datetime", "timestamp":
 		fieldDetails.Kind = typeDateTime
-	case "tinyint", "boolean": // sql stores boolean valuse as tinyint(1), TODO: what if tinyint(28) then it should come under integer
+	case "tinyint", "boolean":
 		fieldDetails.Kind = typeBoolean
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])

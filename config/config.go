@@ -1,32 +1,10 @@
 package config
 
-import "github.com/spaceuptech/space-cloud/utils"
-
 // Config holds the entire configuration
 type Config struct {
 	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
 	SSL      *SSL       `json:"ssl" yaml:"ssl"`
 	Admin    *Admin     `json:"admin" yaml:"admin"`
-	Deploy   Deploy     `json:"deploy" yaml:"deploy"`
-	Static   *Static    `json:"gateway" yaml:"gateway"`
-	Cluster  string     `json:"cluster" yaml:"cluster"`
-	NodeID   string     `json:"nodeId" yaml:"nodeId"`
-}
-
-// Deploy holds the deployment environment config
-type Deploy struct {
-	Orchestrator utils.OrchestratorType `json:"orchestrator,omitempty" yaml:"orchestrator,omitempty"`
-	Registry     Registry               `json:"registry,omitempty" yaml:"registry,omitempty"`
-	Namespace    string                 `json:"namespace,omitempty" yaml:"namespace,omitempty"`
-	Enabled      bool                   `json:"enabled" yaml:"enabled"`
-}
-
-// Registry holds the details of the registry
-type Registry struct {
-	URL   string  `json:"url" yaml:"url"`
-	ID    string  `json:"id" yaml:"id"`
-	Key   string  `json:"key" yaml:"key"`
-	Token *string `json:"token,omitempty" yaml:"token,omitempty"`
 }
 
 // Project holds the project level configuration
@@ -70,12 +48,11 @@ type SSL struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud      Crud       `json:"crud" yaml:"crud"`
-	Auth      Auth       `json:"auth" yaml:"auth"`
-	Functions *Functions `json:"functions" yaml:"functions"`
-	FileStore *FileStore `json:"fileStore" yaml:"fileStore"`
-	Pubsub    *Pubsub    `json:"pubsub" yaml:"pubsub"`
-	Eventing  Eventing   `json:"eventing,omitempty" yaml:"eventing,omitempty"`
+	Crud      Crud            `json:"crud" yaml:"crud"`
+	Auth      Auth            `json:"auth" yaml:"auth"`
+	Services  *ServicesModule `json:"services" yaml:"services"`
+	FileStore *FileStore      `json:"fileStore" yaml:"fileStore"`
+	Eventing  Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -107,8 +84,7 @@ type Rule struct {
 	DB      string                 `json:"db,omitempty" yaml:"db,omitempty"`
 	Col     string                 `json:"col,omitempty" yaml:"col,omitempty"`
 	Find    map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
-	Service string                 `json:"service,omitempty" yaml:"service,omitempty"`
-	Func    string                 `json:"func,omitempty" yaml:"func,omitempty"`
+	Url     string                 `json:"url,omitempty" yaml:"url,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -121,9 +97,10 @@ type AuthStub struct {
 	Secret  string `json:"secret" yaml:"secret"`
 }
 
-// Functions holds the config for the functions module
-type Functions struct {
-	Services Services `json:"services" yaml:"services"`
+// ServicesModule holds the config for the service module
+type ServicesModule struct {
+	Services         Services `json:"externalServices" yaml:"externalServices"`
+	InternalServices Services `json:"internalServices" yaml:"internalServices"`
 }
 
 // Services holds the config of services
@@ -131,12 +108,14 @@ type Services map[string]*Service
 
 // Service holds the config of service
 type Service struct {
-	Functions map[string]Function `json:"functions" yaml:"functions"`
+	URL       string              `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
+	Endpoints map[string]Endpoint `json:"endpoints" yaml:"endpoints"`
 }
 
-// Function holds the config of a function
-type Function struct {
-	Rule *Rule `json:"rule" yaml:"rule"`
+// Endpoint holds the config of a endpoint
+type Endpoint struct {
+	Path string `json:"path" yaml:"path"`
+	Rule *Rule  `json:"rule" yaml:"rule"`
 }
 
 // FileStore holds the config for the file store module
@@ -151,6 +130,7 @@ type FileStore struct {
 
 // FileRule is the authorization object at the file rule level
 type FileRule struct {
+	Name   string           `json:"name" yaml:"name"`
 	Prefix string           `json:"prefix" yaml:"prefix"`
 	Rule   map[string]*Rule `json:"rule" yaml:"rule"` // The key can be create, read, delete
 }
@@ -171,20 +151,6 @@ type StaticRoute struct {
 	Protocol  string `json:"protocol,omitempty" yaml:"protocol,omitempty"`
 }
 
-// Pubsub holds the config for the realtime module
-type Pubsub struct {
-	Enabled bool          `json:"enabled" yaml:"enabled"`
-	Broker  utils.Broker  `json:"broker" yaml:"broker"`
-	Conn    string        `json:"conn" yaml:"conn"`
-	Rules   []*PubsubRule `json:"rules" yaml:"rules"`
-}
-
-// PubsubRule is the authorization object at the pubsub rule level
-type PubsubRule struct {
-	Subject string           `json:"subject" yaml:"subject"` // The channel subject
-	Rule    map[string]*Rule `json:"rule" yaml:"rule"`       // The key can be publish or subscribe
-}
-
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
 	Enabled       bool                    `json:"enabled" yaml:"enabled"`
@@ -196,9 +162,8 @@ type Eventing struct {
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	Type     string            `json:"type" yaml:"type"`
-	Retries  int               `json:"retries" yaml:"retries"`
-	Service  string            `json:"service" yaml:"service"`
-	Function string            `json:"func" yaml:"func"`
-	Options  map[string]string `json:"options" yaml:"options"`
+	Type    string            `json:"type" yaml:"type"`
+	Retries int               `json:"retries" yaml:"retries"`
+	Url     string            `json:"url" yaml:"url"`
+	Options map[string]string `json:"options" yaml:"options"`
 }

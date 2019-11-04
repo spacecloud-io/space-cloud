@@ -35,41 +35,37 @@ func Test(t *testing.T) {
 							},
 						},
 					},
-					FileStore: &config.FileStore{
-						Enabled:   true,
-						StoreType: "amazon-s3",
-						Rules: []*config.FileRule{
-							&config.FileRule{},
-							&config.FileRule{},
-						},
-					},
-					Realtime: &config.Realtime{
-						Enabled: true,
-					},
-					Auth: map[string]*config.AuthStub{
-						"email": &config.AuthStub{
-							Enabled: true,
-						},
-					},
-					Functions: &config.Functions{
-						Enabled: true,
-						Services: config.Services{
-							"service1": &config.Service{
-								Functions: map[string]config.Function{
-									"func1": config.Function{
-										Rule: &config.Rule{},
-									},
-								},
-							},
-							"service2": &config.Service{
-								Functions: map[string]config.Function{
-									"func1": config.Function{Rule: &config.Rule{}},
-									"func2": config.Function{Rule: &config.Rule{}},
-									"func3": config.Function{Rule: &config.Rule{}},
-								},
+				},
+			},
+			Functions: &config.Functions{
+				Services: config.Services{
+					"service1": &config.Service{
+						Functions: map[string]config.Function{
+							"func1": config.Function{
+								Rule: &config.Rule{},
 							},
 						},
 					},
+					"service2": &config.Service{
+						Functions: map[string]config.Function{
+							"func1": config.Function{Rule: &config.Rule{}},
+							"func2": config.Function{Rule: &config.Rule{}},
+							"func3": config.Function{Rule: &config.Rule{}},
+						},
+					},
+				},
+			},
+			FileStore: &config.FileStore{
+				Enabled:   true,
+				StoreType: "amazon-s3",
+				Rules: []*config.FileRule{
+					&config.FileRule{},
+					&config.FileRule{},
+				},
+			},
+			Auth: map[string]*config.AuthStub{
+				"email": &config.AuthStub{
+					Enabled: true,
 				},
 			},
 		},
