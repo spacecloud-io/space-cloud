@@ -28,7 +28,7 @@ func HandleRealtimeEvent(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Load the params from the body
-		eventDoc := model.EventDocument{}
+		eventDoc := model.CloudEventPayload{}
 		json.NewDecoder(r.Body).Decode(&eventDoc)
 		defer r.Body.Close()
 
@@ -68,7 +68,7 @@ func HandleRealtimeProcessRequest(projects *projects.Projects) http.HandlerFunc 
 		}
 
 		// Load the params from the body
-		eventDoc := model.EventDocument{}
+		eventDoc := model.CloudEventPayload{}
 		json.NewDecoder(r.Body).Decode(&eventDoc)
 		defer r.Body.Close()
 
