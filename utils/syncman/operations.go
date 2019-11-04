@@ -174,20 +174,6 @@ func (s *Manager) setProject(project *config.Project) error {
 	return err
 }
 
-// SetStaticConfig applies the set project config command to the raft log
-func (s *Manager) SetStaticConfig(static *config.Static) error {
-	// Acquire a lock
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	s.projectConfig.Static = static
-	if err := s.cb(s.projectConfig); err != nil {
-		return err
-	}
-
-	return config.StoreConfigToFile(s.projectConfig, s.configFile)
-}
-
 // DeleteProjectConfig applies delete project config command to the raft log
 func (s *Manager) DeleteProjectConfig(projectID string) error {
 	// Acquire a lock

@@ -17,10 +17,6 @@ func (s *Server) InitSecureRoutes(profiler bool, staticPath string) {
 	s.routes(s.routerSecure, profiler, staticPath)
 }
 
-func (s *Server) InitConnectRoutes(profiler bool, staticPath string) {
-	s.routes(s.routerConnect, profiler, staticPath)
-}
-
 func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// Initialize the routes for config management
 	router.Methods("GET").Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
@@ -30,12 +26,7 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("GET").Path("/v1/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan, s.configFilePath))
 	router.Methods("PUT").Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleStoreProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("GET").Path("/v1/config/deploy").HandlerFunc(handlers.HandleLoadDeploymentConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("POST").Path("/v1/config/deploy").HandlerFunc(handlers.HandleStoreDeploymentConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("GET").Path("/v1/config/operation").HandlerFunc(handlers.HandleLoadOperationModeConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("POST").Path("/v1/config/operation").HandlerFunc(handlers.HandleStoreOperationModeConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods("GET").Path("/v1/config/static").HandlerFunc(handlers.HandleLoadStaticConfig(s.adminMan, s.syncMan))
-	router.Methods("POST").Path("/v1/config/static").HandlerFunc(handlers.HandleStoreStaticConfig(s.adminMan, s.syncMan))
+
 	// added endpoints for service
 	router.Methods("POST").Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleAddService(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleDeleteService(s.adminMan, s.syncMan))
@@ -122,8 +113,4 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	}
 
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
-
-	// Initialize the route for handling static files
-	router.PathPrefix("/").HandlerFunc(handlers.HandleStaticRequest(s.static))
-
 }

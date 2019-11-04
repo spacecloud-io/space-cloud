@@ -225,10 +225,6 @@ func actionRun(c *cli.Context) error {
 		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
-	if enableConsul {
-		s.InitConnectRoutes(profiler, staticPath)
-	}
-
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 

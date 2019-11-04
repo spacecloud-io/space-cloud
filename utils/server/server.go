@@ -19,7 +19,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
-	"github.com/spaceuptech/space-cloud/modules/static"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
@@ -33,14 +32,12 @@ type Server struct {
 	nodeID         string
 	router         *mux.Router
 	routerSecure   *mux.Router
-	routerConnect  *mux.Router
 	auth           *auth.Module
 	crud           *crud.Module
 	user           *userman.Module
 	file           *filestore.Module
 	functions      *functions.Module
 	realtime       *realtime.Module
-	static         *static.Module
 	nats           *nats.Server
 	eventing       *eventing.Module
 	configFilePath string
@@ -55,7 +52,6 @@ type Server struct {
 func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
-	r3 := mux.NewRouter()
 
 	// Create the fundamental modules
 	c := crud.Init(removeProjectScope)
@@ -91,15 +87,14 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 		return nil, err
 	}
 
-	s := static.Init()
 	u := userman.Init(c, a)
 	f := filestore.Init(a)
 	graphqlMan := graphql.New(a, c, fn)
 
 	fmt.Println("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, router: r, routerSecure: r2, routerConnect: r3, auth: a, crud: c,
-		user: u, file: f, static: s, syncMan: syncMan, adminMan: adminMan, metrics: m,
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
+		user: u, file: f, syncMan: syncMan, adminMan: adminMan, metrics: m,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
 		eventing: e, graphql: graphqlMan}, nil
 }
@@ -194,12 +189,6 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		// Set the configuration for the realtime module
 		if err := s.realtime.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			log.Println("Error in realtime module config: ", err)
-			return err
-		}
-
-		// Set the configuration for static module
-		if err := s.static.SetConfig(config.Static); err != nil {
-			log.Println("Error in static module config", err)
 			return err
 		}
 
