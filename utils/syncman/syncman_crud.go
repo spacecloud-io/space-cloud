@@ -142,11 +142,18 @@ func (s *Manager) SetSchemaInspection(project, dbType, col, schema string) error
 	}
 
 	// update schema in config
-	coll, ok := projectConfig.Modules.Crud[dbType]
+	collection, ok := projectConfig.Modules.Crud[dbType]
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
-	coll.Collections[col].Schema = schema
+
+	temp, ok := collection.Collections[col]
+	// if collection doesn't exist then add to config
+	if !ok {
+		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}} // TODO: rule field here is null
+	} else {
+		temp.Schema = schema
+	}
 
 	return s.setProject(projectConfig)
 }

@@ -21,7 +21,7 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 	}
 	res, err := doExecContext(ctx, sqlString, args, s.client)
 	if err != nil {
-		return 0, nil
+		return 0, err
 	}
 
 	return res.RowsAffected()

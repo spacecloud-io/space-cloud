@@ -1,30 +1,10 @@
 package config
 
-import "github.com/spaceuptech/space-cloud/utils"
-
 // Config holds the entire configuration
 type Config struct {
 	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
 	SSL      *SSL       `json:"ssl" yaml:"ssl"`
 	Admin    *Admin     `json:"admin" yaml:"admin"`
-	Deploy   Deploy     `json:"deploy" yaml:"deploy"`
-	Static   *Static    `json:"gateway" yaml:"gateway"`
-}
-
-// Deploy holds the deployment environment config
-type Deploy struct {
-	Orchestrator utils.OrchestratorType `json:"orchestrator,omitempty" yaml:"orchestrator,omitempty"`
-	Registry     Registry               `json:"registry,omitempty" yaml:"registry,omitempty"`
-	Namespace    string                 `json:"namespace,omitempty" yaml:"namespace,omitempty"`
-	Enabled      bool                   `json:"enabled" yaml:"enabled"`
-}
-
-// Registry holds the details of the registry
-type Registry struct {
-	URL   string  `json:"url" yaml:"url"`
-	ID    string  `json:"id" yaml:"id"`
-	Key   string  `json:"key" yaml:"key"`
-	Token *string `json:"token,omitempty" yaml:"token,omitempty"`
 }
 
 // Project holds the project level configuration

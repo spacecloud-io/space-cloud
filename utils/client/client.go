@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gorilla/websocket"
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/model"
 )
@@ -26,6 +26,6 @@ type DataCallback func(data *model.Message) bool
 func CreateWebsocketClient(socket *websocket.Conn) *WebsocketClient {
 	channel := make(chan *model.Message, 5)
 	ctx, cancel := context.WithCancel(context.Background())
-	id := uuid.NewV1().String()
+	id := ksuid.New().String()
 	return &WebsocketClient{id, channel, ctx, cancel, socket}
 }

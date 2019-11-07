@@ -5,10 +5,8 @@ import (
 	"sync"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/connect"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // Manager syncs the project config between folders
@@ -28,7 +26,6 @@ type Manager struct {
 	// Configuration for clustering
 	isConsulEnabled bool
 	consulClient    *api.Client
-	consulService   *connect.Service
 	services        []*api.ServiceEntry
 }
 
@@ -45,14 +42,8 @@ func New(nodeID, clusterID string, isConsulEnabled bool) (*Manager, error) {
 			return nil, err
 		}
 
-		service, err := connect.NewService(utils.SpaceCloudServiceName, client)
-		if err != nil {
-			return nil, err
-		}
-
 		m.isConsulEnabled = true
 		m.consulClient = client
-		m.consulService = service
 
 		// Set the node id if not already exists
 		if m.nodeID == "" || strings.HasPrefix(m.nodeID, "auto") {

@@ -39,12 +39,11 @@ func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) 
 	c := s.syncMan.GetGlobalConfig()
 	if c != nil {
 		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
-		set["deployConfig"] = map[string]interface{}{"enabled": c.Deploy.Enabled, "orchestrator": c.Deploy.Orchestrator}
 		if c.Admin != nil {
 			set["mode"] = c.Admin.Operation.Mode
 		}
 		if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
-			set["modules"] = getProjectInfo(c.Projects[0].Modules, c.Static)
+			set["modules"] = getProjectInfo(c.Projects[0].Modules)
 			set["projects"] = []string{c.Projects[0].ID}
 		}
 	}
@@ -92,7 +91,7 @@ func (s *Server) RoutineMetrics() {
 	}
 }
 
-func getProjectInfo(config *config.Modules, static *config.Static) map[string]interface{} {
+func getProjectInfo(config *config.Modules) map[string]interface{} {
 
 	crudConfig := map[string]interface{}{"dbs": []string{}, "collections": 0}
 	functionsConfig := map[string]interface{}{"enabled": false, "services": 0, "functions": 0}
@@ -136,15 +135,6 @@ func getProjectInfo(config *config.Modules, static *config.Static) map[string]in
 		fileStoreConfig["storeTypes"] = []string{config.FileStore.StoreType}
 		if config.FileStore.Rules != nil {
 			fileStoreConfig["rules"] = len(config.FileStore.Rules)
-		}
-	}
-
-	if static != nil {
-		if static.Routes != nil {
-			staticConfig["routes"] = len(static.Routes)
-		}
-		if static.InternalRoutes != nil {
-			staticConfig["internalRoutes"] = len(static.InternalRoutes)
 		}
 	}
 

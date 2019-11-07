@@ -15,7 +15,7 @@ import (
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
 	"github.com/mitchellh/mapstructure"
-	uuid "github.com/satori/go.uuid"
+	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -127,7 +127,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 		}
 		defer socket.Close()
 
-		clientID := uuid.NewV1().String()
+		clientID := ksuid.New().String()
 		defer s.realtime.RemoveClient(clientID)
 
 		ctx, cancel := context.WithCancel(context.Background())

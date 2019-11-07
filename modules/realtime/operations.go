@@ -68,7 +68,7 @@ func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) {
 }
 
 // HandleRealtimeEvent handles an incoming realtime event from the eventing module
-func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.EventDocument) error {
+func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.CloudEventPayload) error {
 
 	urls := m.syncMan.GetSpaceCloudNodeURLs(m.project)
 
@@ -118,19 +118,21 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Ev
 }
 
 // ProcessRealtimeRequests handles an incoming realtime process event
-func (m *Module) ProcessRealtimeRequests(eventDoc *model.EventDocument) error {
+func (m *Module) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error {
 
 	dbEvent := new(model.DatabaseEventMessage)
-	if err := mapstructure.Decode(eventDoc.Payload, dbEvent); err != nil {
+	if err := mapstructure.Decode(eventDoc.Data, dbEvent); err != nil {
 		log.Println("Realtime Module Request Handler Error:", err)
 		return err
 	}
+
+	t, _ := time.Parse(time.RFC3339, eventDoc.Time)
 
 	feedData := &model.FeedData{
 		DocID:     dbEvent.DocID,
 		Type:      eventingToRealtimeEvent(eventDoc.Type),
 		Payload:   dbEvent.Doc,
-		TimeStamp: eventDoc.Timestamp,
+		TimeStamp: t.UnixNano() / int64(time.Millisecond),
 		Group:     dbEvent.Col,
 		DBType:    dbEvent.DBType,
 	}

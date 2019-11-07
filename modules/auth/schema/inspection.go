@@ -12,7 +12,7 @@ import (
 // SchemaInspection resturn schema in schema definition language (SDL)
 func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col string) (string, error) {
 	if dbType == "mongo" {
-		return "", errors.New("Inspection cannot be performed over mongo")
+		return "", nil
 	}
 
 	inspectionCollection, err := s.Inspector(ctx, dbType, project, col)
