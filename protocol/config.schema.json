@@ -17,13 +17,6 @@
         },
         "admin": {
           "$ref": "#/definitions/Admin"
-        },
-        "cluster": {
-          "type": "string",
-          "default": "default-cluster"
-        },
-        "nodeId": {
-          "type": "string"
         }
       },
       "required": [
