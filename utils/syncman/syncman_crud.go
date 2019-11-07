@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/auth/schema"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 )
 
 func (s *Manager) SetDeleteCollection(project, dbType, col string) error {
