@@ -18,7 +18,7 @@ type Project struct {
 // Admin stores the admin credentials
 type Admin struct {
 	Secret    string          `json:"secret" yaml:"secret"`
-	Operation OperationConfig `json:"operatiop"`
+	Operation OperationConfig `json:"operation"`
 	Users     []AdminUser     `json:"users" yaml:"users"`
 }
 
