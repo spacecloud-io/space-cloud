@@ -7,7 +7,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/auth/schema"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 
 	"github.com/spaceuptech/space-cloud/modules/functions"
