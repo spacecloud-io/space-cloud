@@ -10,7 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execDeleteRequest(field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
+func (graph *Module) execDeleteRequest(ctx context.Context, field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
 	dbType, err := GetDBType(field)
 	if err != nil {
 		return nil, err
@@ -22,15 +22,15 @@ func (graph *Module) execDeleteRequest(field *ast.Field, token string, store uti
 		return nil, err
 	}
 
-	status, err := graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, req)
+	status, err := graph.auth.IsDeleteOpAuthorised(ctx, graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return utils.M{"status": status}, graph.crud.Delete(context.TODO(), dbType, graph.project, col, req)
+	return utils.M{"status": status}, graph.crud.Delete(ctx, dbType, graph.project, col, req)
 }
 
-func (graph *Module) genrateDeleteReq(field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
+func (graph *Module) genrateDeleteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
 	dbType, err := GetDBType(field)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (graph *Module) genrateDeleteReq(field *ast.Field, token string, store map[
 		return nil, err
 	}
 
-	_, err = graph.auth.IsDeleteOpAuthorised(graph.project, dbType, col, token, req)
+	_, err = graph.auth.IsDeleteOpAuthorised(ctx, graph.project, dbType, col, token, req)
 	if err != nil {
 		return nil, err
 	}

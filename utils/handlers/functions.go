@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -22,6 +24,9 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 		service := vars["service"]
 		function := vars["func"]
 
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		// Load the params from the body
 		req := model.FunctionsRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
@@ -30,14 +35,14 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		_, err := auth.IsFuncCallAuthorised(project, service, function, token, req.Params)
+		_, err := auth.IsFuncCallAuthorised(ctx, project, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		result, err := functions.Call(service, function, token, req.Params, int(req.Timeout))
+		result, err := functions.Call(service, function, token, req.Params, req.Timeout)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

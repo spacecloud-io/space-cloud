@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"context"
 	"errors"
 	"strconv"
 	"strings"
@@ -150,7 +151,7 @@ func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 	}
 }
 
-func (graph *Module) processQueryResult(field *ast.Field, token string, store utils.M, result interface{}, loader *loaderMap, cb callback) {
+func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, loader *loaderMap, cb callback) {
 	addFieldPath(store, getFieldName(field))
 
 	switch val := result.(type) {
@@ -183,7 +184,7 @@ func (graph *Module) processQueryResult(field *ast.Field, token string, store ut
 						continue
 					}
 
-					graph.execGraphQLDocument(f, token, storeNew, loader, createCallback(func(result interface{}, err error) {
+					graph.execGraphQLDocument(ctx, f, token, storeNew, loader, createCallback(func(result interface{}, err error) {
 						defer wg.Done()
 
 						if err != nil {
@@ -221,7 +222,7 @@ func (graph *Module) processQueryResult(field *ast.Field, token string, store ut
 				obj.Set(f.Name.Value, strings.Title(field.Name.Value))
 				continue
 			}
-			graph.execGraphQLDocument(f, token, storeNew, loader, createCallback(func(result interface{}, err error) {
+			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, createCallback(func(result interface{}, err error) {
 				defer wg.Done()
 
 				if err != nil {

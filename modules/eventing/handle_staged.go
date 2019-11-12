@@ -112,7 +112,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 				}
 			}
 
-			m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+			m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
 			return
 		}
 
@@ -129,7 +129,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		time.Sleep(5 * time.Second)
 	}
 
-	if err := m.crud.InternalUpdate(context.TODO(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+	if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		log.Println("Eventing staged event handler could not update event doc:", err)
 	}
 }
