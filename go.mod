@@ -10,6 +10,7 @@ require (
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-stack/stack v1.8.0 // indirect
+	github.com/google/flatbuffers v1.11.0 // indirect
 	github.com/google/go-cmp v0.3.0
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.0
@@ -25,6 +26,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.0.2
 	github.com/nats-io/nats.go v1.8.1
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
+	github.com/pkg/profile v1.3.0
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/ksuid v1.0.2
