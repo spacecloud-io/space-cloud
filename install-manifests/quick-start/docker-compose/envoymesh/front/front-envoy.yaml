@@ -10,7 +10,12 @@ static_resources:
         typed_config:
           "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
           codec_type: auto
+          upgrade_configs: 
+            upgrade_type: websocket
+            enabled: true
           stat_prefix: ingress_http
+          use_remote_address: true
+          # xff_num_trusted_hops: 0
           route_config:
             name: local_route
             virtual_hosts:
@@ -22,10 +27,10 @@ static_resources:
                   prefix: "/"
                 route:
                   cluster: service1
-              - match:
-                  prefix: "/"
-                route:
-                  cluster: service2
+              #- match:
+              #    prefix: "/v2"
+              #  route:
+              #    cluster: service2
           http_filters:
           - name: envoy.router
             typed_config: {}
@@ -34,7 +39,7 @@ static_resources:
     connect_timeout: 0.25s
     type: strict_dns
     lb_policy: round_robin
-    ## http2_protocol_options: {}
+    # http2_protocol_options: {}
     load_assignment:
       cluster_name: service1
       endpoints:
@@ -44,20 +49,22 @@ static_resources:
               socket_address:
                 address: service1
                 port_value: 80
-  - name: service2
-    connect_timeout: 0.25s
-    type: strict_dns
-    lb_policy: round_robin
-    http2_protocol_options: {}
-    load_assignment:
-      cluster_name: service2
-      endpoints:
-      - lb_endpoints:
-        - endpoint:
-            address:
-              socket_address:
-                address: service2
-                port_value: 80
+                
+  #- name: service2
+  #  connect_timeout: 0.25s
+  #  type: strict_dns
+  #  lb_policy: round_robin
+  #  http2_protocol_options: {}
+  #  load_assignment:
+  #    cluster_name: service2
+  #    endpoints:
+  #    - lb_endpoints:
+  #      - endpoint:
+  ##          address:
+  #            socket_address:
+  #              address: service2
+  #              port_value: 80
+
 admin:
   access_log_path: "/dev/null"
   address:

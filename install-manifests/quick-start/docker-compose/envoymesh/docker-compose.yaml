@@ -29,6 +29,8 @@ services:
       - "27017"
     ports:
       - "27017:27017"
+
+      
   service1:
     build:
       context: .
@@ -49,25 +51,25 @@ services:
     expose:
       - "80"
 
-  service2:
-    build:
-      context: .
-      dockerfile: ./service/Dockerfile-service
-    volumes:
-      - ./service/service-envoy-sc.yaml:/etc/service-envoy-sc.yaml
-    networks:
-      envoymesh:
-        aliases:
-          - service2
-    depends_on:
-      - "mongo"
-    links:
-      - "mongo"
-    restart: always
-    environment:
-      - SERVICE_NAME=2
-    expose:
-      - "80"
+  #service2:
+  #  build:
+  #    context: .
+  #    dockerfile: ./service2/Dockerfile-service
+  #  volumes:
+  #    - ./service2/service-envoy-sc.yaml:/etc/service-envoy-sc.yaml
+  #  networks:
+  #    envoymesh:
+  #      aliases:
+  #        - service2
+  #  depends_on:
+  #    - "mongo"
+  #  links:
+  #    - "mongo"
+  #  restart: always
+  #  environment:
+  #    - SERVICE_NAME=2
+  #  expose:
+  #    - "80"
 
 volumes:
   db_data:
