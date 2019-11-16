@@ -1,3 +1,4 @@
+
 Step 1: Install Docker<br/>
 <br/>
   Ensure that you have a recent versions of docker and docker-compose installed.<br/>
@@ -30,3 +31,4 @@ Step 5: to scale service1<br/>
 <br/>
   docker-compose scale service1=3<br/>
   To learn more about scaling, https://www.envoyproxy.io/docs/envoy/latest/start/sandboxes/front_proxy<br/>
+

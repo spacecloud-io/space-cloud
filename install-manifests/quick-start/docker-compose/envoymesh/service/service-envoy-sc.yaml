@@ -16,6 +16,7 @@ static_resources:
           stat_prefix: ingress_http
           use_remote_address: true
           # xff_num_trusted_hops: 0
+
           route_config:
             name: local_route
             virtual_hosts:

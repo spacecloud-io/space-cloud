@@ -16,6 +16,7 @@ static_resources:
           stat_prefix: ingress_http
           use_remote_address: true
           # xff_num_trusted_hops: 0
+
           route_config:
             name: local_route
             virtual_hosts:
@@ -27,10 +28,12 @@ static_resources:
                   prefix: "/"
                 route:
                   cluster: service1
+                  
               #- match:
               #    prefix: "/v2"
               #  route:
               #    cluster: service2
+
           http_filters:
           - name: envoy.router
             typed_config: {}
@@ -39,7 +42,6 @@ static_resources:
     connect_timeout: 0.25s
     type: strict_dns
     lb_policy: round_robin
-    # http2_protocol_options: {}
     load_assignment:
       cluster_name: service1
       endpoints:
@@ -49,7 +51,7 @@ static_resources:
               socket_address:
                 address: service1
                 port_value: 80
-                
+
   #- name: service2
   #  connect_timeout: 0.25s
   #  type: strict_dns

@@ -51,10 +51,12 @@ static_resources:
                   prefix: "/"
                 route:
                   cluster: service1
+
               #- match:
               #    prefix: "/"
               #  route:
               #    cluster: service2
+
           http_filters:
           - name: envoy.router
             typed_config: {}
@@ -81,6 +83,7 @@ static_resources:
               socket_address:
                 address: service1
                 port_value: 80
+                
   #- name: service2
   #  connect_timeout: 0.25s
   #  type: strict_dns

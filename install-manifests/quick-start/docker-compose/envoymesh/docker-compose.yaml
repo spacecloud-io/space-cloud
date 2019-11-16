@@ -1,7 +1,6 @@
 version: "3.7"
 services:
 
-
   front-envoy:
     build:
       context: .
@@ -17,7 +16,6 @@ services:
       - "8000:80"
       - "8001:8001"
   
-
   mongo:
     image: mongo
     restart: always
@@ -31,7 +29,6 @@ services:
       - "27017"
     ports:
       - "27017:27017"
-
 
   service1:
     build:
@@ -52,6 +49,7 @@ services:
       - SERVICE_NAME=1
     expose:
       - "80"
+
 
   #service2:
   #  build:
