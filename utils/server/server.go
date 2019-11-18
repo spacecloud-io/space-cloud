@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/spaceuptech/space-cloud/modules/logging"
 	"log"
 	"net/http"
 	"strconv"
@@ -34,6 +35,7 @@ type Server struct {
 	routerSecure   *mux.Router
 	auth           *auth.Module
 	crud           *crud.Module
+	logging		   *logging.Module
 	user           *userman.Module
 	file           *filestore.Module
 	functions      *functions.Module
@@ -55,6 +57,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 
 	// Create the fundamental modules
 	c := crud.Init(removeProjectScope)
+	l := logging.Init()
 
 	m, err := metrics.New(nodeID, metricsConfig)
 	if err != nil {
