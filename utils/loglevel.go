@@ -3,10 +3,10 @@ package utils
 type LogLevel int
 
 const(
-	DEBUG       = iota
-	INFO        = iota
-	WARNING     = iota
-	ERROR       = iota
+	DEBUG LogLevel      = iota
+	INFO LogLevel       = iota
+	WARNING LogLevel    = iota
+	ERROR LogLevel      = iota
 )
 
 func (level LogLevel) isValid() bool{

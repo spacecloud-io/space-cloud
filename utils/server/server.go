@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"github.com/spaceuptech/space-cloud/modules/logging"
+	"github.com/spaceuptech/space-cloud/utils/logging"
 	"log"
 	"net/http"
 	"strconv"
@@ -115,12 +115,11 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 		go s.RoutineMetrics()
 	}
 
-	s.logging.Debug("Test-Message!!! Logging works", nil)
-
 	// Allow cors
 	corsObj := utils.CreateCorsObject()
 
 	fmt.Println("Starting http server on port: " + strconv.Itoa(port))
+	s.logging.Debug("Test-Message!!! Logging works", nil)
 
 	if s.ssl != nil && s.ssl.Enabled {
 		handler := corsObj.Handler(s.routerSecure)
@@ -161,16 +160,16 @@ func (s *Server) LoadConfig(config *config.Config) error {
 
 		p := config.Projects[0]
 
+		// Set the configuration for the logging module
+		if err := s.logging.SetConfig(p.Modules.Logging); err != nil {
+			log.Println("Error in logging module config: ", err)
+			return err
+		}
+
 		// Always set the config of the crud module first
 		// Set the configuration for the crud module
 		if err := s.crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			log.Println("Error in crud module config: ", err)
-			return err
-		}
-
-		// Set the configuration for the logging module
-		if err := s.logging.SetConfig(p.Modules.Logging); err != nil {
-			log.Println("Error in logging module config: ", err)
 			return err
 		}
 
