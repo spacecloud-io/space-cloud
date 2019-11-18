@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/logging/stdOut"
 	"github.com/spaceuptech/space-cloud/utils"
-	"github.com/spaceuptech/space-cloud/utils/logging/stdOut"
 	"sync"
 )
 
