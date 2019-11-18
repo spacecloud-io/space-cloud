@@ -2,15 +2,15 @@ package stdOut
 
 import (
 	"fmt"
-	"github.com/spaceuptech/space-cloud/utils/logging"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 type StdOut struct {
 	enabled bool
-	levels []logging.LogLevel
+	levels []utils.LogLevel
 }
 
-func Init(levels []logging.LogLevel, enabled bool) (*StdOut, error){
+func Init(levels []utils.LogLevel, enabled bool) (*StdOut, error){
 	stdOutRef := &StdOut{
 		enabled: enabled,
 		levels:  levels,
@@ -20,19 +20,19 @@ func Init(levels []logging.LogLevel, enabled bool) (*StdOut, error){
 
 
 func (stdOutRef StdOut) Debug(msg string, data map[string]interface{}) error {
-	fmt.Println(logging.LogLevel(logging.DEBUG).String(), ":", msg, data)
+	fmt.Println(utils.LogLevel(utils.DEBUG).String(), ":", msg, data)
 	return nil
 }
 func (stdOutRef StdOut) Info(msg string, data map[string]interface{}) error{
-	fmt.Println(logging.LogLevel(logging.INFO).String(), ":", msg, data)
+	fmt.Println(utils.LogLevel(utils.INFO).String(), ":", msg, data)
 	return nil
 }
 func (stdOutRef StdOut) Warning(msg string, data map[string]interface{}) error{
-	fmt.Println(logging.LogLevel(logging.WARNING).String(), ":", msg, data)
+	fmt.Println(utils.LogLevel(utils.WARNING).String(), ":", msg, data)
 	return nil
 }
 func (stdOutRef StdOut) Error(msg string, data map[string]interface{}) error{
-	fmt.Println(logging.LogLevel(logging.ERROR).String(), ":", msg, data)
+	fmt.Println(utils.LogLevel(utils.ERROR).String(), ":", msg, data)
 	return nil
 }
 

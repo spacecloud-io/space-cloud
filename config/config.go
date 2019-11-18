@@ -1,6 +1,8 @@
 package config
 
-import "github.com/spaceuptech/space-cloud/modules/logging"
+import (
+	"github.com/spaceuptech/space-cloud/utils"
+)
 
 // Config holds the entire configuration
 type Config struct {
@@ -74,8 +76,8 @@ type Log map[string]*LogConf
 
 //LogConf holds the config of a logger
 type LogConf struct {
-	Levels  []logging.LogLevel	`json:"levels" yaml:"levels"`
-	Enabled bool				`json:"enabled" yaml:"enabled"`
+	Levels  []utils.LogLevel `json:"levels" yaml:"levels"`
+	Enabled bool             `json:"enabled" yaml:"enabled"`
 }
 
 // TableRule contains the config at the collection level

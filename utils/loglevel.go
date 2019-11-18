@@ -1,4 +1,4 @@
-package logging
+package utils
 
 type LogLevel int
 

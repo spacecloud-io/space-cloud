@@ -96,7 +96,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 
 	fmt.Println("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
+	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c, logging: l,
 		user: u, file: f, syncMan: syncMan, adminMan: adminMan, metrics: m,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
 		eventing: e, graphql: graphqlMan}, nil
@@ -114,6 +114,8 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 	if !disableMetrics {
 		go s.RoutineMetrics()
 	}
+
+	s.logging.Debug("Test-Message!!! Logging works", nil)
 
 	// Allow cors
 	corsObj := utils.CreateCorsObject()
@@ -163,6 +165,12 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		// Set the configuration for the crud module
 		if err := s.crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			log.Println("Error in crud module config: ", err)
+			return err
+		}
+
+		// Set the configuration for the logging module
+		if err := s.logging.SetConfig(p.Modules.Logging); err != nil {
+			log.Println("Error in logging module config: ", err)
 			return err
 		}
 

@@ -26,7 +26,7 @@ func Init() *Module {
 	return &Module{loggers: make(map[string]Logger)}
 }
 
-func initLogger(logType utils.LoggerType, levels []LogLevel, enabled bool) (Logger, error){
+func initLogger(logType utils.LoggerType, levels []utils.LogLevel, enabled bool) (Logger, error){
 	switch logType {
 	case utils.StdOut:
 		return stdOut.Init(levels, enabled)
