@@ -1,17 +1,17 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
-	"os"
-
 	"github.com/segmentio/ksuid"
-	"github.com/urfave/cli"
-
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/server"
+	"github.com/urfave/cli"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"log"
+	"os"
 )
 
 var essentialFlags = []cli.Flag{
@@ -146,6 +146,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }
 
 func actionRun(c *cli.Context) error {
@@ -232,8 +233,34 @@ func actionRun(c *cli.Context) error {
 	return s.Start(disableMetrics, port)
 }
 
-func actionInit(*cli.Context) error {
-	return config.GenerateConfig("none")
+func actionInit(c *cli.Context) error {
+	confPath, err := config.GenerateConfig("none"); if err != nil{
+		return err
+	}
+
+	var start  = "no"
+
+	err = survey.AskOne(&survey.Select{
+		Message: "Do you want to start an Space-Cloud instance with this configuration",
+		Options: []string{"no", "yes"},
+		Default: "no",
+	}, &start, survey.Required)
+	if err != nil {
+		return err
+	}
+
+	if start == "yes"{
+		flgSet := flag.NewFlagSet("defaultFlags", 0)
+
+		for _, f := range essentialFlags{
+			f.Apply(flgSet)
+		}
+
+		flgSet.Set("config", confPath)
+		actionRun(cli.NewContext(cli.NewApp(), flgSet, nil))
+	}
+
+	return nil
 }
 
 func initMissionContol(version string) (string, error) {
