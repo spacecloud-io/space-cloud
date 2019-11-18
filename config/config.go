@@ -1,5 +1,7 @@
 package config
 
+import "github.com/spaceuptech/space-cloud/modules/logging"
+
 // Config holds the entire configuration
 type Config struct {
 	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
@@ -49,6 +51,7 @@ type SSL struct {
 // Modules holds the config of all the modules of that environment
 type Modules struct {
 	Crud      Crud            `json:"crud" yaml:"crud"`
+	Logging	  Log			  `json:"logging" yaml:"logging"`
 	Auth      Auth            `json:"auth" yaml:"auth"`
 	Services  *ServicesModule `json:"services" yaml:"services"`
 	FileStore *FileStore      `json:"fileStore" yaml:"fileStore"`
@@ -64,6 +67,15 @@ type CrudStub struct {
 	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
 	Enabled     bool                  `json:"enabled" yaml:"enabled"`
+}
+
+//Log holds the mapping of loggers
+type Log map[string]*LogConf
+
+//LogConf holds the config of a logger
+type LogConf struct {
+	Levels  []logging.LogLevel	`json:"levels" yaml:"levels"`
+	Enabled bool				`json:"enabled" yaml:"enabled"`
 }
 
 // TableRule contains the config at the collection level
