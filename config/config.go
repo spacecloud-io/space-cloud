@@ -114,8 +114,9 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Path string `json:"path" yaml:"path"`
-	Rule *Rule  `json:"rule" yaml:"rule"`
+	Method string `json:"method" yaml:"method"`
+	Path   string `json:"path" yaml:"path"`
+	Rule   *Rule  `json:"rule" yaml:"rule"`
 }
 
 // FileStore holds the config for the file store module
