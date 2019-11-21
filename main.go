@@ -122,7 +122,7 @@ var essentialFlags = []cli.Flag{
 }
 
 func main() {
-
+	
 	app := cli.NewApp()
 	app.Version = utils.BuildVersion
 	app.Name = "space-cloud"
