@@ -1,0 +1,23 @@
+version: '3.6'
+services:
+  mysql:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 'my-secret-pw'
+  space-cloud:
+    image: spaceuptech/space-cloud
+    ports:
+    - "4122:4122"
+    - "4126:4126"
+    depends_on:
+    - "mysql"
+    restart: always
+    environment:
+      ## The DEV environment lets you use Mission Control (Admin UI) without login
+      ## Change the dev mode to false if you want a login to your Mission Control UI
+      DEV: "true"
+      ## Uncomment next lines to change the login credentials of Mission Control UI
+      # ADMIN_USER: "admin"
+      # ADMIN_PASS: "123"
+      # ADMIN_SECRET: "some-secret" # This is the JWT secret used for login authentication in Mission Control
