@@ -12,10 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/server"
-
 )
-
-// _ "net/http/pprof"
 
 var essentialFlags = []cli.Flag{
 	cli.StringFlag{
