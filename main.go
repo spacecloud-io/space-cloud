@@ -13,7 +13,6 @@ import (
 	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/server"
 
-	"github.com/pkg/profile"
 )
 
 // _ "net/http/pprof"
@@ -126,8 +125,6 @@ var essentialFlags = []cli.Flag{
 }
 
 func main() {
-
-	defer profile.Start().Stop()
 
 	app := cli.NewApp()
 	app.Version = utils.BuildVersion
