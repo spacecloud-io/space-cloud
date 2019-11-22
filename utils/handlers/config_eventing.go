@@ -18,15 +18,16 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		value := config.EventingRule{}
+		json.NewDecoder(r.Body).Decode(&value)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		value := config.EventingRule{}
-		json.NewDecoder(r.Body).Decode(&value)
 
 		vars := mux.Vars(r)
 		ruleName := vars["ruleName"]
@@ -51,6 +52,7 @@ func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -82,6 +84,7 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {

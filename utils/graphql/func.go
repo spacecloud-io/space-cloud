@@ -1,7 +1,9 @@
 package graphql
 
 import (
+	"context"
 	"errors"
+	"time"
 
 	"github.com/graphql-go/graphql/language/ast"
 
@@ -9,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execFuncCall(token string, field *ast.Field, store utils.M, cb callback) {
+func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.Field, store utils.M, cb callback) {
 	serviceName, err := GetDBType(field)
 	if err != nil {
 		cb(nil, err)
@@ -34,13 +36,16 @@ func (graph *Module) execFuncCall(token string, field *ast.Field, store utils.M,
 		return
 	}
 
-	if _, err := graph.auth.IsFuncCallAuthorised(graph.project, serviceName, funcName, token, params); err != nil {
+	if _, err := graph.auth.IsFuncCallAuthorised(ctx, graph.project, serviceName, funcName, token, params); err != nil {
 		cb(nil, err)
 		return
 	}
 
+	ctx2, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+	defer cancel()
+
 	go func() {
-		result, err := graph.functions.Call(serviceName, funcName, token, params, timeout)
+		result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, params)
 		cb(result, err)
 		return
 	}()

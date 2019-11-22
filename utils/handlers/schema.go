@@ -17,6 +17,7 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {

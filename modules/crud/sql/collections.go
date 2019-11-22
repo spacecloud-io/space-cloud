@@ -20,7 +20,7 @@ func (s *SQL) GetCollections(ctx context.Context, project string) ([]utils.Datab
 	}
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
-	rows, err := s.client.Queryx(sqlString, args...)
+	rows, err := s.client.QueryxContext(ctx, sqlString, args...)
 	if err != nil {
 		return nil, err
 	}

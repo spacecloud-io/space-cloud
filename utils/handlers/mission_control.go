@@ -11,6 +11,8 @@ func HandleMissionControl(staticPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := r.URL.Path
 
+		defer r.Body.Close()
+
 		path := strings.TrimPrefix(url, "/mission-control")
 		if !strings.HasPrefix(path, "/") {
 			path = "/" + path
