@@ -18,7 +18,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		token := utils.GetTokenFromHeader(r)
 
 		value := new(config.FileStore)
-		json.NewDecoder(r.Body).Decode(&value)
+		json.NewDecoder(r.Body).Decode(value)
 		defer r.Body.Close()
 
 		// Check if the request is authorised
@@ -87,7 +87,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		token := utils.GetTokenFromHeader(r)
 
 		value := new(config.FileRule)
-		json.NewDecoder(r.Body).Decode(&value)
+		json.NewDecoder(r.Body).Decode(value)
 		defer r.Body.Close()
 
 		// Check if the request is authorised
@@ -122,7 +122,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		token := utils.GetTokenFromHeader(r)
 
 		value := new(config.FileRule)
-		json.NewDecoder(r.Body).Decode(&value)
+		json.NewDecoder(r.Body).Decode(value)
 		defer r.Body.Close()
 
 		// Check if the request is authorised
