@@ -13,13 +13,15 @@ import (
 )
 
 func (m *Module) processIntents(t *time.Time) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
 
 	// Return if module is not enabled
-	if !m.config.Enabled {
+	if !m.IsEnabled() {
 		return
 	}
+	m.lock.RLock()
+	project := m.project
+	dbType, col := m.config.DBType, m.config.Col
+	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -35,9 +37,7 @@ func (m *Module) processIntents(t *time.Time) {
 		},
 	}}
 
-	dbType, col := m.config.DBType, m.config.Col
-
-	results, err := m.crud.Read(ctx, dbType, m.project, col, &readRequest)
+	results, err := m.crud.Read(ctx, dbType, project, col, &readRequest)
 	if err != nil {
 		log.Println("Eventing intent routine error:", err)
 		return
@@ -62,6 +62,9 @@ func (m *Module) processIntents(t *time.Time) {
 }
 
 func (m *Module) processIntent(eventDoc *model.EventDocument) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	// Create a context with 5 second timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
