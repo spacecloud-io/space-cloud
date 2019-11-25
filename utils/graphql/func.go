@@ -100,8 +100,8 @@ func getFuncTimeout(field *ast.Field, store utils.M) (int, error) {
 	return 5, nil
 }
 
-func getFuncParams(field *ast.Field, store utils.M) (utils.M, error) {
-	obj := make(utils.M, len(field.Arguments))
+func getFuncParams(field *ast.Field, store utils.M) (map[string]interface{}, error) {
+	obj := make(map[string]interface{}, len(field.Arguments))
 
 	for _, v := range field.Arguments {
 		val, err := ParseValue(v.Value, store)
