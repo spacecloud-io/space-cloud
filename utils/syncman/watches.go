@@ -76,6 +76,7 @@ func (s *Manager) watchProjects() error {
 			}
 
 			projects = append(projects, project)
+			ids = append(ids, project.ID)
 			s.projects.Store(project)
 		}
 
