@@ -6,6 +6,55 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 )
 
+func (p *Projects) StoreIgnoreErrors(project *config.Project) error {
+	// Get the project. Create if not exists
+	s, err := p.LoadProject(project.ID)
+	if err != nil {
+
+		// Create a new project
+		s, err = p.NewProject(project.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Always set the config of the crud module first
+	// Set the configuration for the crud module
+	if err := s.Crud.SetConfig(project.ID, project.Modules.Crud); err != nil {
+		log.Println("Error in crud module config: ", err)
+	}
+
+	// Set the configuration for the auth module
+	if err := s.Auth.SetConfig(project.ID, project.Secret, project.Modules.Crud, project.Modules.FileStore, project.Modules.Services); err != nil {
+		log.Println("Error in auth module config: ", err)
+	}
+
+	// Set the configuration for the functions module
+	s.Functions.SetConfig(project.ID, project.Modules.Services)
+
+	// Set the configuration for the user management module
+	s.UserManagement.SetConfig(project.Modules.Auth)
+
+	// Set the configuration for the file storage module
+	if err := s.FileStore.SetConfig(project.Modules.FileStore); err != nil {
+		log.Println("Error in files module config: ", err)
+	}
+
+	if err := s.Eventing.SetConfig(project.ID, &project.Modules.Eventing); err != nil {
+		log.Println("Error in eventing module config: ", err)
+	}
+
+	// Set the configuration for the realtime module
+	if err := s.Realtime.SetConfig(project.ID, project.Modules.Crud); err != nil {
+		log.Println("Error in realtime module config: ", err)
+	}
+
+	// Set the configuration for the graphql module
+	s.Graph.SetConfig(project.ID)
+
+	return nil
+}
+
 // StoreProject stores the provided project config
 func (p *Projects) StoreProject(project *config.Project) error {
 	// Get the project. Create if not exists
