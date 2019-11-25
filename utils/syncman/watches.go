@@ -77,7 +77,7 @@ func (s *Manager) watchProjects() error {
 
 			projects = append(projects, project)
 			ids = append(ids, project.ID)
-			s.projects.Store(project)
+			s.projects.StoreIgnoreError(project)
 		}
 
 		s.projectConfig.Projects = projects

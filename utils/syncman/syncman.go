@@ -96,7 +96,7 @@ func (s *Manager) Start(configFilePath string) error {
 
 	if len(s.projectConfig.Projects) > 0 {
 		for _, p := range s.projectConfig.Projects {
-			if err := s.projects.Store(p); err != nil {
+			if err := s.projects.StoreIgnoreError(p); err != nil {
 				log.Println("Load Project Error: ", err)
 			}
 		}
