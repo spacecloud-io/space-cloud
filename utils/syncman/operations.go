@@ -105,7 +105,7 @@ func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 		}
 	}
 
-	go s.projects.Store(project)
+	go s.projects.StoreIgnoreError(project)
 
 	s.setProjectConfig(project)
 

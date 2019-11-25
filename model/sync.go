@@ -6,6 +6,7 @@ import (
 
 // StoreProject is a function used to store the project config
 type StoreProject func(project *config.Project) error
+type StoreProjectIgnoreError func(project *config.Project) error
 
 type SetGlobalConfig func(projectID, secret string) error
 type SetCrudConfig func(projectID string, crud config.Crud) error
@@ -22,7 +23,8 @@ type GetProjectIDs func() []string
 
 // ProjectCallbacks is used to set or delete a projects config
 type ProjectCallbacks struct {
-	Store StoreProject
+	Store            StoreProject
+	StoreIgnoreError StoreProjectIgnoreError
 
 	SetGlobalConfig      SetGlobalConfig
 	SetCrudConfig        SetCrudConfig
