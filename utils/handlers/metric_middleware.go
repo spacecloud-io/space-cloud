@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/utils/metrics"
-	"net/http"
 )
 
 func HandleMetricMiddleWare(next http.Handler, metrics *metrics.Module) http.Handler {
@@ -20,6 +21,5 @@ func HandleMetricMiddleWare(next http.Handler, metrics *metrics.Module) http.Han
 			return
 		}
 		next.ServeHTTP(w, r)
-
 	})
 }

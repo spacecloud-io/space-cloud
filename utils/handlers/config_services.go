@@ -18,15 +18,16 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		v := config.Service{}
+		json.NewDecoder(r.Body).Decode(&v)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		v := config.Service{}
-		json.NewDecoder(r.Body).Decode(&v)
 
 		vars := mux.Vars(r)
 		service := vars["service"]
@@ -51,6 +52,7 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {

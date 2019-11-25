@@ -15,6 +15,11 @@ import (
 // HandleProcessEvent processes a transmitted event
 func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		eventDocs := []*model.EventDocument{}
+		json.NewDecoder(r.Body).Decode(&eventDocs)
+		defer r.Body.Close()
+
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
 			w.WriteHeader(http.StatusNotFound)
@@ -31,10 +36,6 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 			return
 		}
 
-		eventDocs := []*model.EventDocument{}
-		json.NewDecoder(r.Body).Decode(&eventDocs)
-		defer r.Body.Close()
-
 		// Process the incoming events
 		eventing.ProcessTransmittedEvents(eventDocs)
 
@@ -47,6 +48,10 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 // HandleQueueEvent creates a queue event endpoint
 func HandleQueueEvent(adminMan *admin.Manager, eventing *eventing.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Load the params from the body
+		req := model.QueueEventRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
 
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
@@ -58,11 +63,6 @@ func HandleQueueEvent(adminMan *admin.Manager, eventing *eventing.Module) http.H
 		// Get the path parameters
 		// vars := mux.Vars(r)
 		// project := vars["project"]
-
-		// Load the params from the body
-		req := model.QueueEventRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)

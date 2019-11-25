@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/spaceuptech/space-cloud/modules/auth/schema"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 )
@@ -17,6 +17,7 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {

@@ -1,23 +1,24 @@
 package filestore
 
 import (
+	"context"
+	"errors"
 	"io"
 	"net/http"
-	"errors"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // CreateDir creates a directory at the provided path
-func (m *Module) CreateDir(project, token string, req *model.CreateFileRequest) (int, error) {
+func (m *Module) CreateDir(ctx context.Context, project, token string, req *model.CreateFileRequest) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(project, token, req.Path, utils.FileCreate, map[string]interface{}{})
+	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")
 	}
@@ -34,14 +35,14 @@ func (m *Module) CreateDir(project, token string, req *model.CreateFileRequest) 
 }
 
 // DeleteFile deletes a file at the provided path
-func (m *Module) DeleteFile(project, token, path string) (int, error) {
+func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(project, token, path, utils.FileDelete, map[string]interface{}{})
+	err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileDelete, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")
 	}
@@ -58,18 +59,18 @@ func (m *Module) DeleteFile(project, token, path string) (int, error) {
 }
 
 // ListFiles lists all the files in the provided path
-func (m *Module) ListFiles(project, token string, req *model.ListFilesRequest) (int, []*model.ListFilesResponse, error) {
+func (m *Module) ListFiles(ctx context.Context, project, token string, req *model.ListFilesRequest) (int, []*model.ListFilesResponse, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(project, token, req.Path, utils.FileRead, map[string]interface{}{})
+	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, nil, errors.New("You are not authorized to make this request")
 	}
-	
+
 	m.RLock()
 	defer m.RUnlock()
 
@@ -82,14 +83,14 @@ func (m *Module) ListFiles(project, token string, req *model.ListFilesRequest) (
 }
 
 // UploadFile uploads a file to the provided path
-func (m *Module) UploadFile(project, token string, req *model.CreateFileRequest, reader io.Reader) (int, error) {
+func (m *Module) UploadFile(ctx context.Context, project, token string, req *model.CreateFileRequest, reader io.Reader) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(project, token, req.Path, utils.FileCreate, map[string]interface{}{})
+	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")
 	}
@@ -105,14 +106,14 @@ func (m *Module) UploadFile(project, token string, req *model.CreateFileRequest,
 }
 
 // DownloadFile downloads a file from the provided path
-func (m *Module) DownloadFile(project, token, path string) (int, *model.File, error) {
+func (m *Module) DownloadFile(ctx context.Context, project, token, path string) (int, *model.File, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(project, token, path, utils.FileRead, map[string]interface{}{})
+	err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, nil, errors.New("You are not authorized to make this request")
 	}

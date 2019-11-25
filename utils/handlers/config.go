@@ -13,6 +13,8 @@ import (
 // HandleLoadEnv returns the handler to load the projects via a REST endpoint
 func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv()})
 	}
@@ -54,6 +56,8 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -173,6 +177,8 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 // HandleDeleteProjectConfig returns the handler to delete the config of a project via a REST endpoint
 func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		defer r.Body.Close()
 
 		// Give negative acknowledgement
 		w.WriteHeader(http.StatusInternalServerError)

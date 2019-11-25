@@ -18,16 +18,16 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		// Load the body of the request
+		value := new(config.AuthStub)
+		json.NewDecoder(r.Body).Decode(value)
+		defer r.Body.Close()
+
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		// Load the body of the request
-		value := new(config.AuthStub)
-		json.NewDecoder(r.Body).Decode(value)
-		defer r.Body.Close()
 
 		vars := mux.Vars(r)
 		project := vars["project"]

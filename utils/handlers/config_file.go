@@ -17,15 +17,16 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		value := new(config.FileStore)
+		json.NewDecoder(r.Body).Decode(value)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		value := new(config.FileStore)
-		json.NewDecoder(r.Body).Decode(&value)
 
 		vars := mux.Vars(r)
 		project := vars["project"]
@@ -48,6 +49,7 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -84,14 +86,16 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		value := new(config.FileRule)
+		json.NewDecoder(r.Body).Decode(value)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		value := new(config.FileRule)
-		json.NewDecoder(r.Body).Decode(&value)
 
 		vars := mux.Vars(r)
 		project := vars["project"]
@@ -117,14 +121,16 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		value := new(config.FileRule)
+		json.NewDecoder(r.Body).Decode(value)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		value := new(config.FileRule)
-		json.NewDecoder(r.Body).Decode(&value)
 
 		vars := mux.Vars(r)
 		project := vars["project"]

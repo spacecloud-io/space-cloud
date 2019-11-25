@@ -8,8 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
@@ -20,6 +20,8 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -58,6 +60,8 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -85,6 +89,7 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -126,16 +131,16 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		v := config.CrudStub{}
+		json.NewDecoder(r.Body).Decode(&v)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		v := config.CrudStub{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
 
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
@@ -159,16 +164,16 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		v := config.TableRule{}
+		json.NewDecoder(r.Body).Decode(&v)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		v := config.TableRule{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
 
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
@@ -202,16 +207,16 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		v := config.TableRule{}
+		json.NewDecoder(r.Body).Decode(&v)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		v := config.TableRule{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
 
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
@@ -235,6 +240,7 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -269,6 +275,9 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		projectConfig := config.Project{}
+		json.NewDecoder(r.Body).Decode(&projectConfig)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -276,10 +285,6 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		projectConfig := config.Project{}
-		json.NewDecoder(r.Body).Decode(&projectConfig)
-		defer r.Body.Close()
 
 		err, statusCode := syncman.CreateProjectConfig(&projectConfig)
 		if err != nil {
@@ -299,6 +304,7 @@ func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, s
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -341,16 +347,16 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		v := config.CrudStub{}
+		json.NewDecoder(r.Body).Decode(&v)
+		defer r.Body.Close()
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		v := config.CrudStub{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
 
 		vars := mux.Vars(r)
 		dbType := vars["dbType"]
