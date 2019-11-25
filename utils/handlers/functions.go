@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -21,6 +23,11 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 		service := vars["service"]
 		function := vars["func"]
 
+		// Load the params from the body
+		req := model.FunctionsRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(project)
 		if err != nil {
@@ -29,15 +36,13 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Load the params from the body
-		req := model.FunctionsRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		_, err = state.Auth.IsFuncCallAuthorised(project, service, function, token, req.Params)
+		_, err = state.Auth.IsFuncCallAuthorised(ctx, project, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

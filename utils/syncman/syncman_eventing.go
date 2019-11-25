@@ -12,7 +12,13 @@ func (s *Manager) SetEventingRule(project, ruleName string, value config.Eventin
 	}
 	projectConfig.Modules.Eventing.Rules[ruleName] = value
 
-	return s.setProject(projectConfig)
+	// Set the eventing config
+	if err := s.projects.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetDeleteEventingRule(project, ruleName string) error {
@@ -26,7 +32,13 @@ func (s *Manager) SetDeleteEventingRule(project, ruleName string) error {
 	}
 	delete(projectConfig.Modules.Eventing.Rules, ruleName)
 
-	return s.setProject(projectConfig)
+	// Set the eventing config
+	if err := s.projects.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetEventingConfig(project, dbType, col string, enabled bool) error {
@@ -42,5 +54,11 @@ func (s *Manager) SetEventingConfig(project, dbType, col string, enabled bool) e
 	projectConfig.Modules.Eventing.Col = col
 	projectConfig.Modules.Eventing.Enabled = enabled
 
-	return s.setProject(projectConfig)
+	// Set the eventing config
+	if err := s.projects.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }

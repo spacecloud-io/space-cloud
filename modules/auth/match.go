@@ -12,7 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/crud"
 )
 
-func (m *Module) matchRule(project string, rule *config.Rule, args map[string]interface{}, auth map[string]interface{}) error {
+func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args map[string]interface{}, auth map[string]interface{}) error {
 	if project != m.project {
 		return errors.New("invalid project details provided")
 	}
@@ -41,17 +41,17 @@ func (m *Module) matchRule(project string, rule *config.Rule, args map[string]in
 		return matchOr(rule, args)
 
 	case "webhook":
-		return matchFunc(rule, m.makeHttpRequest, args)
+		return matchFunc(ctx, rule, m.makeHttpRequest, args)
 
 	case "query":
-		return matchQuery(project, rule, m.crud, args)
+		return matchQuery(ctx, project, rule, m.crud, args)
 
 	default:
 		return ErrIncorrectMatch
 	}
 }
 
-func matchFunc(rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
+func matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
 	delete(obj, "token")
@@ -63,7 +63,7 @@ func matchFunc(rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args ma
 	return MakeHttpRequest(ctx, "POST", rule.Url, token, obj, &result)
 }
 
-func matchQuery(project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
+func matchQuery(ctx context.Context, project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
 	// Adjust the find object to load any variables referenced from state
 	rule.Find = utils.Adjust(rule.Find, args).(map[string]interface{})
 
@@ -71,7 +71,7 @@ func matchQuery(project string, rule *config.Rule, crud *crud.Module, args map[s
 	req := &model.ReadRequest{Find: rule.Find, Operation: utils.One}
 
 	// Execute the read request
-	_, err := crud.Read(context.TODO(), rule.DB, project, rule.Col, req)
+	_, err := crud.Read(ctx, rule.DB, project, rule.Col, req)
 	return err
 }
 

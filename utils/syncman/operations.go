@@ -142,7 +142,12 @@ func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
 	projectConfig.Secret = project.Secret
 	projectConfig.Name = project.Name
 
-	return s.setProject(projectConfig)
+	// Set the user man config
+	if err := s.projects.SetGlobalConfig(project.ID, projectConfig.Secret); err != nil {
+		return err
+	}
+
+	return s.persistProjectConfig(projectConfig)
 }
 
 // SetProjectConfig applies the set project config command to the raft log
@@ -163,6 +168,10 @@ func (s *Manager) setProject(project *config.Project) error {
 		return err
 	}
 
+	return s.persistProjectConfig(project)
+}
+
+func (s *Manager) persistProjectConfig(project *config.Project) error {
 	s.setProjectConfig(project)
 
 	if !s.isConsulEnabled {

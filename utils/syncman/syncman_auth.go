@@ -13,5 +13,11 @@ func (s *Manager) SetUserManagement(project, provider string, value *config.Auth
 	}
 	projectConfig.Modules.Auth[provider] = value
 
-	return s.setProject(projectConfig)
+	// Set the user man config
+	if err := s.projects.SetUserManConfig(project, projectConfig.Modules.Auth); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }

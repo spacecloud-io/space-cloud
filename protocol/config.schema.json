@@ -1,0 +1,640 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://spaceuptech.com/space-cloud/config",
+  "$ref": "#/definitions/Config",
+  "definitions": {
+    "Config": {
+      "type": "object",
+      "properties": {
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Project"
+          }
+        },
+        "ssl": {
+          "$ref": "#/definitions/SSL"
+        },
+        "admin": {
+          "$ref": "#/definitions/Admin"
+        }
+      },
+      "required": [
+        "projects",
+        "admin"
+      ]
+    },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "secret": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "modules": {
+          "$ref": "#/definitions/Modules"
+        }
+      },
+      "required": [
+        "secret",
+        "id",
+        "modules"
+      ]
+    },
+    "Admin": {
+      "type": "object",
+      "properties": {
+        "secret": {
+          "type": "string"
+        },
+        "operation": {
+          "$ref": "#/definitions/OperationConfig"
+        },
+        "users": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AdminUser"
+          }
+        }
+      },
+      "required": [
+        "secret",
+        "operation"
+      ]
+    },
+    "OperationConfig": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        },
+        "userId": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "if": {
+        "properties": {
+          "mode": {
+            "exclusiveMinimum": 0
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "userId",
+          "key"
+        ]
+      }
+    },
+    "AdminUser": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "string"
+        },
+        "pass": {
+          "type": "string"
+        },
+        "scopes": {
+          "$ref": "#/definitions/ProjectScope"
+        }
+      }
+    },
+    "ProjectScope": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minItems": 1
+        }
+      }
+    },
+    "SSL": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "crt": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        }
+      },
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "crt",
+          "key"
+        ]
+      }
+    },
+    "Modules": {
+      "type": "object",
+      "properties": {
+        "crud": {
+          "$ref": "#/definitions/Crud"
+        },
+        "auth": {
+          "$ref": "#/definitions/Auth"
+        },
+        "services": {
+          "$ref": "#/definitions/Services"
+        },
+        "fileStore": {
+          "$ref": "#/definitions/FileStore"
+        },
+        "eventing": {
+          "$ref": "#/definitions/Eventing"
+        }
+      }
+    },
+    "Crud": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/CrudStub"
+      }
+    },
+    "CrudStub": {
+      "type": "object",
+      "properties": {
+        "conn": {
+          "type": "string"
+        },
+        "collections": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TableRule"
+          }
+        },
+        "isPrimary": {
+          "type": "boolean",
+          "default": false
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "conn"
+        ]
+      }
+    },
+    "TableRule": {
+      "type": "object",
+      "properties": {
+        "isRealtimeEnabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Rule"
+          }
+        },
+        "schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "isRealtimeEnabled"
+      ]
+    },
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "type": "string",
+          "enum": [
+            "allow",
+            "deny",
+            "match",
+            "and",
+            "or",
+            "webhook",
+            "query",
+            "authenticated"
+          ]
+        },
+        "eval": {
+          "type": "string",
+          "enum": [
+            "==",
+            "!=",
+            "<=",
+            ">=",
+            "<",
+            ">"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "bool"
+          ]
+        },
+        "F1": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "F2": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "clauses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Rule"
+          },
+          "minItems": 2
+        },
+        "db": {
+          "type": "string",
+          "enum": [
+            "mongo",
+            "sql-mysql",
+            "sql-postgres",
+            "sql-sqlserver"
+          ]
+        },
+        "col": {
+          "type": "string"
+        },
+        "find": {
+          "type": "object",
+          "description": "MongoDB query DSL"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "const": "match"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "eval",
+              "type",
+              "f1",
+              "f2"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "anyOf": [
+                  {
+                    "const": "and"
+                  },
+                  {
+                    "const": "or"
+                  }
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "clauses"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "const": "query"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "db",
+              "col",
+              "find"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "rule": {
+                "const": "webhook"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "url"
+            ]
+          }
+        }
+      ]
+    },
+    "Auth": {
+      "type": "object",
+      "patternProperties": {
+        "~email$": {
+          "$ref": "#/definitions/AuthStub"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AuthStub": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "secret": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "enabled"
+      ]
+    },
+    "Services": {
+      "type": "object",
+      "description": "The name of service must be url compatible.",
+      "additionalProperties": {
+        "$ref": "#/definitions/Service"
+      }
+    },
+    "Service": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "functions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Function"
+          },
+          "minProperties": 1
+        }
+      },
+      "required": [
+        "url",
+        "functions"
+      ]
+    },
+    "Function": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "rule": {
+          "$ref": "#/definitions/Rule"
+        }
+      },
+      "required": [
+        "path",
+        "rule"
+      ]
+    },
+    "FileStore": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "storeType": {
+          "type": "string",
+          "enum": [
+            "local",
+            "amazon-s3",
+            "gcp-storage"
+          ]
+        },
+        "conn": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "bucket": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FileRule"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "storeType",
+              "rules"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "local"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "conn"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "amazon-s3"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "conn",
+              "bucket"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "storeType": {
+                "const": "gcp-storage"
+              }
+            }
+          },
+          "else": {
+            "required": [
+              "bucket"
+            ]
+          }
+        }
+      ]
+    },
+    "FileRule": {
+      "type": "object",
+      "properties": {
+        "prefix": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "object",
+          "patternProperties": {
+            "^(create|read|delete)$": {
+              "$ref": "#/definitions/Rule"
+            }
+          }
+        }
+      },
+      "required": [
+        "prefix",
+        "rule"
+      ]
+    },
+    "Eventing": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "dbType": {
+          "type": "string"
+        },
+        "col": {
+          "type": "string"
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EventingRule"
+          }
+        },
+        "internalRules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/EventingRule"
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "enabled": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "dbType",
+          "col",
+          "rules"
+        ]
+      },
+      "required": [
+        "enabled"
+      ]
+    },
+    "EventingRule": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "retries": {
+          "type": "integer",
+          "default": 3
+        },
+        "url": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "integer",
+          "default": 5000
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "url",
+        "options"
+      ]
+    }
+  }
+}

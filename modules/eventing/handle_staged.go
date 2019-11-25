@@ -13,13 +13,15 @@ import (
 )
 
 func (m *Module) processStagedEvents(t *time.Time) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
 
 	// Return if module is not enabled
-	if !m.config.Enabled {
+	if !m.IsEnabled() {
 		return
 	}
+	m.lock.RLock()
+	project := m.project
+	dbType, col := m.config.DBType, m.config.Col
+	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -35,9 +37,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		},
 	}}
 
-	dbType, col := m.config.DBType, m.config.Col
-
-	results, err := m.crud.Read(ctx, dbType, m.project, col, &readRequest)
+	results, err := m.crud.Read(ctx, dbType, project, col, &readRequest)
 	if err != nil {
 		log.Println("Eventing stage routine error:", err)
 		return
@@ -58,6 +58,9 @@ func (m *Module) processStagedEvents(t *time.Time) {
 }
 
 func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
 	// Create a context with 5 second timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -112,7 +115,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 				}
 			}
 
-			m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+			m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
 			return
 		}
 
@@ -129,7 +132,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		time.Sleep(5 * time.Second)
 	}
 
-	if err := m.crud.InternalUpdate(context.TODO(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+	if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		log.Println("Eventing staged event handler could not update event doc:", err)
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/auth/schema"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 )
 
 func (s *Manager) SetDeleteCollection(project, dbType, col string) error {
@@ -25,7 +25,13 @@ func (s *Manager) SetDeleteCollection(project, dbType, col string) error {
 	}
 	delete(coll.Collections, col)
 
-	return s.setProject(projectConfig)
+	// Set the crud config
+	if err := s.projects.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetDatabaseConnection(project, dbType string, connection string, enabled bool) error {
@@ -41,13 +47,19 @@ func (s *Manager) SetDatabaseConnection(project, dbType string, connection strin
 	// update database config
 	coll, ok := projectConfig.Modules.Crud[dbType]
 	if !ok {
-		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: connection, Enabled: enabled}
+		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: connection, Enabled: enabled, Collections: map[string]*config.TableRule{}}
 	} else {
 		coll.Conn = connection
 		coll.Enabled = enabled
 	}
 
-	return s.setProject(projectConfig)
+	// Set the crud config
+	if err := s.projects.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetModifySchema(project, dbType, col, schema string) error {
@@ -73,7 +85,13 @@ func (s *Manager) SetModifySchema(project, dbType, col, schema string) error {
 		temp.Schema = schema
 	}
 
-	return s.setProject(projectConfig)
+	// Set the crud config
+	if err := s.projects.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetCollectionRules(project, dbType, col string, v *config.TableRule) error {
@@ -97,7 +115,14 @@ func (s *Manager) SetCollectionRules(project, dbType, col string, v *config.Tabl
 		collection.IsRealTimeEnabled = v.IsRealTimeEnabled
 		collection.Rules = v.Rules
 	}
-	return s.setProject(projectConfig)
+
+	// Set the crud config
+	if err := s.projects.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema) (map[string]interface{}, error) {
@@ -128,7 +153,13 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 		colResult[colName] = result
 	}
 
-	return colResult, s.setProject(projectConfig)
+	// Set the crud config
+	if err := s.projects.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		return colResult, err
+	}
+
+	// Persist the config
+	return colResult, s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetSchemaInspection(project, dbType, col, schema string) error {
@@ -155,7 +186,13 @@ func (s *Manager) SetSchemaInspection(project, dbType, col, schema string) error
 		temp.Schema = schema
 	}
 
-	return s.setProject(projectConfig)
+	// Set the crud config
+	if err := s.projects.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema, v config.CrudStub) error {
@@ -188,5 +225,11 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string
 		}
 	}
 
-	return s.setProject(projectConfig)
+	// Set the crud config
+	if err := s.projects.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }

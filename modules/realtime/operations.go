@@ -18,7 +18,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
-	_, err := m.auth.IsReadOpAuthorised(data.Project, data.DBType, data.Group, data.Token, readReq)
+	_, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,10 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 		return []*model.FeedData{}, nil
 	}
 
-	result, err := m.crud.Read(ctx, data.DBType, data.Project, data.Group, readReq)
+	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	result, err := m.crud.Read(ctx2, data.DBType, data.Project, data.Group, readReq)
 	if err != nil {
 		return nil, err
 	}

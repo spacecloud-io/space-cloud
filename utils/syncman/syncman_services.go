@@ -13,7 +13,13 @@ func (s *Manager) SetService(project, service string, value *config.Service) err
 	}
 	projectConfig.Modules.Services.Services[service] = value
 
-	return s.setProject(projectConfig)
+	// Set the services config
+	if err := s.projects.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetDeleteService(project, service string) error {
@@ -27,5 +33,11 @@ func (s *Manager) SetDeleteService(project, service string) error {
 	}
 	delete(projectConfig.Modules.Services.Services, service)
 
-	return s.setProject(projectConfig)
+	// Set the services config
+	if err := s.projects.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }

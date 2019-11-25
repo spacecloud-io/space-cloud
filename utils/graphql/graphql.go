@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -41,7 +42,7 @@ func (graph *Module) GetProjectID() string {
 }
 
 // ExecGraphQLQuery executes the provided graphql query
-func (graph *Module) ExecGraphQLQuery(req *model.GraphQLRequest, token string, cb callback) {
+func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb callback) {
 
 	source := source.NewSource(&source.Source{
 		Body: []byte(req.Query),
@@ -54,7 +55,7 @@ func (graph *Module) ExecGraphQLQuery(req *model.GraphQLRequest, token string, c
 		return
 	}
 
-	graph.execGraphQLDocument(doc, token, utils.M{"vars": req.Variables, "path": ""}, newLoaderMap(), createCallback(cb))
+	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": ""}, newLoaderMap(), createCallback(cb))
 }
 
 type callback func(op interface{}, err error)
@@ -78,13 +79,13 @@ func createCallback(cb callback) callback {
 	}
 }
 
-func (graph *Module) execGraphQLDocument(node ast.Node, token string, store utils.M, loader *loaderMap, cb callback) {
+func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, loader *loaderMap, cb callback) {
 	switch node.GetKind() {
 
 	case kinds.Document:
 		doc := node.(*ast.Document)
 		if len(doc.Definitions) > 0 {
-			graph.execGraphQLDocument(doc.Definitions[0], token, store, loader, createCallback(cb))
+			graph.execGraphQLDocument(ctx, doc.Definitions[0], token, store, loader, createCallback(cb))
 			return
 		}
 		cb(nil, errors.New("No definitions provided"))
@@ -104,7 +105,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 
 				field := v.(*ast.Field)
 
-				graph.execGraphQLDocument(field, token, store, loader, createCallback(func(result interface{}, err error) {
+				graph.execGraphQLDocument(ctx, field, token, store, loader, createCallback(func(result interface{}, err error) {
 					defer wg.Done()
 					if err != nil {
 						cb(nil, err)
@@ -113,7 +114,6 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 
 					// Set the result in the field
 					obj.Set(getFieldName(field), result)
-
 				}))
 			}
 
@@ -123,7 +123,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 			return
 
 		case "mutation":
-			graph.handleMutation(node, token, store, cb)
+			graph.handleMutation(ctx, node, token, store, cb)
 
 		default:
 			cb(nil, errors.New("Invalid operation: "+op.Operation))
@@ -137,25 +137,25 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 		if len(field.Directives) > 0 {
 			kind := getQueryKind(field.Directives[0])
 			if kind == "read" {
-				graph.execReadRequest(field, token, store, loader, createCallback(func(result interface{}, err error) {
+				graph.execReadRequest(ctx, field, token, store, loader, createCallback(func(result interface{}, err error) {
 					if err != nil {
 						cb(nil, err)
 						return
 					}
 
-					graph.processQueryResult(field, token, store, result, loader, cb)
+					graph.processQueryResult(ctx, field, token, store, result, loader, cb)
 				}))
 				return
 			}
 
 			if kind == "func" {
-				graph.execFuncCall(token, field, store, createCallback(func(result interface{}, err error) {
+				graph.execFuncCall(ctx, token, field, store, createCallback(func(result interface{}, err error) {
 					if err != nil {
 						cb(nil, err)
 						return
 					}
 
-					graph.processQueryResult(field, token, store, result, loader, cb)
+					graph.processQueryResult(ctx, field, token, store, result, loader, cb)
 				}))
 				return
 			}
@@ -187,7 +187,7 @@ func (graph *Module) execGraphQLDocument(node ast.Node, token string, store util
 
 			f := sel.(*ast.Field)
 
-			graph.execGraphQLDocument(f, token, storeNew, loader, createCallback(func(object interface{}, err error) {
+			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, createCallback(func(object interface{}, err error) {
 				defer wg.Done()
 
 				if err != nil {

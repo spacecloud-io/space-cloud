@@ -7,8 +7,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/auth/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -66,6 +66,36 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	}
 
 	return nil
+}
+
+func (m *Module) SetCrudConfig(project string, rules config.Crud) error {
+	m.project = project
+	m.rules = rules
+
+	if err := m.Schema.SetConfig(rules, project); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Module) SetServicesConfig(project string, services *config.ServicesModule) {
+	m.project = project
+
+	if services != nil {
+		m.funcRules = services
+	}
+}
+
+func (m *Module) SetFileStoreConfig(project string, fileStore *config.FileStore) {
+	m.project = project
+	if fileStore != nil {
+		sortFileRule(fileStore.Rules)
+	}
+	if fileStore != nil && fileStore.Enabled {
+		m.fileRules = fileStore.Rules
+		m.fileStoreType = fileStore.StoreType
+	}
 }
 
 // SetSecret sets the secret key to be used for JWT authentication

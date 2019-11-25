@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,11 +18,19 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Create a context of execution
-		_, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
 		project := vars["project"]
+
+		// Get the path parameters
+		token := getRequestMetaData(r).token
+
+		// Load the request from the body
+		req := model.GraphQLRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
 
 		state, err := p.LoadProject(project)
 		if err != nil {
@@ -31,19 +39,10 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Get the path parameters
-		token := getRequestMetaData(r).token
-		// Load the request from the body
-		req := model.GraphQLRequest{}
+		ch := make(chan struct{}, 1)
 
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		var wg sync.WaitGroup
-		wg.Add(1)
-
-		state.Graph.ExecGraphQLQuery(&req, token, func(op interface{}, err error) {
-			defer wg.Done()
+		state.Graph.ExecGraphQLQuery(ctx, &req, token, func(op interface{}, err error) {
+			defer func() { ch <- struct{}{} }()
 
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
@@ -56,7 +55,16 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 			return
 		})
 
-		wg.Wait()
-	}
+		select {
+		case <-ch:
+			return
+		case <-time.After(10 * time.Second):
+			log.Println("GraphQL Handler: Request timed out")
 
+			w.WriteHeader(http.StatusInternalServerError) //http status codee
+			errMes := map[string]interface{}{"message": "Request timed out"}
+			json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+			return
+		}
+	}
 }

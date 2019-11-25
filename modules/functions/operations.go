@@ -12,7 +12,7 @@ func (m *Module) Call(service, function, token string, params interface{}, timeo
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	ctx, cancel := context.WithTimeout(context.TODO(), time.Duration(timeout)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
 
 	return m.handleCall(ctx, service, function, token, params)

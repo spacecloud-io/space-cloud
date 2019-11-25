@@ -10,7 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execReadRequest(field *ast.Field, token string, store utils.M, loader *loaderMap, cb callback) {
+func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, loader *loaderMap, cb callback) {
 	dbType, err := GetDBType(field)
 	if err != nil {
 		cb(nil, err)
@@ -30,7 +30,7 @@ func (graph *Module) execReadRequest(field *ast.Field, token string, store utils
 	}
 
 	// Check if read op is authorised
-	if _, err := graph.auth.IsReadOpAuthorised(graph.project, dbType, col, token, req); err != nil {
+	if _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbType, col, token, req); err != nil {
 		cb(nil, err)
 		return
 	}
@@ -40,7 +40,7 @@ func (graph *Module) execReadRequest(field *ast.Field, token string, store utils
 	go func() {
 		// Create dataloader key
 		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: hasOptions, Req: *req}
-		result, err := dataLoader.Load(context.TODO(), key)()
+		result, err := dataLoader.Load(ctx, key)()
 		cb(result, err)
 	}()
 }
