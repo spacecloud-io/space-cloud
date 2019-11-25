@@ -22,9 +22,10 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "NODE_ID",
 	},
 	cli.StringFlag{
-		Name:  "config",
-		Value: "config.yaml",
-		Usage: "Load space cloud config from `FILE`",
+		Name:   "config",
+		Value:  "config.yaml",
+		Usage:  "Load space cloud config from `FILE`",
+		EnvVar: "CONFIG",
 	},
 	cli.StringFlag{
 		Name:   "ssl-cert",

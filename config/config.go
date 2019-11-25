@@ -18,7 +18,7 @@ type Project struct {
 // Admin stores the admin credentials
 type Admin struct {
 	Secret    string          `json:"secret" yaml:"secret"`
-	Operation OperationConfig `json:"operatiop"`
+	Operation OperationConfig `json:"operation"`
 	Users     []AdminUser     `json:"users" yaml:"users"`
 }
 
@@ -114,8 +114,9 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Path string `json:"path" yaml:"path"`
-	Rule *Rule  `json:"rule" yaml:"rule"`
+	Method string `json:"method" yaml:"method"`
+	Path   string `json:"path" yaml:"path"`
+	Rule   *Rule  `json:"rule" yaml:"rule"`
 }
 
 // FileStore holds the config for the file store module

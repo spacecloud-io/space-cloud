@@ -56,7 +56,15 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 
 	p := projects.New(nodeID, removeProjectScope, driver.New(removeProjectScope), adminMan, syncMan, m)
 	syncMan.SetProjectCallbacks(&model.ProjectCallbacks{
-		Store:      p.StoreProject,
+		Store: p.StoreProject,
+
+		SetGlobalConfig:      p.SetGlobalConfig,
+		SetCrudConfig:        p.SetCrudConfig,
+		SetServicesConfig:    p.SetServicesConfig,
+		SetFileStorageConfig: p.SetFileStoreConfig,
+		SetEventingConfig:    p.SetEventingConfig,
+		SetUserManConfig:     p.SetUserManConfig,
+
 		Delete:     p.DeleteProject,
 		ProjectIDs: p.GetProjectIDs,
 	})

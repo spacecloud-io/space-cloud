@@ -54,8 +54,6 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 
 		// Close the client to free up resources
 		defer c.Close()
-
-		// Start the writer routine
 		go c.RoutineWrite()
 
 		// Get c details
@@ -78,7 +76,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				if err != nil {
 					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
 					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-					return true
+					return false
 				}
 
 				// Send response to c
@@ -96,7 +94,9 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// Send response to c
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
 				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-
+			default:
+				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: map[string]string{"error": "Invalid message type"}})
+				return false
 			}
 			return true
 		})

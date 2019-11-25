@@ -90,7 +90,7 @@ func (s *SQL) IsClientSafe() error {
 }
 
 func (s *SQL) connect() error {
-	timeOut := 5 * time.Second
+	timeOut := 3 * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
 	defer cancel()

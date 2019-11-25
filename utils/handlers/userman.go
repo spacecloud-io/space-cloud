@@ -18,6 +18,7 @@ func HandleProfile(projects *projects.Projects) http.HandlerFunc {
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
+		defer r.Body.Close()
 
 		// Get the path parameters
 		vars := mux.Vars(r)
@@ -69,6 +70,7 @@ func HandleProfiles(projects *projects.Projects) http.HandlerFunc {
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
 
 		status, result, err := state.UserManagement.Profiles(ctx, token, dbType, project)
 		if err != nil {

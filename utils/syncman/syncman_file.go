@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"errors"
+
 	"github.com/spaceuptech/space-cloud/config"
 )
 
@@ -20,7 +21,13 @@ func (s *Manager) SetFileStore(project string, value *config.FileStore) error {
 	projectConfig.Modules.FileStore.Endpoint = value.Endpoint
 	projectConfig.Modules.FileStore.Bucket = value.Bucket
 
-	return s.setProject(projectConfig)
+	// Set the file storage config
+	if err := s.projects.SetFileStorageConfig(project, projectConfig.Modules.FileStore); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetFileRule(project string, value *config.FileRule) error {
@@ -39,7 +46,13 @@ func (s *Manager) SetFileRule(project string, value *config.FileRule) error {
 	}
 	projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
 
-	return s.setProject(projectConfig)
+	// Set the file storage config
+	if err := s.projects.SetFileStorageConfig(project, projectConfig.Modules.FileStore); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }
 
 func (s *Manager) SetDeleteFileRule(project, filename string) error {
@@ -60,5 +73,12 @@ func (s *Manager) SetDeleteFileRule(project, filename string) error {
 		}
 	}
 	projectConfig.Modules.FileStore.Rules = temp
-	return s.setProject(projectConfig)
+
+	// Set the file storage config
+	if err := s.projects.SetFileStorageConfig(project, projectConfig.Modules.FileStore); err != nil {
+		return err
+	}
+
+	// Persist the config
+	return s.persistProjectConfig(projectConfig)
 }

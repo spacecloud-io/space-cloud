@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -28,6 +30,8 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 		vars := mux.Vars(r)
 		project := vars["project"]
 
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(project)
 		if err != nil {
@@ -45,6 +49,9 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 
 		// Extract the path from the url
 		token, project, _ := getMetaData(r)
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		contentType := strings.Split(r.Header.Get("Content-type"), ";")[0]
 
@@ -79,7 +86,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 				fileName = tempName
 			}
 
-			status, err := state.FileStore.UploadFile(project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
+			status, err := state.FileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -88,7 +95,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{})
 		} else {
 			name := r.Form.Get("name")
-			status, err := state.FileStore.CreateDir(project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
+			status, err := state.FileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -106,6 +113,16 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 		vars := mux.Vars(r)
 		project := vars["project"]
 
+		// Extract the path from the url
+		token, project, path := getMetaData(r)
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		op := r.URL.Query().Get("op")
+
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(project)
 		if err != nil {
@@ -114,16 +131,11 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Extract the path from the url
-		token, project, path := getMetaData(r)
-
-		op := r.URL.Query().Get("op")
-
 		// List the specified directory if op type is list
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
 
-			status, res, err := state.FileStore.ListFiles(project, token, &model.ListFilesRequest{Path: path, Type: mode})
+			status, res, err := state.FileStore.ListFiles(ctx, project, token, &model.ListFilesRequest{Path: path, Type: mode})
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -134,7 +146,7 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Read the file from file storage
-		status, file, err := state.FileStore.DownloadFile(project, token, path)
+		status, file, err := state.FileStore.DownloadFile(ctx, project, token, path)
 		w.WriteHeader(status)
 		if err != nil {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -152,6 +164,10 @@ func HandleDelete(projects *projects.Projects) http.HandlerFunc {
 		vars := mux.Vars(r)
 		project := vars["project"]
 
+		// Extract the path from the url
+		token, project, path := getMetaData(r)
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(project)
 		if err != nil {
@@ -160,10 +176,10 @@ func HandleDelete(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Extract the path from the url
-		token, project, path := getMetaData(r)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
-		status, err := state.FileStore.DeleteFile(project, token, path)
+		status, err := state.FileStore.DeleteFile(ctx, project, token, path)
 
 		w.WriteHeader(status)
 		if err != nil {

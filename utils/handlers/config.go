@@ -14,6 +14,8 @@ import (
 // HandleLoadEnv returns the handler to load the projects via a REST endpoint
 func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv()})
 	}
@@ -55,6 +57,8 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -138,22 +142,21 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager)
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load the body of the request
 		c := new(config.Project)
 		err := json.NewDecoder(r.Body).Decode(c)
 		defer r.Body.Close()
-
 		// Throw error if request was of incorrect type
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
+			return
+		}
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -179,6 +182,8 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		// Get the path parameters
 		vars := mux.Vars(r)
 		project := vars["project"]
+
+		defer r.Body.Close()
 
 		// Check if the request is authorised
 		status, err := adminMan.IsAdminOpAuthorised(token, project)

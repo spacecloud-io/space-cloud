@@ -22,6 +22,10 @@ func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) ht
 		vars := mux.Vars(r)
 		project := vars["project"]
 
+		eventDocs := []*model.EventDocument{}
+		json.NewDecoder(r.Body).Decode(&eventDocs)
+		defer r.Body.Close()
+
 		state, err := projects.LoadProject(project)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -45,10 +49,6 @@ func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) ht
 			return
 		}
 
-		eventDocs := []*model.EventDocument{}
-		json.NewDecoder(r.Body).Decode(&eventDocs)
-		defer r.Body.Close()
-
 		// Process the incoming events
 		state.Eventing.ProcessTransmittedEvents(eventDocs)
 
@@ -61,6 +61,10 @@ func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) ht
 // HandleQueueEvent creates a queue event endpoint
 func HandleQueueEvent(adminMan *admin.Manager, projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Load the params from the body
+		req := model.QueueEventRequest{}
+		json.NewDecoder(r.Body).Decode(&req)
+		defer r.Body.Close()
 
 		// Get the path parameters
 		vars := mux.Vars(r)
@@ -79,11 +83,6 @@ func HandleQueueEvent(adminMan *admin.Manager, projects *projects.Projects) http
 			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
 			return
 		}
-
-		// Load the params from the body
-		req := model.QueueEventRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)

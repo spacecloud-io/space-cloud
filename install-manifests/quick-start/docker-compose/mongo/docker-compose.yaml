@@ -3,8 +3,6 @@ services:
   mongo:
     image: mongo
     restart: always
-    volumes:
-    - db_data:/data/db
   space-cloud:
     image: spaceuptech/space-cloud
     ports:
@@ -21,5 +19,3 @@ services:
       # ADMIN_USER: "admin"
       # ADMIN_PASS: "123"
       # ADMIN_SECRET: "some-secret" # This is the JWT secret used for login authentication in Mission Control
-volumes:
-  db_data:

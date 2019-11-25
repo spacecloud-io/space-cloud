@@ -21,6 +21,7 @@ type requestMetaData struct {
 // HandleCrudCreate creates the create operation endpoint
 func HandleCrudCreate(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -42,7 +43,7 @@ func HandleCrudCreate(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Check if the user is authenticated
-		status, err := state.Auth.IsCreateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := state.Auth.IsCreateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -95,7 +96,7 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Check if the user is authenticated
-		status, err := state.Auth.IsReadOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := state.Auth.IsReadOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -140,7 +141,7 @@ func HandleCrudUpdate(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		status, err := state.Auth.IsUpdateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := state.Auth.IsUpdateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -187,7 +188,7 @@ func HandleCrudDelete(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		status, err := state.Auth.IsDeleteOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := state.Auth.IsDeleteOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -233,7 +234,7 @@ func HandleCrudAggregate(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		status, err := state.Auth.IsAggregateOpAuthorised(meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := state.Auth.IsAggregateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -304,15 +305,15 @@ func HandleCrudBatch(projects *projects.Projects) http.HandlerFunc {
 			switch req.Type {
 			case string(utils.Create):
 				r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
-				status, err = state.Auth.IsCreateOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				status, err = state.Auth.IsCreateOpAuthorised(ctx, meta.project, meta.dbType, req.Col, meta.token, &r)
 
 			case string(utils.Update):
 				r := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
-				status, err = state.Auth.IsUpdateOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				status, err = state.Auth.IsUpdateOpAuthorised(ctx, meta.project, meta.dbType, req.Col, meta.token, &r)
 
 			case string(utils.Delete):
 				r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
-				status, err = state.Auth.IsDeleteOpAuthorised(meta.project, meta.dbType, req.Col, meta.token, &r)
+				status, err = state.Auth.IsDeleteOpAuthorised(ctx, meta.project, meta.dbType, req.Col, meta.token, &r)
 
 			}
 

@@ -55,7 +55,7 @@ func (m *Mongo) IsClientSafe() error {
 }
 
 func (m *Mongo) connect() error {
-	timeOut := 5 * time.Second
+	timeOut := 3 * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeOut)
 	defer cancel()

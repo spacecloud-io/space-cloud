@@ -60,3 +60,92 @@ func (p *Projects) StoreProject(project *config.Project) error {
 
 	return nil
 }
+
+func (p *Projects) SetGlobalConfig(projectID, secret string) error {
+	s, err := p.LoadProject(projectID)
+	if err != nil {
+		return err
+	}
+
+	s.Auth.SetSecret(secret)
+	return nil
+}
+
+func (p *Projects) SetCrudConfig(projectID string, c config.Crud) error {
+	s, err := p.LoadProject(projectID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.Crud.SetConfig(projectID, c); err != nil {
+		log.Println("Error in crud module config: ", err)
+		return err
+	}
+
+	// Set the configuration for the auth module
+	if err := s.Auth.SetCrudConfig(projectID, c); err != nil {
+		log.Println("Error in crud module config: ", err)
+		return err
+	}
+
+	// Set the configuration for the realtime module
+	if err := s.Realtime.SetConfig(projectID, c); err != nil {
+		log.Println("Error in realtime module config: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (p *Projects) SetServicesConfig(projectID string, c *config.ServicesModule) error {
+	s, err := p.LoadProject(projectID)
+	if err != nil {
+		return err
+	}
+
+	s.Auth.SetServicesConfig(projectID, c)
+	s.Functions.SetConfig(projectID, c)
+	return nil
+}
+
+func (p *Projects) SetFileStoreConfig(projectID string, c *config.FileStore) error {
+	s, err := p.LoadProject(projectID)
+	if err != nil {
+		return err
+	}
+
+	s.Auth.SetFileStoreConfig(projectID, c)
+
+	// Set the configuration for the file storage module
+	if err := s.FileStore.SetConfig(c); err != nil {
+		log.Println("Error in files module config: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (p *Projects) SetEventingConfig(projectID string, eventing *config.Eventing) error {
+	s, err := p.LoadProject(projectID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.Eventing.SetConfig(projectID, eventing); err != nil {
+		log.Println("Error in eventing module config: ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (p *Projects) SetUserManConfig(projectID string, userMan config.Auth) error {
+	s, err := p.LoadProject(projectID)
+	if err != nil {
+		return err
+	}
+
+	// Set the configuration for the user management module
+	s.UserManagement.SetConfig(userMan)
+	return nil
+}

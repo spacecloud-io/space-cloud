@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"os"
 	"strings"
@@ -10,7 +11,7 @@ import (
 )
 
 // IsFileOpAuthorised checks if the caller is authorized to make the request
-func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOpType, args map[string]interface{}) error {
+func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path string, op utils.FileOpType, args map[string]interface{}) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -38,7 +39,7 @@ func (m *Module) IsFileOpAuthorised(project, token, path string, op utils.FileOp
 	args["token"] = token
 
 	// Match the rule
-	return m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
+	return m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 }
 
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {

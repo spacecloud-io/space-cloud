@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -9,7 +10,7 @@ import (
 )
 
 // IsCreateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsCreateOpAuthorised(project, dbType, col, token string, req *model.CreateRequest) (int, error) {
+func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.CreateRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -32,7 +33,7 @@ func (m *Module) IsCreateOpAuthorised(project, dbType, col, token string, req *m
 
 	for _, row := range rows {
 		args["doc"] = row
-		err := m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
+		err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 		if err != nil {
 			return http.StatusForbidden, err
 		}
@@ -46,7 +47,7 @@ func (m *Module) IsCreateOpAuthorised(project, dbType, col, token string, req *m
 }
 
 // IsReadOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsReadOpAuthorised(project, dbType, col, token string, req *model.ReadRequest) (int, error) {
+func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.ReadRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -56,7 +57,7 @@ func (m *Module) IsReadOpAuthorised(project, dbType, col, token string, req *mod
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
-	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
+	err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -65,7 +66,7 @@ func (m *Module) IsReadOpAuthorised(project, dbType, col, token string, req *mod
 }
 
 // IsUpdateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsUpdateOpAuthorised(project, dbType, col, token string, req *model.UpdateRequest) (int, error) {
+func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.UpdateRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -75,7 +76,7 @@ func (m *Module) IsUpdateOpAuthorised(project, dbType, col, token string, req *m
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update, "token": token}
-	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
+	err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -88,7 +89,7 @@ func (m *Module) IsUpdateOpAuthorised(project, dbType, col, token string, req *m
 }
 
 // IsDeleteOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsDeleteOpAuthorised(project, dbType, col, token string, req *model.DeleteRequest) (int, error) {
+func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.DeleteRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -98,7 +99,7 @@ func (m *Module) IsDeleteOpAuthorised(project, dbType, col, token string, req *m
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
-	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
+	err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -107,7 +108,7 @@ func (m *Module) IsDeleteOpAuthorised(project, dbType, col, token string, req *m
 }
 
 // IsAggregateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsAggregateOpAuthorised(project, dbType, col, token string, req *model.AggregateRequest) (int, error) {
+func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.AggregateRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -117,7 +118,7 @@ func (m *Module) IsAggregateOpAuthorised(project, dbType, col, token string, req
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline, "token": token}
-	err = m.matchRule(project, rule, map[string]interface{}{"args": args}, auth)
+	err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
