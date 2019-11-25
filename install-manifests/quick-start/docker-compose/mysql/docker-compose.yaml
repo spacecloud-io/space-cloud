@@ -1,15 +1,17 @@
 version: '3.6'
 services:
-  mongo:
-    image: mongo
+  mysql:
+    image: mysql
     restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 'my-secret-pw'
   space-cloud:
     image: spaceuptech/space-cloud
     ports:
     - "4122:4122"
     - "4126:4126"
     depends_on:
-    - "mongo"
+    - "mysql"
     restart: always
     environment:
       ## The DEV environment lets you use Mission Control (Admin UI) without login
