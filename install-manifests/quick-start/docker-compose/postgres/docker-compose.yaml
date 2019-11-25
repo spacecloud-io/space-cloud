@@ -1,7 +1,7 @@
 version: '3.6'
 services:
-  mongo:
-    image: mongo
+  postgres:
+    image: postgres
     restart: always
   space-cloud:
     image: spaceuptech/space-cloud
@@ -9,7 +9,7 @@ services:
     - "4122:4122"
     - "4126:4126"
     depends_on:
-    - "mongo"
+    - "postgres"
     restart: always
     environment:
       ## The DEV environment lets you use Mission Control (Admin UI) without login
