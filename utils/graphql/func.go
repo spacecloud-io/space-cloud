@@ -41,10 +41,10 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		return
 	}
 
-	ctx2, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
-	defer cancel()
-
 	go func() {
+		ctx2, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+		defer cancel()
+
 		result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, params)
 		cb(result, err)
 		return

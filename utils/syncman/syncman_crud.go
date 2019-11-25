@@ -41,7 +41,7 @@ func (s *Manager) SetDatabaseConnection(project, dbType string, connection strin
 	// update database config
 	coll, ok := projectConfig.Modules.Crud[dbType]
 	if !ok {
-		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: connection, Enabled: enabled}
+		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: connection, Enabled: enabled, Collections: map[string]*config.TableRule{}}
 	} else {
 		coll.Conn = connection
 		coll.Enabled = enabled
