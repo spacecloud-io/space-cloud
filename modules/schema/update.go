@@ -48,7 +48,7 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 	return nil
 }
 
-func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField) error {
+func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc SchemaFields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -59,7 +59,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField)
 
 		SchemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return errors.New("field not found in schemaField")
+			return errors.New("field not found in SchemaFields")
 		}
 
 		switch t := fieldValue.(type) {
@@ -85,7 +85,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField)
 	return nil
 }
 
-func validateMathOperations(doc interface{}, SchemaDoc schemaField) error {
+func validateMathOperations(doc interface{}, SchemaDoc SchemaFields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -96,7 +96,7 @@ func validateMathOperations(doc interface{}, SchemaDoc schemaField) error {
 
 		SchemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return errors.New("field not found in schemaField")
+			return errors.New("field not found in SchemaFields")
 		}
 
 		switch fieldValue.(type) {
@@ -118,7 +118,7 @@ func validateMathOperations(doc interface{}, SchemaDoc schemaField) error {
 	return nil
 }
 
-func validateDateOperations(doc interface{}, SchemaDoc schemaField) error {
+func validateDateOperations(doc interface{}, SchemaDoc SchemaFields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -129,7 +129,7 @@ func validateDateOperations(doc interface{}, SchemaDoc schemaField) error {
 
 		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return errors.New("field not found in schemaField")
+			return errors.New("field not found in SchemaFields")
 		}
 
 		if schemaDocValue.Kind != typeDateTime {
@@ -140,7 +140,7 @@ func validateDateOperations(doc interface{}, SchemaDoc schemaField) error {
 	return nil
 }
 
-func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc schemaField) (interface{}, error) {
+func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc SchemaFields) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return nil, errors.New("schema update set op wrong type passed expecting map[string]interface{}")

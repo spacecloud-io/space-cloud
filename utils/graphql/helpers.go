@@ -9,6 +9,8 @@ import (
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
+	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -151,7 +153,107 @@ func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
 	}
 }
 
-func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, loader *loaderMap, cb callback) {
+func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.SchemaFieldType, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb callback) {
+	graph.execLinkedReadRequest(ctx, field, fieldStruct.LinkedTable.DBType, fieldStruct.LinkedTable.Table, token, req,
+		store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
+			if err != nil {
+				cb(nil, err)
+				return
+			}
+
+			array := result.([]interface{})
+
+			if len(array) == 0 {
+				cb(nil, nil)
+				return
+			}
+
+			// Check the linked table has a schema
+			s, isSchemaPresent := graph.auth.Schema.GetSchema(dbType, col)
+
+			length := len(array)
+			if !fieldStruct.IsList {
+				length = 1
+			}
+
+			// Create a wait group
+			var wgArray sync.WaitGroup
+			wgArray.Add(length)
+
+			newArray := utils.NewArray(length)
+			for loopIndex := 0; loopIndex < length; loopIndex++ {
+				loopValue := array[loopIndex]
+
+				go func(i int, v interface{}) {
+
+					newCB := createCallback(func(result interface{}, err error) {
+						defer wgArray.Done()
+
+						if err != nil {
+							cb(nil, err)
+							return
+						}
+
+						newArray.Set(i, result)
+					})
+
+					obj := v.(map[string]interface{})
+					if fieldStruct.LinkedTable.Field != "" {
+
+						if !isSchemaPresent {
+							// Simply return the field in the  document received
+							value, p := obj[fieldStruct.LinkedTable.Field]
+							if !p {
+								newCB(nil, nil)
+								return
+							}
+
+							newCB(value, nil)
+							return
+						}
+
+						// Check if the linked field itself is a link
+						linkedFieldSchema, p := s[fieldStruct.LinkedTable.Field]
+						if !p || !linkedFieldSchema.IsLinked {
+							// Simply return the field in the  document received
+							value, p := obj[fieldStruct.LinkedTable.Field]
+							if !p {
+								newCB(nil, nil)
+								return
+							}
+
+							// Process the value
+							newCB(value, nil)
+							return
+						}
+
+						// The field itself is linked. Need to query that from the database now
+						linkedInfo := linkedFieldSchema.LinkedTable
+						findVar, err := utils.LoadValue("args."+linkedInfo.From, map[string]interface{}{"args": obj})
+						if err != nil {
+							newCB(nil, nil)
+							return
+						}
+						req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: findVar}}
+						graph.processLinkedResult(ctx, field, linkedFieldSchema, token, req, store, loader, newCB)
+						return
+					}
+					newCB(obj, nil)
+					return
+				}(loopIndex, loopValue)
+			}
+
+			wgArray.Wait()
+			finalArray := newArray.GetAll()
+			if !fieldStruct.IsList {
+				graph.processQueryResult(ctx, field, token, store, finalArray[0], loader, s, cb)
+				return
+			}
+			graph.processQueryResult(ctx, field, token, store, finalArray, loader, s, cb)
+		}))
+}
+
+func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, loader *loaderMap, schema schema.SchemaFields, cb callback) {
 	addFieldPath(store, getFieldName(field))
 
 	switch val := result.(type) {
@@ -165,6 +267,11 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 		for loopIndex, loopValue := range val {
 			go func(i int, v interface{}) {
 				defer wgArray.Done()
+
+				if field.SelectionSet == nil {
+					array.Set(i, v)
+					return
+				}
 
 				obj := utils.NewObject()
 
@@ -184,7 +291,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 						continue
 					}
 
-					graph.execGraphQLDocument(ctx, f, token, storeNew, loader, createCallback(func(result interface{}, err error) {
+					graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(result interface{}, err error) {
 						defer wg.Done()
 
 						if err != nil {
@@ -208,6 +315,11 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 	case map[string]interface{}, utils.M:
 		obj := utils.NewObject()
 
+		if field.SelectionSet == nil {
+			cb(val, nil)
+			return
+		}
+
 		// Create a wait group
 		var wg sync.WaitGroup
 		wg.Add(len(field.SelectionSet.Selections))
@@ -222,7 +334,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 				obj.Set(f.Name.Value, strings.Title(field.Name.Value))
 				continue
 			}
-			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, createCallback(func(result interface{}, err error) {
+			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(result interface{}, err error) {
 				defer wg.Done()
 
 				if err != nil {
@@ -238,7 +350,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 		return
 
 	default:
-		cb(nil, errors.New("Incorrect result type"))
+		cb(result, nil)
 		return
 	}
 }

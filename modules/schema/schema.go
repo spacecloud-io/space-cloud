@@ -50,6 +50,28 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	return nil
 }
 
+func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	dbSchema, p := s.SchemaDoc[dbType]
+	if !p {
+		return nil, false
+	}
+
+	colSchema, p := dbSchema[col]
+	if !p {
+		return nil, false
+	}
+
+	fields := make(SchemaFields, len(colSchema))
+	for k, v := range colSchema {
+		fields[k] = v
+	}
+
+	return fields, true
+}
+
 // parseSchema Initializes Schema field in Module struct
 func (s *Schema) parseSchema(crud config.Crud) error {
 
@@ -78,7 +100,7 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 			if err != nil {
 				return nil, err
 			}
-			value, err := getCollectionSchema(doc, collectionName)
+			value, err := getCollectionSchema(doc, dbName, collectionName)
 			if err != nil {
 				return nil, err
 			}
@@ -93,8 +115,8 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 	return schema, nil
 }
 
-func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField, error) {
-	fieldMap := schemaField{}
+func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (SchemaFields, error) {
+	fieldMap := SchemaFields{}
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
 
@@ -103,7 +125,7 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 		}
 		for _, field := range v.(*ast.ObjectDefinition).Fields {
 
-			fieldTypeStuct := schemaFieldType{
+			fieldTypeStuct := SchemaFieldType{
 				FieldName: field.Name.Value,
 			}
 			if len(field.Directives) > 0 {
@@ -121,8 +143,8 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 						fieldTypeStuct.IsUpdatedAt = true
 					case directiveLink:
 						fieldTypeStuct.IsLinked = true
-						fieldTypeStuct.LinkedTable = &tableProperties{}
-						kind, err := getFieldType(field.Type, &fieldTypeStuct, doc)
+						fieldTypeStuct.LinkedTable = &TableProperties{DBType: dbName}
+						kind, err := getFieldType(dbName, field.Type, &fieldTypeStuct, doc)
 						if err != nil {
 							return nil, err
 						}
@@ -153,7 +175,7 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 
 					case directiveForeign:
 						fieldTypeStuct.IsForeign = true
-						fieldTypeStuct.JointTable = &tableProperties{}
+						fieldTypeStuct.JointTable = &TableProperties{}
 						fieldTypeStuct.JointTable.Table = strings.Split(field.Name.Value, "_")[0]
 						fieldTypeStuct.JointTable.From = field.Name.Value
 						fieldTypeStuct.JointTable.To = "id"
@@ -174,7 +196,7 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 				}
 			}
 
-			kind, err := getFieldType(field.Type, &fieldTypeStuct, doc)
+			kind, err := getFieldType(dbName, field.Type, &fieldTypeStuct, doc)
 			if err != nil {
 				return nil, err
 			}
@@ -186,11 +208,11 @@ func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField,
 	return fieldMap, nil
 }
 
-func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.Document) (string, error) {
+func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.Document) (string, error) {
 	switch fieldType.GetKind() {
 	case kinds.NonNull:
 		fieldTypeStuct.IsFieldTypeRequired = true
-		return getFieldType(fieldType.(*ast.NonNull).Type, fieldTypeStuct, doc)
+		return getFieldType(dbName, fieldType.(*ast.NonNull).Type, fieldTypeStuct, doc)
 	case kinds.List:
 		// Lists are not allowed for primary and foreign keys
 		if fieldTypeStuct.IsPrimary || fieldTypeStuct.IsForeign {
@@ -198,7 +220,7 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.
 		}
 
 		fieldTypeStuct.IsList = true
-		return getFieldType(fieldType.(*ast.List).Type, fieldTypeStuct, doc)
+		return getFieldType(dbName, fieldType.(*ast.List).Type, fieldTypeStuct, doc)
 
 	case kinds.Named:
 		myType := fieldType.(*ast.Named).Name.Value
@@ -225,7 +247,7 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.
 			}
 
 			// The field is a nested type. Update the nestedObject field and return typeObject. This is a side effect.
-			nestedschemaField, err := getCollectionSchema(doc, myType)
+			nestedschemaField, err := getCollectionSchema(doc, dbName, myType)
 			if err != nil {
 				return "", err
 			}
@@ -238,13 +260,21 @@ func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.
 	}
 }
 
-func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]interface{}) (map[string]interface{}, error) {
+func (s *Schema) schemaValidator(collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
 
 	mutatedDoc := map[string]interface{}{}
 
 	for fieldKey, fieldValue := range collectionFields {
 		// check if key is required
 		value, ok := doc[fieldKey]
+
+		if fieldValue.IsLinked {
+			if ok {
+				return nil, fmt.Errorf("cannot insert value for a linked field %s", fieldKey)
+			}
+
+			continue
+		}
 
 		if fieldValue.Kind == typeID && !ok {
 			value = ksuid.New().String()
@@ -268,9 +298,7 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 			return nil, err
 		}
 
-		if mutatedDoc != nil {
-			mutatedDoc[fieldKey] = val
-		}
+		mutatedDoc[fieldKey] = val
 	}
 
 	return mutatedDoc, nil
@@ -316,7 +344,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	return nil
 }
 
-func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (interface{}, error) {
+func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
 
 	switch v := value.(type) {
 	case int:

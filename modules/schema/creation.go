@@ -10,7 +10,7 @@ import (
 
 type creationModule struct {
 	dbType, project, ColName, FieldKey, columnType string
-	currentFieldStruct, realFieldStruct            *schemaFieldType
+	currentFieldStruct, realFieldStruct            *SchemaFieldType
 	schemaModule                                   *Schema
 	removeProjectScope                             bool
 }
@@ -58,9 +58,9 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 
 		batchedQueries = append(batchedQueries, query)
 
-		currentColValue = schemaField{}
+		currentColValue = SchemaFields{}
 		for realFieldKey, realFieldStruct := range realColValue {
-			temp := schemaFieldType{
+			temp := SchemaFieldType{
 				FieldName:           realFieldStruct.FieldName,
 				IsFieldTypeRequired: realFieldStruct.IsFieldTypeRequired,
 				IsList:              realFieldStruct.IsList,

@@ -32,7 +32,7 @@ func getSQLType(dbType, typename string) (string, error) {
 	}
 }
 
-func checkErrors(realFieldStruct *schemaFieldType) error {
+func checkErrors(realFieldStruct *SchemaFieldType) error {
 	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
 		return fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName)
 	}
@@ -144,7 +144,7 @@ func (c *creationModule) removeForeignKey() []string {
 	return nil
 }
 
-func addNewTable(project, dbType, realColName string, realColValue schemaField, removeProjectScope bool) (string, error) {
+func addNewTable(project, dbType, realColName string, realColValue SchemaFields, removeProjectScope bool) (string, error) {
 	var query string
 	for realFieldKey, realFieldStruct := range realColValue {
 

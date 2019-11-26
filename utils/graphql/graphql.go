@@ -15,6 +15,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -55,10 +56,11 @@ func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLReq
 		return
 	}
 
-	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": ""}, newLoaderMap(), createCallback(cb))
+	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": ""}, newLoaderMap(), nil, createCallback(cb))
 }
 
 type callback func(op interface{}, err error)
+type dbCallback func(dbType, col string, op interface{}, err error)
 
 func createCallback(cb callback) callback {
 	var lock sync.Mutex
@@ -78,14 +80,32 @@ func createCallback(cb callback) callback {
 		cb(result, err)
 	}
 }
+func createDBCallback(cb dbCallback) dbCallback {
+	var lock sync.Mutex
+	var isCalled bool
 
-func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, loader *loaderMap, cb callback) {
+	return func(dbType, col string, result interface{}, err error) {
+		lock.Lock()
+		defer lock.Unlock()
+
+		// Check if callback has already been invoked once
+		if isCalled {
+			return
+		}
+
+		// Set the flag to prevent duplicate invocation
+		isCalled = true
+		cb(dbType, col, result, err)
+	}
+}
+
+func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, loader *loaderMap, schema schema.SchemaFields, cb callback) {
 	switch node.GetKind() {
 
 	case kinds.Document:
 		doc := node.(*ast.Document)
 		if len(doc.Definitions) > 0 {
-			graph.execGraphQLDocument(ctx, doc.Definitions[0], token, store, loader, createCallback(cb))
+			graph.execGraphQLDocument(ctx, doc.Definitions[0], token, store, loader, nil, createCallback(cb))
 			return
 		}
 		cb(nil, errors.New("No definitions provided"))
@@ -105,7 +125,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 				field := v.(*ast.Field)
 
-				graph.execGraphQLDocument(ctx, field, token, store, loader, createCallback(func(result interface{}, err error) {
+				graph.execGraphQLDocument(ctx, field, token, store, loader, nil, createCallback(func(result interface{}, err error) {
 					defer wg.Done()
 					if err != nil {
 						cb(nil, err)
@@ -137,13 +157,16 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 		if len(field.Directives) > 0 {
 			kind := getQueryKind(field.Directives[0])
 			if kind == "read" {
-				graph.execReadRequest(ctx, field, token, store, loader, createCallback(func(result interface{}, err error) {
+				graph.execReadRequest(ctx, field, token, store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
 					if err != nil {
 						cb(nil, err)
 						return
 					}
 
-					graph.processQueryResult(ctx, field, token, store, result, loader, cb)
+					// Load the schema
+					s, _ := graph.auth.Schema.GetSchema(dbType, col)
+
+					graph.processQueryResult(ctx, field, token, store, result, loader, s, cb)
 				}))
 				return
 			}
@@ -155,13 +178,29 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 						return
 					}
 
-					graph.processQueryResult(ctx, field, token, store, result, loader, cb)
+					graph.processQueryResult(ctx, field, token, store, result, loader, nil, cb)
 				}))
 				return
 			}
 
 			cb(nil, errors.New("incorrect query type"))
 			return
+		}
+
+		if schema != nil {
+			fieldStruct, p := schema[field.Name.Value]
+			if p && fieldStruct.IsLinked {
+				linkedInfo := fieldStruct.LinkedTable
+				loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)
+				val, err := utils.LoadValue(loadKey, store)
+				if err != nil {
+					cb(nil, nil)
+					return
+				}
+				req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}}
+				graph.processLinkedResult(ctx, field, fieldStruct, token, req, store, loader, cb)
+				return
+			}
 		}
 
 		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
@@ -187,7 +226,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 			f := sel.(*ast.Field)
 
-			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, createCallback(func(object interface{}, err error) {
+			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(object interface{}, err error) {
 				defer wg.Done()
 
 				if err != nil {

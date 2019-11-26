@@ -31,10 +31,10 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		return nil, err
 	}
 	inspectionCollection := schemaCollection{}
-	inspectionFields := schemaField{}
+	inspectionFields := SchemaFields{}
 
 	for _, field := range fields {
-		fieldDetails := schemaFieldType{FieldName: field.FieldName}
+		fieldDetails := SchemaFieldType{FieldName: field.FieldName}
 
 		// check if field nullable (!)
 		if field.FieldNull == "NO" {
@@ -64,7 +64,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == field.FieldName {
 				fieldDetails.IsForeign = true
-				fieldDetails.JointTable = &tableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName}
+				fieldDetails.JointTable = &TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName}
 			}
 		}
 
@@ -77,7 +77,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 	return inspectionCollection, nil
 }
 
-func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
+func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
 	if typeName == "varchar("+sqlTypeIDSize+")" {
 		fieldDetails.Kind = typeID
 		return nil
@@ -102,7 +102,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldTyp
 	return nil
 }
 
-func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
+func inspectionPostgresCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
 	if typeName == "character varying("+sqlTypeIDSize+")" {
 		fieldDetails.Kind = typeID
 		return nil
