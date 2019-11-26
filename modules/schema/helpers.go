@@ -3,6 +3,7 @@ package schema
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -11,8 +12,8 @@ import (
 func getSQLType(dbType, typename string) (string, error) {
 
 	switch typename {
-	case typeID, typeJoin:
-		return "varchar(50)", nil
+	case typeID:
+		return "varchar(" + sqlTypeIDSize + ")", nil
 	case typeString:
 		return "text", nil
 	case typeDateTime:
@@ -27,31 +28,24 @@ func getSQLType(dbType, typename string) (string, error) {
 	case typeInteger:
 		return "bigint", nil
 	default:
-		return "", errors.New("type not allowed")
+		return "", fmt.Errorf("%s type not allowed", typename)
 	}
 }
 
 func checkErrors(realFieldStruct *schemaFieldType) error {
-	switch realFieldStruct.Directive {
-	case "", directivePrimary, directiveRelation, directiveUnique, directiveCreatedAt, directiveUpdatedAt:
-		break
-	default:
-		//TODO: uncomment after removing id form events_log
-		//return errors.New("unknown directive " + realFieldStruct.Directive)
-	}
-	if realFieldStruct.IsList && (realFieldStruct.Directive != directiveRelation) { // array without directive relation not allowed
-		return errors.New("schema: array type without relation directive not supported in sql creation")
+	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
+		return fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName)
 	}
 	if realFieldStruct.Kind == typeObject {
-		return errors.New("schema: object type not supported in sql creation")
+		return fmt.Errorf("invalid type for field %s - object type not supported in sql creation", realFieldStruct.FieldName)
 	}
-	if realFieldStruct.Directive == directiveRelation && realFieldStruct.Kind != typeJoin {
-		return errors.New("schema : directive relation should contain user defined type got " + realFieldStruct.Kind)
+
+	if realFieldStruct.IsPrimary && !realFieldStruct.IsFieldTypeRequired {
+		return errors.New("primary key must be required")
 	}
-	if realFieldStruct.Directive == directivePrimary && !realFieldStruct.IsFieldTypeRequired {
-		return errors.New("schema directive primary cannot be null require(!)")
-	} else if realFieldStruct.Directive == directivePrimary && realFieldStruct.Kind != typeID {
-		return errors.New("schema directive primary should have type id")
+
+	if realFieldStruct.IsPrimary && realFieldStruct.Kind != typeID {
+		return errors.New("primary key should be of type ID")
 	}
 
 	return nil
@@ -137,7 +131,7 @@ func (c *creationModule) removeUniqueKey() string {
 }
 
 func (c *creationModule) addForeignKey() string {
-	return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " FOREIGN KEY (" + c.FieldKey + ") REFERENCES " + getTableName(c.project, c.realFieldStruct.JointTable.TableName, c.removeProjectScope) + "(" + c.realFieldStruct.JointTable.TableField + ")"
+	return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " FOREIGN KEY (" + c.FieldKey + ") REFERENCES " + getTableName(c.project, c.realFieldStruct.JointTable.Table, c.removeProjectScope) + "(" + c.realFieldStruct.JointTable.To + ")"
 }
 
 func (c *creationModule) removeForeignKey() []string {
@@ -153,6 +147,12 @@ func (c *creationModule) removeForeignKey() []string {
 func addNewTable(project, dbType, realColName string, realColValue schemaField, removeProjectScope bool) (string, error) {
 	var query string
 	for realFieldKey, realFieldStruct := range realColValue {
+
+		// Ignore linked fields since these are virtual fields
+		if realFieldStruct.IsLinked {
+			continue
+		}
+
 		if err := checkErrors(realFieldStruct); err != nil {
 			return "", err
 		}
@@ -163,7 +163,7 @@ func addNewTable(project, dbType, realColName string, realColValue schemaField, 
 
 		query += realFieldKey + " " + sqlType
 
-		if realFieldStruct.Directive == directivePrimary {
+		if realFieldStruct.IsPrimary {
 			primaryKey := "PRIMARY KEY"
 			query += " " + primaryKey
 		}
@@ -198,11 +198,18 @@ func (c *creationModule) addField(ctx context.Context) ([]string, error) {
 		// make the new column not null
 		queries = append(queries, c.addNotNull())
 	}
-	tempQuery, err := c.addDirective(ctx)
-	if err != nil {
-		return nil, err
+
+	if c.realFieldStruct.IsPrimary {
+		queries = append(queries, c.addPrimaryKey())
 	}
-	queries = append(queries, tempQuery...)
+
+	if c.realFieldStruct.IsUnique {
+		queries = append(queries, c.addUniqueKey())
+	}
+
+	if c.realFieldStruct.IsForeign {
+		queries = append(queries, c.addForeignKey())
+	}
 	return queries, nil
 }
 
@@ -213,15 +220,18 @@ func (c *creationModule) removeField() string {
 func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 	var queries []string
 
-	if c.realFieldStruct.Directive != c.currentFieldStruct.Directive {
-		if c.realFieldStruct.Directive == "" {
-			queries = append(queries, c.removeDirective()...)
-		}
+	if !c.realFieldStruct.IsPrimary && c.currentFieldStruct.IsPrimary {
+		queries = append(queries, c.removePrimaryKey())
 	}
 
-	if c.realFieldStruct.Kind == typeJoin {
-		c.realFieldStruct.Kind = c.realFieldStruct.JointTable.TableName
+	if !c.realFieldStruct.IsUnique && c.currentFieldStruct.IsUnique {
+		queries = append(queries, c.removeUniqueKey())
 	}
+
+	if !c.realFieldStruct.IsForeign && c.currentFieldStruct.IsForeign {
+		queries = append(queries, c.removeForeignKey()...)
+	}
+
 	if c.realFieldStruct.Kind != c.currentFieldStruct.Kind {
 		if c.columnType != "" {
 			queries = append(queries, c.modifyColumnType())
@@ -235,40 +245,17 @@ func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 			queries = append(queries, c.removeNotNull())
 		}
 	}
-	if c.realFieldStruct.Directive != c.currentFieldStruct.Directive {
-		if c.realFieldStruct.Directive != "" {
-			tempQuery, err := c.addDirective(ctx)
-			if err != nil {
-				return nil, err
-			}
-			queries = append(queries, tempQuery...)
-		}
-	}
-	return queries, nil
-}
 
-func (c *creationModule) addDirective(ctx context.Context) ([]string, error) {
-	queries := []string{}
-	switch c.realFieldStruct.Directive {
-	case directivePrimary:
+	if c.realFieldStruct.IsPrimary && !c.currentFieldStruct.IsPrimary {
 		queries = append(queries, c.addPrimaryKey())
-	case directiveUnique:
+	}
+
+	if c.realFieldStruct.IsUnique && !c.currentFieldStruct.IsUnique {
 		queries = append(queries, c.addUniqueKey())
-	case directiveRelation:
+	}
+
+	if c.realFieldStruct.IsForeign && !c.currentFieldStruct.IsForeign {
 		queries = append(queries, c.addForeignKey())
 	}
 	return queries, nil
-}
-
-func (c *creationModule) removeDirective() []string {
-	queries := []string{}
-	switch c.currentFieldStruct.Directive {
-	case directivePrimary:
-		queries = append(queries, c.removePrimaryKey())
-	case directiveUnique:
-		queries = append(queries, c.removeUniqueKey())
-	case directiveRelation:
-		queries = append(queries, c.removeForeignKey()...)
-	}
-	return queries
 }

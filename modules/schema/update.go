@@ -64,7 +64,7 @@ func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField)
 
 		switch t := fieldValue.(type) {
 		case []interface{}:
-			if SchemaDocValue.Directive == directiveRelation {
+			if SchemaDocValue.IsForeign {
 				return errors.New("schema update op array with relation directive not allowed")
 			}
 			for _, value := range t {
@@ -162,7 +162,7 @@ func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc schemaField) (i
 	}
 
 	for fieldKey, fieldValue := range SchemaDoc {
-		if fieldValue.Directive == directiveUpdatedAt {
+		if fieldValue.IsUpdatedAt {
 			newMap[fieldKey] = time.Now().UTC()
 		}
 	}
