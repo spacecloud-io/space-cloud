@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -155,5 +156,5 @@ func (m *Module) getCrudRule(dbType, col string, query utils.OperationType) (*co
 			}
 		}
 	}
-	return nil, ErrRuleNotFound
+	return nil, fmt.Errorf("no rule found for collection %s in database %s", col, dbType)
 }

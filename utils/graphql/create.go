@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/segmentio/ksuid"
@@ -13,22 +14,22 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]model.AllRequest, error) {
+func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]model.AllRequest, []interface{}, error) {
 	dbType, err := GetDBType(field)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	col := strings.TrimPrefix(field.Name.Value, "insert_")
 
 	docs, err := extractDocs(field.Arguments, store)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	reqs, err := graph.processNestedFields(docs, dbType, col)
+	reqs, returningDocs, err := graph.processNestedFields(docs, dbType, col)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Check if the requests are authorised
@@ -36,32 +37,53 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 		r := &model.CreateRequest{Document: req.Document, Operation: req.Operation}
 		_, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, dbType, req.Col, token, r)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	return reqs, nil
+	return reqs, returningDocs, nil
 }
 
-func (graph *Module) prepareIDsForPrimaryDocs(doc map[string]interface{}, schemaFields schema.SchemaFields) {
-	// Fields is the array of fields for which an unique id needs to be generated. These will only be done for those
-	// fields which are the primary key and have type as ID
-	fields := make([]string, 0)
+func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema.SchemaFields) {
+	// FieldIDs is the array of fields for which an unique id needs to be generated. These will only be done for those
+	// fields which have the type ID.
+	// FieldDates is the array of fields for which the current time needs to be set.
+	fieldIDs := make([]string, 0)
+	fieldDates := make([]string, 0)
+
 	for fieldName, fieldSchema := range schemaFields {
-		if fieldSchema.IsPrimary && fieldSchema.Kind == schema.TypeID {
-			fields = append(fields, fieldName)
+		if fieldSchema.Kind == schema.TypeID {
+			fieldIDs = append(fieldIDs, fieldName)
+		}
+
+		if fieldSchema.IsCreatedAt || fieldSchema.IsUpdatedAt {
+			fieldDates = append(fieldDates, fieldName)
 		}
 	}
 
-	// Set a new id for all those fields which do not have the field set already
-	for _, field := range fields {
+	// Set a new id for all those field ids which do not have the field set already
+	for _, field := range fieldIDs {
 		if _, p := doc[field]; !p {
 			doc[field] = ksuid.New().String()
 		}
 	}
+
+	// Set the current time for all fieldDates
+	for _, field := range fieldDates {
+		doc[field] = time.Now().UTC()
+	}
 }
 
-func (graph *Module) processNestedFields(docs []interface{}, dbType, col string) ([]model.AllRequest, error) {
+func copyDoc(doc map[string]interface{}) map[string]interface{} {
+	newDoc := make(map[string]interface{}, len(doc))
+	for k, v := range doc {
+		newDoc[k] = v
+	}
+
+	return newDoc
+}
+
+func (graph *Module) processNestedFields(docs []interface{}, dbType, col string) ([]model.AllRequest, []interface{}, error) {
 	createRequests := make([]model.AllRequest, 0)
 	afterRequests := make([]model.AllRequest, 0)
 
@@ -69,16 +91,18 @@ func (graph *Module) processNestedFields(docs []interface{}, dbType, col string)
 	schemaFields, p := graph.auth.Schema.GetSchema(dbType, col)
 	if !p {
 		// Return the docs as is if no schema is available
-		return []model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, nil
+		return []model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil
 	}
 
-	for _, docTemp := range docs {
+	returningDocs := make([]interface{}, len(docs))
+
+	for i, docTemp := range docs {
 
 		// Each document is actually an object
 		doc := docTemp.(map[string]interface{})
+		graph.prepareDocs(doc, schemaFields)
 
-		// Generate ids for all fields which are primary key. This is required since the id might have to be passed down to the nested object
-		graph.prepareIDsForPrimaryDocs(doc, schemaFields)
+		newDoc := copyDoc(doc)
 
 		// Iterate over each field of the document to see if has any linked fields that are present
 		for fieldName, fieldValue := range doc {
@@ -113,14 +137,14 @@ func (graph *Module) processNestedFields(docs []interface{}, dbType, col string)
 			if !fieldSchema.IsList {
 				temp, ok := fieldValue.(map[string]interface{})
 				if !ok {
-					return nil, fmt.Errorf("invalid format provided for linked field %s - wanted object got array", fieldName)
+					return nil, nil, fmt.Errorf("invalid format provided for linked field %s - wanted object got array", fieldName)
 				}
 
 				linkedDocs = []interface{}{temp}
 			} else {
 				temp, ok := fieldValue.([]interface{})
 				if !ok {
-					return nil, fmt.Errorf("invalid format provided for linked field %s - wanted array got object", fieldName)
+					return nil, nil, fmt.Errorf("invalid format provided for linked field %s - wanted array got object", fieldName)
 				}
 				linkedDocs = temp
 			}
@@ -130,8 +154,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbType, col string)
 				// Each document is actually an object
 				linkedDoc := linkedDocTemp.(map[string]interface{})
 
-				// Generate ids for all fields which are primary key. This is required since the id might have to be passed down to the nested object
-				graph.prepareIDsForPrimaryDocs(linkedDoc, schemaFields)
+				graph.prepareDocs(linkedDoc, schemaFields)
 
 				// Check if the `from` field is a primary key. If it is, we need to set that value in the `to` field
 				// of the nested value. If it is not a primary key, we'll have to set it with the value of the `to`
@@ -144,9 +167,9 @@ func (graph *Module) processNestedFields(docs []interface{}, dbType, col string)
 				}
 			}
 
-			linkedCreateRequests, err := graph.processNestedFields(linkedDocs, dbType, fieldSchema.LinkedTable.Table)
+			linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(linkedDocs, dbType, fieldSchema.LinkedTable.Table)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			if fromFieldSchema.IsPrimary {
@@ -159,10 +182,13 @@ func (graph *Module) processNestedFields(docs []interface{}, dbType, col string)
 
 			// Delete the nested field. The schema module would throw an error otherwise
 			delete(doc, fieldName)
+
+			newDoc[fieldName] = returningLinkedDocs
 		}
+		returningDocs[i] = newDoc
 	}
 	createRequests = append(createRequests, model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs})
-	return append(createRequests, afterRequests...), nil
+	return append(createRequests, afterRequests...), returningDocs, nil
 }
 
 func extractDocs(args []*ast.Argument, store utils.M) ([]interface{}, error) {
