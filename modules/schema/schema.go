@@ -116,6 +116,8 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 }
 
 func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (SchemaFields, error) {
+	var isCollectionFound bool
+
 	fieldMap := SchemaFields{}
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
@@ -123,6 +125,10 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 		if colName != collectionName {
 			continue
 		}
+
+		// Mark the collection as found
+		isCollectionFound = true
+
 		for _, field := range v.(*ast.ObjectDefinition).Fields {
 
 			fieldTypeStuct := SchemaFieldType{
@@ -205,6 +211,10 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 		}
 	}
 
+	// Throw an error if the collection wasn't found
+	if !isCollectionFound {
+		return nil, fmt.Errorf("collection %s could not be found in schema", collectionName)
+	}
 	return fieldMap, nil
 }
 
@@ -260,7 +270,7 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaField
 	}
 }
 
-func (s *Schema) schemaValidator(collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
+func (s *Schema) schemaValidator(col string, collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
 
 	mutatedDoc := map[string]interface{}{}
 
@@ -288,12 +298,12 @@ func (s *Schema) schemaValidator(collectionFields SchemaFields, doc map[string]i
 
 		if fieldValue.IsFieldTypeRequired {
 			if !ok {
-				return nil, errors.New("Field " + fieldKey + " Not Present")
+				return nil, fmt.Errorf("required field %s from collection %s not present in request", fieldKey, col)
 			}
 		}
 
 		// check type
-		val, err := s.checkType(value, fieldValue)
+		val, err := s.checkType(col, value, fieldValue)
 		if err != nil {
 			return nil, err
 		}
@@ -330,7 +340,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	}
 
 	for index, doc := range v {
-		newDoc, err := s.schemaValidator(collectionFields, doc.(map[string]interface{}))
+		newDoc, err := s.schemaValidator(col, collectionFields, doc.(map[string]interface{}))
 		if err != nil {
 			return err
 		}
@@ -344,7 +354,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	return nil
 }
 
-func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
+func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
 
 	switch v := value.(type) {
 	case int:
@@ -357,7 +367,7 @@ func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 		case typeFloat:
 			return float64(v), nil
 		default:
-			return nil, fmt.Errorf("invalid type received for field %s - wanted %s got Integer", fieldValue.FieldName, fieldValue.Kind)
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Integer", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 
 	case string:
@@ -365,13 +375,13 @@ func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 		case typeDateTime:
 			unitTimeInRFC3339, err := time.Parse(time.RFC3339, v)
 			if err != nil {
-				return nil, fmt.Errorf("invalid datetime format recieved for field %s - use RFC3339", fieldValue.FieldName)
+				return nil, fmt.Errorf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col)
 			}
 			return unitTimeInRFC3339, nil
 		case TypeID, typeString:
 			return value, nil
 		default:
-			return nil, fmt.Errorf("invalid type received for field %s - wanted %s got String", fieldValue.FieldName, fieldValue.Kind)
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got String", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 
 	case float32, float64:
@@ -383,33 +393,33 @@ func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 		case typeInteger:
 			return int64(value.(float64)), nil
 		default:
-			return nil, fmt.Errorf("invalid type received for field %s - wanted %s got Float", fieldValue.FieldName, fieldValue.Kind)
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Float", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 	case bool:
 		switch fieldValue.Kind {
 		case typeBoolean:
 			return value, nil
 		default:
-			return nil, fmt.Errorf("invalid type received for field %s - wanted %s got Bool", fieldValue.FieldName, fieldValue.Kind)
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Bool", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 
 	case map[string]interface{}:
 		// TODO: allow this operation for nested insert using links
 		if fieldValue.Kind != typeObject {
-			return nil, fmt.Errorf("invalid type received for field %s", fieldValue.FieldName)
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}
 
-		return s.schemaValidator(fieldValue.nestedObject, v)
+		return s.schemaValidator(col, fieldValue.nestedObject, v)
 
 	case []interface{}:
 		// TODO: allow this operation for nested insert using links
 		if fieldValue.Kind != typeObject {
-			return nil, fmt.Errorf("invalid type received for field %s", fieldValue.FieldName)
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}
 
 		arr := make([]interface{}, len(v))
 		for index, value := range v {
-			val, err := s.checkType(value, fieldValue)
+			val, err := s.checkType(col, value, fieldValue)
 			if err != nil {
 				return nil, err
 			}
@@ -421,6 +431,6 @@ func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 			return nil, nil
 		}
 
-		return nil, fmt.Errorf("no matching type found for field %s", fieldValue.FieldName)
+		return nil, fmt.Errorf("no matching type found for field %s in collection %s", fieldValue.FieldName, col)
 	}
 }
