@@ -227,8 +227,8 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaField
 		switch myType {
 		case typeString, typeEnum:
 			return typeString, nil
-		case typeID:
-			return typeID, nil
+		case TypeID:
+			return TypeID, nil
 		case typeDateTime:
 			return typeDateTime, nil
 		case typeFloat:
@@ -276,7 +276,7 @@ func (s *Schema) schemaValidator(collectionFields SchemaFields, doc map[string]i
 			continue
 		}
 
-		if fieldValue.Kind == typeID && !ok {
+		if fieldValue.Kind == TypeID && !ok {
 			value = ksuid.New().String()
 			ok = true
 		}
@@ -368,7 +368,7 @@ func (s *Schema) checkType(value interface{}, fieldValue *SchemaFieldType) (inte
 				return nil, fmt.Errorf("invalid datetime format recieved for field %s - use RFC3339", fieldValue.FieldName)
 			}
 			return unitTimeInRFC3339, nil
-		case typeID, typeString:
+		case TypeID, typeString:
 			return value, nil
 		default:
 			return nil, fmt.Errorf("invalid type received for field %s - wanted %s got String", fieldValue.FieldName, fieldValue.Kind)

@@ -144,6 +144,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		case "mutation":
 			graph.handleMutation(ctx, node, token, store, cb)
+			return
 
 		default:
 			cb(nil, errors.New("Invalid operation: "+op.Operation))

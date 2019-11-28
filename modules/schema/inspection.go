@@ -79,7 +79,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 
 func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
 	if typeName == "varchar("+sqlTypeIDSize+")" {
-		fieldDetails.Kind = typeID
+		fieldDetails.Kind = TypeID
 		return nil
 	}
 
@@ -104,7 +104,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldTyp
 
 func inspectionPostgresCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
 	if typeName == "character varying("+sqlTypeIDSize+")" {
-		fieldDetails.Kind = typeID
+		fieldDetails.Kind = TypeID
 		return nil
 	}
 

@@ -12,7 +12,7 @@ import (
 func getSQLType(dbType, typename string) (string, error) {
 
 	switch typename {
-	case typeID:
+	case TypeID:
 		return "varchar(" + sqlTypeIDSize + ")", nil
 	case typeString:
 		return "text", nil
@@ -44,7 +44,7 @@ func checkErrors(realFieldStruct *SchemaFieldType) error {
 		return errors.New("primary key must be required")
 	}
 
-	if realFieldStruct.IsPrimary && realFieldStruct.Kind != typeID {
+	if realFieldStruct.IsPrimary && realFieldStruct.Kind != TypeID {
 		return errors.New("primary key should be of type ID")
 	}
 

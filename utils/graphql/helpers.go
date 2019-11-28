@@ -34,7 +34,7 @@ func getFieldName(field *ast.Field) string {
 // GetDBType returns the dbType of the request
 func GetDBType(field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
-		return "", errors.New("Field does not contain directives")
+		return "", errors.New("database / service directive not provided")
 	}
 	dbType := field.Directives[0].Name.Value
 	switch dbType {

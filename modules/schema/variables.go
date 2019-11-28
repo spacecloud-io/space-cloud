@@ -42,7 +42,7 @@ const (
 	typeDateTime  string = "DateTime"
 	typeEnum      string = "Enum"
 	typeJSON      string = "Json"
-	typeID        string = "ID"
+	TypeID        string = "ID"
 	sqlTypeIDSize string = "50"
 	typeObject    string = "Object"
 
