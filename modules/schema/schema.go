@@ -2,6 +2,7 @@ package schema
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -49,6 +50,28 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	return nil
 }
 
+func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	dbSchema, p := s.SchemaDoc[dbType]
+	if !p {
+		return nil, false
+	}
+
+	colSchema, p := dbSchema[col]
+	if !p {
+		return nil, false
+	}
+
+	fields := make(SchemaFields, len(colSchema))
+	for k, v := range colSchema {
+		fields[k] = v
+	}
+
+	return fields, true
+}
+
 // parseSchema Initializes Schema field in Module struct
 func (s *Schema) parseSchema(crud config.Crud) error {
 
@@ -77,7 +100,7 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 			if err != nil {
 				return nil, err
 			}
-			value, err := getCollectionSchema(doc, collectionName)
+			value, err := getCollectionSchema(doc, dbName, collectionName)
 			if err != nil {
 				return nil, err
 			}
@@ -92,105 +115,162 @@ func (s *Schema) parser(crud config.Crud) (schemaType, error) {
 	return schema, nil
 }
 
-func getCollectionSchema(doc *ast.Document, collectionName string) (schemaField, error) {
-	fieldMap := schemaField{}
+func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (SchemaFields, error) {
+	var isCollectionFound bool
+
+	fieldMap := SchemaFields{}
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
 
 		if colName != collectionName {
 			continue
 		}
-		for _, ve := range v.(*ast.ObjectDefinition).Fields {
 
-			fieldTypeStuct := schemaFieldType{
-				JointTable: tableProperties{},
+		// Mark the collection as found
+		isCollectionFound = true
+
+		for _, field := range v.(*ast.ObjectDefinition).Fields {
+
+			fieldTypeStuct := SchemaFieldType{
+				FieldName: field.Name.Value,
 			}
-			if len(ve.Directives) > 0 {
-				val := ve.Directives[0]
+			if len(field.Directives) > 0 {
+				// Loop over all directives
 
-				for _, x := range val.Arguments {
+				for _, directive := range field.Directives {
+					switch directive.Name.Value {
+					case directivePrimary:
+						fieldTypeStuct.IsPrimary = true
+					case directiveUnique:
+						fieldTypeStuct.IsUnique = true
+					case directiveCreatedAt:
+						fieldTypeStuct.IsCreatedAt = true
+					case directiveUpdatedAt:
+						fieldTypeStuct.IsUpdatedAt = true
+					case directiveLink:
+						fieldTypeStuct.IsLinked = true
+						fieldTypeStuct.LinkedTable = &TableProperties{DBType: dbName}
+						kind, err := getFieldType(dbName, field.Type, &fieldTypeStuct, doc)
+						if err != nil {
+							return nil, err
+						}
+						fieldTypeStuct.LinkedTable.Table = kind
 
-					if x.Name.Value == "field" {
-						val, _ := (utils.ParseGraphqlValue(x.Value, nil))
-						fieldTypeStuct.JointTable.TableField = val.(string)
+						// Load the from and to fields. If either is not available, we will throw an error.
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "table":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.LinkedTable.Table = val.(string)
+							case "from":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.LinkedTable.From = val.(string)
+							case "to":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.LinkedTable.To = val.(string)
+							case "field":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.LinkedTable.Field = val.(string)
+							}
+						}
+
+						// Throw an error if from and to are unavailable
+						if fieldTypeStuct.LinkedTable.From == "" || fieldTypeStuct.LinkedTable.To == "" {
+							return nil, errors.New("link directive must be accompanied with to and from fields")
+						}
+
+					case directiveForeign:
+						fieldTypeStuct.IsForeign = true
+						fieldTypeStuct.JointTable = &TableProperties{}
+						fieldTypeStuct.JointTable.Table = strings.Split(field.Name.Value, "_")[0]
+						fieldTypeStuct.JointTable.From = field.Name.Value
+						fieldTypeStuct.JointTable.To = "id"
+
+						// Load the joint table name and field
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "table":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.JointTable.Table = val.(string)
+
+							case "to":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.JointTable.To = val.(string)
+							}
+						}
 					}
 				}
-
-				fieldTypeStuct.Directive = val.Name.Value
 			}
 
-			err := getFieldType(ve.Type, &fieldTypeStuct, doc)
+			kind, err := getFieldType(dbName, field.Type, &fieldTypeStuct, doc)
 			if err != nil {
 				return nil, err
 			}
-
-			// make default referenced column name id if directive is relation
-			if fieldTypeStuct.JointTable.TableField == "" && fieldTypeStuct.Directive == directiveRelation {
-				fieldTypeStuct.JointTable.TableField = "id"
-			}
-			fieldMap[ve.Name.Value] = &fieldTypeStuct
+			fieldTypeStuct.Kind = kind
+			fieldMap[field.Name.Value] = &fieldTypeStuct
 		}
 	}
 
+	// Throw an error if the collection wasn't found
+	if !isCollectionFound {
+		return nil, fmt.Errorf("collection %s could not be found in schema", collectionName)
+	}
 	return fieldMap, nil
 }
 
-func getFieldType(fieldType ast.Type, fieldTypeStuct *schemaFieldType, doc *ast.Document) error {
+func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.Document) (string, error) {
 	switch fieldType.GetKind() {
 	case kinds.NonNull:
-		{
-			fieldTypeStuct.IsFieldTypeRequired = true
-			getFieldType(fieldType.(*ast.NonNull).Type, fieldTypeStuct, doc)
-		}
+		fieldTypeStuct.IsFieldTypeRequired = true
+		return getFieldType(dbName, fieldType.(*ast.NonNull).Type, fieldTypeStuct, doc)
 	case kinds.List:
-		{
-			fieldTypeStuct.IsList = true
-			getFieldType(fieldType.(*ast.List).Type, fieldTypeStuct, doc)
-
+		// Lists are not allowed for primary and foreign keys
+		if fieldTypeStuct.IsPrimary || fieldTypeStuct.IsForeign {
+			return "", fmt.Errorf("invalid type for field %s - primary and foreign keys cannot be made on lists", fieldTypeStuct.FieldName)
 		}
-	case kinds.Named:
-		{
-			myType := fieldType.(*ast.Named).Name.Value
-			switch myType {
-			case typeString, typeEnum:
-				fieldTypeStuct.Kind = typeString
-			case typeID:
-				fieldTypeStuct.Kind = typeID
-			case typeDateTime:
-				fieldTypeStuct.Kind = typeDateTime
-			case typeFloat:
-				fieldTypeStuct.Kind = typeFloat
-			case typeInteger:
-				fieldTypeStuct.Kind = typeInteger
-			case typeBoolean:
-				fieldTypeStuct.Kind = typeBoolean
-			case typeJSON:
-				fieldTypeStuct.Kind = typeJSON
-			default:
-				{
-					fieldTypeStuct.Kind = typeJoin
-					fieldTypeStuct.JointTable.TableName = strings.ToLower(myType[0:1]) + myType[1:]
-					if fieldTypeStuct.Directive != "relation" {
-						fieldTypeStuct.Kind = typeObject
-						nestedschemaField, err := getCollectionSchema(doc, myType)
-						if err != nil {
-							return err
-						}
-						fieldTypeStuct.nestedObject = nestedschemaField
-					}
 
-				}
+		fieldTypeStuct.IsList = true
+		return getFieldType(dbName, fieldType.(*ast.List).Type, fieldTypeStuct, doc)
+
+	case kinds.Named:
+		myType := fieldType.(*ast.Named).Name.Value
+		switch myType {
+		case typeString, typeEnum:
+			return typeString, nil
+		case TypeID:
+			return TypeID, nil
+		case typeDateTime:
+			return typeDateTime, nil
+		case typeFloat:
+			return typeFloat, nil
+		case typeInteger:
+			return typeInteger, nil
+		case typeBoolean:
+			return typeBoolean, nil
+		case typeJSON:
+			return typeJSON, nil
+		default:
+			if fieldTypeStuct.IsLinked {
+				// Since the field is actually a link. We'll store the type as is. This type must correspond to a table or a primitive type
+				// or else the link won't work. It's upto the user to make sure of that.
+				return myType, nil
 			}
+
+			// The field is a nested type. Update the nestedObject field and return typeObject. This is a side effect.
+			nestedschemaField, err := getCollectionSchema(doc, dbName, myType)
+			if err != nil {
+				return "", err
+			}
+			fieldTypeStuct.nestedObject = nestedschemaField
+
+			return typeObject, nil
 		}
 	default:
-		{
-			return errors.New("Wrong Field Type")
-		}
+		return "", fmt.Errorf("invalid field kind `%s` provided for field `%s`", fieldType.GetKind(), fieldTypeStuct.FieldName)
 	}
-	return nil
 }
 
-func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]interface{}) (map[string]interface{}, error) {
+func (s *Schema) schemaValidator(col string, collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
 
 	mutatedDoc := map[string]interface{}{}
 
@@ -198,31 +278,37 @@ func (s *Schema) schemaValidator(collectionFields schemaField, doc map[string]in
 		// check if key is required
 		value, ok := doc[fieldKey]
 
-		if fieldValue.Kind == typeID && !ok {
+		if fieldValue.IsLinked {
+			if ok {
+				return nil, fmt.Errorf("cannot insert value for a linked field %s", fieldKey)
+			}
+
+			continue
+		}
+
+		if fieldValue.Kind == TypeID && !ok {
 			value = ksuid.New().String()
 			ok = true
 		}
 
-		if fieldValue.Directive == directiveCreatedAt || fieldValue.Directive == directiveUpdatedAt {
+		if fieldValue.IsCreatedAt || fieldValue.IsUpdatedAt {
 			mutatedDoc[fieldKey] = time.Now().UTC()
 			continue
 		}
 
 		if fieldValue.IsFieldTypeRequired {
 			if !ok {
-				return nil, errors.New("Field " + fieldKey + " Not Present")
+				return nil, fmt.Errorf("required field %s from collection %s not present in request", fieldKey, col)
 			}
 		}
 
 		// check type
-		val, err := s.checkType(value, fieldValue)
+		val, err := s.checkType(col, value, fieldValue)
 		if err != nil {
 			return nil, err
 		}
 
-		if mutatedDoc != nil {
-			mutatedDoc[fieldKey] = val
-		}
+		mutatedDoc[fieldKey] = val
 	}
 
 	return mutatedDoc, nil
@@ -254,7 +340,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	}
 
 	for index, doc := range v {
-		newDoc, err := s.schemaValidator(collectionFields, doc.(map[string]interface{}))
+		newDoc, err := s.schemaValidator(col, collectionFields, doc.(map[string]interface{}))
 		if err != nil {
 			return err
 		}
@@ -268,14 +354,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	return nil
 }
 
-func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (interface{}, error) {
-
-	if fieldValue.Kind == typeJoin {
-		_, ok := value.(string)
-		if !ok {
-			return nil, errors.New("object with directive relation wrong referenced type")
-		}
-	}
+func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
 
 	switch v := value.(type) {
 	case int:
@@ -288,7 +367,7 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		case typeFloat:
 			return float64(v), nil
 		default:
-			return nil, errors.New("Integer wrong type wanted " + fieldValue.Kind + " got Integer")
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Integer", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 
 	case string:
@@ -296,15 +375,13 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		case typeDateTime:
 			unitTimeInRFC3339, err := time.Parse(time.RFC3339, v)
 			if err != nil {
-				return nil, errors.New("String Wrong Date-Time Format")
+				return nil, fmt.Errorf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col)
 			}
 			return unitTimeInRFC3339, nil
-		case typeID:
-			return value, nil
-		case typeString, typeJoin:
+		case TypeID, typeString:
 			return value, nil
 		default:
-			return nil, errors.New("String wrong type wanted " + fieldValue.Kind + " got String")
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got String", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 
 	case float32, float64:
@@ -316,31 +393,33 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 		case typeInteger:
 			return int64(value.(float64)), nil
 		default:
-			return nil, errors.New("Float wrong type wanted " + fieldValue.Kind + " got Float")
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Float", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 	case bool:
 		switch fieldValue.Kind {
 		case typeBoolean:
 			return value, nil
 		default:
-			return nil, errors.New("Bool wrong type wanted " + fieldValue.Kind + " got Bool")
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Bool", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 
 	case map[string]interface{}:
-		if fieldValue.Directive == directiveRelation {
-			return nil, errors.New("object with relation not allowed")
+		// TODO: allow this operation for nested insert using links
+		if fieldValue.Kind != typeObject {
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}
 
-		return s.schemaValidator(fieldValue.nestedObject, v)
+		return s.schemaValidator(col, fieldValue.nestedObject, v)
 
 	case []interface{}:
-		if fieldValue.Directive == directiveRelation {
-			return nil, errors.New("array with relations not allowed")
+		// TODO: allow this operation for nested insert using links
+		if fieldValue.Kind != typeObject {
+			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}
 
 		arr := make([]interface{}, len(v))
 		for index, value := range v {
-			val, err := s.checkType(value, fieldValue)
+			val, err := s.checkType(col, value, fieldValue)
 			if err != nil {
 				return nil, err
 			}
@@ -352,7 +431,6 @@ func (s *Schema) checkType(value interface{}, fieldValue *schemaFieldType) (inte
 			return nil, nil
 		}
 
-		return nil, errors.New("No matching type found")
+		return nil, fmt.Errorf("no matching type found for field %s in collection %s", fieldValue.FieldName, col)
 	}
-	return "", nil
 }

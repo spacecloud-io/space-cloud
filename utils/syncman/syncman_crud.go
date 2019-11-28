@@ -148,6 +148,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 		if err != nil {
 			return nil, err
 		}
+
 		// set new schema in config & return in response body
 		colValue.Schema = result
 		colResult[colName] = result
