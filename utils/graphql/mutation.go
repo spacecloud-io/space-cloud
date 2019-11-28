@@ -2,27 +2,23 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/graphql-go/graphql/language/ast"
-
-	"errors"
 
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
+func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]model.AllRequest, error) {
 	if len(field.Directives) > 0 {
 		// Insert query function
 		if strings.HasPrefix(field.Name.Value, "insert_") {
-			col := strings.TrimPrefix(field.Name.Value, "insert_")
 			result, err := graph.generateWriteReq(ctx, field, token, store)
 			if err != nil {
 				return nil, err
 			}
-			result.Type = string(utils.Create)
-			result.Col = col
 			return result, nil
 		}
 
@@ -36,7 +32,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 			}
 			result.Type = string(utils.Delete)
 			result.Col = col
-			return result, nil
+			return []model.AllRequest{*result}, nil
 		}
 
 		// Update query function
@@ -49,11 +45,11 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 			}
 			result.Type = string(utils.Update)
 			result.Col = col
-			return result, nil
+			return []model.AllRequest{*result}, nil
 
 		}
 	}
-	return nil, errors.New("No directive present")
+	return nil, fmt.Errorf("target database not provided for field %s", getFieldName(field))
 }
 
 func (graph *Module) execAllReq(ctx context.Context, dbType, project string, req *model.BatchRequest) (map[string]interface{}, error) {
@@ -101,6 +97,7 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 			return
 		}
 
+		// Keep a record of which field maps to which db
 		fieldDBMapping[getFieldName(field)] = dbType
 
 		r, ok := reqs[dbType]
@@ -108,18 +105,20 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 			r = []model.AllRequest{}
 		}
 
-		singleRequest, err := graph.generateAllReq(ctx, field, token, store)
+		// Generate a *model.AllRequest object for this given field
+		generatedRequests, err := graph.generateAllReq(ctx, field, token, store)
 		if err != nil {
 			cb(nil, err)
 			return
 		}
 
-		r = append(r, *singleRequest)
+		// Add the request to the number of requests available for that database
+		r = append(r, generatedRequests...)
 		reqs[dbType] = r
 	}
 
 	for dbType, reqs := range reqs {
-		obj, err := graph.execAllReq(ctx, dbType, graph.project, &model.BatchRequest{reqs})
+		obj, err := graph.execAllReq(ctx, dbType, graph.project, &model.BatchRequest{Requests: reqs})
 		if err != nil {
 			obj["error"] = err.Error()
 			obj["status"] = 500

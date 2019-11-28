@@ -10,28 +10,44 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, loader *loaderMap, cb callback) {
+func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbType, col, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb dbCallback) {
+	// Check if read op is authorised
+	if _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbType, col, token, req); err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string)+".linked."+col, graph)
+
+	go func() {
+		// Create dataloader key
+		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: false, Req: *req}
+		result, err := dataLoader.Load(ctx, key)()
+		cb(dbType, col, result, err)
+	}()
+}
+
+func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, loader *loaderMap, cb dbCallback) {
 	dbType, err := GetDBType(field)
 	if err != nil {
-		cb(nil, err)
+		cb("", "", nil, err)
 		return
 	}
 
 	col, err := getCollection(field)
 	if err != nil {
-		cb(nil, err)
+		cb("", "", nil, err)
 		return
 	}
-
 	req, hasOptions, err := generateReadRequest(field, store)
 	if err != nil {
-		cb(nil, err)
+		cb("", "", nil, err)
 		return
 	}
 
 	// Check if read op is authorised
 	if _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbType, col, token, req); err != nil {
-		cb(nil, err)
+		cb("", "", nil, err)
 		return
 	}
 
@@ -41,7 +57,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		// Create dataloader key
 		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: hasOptions, Req: *req}
 		result, err := dataLoader.Load(ctx, key)()
-		cb(result, err)
+		cb(dbType, col, result, err)
 	}()
 }
 

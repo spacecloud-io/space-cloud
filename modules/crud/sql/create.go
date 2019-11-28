@@ -21,6 +21,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 	if err != nil {
 		return 0, err
 	}
+
 	res, err := doExecContext(ctx, sqlQuery, args, s.client)
 	if err != nil {
 		return 0, err

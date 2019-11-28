@@ -9,7 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// SchemaInspection resturn schema in schema definition language (SDL)
+// SchemaInspection returns the schema in schema definition language (SDL)
 func (s *Schema) SchemaInspection(ctx context.Context, dbType, project, col string) (string, error) {
 	if dbType == "mongo" {
 		return "", nil
@@ -31,46 +31,45 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 		return nil, err
 	}
 	inspectionCollection := schemaCollection{}
-	inspectionFields := schemaField{}
+	inspectionFields := SchemaFields{}
 
-	for _, value := range fields {
-		fieldDetails := schemaFieldType{}
+	for _, field := range fields {
+		fieldDetails := SchemaFieldType{FieldName: field.FieldName}
 
 		// check if field nullable (!)
-		if value.FieldNull == "NO" {
+		if field.FieldNull == "NO" {
 			fieldDetails.IsFieldTypeRequired = true
 		}
 
 		// field type
 		if utils.DBType(dbType) == utils.Postgres {
-			if err := inspectionPostgresCheckFieldType(value.FieldType, &fieldDetails); err != nil {
+			if err := inspectionPostgresCheckFieldType(field.FieldType, &fieldDetails); err != nil {
 				return nil, err
 			}
 		} else {
-			if err := inspectionMySQLCheckFieldType(value.FieldType, &fieldDetails); err != nil {
+			if err := inspectionMySQLCheckFieldType(field.FieldType, &fieldDetails); err != nil {
 				return nil, err
 			}
 		}
 		// check if list
-		if value.FieldKey == "PRI" {
-			fieldDetails.Directive = directivePrimary
-			fieldDetails.Kind = typeID
-		} else if value.FieldKey == "UNI" {
-			fieldDetails.Directive = directiveUnique
+		if field.FieldKey == "PRI" {
+			fieldDetails.IsPrimary = true
+		}
+
+		if field.FieldKey == "UNI" {
+			fieldDetails.IsUnique = true
 		}
 
 		// check foreignKey & identify if relation exists
 		for _, foreignValue := range foreignkeys {
-			if foreignValue.ColumnName == value.FieldName {
-				fieldDetails.JointTable.TableName = foreignValue.RefTableName
-				fieldDetails.JointTable.TableField = foreignValue.RefColumnName
-				fieldDetails.Kind = foreignValue.RefTableName
-				fieldDetails.Directive = "relation"
+			if foreignValue.ColumnName == field.FieldName {
+				fieldDetails.IsForeign = true
+				fieldDetails.JointTable = &TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName}
 			}
 		}
 
 		// field name
-		inspectionFields[value.FieldName] = &fieldDetails
+		inspectionFields[field.FieldName] = &fieldDetails
 	}
 	if len(inspectionFields) != 0 {
 		inspectionCollection[col] = inspectionFields
@@ -78,7 +77,11 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 	return inspectionCollection, nil
 }
 
-func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
+func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
+	if typeName == "varchar("+sqlTypeIDSize+")" {
+		fieldDetails.Kind = TypeID
+		return nil
+	}
 
 	result := strings.Split(typeName, "(")
 
@@ -99,7 +102,11 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *schemaFieldTyp
 	return nil
 }
 
-func inspectionPostgresCheckFieldType(typeName string, fieldDetails *schemaFieldType) error {
+func inspectionPostgresCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
+	if typeName == "character varying("+sqlTypeIDSize+")" {
+		fieldDetails.Kind = TypeID
+		return nil
+	}
 
 	result := strings.Split(typeName, " ")
 	result = strings.Split(result[0], "(")

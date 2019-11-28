@@ -1,7 +1,7 @@
 package schema
 
 import (
-	"errors"
+	"fmt"
 	"time"
 )
 
@@ -12,7 +12,7 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 	}
 	schemaDb, ok := s.SchemaDoc[dbType]
 	if !ok {
-		return errors.New(dbType + " not present in Schema")
+		return fmt.Errorf("%s is not present in schema", dbType)
 	}
 	SchemaDoc, ok := schemaDb[col]
 	if !ok {
@@ -22,128 +22,128 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 	for key, doc := range updateDoc {
 		switch key {
 		case "$set":
-			newDoc, err := s.validateSetOperation(doc, SchemaDoc)
+			newDoc, err := s.validateSetOperation(col, doc, SchemaDoc)
 			if err != nil {
 				return err
 			}
 			updateDoc[key] = newDoc
 		case "$push":
-			err := s.validateArrayOperations(doc, SchemaDoc)
+			err := s.validateArrayOperations(col, doc, SchemaDoc)
 			if err != nil {
 				return err
 			}
 		case "$inc", "$min", "$max", "$mul":
-			if err := validateMathOperations(doc, SchemaDoc); err != nil {
+			if err := validateMathOperations(col, doc, SchemaDoc); err != nil {
 				return err
 			}
 		case "$currentDate":
-			err := validateDateOperations(doc, SchemaDoc)
+			err := validateDateOperations(col, doc, SchemaDoc)
 			if err != nil {
 				return err
 			}
 		default:
-			return errors.New(key + " Update operator not supported")
+			return fmt.Errorf("%s update operator is not supported", key)
 		}
 	}
 	return nil
 }
 
-func (s *Schema) validateArrayOperations(doc interface{}, SchemaDoc schemaField) error {
+func (s *Schema) validateArrayOperations(col string, doc interface{}, SchemaDoc SchemaFields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return errors.New("schema array op wrong type passed expecting map[string]interface{}")
+		return fmt.Errorf("document not of type object in collection %s", col)
 	}
 
 	for fieldKey, fieldValue := range v {
 
 		SchemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return errors.New("field not found in schemaField")
+			return fmt.Errorf("field %s from collection %s is not defined in the schema", fieldKey, col)
 		}
 
 		switch t := fieldValue.(type) {
 		case []interface{}:
-			if SchemaDocValue.Directive == directiveRelation {
-				return errors.New("schema update op array with relation directive not allowed")
+			if SchemaDocValue.IsForeign {
+				return fmt.Errorf("invalid type provided for field %s in collection %s", fieldKey, col)
 			}
 			for _, value := range t {
-				if _, err := s.checkType(value, SchemaDocValue); err != nil {
+				if _, err := s.checkType(col, value, SchemaDocValue); err != nil {
 					return err
 				}
 			}
 			return nil
 		case interface{}:
-			if _, err := s.checkType(t, SchemaDocValue); err != nil {
+			if _, err := s.checkType(col, t, SchemaDocValue); err != nil {
 				return err
 			}
 		default:
-			return errors.New("Schema update array op. wrong type ")
+			return fmt.Errorf("invalid type provided for field %s in collection %s", fieldKey, col)
 		}
 	}
 
 	return nil
 }
 
-func validateMathOperations(doc interface{}, SchemaDoc schemaField) error {
+func validateMathOperations(col string, doc interface{}, SchemaDoc SchemaFields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return errors.New("schema math op wrong type passed expecting map[string]interface{}")
+		return fmt.Errorf("document not of type object in collection %s", col)
 	}
 
 	for fieldKey, fieldValue := range v {
 
-		SchemaDocValue, ok := SchemaDoc[fieldKey]
+		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return errors.New("field not found in schemaField")
+			return fmt.Errorf("field %s from collection %s is not defined in the schema", fieldKey, col)
 		}
 
 		switch fieldValue.(type) {
 		case int:
-			if SchemaDocValue.Kind != typeInteger && SchemaDocValue.Kind != typeFloat {
-				return errors.New("Integer : wrong type wanted " + SchemaDocValue.Kind)
+			if schemaDocValue.Kind != typeInteger && schemaDocValue.Kind != typeFloat {
+				return fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Integer", fieldKey, col, schemaDocValue.Kind)
 			}
 			return nil
 		case float32, float64:
-			if SchemaDocValue.Kind != typeFloat {
-				return errors.New("Float : wrong type wanted " + SchemaDocValue.Kind)
+			if schemaDocValue.Kind != typeFloat {
+				return fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Float", fieldKey, col, schemaDocValue.Kind)
 			}
 			return nil
 		default:
-			return errors.New("schema update math op. wrong type ")
+			return fmt.Errorf("invalid type received for field %s in collection %s - wanted %s", fieldKey, col, schemaDocValue.Kind)
 		}
 	}
 
 	return nil
 }
 
-func validateDateOperations(doc interface{}, SchemaDoc schemaField) error {
+func validateDateOperations(col string, doc interface{}, SchemaDoc SchemaFields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return errors.New("schema math op : wrong type passed expecting map[string]interface{}")
+		return fmt.Errorf("document not of type object in collection %s", col)
 	}
 
 	for fieldKey := range v {
 
 		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
-			return errors.New("field not found in schemaField")
+			return fmt.Errorf("field %s from collection %s is not defined in the schema", fieldKey, col)
 		}
 
 		if schemaDocValue.Kind != typeDateTime {
-			return errors.New("incorrect data type")
+			return fmt.Errorf("invalid type received for field %s in collection %s - wanted %s", fieldKey, col, schemaDocValue.Kind)
 		}
 	}
 
 	return nil
 }
 
-func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc schemaField) (interface{}, error) {
+func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc SchemaFields) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("schema update set op wrong type passed expecting map[string]interface{}")
+		return nil, fmt.Errorf("document not of type object in collection %s", col)
 	}
 
 	newMap := map[string]interface{}{}
@@ -151,10 +151,10 @@ func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc schemaField) (i
 		// check if key present in SchemaDoc
 		SchemaDocValue, ok := SchemaDoc[key]
 		if !ok {
-			return nil, errors.New("schema set op field not found")
+			return nil, fmt.Errorf("field %s from collection %s is not defined in the schema", key, col)
 		}
 		// check type
-		newDoc, err := s.checkType(value, SchemaDocValue)
+		newDoc, err := s.checkType(col, value, SchemaDocValue)
 		if err != nil {
 			return nil, err
 		}
@@ -162,7 +162,7 @@ func (s *Schema) validateSetOperation(doc interface{}, SchemaDoc schemaField) (i
 	}
 
 	for fieldKey, fieldValue := range SchemaDoc {
-		if fieldValue.Directive == directiveUpdatedAt {
+		if fieldValue.IsUpdatedAt {
 			newMap[fieldKey] = time.Now().UTC()
 		}
 	}
