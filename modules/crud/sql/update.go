@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -64,24 +65,12 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 		return count, nil
 
 	case utils.Upsert:
-		sqlString, args, err := s.generateReadQuery(ctx, project, col, &model.ReadRequest{Find: req.Find, Operation: utils.One})
+		count, _, err := s.read(ctx, project, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
 		if err != nil {
 			return 0, err
 		}
 
-		stmt, err := executor.PreparexContext(ctx, sqlString)
-		if err != nil {
-			return 0, err
-		}
-		defer stmt.Close()
-
-		rows, err := stmt.QueryxContext(ctx, args...)
-		if err != nil {
-			return 0, err
-		}
-		defer rows.Close()
-
-		if !rows.Next() {
+		if count == 0 {
 			// not found. So, insert
 			doc := make(map[string]interface{})
 			dates := make(map[string]interface{})
@@ -228,11 +217,18 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 }
 
 func numToString(v interface{}) (string, error) {
-	val, ok := v.(float64)
-	if !ok {
-		return "", utils.ErrInvalidParams
-	}
+	switch val := v.(type) {
+		case float64:
+
 	return strconv.FormatFloat(val, 'f', -1, 64), nil
+
+	case int64:
+		return strconv.FormatInt(val, 10), nil
+	case int:
+		return strconv.Itoa(val), nil
+	}
+
+	return "", errors.New("invalid data format provided")
 }
 
 func flattenForDate(m *map[string]interface{}) error {
