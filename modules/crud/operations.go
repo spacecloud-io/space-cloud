@@ -249,7 +249,10 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 	case utils.Postgres:
 		sql = "create schema if not exists " + project
 	case utils.SqlServer:
-		sql = "create schema if not exists " + project
+		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + project + `')) 
+					BEGIN
+    					EXEC ('CREATE SCHEMA [` + project + `] ')
+					END`
 	default:
 		return nil
 	}

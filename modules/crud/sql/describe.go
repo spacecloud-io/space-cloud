@@ -24,9 +24,10 @@ func (s *SQL) DescribeTable(ctx context.Context, project, dbType, col string) ([
 func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col string) ([]utils.FieldType, error) {
 	queryString := ""
 	args := []interface{}{}
-	if utils.DBType(dbType) == utils.MySQL {
+	switch utils.DBType(dbType) {
+	case utils.MySQL:
 		queryString = `DESCRIBE ` + project + "." + col
-	} else {
+	case utils.Postgres:
 		queryString = `SELECT  
 		f.attnum AS "Default",  
 		f.attnum AS "Extra",
@@ -52,6 +53,22 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 		AND c.relname = $1
 		AND n.nspname = $2
 		AND f.attnum > 0 ORDER BY "Default"`
+
+		args = append(args, col, project)
+	case utils.SqlServer:
+
+		queryString = `SELECT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , C.DATA_TYPE as 'Type',C.DATA_TYPE as 'Default',C.DATA_TYPE as 'Extra',
+       CASE
+           WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
+           WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
+           ELSE isnull(TC.CONSTRAINT_TYPE,'NULL')
+           END AS 'Key'
+FROM INFORMATION_SCHEMA.COLUMNS AS C
+         FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC
+                   ON C.COLUMN_NAME = CC.COLUMN_NAME
+         FULL JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS TC
+                   ON CC.CONSTRAINT_NAME = TC.CONSTRAINT_NAME
+WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 
 		args = append(args, col, project)
 	}
@@ -81,9 +98,11 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 
 func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col string) ([]utils.ForeignKeysType, error) {
 	queryString := ""
-	if utils.DBType(dbType) == utils.MySQL {
+	switch utils.DBType(dbType) {
+
+	case utils.MySQL:
 		queryString = "select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = ? and TABLE_NAME = ?"
-	} else {
+	case utils.Postgres:
 		queryString = `SELECT
 		tc.table_name AS "TABLE_NAME", 
 		kcu.column_name AS "COLUMN_NAME", 
@@ -100,6 +119,16 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col str
 		  AND ccu.table_schema = tc.table_schema
 	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
 	`
+	case utils.SqlServer:
+		queryString = `SELECT 
+		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME,
+		isnull(KCU.TABLE_NAME,'') AS 'REFERENCED_TABLE_NAME', isnull(KCU.COLUMN_NAME,'') AS 'REFERENCED_COLUMN_NAME'
+	FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE CCU
+		FULL JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
+			ON CCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
+		FULL JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU 
+			ON KCU.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME  
+	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2`
 	}
 	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
 	if err != nil {

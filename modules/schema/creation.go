@@ -9,15 +9,14 @@ import (
 )
 
 type creationModule struct {
-	dbType, project, ColName, FieldKey, columnType string
-	currentFieldStruct, realFieldStruct            *SchemaFieldType
-	schemaModule                                   *Schema
-	removeProjectScope                             bool
+	dbType, project, TableName, ColumnName, columnType string
+	currentColumnInfo, realColumnInfo                  *SchemaFieldType
+	schemaModule                                       *Schema
+	removeProjectScope                                 bool
 }
 
 // SchemaCreation creates or alters tables of sql
-func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string, parsedSchema schemaType) error {
-
+func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project string, parsedSchema schemaType) error {
 	// Return gracefully if db type is mongo
 	if dbType == string(utils.Mongo) {
 		return nil
@@ -32,82 +31,81 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 		return err
 	}
 
-	currentSchema, _ := s.Inspector(ctx, dbType, project, col)
-
+	currentSchema, _ := s.Inspector(ctx, dbType, project, tableName)
 	realSchema := parsedSchema[dbType]
 	batchedQueries := []string{}
 
-	realColName := col
-	realColValue, p1 := realSchema[realColName]
+	realTableName := tableName
+	realTableInfo, p1 := realSchema[realTableName]
 	if !p1 {
-		if _, p2 := currentSchema[realColName]; p2 {
+		if _, p2 := currentSchema[realTableName]; p2 {
 			return nil
 		}
 
-		return errors.New("Schema not provided for table: " + col)
+		return errors.New("Schema not provided for table: " + tableName)
 	}
 
 	// check if table exist in current schema
-	currentColValue, ok := currentSchema[realColName]
+
+	currentTableInfo, ok := currentSchema[realTableName]
 	if !ok {
 		// create table with primary key
-		query, err := addNewTable(project, dbType, realColName, realColValue, s.removeProjectScope)
+		query, err := addNewTable(project, dbType, realTableName, realTableInfo, s.removeProjectScope)
 		if err != nil {
 			return err
 		}
 
 		batchedQueries = append(batchedQueries, query)
 
-		currentColValue = SchemaFields{}
-		for realFieldKey, realFieldStruct := range realColValue {
+		currentTableInfo = SchemaFields{}
+		for realColumnName, realColumnInfo := range realTableInfo {
 			temp := SchemaFieldType{
-				FieldName:           realFieldStruct.FieldName,
-				IsFieldTypeRequired: realFieldStruct.IsFieldTypeRequired,
-				IsList:              realFieldStruct.IsList,
-				Kind:                realFieldStruct.Kind,
-				IsPrimary:           realFieldStruct.IsPrimary,
-				nestedObject:        realFieldStruct.nestedObject,
+				FieldName:           realColumnInfo.FieldName,
+				IsFieldTypeRequired: realColumnInfo.IsFieldTypeRequired,
+				IsList:              realColumnInfo.IsList,
+				Kind:                realColumnInfo.Kind,
+				IsPrimary:           realColumnInfo.IsPrimary,
+				nestedObject:        realColumnInfo.nestedObject,
 			}
-
-			currentColValue[realFieldKey] = &temp
+			currentTableInfo[realColumnName] = &temp
 		}
 	}
-	for realFieldKey, realFieldStruct := range realColValue {
+	for realColumnName, realColumnInfo := range realTableInfo {
 		// Ignore the field if its linked
-		if realFieldStruct.IsLinked {
+		if realColumnInfo.IsLinked {
 			continue
 		}
-		if err := checkErrors(realFieldStruct); err != nil {
+		if err := checkErrors(realColumnInfo); err != nil {
 			return err
 		}
 
 		// Create the joint table first
-		if realFieldStruct.IsForeign {
-			if err := s.SchemaCreation(ctx, dbType, realFieldStruct.JointTable.Table, project, parsedSchema); err != nil {
+		if realColumnInfo.IsForeign {
+			if err := s.SchemaCreation(ctx, dbType, realColumnInfo.JointTable.Table, project, parsedSchema); err != nil {
 				return err
 			}
 		}
 
-		currentFieldStruct, ok := currentColValue[realFieldKey]
-		columnType, err := getSQLType(dbType, realFieldStruct.Kind)
+		currentFieldStruct, ok := currentTableInfo[realColumnName]
+		columnType, err := getSQLType(dbType, realColumnInfo.Kind)
 		if err != nil {
 			return err
 		}
 		c := creationModule{
 			dbType:             dbType,
 			project:            project,
-			ColName:            realColName,
-			FieldKey:           realFieldKey,
+			TableName:          realTableName,
+			ColumnName:         realColumnName,
 			columnType:         columnType,
-			currentFieldStruct: currentFieldStruct,
-			realFieldStruct:    realFieldStruct,
+			currentColumnInfo:  currentFieldStruct,
+			realColumnInfo:     realColumnInfo,
 			schemaModule:       s,
 			removeProjectScope: s.removeProjectScope,
 		}
 
 		if !ok {
 			// add field in current table only if its not linked
-			if !realFieldStruct.IsLinked {
+			if !realColumnInfo.IsLinked {
 				queries, err := c.addField(ctx)
 				if err != nil {
 					return err
@@ -118,7 +116,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 
 		} else {
 			// modify removing then adding
-			if !realFieldStruct.IsLinked {
+			if !realColumnInfo.IsLinked {
 				queries, err := c.modifyField(ctx)
 				batchedQueries = append(batchedQueries, queries...)
 				if err != nil {
@@ -141,13 +139,13 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 				c := creationModule{
 					dbType:             dbType,
 					project:            project,
-					ColName:            currentColName,
-					FieldKey:           currentFieldKey,
-					currentFieldStruct: currentFieldStruct,
+					TableName:          currentColName,
+					ColumnName:         currentFieldKey,
+					currentColumnInfo:  currentFieldStruct,
 					removeProjectScope: s.removeProjectScope,
 				}
 
-				if c.currentFieldStruct.IsForeign {
+				if c.currentColumnInfo.IsForeign {
 					batchedQueries = append(batchedQueries, c.removeForeignKey()...)
 				}
 
@@ -155,7 +153,6 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 			}
 		}
 	}
-
 	return s.crud.RawBatch(ctx, dbType, batchedQueries)
 }
 
