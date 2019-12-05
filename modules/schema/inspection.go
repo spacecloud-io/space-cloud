@@ -62,7 +62,7 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 
 		// check foreignKey & identify if relation exists
 		for _, foreignValue := range foreignkeys {
-			if foreignValue.ColumnName == field.FieldName {
+			if foreignValue.ColumnName == field.FieldName && foreignValue.RefTableName != "" && foreignValue.RefColumnName != "" {
 				fieldDetails.IsForeign = true
 				fieldDetails.JointTable = &TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName}
 			}
@@ -86,7 +86,9 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldTyp
 	result := strings.Split(typeName, "(")
 
 	switch result[0] {
-	case "char", "varchar", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
+	case "varchar":
+		fieldDetails.Kind = TypeID // for sql server
+	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = typeString
 	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = typeInteger

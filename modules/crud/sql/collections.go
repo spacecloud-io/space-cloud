@@ -18,6 +18,10 @@ func (s *SQL) GetCollections(ctx context.Context, project string) ([]utils.Datab
 	if err != nil {
 		return nil, err
 	}
+	if s.dbType == "sqlserver" {
+		new := strings.Replace(sqlString, "?", "@p1", -1)
+		sqlString = new
+	}
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 	rows, err := s.client.QueryxContext(ctx, sqlString, args...)
