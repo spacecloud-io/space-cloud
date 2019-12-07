@@ -10,7 +10,7 @@ import (
 
 type creationModule struct {
 	dbType, project, ColName, FieldKey, columnType string
-	currentFieldStruct, realFieldStruct            *schemaFieldType
+	currentFieldStruct, realFieldStruct            *SchemaFieldType
 	schemaModule                                   *Schema
 	removeProjectScope                             bool
 }
@@ -58,34 +58,36 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 
 		batchedQueries = append(batchedQueries, query)
 
-		currentColValue = schemaField{}
+		currentColValue = SchemaFields{}
 		for realFieldKey, realFieldStruct := range realColValue {
-			temp := schemaFieldType{
+			temp := SchemaFieldType{
+				FieldName:           realFieldStruct.FieldName,
 				IsFieldTypeRequired: realFieldStruct.IsFieldTypeRequired,
 				IsList:              realFieldStruct.IsList,
 				Kind:                realFieldStruct.Kind,
-				Directive:           realFieldStruct.Directive,
+				IsPrimary:           realFieldStruct.IsPrimary,
 				nestedObject:        realFieldStruct.nestedObject,
-			}
-			if temp.Directive == directiveRelation || temp.Directive == directiveUnique {
-				temp.Directive = ""
 			}
 
 			currentColValue[realFieldKey] = &temp
 		}
 	}
 	for realFieldKey, realFieldStruct := range realColValue {
+		// Ignore the field if its linked
+		if realFieldStruct.IsLinked {
+			continue
+		}
 		if err := checkErrors(realFieldStruct); err != nil {
 			return err
 		}
-		if realFieldStruct.IsList && (realFieldStruct.Directive == directiveRelation) { // as directive is relation for array type don't generate queries
-			continue
-		}
-		if !realFieldStruct.IsList && realFieldStruct.Directive == directiveRelation && realFieldStruct.Kind == typeJoin {
-			if err := s.SchemaCreation(ctx, dbType, realFieldStruct.JointTable.TableName, project, parsedSchema); err != nil {
+
+		// Create the joint table first
+		if realFieldStruct.IsForeign {
+			if err := s.SchemaCreation(ctx, dbType, realFieldStruct.JointTable.Table, project, parsedSchema); err != nil {
 				return err
 			}
 		}
+
 		currentFieldStruct, ok := currentColValue[realFieldKey]
 		columnType, err := getSQLType(dbType, realFieldStruct.Kind)
 		if err != nil {
@@ -104,22 +106,25 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 		}
 
 		if !ok {
-			// add field in current table
+			// add field in current table only if its not linked
+			if !realFieldStruct.IsLinked {
+				queries, err := c.addField(ctx)
+				if err != nil {
+					return err
+				}
 
-			queries, err := c.addField(ctx)
-			batchedQueries = append(batchedQueries, queries...)
-			if err != nil {
-				return err
+				batchedQueries = append(batchedQueries, queries...)
 			}
 
 		} else {
 			// modify removing then adding
-			queries, err := c.modifyField(ctx)
-			batchedQueries = append(batchedQueries, queries...)
-			if err != nil {
-				return err
+			if !realFieldStruct.IsLinked {
+				queries, err := c.modifyField(ctx)
+				batchedQueries = append(batchedQueries, queries...)
+				if err != nil {
+					return err
+				}
 			}
-
 		}
 	}
 	for currentColName, currentColValue := range currentSchema {
@@ -130,8 +135,8 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 		}
 
 		for currentFieldKey, currentFieldStruct := range currentColValue {
-			_, ok := realColValue[currentFieldKey]
-			if !ok {
+			realField, ok := realColValue[currentFieldKey]
+			if !ok || realField.IsLinked {
 				// remove field from current tabel
 				c := creationModule{
 					dbType:             dbType,
@@ -142,7 +147,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, col, project string
 					removeProjectScope: s.removeProjectScope,
 				}
 
-				if c.currentFieldStruct.Directive == directiveRelation {
+				if c.currentFieldStruct.IsForeign {
 					batchedQueries = append(batchedQueries, c.removeForeignKey()...)
 				}
 

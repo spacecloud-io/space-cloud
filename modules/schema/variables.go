@@ -4,39 +4,52 @@ type (
 
 	// schemaType is the data structure for storing the parsed values of schema string
 	schemaType       map[string]schemaCollection // key is database name
-	schemaCollection map[string]schemaField      // key is collection name
-	schemaField      map[string]*schemaFieldType // key is field name
+	schemaCollection map[string]SchemaFields     // key is collection name
+	SchemaFields     map[string]*SchemaFieldType // key is field name
 	directiveArgs    map[string]string           // key is Directive's argument name
 	fieldType        int
 
-	schemaFieldType struct {
+	SchemaFieldType struct {
+		FieldName           string
 		IsFieldTypeRequired bool
 		IsList              bool
 		Kind                string
-		Directive           string
-		nestedObject        schemaField
-		JointTable          tableProperties
+		//Directive           string
+		nestedObject SchemaFields
+
+		// For directives
+		IsPrimary   bool
+		IsUnique    bool
+		IsCreatedAt bool
+		IsUpdatedAt bool
+		IsLinked    bool
+		IsForeign   bool
+		LinkedTable *TableProperties
+		JointTable  *TableProperties
 	}
-	tableProperties struct {
-		TableName, TableField string
+	TableProperties struct {
+		From, To     string
+		Table, Field string
+		DBType       string
 	}
 )
 
 const (
-	typeInteger  string = "Integer"
-	typeString   string = "String"
-	typeFloat    string = "Float"
-	typeBoolean  string = "Boolean"
-	typeDateTime string = "DateTime"
-	typeEnum     string = "Enum"
-	typeJSON     string = "Json"
-	typeID       string = "ID"
-	typeObject   string = "Object"
-	typeJoin     string = "Join"
+	typeInteger   string = "Integer"
+	typeString    string = "String"
+	typeFloat     string = "Float"
+	typeBoolean   string = "Boolean"
+	typeDateTime  string = "DateTime"
+	typeEnum      string = "Enum"
+	typeJSON      string = "Json"
+	TypeID        string = "ID"
+	sqlTypeIDSize string = "50"
+	typeObject    string = "Object"
 
 	directiveUnique    string = "unique"
-	directiveRelation  string = "relation"
+	directiveForeign   string = "foreign"
 	directivePrimary   string = "primary"
 	directiveCreatedAt string = "createdAt"
 	directiveUpdatedAt string = "updatedAt"
+	directiveLink      string = "link"
 )
