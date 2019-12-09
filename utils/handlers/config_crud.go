@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/schema"
@@ -49,7 +50,7 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 			cols[i] = value.TableName
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{"collections": cols})
 	}
 }
@@ -78,7 +79,7 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 
 		connState := crud.GetConnectionState(ctx, dbType)
 
-		w.WriteHeader(http.StatusOK) //http status code
+		w.WriteHeader(http.StatusOK) // http status code
 		json.NewEncoder(w).Encode(map[string]bool{"status": connState})
 		return
 	}
@@ -119,7 +120,7 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status code
+		w.WriteHeader(http.StatusOK) // http status code
 		json.NewEncoder(w).Encode(map[string]string{})
 		return
 	}
@@ -146,13 +147,44 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 		dbType := vars["dbType"]
 		project := vars["project"]
 
-		if err := syncman.SetDatabaseConnection(project, dbType, v.Conn, v.Enabled); err != nil {
+		if err := syncman.SetDatabaseConnection(project, dbType, v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+	}
+}
+
+// HandleRemoveDatabaseConfig is an endpoint handler which removes database config
+func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		vars := mux.Vars(r)
+		dbAlias := vars["dbType"]
+		project := vars["project"]
+
+		if err := syncman.RemoveDatabaseConfig(project, dbAlias); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) // http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 	}
@@ -195,7 +227,7 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 	}
@@ -229,7 +261,7 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 	}
@@ -264,7 +296,7 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{"collections": colResult})
 		return
 	}
@@ -293,7 +325,7 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 	}
@@ -335,7 +367,7 @@ func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, s
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
 		return
 	}
@@ -371,7 +403,7 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
 		return
 	}
