@@ -218,7 +218,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					closeConnAliveRoutine <- true
 					return
 				}
-				dbType, err := graphql.GetDBType(v)
+				dbType, err := s.graphql.GetDBAlias(v)
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true

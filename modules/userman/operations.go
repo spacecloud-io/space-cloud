@@ -22,7 +22,11 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 
 	// Create the find object
 	find := map[string]interface{}{}
-	switch utils.DBType(dbType) {
+	actualDbType, err := m.crud.GetDBType(dbType)
+	if err != nil {
+		return 0, nil, err
+	}
+	switch utils.DBType(actualDbType) {
 	case utils.Mongo:
 		find["_id"] = id
 	default:
@@ -100,7 +104,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 
 	userObj := user.(map[string]interface{})
 
-	//Compares if the given password is correct
+	// Compares if the given password is correct
 	err = bcrypt.CompareHashAndPassword([]byte(userObj["pass"].(string)), []byte(password))
 	if err != nil {
 		return http.StatusUnauthorized, nil, errors.New("Given credentials are not correct")
@@ -111,9 +115,12 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 
 	req := map[string]interface{}{}
 	req["email"] = email
-
+	actualDbType, err := m.crud.GetDBType(dbType)
+	if err != nil {
+		return 0, nil, err
+	}
 	// Create a token
-	if dbType == string(utils.Mongo) {
+	if actualDbType == string(utils.Mongo) {
 		req["id"] = userObj["_id"]
 	} else {
 		req["id"] = userObj["id"]
@@ -134,7 +141,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
 	}
 
-	//Hash the password that's in the request
+	// Hash the password that's in the request
 	var err error
 	password, err = hashPassword(password)
 	if err != nil {
@@ -154,9 +161,13 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	req["pass"] = password
 	req["name"] = name
 	req["role"] = role
+	actualDbType, err := m.crud.GetDBType(dbType)
+	if err != nil {
+		return 0, nil, err
+	}
 	// Create a create request
 	id := uuid.NewV1()
-	if dbType == string(utils.Mongo) {
+	if actualDbType == string(utils.Mongo) {
 		req["_id"] = id.String()
 	} else {
 		req["id"] = id.String()
@@ -193,7 +204,11 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 	req := &model.UpdateRequest{}
 	find := map[string]interface{}{}
 	var idString string
-	if dbType == string(utils.Mongo) {
+	actualDbType, err := m.crud.GetDBType(dbType)
+	if err != nil {
+		return 0, nil, err
+	}
+	if actualDbType == string(utils.Mongo) {
 		idString = "_id"
 	} else {
 		idString = "id"
@@ -256,13 +271,13 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 }
 
 func hashPassword(pwd string) (string, error) {
-	//Generates a new hash from the given password
+	// Generates a new hash from the given password
 	hash, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.MinCost)
 	if err != nil {
 		return "", err
 	}
 
-	//Checks if the hash is correct for the given password
+	// Checks if the hash is correct for the given password
 	err = bcrypt.CompareHashAndPassword(hash, []byte(pwd))
 	if err != nil {
 		return "", err

@@ -92,7 +92,7 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 
 		field := v.(*ast.Field)
 
-		dbType, err := GetDBType(field)
+		dbType, err := graph.GetDBAlias(field)
 		if err != nil {
 			cb(nil, err)
 			return

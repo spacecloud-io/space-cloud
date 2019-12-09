@@ -156,7 +156,11 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		// No directive means its a nested field
 		if len(field.Directives) > 0 {
-			kind := getQueryKind(field.Directives[0])
+			dbType, err := graph.crud.GetDBType(field.Directives[0].Name.Value)
+			if err != nil {
+				return
+			}
+			kind := getQueryKind(dbType)
 			if kind == "read" {
 				graph.execReadRequest(ctx, field, token, store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
 					if err != nil {
@@ -250,10 +254,10 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 	}
 }
 
-func getQueryKind(directive *ast.Directive) string {
-	switch directive.Name.Value {
+func getQueryKind(dbType string) string {
+	switch utils.DBType(dbType) {
 
-	case "postgres", "mysql", "mongo", "sqlserver":
+	case utils.Postgres, utils.MySQL, utils.Mongo, utils.SqlServer:
 		return "read"
 
 	default:

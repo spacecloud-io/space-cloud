@@ -15,7 +15,7 @@ import (
 )
 
 func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]model.AllRequest, []interface{}, error) {
-	dbType, err := GetDBType(field)
+	dbType, err := graph.GetDBAlias(field)
 	if err != nil {
 		return nil, nil, err
 	}

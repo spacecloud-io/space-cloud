@@ -27,3 +27,7 @@ func (m *Mongo) GetConnectionState(ctx context.Context, dbType string) bool {
 	err := m.client.Ping(ctx, nil)
 	return err == nil
 }
+
+func (s *Mongo) CreateProjectIfNotExist(ctx context.Context, project, dbType string) error {
+	return errors.New("create project exists cannot be performed over mongo")
+}

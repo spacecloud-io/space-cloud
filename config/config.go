@@ -56,10 +56,11 @@ type Modules struct {
 }
 
 // Crud holds the mapping of database level configuration
-type Crud map[string]*CrudStub // The key here is the database type
+type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
+	Type        string                `json:"type" yaml:"type"`  // database type
 	Conn        string                `json:"conn" yaml:"conn"`
 	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`

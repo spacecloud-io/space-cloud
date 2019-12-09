@@ -52,7 +52,12 @@ func checkErrors(realFieldStruct *SchemaFieldType) error {
 }
 
 func (c *creationModule) modifyColumnType() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType
 	case utils.Postgres:
@@ -64,7 +69,12 @@ func (c *creationModule) modifyColumnType() string {
 }
 
 func (c *creationModule) addNotNull() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType + " NOT NULL"
 	case utils.Postgres:
@@ -76,7 +86,12 @@ func (c *creationModule) addNotNull() string {
 }
 
 func (c *creationModule) removeNotNull() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType + " NULL"
 	case utils.Postgres:
@@ -88,7 +103,12 @@ func (c *creationModule) removeNotNull() string {
 }
 
 func (c *creationModule) addNewColumn() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD " + c.ColumnName + " " + c.columnType
 	case utils.Postgres:
@@ -108,7 +128,12 @@ func (c *creationModule) removeColumn() string {
 }
 
 func (c *creationModule) addPrimaryKey() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD PRIMARY KEY (" + c.ColumnName + ")"
 	case utils.Postgres:
@@ -120,7 +145,12 @@ func (c *creationModule) addPrimaryKey() string {
 }
 
 func (c *creationModule) removePrimaryKey() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP PRIMARY KEY"
 	case utils.Postgres:
@@ -137,7 +167,12 @@ func (c *creationModule) addUniqueKey() string {
 }
 
 func (c *creationModule) removeUniqueKey() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP INDEX c_" + c.TableName + "_" + c.ColumnName
 	case utils.Postgres:
@@ -153,7 +188,12 @@ func (c *creationModule) addForeignKey() string {
 }
 
 func (c *creationModule) removeForeignKey() []string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return nil
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return []string{"ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP FOREIGN KEY c_" + c.TableName + "_" + c.ColumnName, "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP INDEX c_" + c.TableName + "_" + c.ColumnName}
 	case utils.Postgres:
@@ -165,6 +205,7 @@ func (c *creationModule) removeForeignKey() []string {
 }
 
 func addNewTable(project, dbType, realColName string, realColValue SchemaFields, removeProjectScope bool) (string, error) {
+
 	var query string
 	for realFieldKey, realFieldStruct := range realColValue {
 
@@ -206,7 +247,7 @@ func getTableName(project, table string, removeProjectScope bool) string {
 	return project + "." + table
 }
 
-func (c *creationModule) addField(ctx context.Context) ([]string, error) {
+func (c *creationModule) addField(ctx context.Context, dbType string) ([]string, error) {
 	var queries []string
 
 	if c.columnType != "" {
@@ -216,7 +257,7 @@ func (c *creationModule) addField(ctx context.Context) ([]string, error) {
 
 	if c.realColumnInfo.IsFieldTypeRequired {
 		// make the new column not null
-		if c.dbType == string(utils.SqlServer) && c.columnType == "timestamp" {
+		if dbType == string(utils.SqlServer) && c.columnType == "timestamp" {
 		} else {
 			queries = append(queries, c.addNotNull())
 		}
@@ -240,7 +281,7 @@ func (c *creationModule) removeField() string {
 	return c.removeColumn()
 }
 
-func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
+func (c *creationModule) modifyField(ctx context.Context, dbType string) ([]string, error) {
 	var queries []string
 	var count int
 
@@ -273,7 +314,7 @@ func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
 		}
 		queries = append(queries, c.removeField())
 
-		q, err := c.addField(ctx)
+		q, err := c.addField(ctx, dbType)
 		queries = append(queries, q...)
 		if err != nil {
 			return nil, err

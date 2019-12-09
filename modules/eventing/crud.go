@@ -187,9 +187,13 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 				log.Println("Eventing Staging Error:", err)
 				continue
 			}
+			dbType, err := m.crud.GetDBType(dbEvent.DBType)
+			if err != nil {
+				return
+			}
 
 			req := &model.ReadRequest{
-				Find:      map[string]interface{}{utils.GetIDVariable(dbEvent.DBType): dbEvent.DocID},
+				Find:      map[string]interface{}{utils.GetIDVariable(dbType): dbEvent.DocID},
 				Operation: utils.One,
 			}
 
@@ -222,12 +226,16 @@ func (m *Module) HandleStage(ctx context.Context, intent *model.EventIntent, err
 
 func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows []interface{}) []*model.EventDocument {
 	// Get event listeners
+	actualDbType, err := m.crud.GetDBType(dbType)
+	if err != nil {
+		return nil
+	}
 	rules := m.getMatchingRules(utils.EventCreate, map[string]string{"col": col, "db": dbType})
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, doc := range rows {
 
 		// Skip the doc if id isn't present
-		idTemp, p := doc.(map[string]interface{})[utils.GetIDVariable(dbType)]
+		idTemp, p := doc.(map[string]interface{})[utils.GetIDVariable(actualDbType)]
 		if !p {
 			continue
 		}
@@ -253,9 +261,13 @@ func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows 
 func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, col string, find map[string]interface{}) ([]*model.EventDocument, bool) {
 	// Get event listeners
 	rules := m.getMatchingRules(eventType, map[string]string{"col": col, "db": dbType})
+	actualDBType, err := m.crud.GetDBType(dbType)
+	if err != nil {
+		return nil, false
+	}
 
 	// Check if id field is valid
-	if idTemp, p := find[utils.GetIDVariable(dbType)]; p {
+	if idTemp, p := find[utils.GetIDVariable(actualDBType)]; p {
 		if id, ok := utils.AcceptableIDType(idTemp); ok {
 
 			eventDocs := make([]*model.EventDocument, len(rules))

@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,18 +32,23 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
-// GetDBType returns the dbType of the request
-func GetDBType(field *ast.Field) (string, error) {
+// GetDBAlias returns the dbType of the request
+func (graph *Module) GetDBAlias(field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("database / service directive not provided")
 	}
-	dbType := field.Directives[0].Name.Value
-	switch dbType {
+	dbAlias := field.Directives[0].Name.Value
+
+	if _, err := graph.crud.GetDBType(dbAlias); err == nil {
+		return dbAlias, nil
+	}
+
+	switch dbAlias {
 	case "postgres", "mysql", "sqlserver":
-		return "sql-" + dbType, nil
+		return "sql-" + dbAlias, nil
 
 	default:
-		return dbType, nil
+		return "", fmt.Errorf("provided db (%s) does not exists", dbAlias)
 	}
 }
 
