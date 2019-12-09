@@ -28,7 +28,7 @@ func (s *Manager) SetDeleteCollection(project, dbType, col string) error {
 	return s.setProject(projectConfig)
 }
 
-func (s *Manager) SetDatabaseConnection(project, dbType string, connection string, enabled bool) error {
+func (s *Manager) SetDatabaseConnection(project, dbType string, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -41,11 +41,28 @@ func (s *Manager) SetDatabaseConnection(project, dbType string, connection strin
 	// update database config
 	coll, ok := projectConfig.Modules.Crud[dbType]
 	if !ok {
-		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: connection, Enabled: enabled, Collections: map[string]*config.TableRule{}}
+		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type}
 	} else {
-		coll.Conn = connection
-		coll.Enabled = enabled
+		coll.Conn = v.Conn
+		coll.Enabled = v.Enabled
+		coll.Type = v.Type
 	}
+
+	return s.setProject(projectConfig)
+}
+
+func (s *Manager) RemoveDatabaseConfig(project, dbAlias string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+
+	// update database config
+	delete(projectConfig.Modules.Crud, dbAlias)
 
 	return s.setProject(projectConfig)
 }
