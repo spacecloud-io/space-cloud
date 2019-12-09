@@ -141,6 +141,7 @@ func formatProjectID(id string) string {
 }
 
 func getConnectionString(db string) string {
+
 	switch db {
 	case string(utils.Mongo):
 		return "mongodb://localhost:27017"

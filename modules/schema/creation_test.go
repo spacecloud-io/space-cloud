@@ -65,7 +65,7 @@ func TestSchema_SchemaCreation(t *testing.T) {
 		},
 		// {
 		// 	name: ": removing primary key",
-		// 	args: args{dbType: "sql-mysql", col: "orders", project: "testdb", schema: `type Persons { lastName  : String!     firstName : String     age : Integer     iD : Integer! @id	}	type Orders { address  : Boolean!      college  : DateTime!     personid : ID! @id   age : Float }`},
+		// 	args: args{dbAlias: "sql-mysql", col: "orders", project: "testdb", schema: `type Persons { lastName  : String!     firstName : String     age : Integer     iD : Integer! @id	}	type Orders { address  : Boolean!      college  : DateTime!     personid : ID! @id   age : Float }`},
 		// 	fields: fields{crud: crud.Init(), project: "testdb"},
 		// },
 		{

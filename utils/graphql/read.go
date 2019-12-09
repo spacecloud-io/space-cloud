@@ -28,7 +28,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 }
 
 func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, loader *loaderMap, cb dbCallback) {
-	dbType, err := GetDBType(field)
+	dbType, err := graph.GetDBAlias(field)
 	if err != nil {
 		cb("", "", nil, err)
 		return

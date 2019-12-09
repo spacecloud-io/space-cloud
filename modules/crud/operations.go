@@ -242,21 +242,6 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 		return nil
 	}
 
-	var sql string
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
-		sql = "create database if not exists " + project
-	case utils.Postgres:
-		sql = "create schema if not exists " + project
-	case utils.SqlServer:
-		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + project + `')) 
-					BEGIN
-    					EXEC ('CREATE SCHEMA [` + project + `] ')
-					END`
-	default:
-		return nil
-	}
-
 	crud, err := m.getCrudBlock(dbType)
 	if err != nil {
 		return err
@@ -266,7 +251,7 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 		return err
 	}
 
-	return crud.RawExec(ctx, sql)
+	return crud.CreateProjectIfNotExist(ctx, project, dbType)
 }
 
 // GetConnectionState gets the current state of client

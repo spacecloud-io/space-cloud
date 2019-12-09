@@ -9,21 +9,26 @@ import (
 )
 
 type creationModule struct {
-	dbType, project, TableName, ColumnName, columnType string
-	currentColumnInfo, realColumnInfo                  *SchemaFieldType
-	schemaModule                                       *Schema
-	removeProjectScope                                 bool
+	dbAlias, project, TableName, ColumnName, columnType string
+	currentColumnInfo, realColumnInfo                   *SchemaFieldType
+	schemaModule                                        *Schema
+	removeProjectScope                                  bool
 }
 
 // SchemaCreation creates or alters tables of sql
-func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project string, parsedSchema schemaType) error {
+func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project string, parsedSchema schemaType) error {
+	dbType, err := s.crud.GetDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+
 	// Return gracefully if db type is mongo
 	if dbType == string(utils.Mongo) {
 		return nil
 	}
 
 	// Return if no tables are present in schema
-	if len(parsedSchema[dbType]) == 0 {
+	if len(parsedSchema[dbAlias]) == 0 {
 		return nil
 	}
 
@@ -31,8 +36,8 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project 
 		return err
 	}
 
-	currentSchema, _ := s.Inspector(ctx, dbType, project, tableName)
-	realSchema := parsedSchema[dbType]
+	currentSchema, _ := s.Inspector(ctx, dbAlias, project, tableName)
+	realSchema := parsedSchema[dbAlias]
 	batchedQueries := []string{}
 
 	realTableName := tableName
@@ -50,7 +55,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project 
 	currentTableInfo, ok := currentSchema[realTableName]
 	if !ok {
 		// create table with primary key
-		query, err := addNewTable(project, dbType, realTableName, realTableInfo, s.removeProjectScope)
+		query, err := addNewTable(project, dbAlias, realTableName, realTableInfo, s.removeProjectScope)
 		if err != nil {
 			return err
 		}
@@ -81,7 +86,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project 
 
 		// Create the joint table first
 		if realColumnInfo.IsForeign {
-			if err := s.SchemaCreation(ctx, dbType, realColumnInfo.JointTable.Table, project, parsedSchema); err != nil {
+			if err := s.SchemaCreation(ctx, dbAlias, realColumnInfo.JointTable.Table, project, parsedSchema); err != nil {
 				return err
 			}
 		}
@@ -92,7 +97,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project 
 			return err
 		}
 		c := creationModule{
-			dbType:             dbType,
+			dbAlias:            dbAlias,
 			project:            project,
 			TableName:          realTableName,
 			ColumnName:         realColumnName,
@@ -106,7 +111,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project 
 		if !ok {
 			// add field in current table only if its not linked
 			if !realColumnInfo.IsLinked {
-				queries, err := c.addField(ctx)
+				queries, err := c.addField(ctx,dbType)
 				if err != nil {
 					return err
 				}
@@ -117,7 +122,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project 
 		} else {
 			// modify removing then adding
 			if !realColumnInfo.IsLinked {
-				queries, err := c.modifyField(ctx)
+				queries, err := c.modifyField(ctx,dbType)
 				batchedQueries = append(batchedQueries, queries...)
 				if err != nil {
 					return err
@@ -137,7 +142,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project 
 			if !ok || realField.IsLinked {
 				// remove field from current tabel
 				c := creationModule{
-					dbType:             dbType,
+					dbAlias:            dbAlias,
 					project:            project,
 					TableName:          currentColName,
 					ColumnName:         currentFieldKey,
@@ -153,16 +158,16 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbType, tableName, project 
 			}
 		}
 	}
-	return s.crud.RawBatch(ctx, dbType, batchedQueries)
+	return s.crud.RawBatch(ctx, dbAlias, batchedQueries)
 }
 
 // SchemaModifyAll modifies all the tables provided
-func (s *Schema) SchemaModifyAll(ctx context.Context, dbType, project string, tables map[string]*config.TableRule) error {
+func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
 	crud := config.Crud{}
-	crud[dbType] = &config.CrudStub{
+	crud[dbAlias] = &config.CrudStub{
 		Enabled:     true,
 		Collections: tables,
 	}
@@ -177,7 +182,7 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbType, project string, ta
 			continue
 		}
 
-		if err := s.SchemaCreation(ctx, dbType, tableName, project, parsedSchema); err != nil {
+		if err := s.SchemaCreation(ctx, dbAlias, tableName, project, parsedSchema); err != nil {
 			return err
 		}
 	}

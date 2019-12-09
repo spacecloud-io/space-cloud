@@ -15,10 +15,15 @@ import (
 // Subscribe performs the realtime subscribe operation.
 func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
 
+	actualDbType, err := m.crud.GetDBType(data.DBType)
+	if err != nil {
+		return nil, err
+	}
+
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
-	_, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
+	_, err = m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +48,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 		for _, row := range array {
 			payload := row.(map[string]interface{})
 			idVar := "id"
-			if data.DBType == string(utils.Mongo) {
+			if actualDbType == string(utils.Mongo) {
 				idVar = "_id"
 			}
 			if docID, ok := utils.AcceptableIDType(payload[idVar]); ok {
