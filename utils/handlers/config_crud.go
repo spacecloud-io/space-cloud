@@ -159,9 +159,11 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 	}
 }
 
-// HandleDatabaseConnection is an endpoint handler which updates database config & connects to database
+// HandleRemoveDatabaseConfig is an endpoint handler which removes database config
 func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
