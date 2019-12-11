@@ -31,7 +31,7 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
