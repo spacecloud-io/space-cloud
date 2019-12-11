@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
@@ -27,11 +29,13 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		vars := mux.Vars(r)
 		project := vars["project"]
 
-		if err := syncMan.SetFileStore(project, value); err != nil {
+		if err := syncMan.SetFileStore(ctx, project, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -96,13 +100,15 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		vars := mux.Vars(r)
 		project := vars["project"]
 		ruleName := vars["ruleName"]
 		value.Name = ruleName
 
-		if err := syncMan.SetFileRule(project, value); err != nil {
+		if err := syncMan.SetFileRule(ctx, project, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -131,12 +137,14 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		vars := mux.Vars(r)
 		project := vars["project"]
 		ruleName := vars["ruleName"]
 
-		if err := syncMan.SetDeleteFileRule(project, ruleName); err != nil {
+		if err := syncMan.SetDeleteFileRule(ctx, project, ruleName); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

@@ -124,7 +124,7 @@ func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 }
 
 // SetProjectGlobalConfig applies the set project config command to the raft log
-func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
+func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -137,18 +137,18 @@ func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
 	projectConfig.Secret = project.Secret
 	projectConfig.Name = project.Name
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
 // SetProjectConfig applies the set project config command to the raft log
-func (s *Manager) SetProjectConfig(project *config.Project) error {
+func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	return s.setProject(project)
+	return s.setProject(ctx, project)
 }
 
-func (s *Manager) setProject(project *config.Project) error {
+func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
 	if err := s.cb(&config.Config{Projects: []*config.Project{project}}); err != nil {
 		return err
 	}
@@ -158,9 +158,6 @@ func (s *Manager) setProject(project *config.Project) error {
 	if !s.isConsulEnabled {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)
