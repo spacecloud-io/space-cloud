@@ -193,7 +193,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.JointTable.Table = val.(string)
 
-							case "to":
+							case "field":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.JointTable.To = val.(string)
 							}
