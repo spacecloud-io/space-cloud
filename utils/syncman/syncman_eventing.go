@@ -2,7 +2,7 @@ package syncman
 
 import (
 	"github.com/spaceuptech/space-cloud/config"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value config.EventingRule) error {

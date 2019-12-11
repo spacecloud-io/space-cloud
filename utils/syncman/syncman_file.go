@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore) error {

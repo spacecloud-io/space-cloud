@@ -2,7 +2,7 @@ package syncman
 
 import (
 	"github.com/spaceuptech/space-cloud/config"
-	"golang.org/x/net/context"
+	"context"
 )
 
 func (s *Manager) SetService(ctx context.Context, project, service string, value *config.Service) error {
