@@ -1,10 +1,10 @@
 package syncman
 
 import (
+	"context"
 	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"context"
 )
 
 func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore) error {

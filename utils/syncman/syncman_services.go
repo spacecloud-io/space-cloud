@@ -1,8 +1,9 @@
 package syncman
 
 import (
-	"github.com/spaceuptech/space-cloud/config"
 	"context"
+
+	"github.com/spaceuptech/space-cloud/config"
 )
 
 func (s *Manager) SetService(ctx context.Context, project, service string, value *config.Service) error {

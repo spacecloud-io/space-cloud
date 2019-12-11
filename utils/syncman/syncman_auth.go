@@ -1,8 +1,9 @@
 package syncman
 
 import (
-	"github.com/spaceuptech/space-cloud/config"
 	"context"
+
+	"github.com/spaceuptech/space-cloud/config"
 )
 
 func (s *Manager) SetUserManagement(ctx context.Context, project, provider string, value *config.AuthStub) error {
