@@ -1,11 +1,13 @@
 package syncman
 
 import (
+	"context"
 	"errors"
+
 	"github.com/spaceuptech/space-cloud/config"
 )
 
-func (s *Manager) SetFileStore(project string, value *config.FileStore) error {
+func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -20,10 +22,10 @@ func (s *Manager) SetFileStore(project string, value *config.FileStore) error {
 	projectConfig.Modules.FileStore.Endpoint = value.Endpoint
 	projectConfig.Modules.FileStore.Bucket = value.Bucket
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
-func (s *Manager) SetFileRule(project string, value *config.FileRule) error {
+func (s *Manager) SetFileRule(ctx context.Context, project string, value *config.FileRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -39,10 +41,10 @@ func (s *Manager) SetFileRule(project string, value *config.FileRule) error {
 	}
 	projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
-func (s *Manager) SetDeleteFileRule(project, filename string) error {
+func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -60,5 +62,5 @@ func (s *Manager) SetDeleteFileRule(project, filename string) error {
 		}
 	}
 	projectConfig.Modules.FileStore.Rules = temp
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
