@@ -120,9 +120,10 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	return nil
 }
 
+//GetBDType returns a database type on providing database alias
 func (m *Module) GetDBType(dbAlias string) (string, error) {
 	if dbAlias != m.alias {
-		return "", fmt.Errorf("crud module dbalias %q not found", dbAlias)
+		return "", fmt.Errorf("crud module db %s not found", dbAlias)
 	}
 	return m.dbType, nil
 }
