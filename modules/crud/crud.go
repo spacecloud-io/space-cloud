@@ -86,7 +86,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	defer m.Unlock()
 
 	if len(crud) > 1 {
-		return errors.New("crud module cannot have more than 1 alias")
+		return errors.New("crud module cannot have more than 1 db")
 	}
 
 	m.project = project
@@ -123,7 +123,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 //GetDBType returns database type on providing database alias
 func (m *Module) GetDBType(dbAlias string) (string, error) {
 	if dbAlias != m.alias {
-		return "", fmt.Errorf("crud module db %s not found", dbAlias)
+		return "", fmt.Errorf("db (%s) not found", dbAlias)
 	}
 	return m.dbType, nil
 }
