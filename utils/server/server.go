@@ -107,7 +107,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 func (s *Server) Start(disableMetrics bool, port int) error {
 
 	// Start the sync manager
-	if err := s.syncMan.Start(s.configFilePath, s.LoadConfig); err != nil {
+	if err := s.syncMan.Start(s.configFilePath, s.LoadConfig, port); err != nil {
 		return err
 	}
 
