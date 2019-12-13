@@ -25,7 +25,7 @@ func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, 
 	defer s.lock.RUnlock()
 
 	if !s.isConsulEnabled {
-		return fmt.Sprintf("http://localhost:4122/v1/api/%s/eventing/process", project), nil
+		return fmt.Sprintf("http://localhost:%d/v1/api/%s/eventing/process", s.port, project), nil
 	}
 
 	opts := &api.QueryOptions{AllowStale: true}
@@ -42,7 +42,7 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	defer s.lock.RUnlock()
 
 	if !s.isConsulEnabled {
-		return []string{fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/process", project)}
+		return []string{fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/process", s.port, project)}
 	}
 
 	urls := make([]string, len(s.services))
@@ -52,6 +52,10 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	}
 
 	return urls
+}
+
+func (s *Manager) GetRealtimeUrl(project string) string {
+	return string(fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project))
 }
 
 // GetAssignedTokens returns the array or tokens assigned to this node
