@@ -30,7 +30,7 @@ type Module struct {
 
 // New creates a new GraphQL module
 func New(a *auth.Module, c *crud.Module, f *functions.Module, s *schema.Schema) *Module {
-	return &Module{auth: a, crud: c, functions: f}
+	return &Module{auth: a, crud: c, functions: f, schema: s}
 }
 
 // SetConfig sets the project configuration
