@@ -28,7 +28,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token string
 	// Create a http client and fire the request
 	client := &http.Client{}
 
-	// if s.isConsulEnabled && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
+	// if s.storeType && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
 	// 	 client = s.consulService.HTTPClient()
 	// }
 

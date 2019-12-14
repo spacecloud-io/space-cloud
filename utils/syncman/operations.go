@@ -1,11 +1,9 @@
 package syncman
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/hashicorp/consul/api"
 	"golang.org/x/net/context"
@@ -24,7 +22,7 @@ func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, 
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	if !s.isConsulEnabled {
+	if s.storeType == "none" {
 		return fmt.Sprintf("http://localhost:4122/v1/api/%s/eventing/process", project), nil
 	}
 
@@ -33,7 +31,7 @@ func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, 
 
 	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
 
-	return fmt.Sprintf("http://%s:%d/v1/api/%s/eventing/process", s.services[index].Node.Address, s.services[index].Service.Port, project), nil
+	return fmt.Sprintf("http://%s/v1/api/%s/eventing/process", s.services[index].addr, project), nil
 }
 
 // GetSpaceCloudNodeURLs returns the array of space cloud urls
@@ -41,14 +39,14 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	if !s.isConsulEnabled {
+	if s.storeType == "none" {
 		return []string{fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/process", project)}
 	}
 
 	urls := make([]string, len(s.services))
 
-	for i, addr := range s.services {
-		urls[i] = fmt.Sprintf("http://%s:%d/v1/api/%s/realtime/process", addr.Node.Address, addr.Service.Port, project)
+	for i, svc := range s.services {
+		urls[i] = fmt.Sprintf("http://%s/v1/api/%s/realtime/process", svc.addr, project)
 	}
 
 	return urls
@@ -60,14 +58,14 @@ func (s *Manager) GetAssignedTokens() (start, end int) {
 	defer s.lock.RUnlock()
 
 	// Always return true if running in single mode
-	if !s.isConsulEnabled {
+	if s.storeType == "none" {
 		return calcTokens(1, utils.MaxEventTokens, 0)
 	}
 
 	index := 0
 
 	for i, v := range s.services {
-		if v.Service.ID == s.nodeID || (s.nodeID == v.Node.ID && s.port == v.Service.Port) {
+		if v.id == s.nodeID {
 			index = i
 			break
 		}
@@ -83,7 +81,7 @@ func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
 	defer s.lock.RUnlock()
 
 	// Return 1 if not running with consul
-	if !s.isConsulEnabled {
+	if s.storeType == "none" {
 		return 1, nil
 	}
 
@@ -104,23 +102,12 @@ func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 
 	s.cb(s.projectConfig)
 
-	if !s.isConsulEnabled {
+	if s.storeType == "none" {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	opts := &api.WriteOptions{}
-	opts = opts.WithContext(ctx)
-
-	data, _ := json.Marshal(project)
-
-	_, err := s.consulClient.KV().Put(&api.KVPair{
-		Key:   fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID),
-		Value: data,
-	}, opts)
-	return err, http.StatusInternalServerError
+	s.cb(s.projectConfig)
+	return s.store.SetProject(project), http.StatusInternalServerError
 }
 
 // SetProjectGlobalConfig applies the set project config command to the raft log
@@ -145,6 +132,8 @@ func (s *Manager) SetProjectConfig(project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	s.cb(s.projectConfig)
 	return s.setProject(project)
 }
 
@@ -155,23 +144,11 @@ func (s *Manager) setProject(project *config.Project) error {
 
 	s.setProjectConfig(project)
 
-	if !s.isConsulEnabled {
+	if s.storeType == "none" {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	opts := &api.WriteOptions{}
-	opts = opts.WithContext(ctx)
-
-	data, _ := json.Marshal(project)
-
-	_, err := s.consulClient.KV().Put(&api.KVPair{
-		Key:   fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID),
-		Value: data,
-	}, opts)
-	return err
+	return s.store.SetProject(project)
 }
 
 // DeleteProjectConfig applies delete project config command to the raft log
@@ -180,7 +157,7 @@ func (s *Manager) DeleteProjectConfig(projectID string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if !s.isConsulEnabled {
+	if s.storeType == "none" {
 		s.delete(projectID)
 		if err := s.cb(s.projectConfig); err != nil {
 			return err
@@ -189,14 +166,8 @@ func (s *Manager) DeleteProjectConfig(projectID string) error {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	opts := &api.WriteOptions{}
-	opts = opts.WithContext(ctx)
-
-	_, err := s.consulClient.KV().Delete(fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID), opts)
-	return err
+	s.cb(s.projectConfig)
+	return s.store.DeleteProject(projectID)
 }
 
 // GetConfig returns the config present in the state
