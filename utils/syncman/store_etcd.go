@@ -21,8 +21,10 @@ type ETCDStore struct {
 	nodeID, clusterID, advertiseAddr string
 }
 
-func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
-	client, err := clientv3.New(clientv3.Config{})
+func NewETCDStore(nodeID, clusterID, advertiseAddr, storeAddr string) (*ETCDStore, error) {
+	client, err := clientv3.New(clientv3.Config{
+		Endpoints: []string{storeAddr},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -47,16 +49,15 @@ func (s *ETCDStore) Register() {
 	}
 
 	ticker := time.NewTicker(3 * time.Second)
-	done := make(chan bool)
 
 	go func() {
 		for {
 			select {
-			case <-done:
-				return
 			case <-ticker.C:
 				if _, err := s.etcdClient.KeepAlive(context.Background(), lease.ID); err != nil {
 					log.Println("Could not renew consul session:", err)
+					// register again
+					s.Register()
 				}
 			}
 		}
@@ -141,6 +142,6 @@ func (s *ETCDStore) DeleteProject(projectID string) error {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)
 
-	_,err := s.kv.Delete(ctx, fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID))
+	_, err := s.kv.Delete(ctx, fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID))
 	return err
 }

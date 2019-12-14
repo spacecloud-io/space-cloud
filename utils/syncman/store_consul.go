@@ -31,11 +31,8 @@ func NewConsulStore(nodeID, clusterID, advertiseAddr string) (*ConsulStore, erro
 }
 
 func (s *ConsulStore) Register() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	opts := &api.WriteOptions{}
-	opts = opts.WithContext(ctx)
+	opts = opts.WithContext(context.Background())
 
 	session := s.consulClient.Session()
 	id, _, err := session.Create(&api.SessionEntry{
@@ -48,21 +45,20 @@ func (s *ConsulStore) Register() {
 	}
 
 	data := []byte(s.advertiseAddr)
-	if _, _, err := s.consulClient.KV().Acquire(&api.KVPair{Key: fmt.Sprintf("sc/instances/%s/%s", s.clusterID, s.nodeID), Value: data,}, opts); err != nil {
+	if _, _, err := s.consulClient.KV().Acquire(&api.KVPair{Session: id, Key: fmt.Sprintf("sc/instances/%s/%s", s.clusterID, s.nodeID), Value: data,}, opts); err != nil {
 		log.Fatal("Could not register space cloud with consul:", err)
 	}
 
 	ticker := time.NewTicker(3 * time.Second)
-	done := make(chan bool)
 
 	go func() {
 		for {
 			select {
-			case <-done:
-				return
 			case <-ticker.C:
 				if _, _, err := session.Renew(id, opts); err != nil {
 					log.Println("Could not renew consul session:", err)
+					// register again
+					s.Register()
 				}
 			}
 		}

@@ -78,10 +78,9 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "CLUSTER_ID",
 		Value:  "default-cluster",
 	},
-	cli.BoolFlag{
-		Name:   "enable-consul",
-		Usage:  "Enable consul integration",
-		EnvVar: "ENABLE_CONSUL",
+	cli.StringFlag{
+		Name:   "store-addr",
+		EnvVar: "STORE_ADDR",
 	},
 	cli.StringFlag{
 		Name:   "advertise-addr",
@@ -185,6 +184,7 @@ func actionRun(c *cli.Context) error {
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
 	advertiseAddr := c.String("advice-addr")
+	storeAddr := c.String("store-addr")
 
 	// Load the flags for the metrics module
 	enableMetrics := c.Bool("enable-metrics")
@@ -197,7 +197,7 @@ func actionRun(c *cli.Context) error {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, removeProjectScope,
+	s, err := server.New(nodeID, clusterID,storeAddr ,advertiseAddr, storeType, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
