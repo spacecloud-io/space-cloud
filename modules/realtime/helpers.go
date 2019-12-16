@@ -8,17 +8,17 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-var dbEvents = []string{utils.EventCreate, utils.EventUpdate, utils.EventDelete}
+var dbEvents = []string{utils.EventDBCreate, utils.EventDBUpdate, utils.EventDBDelete}
 
 func eventingToRealtimeEvent(event string) string {
 	switch event {
-	case utils.EventCreate:
+	case utils.EventDBCreate:
 		return utils.RealtimeInsert
 
-	case utils.EventUpdate:
+	case utils.EventDBUpdate:
 		return utils.RealtimeUpdate
 
-	case utils.EventDelete:
+	case utils.EventDBDelete:
 		return utils.RealtimeDelete
 
 	default:

@@ -6,12 +6,14 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/eventing"
 	"github.com/spaceuptech/space-cloud/utils"
 
 	"github.com/spaceuptech/space-cloud/modules/auth"
+	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/filestore/amazons3"
-	"github.com/spaceuptech/space-cloud/modules/filestore/local"
 	"github.com/spaceuptech/space-cloud/modules/filestore/gcpstorage"
+	"github.com/spaceuptech/space-cloud/modules/filestore/local"
 )
 
 // Module is responsible for managing the file storage module
@@ -20,6 +22,8 @@ type Module struct {
 	store   FileStore
 	enabled bool
 	auth    *auth.Module
+	crud    *crud.Module
+	event   *eventing.Module
 }
 
 // Init creates a new instance of the file store object
@@ -37,6 +41,8 @@ type FileStore interface {
 
 	DeleteDir(path string) error
 	DeleteFile(path string) error
+
+	DoesExists(path string) error
 
 	GetStoreType() utils.FileStoreType
 	Close() error
@@ -92,4 +98,8 @@ func initBlock(fileStoreType utils.FileStoreType, connection, endpoint, bucket s
 	default:
 		return nil, utils.ErrInvalidParams
 	}
+}
+
+func (m *Module) DoesExists(path string) error {
+	m.store.DoesExists(path)
 }

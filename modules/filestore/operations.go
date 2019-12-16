@@ -26,12 +26,19 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.CreateDir(req)
+	intent, err := m.event.HookFileCreateIntent(ctx, req)
 	if err != nil {
 		return 500, err
-	} else {
-		return 200, nil
 	}
+
+	err = m.store.CreateDir(req)
+	if err == nil {
+		return 200, err
+	}
+
+	m.event.HookFileStage(ctx, intent, err)
+
+	return 500, nil
 }
 
 // DeleteFile deletes a file at the provided path
@@ -50,12 +57,19 @@ func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (i
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.DeleteFile(path)
+	intent, err := m.event.HookFileDeleteIntent(ctx, path)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return 0, err
 	}
 
-	return 200, nil
+	err = m.store.DeleteFile(path)
+	if err == nil {
+		return http.StatusOK, err
+	}
+
+	m.event.HookFileStage(ctx, intent, err)
+
+	return http.StatusInternalServerError, nil
 }
 
 // ListFiles lists all the files in the provided path
@@ -98,11 +112,19 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.CreateFile(req, reader)
+	intent, err := m.event.HookFileCreateIntent(ctx, req)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return 500, err
 	}
-	return http.StatusOK, nil
+
+	err = m.store.CreateFile(req, reader)
+	if err == nil {
+		return http.StatusOK, err
+	}
+
+	m.event.HookFileStage(ctx, intent, err)
+
+	return http.StatusInternalServerError, nil
 }
 
 // DownloadFile downloads a file from the provided path

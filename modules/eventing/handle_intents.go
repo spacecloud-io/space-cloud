@@ -61,6 +61,7 @@ func (m *Module) processIntents(t *time.Time) {
 	}
 }
 
+// TODO: potential bug for prematurely processing an intent when operation is still underway e.g -> uploading a large file
 func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -74,7 +75,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 	switch eventDoc.Type {
 
-	case utils.EventCreate:
+	case utils.EventDBCreate:
 		// Unmarshal the payload
 		createEvent := model.DatabaseEventMessage{}
 		if err := json.Unmarshal([]byte(eventDoc.Payload.(string)), &createEvent); err != nil {
@@ -101,10 +102,10 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		}
 
 		// Broadcast the event so the concerned worker can process it immediately
-		eventDoc.Status = utils.EventStatusProcessed
+		eventDoc.Status = utils.EventStatusStaged
 		m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 
-	case utils.EventUpdate:
+	case utils.EventDBUpdate:
 		// Unmarshal the payload
 		updateEvent := model.DatabaseEventMessage{}
 		json.Unmarshal([]byte(eventDoc.Payload.(string)), &updateEvent)
@@ -133,13 +134,13 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 			},
 		}); err == nil {
 			// Broadcast the event so the concerned worker can process it immediately
-			eventDoc.Status = utils.EventStatusProcessed
+			eventDoc.Status = utils.EventStatusStaged
 			eventDoc.Payload = string(data)
 			eventDoc.Timestamp = timestamp
 			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 		}
 
-	case utils.EventDelete:
+	case utils.EventDBDelete:
 		// Unmarshal the payload
 		deleteEvent := model.DatabaseEventMessage{}
 		json.Unmarshal([]byte(eventDoc.Payload.(string)), &deleteEvent)
@@ -157,7 +158,43 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		// Mark the event as staged if the document doesn't exist
 		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateStageEventRequest(eventID)); err == nil {
 			// Broadcast the event so the concerned worker can process it immediately
-			eventDoc.Status = utils.EventStatusProcessed
+			eventDoc.Status = utils.EventStatusStaged
+			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
+		}
+	case utils.EventFileCreate:
+
+		// Check if document exists in database
+		if err := m.fileStore.DoesExists(eventDoc.Payload.(string)); err != nil {
+
+			// Mark event as cancelled if it document doesn't exist
+			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID)); err != nil {
+				log.Println("Eventing: Couldn't cancel intent -", err)
+			}
+			return
+		}
+
+		// Mark event as staged if document does exist
+		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateStageEventRequest(eventID)); err != nil {
+			log.Println("Eventing: Couldn't update intent to staged -", err)
+			return
+		}
+
+		// Broadcast the event so the concerned worker can process it immediately
+		eventDoc.Status = utils.EventStatusStaged
+		m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
+
+	case utils.EventFileDelete:
+
+		if err := m.fileStore.DoesExists(eventDoc.Payload.(string)); err == nil {
+			// Mark the event as cancelled if the object still exists
+			m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID))
+			return
+		}
+
+		// Mark the event as staged if the object doesn't exist
+		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateStageEventRequest(eventID)); err == nil {
+			// Broadcast the event so the concerned worker can process it immediately
+			eventDoc.Status = utils.EventStatusStaged
 			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 		}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
@@ -29,6 +30,7 @@ type Module struct {
 	functions *functions.Module
 	adminMan  *admin.Manager
 	syncMan   *syncman.Manager
+	fileStore *filestore.Module
 }
 
 // New creates a new instance of the eventing module

@@ -75,11 +75,11 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 	e := eventing.New(a, c, fn, adminMan, syncMan)
 
 	c.SetHooks(&model.CrudHooks{
-		Create: e.HandleCreateIntent,
-		Update: e.HandleUpdateIntent,
-		Delete: e.HandleDeleteIntent,
-		Batch:  e.HandleBatchIntent,
-		Stage:  e.HandleStage,
+		Create: e.HookDBCreateIntent,
+		Update: e.HookDBUpdateIntent,
+		Delete: e.HookDBDeleteIntent,
+		Batch:  e.HookDBBatchIntent,
+		Stage:  e.HookDBStage,
 	}, m.AddDBOperation)
 
 	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
