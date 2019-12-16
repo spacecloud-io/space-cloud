@@ -51,23 +51,6 @@ func checkErrors(realFieldStruct *SchemaFieldType) error {
 	return nil
 }
 
-func (c *creationModule) modifyColumnType() string {
-	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
-	if err != nil {
-		return ""
-	}
-
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType
-	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " TYPE " + c.columnType + " USING (" + c.ColumnName + "::" + c.columnType + ")"
-	case utils.SqlServer:
-		return "ALTER TABLE " + c.project + "." + c.TableName + " ALTER COLUMN " + c.ColumnName + " " + c.columnType
-	}
-	return ""
-}
-
 func (c *creationModule) addNotNull() string {
 	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
 	if err != nil {
@@ -247,7 +230,7 @@ func getTableName(project, table string, removeProjectScope bool) string {
 	return project + "." + table
 }
 
-func (c *creationModule) addField(ctx context.Context, dbType string) ([]string, error) {
+func (c *creationModule) addColumn(ctx context.Context, dbType string) ([]string, error) {
 	var queries []string
 
 	if c.columnType != "" {
@@ -277,48 +260,58 @@ func (c *creationModule) addField(ctx context.Context, dbType string) ([]string,
 	return queries, nil
 }
 
-func (c *creationModule) removeField() string {
-	return c.removeColumn()
-}
-
-func (c *creationModule) modifyField(ctx context.Context, dbType string) ([]string, error) {
+func (c *creationModule) modifyColumn(ctx context.Context) ([]string, error) {
 	var queries []string
-	var count int
 
-	if c.realColumnInfo.Kind != c.currentColumnInfo.Kind {
-		if c.columnType != "" {
-			count++
+	if c.realColumnInfo.IsFieldTypeRequired != c.currentColumnInfo.IsFieldTypeRequired {
+		if c.realColumnInfo.IsFieldTypeRequired {
+			queries = append(queries, c.addNotNull())
+		} else {
+			queries = append(queries, c.removeNotNull())
 		}
 	}
 
-	if c.realColumnInfo.IsFieldTypeRequired != c.currentColumnInfo.IsFieldTypeRequired {
-		count++
+	if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
+		queries = append(queries, c.removePrimaryKey())
+	}
+
+	if !c.realColumnInfo.IsUnique && c.currentColumnInfo.IsUnique {
+		queries = append(queries, c.removeUniqueKey())
+	}
+
+	if !c.realColumnInfo.IsForeign && c.currentColumnInfo.IsForeign {
+		queries = append(queries, c.removeForeignKey()...)
 	}
 
 	if c.realColumnInfo.IsPrimary && !c.currentColumnInfo.IsPrimary {
-		count++
+		queries = append(queries, c.addPrimaryKey())
 	}
 
 	if c.realColumnInfo.IsUnique && !c.currentColumnInfo.IsUnique {
-		count++
+		queries = append(queries, c.addUniqueKey())
 	}
 
 	if c.realColumnInfo.IsForeign && !c.currentColumnInfo.IsForeign {
-		count++
+		queries = append(queries, c.addForeignKey())
 	}
 
-	if count > 0 {
-		// some modification in existing columns of the table so drop the column then add a new column
-		if c.currentColumnInfo.IsForeign {
-			queries = append(queries, c.removeForeignKey()...)
-		}
-		queries = append(queries, c.removeField())
+	return queries, nil
+}
 
-		q, err := c.addField(ctx, dbType)
-		queries = append(queries, q...)
-		if err != nil {
-			return nil, err
-		}
+// modifyColumnType drop the column then creates a new column with provided type
+func (c *creationModule) modifyColumnType(ctx context.Context, dbType string) ([]string, error) {
+	queries := []string{}
+
+	if c.currentColumnInfo.IsForeign {
+		queries = append(queries, c.removeForeignKey()...)
 	}
+	queries = append(queries, c.removeColumn())
+
+	q, err := c.addColumn(ctx, dbType)
+	queries = append(queries, q...)
+	if err != nil {
+		return nil, err
+	}
+
 	return queries, nil
 }

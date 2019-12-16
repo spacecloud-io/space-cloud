@@ -54,6 +54,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 
 	currentTableInfo, ok := currentSchema[realTableName]
 	if !ok {
+
 		// create table with primary key
 		query, err := addNewTable(project, dbAlias, realTableName, realTableInfo, s.removeProjectScope)
 		if err != nil {
@@ -61,7 +62,6 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		}
 
 		batchedQueries = append(batchedQueries, query)
-
 		currentTableInfo = SchemaFields{}
 		for realColumnName, realColumnInfo := range realTableInfo {
 			temp := SchemaFieldType{
@@ -76,6 +76,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		}
 	}
 	for realColumnName, realColumnInfo := range realTableInfo {
+
 		// Ignore the field if its linked
 		if realColumnInfo.IsLinked {
 			continue
@@ -91,7 +92,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 			}
 		}
 
-		currentFieldStruct, ok := currentTableInfo[realColumnName]
+		currentColumnInfo, ok := currentTableInfo[realColumnName]
 		columnType, err := getSQLType(dbType, realColumnInfo.Kind)
 		if err != nil {
 			return err
@@ -102,7 +103,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 			TableName:          realTableName,
 			ColumnName:         realColumnName,
 			columnType:         columnType,
-			currentColumnInfo:  currentFieldStruct,
+			currentColumnInfo:  currentColumnInfo,
 			realColumnInfo:     realColumnInfo,
 			schemaModule:       s,
 			removeProjectScope: s.removeProjectScope,
@@ -111,7 +112,8 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		if !ok {
 			// add field in current table only if its not linked
 			if !realColumnInfo.IsLinked {
-				queries, err := c.addField(ctx,dbType)
+
+				queries, err := c.addColumn(ctx, dbType)
 				if err != nil {
 					return err
 				}
@@ -120,12 +122,22 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 			}
 
 		} else {
-			// modify removing then adding
 			if !realColumnInfo.IsLinked {
-				queries, err := c.modifyField(ctx,dbType)
-				batchedQueries = append(batchedQueries, queries...)
-				if err != nil {
-					return err
+				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind {
+
+					// for changing the type of column, drop the column then add new column
+					queries, err := c.modifyColumnType(ctx, dbType)
+					if err != nil {
+						return err
+					}
+					batchedQueries = append(batchedQueries, queries...)
+				} else {
+					// make changes according to the changes in directives
+					queries, err := c.modifyColumn(ctx)
+					batchedQueries = append(batchedQueries, queries...)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -154,10 +166,11 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 					batchedQueries = append(batchedQueries, c.removeForeignKey()...)
 				}
 
-				batchedQueries = append(batchedQueries, c.removeField())
+				batchedQueries = append(batchedQueries, c.removeColumn())
 			}
 		}
 	}
+
 	return s.crud.RawBatch(ctx, dbAlias, batchedQueries)
 }
 
