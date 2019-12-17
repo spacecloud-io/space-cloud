@@ -25,11 +25,12 @@ type Module struct {
 	auth      *auth.Module
 	crud      *crud.Module
 	functions *functions.Module
+	schema    *schema.Schema
 }
 
 // New creates a new GraphQL module
-func New(a *auth.Module, c *crud.Module, f *functions.Module) *Module {
-	return &Module{auth: a, crud: c, functions: f}
+func New(a *auth.Module, c *crud.Module, f *functions.Module, s *schema.Schema) *Module {
+	return &Module{auth: a, crud: c, functions: f, schema: s}
 }
 
 // SetConfig sets the project configuration
@@ -175,7 +176,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 					}
 
 					// Load the schema
-					s, _ := graph.auth.Schema.GetSchema(dbType, col)
+					s, _ := graph.schema.GetSchema(dbType, col)
 
 					graph.processQueryResult(ctx, field, token, store, result, loader, s, cb)
 				}))

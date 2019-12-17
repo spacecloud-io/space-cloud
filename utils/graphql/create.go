@@ -88,7 +88,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbType, col string)
 	afterRequests := make([]model.AllRequest, 0)
 
 	// Check if we can the schema for this collection
-	schemaFields, p := graph.auth.Schema.GetSchema(dbType, col)
+	schemaFields, p := graph.schema.GetSchema(dbType, col)
 	if !p {
 		// Return the docs as is if no schema is available
 		return []model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil

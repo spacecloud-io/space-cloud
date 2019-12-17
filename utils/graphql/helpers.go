@@ -175,7 +175,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 			}
 
 			// Check the linked table has a schema
-			s, isSchemaPresent := graph.auth.Schema.GetSchema(dbType, col)
+			s, isSchemaPresent := graph.schema.GetSchema(dbType, col)
 
 			length := len(array)
 			if !fieldStruct.IsList {
