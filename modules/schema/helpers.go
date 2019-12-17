@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"context"
 	"errors"
 	"fmt"
 
@@ -61,7 +60,7 @@ func (c *creationModule) addNotNull() string {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType + " NOT NULL"
 	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " SET NOT NULL "
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " SET NOT NULL"
 	case utils.SqlServer:
 		return "ALTER TABLE " + c.project + "." + c.TableName + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NOT NULL"
 	}
@@ -230,7 +229,7 @@ func getTableName(project, table string, removeProjectScope bool) string {
 	return project + "." + table
 }
 
-func (c *creationModule) addColumn(ctx context.Context, dbType string) ([]string, error) {
+func (c *creationModule) addColumn(dbType string) ([]string, error) {
 	var queries []string
 
 	if c.columnType != "" {
@@ -260,7 +259,7 @@ func (c *creationModule) addColumn(ctx context.Context, dbType string) ([]string
 	return queries, nil
 }
 
-func (c *creationModule) modifyColumn(ctx context.Context) ([]string, error) {
+func (c *creationModule) modifyColumn() ([]string, error) {
 	var queries []string
 
 	if c.realColumnInfo.IsFieldTypeRequired != c.currentColumnInfo.IsFieldTypeRequired {
@@ -299,7 +298,7 @@ func (c *creationModule) modifyColumn(ctx context.Context) ([]string, error) {
 }
 
 // modifyColumnType drop the column then creates a new column with provided type
-func (c *creationModule) modifyColumnType(ctx context.Context, dbType string) ([]string, error) {
+func (c *creationModule) modifyColumnType(dbType string) ([]string, error) {
 	queries := []string{}
 
 	if c.currentColumnInfo.IsForeign {
@@ -307,7 +306,7 @@ func (c *creationModule) modifyColumnType(ctx context.Context, dbType string) ([
 	}
 	queries = append(queries, c.removeColumn())
 
-	q, err := c.addColumn(ctx, dbType)
+	q, err := c.addColumn(dbType)
 	queries = append(queries, q...)
 	if err != nil {
 		return nil, err
