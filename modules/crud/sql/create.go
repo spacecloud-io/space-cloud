@@ -22,6 +22,10 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 		return 0, err
 	}
 
+	if s.dbType == "sqlserver" {
+		sqlQuery = s.generateQuerySQLServer(sqlQuery)
+
+	}
 	res, err := doExecContext(ctx, sqlQuery, args, s.client)
 	if err != nil {
 		return 0, err

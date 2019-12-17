@@ -22,6 +22,10 @@ func getSQLType(dbType, typename string) (string, error) {
 		}
 		return "timestamp", nil
 	case typeBoolean:
+
+		if dbType == string(utils.SqlServer) {
+			return "bit", nil
+		}
 		return "boolean", nil
 	case typeFloat:
 		return "float", nil
@@ -46,6 +50,10 @@ func checkErrors(realFieldStruct *SchemaFieldType) error {
 
 	if realFieldStruct.IsPrimary && realFieldStruct.Kind != TypeID {
 		return errors.New("primary key should be of type ID")
+	}
+
+	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
+		return errors.New("cannot set default directive with other constraints")
 	}
 
 	return nil
@@ -187,6 +195,49 @@ func (c *creationModule) addForeignKey() string {
 	return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " FOREIGN KEY (" + c.ColumnName + ") REFERENCES " + getTableName(c.project, c.realColumnInfo.JointTable.Table, c.removeProjectScope) + " (" + c.realColumnInfo.JointTable.To + ")"
 }
 
+func (c *creationModule) typeSwitch() string {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch v := c.realColumnInfo.Default.(type) {
+	case string:
+		return "'" + fmt.Sprintf("%v", v) + "'"
+	case bool:
+		if utils.DBType(dbType) == utils.SqlServer {
+			if v {
+				return fmt.Sprintf("1")
+			} else {
+				return fmt.Sprintf("0")
+			}
+		}
+		return fmt.Sprintf("%v", v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+	return ""
+}
+
+func (c *creationModule) addDefaultKey() string {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+	switch utils.DBType(dbType) {
+	case utils.MySQL:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER " + c.ColumnName + " SET DEFAULT " + c.typeSwitch()
+
+	case utils.SqlServer:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.ColumnName + " DEFAULT " + c.typeSwitch() + " FOR " + c.ColumnName
+
+	case utils.Postgres:
+
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " SET DEFAULT " + c.typeSwitch()
+	}
+	return ""
+}
+
 func (c *creationModule) removeForeignKey() []string {
 	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
 	if err != nil {
@@ -274,6 +325,11 @@ func (c *creationModule) addField(ctx context.Context, dbType string) ([]string,
 	if c.realColumnInfo.IsForeign {
 		queries = append(queries, c.addForeignKey())
 	}
+
+	if c.realColumnInfo.IsDefault {
+		queries = append(queries, c.addDefaultKey())
+	}
+
 	return queries, nil
 }
 
@@ -304,6 +360,10 @@ func (c *creationModule) modifyField(ctx context.Context, dbType string) ([]stri
 	}
 
 	if c.realColumnInfo.IsForeign && !c.currentColumnInfo.IsForeign {
+		count++
+	}
+
+	if c.realColumnInfo.IsDefault && !c.currentColumnInfo.IsDefault {
 		count++
 	}
 

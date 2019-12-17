@@ -111,7 +111,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		if !ok {
 			// add field in current table only if its not linked
 			if !realColumnInfo.IsLinked {
-				queries, err := c.addField(ctx,dbType)
+				queries, err := c.addField(ctx, dbType)
 				if err != nil {
 					return err
 				}
@@ -122,7 +122,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		} else {
 			// modify removing then adding
 			if !realColumnInfo.IsLinked {
-				queries, err := c.modifyField(ctx,dbType)
+				queries, err := c.modifyField(ctx, dbType)
 				batchedQueries = append(batchedQueries, queries...)
 				if err != nil {
 					return err
@@ -158,6 +158,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 			}
 		}
 	}
+
 	return s.crud.RawBatch(ctx, dbAlias, batchedQueries)
 }
 

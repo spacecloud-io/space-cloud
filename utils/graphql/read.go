@@ -28,6 +28,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 }
 
 func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, loader *loaderMap, cb dbCallback) {
+
 	dbType, err := graph.GetDBAlias(field)
 	if err != nil {
 		cb("", "", nil, err)
@@ -57,6 +58,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		// Create dataloader key
 		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: hasOptions, Req: *req}
 		result, err := dataLoader.Load(ctx, key)()
+
 		cb(dbType, col, result, err)
 	}()
 }
