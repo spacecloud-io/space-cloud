@@ -41,7 +41,7 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 
 		ch := make(chan struct{}, 1)
 
-		go graphql.ExecGraphQLQuery(ctx, &req, token, func(op interface{}, err error) {
+		graphql.ExecGraphQLQuery(ctx, &req, token, func(op interface{}, err error) {
 			defer func() { ch <- struct{}{} }()
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}

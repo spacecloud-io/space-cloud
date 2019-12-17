@@ -157,6 +157,9 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 
 								fieldTypeStuct.Default = val
 							}
+							if value == "" {
+								return nil, errors.New("The default value can not be null")
+							}
 						}
 					case directiveLink:
 						fieldTypeStuct.IsLinked = true

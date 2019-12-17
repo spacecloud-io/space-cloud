@@ -36,7 +36,12 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 //generateCreateQuery makes query for create operation
 func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
-	dialect := goqu.Dialect(s.dbType)
+	dbType := s.dbType
+	if dbType == "sqlserver" {
+		dbType = "postgres"
+	}
+
+	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	var insert []interface{}

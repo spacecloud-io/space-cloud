@@ -97,7 +97,7 @@ func (s *SQL) getDBName(project, col string) string {
 }
 
 func (s *SQL) generateQuerySQLServer(query string) string {
-	return strings.Replace(query, "?", "@p1", -1)
+	return strings.Replace(query, "$", "@p", -1)
 }
 
 func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[string]interface{}) {

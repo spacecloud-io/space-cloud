@@ -217,7 +217,7 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		col := vars["col"]
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 50*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 		if err := schemaArg.SchemaModifyAll(ctx, dbType, project, map[string]*config.TableRule{col: &v}); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -399,7 +399,7 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 		dbType := vars["dbType"]
 		project := vars["project"]
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 100*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		if err := syncman.SetModifyAllSchema(ctx, dbType, project, schemaArg, v); err != nil {

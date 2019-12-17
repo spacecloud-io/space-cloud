@@ -30,7 +30,13 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 //genrateDeleteQuery makes query for delete operation
 func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
-	dialect := goqu.Dialect(s.dbType)
+
+	dbType := s.dbType
+	if dbType == "sqlserver" {
+		dbType = "postgres"
+	}
+
+	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	if req.Find != nil {
