@@ -1,7 +1,6 @@
 package realtime
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -26,7 +25,7 @@ func eventingToRealtimeEvent(event string) string {
 	}
 }
 
-func generateEventRules(crudConfig config.Crud, project string) []config.EventingRule {
+func generateEventRules(crudConfig config.Crud, project, url string) []config.EventingRule {
 
 	var eventingRules []config.EventingRule
 
@@ -46,7 +45,7 @@ func generateEventRules(crudConfig config.Crud, project string) []config.Eventin
 					for _, eventType := range dbEvents {
 						rule := config.EventingRule{
 							Type:    eventType,
-							Url:     fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/handle", project),
+							Url:     url,
 							Options: map[string]string{"db": dbType, "col": col},
 						}
 						eventingRules = append(eventingRules, rule)

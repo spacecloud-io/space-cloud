@@ -8,7 +8,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/schema"
 )
 
-func (s *Manager) SetDeleteCollection(project, dbType, col string) error {
+func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbType, col string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -25,10 +25,10 @@ func (s *Manager) SetDeleteCollection(project, dbType, col string) error {
 	}
 	delete(coll.Collections, col)
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
-func (s *Manager) SetDatabaseConnection(project, dbType string, v config.CrudStub) error {
+func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbType string, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -48,10 +48,10 @@ func (s *Manager) SetDatabaseConnection(project, dbType string, v config.CrudStu
 		coll.Type = v.Type
 	}
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
-func (s *Manager) RemoveDatabaseConfig(project, dbAlias string) error {
+func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -64,10 +64,10 @@ func (s *Manager) RemoveDatabaseConfig(project, dbAlias string) error {
 	// update database config
 	delete(projectConfig.Modules.Crud, dbAlias)
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
-func (s *Manager) SetModifySchema(project, dbType, col, schema string) error {
+func (s *Manager) SetModifySchema(ctx context.Context, project, dbType, col, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -90,10 +90,10 @@ func (s *Manager) SetModifySchema(project, dbType, col, schema string) error {
 		temp.Schema = schema
 	}
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
-func (s *Manager) SetCollectionRules(project, dbType, col string, v *config.TableRule) error {
+func (s *Manager) SetCollectionRules(ctx context.Context, project, dbType, col string, v *config.TableRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -114,7 +114,7 @@ func (s *Manager) SetCollectionRules(project, dbType, col string, v *config.Tabl
 		collection.IsRealTimeEnabled = v.IsRealTimeEnabled
 		collection.Rules = v.Rules
 	}
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
 func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema) (map[string]interface{}, error) {
@@ -146,10 +146,10 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 		colResult[colName] = result
 	}
 
-	return colResult, s.setProject(projectConfig)
+	return colResult, s.setProject(ctx, projectConfig)
 }
 
-func (s *Manager) SetSchemaInspection(project, dbType, col, schema string) error {
+func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbType, col, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -173,7 +173,7 @@ func (s *Manager) SetSchemaInspection(project, dbType, col, schema string) error
 		temp.Schema = schema
 	}
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
 func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema, v config.CrudStub) error {
@@ -206,5 +206,5 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string
 		}
 	}
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }

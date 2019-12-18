@@ -7,8 +7,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -31,13 +31,13 @@ type Module struct {
 	funcRules       *config.ServicesModule
 	project         string
 	fileStoreType   string
-	Schema          *schema.Schema
+	schema          *schema.Schema
 	makeHttpRequest utils.MakeHttpRequest
 }
 
 // Init creates a new instance of the auth object
-func Init(crud *crud.Module, functions *functions.Module, removeProjectScope bool) *Module {
-	return &Module{rules: make(config.Crud), crud: crud, functions: functions, Schema: schema.Init(crud, removeProjectScope)}
+func Init(crud *crud.Module, functions *functions.Module, schema *schema.Schema, removeProjectScope bool) *Module {
+	return &Module{rules: make(config.Crud), crud: crud, functions: functions, schema: schema}
 }
 
 // SetConfig set the rules and secret key required by the auth block
@@ -51,10 +51,6 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 
 	m.project = project
 	m.rules = rules
-
-	if err := m.Schema.SetConfig(rules, project); err != nil {
-		return err
-	}
 	m.secret = secret
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
