@@ -18,7 +18,7 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")
 	}
@@ -42,7 +42,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (i
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileDelete, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileDelete, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")
 	}
@@ -66,7 +66,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileRead, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, nil, errors.New("You are not authorized to make this request")
 	}
@@ -90,7 +90,7 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")
 	}
@@ -113,7 +113,7 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, nil, errors.New("You are not authorized to make this request")
 	}

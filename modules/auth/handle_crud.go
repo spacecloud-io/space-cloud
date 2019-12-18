@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -34,7 +36,7 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbType, col,
 
 	for _, row := range rows {
 		args["doc"] = row
-		err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+		_, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 		if err != nil {
 			return http.StatusForbidden, err
 		}
@@ -48,22 +50,22 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbType, col,
 }
 
 // IsReadOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.ReadRequest) (int, error) {
+func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.ReadRequest) (*PostProcess, int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticateCrudRequest(dbType, col, token, utils.Read)
 	if err != nil {
-		return http.StatusUnauthorized, err
+		return &PostProcess{}, http.StatusUnauthorized, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
-	err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return http.StatusForbidden, err
+		return &PostProcess{}, http.StatusForbidden, err
 	}
 
-	return http.StatusOK, nil
+	return actions, http.StatusOK, nil
 }
 
 // IsUpdateOpAuthorised checks if the crud operation is authorised
@@ -77,7 +79,7 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbType, col,
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "update": req.Update, "token": token}
-	err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -100,7 +102,7 @@ func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbType, col,
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
-	err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
@@ -119,12 +121,52 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbType, c
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "pipeline": req.Pipeline, "token": token}
-	err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
 	}
 
 	return http.StatusOK, nil
+}
+
+// PostProcessMethod to do processing on result
+func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{}) error {
+	// Gracefully exist if the result is nil
+	if result == nil {
+		return nil
+	}
+
+	// convert to array of interfaces
+	var resultArr []interface{}
+	switch val := result.(type) {
+	case map[string]interface{}:
+		resultArr = []interface{}{val} //make an array of interface with val element
+	case []interface{}:
+		resultArr = resultArr
+	default:
+		return errors.New("result is of invalid type")
+	}
+
+	for _, doc := range resultArr {
+		for _, field := range postProcess.postProcessAction {
+			// apply Action on all elements
+			switch field.Action {
+			case "force":
+				if err := utils.StoreValue(field.Field, field.Value, map[string]interface{}{"res": doc}); err != nil {
+					return err
+				}
+			case "remove":
+				if err := utils.DeleteValue(field.Field, map[string]interface{}{"res": doc}); err != nil {
+					return err
+				}
+			default:
+				err := fmt.Errorf("invalid action (%s) received in post processing read op", field.Action)
+				log.Println("Post processing error:", err)
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (m *Module) authenticateCrudRequest(dbType, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {

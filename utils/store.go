@@ -226,3 +226,169 @@ func splitVariable(key string) []string {
 	}
 	return array
 }
+
+// StoreValue  -- stores a value in the provided state
+func StoreValue(key string, value interface{}, state map[string]interface{}) error {
+	keyArray := splitVariable(key)
+	length := len(keyArray) - 1
+	if length == 0 {
+		// return errors.New(ErrorInvalidVariable)
+		return errors.New("Invalid Variable Error")
+	}
+
+	scope, present := state[keyArray[0]]
+	if !present {
+		return errors.New("Scope not present for given variable")
+	}
+
+	obj := scope.(map[string]interface{})
+
+	for i, k := range keyArray {
+		if i == 0 {
+			continue
+		}
+
+		if i == length {
+			if strings.HasSuffix(k, "]") {
+				pre := strings.IndexRune(k, '[')
+				post := strings.IndexRune(k, ']')
+
+				var err error
+				obj, err = convertOrCreate(k[0:pre], obj)
+				if err != nil {
+					return err
+				}
+
+				subVal, err := LoadValue(k[pre+1:post], state)
+				if err != nil {
+					return err
+				}
+				subKey, ok := subVal.(string)
+				if !ok {
+					return errors.New("Key not of type string")
+				}
+
+				obj[subKey] = value
+				return nil
+			}
+			obj[k] = value
+			return nil
+		}
+		if strings.HasSuffix(k, "]") {
+			pre := strings.IndexRune(k, '[')
+			post := strings.IndexRune(k, ']')
+
+			var err error
+			obj, err = convertOrCreate(k[0:pre], obj)
+			if err != nil {
+				return err
+			}
+
+			subVal, err := LoadValue(k[pre+1:post], state)
+			if err != nil {
+				return err
+			}
+			subKey, ok := subVal.(string)
+			if !ok {
+				return errors.New("Key not of type string")
+			}
+
+			obj, err = convertOrCreate(subKey, obj)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		var err error
+		obj, err = convertOrCreate(k, obj)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func convertOrCreate(k string, obj map[string]interface{}) (map[string]interface{}, error) {
+	tempObj, present := obj[k]
+	if !present {
+		tempObj = make(map[string]interface{})
+	}
+
+	var ok bool
+	obj2, ok := tempObj.(map[string]interface{})
+	if !ok {
+		return nil, errors.New("The variable cannot be mapped")
+	}
+	return obj2, nil
+}
+
+// DeleteValue  -- deletes a value in the provided state
+func DeleteValue(key string, state map[string]interface{}) error {
+	keyArray := strings.Split(key, ".")
+
+	length := len(keyArray) - 1
+	if length == 0 {
+		return errors.New("invalid variable provided")
+	}
+
+	scope, present := state[keyArray[0]]
+	if !present {
+		return errors.New("Scope not present for given variable")
+	}
+
+	obj := scope.(map[string]interface{})
+
+	for i, k := range keyArray {
+		if i == 0 {
+			continue
+		}
+
+		if i == length {
+			delete(obj, k)
+			break
+		}
+
+		tempObj, present := obj[k]
+		if !present {
+			return errors.New("Cannot find property " + k + "of undefined")
+		}
+
+		var ok bool
+		obj, ok = tempObj.(map[string]interface{})
+		if !ok {
+			return errors.New("The variable cannot be mapped")
+		}
+	}
+
+	return nil
+}
+
+// StoreValueInObject -- stores a value in provided object
+func StoreValueInObject(key string, value interface{}, obj map[string]interface{}) error {
+	keyArray := strings.Split(key, ".")
+
+	length := len(keyArray) - 1
+
+	for i, k := range keyArray {
+		if i == length {
+			obj[k] = value
+			break
+		}
+
+		tempObj, present := obj[k]
+		if !present {
+			obj[k] = make(map[string]interface{})
+			obj, _ = obj[k].(map[string]interface{})
+			continue
+		}
+
+		var ok bool
+		obj, ok = tempObj.(map[string]interface{})
+		if !ok {
+			return errors.New("The variable cannot be mapped")
+		}
+	}
+
+	return nil
+}

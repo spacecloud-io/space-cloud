@@ -28,7 +28,7 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 		return nil, err
 	}
 
-	if err = m.matchRule(ctx, project, rule, map[string]interface{}{
+	if _, err = m.matchRule(ctx, project, rule, map[string]interface{}{
 		"args": map[string]interface{}{"auth": auth, "params": params, "token": token},
 	}, auth); err != nil {
 		return nil, err

@@ -35,6 +35,16 @@ type Module struct {
 	makeHttpRequest utils.MakeHttpRequest
 }
 
+type PostProcess struct {
+	postProcessAction []PostProcessAction
+}
+
+type PostProcessAction struct {
+	Action string
+	Field  string
+	Value  interface{}
+}
+
 // Init creates a new instance of the auth object
 func Init(crud *crud.Module, functions *functions.Module, schema *schema.Schema, removeProjectScope bool) *Module {
 	return &Module{rules: make(config.Crud), crud: crud, functions: functions, schema: schema}
