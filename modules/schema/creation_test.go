@@ -263,6 +263,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "adding foreign key with type change",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsForeign: true, JointTable: &TableProperties{Table: "table2", To: "id"}}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID, IsForeign: false}}, "table2": SchemaFields{}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			wantErr: false,
+		},
+		{
 			name: "removing foreign key",
 			args: args{
 				dbAlias:       "mysql",
@@ -273,6 +286,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			},
 			fields:  fields{crud: crudMySql, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE test.table1 DROP INDEX c_table1_col1"},
+			wantErr: false,
+		},
+		{
+			name: "removing foreign key and type change",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsFieldTypeRequired: false, IsForeign: false}}, "table2": SchemaFields{"id": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID, IsForeign: true, JointTable: &TableProperties{Table: "table2", To: "id"}}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE test.table1 DROP INDEX c_table1_col1", "ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint"},
 			wantErr: false,
 		},
 		{
@@ -301,7 +327,103 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)"},
 			wantErr: false,
 		},
-
+		{
+			name: "Wrong dbAlias",
+			args: args{
+				dbAlias:       "wrgDbAlias",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "when table is not provided",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			wantErr: false,
+		},
+		{
+			name: "tablename  present in currentschema but not in realschema",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "tablename  not present in currentschema, realschema",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			wantErr: false,
+		},
+		{
+			name: "tablename  present in realschema but not in realschema",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 varchar(50) );"},
+			wantErr: false,
+		},
+		{
+			name: "fieldtype of type object in realschema",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "invalid fieldtype in realschema and table not present in current schema",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "invalid fieldtype in realschema",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: "int"}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			wantErr: true,
+		},
 		// //sql-server
 
 		{
@@ -526,6 +648,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "adding foreign key with type change",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsForeign: true, JointTable: &TableProperties{Table: "table2", To: "id"}}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID, IsForeign: false}}, "table2": SchemaFields{}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			wantErr: false,
+		},
+		{
 			name: "removing foreign key",
 			args: args{
 				dbAlias:       "sqlserver",
@@ -536,6 +671,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_table1_col1"},
+			wantErr: false,
+		},
+		{
+			name: "removing foreign key and type change",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsFieldTypeRequired: false, IsForeign: false}}, "table2": SchemaFields{"id": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID, IsForeign: true, JointTable: &TableProperties{Table: "table2", To: "id"}}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_table1_col1", "ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint"},
 			wantErr: false,
 		},
 		{
@@ -563,6 +711,103 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			fields:  fields{crud: crudSqlServer, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)"},
 			wantErr: false,
+		},
+		{
+			name: "Wrong dbAlias",
+			args: args{
+				dbAlias:       "wrgDbAlias",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "when table is not provided",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			wantErr: false,
+		},
+		{
+			name: "tablename  present in currentschema but not in realschema",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "tablename  not present in currentschema, realschema",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			wantErr: false,
+		},
+		{
+			name: "tablename  present in realschema but not in realschema",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 varchar(50) );"},
+			wantErr: false,
+		},
+		{
+			name: "fieldtype of type object in realschema",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "invalid fieldtype in realschema and table not present in current schema",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "invalid fieldtype in realschema",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: "int"}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			wantErr: true,
 		},
 
 		// //postgres
@@ -775,16 +1020,16 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "adding foreign key",
+			name: "adding foreign key with type change",
 			args: args{
 				dbAlias:       "postgres",
 				tableName:     "table1",
 				project:       "test",
-				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID, IsForeign: true, JointTable: &TableProperties{Table: "table2", To: "id"}}}}},
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsForeign: true, JointTable: &TableProperties{Table: "table2", To: "id"}}}}},
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID, IsForeign: false}}, "table2": SchemaFields{}},
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 bigint", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -798,6 +1043,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_table1_col1"},
+			wantErr: false,
+		},
+		{
+			name: "removing foreign key and type change",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsFieldTypeRequired: false, IsForeign: false}}, "table2": SchemaFields{"id": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID, IsForeign: true, JointTable: &TableProperties{Table: "table2", To: "id"}}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_table1_col1", "ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 bigint"},
 			wantErr: false,
 		},
 		{
@@ -826,6 +1084,103 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			want:    []string{"ALTER TABLE test.table1 ADD COLUMN col1 varchar(50)"},
 			wantErr: false,
 		},
+		{
+			name: "Wrong dbAlias",
+			args: args{
+				dbAlias:       "wrgDbAlias",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "when table is not provided",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			wantErr: false,
+		},
+		{
+			name: "tablename  present in currentschema but not in realschema",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "tablename  not present in currentschema, realschema",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			wantErr: false,
+		},
+		{
+			name: "tablename  present in realschema but not in realschema",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 varchar(50) );"},
+			wantErr: false,
+		},
+		{
+			name: "fieldtype of type object in realschema",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "invalid fieldtype in realschema and table not present in current schema",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}}},
+				currentSchema: schemaCollection{"table2": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			wantErr: true,
+		},
+		{
+			name: "invalid fieldtype in realschema",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgress": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: "int"}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeObject}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -843,15 +1198,17 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				return
 			}
 
-			if len(got) != len(tt.want) {
-				t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)
-				return
-			}
-
-			for i, v := range got {
-				if tt.want[i] != v {
+			if !tt.wantErr {
+				if len(got) != len(tt.want) {
 					t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)
-					break
+					return
+				}
+
+				for i, v := range got {
+					if tt.want[i] != v {
+						t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)
+						break
+					}
 				}
 			}
 		})

@@ -229,7 +229,7 @@ func getTableName(project, table string, removeProjectScope bool) string {
 	return project + "." + table
 }
 
-func (c *creationModule) addColumn(dbType string) ([]string, error) {
+func (c *creationModule) addColumn(dbType string) []string {
 	var queries []string
 
 	if c.columnType != "" {
@@ -256,10 +256,10 @@ func (c *creationModule) addColumn(dbType string) ([]string, error) {
 	if c.realColumnInfo.IsForeign {
 		queries = append(queries, c.addForeignKey())
 	}
-	return queries, nil
+	return queries
 }
 
-func (c *creationModule) modifyColumn() ([]string, error) {
+func (c *creationModule) modifyColumn() []string {
 	var queries []string
 
 	if c.realColumnInfo.IsFieldTypeRequired != c.currentColumnInfo.IsFieldTypeRequired {
@@ -294,11 +294,11 @@ func (c *creationModule) modifyColumn() ([]string, error) {
 		queries = append(queries, c.addForeignKey())
 	}
 
-	return queries, nil
+	return queries
 }
 
 // modifyColumnType drop the column then creates a new column with provided type
-func (c *creationModule) modifyColumnType(dbType string) ([]string, error) {
+func (c *creationModule) modifyColumnType(dbType string) []string {
 	queries := []string{}
 
 	if c.currentColumnInfo.IsForeign {
@@ -306,11 +306,8 @@ func (c *creationModule) modifyColumnType(dbType string) ([]string, error) {
 	}
 	queries = append(queries, c.removeColumn())
 
-	q, err := c.addColumn(dbType)
+	q := c.addColumn(dbType)
 	queries = append(queries, q...)
-	if err != nil {
-		return nil, err
-	}
 
-	return queries, nil
+	return queries
 }

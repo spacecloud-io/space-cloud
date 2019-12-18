@@ -65,16 +65,13 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 	}
 
 	// check if table exist in current schema
-
 	currentTableInfo, ok := currentSchema[realTableName]
 	if !ok {
-
 		// create table with primary key
 		query, err := addNewTable(project, dbAlias, realTableName, realTableInfo, s.removeProjectScope)
 		if err != nil {
 			return nil, err
 		}
-
 		batchedQueries = append(batchedQueries, query)
 		currentTableInfo = SchemaFields{}
 		for realColumnName, realColumnInfo := range realTableInfo {
@@ -128,11 +125,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		if !ok || currentColumnInfo.IsLinked {
 			// add field in current table only if its not linked
 			if !realColumnInfo.IsLinked {
-
-				queries, err := c.addColumn(dbType)
-				if err != nil {
-					return nil, err
-				}
+				queries := c.addColumn(dbType)
 
 				batchedQueries = append(batchedQueries, queries...)
 			}
@@ -140,21 +133,16 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		} else {
 			if !realColumnInfo.IsLinked {
 				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind {
-
 					// for changing the type of column, drop the column then add new column
-					queries, err := c.modifyColumnType(dbType)
-					if err != nil {
-						return nil, err
-					}
+					queries := c.modifyColumnType(dbType)
+
+					batchedQueries = append(batchedQueries, queries...)
+				} else {
+					// make changes according to the changes in directives
+					queries := c.modifyColumn()
+
 					batchedQueries = append(batchedQueries, queries...)
 				}
-
-				// make changes according to the changes in directives
-				queries, err := c.modifyColumn()
-				if err != nil {
-					return nil, err
-				}
-				batchedQueries = append(batchedQueries, queries...)
 			}
 		}
 	}
@@ -164,7 +152,6 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		if !ok {
 			continue
 		}
-
 		for currentFieldKey, currentFieldStruct := range currentColValue {
 			realField, ok := realColValue[currentFieldKey]
 			if !ok || realField.IsLinked {
@@ -177,11 +164,9 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 					currentColumnInfo:  currentFieldStruct,
 					removeProjectScope: s.removeProjectScope,
 				}
-
 				if c.currentColumnInfo.IsForeign {
 					batchedQueries = append(batchedQueries, c.removeForeignKey()...)
 				}
-
 				batchedQueries = append(batchedQueries, c.removeColumn())
 			}
 		}
@@ -199,7 +184,6 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, project string, t
 		Enabled:     true,
 		Collections: tables,
 	}
-
 	parsedSchema, err := s.parser(crud)
 	if err != nil {
 		return err
@@ -208,7 +192,6 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, project string, t
 		if info.Schema == "" {
 			continue
 		}
-
 		if err := s.SchemaCreation(ctx, dbAlias, tableName, project, parsedSchema); err != nil {
 			return err
 		}
