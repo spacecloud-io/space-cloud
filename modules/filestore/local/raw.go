@@ -1,13 +1,16 @@
 package local
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
-func (l *Local) DoesExists(path string) ( error) {
+func (l *Local) DoesExists(path string) error {
 	// check if file / folder exists
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); err != nil {
 		// path does not exist
-		return  nil
+		return errors.New("provided file / dir path not found")
 	}
 
-	return  nil
+	return nil
 }

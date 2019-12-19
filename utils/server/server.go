@@ -79,7 +79,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 		Update: e.HookDBUpdateIntent,
 		Delete: e.HookDBDeleteIntent,
 		Batch:  e.HookDBBatchIntent,
-		Stage:  e.HookDBStage,
+		Stage:  e.HookStage,
 	}, m.AddDBOperation)
 
 	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
@@ -88,7 +88,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 	}
 
 	u := userman.Init(c, a)
-	f := filestore.Init(a)
+	f := filestore.Init(a, e)
 	graphqlMan := graphql.New(a, c, fn)
 
 	fmt.Println("Creating a new server with id", nodeID)
@@ -128,7 +128,7 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 		}()
 	}
 
-	//go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
+	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.router)
 

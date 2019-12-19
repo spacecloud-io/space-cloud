@@ -11,7 +11,7 @@ import (
 )
 
 // CreateDir creates a directory at the provided path
-func (m *Module) CreateDir(ctx context.Context, project, token string, req *model.CreateFileRequest) (int, error) {
+func (m *Module) CreateDir(ctx context.Context, project, token string, req *model.CreateFileRequest, meta map[string]interface{}) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
@@ -26,23 +26,23 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	m.RLock()
 	defer m.RUnlock()
 
-	intent, err := m.event.HookFileCreateIntent(ctx, req)
+	intent, err := m.eventing.CreateFileIntentHook(ctx, req, meta)
 	if err != nil {
-		return 500, err
+		return http.StatusInternalServerError, err
 	}
 
 	err = m.store.CreateDir(req)
 	if err == nil {
-		return 200, err
+		m.eventing.HookStage(ctx, intent, err)
+		return http.StatusOK, err
 	}
 
-	m.event.HookFileStage(ctx, intent, err)
-
-	return 500, nil
+	m.eventing.HookStage(ctx, intent, err)
+	return http.StatusInternalServerError, nil
 }
 
 // DeleteFile deletes a file at the provided path
-func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (int, error) {
+func (m *Module) DeleteFile(ctx context.Context, project, token string, path string, meta map[string]interface{}) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
@@ -57,18 +57,18 @@ func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (i
 	m.RLock()
 	defer m.RUnlock()
 
-	intent, err := m.event.HookFileDeleteIntent(ctx, path)
+	intent, err := m.eventing.DeleteFileIntentHook(ctx, path, meta)
 	if err != nil {
 		return 0, err
 	}
 
 	err = m.store.DeleteFile(path)
 	if err == nil {
+		m.eventing.HookStage(ctx, intent, err)
 		return http.StatusOK, err
 	}
 
-	m.event.HookFileStage(ctx, intent, err)
-
+	m.eventing.HookStage(ctx, intent, err)
 	return http.StatusInternalServerError, nil
 }
 
@@ -97,7 +97,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 }
 
 // UploadFile uploads a file to the provided path
-func (m *Module) UploadFile(ctx context.Context, project, token string, req *model.CreateFileRequest, reader io.Reader) (int, error) {
+func (m *Module) UploadFile(ctx context.Context, project, token string, req *model.CreateFileRequest, reader io.Reader, meta map[string]interface{}) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
@@ -112,18 +112,18 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	m.RLock()
 	defer m.RUnlock()
 
-	intent, err := m.event.HookFileCreateIntent(ctx, req)
+	intent, err := m.eventing.CreateFileIntentHook(ctx, req, meta)
 	if err != nil {
 		return 500, err
 	}
 
 	err = m.store.CreateFile(req, reader)
 	if err == nil {
+		m.eventing.HookStage(ctx, intent, err)
 		return http.StatusOK, err
 	}
 
-	m.event.HookFileStage(ctx, intent, err)
-
+	m.eventing.HookStage(ctx, intent, err)
 	return http.StatusInternalServerError, nil
 }
 
@@ -149,4 +149,23 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 		return http.StatusInternalServerError, nil, err
 	}
 	return http.StatusOK, file, nil
+}
+
+func (m *Module) DoesExists(ctx context.Context, project, token, path string) error {
+	// Exit if file storage is not enabled
+	if !m.IsEnabled() {
+		return errors.New("This feature isn't enabled")
+	}
+
+	// Check if the user is authorised to make this request
+	err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
+	if err != nil {
+		return errors.New("You are not authorized to make this request")
+	}
+
+	m.RLock()
+	defer m.RUnlock()
+
+	// Read the file from file storage
+	return m.store.DoesExists(path)
 }

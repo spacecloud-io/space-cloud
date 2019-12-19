@@ -14,10 +14,9 @@ func (a *AmazonS3) DoesExists(path string) error {
 		Key:    aws.String(path),
 	}
 
-	result, err := svc.GetObject(input)
+	_, err := svc.GetObject(input)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting svc object: %s", err.Error())
 	}
-	fmt.Println(result)
 	return nil
 }

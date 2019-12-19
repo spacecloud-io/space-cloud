@@ -32,6 +32,9 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 		token, project, _ := getMetaData(r)
 		defer r.Body.Close()
 
+		v := map[string]interface{}{}
+		json.NewDecoder(r.Body).Decode(v)
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
@@ -69,7 +72,7 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 				fileName = tempName
 			}
 
-			status, err := fileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
+			status, err := fileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file, v)
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -78,7 +81,7 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 			json.NewEncoder(w).Encode(map[string]string{})
 		} else {
 			name := r.Form.Get("name")
-			status, err := fileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
+			status, err := fileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -134,10 +137,13 @@ func HandleDelete(auth *auth.Module, fileStore *filestore.Module) http.HandlerFu
 		token, project, path := getMetaData(r)
 		defer r.Body.Close()
 
+		v := map[string]interface{}{}
+		json.NewDecoder(r.Body).Decode(v)
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		status, err := fileStore.DeleteFile(ctx, project, token, path)
+		status, err := fileStore.DeleteFile(ctx, project, token, path, v)
 
 		w.WriteHeader(status)
 		if err != nil {

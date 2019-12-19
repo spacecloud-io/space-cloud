@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -163,8 +164,17 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		}
 	case utils.EventFileCreate:
 
+		filePayload := model.FilePayload{}
+		json.Unmarshal([]byte(eventDoc.Payload.(string)), &filePayload)
 		// Check if document exists in database
-		if err := m.fileStore.DoesExists(eventDoc.Payload.(string)); err != nil {
+
+		token, err := m.auth.GetInternalAccessToken()
+		if err != nil {
+			fmt.Errorf("error generating token in intent staging %s", err.Error())
+			return
+		}
+
+		if err := m.fileStore.DoesExists(ctx, m.project, token, filePayload.Path); err != nil {
 
 			// Mark event as cancelled if it document doesn't exist
 			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID)); err != nil {
@@ -184,8 +194,16 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 
 	case utils.EventFileDelete:
+		filePayload := model.FilePayload{}
+		json.Unmarshal([]byte(eventDoc.Payload.(string)), &filePayload)
 
-		if err := m.fileStore.DoesExists(eventDoc.Payload.(string)); err == nil {
+		token, err := m.auth.GetInternalAccessToken()
+		if err != nil {
+			fmt.Errorf("error generating token in intent staging %s", err.Error())
+			return
+		}
+
+		if err := m.fileStore.DoesExists(ctx, m.project, token, filePayload.Path); err == nil {
 			// Mark the event as cancelled if the object still exists
 			m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID))
 			return

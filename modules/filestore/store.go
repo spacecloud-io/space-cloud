@@ -6,11 +6,9 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/modules/eventing"
 	"github.com/spaceuptech/space-cloud/utils"
 
 	"github.com/spaceuptech/space-cloud/modules/auth"
-	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/filestore/amazons3"
 	"github.com/spaceuptech/space-cloud/modules/filestore/gcpstorage"
 	"github.com/spaceuptech/space-cloud/modules/filestore/local"
@@ -19,16 +17,15 @@ import (
 // Module is responsible for managing the file storage module
 type Module struct {
 	sync.RWMutex
-	store   FileStore
-	enabled bool
-	auth    *auth.Module
-	crud    *crud.Module
-	event   *eventing.Module
+	store    FileStore
+	enabled  bool
+	auth     *auth.Module
+	eventing model.EventingModule
 }
 
 // Init creates a new instance of the file store object
-func Init(auth *auth.Module) *Module {
-	return &Module{enabled: false, store: nil, auth: auth}
+func Init(auth *auth.Module, eventing model.EventingModule) *Module {
+	return &Module{enabled: false, store: nil, auth: auth, eventing: eventing}
 }
 
 // FileStore abstracts the implementation file storage operations
@@ -98,8 +95,4 @@ func initBlock(fileStoreType utils.FileStoreType, connection, endpoint, bucket s
 	default:
 		return nil, utils.ErrInvalidParams
 	}
-}
-
-func (m *Module) DoesExists(path string) error {
-	m.store.DoesExists(path)
 }

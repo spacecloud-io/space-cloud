@@ -32,3 +32,9 @@ type CrudHooks struct {
 	Batch  BatchIntentHook
 	Stage  StageEventHook
 }
+
+type EventingModule interface {
+	CreateFileIntentHook(ctx context.Context, req *CreateFileRequest, meta map[string]interface{}) (*EventIntent, error)
+	DeleteFileIntentHook(ctx context.Context, path string, meta map[string]interface{}) (*EventIntent, error)
+	HookStage(ctx context.Context, intent *EventIntent, err error)
+}

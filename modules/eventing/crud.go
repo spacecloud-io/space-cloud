@@ -147,8 +147,8 @@ func (m *Module) HookDBUpdateDeleteIntent(ctx context.Context, eventType, dbType
 	return &model.EventIntent{Invalid: true}, nil
 }
 
-// HookDBStage stages the event so that it can be processed
-func (m *Module) HookDBStage(ctx context.Context, intent *model.EventIntent, err error) {
+// HookStage stages the event so that it can be processed
+func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -233,7 +233,7 @@ func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows 
 		return nil
 	}
 
-	rules := m.getMatchingRules(utils.EventDBCreate, map[string]string{})
+	rules := m.getMatchingRules(utils.EventDBCreate, map[string]string{"col": col, "db": dbType})
 
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, doc := range rows {

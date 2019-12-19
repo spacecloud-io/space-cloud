@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"errors"
-	"log"
 	"math/rand"
 
 	"github.com/segmentio/ksuid"
@@ -13,7 +12,7 @@ import (
 )
 
 // HookDBCreateIntent handles the create intent request
-func (m *Module) HookFileCreateIntent(ctx context.Context, req *model.CreateFileRequest) (*model.EventIntent, error) {
+func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFileRequest, meta map[string]interface{}) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -33,8 +32,11 @@ func (m *Module) HookFileCreateIntent(ctx context.Context, req *model.CreateFile
 	for _, rule := range rules {
 		eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
 			batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
-				Type:    utils.EventFileCreate,
-				Payload: req.Path,
+				Type: utils.EventFileCreate,
+				Payload: &model.FilePayload{
+					Meta: meta,
+					Path: req.Path,
+				},
 			}))
 	}
 
@@ -48,7 +50,7 @@ func (m *Module) HookFileCreateIntent(ctx context.Context, req *model.CreateFile
 }
 
 // HookDBDeleteIntent handles the delete intent requests
-func (m *Module) HookFileDeleteIntent(ctx context.Context, path string) (*model.EventIntent, error) {
+func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map[string]interface{}) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -68,8 +70,11 @@ func (m *Module) HookFileDeleteIntent(ctx context.Context, path string) (*model.
 	for _, rule := range rules {
 		eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
 			batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
-				Type:    utils.EventFileDelete,
-				Payload: path,
+				Type: utils.EventFileDelete,
+				Payload: &model.FilePayload{
+					Meta: meta,
+					Path: path,
+				},
 			}))
 	}
 
@@ -80,46 +85,4 @@ func (m *Module) HookFileDeleteIntent(ctx context.Context, path string) (*model.
 	}
 
 	return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
-}
-
-// HookDBStage stages the event so that it can be processed
-func (m *Module) HookFileStage(ctx context.Context, intent *model.EventIntent, err error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	// Return if the intent is invalid
-	if intent.Invalid {
-		return
-	}
-
-	set := map[string]interface{}{}
-	if err != nil {
-		// Set the status to cancelled if error occurred
-		set["status"] = utils.EventStatusCancelled
-		set["remark"] = err.Error()
-		intent.Invalid = true
-	} else {
-		// Set the status to staged if no error occurred
-		set["status"] = utils.EventStatusStaged
-	}
-
-	// Create the find and update clauses
-	find := map[string]interface{}{"batchid": intent.BatchID}
-	update := map[string]interface{}{"$set": set}
-
-	updateRequest := model.UpdateRequest{Find: find, Operation: utils.All, Update: update}
-	if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, &updateRequest); err != nil {
-		log.Println("Eventing Error: event could not be updated", err)
-		return
-	}
-
-	for _, doc := range intent.Docs {
-		// Mark all docs as staged
-		doc.Status = utils.EventStatusStaged
-	}
-
-	// Broadcast the event so the concerned worker can process it immediately
-	if !intent.Invalid {
-		m.transmitEvents(intent.Token, intent.Docs)
-	}
 }
