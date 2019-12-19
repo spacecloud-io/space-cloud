@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"encoding/json"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -182,21 +180,9 @@ func Test_generateInspection(t *testing.T) {
 			got, err := generateInspection(tt.args.dbType, tt.args.col, tt.args.fields, tt.args.foreignkeys)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generateInspection() error = %v, wantErr %v", err, tt.wantErr)
-				b, err1 := json.MarshalIndent(got, "", "  ")
-				if err1 != nil {
-					fmt.Println("error:", err1)
-				}
-				fmt.Print(string(b))
-				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("generateInspection() = %v, want %v", got, tt.want)
-				b, err1 := json.MarshalIndent(got, "", "  ")
-				if err1 != nil {
-					fmt.Println("error:", err1)
-				}
-				fmt.Print(tt.name, string(b))
-				return
 			}
 		})
 	}
