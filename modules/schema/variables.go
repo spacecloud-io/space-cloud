@@ -40,8 +40,6 @@ const (
 	typeFloat     string = "Float"
 	typeBoolean   string = "Boolean"
 	typeDateTime  string = "DateTime"
-	typeEnum      string = "Enum"
-	typeJSON      string = "Json"
 	TypeID        string = "ID"
 	sqlTypeIDSize string = "50"
 	typeObject    string = "Object"

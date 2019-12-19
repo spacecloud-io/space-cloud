@@ -3,11 +3,9 @@ package schema
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"sync"
-	"time"
-
-	"github.com/segmentio/ksuid"
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
@@ -15,7 +13,6 @@ import (
 	"github.com/graphql-go/graphql/language/source"
 
 	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -74,9 +71,9 @@ func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
 
 // parseSchema Initializes Schema field in Module struct
 func (s *Schema) parseSchema(crud config.Crud) error {
-
 	schema, err := s.parser(crud)
 	if err != nil {
+		log.Println("error ", err)
 		return err
 	}
 	s.SchemaDoc = schema
@@ -235,7 +232,7 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaField
 	case kinds.Named:
 		myType := fieldType.(*ast.Named).Name.Value
 		switch myType {
-		case typeString, typeEnum:
+		case typeString:
 			return typeString, nil
 		case TypeID:
 			return TypeID, nil
@@ -247,8 +244,6 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaField
 			return typeInteger, nil
 		case typeBoolean:
 			return typeBoolean, nil
-		case typeJSON:
-			return typeJSON, nil
 		default:
 			if fieldTypeStuct.IsLinked {
 				// Since the field is actually a link. We'll store the type as is. This type must correspond to a table or a primitive type
@@ -267,170 +262,5 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaField
 		}
 	default:
 		return "", fmt.Errorf("invalid field kind `%s` provided for field `%s`", fieldType.GetKind(), fieldTypeStuct.FieldName)
-	}
-}
-
-func (s *Schema) schemaValidator(col string, collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
-
-	mutatedDoc := map[string]interface{}{}
-
-	for fieldKey, fieldValue := range collectionFields {
-		// check if key is required
-		value, ok := doc[fieldKey]
-
-		if fieldValue.IsLinked {
-			if ok {
-				return nil, fmt.Errorf("cannot insert value for a linked field %s", fieldKey)
-			}
-
-			continue
-		}
-
-		if fieldValue.Kind == TypeID && !ok {
-			value = ksuid.New().String()
-			ok = true
-		}
-
-		if fieldValue.IsCreatedAt || fieldValue.IsUpdatedAt {
-			mutatedDoc[fieldKey] = time.Now().UTC()
-			continue
-		}
-
-		if fieldValue.IsFieldTypeRequired {
-			if !ok {
-				return nil, fmt.Errorf("required field %s from collection %s not present in request", fieldKey, col)
-			}
-		}
-
-		// check type
-		val, err := s.checkType(col, value, fieldValue)
-		if err != nil {
-			return nil, err
-		}
-
-		mutatedDoc[fieldKey] = val
-	}
-
-	return mutatedDoc, nil
-}
-
-// ValidateCreateOperation validates schema on create operation
-func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRequest) error {
-
-	if s.SchemaDoc == nil {
-		return errors.New("schema not initialized")
-	}
-
-	v := make([]interface{}, 0)
-
-	switch t := req.Document.(type) {
-	case []interface{}:
-		v = t
-	case map[string]interface{}:
-		v = append(v, t)
-	}
-
-	collection, ok := s.SchemaDoc[dbType]
-	if !ok {
-		return errors.New("No db was found named " + dbType)
-	}
-	collectionFields, ok := collection[col]
-	if !ok {
-		return nil
-	}
-
-	for index, doc := range v {
-		newDoc, err := s.schemaValidator(col, collectionFields, doc.(map[string]interface{}))
-		if err != nil {
-			return err
-		}
-
-		v[index] = newDoc
-	}
-
-	req.Operation = utils.All
-	req.Document = v
-
-	return nil
-}
-
-func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
-
-	switch v := value.(type) {
-	case int:
-		// TODO: int64
-		switch fieldValue.Kind {
-		case typeDateTime:
-			return time.Unix(int64(v)/1000, 0), nil
-		case typeInteger:
-			return value, nil
-		case typeFloat:
-			return float64(v), nil
-		default:
-			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Integer", fieldValue.FieldName, col, fieldValue.Kind)
-		}
-
-	case string:
-		switch fieldValue.Kind {
-		case typeDateTime:
-			unitTimeInRFC3339, err := time.Parse(time.RFC3339, v)
-			if err != nil {
-				return nil, fmt.Errorf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col)
-			}
-			return unitTimeInRFC3339, nil
-		case TypeID, typeString:
-			return value, nil
-		default:
-			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got String", fieldValue.FieldName, col, fieldValue.Kind)
-		}
-
-	case float32, float64:
-		switch fieldValue.Kind {
-		case typeDateTime:
-			return time.Unix(int64(v.(float64))/1000, 0), nil
-		case typeFloat:
-			return value, nil
-		case typeInteger:
-			return int64(value.(float64)), nil
-		default:
-			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Float", fieldValue.FieldName, col, fieldValue.Kind)
-		}
-	case bool:
-		switch fieldValue.Kind {
-		case typeBoolean:
-			return value, nil
-		default:
-			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Bool", fieldValue.FieldName, col, fieldValue.Kind)
-		}
-
-	case map[string]interface{}:
-		// TODO: allow this operation for nested insert using links
-		if fieldValue.Kind != typeObject {
-			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
-		}
-
-		return s.schemaValidator(col, fieldValue.nestedObject, v)
-
-	case []interface{}:
-		// TODO: allow this operation for nested insert using links
-		if fieldValue.Kind != typeObject {
-			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
-		}
-
-		arr := make([]interface{}, len(v))
-		for index, value := range v {
-			val, err := s.checkType(col, value, fieldValue)
-			if err != nil {
-				return nil, err
-			}
-			arr[index] = val
-		}
-		return arr, nil
-	default:
-		if !fieldValue.IsFieldTypeRequired {
-			return nil, nil
-		}
-
-		return nil, fmt.Errorf("no matching type found for field %s in collection %s", fieldValue.FieldName, col)
 	}
 }

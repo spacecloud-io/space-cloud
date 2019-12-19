@@ -2,58 +2,258 @@ package schema
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 
 	"github.com/spaceuptech/space-cloud/config"
 )
 
 var query = `
-type tweet {
-	id: ID! @id
-	createdAt: DateTime! @createdAt
-	text: String
-	owner: [String!]! @relation
-	location: location!
-	age : Integer!	
-  }
-  
-  type user {
-	id: ID! @id
-	createdAt: DateTime! @createdAt
-	updatedAt: DateTime! @updatedAt
-	handle: String! @unique
-	name: String
-	tweets: [tweet!]!
-  }
-  
-  type location {
-	id: ID! @id
-	latitude: Float!
-	longitude: Float!
-	person : sharad! @relation(field:name)
-  }
 
-  type sharad {
-	  name : String!
-	  sirName : String!
-	  age : Integer!
-	  isMale : Boolean!
-	  dob : DateTime!
-  }
-  type event_logs {
-	id: ID! @id
-	name: String!
-  }
-`
-var ParseData = config.Crud{
-	"mongo": &config.CrudStub{
-		Collections: map[string]*config.TableRule{
-			"event_logs": &config.TableRule{
-				Schema: query,
+   type user {
+ 	id: ID! @id
+ 	mentor:sharad @link(table:sharad, from:Name)
+   }
+
+   type sharad {
+ 	  Name : String!
+ 	  Surname : String!
+ 	  age : Integer!
+ 	  isMale : Boolean!
+ 	  dob : DateTime@createdAt
+   }
+   type event_logs {
+		id:ID@unique
+	  	owner: [String]@foreign
+   }
+ `
+var parsedata = []struct {
+	name   string
+	want   error
+	schema schemaType
+	Data   config.Crud
+}{
+	{
+		name: "compulsory field with different datatypes",
+		want: errors.New("invalid type for field owner - primary and foreign keys cannot be made on lists"),
+		schema: schemaType{
+			"mongo": schemaCollection{
+				"tweet": SchemaFields{
+					"id": &SchemaFieldType{
+						FieldName:           "id",
+						Kind:                TypeID,
+						IsFieldTypeRequired: true,
+					},
+					"createdAt": &SchemaFieldType{
+						FieldName: "createdAt",
+						Kind:      typeDateTime,
+					},
+					"exp": &SchemaFieldType{
+						FieldName: "exp",
+						Kind:      typeInteger,
+					},
+					"age": &SchemaFieldType{
+						FieldName:           "age",
+						Kind:                typeFloat,
+						IsFieldTypeRequired: true,
+					},
+					"isMale": &SchemaFieldType{
+						FieldName: "age",
+						Kind:      typeBoolean,
+					},
+					"text": &SchemaFieldType{
+						FieldName: "text",
+						Kind:      typeString,
+					},
+					"owner": &SchemaFieldType{
+						FieldName: "owner",
+						Kind:      typeString,
+					},
+				},
+			},
+		},
+		Data: config.Crud{
+			"mongo": &config.CrudStub{
+				Collections: map[string]*config.TableRule{
+					"tweet": &config.TableRule{
+						Schema: `
+						type tweet {
+							id: ID!
+							createdAt:DateTime
+							text: String
+							isMale: Boolean
+							age: Float!
+							exp: Integer
+							owner:[String]@primary
+						  }`,
+					},
+				},
+			},
+		},
+	},
+	{
+		name: "invalid collection name",
+		schema: schemaType{
+			"mongo": schemaCollection{
+				"tweet": SchemaFields{
+					"id": &SchemaFieldType{
+						FieldName: "id",
+						Kind:      TypeID,
+					},
+					"person": &SchemaFieldType{
+						FieldName: "createdAt",
+						Kind:      typeDateTime,
+						IsLinked:  true,
+					},
+				},
+			},
+		},
+		want: errors.New("collection tes could not be found in schema"),
+		Data: config.Crud{
+			"mongo": &config.CrudStub{
+				Collections: map[string]*config.TableRule{
+					"tes": &config.TableRule{
+						Schema: `type test {
+						 id : ID @id
+						 person : sharad @link(table:sharad, from:Name, to:isMale)
+						}`,
+					},
+				},
+			},
+		},
+	},
+	{
+		name: "invalid linked field and valid directives",
+		schema: schemaType{
+			"mongo": schemaCollection{
+				"tweet": SchemaFields{
+					"id": &SchemaFieldType{
+						FieldName: "id",
+						Kind:      TypeID,
+						IsPrimary: true,
+					},
+					"text": &SchemaFieldType{
+						FieldName: "text",
+						Kind:      typeString,
+						IsUnique:  true,
+					},
+					"person": &SchemaFieldType{
+						FieldName: "person",
+						Kind:      typeObject,
+					},
+					"createdAt": &SchemaFieldType{
+						FieldName:   "createdAt",
+						Kind:        typeDateTime,
+						IsCreatedAt: true,
+					},
+					"updatedAt": &SchemaFieldType{
+						FieldName:   "id",
+						Kind:        typeDateTime,
+						IsUpdatedAt: true,
+					},
+					"loc": &SchemaFieldType{
+						FieldName: "loc",
+						Kind:      typeObject,
+						IsForeign: true,
+					},
+				},
+				"location": SchemaFields{
+					"latitude": &SchemaFieldType{
+						FieldName: "latitude",
+						Kind:      typeFloat,
+					},
+					"text": &SchemaFieldType{
+						FieldName: "text",
+						Kind:      typeFloat,
+					},
+				},
+			},
+		},
+		want: errors.New("link directive must be accompanied with to and from fields"),
+		Data: config.Crud{
+			"mongo": &config.CrudStub{
+				Collections: map[string]*config.TableRule{
+					"test": &config.TableRule{
+						Schema: `type test {
+						 id : ID @primary
+						 text: String@unique
+						 createdAt:DateTime@createdAt
+						 updatedAt:DateTime@updatedAt
+						 loc:location@foreign(table:location,field:latitude)
+						 person : sharad @link(table:sharad, from:Name)
+						}
+						type location{
+							latitude:Float
+							longitude:Float
+						}`,
+					},
+				},
+			},
+		},
+	},
+	{
+		name: "invalid linked field and valid directives",
+		schema: schemaType{
+			"mongo": schemaCollection{
+				"tweet": SchemaFields{
+					"id": &SchemaFieldType{
+						FieldName: "id",
+						Kind:      TypeID,
+						IsPrimary: true,
+					},
+					"person": &SchemaFieldType{
+						FieldName: "person",
+					},
+				},
+			},
+		},
+		want: errors.New("collection Integera could not be found in schema"),
+		Data: config.Crud{
+			"mongo": &config.CrudStub{
+				Collections: map[string]*config.TableRule{
+					"test": &config.TableRule{
+						Schema: `type test {
+						 id : ID @primary
+						 text: String@unique
+						 createdAt:DateTime@createdAt
+						 updatedAt:DateTime@updatedAt
+						 exp:Integera
+						 person : sharad @link(table:sharad, from:Name)
+						 
+						}`,
+					},
+				},
+			},
+		},
+	},
+	{
+		name: "valid schema",
+		schema: schemaType{
+			"mongo": schemaCollection{
+				"tweet": SchemaFields{
+					"ID": &SchemaFieldType{
+						FieldName: "ID",
+						Kind:      TypeID,
+						IsPrimary: true,
+					},
+				},
+			},
+		},
+		want: nil,
+		Data: config.Crud{
+			"mongo": &config.CrudStub{
+				Collections: map[string]*config.TableRule{
+					"test": &config.TableRule{
+						Schema: `type test {
+						 ID : ID @primary
+						 person:sharad@link(table:sharad,from:ID,to:isMale,field:surname)
+						}`,
+					},
+				},
 			},
 		},
 	},
@@ -61,77 +261,25 @@ var ParseData = config.Crud{
 
 func TestParseSchema(t *testing.T) {
 	temp := crud.Module{}
-	s := Init(&temp)
+	s := Init(&temp, false)
 
-	t.Run("Schema Parser", func(t *testing.T) {
-		err := s.ParseSchema(ParseData)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// uncomment the below statements to see the reuslt
-		b, err := json.MarshalIndent(s.SchemaDoc, "", "  ")
-		if err != nil {
-			fmt.Println("error:", err)
-		}
-		fmt.Print(string(b))
-		t.Log("Logging Test Output :: ", s.SchemaDoc)
-	})
-}
-
-func TestValidateSchema(t *testing.T) {
-
-	var arr []interface{}
-	str := []int{1, 2, 3}
-	for _, v := range str {
-		arr = append(arr, v)
-	}
-
-	req := model.CreateRequest{
-		Document: []map[string]interface{}{
-			{
-				"id":        "dfdsairfa",
-				"createdAt": 986413662654,
-				"text":      "Hello World!",
-				"location": map[string]interface{}{
-					"id":        "locatoinid",
-					"latitude":  5.5,
-					"longitude": 312.3,
-					"person": map[string]interface{}{
-						"name":    "sharad",
-						"sirName": "Regoti",
-						"age":     19,
-						"isMale":  true,
-						"dob":     "1999-10-19T11:45:26.371Z",
-					},
-				},
-				"owner": arr,
-			},
-		},
-	}
-
-	tdd := []struct {
-		dbName, coll, description string
-		value                     model.CreateRequest
-	}{{
-		dbName:      "mongo",
-		coll:        "tweet",
-		description: "checking User defined type",
-		value:       req,
-	}}
-	temp := crud.Module{}
-	s := Init(&temp)
-	err := s.ParseSchema(ParseData)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, val := range tdd {
-		t.Run(val.description, func(t *testing.T) {
-			err := s.ValidateCreateOperation(val.dbName, val.coll, &val.value)
-			if err != nil {
-				t.Fatal(err)
+	for _, value := range parsedata {
+		t.Run("Schema Parser", func(t *testing.T) {
+			if _, err := s.parser(value.Data); err != nil {
+				if !reflect.DeepEqual(err, value.want) {
+					t.Errorf("\n Schema.parseSchema() error = (%v,%v)", err, value.want)
+				}
+				/*if !reflect.DeepEqual(r, value.schema) {
+					t.Errorf("parser()=%v,want%v", r, value.schema)
+				}*/
 			}
+			// uncomment the below statements to see the reuslt
+			b, err := json.MarshalIndent(s.SchemaDoc, "", "  ")
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			fmt.Print(string(b))
+			t.Log("Logging Test Output :: ", s.SchemaDoc)
 		})
 	}
-
 }
