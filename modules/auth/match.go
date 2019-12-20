@@ -41,7 +41,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return matchOr(rule, args)
 
 	case "webhook":
-		return matchFunc(ctx, rule, m.makeHttpRequest, args)
+		return m.matchFunc(ctx, rule, m.makeHttpRequest, args)
 
 	case "query":
 		return matchQuery(ctx, project, rule, m.crud, args)
@@ -51,7 +51,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 	}
 }
 
-func matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
+func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
 	delete(obj, "token")
@@ -59,8 +59,13 @@ func matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.Mak
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	scToken, err := m.GetSCAccessToken()
+	if err != nil {
+		return err
+	}
+
 	var result interface{}
-	return MakeHttpRequest(ctx, "POST", rule.Url, token, obj, &result)
+	return MakeHttpRequest(ctx, "POST", rule.Url, token, scToken, obj, &result)
 }
 
 func matchQuery(ctx context.Context, project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {

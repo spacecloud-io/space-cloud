@@ -125,9 +125,18 @@ func TestValidateSchema(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, val := range tdd {
-		t.Run(val.description, func(t *testing.T) {
-			err := s.ValidateCreateOperation(val.dbName, val.coll, &val.value)
+	for _, value := range parsedata {
+		t.Run("Schema Parser", func(t *testing.T) {
+			if r, err := s.parser(value.Data); err != nil {
+				if !reflect.DeepEqual(err, value.want) {
+					t.Errorf("\n Schema.parseSchema() error = (%v,%v)", err, value.want)
+				}
+				if !reflect.DeepEqual(r, value.schema) {
+					t.Errorf("parser()=%v,want%v", r, value.schema)
+				}
+			}
+			// uncomment the below statements to see the reuslt
+			b, err := json.MarshalIndent(s.SchemaDoc, "", "  ")
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -157,8 +157,14 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		// No directive means its a nested field
 		if len(field.Directives) > 0 {
-			dbType, err := graph.crud.GetDBType(field.Directives[0].Name.Value)
+			dbAlias, err := graph.GetDBAlias(field)
 			if err != nil {
+				cb(nil, err)
+				return
+			}
+			dbType, err := graph.crud.GetDBType(dbAlias)
+			if err != nil {
+				cb(nil, err)
 				return
 			}
 			kind := getQueryKind(dbType)

@@ -91,22 +91,26 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Cl
 	ctx, cancel := context.WithTimeout(ctxRoot, 5*time.Second)
 	defer cancel()
 
-	for _, url := range urls {
-		go func() {
+	token, err := m.auth.GetInternalAccessToken()
+	if err != nil {
+		return err
+	}
+
+	scToken, err := m.auth.GetSCAccessToken()
+	if err != nil {
+		return err
+	}
+
+	for _, u := range urls {
+		go func(url string) {
 			defer wg.Done()
 
-			token, err := m.auth.GetInternalAccessToken()
-			if err != nil {
-				errCh <- err
-				return
-			}
-
 			var res interface{}
-			if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, eventDoc, &res); err != nil {
+			if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, scToken, eventDoc, &res); err != nil {
 				errCh <- err
 				return
 			}
-		}()
+		}(u)
 	}
 
 	go func() {

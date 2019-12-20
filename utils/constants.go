@@ -246,4 +246,4 @@ const (
 // SpaceCloudServiceName is the service name space cloud will register itself with in service discovery mechanisms
 const SpaceCloudServiceName string = "space-cloud"
 
-type MakeHttpRequest func(ctx context.Context, method, url, token string, params, vPtr interface{}) error
+type MakeHttpRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
