@@ -142,7 +142,7 @@ func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{})
 	case map[string]interface{}:
 		resultArr = []interface{}{val} //make an array of interface with val element
 	case []interface{}:
-		resultArr = resultArr
+		resultArr = val
 	default:
 		return errors.New("result is of invalid type")
 	}
@@ -155,6 +155,7 @@ func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{})
 				if err := utils.StoreValue(field.Field, field.Value, map[string]interface{}{"res": doc}); err != nil {
 					return err
 				}
+
 			case "remove":
 				if err := utils.DeleteValue(field.Field, map[string]interface{}{"res": doc}); err != nil {
 					return err

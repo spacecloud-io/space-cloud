@@ -313,6 +313,7 @@ func convertOrCreate(k string, obj map[string]interface{}) (map[string]interface
 	tempObj, present := obj[k]
 	if !present {
 		tempObj = make(map[string]interface{})
+		obj[k] = tempObj
 	}
 
 	var ok bool

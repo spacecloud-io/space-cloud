@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"log"
 	"strings"
 	"time"
 
@@ -136,7 +137,8 @@ func matchForce(rule *config.Rule, args map[string]interface{}) (*PostProcess, e
 		addToStruct := PostProcessAction{Action: "force", Field: rule.Field, Value: value}
 		return &PostProcess{postProcessAction: []PostProcessAction{addToStruct}}, nil
 	} else if strings.HasPrefix(rule.Field, "args") {
-		return &PostProcess{}, utils.StoreValue(rule.Field, value, args)
+		err := utils.StoreValue(rule.Field, value, args)
+		return &PostProcess{}, err
 	} else {
 		return nil, ErrIncorrectRuleFieldType
 	}
