@@ -92,7 +92,6 @@ func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Ru
 		completeAction.postProcessAction = append(completeAction.postProcessAction, postProcess.postProcessAction...)
 	}
 	return completeAction, nil
-	// return nil
 }
 
 func (m *Module) matchOr(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*PostProcess, error) {

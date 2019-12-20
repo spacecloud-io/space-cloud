@@ -35,10 +35,12 @@ type Module struct {
 	makeHttpRequest utils.MakeHttpRequest
 }
 
+// PostProcess is responsible for implementing force and remove rules
 type PostProcess struct {
 	postProcessAction []PostProcessAction
 }
 
+// PostProcessAction has action ->  force/remove and field,value depending on the Action.
 type PostProcessAction struct {
 	Action string
 	Field  string
