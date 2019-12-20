@@ -106,7 +106,6 @@ func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
 	}
 
-	s.cb(s.projectConfig)
 	return s.store.SetProject(project), http.StatusInternalServerError
 }
 

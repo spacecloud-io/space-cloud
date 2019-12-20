@@ -81,15 +81,16 @@ var essentialFlags = []cli.Flag{
 	cli.StringFlag{
 		Name:   "store-addr",
 		EnvVar: "STORE_ADDR",
+		Usage:  "The address of config store used by space-cloud to make connection",
 	},
 	cli.StringFlag{
 		Name:   "advertise-addr",
-		Usage:  "",
+		Usage:  "The address which will be broadcast to other space cloud instances",
 		EnvVar: "ADVERTISE_ADDR",
 	},
 	cli.StringFlag{
 		Name:   "store-type",
-		Usage:  "",
+		Usage:  "The config store to use for storing project configs and other meta data",
 		EnvVar: "STORE_TYPE",
 		Value:  "none",
 	},
@@ -197,7 +198,7 @@ func actionRun(c *cli.Context) error {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID,storeAddr ,advertiseAddr, storeType, removeProjectScope,
+	s, err := server.New(nodeID, clusterID, storeAddr, advertiseAddr, storeType, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err

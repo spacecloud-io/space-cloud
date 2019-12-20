@@ -23,7 +23,6 @@ type Manager struct {
 
 	// Configuration for clustering
 	storeType string
-	storeAddr string
 	store     Store
 	services  []*service
 }
