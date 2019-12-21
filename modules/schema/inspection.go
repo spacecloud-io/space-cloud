@@ -132,8 +132,6 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *SchemaField
 		fieldDetails.Kind = typeDateTime
 	case "boolean":
 		fieldDetails.Kind = typeBoolean
-	case "json":
-		fieldDetails.Kind = typeJSON
 
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])
