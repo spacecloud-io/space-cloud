@@ -12,7 +12,8 @@ import (
 
 func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbType, col, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb dbCallback) {
 	// Check if read op is authorised
-	if _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbType, col, token, req); err != nil {
+	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbType, col, token, req)
+	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
@@ -23,6 +24,8 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		// Create dataloader key
 		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: false, Req: *req}
 		result, err := dataLoader.Load(ctx, key)()
+		_ = graph.auth.PostProcessMethod(actions, result)
+
 		cb(dbType, col, result, err)
 	}()
 }
@@ -46,7 +49,8 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	}
 
 	// Check if read op is authorised
-	if _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbType, col, token, req); err != nil {
+	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbType, col, token, req)
+	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
@@ -57,6 +61,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		// Create dataloader key
 		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: hasOptions, Req: *req}
 		result, err := dataLoader.Load(ctx, key)()
+		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbType, col, result, err)
 	}()
 }

@@ -23,13 +23,13 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
-	_, err = m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
+	actions, _, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
 	if err != nil {
 		return nil, err
 	}
 
 	if data.Options.SkipInitial {
-		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, sendFeed)
+		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
 		return []*model.FeedData{}, nil
 	}
 
@@ -40,6 +40,8 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 	if err != nil {
 		return nil, err
 	}
+
+	_ = m.auth.PostProcessMethod(actions, result)
 
 	feedData := make([]*model.FeedData, 0)
 	array, ok := result.([]interface{})
@@ -66,7 +68,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 	}
 
 	// Add the live query
-	m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, sendFeed)
+	m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
 	return feedData, nil
 }
 

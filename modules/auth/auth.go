@@ -34,6 +34,18 @@ type Module struct {
 	makeHttpRequest utils.MakeHttpRequest
 }
 
+// PostProcess is responsible for implementing force and remove rules
+type PostProcess struct {
+	postProcessAction []PostProcessAction
+}
+
+// PostProcessAction has action ->  force/remove and field,value depending on the Action.
+type PostProcessAction struct {
+	Action string
+	Field  string
+	Value  interface{}
+}
+
 // Init creates a new instance of the auth object
 func Init(nodeID string, crud *crud.Module, schema *schema.Schema, removeProjectScope bool) *Module {
 	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, schema: schema}
