@@ -183,7 +183,6 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 						fieldTypeStuct.IsForeign = true
 						fieldTypeStuct.JointTable = &TableProperties{}
 						fieldTypeStuct.JointTable.Table = strings.Split(field.Name.Value, "_")[0]
-						fieldTypeStuct.JointTable.From = field.Name.Value
 						fieldTypeStuct.JointTable.To = "id"
 
 						// Load the joint table name and field
@@ -193,7 +192,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.JointTable.Table = val.(string)
 
-							case "field":
+							case "field", "to":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.JointTable.To = val.(string)
 							}
