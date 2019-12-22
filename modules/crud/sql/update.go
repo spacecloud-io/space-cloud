@@ -135,7 +135,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	if req.Find != nil {
 		// Get the where clause from query object
 		var err error
-		query, err = generateWhereClause(query, req.Find)
+		query, _, err = s.generateWhereClause(query, req.Find)
 		if err != nil {
 			return "", nil, err
 		}
@@ -218,9 +218,9 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 
 func numToString(v interface{}) (string, error) {
 	switch val := v.(type) {
-		case float64:
+	case float64:
 
-	return strconv.FormatFloat(val, 'f', -1, 64), nil
+		return strconv.FormatFloat(val, 'f', -1, 64), nil
 
 	case int64:
 		return strconv.FormatInt(val, 10), nil

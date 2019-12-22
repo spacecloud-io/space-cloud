@@ -89,14 +89,14 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		Time: time.Unix(0, eventDoc.Timestamp*int64(time.Millisecond)).Format(time.RFC3339), Data: eventDoc.Payload}
 
 	for {
-		token, err := m.auth.GetInternalAccessToken()
+		scToken, err := m.auth.GetSCAccessToken()
 		if err != nil {
 			log.Println("Eventing: Couldn't trigger functions -", err)
 			return
 		}
 
 		var eventResponse model.EventResponse
-		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, token, cloudEvent, &eventResponse)
+		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, "", scToken, cloudEvent, &eventResponse)
 		if err == nil {
 			var eventRequests []*model.QueueEventRequest
 

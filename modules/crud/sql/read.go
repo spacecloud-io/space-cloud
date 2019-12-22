@@ -22,11 +22,11 @@ import (
 func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dialect := goqu.Dialect(s.dbType)
 	query := dialect.From(s.getDBName(project, col)).Prepared(true)
-
+	var tarr []string
 	if req.Find != nil {
 		// Get the where clause from query object
 		var err error
-		query, err = generateWhereClause(query, req.Find)
+		query, tarr, err = s.generateWhereClause(query, req.Find)
 		if err != nil {
 			return "", nil, err
 		}
@@ -91,8 +91,19 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 	if err != nil {
 		return "", nil, err
 	}
-
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
+
+	for _, v := range tarr {
+		switch s.dbType {
+		case "mysql":
+			vReplaced := strings.Replace(v, "=", "REGEXP", -1)
+			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
+		case "postgres":
+			vReplaced := strings.Replace(v, "=", "~", -1)
+			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
+		}
+
+	}
 	return sqlString, args, nil
 }
 

@@ -34,6 +34,10 @@ func (s *Schema) Inspector(ctx context.Context, dbAlias, project, col string) (s
 	if err != nil {
 		return nil, err
 	}
+	return generateInspection(dbType, col, fields, foreignkeys)
+}
+
+func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType) (schemaCollection, error) {
 	inspectionCollection := schemaCollection{}
 	inspectionFields := SchemaFields{}
 
@@ -128,8 +132,6 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *SchemaField
 		fieldDetails.Kind = typeDateTime
 	case "boolean":
 		fieldDetails.Kind = typeBoolean
-	case "json":
-		fieldDetails.Kind = typeJSON
 
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])

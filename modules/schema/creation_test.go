@@ -54,19 +54,6 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)", "ALTER TABLE test.table1 ADD col2 text"},
 			wantErr: false,
 		},
-		// {
-		// 	name: "adding a table",
-		// 	args: args{
-		// 		dbAlias:       "mysql",
-		// 		tableName:     "table1",
-		// 		project:       "test",
-		// 		parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsFieldTypeRequired: true, IsUnique: true}, "col2": &SchemaFieldType{FieldName: "col2", Kind: TypeID, IsForeign: true, JointTable: &TableProperties{Table: "table2", To: "id"}}, "col3": &SchemaFieldType{FieldName: "col3", Kind: TypeID, IsFieldTypeRequired: true, IsPrimary: true}, "col4": &SchemaFieldType{FieldName: "col4", Kind: typeDateTime}}}},
-		// 		currentSchema: schemaCollection{"table2": SchemaFields{}},
-		// 	},
-		// 	fields:  fields{crud: crudMySql, project: "test"},
-		// 	want:    []string{"CREATE TABLE test.table1 (col2 varchar(50) ,col3 varchar(50) PRIMARY KEY NOT NULL ,col4 timestamp ,col1 bigint NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 UNIQUE (col1)", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
-		// 	wantErr: false,
-		// },
 		{
 			name: "adding a table and column of type integer",
 			args: args{
@@ -1364,19 +1351,16 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			got, err := s.generateCreationQueries(tt.args.ctx, tt.args.dbAlias, tt.args.tableName, tt.args.project, tt.args.parsedSchema, tt.args.currentSchema)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("name = %v, Schema.generateCreationQueries() error = %v, wantErr %v", tt.name, err, tt.wantErr)
-				return
 			}
 
 			if !tt.wantErr {
 				if len(got) != len(tt.want) {
 					t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)
-					return
 				}
 
 				for i, v := range got {
 					if tt.want[i] != v {
 						t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)
-						break
 					}
 				}
 			}
