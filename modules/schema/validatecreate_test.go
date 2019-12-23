@@ -1,16 +1,16 @@
 package schema
 
 import (
-	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 )
 
-var queries = `
+var testQueries = `
  type tweet {
  	id: ID @id
  	createdAt: DateTime@createdAt
@@ -33,7 +33,6 @@ var queries = `
  	id: ID! @id
  	latitude: Float
  	longitude: Float
-
    }
    type sharad {
  	  Name : String!
@@ -43,7 +42,6 @@ var queries = `
  	  dob : DateTime@createdAt
    }
    type event_logs {
- 	id: Integer
  	name: String
    }
  `
@@ -51,13 +49,13 @@ var Parsedata = config.Crud{
 	"mongo": &config.CrudStub{
 		Collections: map[string]*config.TableRule{
 			"tweet": &config.TableRule{
-				Schema: queries,
+				Schema: testQueries,
 			},
 			"test": &config.TableRule{
-				Schema: queries,
+				Schema: testQueries,
 			},
 			"location": &config.TableRule{
-				Schema: queries,
+				Schema: testQueries,
 			},
 		},
 	},
@@ -65,15 +63,16 @@ var Parsedata = config.Crud{
 
 func TestSchema_ValidateCreateOperation(t *testing.T) {
 
-	tdd := []struct {
-		dbName, coll, description string
-		value                     model.CreateRequest
-		want                      error
+	testCases := []struct {
+		dbName, coll, name string
+		value              model.CreateRequest
+		IsErrExpected      bool
 	}{
 		{
-			dbName: "sqlserver",
-			coll:   "tweet",
-			want:   errors.New("No db was found named sqlserver"),
+			dbName:        "sqlserver",
+			coll:          "tweet",
+			name:          "No db was found named sqlserver",
+			IsErrExpected: true,
 			value: model.CreateRequest{
 				Document: map[string]interface{}{
 					"male": true,
@@ -81,9 +80,10 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 			},
 		},
 		{
-			dbName: "mongo",
-			coll:   "twee",
-			want:   nil,
+			dbName:        "mongo",
+			coll:          "twee",
+			name:          "Collection which does not exist",
+			IsErrExpected: false,
 			value: model.CreateRequest{
 				Document: map[string]interface{}{
 					"male": true,
@@ -91,9 +91,10 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 			},
 		},
 		{
-			dbName: "mongo",
-			coll:   "tweet",
-			want:   errors.New("required field age from collection tweet not present in request"),
+			dbName:        "mongo",
+			coll:          "tweet",
+			name:          "required field age from collection tweet not present in request",
+			IsErrExpected: true,
 			value: model.CreateRequest{
 				Document: map[string]interface{}{
 					"male": true,
@@ -101,9 +102,10 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 			},
 		},
 		{
-			dbName: "mongo",
-			coll:   "tweet",
-			want:   errors.New("invalid document provided for collection (mongo:tweet)"),
+			dbName:        "mongo",
+			coll:          "tweet",
+			name:          "invalid document provided for collection (mongo:tweet)",
+			IsErrExpected: true,
 			value: model.CreateRequest{
 				Document: []interface{}{
 					"text", "12PM",
@@ -111,9 +113,10 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 			},
 		},
 		{
-			dbName: "mongo",
-			coll:   "tweet",
-			want:   errors.New("required field age from collection tweet not present in request"),
+			dbName:        "mongo",
+			coll:          "tweet",
+			name:          "required field age from collection tweet not present in request",
+			IsErrExpected: true,
 			value: model.CreateRequest{
 				Document: map[string]interface{}{
 					"isMale": true,
@@ -121,259 +124,315 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 			},
 		},
 		{
-			dbName: "mongo",
-			coll:   "location",
-			want:   nil,
+			dbName:        "mongo",
+			coll:          "location",
+			IsErrExpected: false,
+			name:          "Valid Test Case",
 			value: model.CreateRequest{
 				Document: map[string]interface{}{
-					"location": "21",
+					"location": 21.5,
+					"age":      12.5,
 				},
 			},
 		},
 	}
 
-	temp := crud.Module{}
-	s := Init(&temp, false)
+	s := Init(&crud.Module{}, false)
 	err := s.parseSchema(Parsedata)
 	if err != nil {
-		t.Fatal(err)
+		t.Errorf("Error while parsing schema-%v", err)
 	}
 
-	for _, val := range tdd {
-		t.Run(val.description, func(t *testing.T) {
-			err := s.ValidateCreateOperation(val.dbName, val.coll, &val.value)
-			if !reflect.DeepEqual(err, val.want) {
-				t.Errorf("\n SchemaValidateCreateOperation() error = (%v,%v)", err, val.want)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := s.ValidateCreateOperation(testCase.dbName, testCase.coll, &testCase.value)
+			if (err != nil) != testCase.IsErrExpected {
+				t.Errorf("\n ValidateCreateOperation() error = expected error-%v,got-%v)", testCase.IsErrExpected, err)
 			}
 		})
 	}
-
 }
 func TestSchema_SchemaValidate(t *testing.T) {
-	td := []struct {
-		coll, description string
-		Document          map[string]interface{}
-		want              error
+	testCases := []struct {
+		coll, name    string
+		Document      map[string]interface{}
+		IsErrExpected bool
+		IsSkipable    bool
 	}{{
-		coll:        "test",
-		description: "inserting value for linked field",
-		want:        errors.New("cannot insert value for a linked field person"),
+		coll:          "test",
+		name:          "inserting value for linked field",
+		IsErrExpected: true,
+		IsSkipable:    true,
 		Document: map[string]interface{}{
 			"person": "12PM",
 		},
 	},
 		{
-			coll:        "tweet",
-			description: "required field not present",
-			want:        errors.New("required field age from collection tweet not present in request"),
+			coll:          "tweet",
+			name:          "required field not present",
+			IsErrExpected: true,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
 				"latitude": "12PM",
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "field having directive createdAt",
-			want:        errors.New("required field age from collection tweet not present in request"),
+			coll:          "tweet",
+			name:          "field having directive createdAt",
+			IsErrExpected: false,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
-				"createdAt": "12PM",
+				"id":        "1234",
+				"createdAt": "2019-12-23 05:52:16.5366853 +0000 UTC",
+				"age":       12.5,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "valid field",
-			want:        errors.New("required field age from collection tweet not present in request"),
+			coll:          "tweet",
+			name:          "valid field",
+			IsErrExpected: false,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
 				"text": "12PM",
+				"age":  12.65,
+			},
+		},
+		{
+			coll:          "location",
+			name:          "valid field with mutated doc",
+			IsErrExpected: false,
+			IsSkipable:    false,
+			Document: map[string]interface{}{
+				"id":        "1234",
+				"latitude":  21.3,
+				"longitude": 64.5,
 			},
 		},
 	}
-	temp := crud.Module{}
-	s := Init(&temp, false)
+	s := Init(&crud.Module{}, false)
 	err := s.parseSchema(Parsedata)
 	if err != nil {
-		t.Fatal(err)
+		t.Errorf("Error while parsing schema:%v", err)
 	}
-	for _, v := range td {
-		t.Run(v.description, func(t *testing.T) {
-			_, err := s.schemaValidator(v.coll, s.SchemaDoc["mongo"][v.coll], v.Document)
-			if !reflect.DeepEqual(err, v.want) {
-				t.Errorf("\n SchemaValidateCreateOperation() error = (%v,%v)", err, v.want)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			result, err := s.schemaValidator(testCase.coll, s.SchemaDoc["mongo"][testCase.coll], testCase.Document)
+			if (err != nil) != testCase.IsErrExpected {
+				t.Errorf("\n SchemaValidateOperation() error : expected error-%v, got-%v)", testCase.IsErrExpected, err)
+			}
+			if testCase.IsSkipable == false {
+				if !reflect.DeepEqual(result, testCase.Document) {
+					t.Errorf("\n SchemaValidateOperation() error : got  %v,expected %v)", result, testCase.Document)
+				}
 			}
 		})
 	}
 }
 
 func TestSchema_CheckType(t *testing.T) {
-	td := []struct {
-		coll, description string
-		Document          map[string]interface{}
-		want              error
+	testCases := []struct {
+		coll, name    string
+		Document      map[string]interface{}
+		result        interface{}
+		IsErrExpected bool
+		IsSkipable    bool
 	}{{
-		coll:        "tweet",
-		description: "integer value for float field",
-		want:        nil,
+		coll:          "tweet",
+		name:          "integer value for float field",
+		IsErrExpected: false,
+		IsSkipable:    false,
+		result:        float64(12),
 		Document: map[string]interface{}{
 			"age": 12,
 		},
 	},
 		{
-			coll:        "tweet",
-			description: "integer value for string field",
-			want:        errors.New("invalid type received for field text in collection tweet - wanted String got Integer"),
+			coll:          "tweet",
+			name:          "integer value for string field",
+			IsErrExpected: true,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
 				"text": 12,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "integer value for datetime field",
-			want:        nil,
+			coll:          "tweet",
+			name:          "integer value for datetime field",
+			IsErrExpected: false,
+			IsSkipable:    false,
+			result:        time.Unix(int64(12)/1000, 0),
 			Document: map[string]interface{}{
 				"createdAt": 12,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "string value for datetime field",
-			want:        errors.New("invalid datetime format recieved for field createdAt in collection tweet - use RFC3339 fromat"),
+			coll:          "tweet",
+			name:          "string value for datetime field",
+			IsErrExpected: true,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
 				"createdAt": "12",
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "valid datetime field",
-			want:        nil,
+			coll:          "tweet",
+			name:          "valid datetime field",
+			IsErrExpected: false,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
 				"createdAt": "1999-10-19T11:45:26.371Z",
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "valid integer value",
-			want:        nil,
+			coll:          "tweet",
+			name:          "valid integer value",
+			IsErrExpected: false,
+			IsSkipable:    false,
+			result:        12,
 			Document: map[string]interface{}{
 				"exp": 12,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "valid string value",
-			want:        nil,
+			coll:          "tweet",
+			name:          "valid string value",
+			IsErrExpected: false,
+			IsSkipable:    false,
+			result:        "12",
 			Document: map[string]interface{}{
 				"text": "12",
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "valid float value",
-			want:        nil,
+			coll:          "tweet",
+			name:          "valid float value",
+			IsErrExpected: false,
+			IsSkipable:    false,
+			result:        12.5,
 			Document: map[string]interface{}{
 				"age": 12.5,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "string value for integer field",
-			want:        errors.New("invalid type received for field exp in collection tweet - wanted Integer got String"),
+			coll:          "tweet",
+			name:          "string value for integer field",
+			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"exp": "12",
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "float value for string field",
-			want:        errors.New("invalid type received for field text in collection tweet - wanted String got Float"),
+			coll:          "tweet",
+			name:          "float value for string field",
+			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"text": 12.5,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "valid boolean value",
-			want:        nil,
+			coll:          "tweet",
+			name:          "valid boolean value",
+			IsErrExpected: false,
+			IsSkipable:    false,
+			result:        true,
 			Document: map[string]interface{}{
 				"isMale": true,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "invalid boolean value",
-			want:        errors.New("invalid type received for field age in collection tweet - wanted Float got Bool"),
+			coll:          "tweet",
+			name:          "invalid boolean value",
+			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"age": true,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "float value for datetime field",
-			want:        nil,
+			coll:          "tweet",
+			name:          "float value for datetime field",
+			IsErrExpected: false,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
 				"createdAt": 12.5,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "invalid map string interface",
-			want:        errors.New("invalid type received for field exp in collection tweet"),
+			coll:          "tweet",
+			name:          "invalid map string interface",
+			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"exp": map[string]interface{}{"years": 10},
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "valid map string interface",
-			want:        nil,
+			coll:          "tweet",
+			name:          "valid map string interface",
+			IsErrExpected: false,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
 				"event": map[string]interface{}{"name": "suyash"},
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "float value for integer field",
-			want:        nil,
+			coll:          "tweet",
+			name:          "float value for integer field",
+			IsErrExpected: false,
+			IsSkipable:    true,
 			Document: map[string]interface{}{
 				"exp": 12.5,
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "valid interface value",
-			want:        errors.New("invalid type received for field event in collection tweet - wanted Object got Integer"),
+			coll:          "tweet",
+			name:          "valid interface value",
+			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"event": []interface{}{1, 2},
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "invalid interface value",
-			want:        errors.New("invalid type received for field text in collection tweet"),
+			coll:          "tweet",
+			name:          "valid interface value for matching field",
+			IsErrExpected: false,
+			IsSkipable:    false,
+			result:        []interface{}{map[string]interface{}{"name": "Suyash"}},
+			Document: map[string]interface{}{
+				"event": []interface{}{map[string]interface{}{"name": "Suyash"}},
+			},
+		},
+		{
+			coll:          "tweet",
+			name:          "invalid interface value",
+			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"text": []interface{}{1, 2},
 			},
 		},
 		{
-			coll:        "tweet",
-			description: "no matching type",
-			want:        errors.New("no matching type found for field age in collection tweet"),
+			coll:          "tweet",
+			name:          "no matching type",
+			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"age": int32(6),
 			},
 		},
 	}
-	temp := crud.Module{}
-	s := Init(&temp, false)
+	s := Init(&crud.Module{}, false)
 	err := s.parseSchema(Parsedata)
 	if err != nil {
-		t.Fatal(err)
+		t.Errorf("Error while parsing schema:%v", err)
 	}
 	r := s.SchemaDoc["mongo"]["tweet"]
-	for _, v := range td {
-		t.Run(v.description, func(t *testing.T) {
-			for key, value := range v.Document {
-				if _, err := s.checkType(v.coll, value, r[key]); err != nil {
-					if !reflect.DeepEqual(err, v.want) {
-						t.Errorf("\n CheckType() error = (%v,%v,%v)", v.description, err, v.want)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			for key, value := range testCase.Document {
+				retval, err := s.checkType(testCase.coll, value, r[key])
+				if (err != nil) != testCase.IsErrExpected {
+					t.Errorf("\n CheckType() error = Expected error-%v,got-%v)", testCase.IsErrExpected, err)
+				}
+				if testCase.IsSkipable == false {
+					if !reflect.DeepEqual(retval, testCase.result) {
+						t.Errorf("\n CheckType() error = Expected return value-%v,got-%v)", testCase.result, retval)
 					}
 				}
 			}

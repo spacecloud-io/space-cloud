@@ -1,58 +1,54 @@
 package schema
 
 import (
-	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 )
 
-var Query = `type tweet {
- 	id: ID! @id
- 	createdAt: DateTime! @createdAt
- 	text: String
- 	owner: String!
-	age : Integer!
-	cpi: Float!
-	diplomastudent: Boolean!@foreign(table:"shreyas",field:"diploma")
-	friends:[String!]!
-	mentor: shreyas
-   }
-   type shreyas{
-	   name:String!
-	   surname:String!
-	   diploma:Boolean
-   }
-  `
-
-var ParseData = config.Crud{
-	"mongo": &config.CrudStub{
-		Collections: map[string]*config.TableRule{
-			"tweet": &config.TableRule{
-				Schema: Query,
-			},
-		},
-	},
-}
-
 func TestSchema_ValidateUpdateOperation(t *testing.T) {
 
+	var Query = `type tweet {
+	id: ID! @id
+	createdAt: DateTime! @createdAt
+	text: String
+	owner: String!
+   	age : Integer!
+   	cpi: Float!
+   	diplomastudent: Boolean!@foreign(table:"shreyas",field:"diploma")
+	friends:[String!]!
+	update:DateTime@updatedAt
+   	mentor: shreyas
+  	}
+	type shreyas{
+		name:String!
+		surname:String!
+		diploma:Boolean
+  	}`
+
+	var TestCases = config.Crud{
+		"mongo": &config.CrudStub{
+			Collections: map[string]*config.TableRule{
+				"tweet": &config.TableRule{
+					Schema: Query,
+				},
+			},
+		},
+	}
 	type args struct {
 		dbType    string
 		col       string
 		updateDoc map[string]interface{}
 	}
 	tests := []struct {
-		name string
-		args args
-		want error
+		name          string
+		args          args
+		IsErrExpected bool
 	}{
-		// TODO: Add test cases.
 		{
-			name: "Successful Test case",
-			want: nil,
+			name:          "Successful Test case",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -84,8 +80,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 1",
-			want: errors.New("invalid type received for field id in collection tweet - wanted ID got Integer"),
+			name:          "Invalid Test case-IsErrExpecteded ID got integer",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -97,8 +93,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 2",
-			want: errors.New("Nothing to update"),
+			name:          "Test case-Nothing to Update",
+			IsErrExpected: false,
 			args: args{
 				dbType:    "mongo",
 				col:       "tweet",
@@ -106,8 +102,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 3",
-			want: errors.New("$createdAt update operator is not supported"),
+			name:          "Invalid Test case-$createdAt update operator unsupported",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -119,8 +115,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 4",
-			want: errors.New("invalid type received for field id in collection tweet - wanted ID"),
+			name:          "Invalid Test case-expected ID",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -132,8 +128,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid Test case 2",
-			want: nil,
+			name:          "Valid Test case-increment operation",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "suyash",
@@ -145,8 +141,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 5",
-			want: errors.New("invalid type received for field age in collection tweet - wanted Integer got Float"),
+			name:          "Invalid Test case-IsErrExpecteded integer got float",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -158,8 +154,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 6",
-			want: errors.New("document not of type object in collection tweet"),
+			name:          "Invalid Test case-document not of type object",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -169,8 +165,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid Test case 3",
-			want: nil,
+			name:          "Valid Test case-createdAt",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -183,8 +179,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 7",
-			want: errors.New("invalid type received for field id in collection tweet - wanted ID"),
+			name:          "Invalid Test case-IsErrExpecteded ID(currentDate)",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -196,8 +192,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 8",
-			want: errors.New("field location from collection tweet is not defined in the schema"),
+			name:          "Invalid Test case-field not defined in schema",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -210,8 +206,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 9",
-			want: errors.New("invalid type received for field owner in collection tweet - wanted String got Integer"),
+			name:          "Invalid Test case-IsErrExpecteded string got integer",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -224,8 +220,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 10",
-			want: errors.New("invalid type received for field owner in collection tweet - wanted String got Integer"),
+			name:          "Invalid Test case-invalid type for field",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -237,8 +233,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 11",
-			want: errors.New("Invalid Type for field age in collection tweet"),
+			name:          "Test Case-Float value",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -250,8 +246,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 12",
-			want: errors.New("invalid type received for field id in collection tweet - wanted ID got Integer"),
+			name:          "Invalid Test case-IsErrExpecteded ID got integer",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -263,8 +259,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 13",
-			want: errors.New("invalid datetime format recieved for field createdAt in collection tweet - use RFC3339 fromat"),
+			name:          "Invalid Test case-invalid datetime format",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -276,8 +272,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 14",
-			want: errors.New("invalid type received for field age in collection tweet - wanted Integer got String"),
+			name:          "Invalid Test case-IsErrExpecteded Integer got String",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -289,8 +285,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 15",
-			want: errors.New("Invalid Type for field createdAt in collection tweet"),
+			name:          "Float value for field createdAt",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -302,8 +298,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 16",
-			want: errors.New("invalid type received for field text in collection tweet - wanted String got Float"),
+			name:          "Invalid Test case-IsErrExpecteded String got Float",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -315,8 +311,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 17",
-			want: errors.New("invalid type received for field cpi in collection tweet - wanted Float got Bool"),
+			name:          "Invalid Test case-IsErrExpecteded float got boolean",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -328,8 +324,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid Test Case 4",
-			want: nil,
+			name:          "Valid Test Case-Boolean",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -341,8 +337,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 18",
-			want: errors.New("invalid type received for field cpi in collection tweet"),
+			name:          "Invalid Test case-invalid map string interface",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -354,8 +350,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 19",
-			want: errors.New("invalid type received for field cpi in collection tweet"),
+			name:          "Invalid Test case-invalid array interface",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -367,8 +363,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test Case 20",
-			want: errors.New("invalid type received for field friends in collection tweet"),
+			name:          "Invalid Test Case-invalid type for field",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -380,8 +376,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 21",
-			want: errors.New("field friend from collection tweet is not defined in the schema"),
+			name:          "Invalid Test case-field not defined in schema",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -393,8 +389,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 22",
-			want: errors.New("invalid type received for field mentor in collection tweet - wanted Object got Integer"),
+			name:          "Invalid Test case-Wanted Object got integer",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -406,8 +402,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 23",
-			want: errors.New("no matching type found for field age in collection tweet"),
+			name:          "Invalid Test case-no matching type found",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -419,8 +415,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Valid Test Case 5",
-			want: nil,
+			name:          "Valid Test Case-set operation",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -432,8 +428,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 24",
-			want: errors.New("field friend from collection tweet is not defined in the schema"),
+			name:          "Invalid Test case-field not present in schema",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -445,8 +441,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 25",
-			want: errors.New("invalid type provided for field diplomastudent in collection tweet"),
+			name:          "Invalid Test case-invalid boolean field",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -458,8 +454,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 26",
-			want: errors.New("$push1 update operator is not supported"),
+			name:          "Invalid Test case-unsupported operator",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -471,8 +467,78 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test case 27",
-			want: errors.New("invalid type provided for field friends in collection tweet"),
+			name:          "Invalid Test case-field not present in schema(math)",
+			IsErrExpected: true,
+			args: args{
+				dbType: "mongo",
+				col:    "tweet",
+				updateDoc: map[string]interface{}{
+					"$inc": map[string]interface{}{
+						"friends1": 4,
+					},
+				},
+			},
+		},
+		{
+			name:          "Invalid Test case-field not present in schema(date)",
+			IsErrExpected: true,
+			args: args{
+				dbType: "mongo",
+				col:    "tweet",
+				updateDoc: map[string]interface{}{
+					"$currentDate": map[string]interface{}{
+						"friends1": "4/12/2019",
+					},
+				},
+			},
+		},
+		{
+			name:          "Invalid Test case-document not of type object(math)",
+			IsErrExpected: true,
+			args: args{
+				dbType: "mongo",
+				col:    "tweet",
+				updateDoc: map[string]interface{}{
+					"$inc": "age",
+				},
+			},
+		},
+		{
+			name:          "Invalid Test case-document not of type object(set)",
+			IsErrExpected: true,
+			args: args{
+				dbType: "mongo",
+				col:    "tweet",
+				updateDoc: map[string]interface{}{
+					"$set": "age",
+				},
+			},
+		},
+		{
+			name:          "Invalid Test case-document not of type object(Date)",
+			IsErrExpected: true,
+			args: args{
+				dbType: "mongo",
+				col:    "tweet",
+				updateDoc: map[string]interface{}{
+					"$currentDate": "15/10/2019",
+				},
+			},
+		},
+		{
+			name:          "Valid Test case-updatedAt directive involved",
+			IsErrExpected: true,
+			args: args{
+				dbType: "mongo",
+				col:    "tweet",
+				updateDoc: map[string]interface{}{
+					"$set": map[string]interface{}{"update": "15/10/2019"},
+				},
+			},
+		},
+		{
+			name:          "Invalid Test case-invalid field type in push operation",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -484,8 +550,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Test Case 28",
-			want: errors.New("mysql is not present in schema"),
+			name:          "Invalid Test Case-DB name not present in schema",
+			IsErrExpected: true,
 			args: args{
 				dbType: "mysql",
 				col:    "tweet",
@@ -499,18 +565,17 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 	}
-	temp := crud.Module{}
-	s := Init(&temp, false)
-	if err := s.parseSchema(ParseData); err != nil {
-		t.Errorf("error parsing scheam :: %v", err)
+
+	s := Init(&crud.Module{}, false)
+	if err := s.parseSchema(TestCases); err != nil {
+		t.Errorf("error parsing schema :: %v", err)
 	}
 
-	for _, v := range tests {
-		t.Run(v.name, func(t *testing.T) {
-			if err := s.ValidateUpdateOperation(v.args.dbType, v.args.col, v.args.updateDoc); err != nil {
-				if !reflect.DeepEqual(err, v.want) {
-					t.Errorf("\n ValidateUpdateOperation() error = (%v,%v,%v)", v.name, err, v.want)
-				}
+	for _, testcase := range tests {
+		t.Run(testcase.name, func(t *testing.T) {
+			err := s.ValidateUpdateOperation(testcase.args.dbType, testcase.args.col, testcase.args.updateDoc)
+			if (err != nil) != testcase.IsErrExpected {
+				t.Errorf("\n ValidateUpdateOperation() error = expected error-%v, got-%v)", testcase.IsErrExpected, err)
 			}
 
 		})

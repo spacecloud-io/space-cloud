@@ -3,7 +3,6 @@ package schema
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 
@@ -73,7 +72,6 @@ func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
 func (s *Schema) parseSchema(crud config.Crud) error {
 	schema, err := s.parser(crud)
 	if err != nil {
-		log.Println("error ", err)
 		return err
 	}
 	s.SchemaDoc = schema
