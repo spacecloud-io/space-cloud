@@ -126,7 +126,12 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 //generateUpdateQuery makes query for update operations
 func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest, op string) (string, []interface{}, error) {
 	// Generate a prepared query builder
-	dialect := goqu.Dialect(s.dbType)
+
+	dbType := s.dbType
+	if dbType == string(utils.SqlServer) {
+		dbType = string(utils.Postgres)
+	}
+	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(project, col))
 	if op == "$set" {
 		query = query.Prepared(true)
@@ -212,6 +217,9 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 		}
 	default:
 		return "", nil, utils.ErrInvalidParams
+	}
+	if s.dbType == string(utils.SqlServer) {
+		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 	return sqlString, args, nil
 }

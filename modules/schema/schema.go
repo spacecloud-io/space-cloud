@@ -147,6 +147,19 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 						fieldTypeStuct.IsCreatedAt = true
 					case directiveUpdatedAt:
 						fieldTypeStuct.IsUpdatedAt = true
+					case directiveDefault:
+						fieldTypeStuct.IsDefault = true
+
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "value":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.Default = val
+							}
+						}
+						if fieldTypeStuct.Default == nil {
+							return nil, fmt.Errorf("default directive must be accompanied with value field")
+						}
 					case directiveLink:
 						fieldTypeStuct.IsLinked = true
 						fieldTypeStuct.LinkedTable = &TableProperties{DBType: dbName}
@@ -282,6 +295,11 @@ func (s *Schema) schemaValidator(col string, collectionFields SchemaFields, doc 
 				return nil, fmt.Errorf("cannot insert value for a linked field %s", fieldKey)
 			}
 
+			continue
+		}
+
+		if !ok && fieldValue.IsDefault {
+			mutatedDoc[fieldKey] = fieldValue.Default
 			continue
 		}
 
@@ -426,7 +444,7 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFiel
 		}
 		return arr, nil
 	default:
-		if !fieldValue.IsFieldTypeRequired {
+		if !fieldValue.IsFieldTypeRequired || fieldValue.IsDefault {
 			return nil, nil
 		}
 

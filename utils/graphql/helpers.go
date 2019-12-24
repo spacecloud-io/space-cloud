@@ -43,13 +43,7 @@ func (graph *Module) GetDBAlias(field *ast.Field) (string, error) {
 		return dbAlias, nil
 	}
 
-	switch dbAlias {
-	case "postgres", "mysql", "sqlserver":
-		return "sql-" + dbAlias, nil
-
-	default:
-		return "", fmt.Errorf("provided db (%s) does not exists", dbAlias)
-	}
+	return "", fmt.Errorf("provided db (%s) does not exists", dbAlias)
 }
 
 func getCollection(field *ast.Field) (string, error) {

@@ -5,9 +5,11 @@ import (
 	"strings"
 
 	"github.com/doug-martin/goqu/v8"
-	"github.com/spaceuptech/space-cloud/model"
 
-	_ "github.com/denisenkom/go-mssqldb"                //Import for MsSQL
+	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/utils"
+
+	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
@@ -27,10 +29,16 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 	return res.RowsAffected()
 }
 
-//genrateDeleteQuery makes query for delete operation
+// genrateDeleteQuery makes query for delete operation
 func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
-	dialect := goqu.Dialect(s.dbType)
+
+	dbType := s.dbType
+	if dbType == string(utils.SqlServer) {
+		dbType = string(utils.Postgres)
+	}
+
+	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	if req.Find != nil {
@@ -48,6 +56,10 @@ func (s *SQL) generateDeleteQuery(ctx context.Context, project, col string, req 
 		return "", nil, err
 	}
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
+
+	if s.dbType == string(utils.SqlServer) {
+		sqlString = s.generateQuerySQLServer(sqlString)
+	}
 	return sqlString, args, nil
 }
 

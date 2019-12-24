@@ -8,6 +8,9 @@ import (
 )
 
 func Test_generateInspection(t *testing.T) {
+	temp := "9.8"
+	tempstr := "string"
+
 	type args struct {
 		dbType      string
 		col         string
@@ -20,7 +23,7 @@ func Test_generateInspection(t *testing.T) {
 		want    schemaCollection
 		wantErr bool
 	}{
-		//TODO: Add test cases.
+		// TODO: Add test cases.
 		{
 			name: "primary-!null-ID",
 			args: args{
@@ -30,6 +33,28 @@ func Test_generateInspection(t *testing.T) {
 				foreignkeys: []utils.ForeignKeysType{},
 			},
 			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			wantErr: false,
+		},
+		{
+			name: "default key -!null-ID",
+			args: args{
+				dbType:      "sql-mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "float", FieldNull: "NO", FieldDefault: &temp}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsDefault: true, Default: &temp}}},
+			wantErr: false,
+		},
+		{
+			name: "default key string -!null-ID",
+			args: args{
+				dbType:      "sql-mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldDefault: &tempstr}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: &tempstr}}},
 			wantErr: false,
 		},
 		{
@@ -97,13 +122,13 @@ func Test_generateInspection(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		//postgres
+		// postgres
 		{
 			name: "primary-!null-ID",
 			args: args{
 				dbType:      "sql-postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "character varying(50)", FieldNull: "NO", FieldKey: "PRI"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
 			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},

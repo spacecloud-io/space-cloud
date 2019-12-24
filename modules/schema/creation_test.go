@@ -77,7 +77,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table2": SchemaFields{}},
 			},
 			fields:  fields{crud: crudMySql, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col2 timestamp );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
+			want:    []string{"CREATE TABLE test.table1 (col2 datetime );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -527,7 +527,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 boolean NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 UNIQUE (col1)"},
+			want:    []string{"CREATE TABLE test.table1 (col1 bit NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 UNIQUE (col1)"},
 			wantErr: false,
 		},
 		{

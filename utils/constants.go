@@ -32,13 +32,13 @@ const (
 	Mongo DBType = "mongo"
 
 	// MySQL is the type used for MySQL
-	MySQL DBType = "sql-mysql"
+	MySQL DBType = "mysql"
 
 	// Postgres is the type used for PostgresQL
-	Postgres DBType = "sql-postgres"
+	Postgres DBType = "postgres"
 
 	// SqlServer is the type used for MsSQL
-	SqlServer DBType = "sql-sqlserver"
+	SqlServer DBType = "sqlserver"
 )
 
 // Broker is the type of broker used by Space Cloud

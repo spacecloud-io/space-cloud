@@ -87,7 +87,6 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		}
 	}
 	for realColumnName, realColumnInfo := range realTableInfo {
-
 		// Ignore the field if its linked
 		if realColumnInfo.IsLinked {
 			continue

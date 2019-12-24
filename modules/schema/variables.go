@@ -24,9 +24,12 @@ type (
 		IsUpdatedAt bool
 		IsLinked    bool
 		IsForeign   bool
+		IsDefault   bool
 		LinkedTable *TableProperties
 		JointTable  *TableProperties
+		Default     interface{}
 	}
+
 	TableProperties struct {
 		From, To     string
 		Table, Field string
@@ -52,4 +55,5 @@ const (
 	directiveCreatedAt string = "createdAt"
 	directiveUpdatedAt string = "updatedAt"
 	directiveLink      string = "link"
+	directiveDefault   string = "default"
 )
