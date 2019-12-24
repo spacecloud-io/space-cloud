@@ -140,7 +140,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	if req.Find != nil {
 		// Get the where clause from query object
 		var err error
-		query, err = generateWhereClause(query, req.Find)
+		query, _, err = s.generateWhereClause(query, req.Find)
 		if err != nil {
 			return "", nil, err
 		}
