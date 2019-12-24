@@ -21,9 +21,10 @@ import (
 // generateReadQuery makes a query for read operation
 func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dbType := s.dbType
-	if dbType == "sqlserver" {
-		dbType = "postgres"
+	if dbType == string(utils.SqlServer) {
+		dbType = string(utils.Postgres)
 	}
+
 	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 	var tarr []string
@@ -107,6 +108,10 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 			sqlString = strings.Replace(sqlString, v, vReplaced, -1)
 		}
 
+	}
+
+	if s.dbType == string(utils.SqlServer) {
+		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 	return sqlString, args, nil
 }
