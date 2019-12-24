@@ -154,11 +154,11 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 							switch arg.Name.Value {
 							case "value":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								if val == nil {
-									return nil, fmt.Errorf("error default value cannot be empty")
-								}
 								fieldTypeStuct.Default = val
 							}
+						}
+						if fieldTypeStuct.Default == nil {
+							return nil, fmt.Errorf("default directive must be accompanied with value field")
 						}
 					case directiveLink:
 						fieldTypeStuct.IsLinked = true

@@ -128,8 +128,8 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	// Generate a prepared query builder
 
 	dbType := s.dbType
-	if dbType == "sqlserver" {
-		dbType = "postgres"
+	if dbType == string(utils.SqlServer) {
+		dbType = string(utils.Postgres)
 	}
 	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(project, col))
@@ -217,6 +217,9 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 		}
 	default:
 		return "", nil, utils.ErrInvalidParams
+	}
+	if s.dbType == string(utils.SqlServer) {
+		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 	return sqlString, args, nil
 }
