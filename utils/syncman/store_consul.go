@@ -76,9 +76,7 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 	}
 
 	p.HybridHandler = func(val watch.BlockingParamVal, data interface{}) {
-
 		kvPairs := data.(api.KVPairs)
-
 		var projects []*config.Project
 
 		for _, kv := range kvPairs {
@@ -86,16 +84,13 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 			if a[2] != s.clusterID {
 				continue
 			}
-
 			project := new(config.Project)
 			if err := json.Unmarshal(kv.Value, project); err != nil {
 				log.Println("Sync manager: Could not parse project received -", err)
 				continue
 			}
-
 			projects = append(projects, project)
 		}
-
 		cb(projects)
 	}
 
@@ -105,7 +100,6 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 			os.Exit(-1)
 		}
 	}()
-
 	return nil
 }
 
@@ -132,9 +126,8 @@ func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 			}
 
 			service := new(service)
-			service.id = kv.Key
+			service.id = a[3]
 			service.addr = string(kv.Value)
-
 			services = append(services, service)
 		}
 

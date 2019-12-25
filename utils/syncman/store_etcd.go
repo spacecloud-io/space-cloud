@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/hashicorp/consul/api"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -19,6 +20,13 @@ type ETCDStore struct {
 	etcdClient                       *clientv3.Client
 	kv                               clientv3.KV
 	nodeID, clusterID, advertiseAddr string
+}
+
+type trackedItemMeta struct {
+	createRevision int64
+	modRevision    int64
+	service        *service
+	project        *config.Project
 }
 
 func NewETCDStore(nodeID, clusterID, advertiseAddr, storeAddr string) (*ETCDStore, error) {
@@ -65,56 +73,175 @@ func (s *ETCDStore) Register() {
 }
 
 func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
+	idxID := 3
+	itemsMeta := map[string]*trackedItemMeta{}
+
+	// Query all KVs with prefix
+	res, err := s.etcdClient.Get(context.Background(), fmt.Sprintf("sc/projects/%s", s.clusterID), clientv3.WithPrefix())
+	if err != nil {
+		return err
+	}
+
+	for _, kv := range res.Kvs {
+		// Get the id of the item
+		id := strings.Split(string(kv.Key), "/")[idxID]
+		project := new(config.Project)
+		if err := json.Unmarshal(kv.Value, project); err != nil {
+			log.Println("Sync manager: Could not parse project received -", err)
+			continue
+		}
+		// Store the item
+		itemsMeta[id] = &trackedItemMeta{createRevision: kv.CreateRevision, modRevision: kv.ModRevision, project: project}
+	}
 
 	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/projects/%s", s.clusterID), clientv3.WithPrefix())
 
 	go func() {
 		for watchResponse := range ch {
-			var projects []*config.Project
+
 			for _, event := range watchResponse.Events {
+				// Return if watch response contains an error
+				if watchResponse.Err() != nil {
+					log.Fatal(watchResponse.Err())
+				}
 				kv := event.Kv
 				a := strings.Split(string(kv.Key), "/")
+				id := a[idxID]
 				if a[2] != s.clusterID {
 					continue
 				}
 
-				project := new(config.Project)
-				if err := json.Unmarshal(kv.Value, project); err != nil {
-					log.Println("Sync manager: Could not parse project received -", err)
-					continue
-				}
+				switch event.Type {
+				case mvccpb.PUT:
+					project := new(config.Project)
+					if err := json.Unmarshal(kv.Value, project); err != nil {
+						log.Println("Sync manager: Could not parse project received -", err)
+						continue
+					}
+					meta, p := itemsMeta[id]
+					if !p {
+						// AddStateless node if doesn't already exists
+						itemsMeta[id] = &trackedItemMeta{createRevision: event.Kv.CreateRevision, modRevision: event.Kv.ModRevision, project: project}
+					}
 
-				projects = append(projects, project)
+					// Ignore if incoming create revision is smaller
+					if event.Kv.CreateRevision < meta.createRevision {
+						break
+					}
+
+					// Update if incoming create revision or mod revision is greater
+					if event.Kv.CreateRevision > meta.createRevision || event.Kv.ModRevision > meta.modRevision {
+						meta.createRevision = event.Kv.CreateRevision
+						meta.modRevision = event.Kv.ModRevision
+						meta.project = project
+						itemsMeta[id] = meta
+						break
+					}
+
+				case mvccpb.DELETE:
+					meta, p := itemsMeta[id]
+					if !p {
+						// Ignore if node does not exist
+						break
+					}
+
+					// Remove if incoming mod revision is greater
+					if event.Kv.ModRevision > meta.modRevision {
+						// AddStateless node if doesn't already exists
+						meta.createRevision = event.Kv.CreateRevision
+						meta.modRevision = event.Kv.ModRevision
+						delete(itemsMeta, id)
+					}
+				}
 			}
-			cb(projects)
+			var arrProjects []*config.Project
+			for _, item := range itemsMeta {
+				arrProjects = append(arrProjects, item.project)
+			}
+			cb(arrProjects)
 		}
 	}()
-
 	return nil
 }
 
 func (s *ETCDStore) WatchServices(cb func(scServices)) error {
+	idxID := 3
+	itemsMeta := map[string]*trackedItemMeta{}
+
+	// Query all KVs with prefix
+	res, err := s.etcdClient.Get(context.Background(), fmt.Sprintf("sc/instances/%s", s.clusterID), clientv3.WithPrefix())
+	if err != nil {
+		return err
+	}
+
+	for _, kv := range res.Kvs {
+		// Get the id of the item
+		id := strings.Split(string(kv.Key), "/")[idxID]
+		service := &service{id: id, addr: string(kv.Value)}
+		// Store the item
+		itemsMeta[id] = &trackedItemMeta{createRevision: kv.CreateRevision, modRevision: kv.ModRevision, service: service}
+	}
 
 	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/instances/%s", s.clusterID), clientv3.WithPrefix())
 
 	go func() {
 		for watchResponse := range ch {
-			var services scServices
 			for _, event := range watchResponse.Events {
+				// Return if watch response contains an error
+				if watchResponse.Err() != nil {
+					log.Fatal(watchResponse.Err())
+				}
 				kv := event.Kv
 				a := strings.Split(string(kv.Key), "/")
+				id := a[idxID]
 				if a[2] != s.clusterID {
 					continue
 				}
 
-				service := new(service)
-				service.id = string(kv.Key)
-				service.addr = string(kv.Value)
+				switch event.Type {
+				case mvccpb.PUT:
+					meta, p := itemsMeta[id]
+					if !p {
+						// AddStateless node if doesn't already exists
+						itemsMeta[id] = &trackedItemMeta{createRevision: event.Kv.CreateRevision, modRevision: event.Kv.ModRevision, service: &service{id: id, addr: string(kv.Value)}}
+					}
 
-				services = append(services, service)
+					// Ignore if incoming create revision is smaller
+					if event.Kv.CreateRevision < meta.createRevision {
+						break
+					}
+
+					// Update if incoming create revision or mod revision is greater
+					if event.Kv.CreateRevision > meta.createRevision || event.Kv.ModRevision > meta.modRevision {
+						meta.createRevision = event.Kv.CreateRevision
+						meta.modRevision = event.Kv.ModRevision
+						meta.service = &service{id: id, addr: string(kv.Value)}
+						itemsMeta[id] = meta
+						break
+					}
+
+				case mvccpb.DELETE:
+					meta, p := itemsMeta[id]
+					if !p {
+						// Ignore if node does not exist
+						break
+					}
+
+					// Remove if incoming mod revision is greater
+					if event.Kv.ModRevision > meta.modRevision {
+						// AddStateless node if doesn't already exists
+						meta.createRevision = event.Kv.CreateRevision
+						meta.modRevision = event.Kv.ModRevision
+						delete(itemsMeta, id)
+					}
+				}
 			}
 
 			// Sort and store
+			var services scServices
+			for _, item := range itemsMeta {
+				services = append(services, item.service)
+			}
 			sort.Stable(services)
 			cb(services)
 		}

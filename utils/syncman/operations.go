@@ -156,16 +156,15 @@ func (s *Manager) DeleteProjectConfig(projectID string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if s.storeType == "none" {
-		s.delete(projectID)
-		if err := s.cb(s.projectConfig); err != nil {
-			return err
-		}
+	s.delete(projectID)
+	if err := s.cb(s.projectConfig); err != nil {
+		return err
+	}
 
+	if s.storeType == "none" {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	s.cb(s.projectConfig)
 	return s.store.DeleteProject(projectID)
 }
 
