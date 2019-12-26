@@ -61,7 +61,7 @@ func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
 		// Read the key pair to create certificate
 		cert, err := tls.LoadX509KeyPair(etcdConf.publicKey, etcdConf.privateKey)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Errorf("error reading public or private key from provided path,%v", err)
 		}
 
 		client, err = clientv3.New(clientv3.Config{
@@ -314,25 +314,13 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
-func (s *ETCDStore) SetProject(project *config.Project) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	opts := &api.WriteOptions{}
-	opts = opts.WithContext(ctx)
-
+func (s *ETCDStore) SetProject(ctx context.Context, project *config.Project) error {
 	_, err := s.kv.Put(ctx, fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID), project.ID)
 
 	return err
 }
 
-func (s *ETCDStore) DeleteProject(projectID string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	opts := &api.WriteOptions{}
-	opts = opts.WithContext(ctx)
-
+func (s *ETCDStore) DeleteProject(ctx context.Context, projectID string) error {
 	_, err := s.kv.Delete(ctx, fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID))
 	return err
 }

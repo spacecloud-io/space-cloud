@@ -23,7 +23,7 @@ func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, 
 	defer s.lock.RUnlock()
 
 	if s.storeType == "none" {
-		return fmt.Sprintf("http://localhost:4122/v1/api/%s/eventing/process", project), nil
+		return fmt.Sprintf("http://localhost:%d/v1/api/%s/eventing/process", s.port, project), nil
 	}
 
 	opts := &api.QueryOptions{AllowStale: true}
@@ -40,7 +40,7 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	defer s.lock.RUnlock()
 
 	if s.storeType == "none" {
-		return []string{fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/process", project)}
+		return []string{fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/process", s.port, project)}
 	}
 
 	urls := make([]string, len(s.services))
@@ -50,6 +50,10 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	}
 
 	return urls
+}
+
+func (s *Manager) GetRealtimeUrl(project string) string {
+	return string(fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project))
 }
 
 // GetAssignedTokens returns the array or tokens assigned to this node
@@ -88,7 +92,7 @@ func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
 	return len(s.services), nil
 }
 
-func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
+func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Project) (error, int) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -106,11 +110,11 @@ func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
 	}
 
-	return s.store.SetProject(project), http.StatusInternalServerError
+	return s.store.SetProject(ctx, project), http.StatusInternalServerError
 }
 
 // SetProjectGlobalConfig applies the set project config command to the raft log
-func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
+func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -123,20 +127,20 @@ func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
 	projectConfig.Secret = project.Secret
 	projectConfig.Name = project.Name
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
 // SetProjectConfig applies the set project config command to the raft log
-func (s *Manager) SetProjectConfig(project *config.Project) error {
+func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	s.cb(s.projectConfig)
-	return s.setProject(project)
+	return s.setProject(ctx, project)
 }
 
-func (s *Manager) setProject(project *config.Project) error {
+func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
 	if err := s.cb(&config.Config{Projects: []*config.Project{project}}); err != nil {
 		return err
 	}
@@ -147,11 +151,11 @@ func (s *Manager) setProject(project *config.Project) error {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	return s.store.SetProject(project)
+	return s.store.SetProject(ctx, project)
 }
 
 // DeleteProjectConfig applies delete project config command to the raft log
-func (s *Manager) DeleteProjectConfig(projectID string) error {
+func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -165,7 +169,7 @@ func (s *Manager) DeleteProjectConfig(projectID string) error {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	return s.store.DeleteProject(projectID)
+	return s.store.DeleteProject(ctx, projectID)
 }
 
 // GetConfig returns the config present in the state

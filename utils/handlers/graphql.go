@@ -59,6 +59,8 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 			return
 		case <-time.After(10 * time.Second):
 			log.Println("GraphQL Handler: Request timed out")
+			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
+			json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
 	}

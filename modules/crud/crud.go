@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -86,7 +87,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	defer m.Unlock()
 
 	if len(crud) > 1 {
-		return errors.New("crud module cannot have more than 1 alias")
+		return errors.New("crud module cannot have more than 1 db")
 	}
 
 	m.project = project
@@ -101,14 +102,15 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		var c Crud
 		var err error
 		if v.Type == "" {
-			c, err = m.initBlock(utils.DBType(k), v.Enabled, v.Conn)
-			m.dbType = k
-		} else {
-			c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
-			m.dbType = v.Type
+			v.Type = k
 		}
+
+		v.Type = strings.TrimPrefix(v.Type, "sql-")
+		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
+
+		m.dbType = v.Type
 		m.block = c
-		m.alias = k
+		m.alias = strings.TrimPrefix(k, "sql-")
 
 		if err != nil {
 			log.Println("Error connecting to " + k + " : " + err.Error())
@@ -120,9 +122,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	return nil
 }
 
+// GetDBType returns the type of the db for the alias provided
 func (m *Module) GetDBType(dbAlias string) (string, error) {
+	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
 	if dbAlias != m.alias {
-		return "", fmt.Errorf("crud module dbalias %q not found", dbAlias)
+		return "", fmt.Errorf("db (%s) not found", dbAlias)
 	}
 	return m.dbType, nil
 }

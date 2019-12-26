@@ -1,6 +1,10 @@
 package syncman
 
-import "github.com/spaceuptech/space-cloud/config"
+import (
+	"context"
+
+	"github.com/spaceuptech/space-cloud/config"
+)
 
 type Store interface {
 	WatchProjects(cb func(projects []*config.Project)) error
@@ -8,6 +12,6 @@ type Store interface {
 
 	Register()
 
-	SetProject(project *config.Project) error
-	DeleteProject(projectID string) error
+	SetProject(ctx context.Context, project *config.Project) error
+	DeleteProject(ctx context.Context, projectID string) error
 }

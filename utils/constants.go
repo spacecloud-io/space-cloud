@@ -32,13 +32,13 @@ const (
 	Mongo DBType = "mongo"
 
 	// MySQL is the type used for MySQL
-	MySQL DBType = "sql-mysql"
+	MySQL DBType = "mysql"
 
 	// Postgres is the type used for PostgresQL
-	Postgres DBType = "sql-postgres"
+	Postgres DBType = "postgres"
 
 	// SqlServer is the type used for MsSQL
-	SqlServer DBType = "sql-sqlserver"
+	SqlServer DBType = "sqlserver"
 )
 
 // Broker is the type of broker used by Space Cloud
@@ -206,15 +206,23 @@ type DatabaseCollections struct {
 const MaxEventTokens int = 100
 
 const (
-	// EventCreate is fired for create request
-	EventCreate string = "DB_INSERT"
+	// EventDBCreate is fired for create request
+	EventDBCreate string = "DB_INSERT"
 
-	// EventUpdate is fired for update request
-	EventUpdate string = "DB_UPDATE"
+	// EventDBUpdate is fired for update request
+	EventDBUpdate string = "DB_UPDATE"
 
-	// EventDelete is fired for delete request
-	EventDelete string = "DB_DELETE"
+	// EventDBDelete is fired for delete request
+	EventDBDelete string = "DB_DELETE"
+
+	// EventFileCreate is fired for create request
+	EventFileCreate string = "FILE_CREATE"
+
+	// EventFileDelete is fired for delete request
+	EventFileDelete string = "FILE_DELETE"
 )
+
+
 
 const (
 	// EventStatusIntent signifies that the event hasn't been staged yet
@@ -246,4 +254,4 @@ const (
 // SpaceCloudServiceName is the service name space cloud will register itself with in service discovery mechanisms
 const SpaceCloudServiceName string = "space-cloud"
 
-type MakeHttpRequest func(ctx context.Context, method, url, token string, params, vPtr interface{}) error
+type MakeHttpRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error

@@ -62,13 +62,14 @@ func New(nodeID, clusterID, advertiseAddr, storeType string) (*Manager, error) {
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, cb func(*config.Config) error) error {
+func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	// Set the callback
 	s.cb = cb
+	s.port = port
 
 	s.configFile = configFilePath
 

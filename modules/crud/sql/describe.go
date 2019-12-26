@@ -29,7 +29,7 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 		queryString = `DESCRIBE ` + project + "." + col
 	case utils.Postgres:
 		queryString = `SELECT  
-		f.attnum AS "Default",  
+		adsrc AS "Default",  
 		f.attnum AS "Extra",
 		f.attname AS "Field",  
 		pg_catalog.format_type(f.atttypid,f.atttypmod) AS "Type",  
@@ -42,7 +42,7 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 			WHEN f.attnotnull = 't' THEN 'NO'
 			ELSE 'YES'
 		END AS "Null"
-	FROM pg_attribute f  
+FROM pg_class pclass,pg_attribute f
 		JOIN pg_class c ON c.oid = f.attrelid  
 		JOIN pg_type t ON t.oid = f.atttypid  
 		LEFT JOIN pg_attrdef d ON d.adrelid = c.oid AND d.adnum = f.attnum  
@@ -50,6 +50,7 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 		LEFT JOIN pg_constraint p ON p.conrelid = c.oid AND f.attnum = ANY (p.conkey)  
 		LEFT JOIN pg_class AS g ON p.confrelid = g.oid  
 	WHERE c.relkind = 'r'::char    
+	  AND pclass.relname = $1
 		AND c.relname = $1
 		AND n.nspname = $2
 		AND f.attnum > 0 ORDER BY "Default"`
@@ -57,7 +58,7 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 		args = append(args, col, project)
 	case utils.SqlServer:
 
-		queryString = `SELECT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , C.DATA_TYPE as 'Type',C.DATA_TYPE as 'Default',C.DATA_TYPE as 'Extra',
+		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , C.DATA_TYPE as 'Type',C.COLUMN_DEFAULT as 'Default',C.DATA_TYPE as 'Extra',
        CASE
            WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
            WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'

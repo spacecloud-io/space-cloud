@@ -45,7 +45,7 @@ func (s *ConsulStore) Register() {
 	}
 
 	data := []byte(s.advertiseAddr)
-	if _, _, err := s.consulClient.KV().Acquire(&api.KVPair{Session: id, Key: fmt.Sprintf("sc/instances/%s/%s", s.clusterID, s.nodeID), Value: data,}, opts); err != nil {
+	if _, _, err := s.consulClient.KV().Acquire(&api.KVPair{Session: id, Key: fmt.Sprintf("sc/instances/%s/%s", s.clusterID, s.nodeID), Value: data}, opts); err != nil {
 		log.Fatal("Could not register space cloud with consul:", err)
 	}
 
@@ -146,10 +146,7 @@ func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
-func (s *ConsulStore) SetProject(project *config.Project) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s *ConsulStore) SetProject(ctx context.Context, project *config.Project) error {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)
 
@@ -163,30 +160,10 @@ func (s *ConsulStore) SetProject(project *config.Project) error {
 	return err
 }
 
-func (s *ConsulStore) DeleteProject(projectID string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func (s *ConsulStore) DeleteProject(ctx context.Context, projectID string) error {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)
 
 	_, err := s.consulClient.KV().Delete(fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID), opts)
-	return err
-}
-
-func (s *ConsulStore) CreateProjectConfig(project *config.Project) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	opts := &api.WriteOptions{}
-	opts = opts.WithContext(ctx)
-
-	data, _ := json.Marshal(project)
-
-	_, err := s.consulClient.KV().Put(&api.KVPair{
-		Key:   fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID),
-		Value: data,
-	}, opts)
-
 	return err
 }

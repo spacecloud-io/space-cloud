@@ -11,14 +11,14 @@ import (
 )
 
 // CreateDir creates a directory at the provided path
-func (m *Module) CreateDir(ctx context.Context, project, token string, req *model.CreateFileRequest) (int, error) {
+func (m *Module) CreateDir(ctx context.Context, project, token string, req *model.CreateFileRequest, meta map[string]interface{}) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")
 	}
@@ -26,36 +26,50 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.CreateDir(req)
-	if err != nil {
-		return 500, err
-	} else {
-		return 200, nil
-	}
-}
-
-// DeleteFile deletes a file at the provided path
-func (m *Module) DeleteFile(ctx context.Context, project, token, path string) (int, error) {
-	// Exit if file storage is not enabled
-	if !m.IsEnabled() {
-		return http.StatusNotFound, errors.New("This feature isn't enabled")
-	}
-
-	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileDelete, map[string]interface{}{})
-	if err != nil {
-		return http.StatusForbidden, errors.New("You are not authorized to make this request")
-	}
-
-	m.RLock()
-	defer m.RUnlock()
-
-	err = m.store.DeleteFile(path)
+	intent, err := m.eventing.CreateFileIntentHook(ctx, req)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
 
-	return 200, nil
+	err = m.store.CreateDir(req)
+	if err == nil {
+		m.eventing.HookStage(ctx, intent, err)
+		return http.StatusOK, err
+	}
+
+	m.eventing.HookStage(ctx, intent, err)
+	return http.StatusInternalServerError, nil
+}
+
+// DeleteFile deletes a file at the provided path
+func (m *Module) DeleteFile(ctx context.Context, project, token string, path string, meta map[string]interface{}) (int, error) {
+	// Exit if file storage is not enabled
+	if !m.IsEnabled() {
+		return http.StatusNotFound, errors.New("This feature isn't enabled")
+	}
+
+	// Check if the user is authorised to make this request
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileDelete, map[string]interface{}{})
+	if err != nil {
+		return http.StatusForbidden, errors.New("You are not authorized to make this request")
+	}
+
+	m.RLock()
+	defer m.RUnlock()
+
+	intent, err := m.eventing.DeleteFileIntentHook(ctx, path)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+
+	err = m.store.DeleteFile(path)
+	if err == nil {
+		m.eventing.HookStage(ctx, intent, err)
+		return http.StatusOK, err
+	}
+
+	m.eventing.HookStage(ctx, intent, err)
+	return http.StatusInternalServerError, nil
 }
 
 // ListFiles lists all the files in the provided path
@@ -66,7 +80,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileRead, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, nil, errors.New("You are not authorized to make this request")
 	}
@@ -90,7 +104,7 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, req.Path, utils.FileCreate, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, errors.New("You are not authorized to make this request")
 	}
@@ -98,11 +112,19 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	m.RLock()
 	defer m.RUnlock()
 
-	err = m.store.CreateFile(req, reader)
+	intent, err := m.eventing.CreateFileIntentHook(ctx, req)
 	if err != nil {
-		return http.StatusInternalServerError, err
+		return 500, err
 	}
-	return http.StatusOK, nil
+
+	err = m.store.CreateFile(req, reader)
+	if err == nil {
+		m.eventing.HookStage(ctx, intent, err)
+		return http.StatusOK, err
+	}
+
+	m.eventing.HookStage(ctx, intent, err)
+	return http.StatusInternalServerError, nil
 }
 
 // DownloadFile downloads a file from the provided path
@@ -113,7 +135,7 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
 		return http.StatusForbidden, nil, errors.New("You are not authorized to make this request")
 	}
@@ -127,4 +149,24 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 		return http.StatusInternalServerError, nil, err
 	}
 	return http.StatusOK, file, nil
+}
+
+// DoesExists checks if the provided path exists
+func (m *Module) DoesExists(ctx context.Context, project, token, path string) error {
+	// Exit if file storage is not enabled
+	if !m.IsEnabled() {
+		return errors.New("This feature isn't enabled")
+	}
+
+	// Check if the user is authorised to make this request
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
+	if err != nil {
+		return errors.New("You are not authorized to make this request")
+	}
+
+	m.RLock()
+	defer m.RUnlock()
+
+	// Read the file from file storage
+	return m.store.DoesExists(path)
 }
