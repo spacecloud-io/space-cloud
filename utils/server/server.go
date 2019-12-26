@@ -71,8 +71,11 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 
 	a := auth.Init(c, fn, removeProjectScope)
 
+	f := filestore.Init(a)
+
 	// Initialise the eventing module and set the crud module hooks
-	e := eventing.New(a, c, fn, adminMan, syncMan)
+	e := eventing.New(a, c, fn, adminMan, syncMan, f)
+	f.SetEventingModule(e)
 
 	c.SetHooks(&model.CrudHooks{
 		Create: e.HookDBCreateIntent,
@@ -88,9 +91,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 	}
 
 	u := userman.Init(c, a)
-	f := filestore.Init(a, e)
 	graphqlMan := graphql.New(a, c, fn)
-
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,

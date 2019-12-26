@@ -34,7 +34,7 @@ type Module struct {
 }
 
 // New creates a new instance of the eventing module
-func New(auth *auth.Module, crud *crud.Module, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager) *Module {
+func New(auth *auth.Module, crud *crud.Module, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
 
 	m := &Module{
 		auth:      auth,
@@ -42,6 +42,7 @@ func New(auth *auth.Module, crud *crud.Module, functions *functions.Module, admi
 		functions: functions,
 		adminMan:  adminMan,
 		syncMan:   syncMan,
+		fileStore: file,
 		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
 

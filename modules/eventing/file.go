@@ -12,7 +12,7 @@ import (
 )
 
 // HookDBCreateIntent handles the create intent request
-func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFileRequest, meta map[string]interface{}) (*model.EventIntent, error) {
+func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFileRequest) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -34,10 +34,14 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 			batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 				Type: utils.EventFileCreate,
 				Payload: &model.FilePayload{
-					Meta: meta,
+					Meta: req.Meta,
 					Path: req.Path,
 				},
 			}))
+	}
+
+	if len(eventDocs) == 0 {
+		return &model.EventIntent{Invalid: true}, nil
 	}
 
 	// Persist the event intent
@@ -50,7 +54,7 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 }
 
 // HookDBDeleteIntent handles the delete intent requests
-func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map[string]interface{}) (*model.EventIntent, error) {
+func (m *Module) DeleteFileIntentHook(ctx context.Context, path string) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -64,7 +68,6 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	token := rand.Intn(utils.MaxEventTokens)
 
 	rules := m.getMatchingRules(utils.EventFileDelete, map[string]string{})
-
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
@@ -72,10 +75,13 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 			batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 				Type: utils.EventFileDelete,
 				Payload: &model.FilePayload{
-					Meta: meta,
 					Path: path,
 				},
 			}))
+	}
+
+	if len(eventDocs) == 0 {
+		return &model.EventIntent{Invalid: true}, nil
 	}
 
 	// Persist the event intent

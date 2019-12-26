@@ -24,8 +24,13 @@ type Module struct {
 }
 
 // Init creates a new instance of the file store object
-func Init(auth *auth.Module, eventing model.EventingModule) *Module {
-	return &Module{enabled: false, store: nil, auth: auth, eventing: eventing}
+func Init(auth *auth.Module) *Module {
+	return &Module{enabled: false, store: nil, auth: auth}
+}
+
+// SetEventingModule sets the eventing module
+func (m *Module) SetEventingModule(eventing model.EventingModule) {
+	m.eventing = eventing
 }
 
 // FileStore abstracts the implementation file storage operations

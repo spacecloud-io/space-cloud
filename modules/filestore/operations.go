@@ -26,7 +26,7 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 	m.RLock()
 	defer m.RUnlock()
 
-	intent, err := m.eventing.CreateFileIntentHook(ctx, req, meta)
+	intent, err := m.eventing.CreateFileIntentHook(ctx, req)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
@@ -57,9 +57,9 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 	m.RLock()
 	defer m.RUnlock()
 
-	intent, err := m.eventing.DeleteFileIntentHook(ctx, path, meta)
+	intent, err := m.eventing.DeleteFileIntentHook(ctx, path)
 	if err != nil {
-		return 0, err
+		return http.StatusInternalServerError, err
 	}
 
 	err = m.store.DeleteFile(path)
@@ -97,7 +97,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 }
 
 // UploadFile uploads a file to the provided path
-func (m *Module) UploadFile(ctx context.Context, project, token string, req *model.CreateFileRequest, reader io.Reader, meta map[string]interface{}) (int, error) {
+func (m *Module) UploadFile(ctx context.Context, project, token string, req *model.CreateFileRequest, reader io.Reader) (int, error) {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, errors.New("This feature isn't enabled")
@@ -112,7 +112,7 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 	m.RLock()
 	defer m.RUnlock()
 
-	intent, err := m.eventing.CreateFileIntentHook(ctx, req, meta)
+	intent, err := m.eventing.CreateFileIntentHook(ctx, req)
 	if err != nil {
 		return 500, err
 	}

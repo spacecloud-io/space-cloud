@@ -79,9 +79,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	case utils.EventDBCreate:
 		// Unmarshal the payload
 		createEvent := model.DatabaseEventMessage{}
-		if err := json.Unmarshal([]byte(eventDoc.Payload.(string)), &createEvent); err != nil {
-			return
-		}
+		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &createEvent)
 
 		idVar := utils.GetIDVariable(createEvent.DBType)
 
@@ -109,7 +107,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	case utils.EventDBUpdate:
 		// Unmarshal the payload
 		updateEvent := model.DatabaseEventMessage{}
-		json.Unmarshal([]byte(eventDoc.Payload.(string)), &updateEvent)
+		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &updateEvent)
 		idVar := utils.GetIDVariable(updateEvent.DBType)
 
 		// Get the document from the database
@@ -144,7 +142,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	case utils.EventDBDelete:
 		// Unmarshal the payload
 		deleteEvent := model.DatabaseEventMessage{}
-		json.Unmarshal([]byte(eventDoc.Payload.(string)), &deleteEvent)
+		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &deleteEvent)
 		idVar := utils.GetIDVariable(deleteEvent.DBType)
 
 		// Check if document exists in database
@@ -152,7 +150,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		if _, err := m.crud.Read(ctx, deleteEvent.DBType, m.project, deleteEvent.Col, readRequest); err == nil {
 
 			// Mark the event as cancelled if the document still exists
-			m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID))
+			_ = m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID))
 			return
 		}
 
@@ -165,7 +163,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	case utils.EventFileCreate:
 
 		filePayload := model.FilePayload{}
-		json.Unmarshal([]byte(eventDoc.Payload.(string)), &filePayload)
+		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &filePayload)
 		// Check if document exists in database
 
 		token, err := m.auth.GetInternalAccessToken()
@@ -195,7 +193,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 	case utils.EventFileDelete:
 		filePayload := model.FilePayload{}
-		json.Unmarshal([]byte(eventDoc.Payload.(string)), &filePayload)
+		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &filePayload)
 
 		token, err := m.auth.GetInternalAccessToken()
 		if err != nil {
@@ -205,7 +203,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		if err := m.fileStore.DoesExists(ctx, m.project, token, filePayload.Path); err == nil {
 			// Mark the event as cancelled if the object still exists
-			m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID))
+			_ = m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateCancelEventRequest(eventID))
 			return
 		}
 
