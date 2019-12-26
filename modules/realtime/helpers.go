@@ -30,7 +30,7 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 	var eventingRules []config.EventingRule
 
 	// Iterate over all dbTypes
-	for dbType, dbStub := range crudConfig {
+	for dbAlias, dbStub := range crudConfig {
 
 		// Proceed only if db is enabled
 		if dbStub.Enabled {
@@ -46,7 +46,7 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 						rule := config.EventingRule{
 							Type:    eventType,
 							Url:     url,
-							Options: map[string]string{"db": dbType, "col": col},
+							Options: map[string]string{"db": dbAlias, "col": col},
 						}
 						eventingRules = append(eventingRules, rule)
 					}

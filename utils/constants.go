@@ -197,6 +197,16 @@ type ForeignKeysType struct {
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }
 
+//IndexType is the type use to indexkey information of sql inspection
+type IndexType struct {
+	TableName  string `db:"TABLE_NAME"`
+	ColumnName string `db:"COLUMN_NAME"`
+	IndexName  string `db:"INDEX_NAME"`
+	Order      int    `db:"SEQ_IN_INDEX"`
+	Sort       string `db:"SORT"`
+	IsUnique   string `db:"IS_UNIQUE"`
+}
+
 // DatabaseCollections stores all callections of sql or postgres or mongo
 type DatabaseCollections struct {
 	TableName string `db:"table_name" json:"tableName"`

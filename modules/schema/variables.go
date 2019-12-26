@@ -19,12 +19,14 @@ type (
 
 		// For directives
 		IsPrimary   bool
+		IsIndex     bool
 		IsUnique    bool
 		IsCreatedAt bool
 		IsUpdatedAt bool
 		IsLinked    bool
 		IsForeign   bool
 		IsDefault   bool
+		IndexInfo   *TableProperties
 		LinkedTable *TableProperties
 		JointTable  *TableProperties
 		Default     interface{}
@@ -34,6 +36,8 @@ type (
 		From, To     string
 		Table, Field string
 		DBType       string
+		Group, Sort  string
+		Order        int
 	}
 )
 
@@ -50,10 +54,21 @@ const (
 	typeObject    string = "Object"
 
 	directiveUnique    string = "unique"
+	directiveIndex     string = "index"
 	directiveForeign   string = "foreign"
 	directivePrimary   string = "primary"
 	directiveCreatedAt string = "createdAt"
 	directiveUpdatedAt string = "updatedAt"
 	directiveLink      string = "link"
 	directiveDefault   string = "default"
+
+	defaultIndexName  string = ""
+	defaultIndexSort  string = "asc"
+	deafultIndexOrder int    = 1
 )
+
+type indexStore []*SchemaFieldType
+
+func (a indexStore) Len() int           { return len(a) }
+func (a indexStore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a indexStore) Less(i, j int) bool { return a[i].IndexInfo.Order < a[j].IndexInfo.Order }

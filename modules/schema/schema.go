@@ -141,8 +141,6 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 					switch directive.Name.Value {
 					case directivePrimary:
 						fieldTypeStuct.IsPrimary = true
-					case directiveUnique:
-						fieldTypeStuct.IsUnique = true
 					case directiveCreatedAt:
 						fieldTypeStuct.IsCreatedAt = true
 					case directiveUpdatedAt:
@@ -159,6 +157,23 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 						}
 						if fieldTypeStuct.Default == nil {
 							return nil, fmt.Errorf("default directive must be accompanied with value field")
+						}
+					case directiveIndex, directiveUnique:
+						fieldTypeStuct.IsIndex = true
+						fieldTypeStuct.IsUnique = directive.Name.Value == directiveUnique
+						fieldTypeStuct.IndexInfo = &TableProperties{Group: fieldTypeStuct.FieldName, Order: deafultIndexOrder, Sort: defaultIndexSort}
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "group":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.IndexInfo.Group = val.(string)
+							case "order":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.IndexInfo.Order = val.(int)
+							case "sort":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.IndexInfo.Sort = val.(string)
+							}
 						}
 					case directiveLink:
 						fieldTypeStuct.IsLinked = true
