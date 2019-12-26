@@ -82,7 +82,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 	// Payload will be of type json. Unmarshal it before sending
 	var doc interface{}
-	json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
+	_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
 	eventDoc.Payload = doc
 
 	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: eventDoc.Type, Source: m.syncMan.GetEventSource(), Id: eventDoc.ID,
@@ -115,7 +115,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 				}
 			}
 
-			m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+			_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
 			return
 		}
 
