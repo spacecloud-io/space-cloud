@@ -32,13 +32,13 @@ const (
 	Mongo DBType = "mongo"
 
 	// MySQL is the type used for MySQL
-	MySQL DBType = "sql-mysql"
+	MySQL DBType = "mysql"
 
 	// Postgres is the type used for PostgresQL
-	Postgres DBType = "sql-postgres"
+	Postgres DBType = "postgres"
 
 	// SqlServer is the type used for MsSQL
-	SqlServer DBType = "sql-sqlserver"
+	SqlServer DBType = "sqlserver"
 )
 
 // Broker is the type of broker used by Space Cloud
@@ -254,4 +254,4 @@ const (
 // SpaceCloudServiceName is the service name space cloud will register itself with in service discovery mechanisms
 const SpaceCloudServiceName string = "space-cloud"
 
-type MakeHttpRequest func(ctx context.Context, method, url, token string, params, vPtr interface{}) error
+type MakeHttpRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error

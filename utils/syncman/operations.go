@@ -25,7 +25,7 @@ func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, 
 	defer s.lock.RUnlock()
 
 	if !s.isConsulEnabled {
-		return fmt.Sprintf("http://localhost:4122/v1/api/%s/eventing/process", project), nil
+		return fmt.Sprintf("http://localhost:%d/v1/api/%s/eventing/process", s.port, project), nil
 	}
 
 	opts := &api.QueryOptions{AllowStale: true}
@@ -42,7 +42,7 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	defer s.lock.RUnlock()
 
 	if !s.isConsulEnabled {
-		return []string{fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/process", project)}
+		return []string{fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/process", s.port, project)}
 	}
 
 	urls := make([]string, len(s.services))
@@ -52,6 +52,10 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	}
 
 	return urls
+}
+
+func (s *Manager) GetRealtimeUrl(project string) string {
+	return string(fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project))
 }
 
 // GetAssignedTokens returns the array or tokens assigned to this node
@@ -124,7 +128,7 @@ func (s *Manager) CreateProjectConfig(project *config.Project) (error, int) {
 }
 
 // SetProjectGlobalConfig applies the set project config command to the raft log
-func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
+func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -137,18 +141,18 @@ func (s *Manager) SetProjectGlobalConfig(project *config.Project) error {
 	projectConfig.Secret = project.Secret
 	projectConfig.Name = project.Name
 
-	return s.setProject(projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
 // SetProjectConfig applies the set project config command to the raft log
-func (s *Manager) SetProjectConfig(project *config.Project) error {
+func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	return s.setProject(project)
+	return s.setProject(ctx, project)
 }
 
-func (s *Manager) setProject(project *config.Project) error {
+func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
 	if err := s.cb(&config.Config{Projects: []*config.Project{project}}); err != nil {
 		return err
 	}
@@ -158,9 +162,6 @@ func (s *Manager) setProject(project *config.Project) error {
 	if !s.isConsulEnabled {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)

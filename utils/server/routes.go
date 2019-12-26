@@ -51,13 +51,13 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}").HandlerFunc(handlers.HandleDeleteCollection(s.adminMan, s.crud, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/config").HandlerFunc(handlers.HandleDatabaseConnection(s.adminMan, s.crud, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/database/{dbType}").HandlerFunc(handlers.HandleRemoveDatabaseConfig(s.adminMan, s.crud, s.syncMan))
-	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/modify-schema").HandlerFunc(handlers.HandleModifyAllSchema(s.adminMan, s.auth.Schema, s.syncMan))
-	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/modify-schema").HandlerFunc(handlers.HandleModifySchema(s.adminMan, s.auth.Schema, s.syncMan))
-	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/reload-schema").HandlerFunc(handlers.HandleReloadSchema(s.adminMan, s.auth.Schema, s.syncMan))
-	router.Methods("GET").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/inspect-schema").HandlerFunc(handlers.HandleSchemaInspection(s.adminMan, s.auth.Schema, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/modify-schema").HandlerFunc(handlers.HandleModifyAllSchema(s.adminMan, s.schema, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/modify-schema").HandlerFunc(handlers.HandleModifySchema(s.adminMan, s.schema, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/reload-schema").HandlerFunc(handlers.HandleReloadSchema(s.adminMan, s.schema, s.syncMan))
+	router.Methods("GET").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/inspect-schema").HandlerFunc(handlers.HandleSchemaInspection(s.adminMan, s.schema, s.syncMan))
 
 	// Initialize route for getting all schemas for all the collections present in config.crud
-	router.Methods("GET").Path("/v1/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.auth.Schema))
+	router.Methods("GET").Path("/v1/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.schema))
 
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))

@@ -3,8 +3,10 @@ package sql
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	goqu "github.com/doug-martin/goqu/v8"
@@ -12,17 +14,17 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func generator(find map[string]interface{}) goqu.Expression {
-
+func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string) {
+	var regxarr []string
 	array := []goqu.Expression{}
 	for k, v := range find {
 		if k == "$or" {
 			orArray := v.([]interface{})
-
 			orFinalArray := []goqu.Expression{}
 			for _, item := range orArray {
-				exp := generator(item.(map[string]interface{}))
+				exp, a := s.generator(item.(map[string]interface{}))
 				orFinalArray = append(orFinalArray, exp)
+				regxarr = append(regxarr, a...)
 			}
 
 			array = append(array, goqu.Or(orFinalArray...))
@@ -32,6 +34,14 @@ func generator(find map[string]interface{}) goqu.Expression {
 		if isObj {
 			for k2, v2 := range val {
 				switch k2 {
+				case "$regex":
+					switch s.dbType {
+					case "postgres":
+						regxarr = append(regxarr, fmt.Sprintf("%s = $", k))
+					case "mysql":
+						regxarr = append(regxarr, fmt.Sprintf("%s = ?", k))
+					}
+					array = append(array, goqu.I(k).Eq(v2))
 				case "$eq":
 					array = append(array, goqu.I(k).Eq(v2))
 				case "$ne":
@@ -60,18 +70,18 @@ func generator(find map[string]interface{}) goqu.Expression {
 			array = append(array, goqu.I(k).Eq(v))
 		}
 	}
-	return goqu.And(array...)
+	return goqu.And(array...), regxarr
 }
 
-func generateWhereClause(q *goqu.SelectDataset, find map[string]interface{}) (query *goqu.SelectDataset, err error) {
+func (s *SQL) generateWhereClause(q *goqu.SelectDataset, find map[string]interface{}) (query *goqu.SelectDataset, arr []string, err error) {
 	query = q
 	err = nil
 	if len(find) == 0 {
 		return
 	}
-	exp := generator(find)
+	exp, arr := s.generator(find)
 	query = query.Where(exp)
-	return
+	return query, arr, err
 }
 
 func generateRecord(temp interface{}) (goqu.Record, error) {
@@ -93,6 +103,10 @@ func (s *SQL) getDBName(project, col string) string {
 	}
 
 	return project + "." + col
+}
+
+func (s *SQL) generateQuerySQLServer(query string) string {
+	return strings.Replace(query, "$", "@p", -1)
 }
 
 func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[string]interface{}) {

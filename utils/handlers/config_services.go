@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
@@ -28,12 +30,14 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		vars := mux.Vars(r)
 		service := vars["service"]
 		project := vars["project"]
 
-		if err := syncMan.SetService(project, service, &v); err != nil {
+		if err := syncMan.SetService(ctx, project, service, &v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -60,12 +64,14 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		vars := mux.Vars(r)
 		service := vars["service"]
 		project := vars["project"]
 
-		if err := syncMan.SetDeleteService(project, service); err != nil {
+		if err := syncMan.SetDeleteService(ctx, project, service); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

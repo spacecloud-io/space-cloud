@@ -24,9 +24,6 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 		service := vars["service"]
 		function := vars["func"]
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-
 		// Load the params from the body
 		req := model.FunctionsRequest{}
 		json.NewDecoder(r.Body).Decode(&req)
@@ -35,6 +32,9 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
+		defer cancel()
+
 		_, err := auth.IsFuncCallAuthorised(ctx, project, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
@@ -42,7 +42,7 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 			return
 		}
 
-		result, err := functions.Call(service, function, token, req.Params, req.Timeout)
+		result, err := functions.CallWithContext(ctx, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
