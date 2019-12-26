@@ -27,18 +27,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Load space cloud config from `FILE`",
 		EnvVar: "CONFIG",
 	},
-	cli.StringFlag{
-		Name:   "ssl-cert",
-		Value:  "none",
-		Usage:  "Load ssl certificate from `FILE`",
-		EnvVar: "SSL_CERT",
-	},
-	cli.StringFlag{
-		Name:   "ssl-key",
-		Value:  "none",
-		Usage:  "Load ssl key from `FILE`",
-		EnvVar: "SSL_KEY",
-	},
 	cli.BoolFlag{
 		Name:   "dev",
 		Usage:  "Run space-cloud in development mode",
@@ -55,33 +43,10 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "PROFILER",
 	},
 	cli.StringFlag{
-		Name:   "admin-user",
-		Usage:  "Set the admin user name",
-		EnvVar: "ADMIN_USER",
-		Value:  "",
-	},
-	cli.StringFlag{
-		Name:   "admin-pass",
-		Usage:  "Set the admin password",
-		EnvVar: "ADMIN_PASS",
-		Value:  "",
-	},
-	cli.StringFlag{
-		Name:   "admin-secret",
-		Usage:  "Set the admin secret",
-		EnvVar: "ADMIN_SECRET",
-		Value:  "",
-	},
-	cli.StringFlag{
 		Name:   "cluster",
 		Usage:  "The cluster id to start space-cloud with",
 		EnvVar: "CLUSTER_ID",
 		Value:  "default-cluster",
-	},
-	cli.StringFlag{
-		Name:   "store-addr",
-		EnvVar: "STORE_ADDR",
-		Usage:  "The address of config store used by space-cloud to make connection",
 	},
 	cli.StringFlag{
 		Name:   "advertise-addr",
@@ -173,19 +138,13 @@ func actionRun(c *cli.Context) error {
 	removeProjectScope := c.Bool("remove-project-scope")
 
 	// Load flags related to ssl
-	sslCert := c.String("ssl-cert")
-	sslKey := c.String("ssl-key")
 
 	// Flags related to the admin details
-	adminUser := c.String("admin-user")
-	adminPass := c.String("admin-pass")
-	adminSecret := c.String("admin-secret")
 
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
 	advertiseAddr := c.String("advice-addr")
-	storeAddr := c.String("store-addr")
 
 	// Load the flags for the metrics module
 	enableMetrics := c.Bool("enable-metrics")
@@ -198,7 +157,7 @@ func actionRun(c *cli.Context) error {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, storeAddr, advertiseAddr, storeType, removeProjectScope,
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
@@ -213,17 +172,6 @@ func actionRun(c *cli.Context) error {
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
 
-	// Override the admin config if provided
-	if adminUser != "" {
-		conf.Admin.Users[0].User = adminUser
-	}
-	if adminPass != "" {
-		conf.Admin.Users[0].Pass = adminPass
-	}
-	if adminSecret != "" {
-		conf.Admin.Secret = adminSecret
-	}
-
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
 	if err != nil {
@@ -232,12 +180,6 @@ func actionRun(c *cli.Context) error {
 
 	// Initialise the routes
 	s.InitRoutes(profiler, staticPath)
-
-	// Set the ssl config
-	if sslCert != "none" && sslKey != "none" {
-		s.InitSecureRoutes(profiler, staticPath)
-		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
-	}
 
 	// Configure all modules
 	s.SetConfig(conf, !isDev)

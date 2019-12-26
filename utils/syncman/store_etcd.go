@@ -2,10 +2,15 @@ package syncman
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,15 +34,74 @@ type trackedItemMeta struct {
 	project        *config.Project
 }
 
-func NewETCDStore(nodeID, clusterID, advertiseAddr, storeAddr string) (*ETCDStore, error) {
-	client, err := clientv3.New(clientv3.Config{
-		Endpoints: []string{storeAddr},
-	})
+type etcdConfig struct {
+	endpoints  string
+	adminUser  string
+	adminPass  string
+	caCert     string
+	publicKey  string
+	privateKey string
+	isSSL      bool
+}
+
+func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
+	etcdConf, err := loadConfig()
 	if err != nil {
-		return nil, err
+		return &ETCDStore{}, fmt.Errorf("error loading etcd config from environment %v", err)
+	}
+
+	var client *clientv3.Client
+	if etcdConf.isSSL {
+		caCert, err := ioutil.ReadFile(etcdConf.caCert)
+		if err != nil {
+			fmt.Errorf("error reading CA cert from provided path,%v", err)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+		// Read the key pair to create certificate
+		cert, err := tls.LoadX509KeyPair(etcdConf.publicKey, etcdConf.privateKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		client, err = clientv3.New(clientv3.Config{
+			Endpoints: strings.Split(etcdConf.endpoints, ","),
+			Username:  etcdConf.adminUser,
+			Password:  etcdConf.adminPass,
+			TLS: &tls.Config{
+				RootCAs:      caCertPool,
+				Certificates: []tls.Certificate{cert},
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("error not able initilize etcd client, %v", err)
+		}
+	} else {
+		client, err = clientv3.New(clientv3.Config{
+			Endpoints: strings.Split(etcdConf.endpoints, ","),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("error not able initilize etcd client, %v", err)
+		}
 	}
 
 	return &ETCDStore{etcdClient: client, nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, kv: clientv3.NewKV(client)}, nil
+}
+
+func loadConfig() (*etcdConfig, error) {
+	isSSL, err := strconv.ParseBool(os.Getenv("ETCD_HTTP_SSL"))
+	if err != nil {
+		return &etcdConfig{}, fmt.Errorf("error cannot parse ETCD_HTTP_SSL to bool, %v", err)
+	}
+	return &etcdConfig{
+		endpoints:  os.Getenv("ETCD_ENDPOINTS"),
+		adminUser:  os.Getenv("ETCD_USER"),
+		adminPass:  os.Getenv("ETCD_PASSWORD"),
+		caCert:     os.Getenv("ETCD_CACERT"),
+		publicKey:  os.Getenv("ETCD_CLIENT_CERT"),
+		privateKey: os.Getenv("ETCD_CLIENT_KEY"),
+		isSSL:      isSSL,
+	}, nil
 }
 
 func (s *ETCDStore) Register() {

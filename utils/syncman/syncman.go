@@ -33,7 +33,7 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, storeAddr, advertiseAddr, storeType string) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType string) (*Manager, error) {
 
 	// Create a new manager instance
 	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType}
@@ -50,7 +50,7 @@ func New(nodeID, clusterID, storeAddr, advertiseAddr, storeType string) (*Manage
 		m.store = s
 		m.store.Register()
 	case "etcd":
-		s, err := NewETCDStore(nodeID, clusterID, advertiseAddr, storeAddr)
+		s, err := NewETCDStore(nodeID, clusterID, advertiseAddr)
 		if err != nil {
 			return nil, err
 		}
