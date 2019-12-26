@@ -74,15 +74,18 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 
 	fn := functions.Init(a, syncMan)
 
+	f := filestore.Init(a)
+
 	// Initialise the eventing module and set the crud module hooks
-	e := eventing.New(a, c, fn, adminMan, syncMan)
+	e := eventing.New(a, c, fn, adminMan, syncMan, f)
+	f.SetEventingModule(e)
 
 	c.SetHooks(&model.CrudHooks{
-		Create: e.HandleCreateIntent,
-		Update: e.HandleUpdateIntent,
-		Delete: e.HandleDeleteIntent,
-		Batch:  e.HandleBatchIntent,
-		Stage:  e.HandleStage,
+		Create: e.HookDBCreateIntent,
+		Update: e.HookDBUpdateIntent,
+		Delete: e.HookDBDeleteIntent,
+		Batch:  e.HookDBBatchIntent,
+		Stage:  e.HookStage,
 	}, m.AddDBOperation)
 
 	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
@@ -91,7 +94,6 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 	}
 
 	u := userman.Init(c, a)
-	f := filestore.Init(a)
 	graphqlMan := graphql.New(a, c, fn, s)
 
 	fmt.Println("Creating a new server with id", nodeID)
@@ -131,7 +133,7 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 		}()
 	}
 
-	//go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
+	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.router)
 

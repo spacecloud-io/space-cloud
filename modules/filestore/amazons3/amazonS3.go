@@ -12,6 +12,7 @@ type AmazonS3 struct {
 	bucket string
 }
 
+
 // Init initializes an amazon s3 driver
 func Init(region, endpoint, bucket string) (*AmazonS3, error) {
 	awsConf := &aws.Config{Region: aws.String(region)}
