@@ -11,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// HookDBCreateIntent handles the create intent request
+// CreateFileIntentHook handles the create file intent request
 func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFileRequest) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -53,7 +53,7 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 	return &model.EventIntent{BatchID: batchID, Token: token, Docs: eventDocs}, nil
 }
 
-// HookDBDeleteIntent handles the delete intent requests
+// DeleteFileIntentHook handles the delete file intent requests
 func (m *Module) DeleteFileIntentHook(ctx context.Context, path string) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()

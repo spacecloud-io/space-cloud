@@ -128,6 +128,7 @@ func (m *Module) HookDBDeleteIntent(ctx context.Context, dbType, col string, req
 	return m.HookDBUpdateDeleteIntent(ctx, utils.EventDBDelete, dbType, col, req.Find)
 }
 
+// HookDBUpdateDeleteIntent is used as the hook for update and delete events
 func (m *Module) HookDBUpdateDeleteIntent(ctx context.Context, eventType, dbType, col string, find map[string]interface{}) (*model.EventIntent, error) {
 	// Create a unique batch id and token
 	batchID := ksuid.New().String()

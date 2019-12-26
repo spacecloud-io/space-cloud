@@ -151,6 +151,7 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 	return http.StatusOK, file, nil
 }
 
+// DoesExists checks if the provided path exists
 func (m *Module) DoesExists(ctx context.Context, project, token, path string) error {
 	// Exit if file storage is not enabled
 	if !m.IsEnabled() {
@@ -158,7 +159,7 @@ func (m *Module) DoesExists(ctx context.Context, project, token, path string) er
 	}
 
 	// Check if the user is authorised to make this request
-	err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
+	_, err := m.auth.IsFileOpAuthorised(ctx, project, token, path, utils.FileRead, map[string]interface{}{})
 	if err != nil {
 		return errors.New("You are not authorized to make this request")
 	}

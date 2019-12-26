@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -168,7 +167,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		token, err := m.auth.GetInternalAccessToken()
 		if err != nil {
-			fmt.Errorf("error generating token in intent staging %s", err.Error())
+			log.Println("Eventing: Error generating token in intent staging -", err)
 			return
 		}
 
@@ -197,7 +196,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		token, err := m.auth.GetInternalAccessToken()
 		if err != nil {
-			fmt.Errorf("error generating token in intent staging %s", err.Error())
+			log.Println("Eventing: Error generating token in intent staging -", err)
 			return
 		}
 
