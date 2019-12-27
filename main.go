@@ -69,7 +69,37 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Removes the project level scope in the database and file storage modules",
 		EnvVar: "REMOVE_PROJECT_SCOPE",
 	},
-
+	cli.StringFlag{
+		Name:   "ssl-cert",
+		Value:  "none",
+		Usage:  "Load ssl certificate from `FILE`",
+		EnvVar: "SSL_CERT",
+	},
+	cli.StringFlag{
+		Name:   "ssl-key",
+		Value:  "none",
+		Usage:  "Load ssl key from `FILE`",
+		EnvVar: "SSL_KEY",
+	},
+	// flags for admin man
+	cli.StringFlag{
+		Name:   "admin-user",
+		Usage:  "Set the admin user name",
+		EnvVar: "ADMIN_USER",
+		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "admin-pass",
+		Usage:  "Set the admin password",
+		EnvVar: "ADMIN_PASS",
+		Value:  "",
+	},
+	cli.StringFlag{
+		Name:   "admin-secret",
+		Usage:  "Set the admin secret",
+		EnvVar: "ADMIN_SECRET",
+		Value:  "",
+	},
 	// Flags for the metrics module
 	cli.BoolFlag{
 		Name:   "enable-metrics",
@@ -138,8 +168,13 @@ func actionRun(c *cli.Context) error {
 	removeProjectScope := c.Bool("remove-project-scope")
 
 	// Load flags related to ssl
+	sslKey := c.String("ssl-key")
+	sslCert := c.String("ssl-cert")
 
 	// Flags related to the admin details
+	adminUser := c.String("admin-user")
+	adminPass := c.String("admin-pass")
+	adminSecret := c.String("admin-secret")
 
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
@@ -172,6 +207,17 @@ func actionRun(c *cli.Context) error {
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
 
+	// Override the admin config if provided
+	if adminUser != "" {
+		conf.Admin.Users[0].User = adminUser
+	}
+	if adminPass != "" {
+		conf.Admin.Users[0].Pass = adminPass
+	}
+	if adminSecret != "" {
+		conf.Admin.Secret = adminSecret
+	}
+
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
 	if err != nil {
@@ -180,6 +226,12 @@ func actionRun(c *cli.Context) error {
 
 	// Initialise the routes
 	s.InitRoutes(profiler, staticPath)
+
+	// Set the ssl config
+	if sslCert != "none" && sslKey != "none" {
+		s.InitSecureRoutes(profiler, staticPath)
+		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
+	}
 
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
