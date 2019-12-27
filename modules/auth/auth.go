@@ -10,7 +10,6 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/schema"
 
-	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -24,9 +23,9 @@ var (
 type Module struct {
 	sync.RWMutex
 	rules           config.Crud
+	nodeID          string
 	secret          string
 	crud            *crud.Module
-	functions       *functions.Module
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
 	project         string
@@ -48,8 +47,8 @@ type PostProcessAction struct {
 }
 
 // Init creates a new instance of the auth object
-func Init(crud *crud.Module, functions *functions.Module, schema *schema.Schema, removeProjectScope bool) *Module {
-	return &Module{rules: make(config.Crud), crud: crud, functions: functions, schema: schema}
+func Init(nodeID string, crud *crud.Module, schema *schema.Schema, removeProjectScope bool) *Module {
+	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, schema: schema}
 }
 
 // SetConfig set the rules and secret key required by the auth block
@@ -85,7 +84,19 @@ func (m *Module) SetSecret(secret string) {
 
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud
 func (m *Module) GetInternalAccessToken() (string, error) {
-	return m.CreateToken(map[string]interface{}{"id": utils.InternalUserID})
+	return m.CreateToken(map[string]interface{}{
+		"id":     utils.InternalUserID,
+		"nodeId": m.nodeID,
+		"role":   "SpaceCloud",
+	})
+}
+
+// GetSCAccessToken returns the token that can be used to verify Space Cloud
+func (m *Module) GetSCAccessToken() (string, error) {
+	return m.CreateToken(map[string]interface{}{
+		"id":   m.nodeID,
+		"role": "SpaceCloud",
+	})
 }
 
 // CreateToken generates a new JWT Token with the token claims

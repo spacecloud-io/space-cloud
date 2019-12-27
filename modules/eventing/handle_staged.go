@@ -82,21 +82,21 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 	// Payload will be of type json. Unmarshal it before sending
 	var doc interface{}
-	json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
+	_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
 	eventDoc.Payload = doc
 
 	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: eventDoc.Type, Source: m.syncMan.GetEventSource(), Id: eventDoc.ID,
 		Time: time.Unix(0, eventDoc.Timestamp*int64(time.Millisecond)).Format(time.RFC3339), Data: eventDoc.Payload}
 
 	for {
-		token, err := m.auth.GetInternalAccessToken()
+		scToken, err := m.auth.GetSCAccessToken()
 		if err != nil {
 			log.Println("Eventing: Couldn't trigger functions -", err)
 			return
 		}
 
 		var eventResponse model.EventResponse
-		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, token, cloudEvent, &eventResponse)
+		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, "", scToken, cloudEvent, &eventResponse)
 		if err == nil {
 			var eventRequests []*model.QueueEventRequest
 
@@ -115,7 +115,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 				}
 			}
 
-			m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+			_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
 			return
 		}
 
