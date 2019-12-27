@@ -1,252 +1,230 @@
 package auth
 
 import (
-	"errors"
-	"reflect"
-	"testing"
-
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/modules/schema"
+	"golang.org/x/net/context"
+	"reflect"
+	"testing"
 )
 
-func TestMatch(t *testing.T) {
-	var authMatch = []struct {
-		testName string
-		err      error
-		rule     *config.Rule
-		args     map[string]interface{}
+func TestMatch_Rule(t *testing.T) {
+	var testCases = []struct {
+		name          string
+		IsErrExpected bool
+		project       string
+		rule          *config.Rule
+		args          map[string]interface{}
+		auth          map[string]interface{}
 	}{
-		{testName: "Match String !=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match String ==", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "string", F1: "interfaceString1", F2: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number ==", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number <=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "<=", Type: "number", F1: 2.0, F2: 3.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number >=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: ">=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number <", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "<", Type: "number", F1: 1.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number >", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: ">", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number !=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0, F2: 10.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match bool ==", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match bool !=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "bool", F1: false, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		// error
-		{testName: "Error Test", err: ErrIncorrectMatch, rule: &config.Rule{}},
-		{testName: "Match String !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number ==", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match bool ==", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match String !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "string", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match String !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "string", F1: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match number !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "number", F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match number !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "number", F1: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match bool !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match bool !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
+		{name: "Test Case-internal sc user", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "deny", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc-user", "roll": "1234"},
+		},
+		{name: "Test Case-allow", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "allow", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc-user", "roll": "1234"},
+		},
+		{name: "Test Case-deny rule", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "deny", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Invalid Test Case-matchand rule", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "deny", Eval: "!="},
+				{Rule: "allow", Eval: "!="}}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Valid Test Case-matchand rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "allow", Eval: "!="},
+				{Rule: "allow", Eval: "!="}}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-match rule-string", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-match rule-invalid type", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "integer", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-match rule-number", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "number", F1: 0, F2: "args.string1", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": 1}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-match rule-number(indirectly passing arguments)", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "==", Type: "number", F1: "args.string1", F2: "args.string1", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": 1}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-match rule-invalid boolean fields", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-match rule-invalid boolean fields", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: true, F2: false, DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Invalid Test Case-matchor rule", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "deny"}, {Rule: "deny"}}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-matchor rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "allow"}, {Rule: "deny"}}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-webhook rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "webhook", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-query rule", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "query", Type: "string", DB: "mongo", Col: "default", Find: map[string]interface{}{"age": 12}},
+			args: map[string]interface{}{"args": map[string]interface{}{"age": 12}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-match-force rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "force", Eval: "!=", Type: "string", Field: "args.token", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Test Case-match-remove rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "remove", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
 	}
-	testcases := 9
-	for i, test := range authMatch {
-		t.Run(test.testName, func(t *testing.T) {
-			err := match(test.rule, test.args)
-			if i <= testcases {
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			} else {
-
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Error Test", "| Got This |", err, "| Wanted This |", test.err)
+	auth := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
+	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"default": {Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}}}
+	auth.makeHttpRequest = func(ctx context.Context, method, url, token string, params, vPtr interface{}) error { return nil }
+	auth.SetConfig("default", "", rule, &config.FileStore{}, &config.ServicesModule{})
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := (auth).matchRule(context.Background(), test.project, test.rule, test.args, test.auth)
+			if (err != nil) != test.IsErrExpected {
+				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
+			}
+		})
+	}
+}
+func TestMatchForce_Rule(t *testing.T) {
+	var testCases = []struct {
+		name          string
+		IsErrExpected bool
+		IsSkipable    bool
+		result        *PostProcess
+		rule          *config.Rule
+		args          map[string]interface{}
+	}{
+		{name: "Test Case-res directly passing value", IsErrExpected: false, IsSkipable: false,
+			result: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			rule:   &config.Rule{Rule: "force", Value: "1234", Field: "res.age"},
+			args:   map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+		},
+		{name: "Test Case-Scope not present for given variable", IsErrExpected: true, IsSkipable: true,
+			rule: &config.Rule{Rule: "force", Value: "1234", Field: "args.age"},
+			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
+		},
+		{name: "Test Case-res indirectly passing value", IsErrExpected: false, IsSkipable: false,
+			result: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			rule:   &config.Rule{Rule: "force", Value: "args.string2", Field: "res.age"},
+			args:   map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "1234"}},
+		},
+		{name: "Incorrect Rule Field Test Case", IsErrExpected: true, IsSkipable: true,
+			rule: &config.Rule{Rule: "force", Value: "args.string2", Field: "arg.string1"},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
+		},
+		{name: "Valid Test Case-args", IsErrExpected: false, IsSkipable: false, result: &PostProcess{},
+			rule: &config.Rule{Rule: "force", Value: "1234", Field: "args.string1"},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
+		},
+	}
+	auth := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
+	auth.makeHttpRequest = func(ctx context.Context, method, url, token string, params, vPtr interface{}) error { return nil }
+	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			r, err := matchForce(test.rule, test.args)
+			if (err != nil) != test.IsErrExpected {
+				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
+			}
+			//check return value if post process is appended
+			if !test.IsSkipable {
+				if !reflect.DeepEqual(r, test.result) {
+					t.Error("| Got This ", r, "| Wanted Result |", test.result)
 				}
 			}
 		})
 	}
 }
 
-func TestMatchAnd(t *testing.T) {
-	var authMatchAnd = []struct {
-		testName string
-		err      error
-		rule     *config.Rule
-		args     map[string]interface{}
+func TestMatchRemove_Rule(t *testing.T) {
+	var testCases = []struct {
+		name          string
+		IsErrExpected bool
+		rule          *config.Rule
+		result        *PostProcess
+		IsSkipable    bool
+		args          map[string]interface{}
 	}{
-		{testName: "Success Match Test", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and !=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and ==", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "==", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and <=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "<=", Type: "number", F1: 2.0, F2: 3.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and ==", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "==", Type: "string", F1: "interfaceString1", F2: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and >=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: ">=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and <", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "<", Type: "number", F1: 1.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and >", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: ">", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and !=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and ==", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "==", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and !=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "bool", F1: true, F2: false, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		// error
-		{testName: "Error Test and != type is not provided", err: ErrIncorrectMatch, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "", F1: true, F2: false, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match String eval is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match String f1 is not provided !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "string", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match String f2 is not provided !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-
-		{testName: "Error Match number eval is not provided !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match number f1 is not provided !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "number", F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match number f2 is not provided !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-
-		{testName: "Error Match bool eval is not provided !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match bool f1 is not provided !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "bool", F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match bool f2 is not provided !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "bool", F1: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
+		{name: "Test Case-res", IsErrExpected: false,
+			IsSkipable: false,
+			rule:       &config.Rule{Rule: "remove", Value: "12", Fields: []string{"res.age"}},
+			args:       map[string]interface{}{"res": map[string]interface{}{"age": "12"}},
+			result:     &PostProcess{[]PostProcessAction{PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
+		},
+		{name: "Test Case-invalid field provided", IsErrExpected: true, IsSkipable: true,
+			rule: &config.Rule{Rule: "remove", Type: "string", Fields: []string{"args:age"}},
+			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
+		},
+		{name: "Test Case-scope not present", IsErrExpected: true, IsSkipable: true,
+			rule: &config.Rule{Rule: "remove", Type: "string", Fields: []string{"args.age"}},
+			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
+		},
+		{name: "Test Case-remove multiple args", IsErrExpected: false, IsSkipable: false,
+			result: &PostProcess{},
+			rule:   &config.Rule{Rule: "remove", Type: "number", Fields: []string{"args.age", "args.exp"}},
+			args:   map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
+		},
+		{name: "Test Case-invalid map value to another map", IsErrExpected: true, IsSkipable: true,
+			rule: &config.Rule{Rule: "remove", Type: "number", Fields: []string{"args.age.exp"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
+		},
+		{name: "Test Case-cannot find property of map", IsErrExpected: true, IsSkipable: true,
+			rule: &config.Rule{Rule: "remove", Type: "number", Fields: []string{"args.aged.exp"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
+		},
+		{name: "Test Case-invalid prefix", IsErrExpected: true, IsSkipable: true,
+			rule: &config.Rule{Rule: "remove", Type: "number", Fields: []string{"arg.age.exp"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
+		},
 	}
-	testcases := 10
-	for i, test := range authMatchAnd {
-		t.Run(test.testName, func(t *testing.T) {
-			err := matchAnd(test.rule, test.args)
-			if i <= testcases {
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			} else {
-
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Error Test", "| Got This |", err, "| Wanted This |", test.err)
-				}
+	auth := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
+	auth.makeHttpRequest = func(ctx context.Context, method, url, token string, params, vPtr interface{}) error { return nil }
+	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			r, err := matchRemove(test.rule, test.args)
+			if (err != nil) != test.IsErrExpected {
+				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
 			}
-		})
-	}
-}
-
-func TestMatchOr(t *testing.T) {
-	var authMatchOr = []struct {
-		testName string
-		err      error
-		rule     *config.Rule
-		args     map[string]interface{}
-	}{
-		{testName: "Success Match Test", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or !=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or ==", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "==", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or <=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "<=", Type: "number", F1: 2.0, F2: 3.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or ==", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "==", Type: "string", F1: "interfaceString1", F2: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or >=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: ">=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or <", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "<", Type: "number", F1: 1.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or >", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: ">", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or !=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or ==", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "==", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or !=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "bool", F1: true, F2: false, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		// error
-		{testName: "Error Test and != type is not provided", err: ErrIncorrectMatch, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "", F1: true, F2: false, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match String eval is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match String f1 is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "string", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match String f2 is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-
-		{testName: "Error Match number eval is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match number f1 is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "number", F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match number f2 is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-
-		{testName: "Error Match bool eval is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match bool f1 is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "bool", F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Match bool f2 is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "bool", F1: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-	}
-	testcases := 0
-	for i, test := range authMatchOr {
-		t.Run(test.testName, func(t *testing.T) {
-			err := matchOr(test.rule, test.args)
-			if i <= testcases {
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			} else {
-
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Error Test", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			}
-		})
-	}
-}
-
-func TestMatchRule(t *testing.T) {
-	var authMatchRule = []struct {
-		testName string
-		err      error
-		rule     *config.Rule
-		args     map[string]interface{}
-	}{
-		{testName: "Success Match allow", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "allow", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Success Match authenticated", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "authenticated", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Success Match match", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-
-		{testName: "Success Match And", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and !=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and ==", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "==", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and <=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "<=", Type: "number", F1: 2.0, F2: 3.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and ==", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "==", Type: "string", F1: "interfaceString1", F2: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and >=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: ">=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and <", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "<", Type: "number", F1: 1.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and >", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: ">", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and !=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and ==", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "==", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test and !=", rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "bool", F1: true, F2: false, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-
-		{testName: "Success Match Or", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or !=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or ==", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "==", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or <=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "<=", Type: "number", F1: 2.0, F2: 3.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or ==", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "==", Type: "string", F1: "interfaceString1", F2: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or >=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: ">=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or <", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "<", Type: "number", F1: 1.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or >", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: ">", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or !=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or ==", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "==", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Successful Test or !=", rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "Rule", Eval: "!=", Type: "bool", F1: true, F2: false, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		// errors
-		{testName: "Error Test and != deny", err: ErrIncorrectMatch, rule: &config.Rule{Rule: "deny", Clauses: []*config.Rule{{Rule: "and", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Test and != default", err: ErrIncorrectMatch, rule: &config.Rule{Rule: "", Clauses: []*config.Rule{{Rule: "and", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Test and != incorrect type", err: ErrIncorrectMatch, rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "and", Eval: "!=", Type: "", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-		{testName: "Error Test or != incorrect type", err: ErrIncorrectMatch, rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "and", Eval: "!=", Type: "", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}},
-
-		{testName: "Match String !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number ==", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match bool ==", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match String !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "string", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match String !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "string", F1: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match number !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "number", F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match number !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "number", F1: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match bool !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match bool !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-	}
-	testcases := 24
-	authModule := Init(&crud.Module{}, &functions.Module{})
-	authModule.project = "project"
-	for i, test := range authMatchRule {
-		t.Run(test.testName, func(t *testing.T) {
-			err := authModule.matchRule("project", test.rule, test.args, map[string]interface{}{})
-			if i <= testcases {
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			} else {
-
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Error Test", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			}
-		})
-	}
-}
-
-// todo implement
-func TestMatchQuery(t *testing.T) {
-	var authMatchQuery = []struct {
-		testName string
-		err      error
-		rule     *config.Rule
-		crud     *crud.Module
-		args     map[string]interface{}
-	}{}
-	testcases := 4
-	for i, test := range authMatchQuery {
-		t.Run(test.testName, func(t *testing.T) {
-			err := matchQuery("project", test.rule, test.crud, test.args)
-			if i <= testcases {
-				if err != test.err {
-					t.Error("Success Got Err", err, "Want Error", test.err)
-				}
-			} else {
-				if err == test.err {
-					t.Error("Error : Got Err", err, "Want Error", test.err)
+			//check return value if post process is appended
+			if !test.IsSkipable {
+				if !reflect.DeepEqual(r, test.result) {
+					t.Error("| Got This ", r, "| Wanted Result |", test.result)
 				}
 			}
 		})

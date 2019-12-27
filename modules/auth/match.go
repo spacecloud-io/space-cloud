@@ -57,7 +57,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 	}
 }
 
-func matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
+func matchFunc(ctx context.Context, rule *config.Rule, makeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
 	delete(obj, "token")
@@ -66,7 +66,7 @@ func matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.Mak
 	defer cancel()
 
 	var result interface{}
-	return MakeHttpRequest(ctx, "POST", rule.Url, token, obj, &result)
+	return makeHttpRequest(ctx, "POST", rule.Url, token, obj, &result)
 }
 
 func matchQuery(ctx context.Context, project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
