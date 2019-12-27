@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-
 	"github.com/spaceuptech/space-cloud/config"
 )
 
@@ -22,7 +21,6 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 		}
 		return map[string]interface{}{}, errors.New("invalid project details provided")
 	}
-
 	auth, err := m.parseToken(token)
 	if err != nil {
 		return nil, err
@@ -33,7 +31,6 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 	}, auth); err != nil {
 		return nil, err
 	}
-
 	return auth, nil
 }
 
@@ -41,7 +38,6 @@ func (m *Module) getFunctionRule(service, function string) (*config.Rule, error)
 	if m.funcRules == nil {
 		return nil, ErrRuleNotFound
 	}
-
 	if serviceStub, p := m.funcRules.InternalServices[service]; p && serviceStub.Endpoints != nil {
 		if funcStub, p := serviceStub.Endpoints[function]; p && funcStub.Rule != nil {
 			return funcStub.Rule, nil

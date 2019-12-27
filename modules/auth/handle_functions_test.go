@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/schema"
 	"os"
 	"reflect"
@@ -113,7 +112,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			result:        TokenClaims{"token1": "token1value", "token2": "token2value"},
 		},
 	}
-	authModule := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
+	authModule := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetConfig("project", test.secretKey, config.Crud{}, &config.FileStore{}, test.module.funcRules)

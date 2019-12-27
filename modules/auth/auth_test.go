@@ -1,12 +1,12 @@
 package auth
 
 import (
-	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/functions"
-	"github.com/spaceuptech/space-cloud/modules/schema"
 	"reflect"
 	"testing"
+
+	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 )
 
 //this test generates a tokenstring even if object is empty is this the behaviour we want
@@ -21,7 +21,7 @@ func TestCreateToken(t *testing.T) {
 		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKey: "mySecretkey", wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-scuser"}},
 		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKey: "mySecretkey", wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
-	authModule := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
+	authModule := Init("1",&crud.Module{}, &schema.Schema{}, false)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecret(test.secretKey)
@@ -45,7 +45,7 @@ func TestIsTokenInternal(t *testing.T) {
 		{testName: "Unsuccessful Test-Signature is Invalid", IsErrExpected: true, secretKey: "mysecretkey", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.MKIZkrXy6nUMu5ejqiYKl7EOU1TxEoKTOww-eoQm6Lw"},
 		{testName: "Successful Test Case", IsErrExpected: false, secretKey: "mySecretkey", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
-	authModule := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
+	authModule := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecret(test.secretKey)
@@ -73,7 +73,7 @@ func TestParseToken(t *testing.T) {
 		{name: "Test should fail as invalid secret key-invalid signature", IsErrExpected: true, secretKey: "mysecretkey", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
 	}
 
-	authModule := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
+	authModule := Init("1",&crud.Module{}, &schema.Schema{}, false)
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			authModule.SetConfig("default", test.secretKey, config.Crud{}, &config.FileStore{}, &config.ServicesModule{})

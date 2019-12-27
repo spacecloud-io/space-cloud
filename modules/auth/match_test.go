@@ -3,7 +3,6 @@ package auth
 import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
-	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/schema"
 	"golang.org/x/net/context"
 	"reflect"
@@ -107,9 +106,11 @@ func TestMatch_Rule(t *testing.T) {
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 	}
-	auth := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
+	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"default": {Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}}}
-	auth.makeHttpRequest = func(ctx context.Context, method, url, token string, params, vPtr interface{}) error { return nil }
+	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
+		return nil
+	}
 	auth.SetConfig("default", "", rule, &config.FileStore{}, &config.ServicesModule{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
@@ -152,8 +153,10 @@ func TestMatchForce_Rule(t *testing.T) {
 			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
 		},
 	}
-	auth := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
-	auth.makeHttpRequest = func(ctx context.Context, method, url, token string, params, vPtr interface{}) error { return nil }
+	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
+	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
+		return nil
+	}
 	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
@@ -212,8 +215,10 @@ func TestMatchRemove_Rule(t *testing.T) {
 			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 		},
 	}
-	auth := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
-	auth.makeHttpRequest = func(ctx context.Context, method, url, token string, params, vPtr interface{}) error { return nil }
+	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
+	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
+		return nil
+	}
 	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {

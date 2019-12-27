@@ -2,11 +2,12 @@ package auth
 
 import (
 	"context"
-	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/utils"
 	"os"
 	"reflect"
 	"testing"
+	
+	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 func TestGetFileRule(t *testing.T) {
