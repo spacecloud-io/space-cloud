@@ -5,14 +5,14 @@ import (
 	"os"
 	"reflect"
 	"testing"
-	
+
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 func TestGetFileRule(t *testing.T) {
 
-	var ps = string(os.PathSeparator)
+	var ps = "/"
 
 	fileRule := &config.FileRule{
 		Prefix: ps,
@@ -32,25 +32,49 @@ func TestGetFileRule(t *testing.T) {
 	}
 
 	var mod = []struct {
-		module              *Module
-		IsErrExpected       bool
-		testName            string
-		path                string
-		pathParams          map[string]interface{}
-		result              *config.FileRule
-		IsPathParamSkipable bool
+		module        *Module
+		IsErrExpected bool
+		testName      string
+		path          string
+		pathParams    map[string]interface{}
+		result        *config.FileRule
 	}{
-		{testName: "Valid Test Case-Basic Path", IsErrExpected: false, result: &config.FileRule{Name: "", Prefix: "\\", Rule: map[string]*config.Rule{"rule": {
-			Rule: "allow"}}}, IsPathParamSkipable: true, path: ps, module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}}},
-		{testName: "Test Case-local file store type", IsErrExpected: false, IsPathParamSkipable: true, path: ps, module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}, fileStoreType: "local"},
-			result: &config.FileRule{Name: "", Prefix: "\\", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}}},
-		{testName: "Valid Test Case-File Rule with folder specified", IsErrExpected: false, IsPathParamSkipable: true, path: ps + "folder", module: &Module{fileRules: []*config.FileRule{fileRule1, fileRule1, fileRule1}},
-			result: &config.FileRule{Name: "", Prefix: "\\folder", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}}},
-		{testName: "Valid Test Case-Folder with variable mentioned", IsErrExpected: false, IsPathParamSkipable: false, path: ps + "folder/:suyash", module: &Module{fileRules: []*config.FileRule{fileRule2, fileRule2, fileRule2}},
-			result: &config.FileRule{Name: "", Prefix: "\\folder/:suyash", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}}, pathParams: map[string]interface{}{"suyash": ":suyash"}},
-		{testName: "Test case-Rule and Actual Path do not match", IsErrExpected: true, IsPathParamSkipable: true, path: ps + "folder" + ps + "file", module: &Module{fileRules: []*config.FileRule{fileRule3, fileRule3, fileRule3}}},
-		{testName: "Invalid Path Test Case", IsErrExpected: true, IsPathParamSkipable: true, path: ps + "NewFolder" + ps + "file", module: &Module{fileRules: []*config.FileRule{fileRule1, fileRule1, fileRule1}}},
-		{testName: "Invalid Case-Provided path should be absolute", IsPathParamSkipable: true, IsErrExpected: true, path: ps + ".." + ps + "folder" + ps + "file", module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}}},
+		{
+			testName: "Valid Test Case-Basic Path", IsErrExpected: false,
+			result:     &config.FileRule{Name: "", Prefix: "/", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
+			pathParams: map[string]interface{}{}, path: ps,
+			module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}},
+		},
+		{
+			testName: "Test Case-local file store type", IsErrExpected: false, path: ps,
+			module:     &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}, fileStoreType: "local"},
+			pathParams: map[string]interface{}{},
+			result:     &config.FileRule{Name: "", Prefix: "/", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
+		},
+		{
+			testName: "Valid Test Case-File Rule with folder specified", IsErrExpected: false, path: ps + "folder",
+			module:     &Module{fileRules: []*config.FileRule{fileRule1, fileRule1, fileRule1}},
+			pathParams: map[string]interface{}{},
+			result:     &config.FileRule{Name: "", Prefix: "/folder", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
+		},
+		{
+			testName: "Valid Test Case-Folder with variable mentioned", IsErrExpected: false, path: ps + "folder/:suyash",
+			module:     &Module{fileRules: []*config.FileRule{fileRule2, fileRule2, fileRule2}},
+			result:     &config.FileRule{Name: "", Prefix: "/folder/:suyash", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
+			pathParams: map[string]interface{}{"suyash": ":suyash"},
+		},
+		{
+			testName: "Test case-Rule and Actual Path do not match", IsErrExpected: true, path: ps + "folder" + ps + "file",
+			module: &Module{fileRules: []*config.FileRule{fileRule3, fileRule3, fileRule3}},
+		},
+		{
+			testName: "Invalid Path Test Case", IsErrExpected: true, path: ps + "NewFolder" + ps + "file",
+			module: &Module{fileRules: []*config.FileRule{fileRule1, fileRule1, fileRule1}},
+		},
+		{
+			testName: "Invalid Case-Provided path should be absolute", IsErrExpected: true, path: ps + ".." + ps + "folder" + ps + "file",
+			module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}},
+		},
 	}
 
 	for _, test := range mod {
@@ -65,10 +89,8 @@ func TestGetFileRule(t *testing.T) {
 					t.Errorf("getFileRule():Wanted Rule%v,Got Rule%v", test.result, rules)
 				}
 				//check if valid path paramters are returned
-				if !test.IsPathParamSkipable {
-					if !reflect.DeepEqual(data, test.pathParams) {
-						t.Errorf("getFileRule():Wanted Path Parameters%v,Got Path Parameters%v", test.pathParams, data)
-					}
+				if !reflect.DeepEqual(data, test.pathParams) {
+					t.Errorf("getFileRule():Wanted Path Parameters%v,Got Path Parameters%v", test.pathParams, data)
 				}
 			}
 		})
