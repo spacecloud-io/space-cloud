@@ -220,7 +220,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 			if (err != nil) != testCase.IsErrExpected {
 				t.Errorf("\n SchemaValidateOperation() error : expected error-%v, got-%v)", testCase.IsErrExpected, err)
 			}
-			if testCase.IsSkipable == false {
+			if !testCase.IsSkipable {
 				if !reflect.DeepEqual(result, testCase.Document) {
 					t.Errorf("\n SchemaValidateOperation() error : got  %v,expected %v)", result, testCase.Document)
 				}
@@ -430,7 +430,7 @@ func TestSchema_CheckType(t *testing.T) {
 				if (err != nil) != testCase.IsErrExpected {
 					t.Errorf("\n CheckType() error = Expected error-%v,got-%v)", testCase.IsErrExpected, err)
 				}
-				if testCase.IsSkipable == false {
+				if !testCase.IsSkipable {
 					if !reflect.DeepEqual(retval, testCase.result) {
 						t.Errorf("\n CheckType() error = Expected return value-%v,got-%v)", testCase.result, retval)
 					}

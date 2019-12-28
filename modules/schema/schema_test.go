@@ -141,7 +141,9 @@ func TestParseSchema(t *testing.T) {
 			r, err := s.parser(testCase.Data)
 			if (err != nil) != testCase.IsErrExpected {
 				t.Errorf("\n Schema.parseSchema() error = expected error-%v,got error-%v", testCase.IsErrExpected, err)
-			} else if !reflect.DeepEqual(r, testCase.schema) {
+				return
+			} 
+			if !reflect.DeepEqual(r, testCase.schema) {
 				t.Errorf("parser()=got return value-%v,expected schema-%v", r, testCase.schema)
 			}
 		})
