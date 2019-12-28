@@ -386,7 +386,7 @@ func removeIndex(dbType, project, tableName, indexName string, removeProjectScop
 	case utils.MySQL:
 		return "DROP INDEX " + "index__" + tableName + "__" + indexName + " ON " + project + "." + tableName
 	case utils.SqlServer:
-		return "DROP INDEX " + tableName + "." + "index__" + tableName + "__" + indexName + " ON " + getTableName(project, tableName, removeProjectScope)
+		return "DROP INDEX " + "index__" + tableName + "__" + indexName + " ON " + getTableName(project, tableName, removeProjectScope)
 	case utils.Postgres:
 		indexname := "index__" + tableName + "__" + indexName
 		return "DROP INDEX " + getTableName(project, indexname, removeProjectScope)
