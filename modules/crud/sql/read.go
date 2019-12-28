@@ -30,11 +30,7 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 	var tarr []string
 	if req.Find != nil {
 		// Get the where clause from query object
-		var err error
-		query, tarr, err = s.generateWhereClause(query, req.Find)
-		if err != nil {
-			return "", nil, err
-		}
+		query, _ = s.generateWhereClause(query, req.Find)
 	}
 
 	selArray := []interface{}{}

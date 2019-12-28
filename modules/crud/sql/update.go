@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -132,18 +134,11 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 		dbType = string(utils.Postgres)
 	}
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(project, col))
-	if op == "$set" {
-		query = query.Prepared(true)
-	}
+	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object
-		var err error
-		query, _, err = s.generateWhereClause(query, req.Find)
-		if err != nil {
-			return "", nil, err
-		}
+		query, _ = s.generateWhereClause(query, req.Find)
 	}
 
 	if req.Update == nil {
@@ -173,39 +168,49 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	}
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
+	log.Println("op", op)
 	switch op {
 	case "$set":
 	case "$inc":
 		for k, v := range m {
-			val, err := numToString(v)
+			_, err := numToString(v)
 			if err != nil {
 				return "", nil, err
 			}
-			sqlString = strings.Replace(sqlString, k+"="+val, k+"="+k+"+"+val, -1)
+			//log.Println("sqlString", sqlString)
+			//sqlString = strings.Replace(sqlString, k+"="+val, k+"="+k+"+"+val, -1)
+			sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"+?", -1)
+			//log.Println("sqlString", sqlString)
 		}
 	case "$mul":
 		for k, v := range m {
-			val, err := numToString(v)
+			_, err := numToString(v)
 			if err != nil {
 				return "", nil, err
 			}
-			sqlString = strings.Replace(sqlString, k+"="+val, k+"="+k+"*"+val, -1)
+
+			sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"*?", -1)
+			log.Println("sqlString", sqlString)
 		}
 	case "$max":
 		for k, v := range m {
-			val, err := numToString(v)
+			_, err := numToString(v)
 			if err != nil {
 				return "", nil, err
 			}
-			sqlString = strings.Replace(sqlString, k+"="+val, k+"=GREATEST("+k+","+val+")", -1)
+			sqlString = strings.Replace(sqlString, k+"=?", k+"=GREATEST("+k+","+"?"+")", 1)
 		}
+
 	case "$min":
 		for k, v := range m {
-			val, err := numToString(v)
+			_, err := numToString(v)
 			if err != nil {
 				return "", nil, err
 			}
-			sqlString = strings.Replace(sqlString, k+"="+val, k+"=LEAST("+k+","+val+")", -1)
+			//log.Println("sqlString", sqlString)
+			sqlString = strings.Replace(sqlString, k+"=?", k+"=LEAST("+k+","+"?"+")", 1)
+			//sqlString = strings.Replace(sqlString, k+"="+val, k+"=LEAST("+k+","+val+")", -1)
+			//log.Println("sqlString", sqlString)
 		}
 	case "$currentDate":
 		for k, v := range m {
@@ -213,7 +218,8 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			if !ok {
 				return "", nil, utils.ErrInvalidParams
 			}
-			sqlString = strings.Replace(sqlString, k+"='"+val+"'", k+"="+val, -1)
+			sqlString = strings.Replace(sqlString, k+"=?", k+"="+val, -1)
+			args = nil
 		}
 	default:
 		return "", nil, utils.ErrInvalidParams
@@ -221,6 +227,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	if s.dbType == string(utils.SqlServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
+	log.Println("args2", args)
 	return sqlString, args, nil
 }
 
@@ -243,12 +250,12 @@ func flattenForDate(m *map[string]interface{}) error {
 	for k, v := range *m {
 		mm, ok := v.(map[string]interface{})
 		if !ok {
-			return utils.ErrInvalidParams
+			return fmt.Errorf("invalid current date format (%v) provided", reflect.TypeOf(v))
 		}
-		for _, val := range mm {
-			val, ok := val.(string)
+		for _, valTemp := range mm {
+			val, ok := valTemp.(string)
 			if !ok {
-				return utils.ErrInvalidParams
+				return fmt.Errorf("invalid current date type (%v) provided", valTemp)
 			}
 			switch val {
 			case "date":
@@ -256,7 +263,7 @@ func flattenForDate(m *map[string]interface{}) error {
 			case "timestamp":
 				(*m)[k] = "CURRENT_TIMESTAMP"
 			default:
-				return utils.ErrInvalidParams
+				return fmt.Errorf("invalid current date value (%s) provided", val)
 			}
 		}
 	}
