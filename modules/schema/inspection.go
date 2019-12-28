@@ -25,20 +25,20 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 
 }
 
-// Inspector does something
+// Inspector generates schema
 func (s *Schema) Inspector(ctx context.Context, dbAlias, project, col string) (schemaCollection, error) {
 	dbType, err := s.crud.GetDBType(dbAlias)
 	if err != nil {
 		return nil, err
 	}
-	fields, foreignkeys, err := s.crud.DescribeTable(ctx, dbType, project, col)
+	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
 	if err != nil {
 		return nil, err
 	}
-	return generateInspection(dbType, col, fields, foreignkeys)
+	return generateInspection(dbType, col, fields, foreignkeys, indexes)
 }
 
-func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType) (schemaCollection, error) {
+func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType, indexes []utils.IndexType) (schemaCollection, error) {
 	inspectionCollection := schemaCollection{}
 	inspectionFields := SchemaFields{}
 
@@ -87,15 +87,18 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			fieldDetails.IsPrimary = true
 		}
 
-		if field.FieldKey == "UNI" {
-			fieldDetails.IsUnique = true
-		}
-
 		// check foreignKey & identify if relation exists
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == field.FieldName && foreignValue.RefTableName != "" && foreignValue.RefColumnName != "" {
 				fieldDetails.IsForeign = true
 				fieldDetails.JointTable = &TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName}
+			}
+		}
+		for _, indexValue := range indexes {
+			if indexValue.ColumnName == field.FieldName {
+				fieldDetails.IsIndex = true
+				fieldDetails.IsUnique = indexValue.IsUnique == "yes"
+				fieldDetails.IndexInfo = &TableProperties{Group: indexValue.IndexName, Order: indexValue.Order, Sort: indexValue.Sort}
 			}
 		}
 
@@ -118,7 +121,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldTyp
 
 	switch result[0] {
 	case "varchar":
-		fieldDetails.Kind = TypeID // for sql server
+		fieldDetails.Kind = typeString // for sql server
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = typeString
 	case "smallint", "mediumint", "int", "bigint":
