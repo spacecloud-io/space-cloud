@@ -112,7 +112,6 @@ func (s *ETCDStore) Register() {
 	ch, err := s.etcdClient.KeepAlive(context.Background(), lease.ID)
 	if err != nil {
 		log.Println("Could not renew consul session:", err)
-		// register again
 	}
 
 	go func() {
