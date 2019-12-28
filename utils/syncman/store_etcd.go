@@ -109,17 +109,16 @@ func (s *ETCDStore) Register() {
 		log.Fatal("Could not register space cloud with etcd:", err)
 	}
 
-	ticker := time.NewTicker(3 * time.Second)
+	ch, err := s.etcdClient.KeepAlive(context.Background(), lease.ID)
+	if err != nil {
+		log.Println("Could not renew consul session:", err)
+		// register again
+	}
 
 	go func() {
-		defer ticker.Stop()
-		for range ticker.C {
-			if _, err := s.etcdClient.KeepAlive(context.Background(), lease.ID); err != nil {
-				log.Println("Could not renew consul session:", err)
-				// register again
-				s.Register()
-				return
-			}
+		for range ch {
+			s.Register()
+			return
 		}
 	}()
 }
