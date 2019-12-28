@@ -14,6 +14,7 @@ func Test_generateInspection(t *testing.T) {
 		col         string
 		fields      []utils.FieldType
 		foreignkeys []utils.ForeignKeysType
+		indexkeys   []utils.IndexType
 	}
 	tests := []struct {
 		name    string
@@ -38,10 +39,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "bigint", FieldNull: "NO", FieldKey: "UNI"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "bigint", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer", IsUnique: true}}},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer"}}},
 			wantErr: false,
 		},
 		{
@@ -49,10 +50,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldKey: "UNI"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsUnique: true}}},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String"}}},
 			wantErr: false,
 		},
 		{
@@ -60,10 +61,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO", FieldKey: "UNI"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean", IsUnique: true}}},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean"}}},
 			wantErr: false,
 		},
 		{
@@ -148,10 +149,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "bigint", FieldNull: "NO", FieldKey: "UNI"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "bigint", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer", IsUnique: true}}},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer"}}},
 			wantErr: false,
 		},
 		{
@@ -159,10 +160,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldKey: "UNI"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsUnique: true}}},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String"}}},
 			wantErr: false,
 		},
 		{
@@ -170,10 +171,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO", FieldKey: "UNI"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean", IsUnique: true}}},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean"}}},
 			wantErr: false,
 		},
 		{
@@ -214,7 +215,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "varchar", FieldNull: "NO", FieldKey: "PRI"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
 			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
@@ -234,7 +235,7 @@ func Test_generateInspection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := generateInspection(tt.args.dbType, tt.args.col, tt.args.fields, tt.args.foreignkeys)
+			got, err := generateInspection(tt.args.dbType, tt.args.col, tt.args.fields, tt.args.foreignkeys, tt.args.indexkeys)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generateInspection() error = %v, wantErr %v", err, tt.wantErr)
 			}

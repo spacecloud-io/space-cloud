@@ -519,6 +519,32 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "doing nthg",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{},
+			wantErr: false,
+		},
+		{
+			name: "doing nthg composite",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{},
+			wantErr: false,
+		},
+		{
 			name: "adding index key",
 			args: args{
 				dbAlias:       "mysql",
@@ -762,7 +788,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 text NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_col1 DEFAULT 'string' FOR col1"},
+			want:    []string{"CREATE TABLE test.table1 (col1 varchar(max) NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_col1 DEFAULT 'string' FOR col1"},
 			wantErr: false,
 		},
 		{
@@ -802,7 +828,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			},
 			isSort:  true,
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)", "ALTER TABLE test.table1 ADD col2 text"},
+			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)", "ALTER TABLE test.table1 ADD col2 varchar(max)"},
 			wantErr: false,
 		},
 		{
@@ -906,7 +932,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 text"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 varchar(max)"},
 			wantErr: false,
 		},
 		{
@@ -1267,6 +1293,32 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "doing nthg",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{},
+			wantErr: false,
+		},
+		{
+			name: "doing nthg composite",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{},
+			wantErr: false,
+		},
+		{
 			name: "adding index key to existing index",
 			args: args{
 				dbAlias:       "sqlserver",
@@ -1276,7 +1328,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col2 bigint", "DROP INDEX table1.index__table1__i1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
+			want:    []string{"ALTER TABLE test.table1 ADD col2 bigint", "DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1315,7 +1367,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IsUnique: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col2 bigint", "DROP INDEX table1.index__table1__i1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
+			want:    []string{"ALTER TABLE test.table1 ADD col2 bigint", "DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1341,7 +1393,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"DROP INDEX table1.index__table1__i1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc)"},
+			want:    []string{"DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1354,7 +1406,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"DROP INDEX table1.index__table1__i1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc)"},
+			want:    []string{"DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1367,7 +1419,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IsUnique: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"DROP INDEX table1.index__table1__i1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc)"},
+			want:    []string{"DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1380,7 +1432,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IsUnique: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeInteger, IsIndex: true, IsUnique: true, IndexInfo: &TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"DROP INDEX table1.index__table1__i1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col2 asc, col1 asc)"},
+			want:    []string{"DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col2 asc, col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1393,7 +1445,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"DROP INDEX table1.index__table1__i1", "CREATE INDEX index__table1__i1 ON test.table1 (col2 asc, col1 asc)"},
+			want:    []string{"DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE INDEX index__table1__i1 ON test.table1 (col2 asc, col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1406,7 +1458,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IsUnique: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeInteger, IsIndex: true, IsUnique: true, IndexInfo: &TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"CREATE UNIQUE INDEX index__table1__i2 ON test.table1 (col2 asc, col1 asc)", "DROP INDEX table1.index__table1__i1"},
+			want:    []string{"CREATE UNIQUE INDEX index__table1__i2 ON test.table1 (col2 asc, col1 asc)", "DROP INDEX table1.index__table1__i1 ON test.table1"},
 			wantErr: false,
 		},
 		{
@@ -1419,7 +1471,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 2}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"CREATE INDEX index__table1__i2 ON test.table1 (col2 asc, col1 asc)", "DROP INDEX table1.index__table1__i1"},
+			want:    []string{"CREATE INDEX index__table1__i2 ON test.table1 (col2 asc, col1 asc)", "DROP INDEX table1.index__table1__i1 ON test.table1"},
 			wantErr: false,
 		},
 		{
@@ -1432,7 +1484,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IsUnique: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "desc"}}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeInteger, IsIndex: true, IsUnique: true, IndexInfo: &TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"DROP INDEX table1.index__table1__i1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col2 desc, col1 asc)"},
+			want:    []string{"DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col2 desc, col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1445,7 +1497,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "desc"}}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 2, Sort: "desc"}}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"DROP INDEX table1.index__table1__i1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
+			want:    []string{"DROP INDEX table1.index__table1__i1 ON test.table1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
 			wantErr: false,
 		},
 		{
@@ -1894,6 +1946,32 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 ADD COLUMN col2 bigint", "DROP INDEX test.index__table1__i1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
+			wantErr: false,
+		},
+		{
+			name: "doing nthg",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{},
+			wantErr: false,
+		},
+		{
+			name: "doing nthg composite",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsIndex: true, IndexInfo: &TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{},
 			wantErr: false,
 		},
 		{
