@@ -2189,7 +2189,8 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 					t.Errorf("name = %v, Schema.generateCreationQueries() length error = %v, want %v", tt.name, got, tt.want)
 				}
 				if tt.isSort {
-					sort.Strings(got)
+					sort.Stable(sort.StringSlice(got))
+					sort.Stable(sort.StringSlice(tt.want))
 				}
 				for i, v := range got {
 					if tt.want[i] != v {
