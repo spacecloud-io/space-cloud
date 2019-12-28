@@ -1,9 +1,0 @@
-FROM envoyproxy/envoy-dev:latest
-
-COPY ./service/bin/space-cloud /usr/local/bin/space-cloud
-RUN chmod u+x /usr/local/bin/space-cloud
-
-COPY ./service/service-start.sh /usr/local/bin/service-start
-RUN chmod u+x /usr/local/bin/service-start
-
-CMD /usr/local/bin/service-start
