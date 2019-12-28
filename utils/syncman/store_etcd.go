@@ -34,16 +34,6 @@ type trackedItemMeta struct {
 	project        *config.Project
 }
 
-type etcdConfig struct {
-	endpoints  string
-	adminUser  string
-	adminPass  string
-	caCert     string
-	publicKey  string
-	privateKey string
-	isSSL      bool
-}
-
 func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
 	config, err := loadConfig()
 	if err != nil {
@@ -122,14 +112,13 @@ func (s *ETCDStore) Register() {
 	ticker := time.NewTicker(3 * time.Second)
 
 	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				if _, err := s.etcdClient.KeepAlive(context.Background(), lease.ID); err != nil {
-					log.Println("Could not renew consul session:", err)
-					// register again
-					s.Register()
-				}
+		defer ticker.Stop()
+		for range ticker.C {
+			if _, err := s.etcdClient.KeepAlive(context.Background(), lease.ID); err != nil {
+				log.Println("Could not renew consul session:", err)
+				// register again
+				s.Register()
+				return
 			}
 		}
 	}()
@@ -156,6 +145,7 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 		// Store the item
 		itemsMeta[id] = &trackedItemMeta{createRevision: kv.CreateRevision, modRevision: kv.ModRevision, project: project}
 	}
+	cb(s.getProjects(itemsMeta))
 
 	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/projects/%s", s.clusterID), clientv3.WithPrefix())
 
@@ -163,7 +153,6 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 		for watchResponse := range ch {
 
 			for _, event := range watchResponse.Events {
-				// Return if watch response contains an error
 				if watchResponse.Err() != nil {
 					log.Fatal(watchResponse.Err())
 				}
@@ -185,6 +174,7 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 					if !p {
 						// AddStateless node if doesn't already exists
 						itemsMeta[id] = &trackedItemMeta{createRevision: event.Kv.CreateRevision, modRevision: event.Kv.ModRevision, project: project}
+						cb(s.getProjects(itemsMeta))
 					}
 
 					// Ignore if incoming create revision is smaller
@@ -198,6 +188,7 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 						meta.modRevision = event.Kv.ModRevision
 						meta.project = project
 						itemsMeta[id] = meta
+						cb(s.getProjects(itemsMeta))
 						break
 					}
 
@@ -214,14 +205,10 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 						meta.createRevision = event.Kv.CreateRevision
 						meta.modRevision = event.Kv.ModRevision
 						delete(itemsMeta, id)
+						cb(s.getProjects(itemsMeta))
 					}
 				}
 			}
-			var arrProjects []*config.Project
-			for _, item := range itemsMeta {
-				arrProjects = append(arrProjects, item.project)
-			}
-			cb(arrProjects)
 		}
 	}()
 	return nil
@@ -244,6 +231,7 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 		// Store the item
 		itemsMeta[id] = &trackedItemMeta{createRevision: kv.CreateRevision, modRevision: kv.ModRevision, service: service}
 	}
+	cb(s.getServices(itemsMeta))
 
 	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/instances/%s", s.clusterID), clientv3.WithPrefix())
 
@@ -267,6 +255,7 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 					if !p {
 						// AddStateless node if doesn't already exists
 						itemsMeta[id] = &trackedItemMeta{createRevision: event.Kv.CreateRevision, modRevision: event.Kv.ModRevision, service: &service{id: id, addr: string(kv.Value)}}
+						cb(s.getServices(itemsMeta))
 					}
 
 					// Ignore if incoming create revision is smaller
@@ -280,6 +269,7 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 						meta.modRevision = event.Kv.ModRevision
 						meta.service = &service{id: id, addr: string(kv.Value)}
 						itemsMeta[id] = meta
+						cb(s.getServices(itemsMeta))
 						break
 					}
 
@@ -296,17 +286,10 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 						meta.createRevision = event.Kv.CreateRevision
 						meta.modRevision = event.Kv.ModRevision
 						delete(itemsMeta, id)
+						cb(s.getServices(itemsMeta))
 					}
 				}
 			}
-
-			// Sort and store
-			var services scServices
-			for _, item := range itemsMeta {
-				services = append(services, item.service)
-			}
-			sort.Stable(services)
-			cb(services)
 		}
 	}()
 
@@ -322,4 +305,22 @@ func (s *ETCDStore) SetProject(ctx context.Context, project *config.Project) err
 func (s *ETCDStore) DeleteProject(ctx context.Context, projectID string) error {
 	_, err := s.kv.Delete(ctx, fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID))
 	return err
+}
+
+func (s *ETCDStore) getProjects(itemsMeta map[string]*trackedItemMeta) []*config.Project {
+	var arrProjects []*config.Project
+	for _, item := range itemsMeta {
+		arrProjects = append(arrProjects, item.project)
+	}
+	return arrProjects
+}
+
+func (s *ETCDStore) getServices(itemsMeta map[string]*trackedItemMeta) scServices {
+	// Sort and store
+	var services scServices
+	for _, item := range itemsMeta {
+		services = append(services, item.service)
+	}
+	sort.Stable(services)
+	return services
 }

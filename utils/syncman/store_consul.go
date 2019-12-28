@@ -49,17 +49,16 @@ func (s *ConsulStore) Register() {
 		log.Fatal("Could not register space cloud with consul:", err)
 	}
 
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(4 * time.Second)
 
 	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				if _, _, err := session.Renew(id, opts); err != nil {
-					log.Println("Could not renew consul session:", err)
-					// register again
-					s.Register()
-				}
+		defer ticker.Stop()
+		for range ticker.C {
+			if _, _, err := session.Renew(id, opts); err != nil {
+				log.Println("Could not renew consul session:", err)
+				// register again
+				s.Register()
+				return
 			}
 		}
 	}()
