@@ -1,10 +1,11 @@
 package schema
 
 import (
-	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/crud"
 	"reflect"
 	"testing"
+
+	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/crud"
 )
 
 func TestParseSchema(t *testing.T) {

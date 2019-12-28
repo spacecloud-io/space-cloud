@@ -37,7 +37,7 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 	req := &model.ReadRequest{Find: find, Operation: utils.One}
 
 	// Check if the user is authenticated
-	status, err := m.auth.IsReadOpAuthorised(ctx, project, dbType, "users", token, req)
+	actions, status, err := m.auth.IsReadOpAuthorised(ctx, project, dbType, "users", token, req)
 	if err != nil {
 		return status, nil, err
 	}
@@ -47,6 +47,8 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
+
+	_ = m.auth.PostProcessMethod(actions, res)
 
 	// Delete password from user object
 	delete(res.(map[string]interface{}), "pass")
@@ -66,7 +68,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 	req := &model.ReadRequest{Find: find, Operation: utils.All}
 
 	// Check if the user is authenticated
-	status, err := m.auth.IsReadOpAuthorised(ctx, project, dbType, "users", token, req)
+	actions, status, err := m.auth.IsReadOpAuthorised(ctx, project, dbType, "users", token, req)
 	if err != nil {
 		return status, nil, err
 	}
@@ -75,6 +77,8 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
+
+	_ = m.auth.PostProcessMethod(actions, res)
 
 	// Delete password from user object
 	if usersArray, ok := res.([]interface{}); ok {

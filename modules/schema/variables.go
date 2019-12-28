@@ -24,9 +24,12 @@ type (
 		IsUpdatedAt bool
 		IsLinked    bool
 		IsForeign   bool
+		IsDefault   bool
 		LinkedTable *TableProperties
 		JointTable  *TableProperties
+		Default     interface{}
 	}
+
 	TableProperties struct {
 		From, To     string
 		Table, Field string
@@ -35,19 +38,20 @@ type (
 )
 
 const (
-	typeInteger   string = "Integer"
-	typeString    string = "String"
-	typeFloat     string = "Float"
-	typeBoolean   string = "Boolean"
-	typeDateTime  string = "DateTime"
-	TypeID        string = "ID"
-	sqlTypeIDSize string = "50"
-	typeObject    string = "Object"
-
+	typeInteger        string = "Integer"
+	typeString         string = "String"
+	typeFloat          string = "Float"
+	typeBoolean        string = "Boolean"
+	typeDateTime       string = "DateTime"
+	TypeID             string = "ID"
+	sqlTypeIDSize      string = "50"
+	typeObject         string = "Object"
+	typeEnum           string = "Enum"
 	directiveUnique    string = "unique"
 	directiveForeign   string = "foreign"
 	directivePrimary   string = "primary"
 	directiveCreatedAt string = "createdAt"
 	directiveUpdatedAt string = "updatedAt"
 	directiveLink      string = "link"
+	directiveDefault   string = "default"
 )

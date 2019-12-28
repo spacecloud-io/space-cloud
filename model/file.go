@@ -10,10 +10,16 @@ type File struct {
 
 // CreateFileRequest is the request received to create a new file or directory
 type CreateFileRequest struct {
-	Path    string `json:"path"`
-	Name    string `json:"name"`
-	Type    string `json:"type"`    // Either file or dir
-	MakeAll bool   `json:"makeAll"` // This option is only available for creating directories
+	Meta    map[string]interface{} `json:"meta"`
+	Path    string                 `json:"path"`
+	Name    string                 `json:"name"`
+	Type    string                 `json:"type"`    // Either file or dir
+	MakeAll bool                   `json:"makeAll"` // This option is only available for creating directories
+}
+
+type DeleteFileRequest struct {
+	Meta map[string]interface{} `json:"meta"`
+	Path string                 `json:"path"`
 }
 
 // ListFilesRequest is the request made to browse the contents inside a directory
@@ -26,6 +32,11 @@ type ListFilesRequest struct {
 type ListFilesResponse struct {
 	Name string `json:"name"`
 	Type string `json:"type"` // Type could be dir or file
+}
+
+type FilePayload struct {
+	Meta map[string]interface{} `json:"meta"`
+	Path string                 `json:"path"`
 }
 
 // FileReader is a function type used for file streaming

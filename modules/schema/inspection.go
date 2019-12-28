@@ -3,6 +3,7 @@ package schema
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -34,6 +35,10 @@ func (s *Schema) Inspector(ctx context.Context, dbAlias, project, col string) (s
 	if err != nil {
 		return nil, err
 	}
+	return generateInspection(dbType, col, fields, foreignkeys)
+}
+
+func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType) (schemaCollection, error) {
 	inspectionCollection := schemaCollection{}
 	inspectionFields := SchemaFields{}
 
@@ -55,6 +60,22 @@ func (s *Schema) Inspector(ctx context.Context, dbAlias, project, col string) (s
 				return nil, err
 			}
 		}
+
+		// default key
+		if field.FieldDefault != nil {
+			fieldDetails.IsDefault = true
+			if utils.DBType(dbType) == utils.SqlServer {
+				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
+				strings.Replace(*field.FieldDefault, "(", "", -1)
+				strings.Replace(*field.FieldDefault, ")", "", -1)
+			}
+			// add string between quotes
+			if fieldDetails.Kind == typeString {
+				*field.FieldDefault = fmt.Sprintf("\"%s\"", *field.FieldDefault)
+			}
+			fieldDetails.Default = field.FieldDefault
+		}
+
 		// check if list
 		if field.FieldKey == "PRI" {
 			fieldDetails.IsPrimary = true

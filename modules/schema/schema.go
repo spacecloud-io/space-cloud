@@ -142,6 +142,19 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 						fieldTypeStuct.IsCreatedAt = true
 					case directiveUpdatedAt:
 						fieldTypeStuct.IsUpdatedAt = true
+					case directiveDefault:
+						fieldTypeStuct.IsDefault = true
+
+						for _, arg := range directive.Arguments {
+							switch arg.Name.Value {
+							case "value":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.Default = val
+							}
+						}
+						if fieldTypeStuct.Default == nil {
+							return nil, fmt.Errorf("default directive must be accompanied with value field")
+						}
 					case directiveLink:
 						fieldTypeStuct.IsLinked = true
 						fieldTypeStuct.LinkedTable = &TableProperties{DBType: dbName}
@@ -178,7 +191,6 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 						fieldTypeStuct.IsForeign = true
 						fieldTypeStuct.JointTable = &TableProperties{}
 						fieldTypeStuct.JointTable.Table = strings.Split(field.Name.Value, "_")[0]
-						fieldTypeStuct.JointTable.From = field.Name.Value
 						fieldTypeStuct.JointTable.To = "id"
 
 						// Load the joint table name and field
@@ -188,7 +200,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.JointTable.Table = val.(string)
 
-							case "field":
+							case "field", "to":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.JointTable.To = val.(string)
 							}
@@ -230,7 +242,7 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaField
 	case kinds.Named:
 		myType := fieldType.(*ast.Named).Name.Value
 		switch myType {
-		case typeString:
+		case typeString, typeEnum:
 			return typeString, nil
 		case TypeID:
 			return TypeID, nil

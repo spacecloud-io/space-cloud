@@ -4,11 +4,13 @@ import (
 	"sync"
 
 	"github.com/nats-io/nats.go"
+	"github.com/spaceuptech/space-cloud/modules/auth"
 )
 
 type queryStub struct {
 	sendFeed SendFeed
 	whereObj map[string]interface{}
+	actions  *auth.PostProcess
 }
 
 type clientsStub struct {
@@ -18,7 +20,7 @@ type clientsStub struct {
 }
 
 // AddLiveQuery tracks a client for a live query
-func (m *Module) AddLiveQuery(id, project, dbType, group, clientID string, whereObj map[string]interface{}, sendFeed SendFeed) {
+func (m *Module) AddLiveQuery(id, project, dbType, group, clientID string, whereObj map[string]interface{}, actions *auth.PostProcess, sendFeed SendFeed) {
 	// Load clients in a particular group
 	clients := new(clientsStub)
 	t, _ := m.groups.LoadOrStore(createGroupKey(dbType, group), clients)
@@ -30,7 +32,7 @@ func (m *Module) AddLiveQuery(id, project, dbType, group, clientID string, where
 	queries = t.(*sync.Map)
 
 	// Add the query
-	queries.Store(id, &queryStub{sendFeed, whereObj})
+	queries.Store(id, &queryStub{sendFeed, whereObj, actions})
 }
 
 // RemoveLiveQuery removes a particular live query
