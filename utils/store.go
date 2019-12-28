@@ -2,6 +2,8 @@ package utils
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -36,13 +38,20 @@ func Adjust(obj interface{}, state map[string]interface{}) interface{} {
 }
 
 // LoadStringIfExists loads a value if its present else returns the same
-func LoadStringIfExists(value string, state map[string]interface{}) string {
-	if temp, err := LoadValue(value, state); err == nil {
-		if tempString, ok := temp.(string); ok {
-			value = tempString
-		}
+func LoadStringIfExists(value string, state map[string]interface{}) (string, error) {
+	if !strings.HasPrefix(value, "args.") {
+		return value, nil
 	}
-	return value
+	temp, err := LoadValue(value, state)
+	if err != nil {
+		return "", err
+	}
+	tempString, ok := temp.(string)
+	if !ok {
+		return "", fmt.Errorf("variable (%s) is of incorrect type (%s)", value, reflect.TypeOf(temp))
+	}
+	value = tempString
+	return value, nil
 }
 
 // LoadValue loads a value from the state
@@ -164,6 +173,10 @@ func LoadNumber(key interface{}, args map[string]interface{}) (float64, error) {
 
 	switch v := temp.(type) {
 	case int64:
+		return float64(v), nil
+	case int32:
+		return float64(v), nil
+	case int:
 		return float64(v), nil
 	case float64:
 		return v, nil

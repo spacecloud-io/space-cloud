@@ -36,30 +36,17 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]ut
 	case utils.MySQL:
 		queryString = `DESCRIBE ` + project + "." + col
 	case utils.Postgres:
-		queryString = `SELECT    
-		f.attnum AS "Extra",
-		f.attname AS "Field",  
-		pg_catalog.format_type(f.atttypid,f.atttypmod) AS "Type",  
-		CASE  
-			WHEN p.contype = 'p' THEN 'PRI'  
-			WHEN p.contype = 'u' THEN 'UNI'
-			ELSE 'f'  
-		END AS "Key",
-		CASE
-			WHEN f.attnotnull = 't' THEN 'NO'
-			ELSE 'YES'
-		END AS "Null"
-FROM pg_class pclass,pg_attribute f
-		JOIN pg_class c ON c.oid = f.attrelid  
-		JOIN pg_type t ON t.oid = f.atttypid  
-		LEFT JOIN pg_attrdef d ON d.adrelid = c.oid AND d.adnum = f.attnum  
-		LEFT JOIN pg_namespace n ON n.oid = c.relnamespace  
-		LEFT JOIN pg_constraint p ON p.conrelid = c.oid AND f.attnum = ANY (p.conkey)  
-		LEFT JOIN pg_class AS g ON p.confrelid = g.oid  
-	WHERE c.relkind = 'r'::char  
-		AND c.relname = $1
-		AND n.nspname = $2
-		AND f.attnum > 0`
+		queryString = `SELECT isc.column_name AS "Field", coalesce(isc.column_default,'') AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",isc.is_nullable as "Extra",
+CASE
+    WHEN istc.constraint_type = 'PRIMARY KEY' THEN 'PRI'
+    WHEN istc.constraint_type = 'UNIQUE' THEN 'UNI'
+    ELSE 'f'
+END AS "Key"
+FROM information_schema.columns isc
+    left join information_schema.constraint_column_usage cu on (cu.table_schema, cu.table_name, cu.column_name) = (isc.table_schema, isc.table_name, isc.column_name)
+    left JOIN information_schema.table_constraints istc  on (istc.table_schema,istc.table_name, istc.constraint_name) = (cu.table_schema,cu.table_name, cu.constraint_name)
+WHERE (isc.table_schema, isc.table_name) = ($2, $1)
+ORDER BY isc.ordinal_position;`
 
 		args = append(args, col, project)
 	case utils.SqlServer:

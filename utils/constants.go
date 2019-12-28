@@ -180,12 +180,12 @@ const (
 
 // FieldType is the type for storing sql inspection information
 type FieldType struct {
-	FieldName    string  `db:"Field"`
-	FieldType    string  `db:"Type"`
-	FieldNull    string  `db:"Null"`
-	FieldKey     string  `db:"Key"`
-	FieldDefault *string `db:"Default"`
-	FieldExtra   string  `db:"Extra"`
+	FieldName    string `db:"Field"`
+	FieldType    string `db:"Type"`
+	FieldNull    string `db:"Null"`
+	FieldKey     string `db:"Key"`
+	FieldDefault string `db:"Default"`
+	FieldExtra   string `db:"Extra"`
 }
 
 // ForeignKeysType is the type for storing  foreignkeys information of sql inspection
@@ -231,8 +231,6 @@ const (
 	// EventFileDelete is fired for delete request
 	EventFileDelete string = "FILE_DELETE"
 )
-
-
 
 const (
 	// EventStatusIntent signifies that the event hasn't been staged yet

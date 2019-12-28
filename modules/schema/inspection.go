@@ -62,16 +62,22 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		}
 
 		// default key
-		if field.FieldDefault != nil {
+		if field.FieldDefault != "" {
 			fieldDetails.IsDefault = true
 			if utils.DBType(dbType) == utils.SqlServer {
 				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
-				strings.Replace(*field.FieldDefault, "(", "", -1)
-				strings.Replace(*field.FieldDefault, ")", "", -1)
+				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
 			}
+
+			if utils.DBType(dbType) == utils.Postgres {
+				// split "'default-value'::text" to "default-value"
+				s := strings.Split(field.FieldDefault, ",")
+				field.FieldDefault = s[0]
+			}
+
 			// add string between quotes
 			if fieldDetails.Kind == typeString {
-				*field.FieldDefault = fmt.Sprintf("\"%s\"", *field.FieldDefault)
+				field.FieldDefault = fmt.Sprintf("\"%s\"", field.FieldDefault)
 			}
 			fieldDetails.Default = field.FieldDefault
 		}
@@ -133,7 +139,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldTyp
 }
 
 func inspectionPostgresCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
-	if typeName == "character varying("+sqlTypeIDSize+")" {
+	if typeName == "character varying" {
 		fieldDetails.Kind = TypeID
 		return nil
 	}

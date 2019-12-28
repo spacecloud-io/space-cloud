@@ -2,6 +2,7 @@ package schema
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -39,8 +40,74 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		fields  fields
 		args    args
 		want    []string
+		isSort  bool
 		wantErr bool
 	}{
+		{
+			name: "adding a table and column of type integer with default key",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsFieldTypeRequired: true, IsDefault: true, Default: 543}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 bigint NOT NULL );", "ALTER TABLE test.table1 ALTER col1 SET DEFAULT 543"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type float with default key",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeFloat, IsFieldTypeRequired: true, IsDefault: true, Default: 5.2}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 float NOT NULL );", "ALTER TABLE test.table1 ALTER col1 SET DEFAULT 5.2"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type string with default key",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString, IsFieldTypeRequired: true, IsDefault: true, Default: "string"}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 text NOT NULL );", "ALTER TABLE test.table1 ALTER col1 SET DEFAULT 'string'"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type boolean with default key",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeBoolean, IsFieldTypeRequired: true, IsDefault: true, Default: true}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 boolean NOT NULL );", "ALTER TABLE test.table1 ALTER col1 SET DEFAULT true"},
+			wantErr: false,
+		},
+		{
+			name: "removing a table and column of type boolean with default key",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeBoolean}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeBoolean, IsDefault: true, Default: true}}},
+			},
+			fields:  fields{crud: crudMySql, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 ALTER col1 DROP DEFAULT"},
+			wantErr: false,
+		},
 		{
 			name: "adding two columns",
 			args: args{
@@ -50,6 +117,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				parsedSchema:  schemaType{"mysql": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeString}}}},
 				currentSchema: schemaCollection{"table1": SchemaFields{}},
 			},
+			isSort:  true,
 			fields:  fields{crud: crudMySql, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)", "ALTER TABLE test.table1 ADD col2 text"},
 			wantErr: false,
@@ -658,7 +726,71 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		},
 
 		// //sql-server
-
+		{
+			name: "adding a table and column of type integer with default key",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsFieldTypeRequired: true, IsDefault: true, Default: 543}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 bigint NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_col1 DEFAULT 543 FOR col1"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type float with default key",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeFloat, IsFieldTypeRequired: true, IsDefault: true, Default: 5.2}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 float NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_col1 DEFAULT 5.2 FOR col1"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type string with default key",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString, IsFieldTypeRequired: true, IsDefault: true, Default: "string"}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 text NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_col1 DEFAULT 'string' FOR col1"},
+			wantErr: false,
+		},
+		{
+			name: "removing a table and column of type boolean with default key",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeBoolean}}}},
+				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeBoolean, IsDefault: true, Default: true}}},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 ALTER COLUMN col1 DROP DEFAULT"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type boolean with default key",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeBoolean, IsFieldTypeRequired: true, IsDefault: true, Default: true}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudSqlServer, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 bit NOT NULL );", "ALTER TABLE test.table1 ADD CONSTRAINT c_col1 DEFAULT 1 FOR col1"},
+			wantErr: false,
+		},
 		{
 			name: "adding two columns",
 			args: args{
@@ -668,6 +800,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeString}}}},
 				currentSchema: schemaCollection{"table1": SchemaFields{}},
 			},
+			isSort:  true,
 			fields:  fields{crud: crudSqlServer, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)", "ALTER TABLE test.table1 ADD col2 text"},
 			wantErr: false,
@@ -1069,7 +1202,59 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "adding index key",
+			name: "adding a table and column of type integer with default key",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsFieldTypeRequired: true, IsDefault: true, Default: 543}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 bigint NOT NULL );", "ALTER TABLE test.table1 ALTER COLUMN col1 SET DEFAULT 543"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type float with default key",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeFloat, IsFieldTypeRequired: true, IsDefault: true, Default: 5.2}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 float NOT NULL );", "ALTER TABLE test.table1 ALTER COLUMN col1 SET DEFAULT 5.2"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type string with default key",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeString, IsFieldTypeRequired: true, IsDefault: true, Default: "string"}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 text NOT NULL );", "ALTER TABLE test.table1 ALTER COLUMN col1 SET DEFAULT 'string'"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and column of type boolean with default key",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeBoolean, IsFieldTypeRequired: true, IsDefault: true, Default: true}}}},
+				currentSchema: schemaCollection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 boolean NOT NULL );", "ALTER TABLE test.table1 ALTER COLUMN col1 SET DEFAULT true"},
+			wantErr: false,
+		},
+		{
+			name: "adding two columns",
 			args: args{
 				dbAlias:       "sqlserver",
 				tableName:     "table1",
@@ -1923,10 +2108,11 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 
 			if !tt.wantErr {
 				if len(got) != len(tt.want) {
-					t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)
-					return
+					t.Errorf("name = %v, Schema.generateCreationQueries() length error = %v, want %v", tt.name, got, tt.want)
 				}
-
+				if tt.isSort {
+					sort.Strings(got)
+				}
 				for i, v := range got {
 					if tt.want[i] != v {
 						t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)

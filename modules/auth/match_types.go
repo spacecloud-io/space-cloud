@@ -15,8 +15,14 @@ func matchString(rule *config.Rule, args map[string]interface{}) error {
 		return ErrIncorrectRuleFieldType
 	}
 
-	f1 := utils.LoadStringIfExists(f1String, args)
-	f2 := utils.LoadStringIfExists(f2String, args)
+	f1, err := utils.LoadStringIfExists(f1String, args)
+	if err != nil {
+		return err
+	}
+	f2, err := utils.LoadStringIfExists(f2String, args)
+	if err != nil {
+		return err
+	}
 	switch rule.Eval {
 	case "==":
 		if f1 == f2 {
