@@ -238,7 +238,11 @@ func TestLoadStringIfExists(t *testing.T) {
 		},
 	}
 	for i, eachTest := range test {
-		res := LoadStringIfExists(eachTest.value, eachTest.state)
+		res, err := LoadStringIfExists(eachTest.value, eachTest.state)
+		if err != nil {
+			t.Error(i+1, ":", err)
+			continue
+		}
 		eq := reflect.DeepEqual(eachTest.ret, res)
 		if i < trueCases {
 			if !eq {
