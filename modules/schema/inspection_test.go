@@ -1,117 +1,252 @@
 package schema
 
 import (
-	"context"
-	"fmt"
+	"encoding/json"
+	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
-func TestSchema_schemaInspection(t *testing.T) {
-	type fields struct {
-		SchemaDoc schemaType
-		crud      *crud.Module
-		project   string
-	}
+func Test_generateInspection(t *testing.T) {
 	type args struct {
-		ctx    context.Context
-		dbType string
-		col    string
-		dbName string
+		dbType      string
+		col         string
+		fields      []utils.FieldType
+		foreignkeys []utils.ForeignKeysType
+		indexkeys   []utils.IndexType
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
+		name    string
+		args    args
+		want    schemaCollection
+		wantErr bool
 	}{
+		// TODO: Add test cases.
 		{
-			name: "MySQL schema Persons",
+			name: "primary-!null-ID",
 			args: args{
-				dbType: "sql-mysql",
-				col:    "persons",
-				dbName: "testdb",
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignkeys: []utils.ForeignKeysType{},
 			},
-			fields: fields{
-				crud:    &crud.Module{},
-				project: "testdb",
-			},
-		},
-		{
-			name: "MySQL schema Orders",
-			args: args{
-				dbType: "sql-mysql",
-				col:    "orders",
-				dbName: "testdb",
-			},
-			fields: fields{
-				crud:    &crud.Module{},
-				project: "testdb",
-			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			wantErr: false,
 		},
 		{
-			name: "Postgress schema persons",
+			name: "unique-!null-Integer",
 			args: args{
-				dbType: "sql-postgres",
-				col:    "persons",
-				dbName: "testdb",
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "bigint", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
 			},
-			fields: fields{
-				crud:    &crud.Module{},
-				project: "testdb",
-			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer"}}},
+			wantErr: false,
 		},
 		{
-			name: "Postgress schema orders",
+			name: "unique-!null-String",
 			args: args{
-				dbType: "sql-postgres",
-				col:    "orders",
-				dbName: "testdb",
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
 			},
-			fields: fields{
-				crud:    &crud.Module{},
-				project: "testdb",
-			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String"}}},
+			wantErr: false,
 		},
-	}
-
-	db := config.Crud{
-		"sql-mysql": &config.CrudStub{
-			Conn: "root:1234@tcp(172.17.0.2:3306)/testdb",
-			Collections: map[string]*config.TableRule{
-				"Persons": &config.TableRule{},
-				"Orders":  &config.TableRule{},
+		{
+			name: "unique-!null-Boolean",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
 			},
-			Enabled: true,
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean"}}},
+			wantErr: false,
 		},
-		"sql-postgres": &config.CrudStub{
-			Conn: "postgres://postgres:1234@172.17.0.3:5432/testdb?sslmode=disable",
-			Collections: map[string]*config.TableRule{
-				"Persons": &config.TableRule{},
-				"Orders":  &config.TableRule{},
+		{
+			name: "foreign-!null-Float",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "float", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
 			},
-			Enabled: true,
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsForeign: true, JointTable: &TableProperties{To: "col2", Table: "table2"}}}},
+			wantErr: false,
 		},
-	}
-
-	crud := crud.Init()
-	if err := crud.SetConfig(db); err != nil {
-		t.Fatal(err)
+		{
+			name: "foreign-!null-DateTime",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "datetime", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "DateTime", IsForeign: true, JointTable: &TableProperties{To: "col2", Table: "table2"}}}},
+			wantErr: false,
+		},
+		{
+			name: "foreign-!null-wrongDataType",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "wrongType", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
+			},
+			wantErr: true,
+		},
+		// postgres
+		{
+			name: "default key -!null-ID",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "float", FieldNull: "NO", FieldDefault: "9.8"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsDefault: true, Default: "9.8"}}},
+			wantErr: false,
+		},
+		{
+			name: "default key string -!null-ID",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldDefault: "string"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"string\""}}},
+			wantErr: false,
+		},
+		{
+			name: "default key boolean -!null-ID",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO", FieldDefault: "true"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean", IsDefault: true, Default: "true"}}},
+			wantErr: false,
+		},
+		{
+			name: "primary-!null-ID",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "character varying", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			wantErr: false,
+		},
+		{
+			name: "unique-!null-Integer",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "bigint", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer"}}},
+			wantErr: false,
+		},
+		{
+			name: "unique-!null-String",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String"}}},
+			wantErr: false,
+		},
+		{
+			name: "unique-!null-Boolean",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean"}}},
+			wantErr: false,
+		},
+		{
+			name: "foreign-!null-Float",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "float", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsForeign: true, JointTable: &TableProperties{To: "col2", Table: "table2"}}}},
+			wantErr: false,
+		},
+		{
+			name: "foreign-!null-DateTime",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "datetime", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "DateTime", IsForeign: true, JointTable: &TableProperties{To: "col2", Table: "table2"}}}},
+			wantErr: false,
+		},
+		{
+			name: "foreign-!null-wrongDataType",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "wrongType", FieldNull: "NO", FieldKey: "MUL"}},
+				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
+			},
+			wantErr: true,
+		},
+		// sql server
+		{
+			name: "primary-!null-ID",
+			args: args{
+				dbType:      "sqlserver",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			wantErr: false,
+		},
+		{
+			name: "default key string -!null-ID",
+			args: args{
+				dbType:      "sqlserver",
+				col:         "table1",
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldDefault: "((string))"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"string\""}}},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Schema{
-				SchemaDoc: tt.fields.SchemaDoc,
-				crud:      crud,
-				project:   tt.fields.project,
+			got, err := generateInspection(tt.args.dbType, tt.args.col, tt.args.fields, tt.args.foreignkeys, tt.args.indexkeys)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("generateInspection() error = %v, wantErr %v", err, tt.wantErr)
 			}
-
-			result, err := s.SchemaInspection(tt.args.ctx, tt.args.dbType, s.project, tt.args.col)
-			if err != nil {
-				t.Errorf("Schema.schemaInspection() error = %v", err)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("generateInspection() = %s, want %s", print(got), print(tt.want))
 			}
-			fmt.Println(result)
 		})
 	}
+}
+
+func print(val interface{}) string {
+	b, _ := json.MarshalIndent(val, "", "  ")
+	return string(b)
 }

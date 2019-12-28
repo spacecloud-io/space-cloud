@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
@@ -121,9 +123,11 @@ func HandleGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		// Sync the config
-		if err := syncMan.SetProjectGlobalConfig(c); err != nil {
+		if err := syncMan.SetProjectGlobalConfig(ctx, c); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -159,9 +163,11 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		// Sync the config
-		if err := syncMan.SetProjectConfig(c); err != nil {
+		if err := syncMan.SetProjectConfig(ctx, c); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -193,7 +199,10 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 			return
 		}
 
-		err = syncMan.DeleteProjectConfig(project)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		err = syncMan.DeleteProjectConfig(ctx, project)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

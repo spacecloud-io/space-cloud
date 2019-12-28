@@ -70,9 +70,6 @@ func GenerateConfig(configFilePath string) error {
 	if err != nil {
 		return err
 	}
-	if i.PrimaryDB == "mysql" || i.PrimaryDB == "postgres" {
-		i.PrimaryDB = "sql-" + i.PrimaryDB
-	}
 
 	// Ask for the connection string
 	err = survey.AskOne(&survey.Input{Message: "connection string (" + i.PrimaryDB + ")", Default: getConnectionString(i.PrimaryDB)}, &i.Conn, survey.Required)
@@ -141,6 +138,7 @@ func formatProjectID(id string) string {
 }
 
 func getConnectionString(db string) string {
+
 	switch db {
 	case string(utils.Mongo):
 		return "mongodb://localhost:27017"

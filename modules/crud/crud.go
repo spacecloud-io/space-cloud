@@ -1,7 +1,10 @@
 package crud
 
 import (
+	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -31,10 +34,14 @@ func Init(h *driver.Handler) *Module {
 	return &Module{blocks: make(map[string]*stub), h: h}
 }
 
-// SetConfig set the rules adn secret key required by the crud block
+// SetConfig set the rules and secret key required by the crud block
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
+
+	if len(crud) > 1 {
+		return errors.New("crud module cannot have more than 1 db")
+	}
 
 	m.project = project
 
@@ -46,16 +53,22 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.blocks = make(map[string]*stub, len(crud))
 
 	// Create a new crud blocks
-	for dbType, v := range crud {
+	for dbAlias, v := range crud {
+		// For backward compatibilty support
+		if v.Type == "" {
+			v.Type = dbAlias
+		}
+		v.Type = strings.TrimPrefix(v.Type, "sql-")
+
 		// Initialise a new block
-		c, err := m.h.InitBlock(utils.DBType(dbType), v.Enabled, v.Conn)
-		m.blocks[dbType] = &stub{c: c, conn: v.Conn, dbType: utils.DBType(dbType)}
+		c, err := m.h.InitBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
+		m.blocks[dbAlias] = &stub{c: c, conn: v.Conn, dbType: utils.DBType(v.Type)}
 
 		if err != nil {
-			log.Println("Error connecting to " + dbType + " : " + err.Error())
+			log.Println("Error connecting to " + dbAlias + " : " + err.Error())
 			return err
 		} else {
-			log.Println("Successfully connected to " + dbType)
+			log.Println("Successfully connected to " + dbAlias)
 		}
 	}
 	return nil
@@ -68,9 +81,10 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 }
 
 type stub struct {
-	conn   string
-	c      driver.Crud
-	dbType utils.DBType
+	conn    string
+	c       driver.Crud
+	dbType  utils.DBType
+	dbAlias string
 }
 
 func (m *Module) getCrudBlock(dbType string) (driver.Crud, error) {
@@ -79,4 +93,14 @@ func (m *Module) getCrudBlock(dbType string) (driver.Crud, error) {
 	}
 
 	return nil, utils.ErrDatabaseConfigAbsent
+}
+
+// GetDBType returns the type of the db for the alias provided
+func (m *Module) GetDBType(dbAlias string) (string, error) {
+	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
+	s, p := m.blocks[dbAlias]
+	if !p {
+		return "", fmt.Errorf("db (%s) not found", dbAlias)
+	}
+	return string(s.dbType), nil
 }

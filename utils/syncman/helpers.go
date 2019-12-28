@@ -3,42 +3,11 @@ package syncman
 import (
 	"errors"
 	"math"
-	"sort"
 
 	"github.com/getlantern/deepcopy"
-	"github.com/hashicorp/consul/api"
 
 	"github.com/spaceuptech/space-cloud/config"
 )
-
-func (s *Manager) setSpaceCloudInstances(nodes memRange) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	var passingNodes memRange
-
-	// Filter out failing nodes
-	for _, node := range nodes {
-		if isCheckNotPassing(node.Checks) {
-			continue
-		}
-
-		passingNodes = append(passingNodes, node)
-	}
-
-	// Sort and store
-	sort.Stable(passingNodes)
-	s.services = passingNodes
-}
-
-func isCheckNotPassing(checks api.HealthChecks) bool {
-	for _, check := range checks {
-		if check.Status != api.HealthPassing {
-			return true
-		}
-	}
-	return false
-}
 
 func (s *Manager) setProjectConfig(conf *config.Project) {
 	for i, p := range s.projectConfig.Projects {
@@ -66,11 +35,11 @@ func remove(s []*config.Project, i int) []*config.Project {
 	return s[:len(s)-1]
 }
 
-type memRange []*api.ServiceEntry
+type scServices []*service
 
-func (a memRange) Len() int           { return len(a) }
-func (a memRange) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a memRange) Less(i, j int) bool { return a[i].Service.Address < a[j].Service.Address }
+func (a scServices) Len() int           { return len(a) }
+func (a scServices) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a scServices) Less(i, j int) bool { return a[i].id < a[j].id }
 
 func calcTokens(n int, tokens int, i int) (start int, end int) {
 	tokensPerMember := int(math.Ceil(float64(tokens) / float64(n)))

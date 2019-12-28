@@ -24,6 +24,10 @@ func (p *Projects) StoreIgnoreErrors(project *config.Project) error {
 		log.Println("Error in crud module config: ", err)
 	}
 
+	if err := s.Schema.SetConfig(project.Modules.Crud, project.ID); err != nil {
+		log.Println("Error in schema module config: ", err)
+	}
+
 	// Set the configuration for the auth module
 	if err := s.Auth.SetConfig(project.ID, project.Secret, project.Modules.Crud, project.Modules.FileStore, project.Modules.Services); err != nil {
 		log.Println("Error in auth module config: ", err)
@@ -72,6 +76,11 @@ func (p *Projects) StoreProject(project *config.Project) error {
 	// Set the configuration for the crud module
 	if err := s.Crud.SetConfig(project.ID, project.Modules.Crud); err != nil {
 		log.Println("Error in crud module config: ", err)
+		return err
+	}
+
+	if err := s.Schema.SetConfig(project.Modules.Crud, project.ID); err != nil {
+		log.Println("Error in schema module config: ", err)
 		return err
 	}
 
@@ -134,6 +143,11 @@ func (p *Projects) SetCrudConfig(projectID string, c config.Crud) error {
 	// Set the configuration for the auth module
 	if err := s.Auth.SetCrudConfig(projectID, c); err != nil {
 		log.Println("Error in crud module config: ", err)
+		return err
+	}
+
+	if err := s.Schema.SetConfig(c, projectID); err != nil {
+		log.Println("Error in schema module config: ", err)
 		return err
 	}
 

@@ -25,11 +25,12 @@ type Module struct {
 	auth      *auth.Module
 	crud      *crud.Module
 	functions *functions.Module
+	schema    *schema.Schema
 }
 
 // New creates a new GraphQL module
-func New(a *auth.Module, c *crud.Module, f *functions.Module) *Module {
-	return &Module{auth: a, crud: c, functions: f}
+func New(a *auth.Module, c *crud.Module, f *functions.Module, s *schema.Schema) *Module {
+	return &Module{auth: a, crud: c, functions: f, schema: s}
 }
 
 // SetConfig sets the project configuration
@@ -156,7 +157,17 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		// No directive means its a nested field
 		if len(field.Directives) > 0 {
-			kind := getQueryKind(field.Directives[0])
+			dbAlias, err := graph.GetDBAlias(field)
+			if err != nil {
+				cb(nil, err)
+				return
+			}
+			dbType, err := graph.crud.GetDBType(dbAlias)
+			if err != nil {
+				cb(nil, err)
+				return
+			}
+			kind := getQueryKind(dbType)
 			if kind == "read" {
 				graph.execReadRequest(ctx, field, token, store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
 					if err != nil {
@@ -165,7 +176,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 					}
 
 					// Load the schema
-					s, _ := graph.auth.Schema.GetSchema(dbType, col)
+					s, _ := graph.schema.GetSchema(dbType, col)
 
 					graph.processQueryResult(ctx, field, token, store, result, loader, s, cb)
 				}))
@@ -250,10 +261,10 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 	}
 }
 
-func getQueryKind(directive *ast.Directive) string {
-	switch directive.Name.Value {
+func getQueryKind(dbType string) string {
+	switch utils.DBType(dbType) {
 
-	case "postgres", "mysql", "mongo", "sqlserver":
+	case utils.Postgres, utils.MySQL, utils.Mongo, utils.SqlServer:
 		return "read"
 
 	default:

@@ -33,8 +33,13 @@ func (m *Module) handleCall(ctx context.Context, service, endpoint, token string
 		method = "POST"
 	}
 
+	scToken, err := m.auth.GetSCAccessToken()
+	if err != nil {
+		return nil, err
+	}
+
 	var res interface{}
-	if err := m.manager.MakeHTTPRequest(ctx, method, url, token, params, &res); err != nil {
+	if err := m.manager.MakeHTTPRequest(ctx, method, url, token, scToken, params, &res); err != nil {
 		return nil, err
 	}
 

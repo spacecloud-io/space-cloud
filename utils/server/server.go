@@ -39,7 +39,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 
@@ -49,7 +49,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 	}
 
 	adminMan := admin.New(nodeID)
-	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled, adminMan)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, adminMan)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 func (s *Server) Start(disableMetrics bool, port int) error {
 
 	// Start the sync manager
-	if err := s.syncMan.Start(s.configFilePath); err != nil {
+	if err := s.syncMan.Start(s.configFilePath, port); err != nil {
 		return err
 	}
 

@@ -1,137 +1,151 @@
 package schema
 
 import (
-	"encoding/json"
-	"fmt"
+	"reflect"
 	"testing"
 
-	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/modules/crud"
-
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/crud"
 )
 
-var query = `
-type tweet {
-	id: ID! @id
-	createdAt: DateTime! @createdAt
-	text: String
-	owner: [String!]! @relation
-	location: location!
-	age : Integer!	
-  }
-  
-  type user {
-	id: ID! @id
-	createdAt: DateTime! @createdAt
-	updatedAt: DateTime! @updatedAt
-	handle: String! @unique
-	name: String
-	tweets: [tweet!]!
-  }
-  
-  type location {
-	id: ID! @id
-	latitude: Float!
-	longitude: Float!
-	person : sharad! @relation(field:name)
-  }
-
-  type sharad {
-	  name : String!
-	  sirName : String!
-	  age : Integer!
-	  isMale : Boolean!
-	  dob : DateTime!
-  }
-  type event_logs {
-	id: ID! @id
-	name: String!
-  }
-`
-var ParseData = config.Crud{
-	"mongo": &config.CrudStub{
-		Collections: map[string]*config.TableRule{
-			"event_logs": &config.TableRule{
-				Schema: query,
-			},
-		},
-	},
-}
-
 func TestParseSchema(t *testing.T) {
-	temp := crud.Module{}
-	s := Init(&temp)
-
-	t.Run("Schema Parser", func(t *testing.T) {
-		err := s.ParseSchema(ParseData)
-		if err != nil {
-			t.Fatal(err)
-		}
-		// uncomment the below statements to see the reuslt
-		b, err := json.MarshalIndent(s.SchemaDoc, "", "  ")
-		if err != nil {
-			fmt.Println("error:", err)
-		}
-		fmt.Print(string(b))
-		t.Log("Logging Test Output :: ", s.SchemaDoc)
-	})
-}
-
-func TestValidateSchema(t *testing.T) {
-
-	var arr []interface{}
-	str := []int{1, 2, 3}
-	for _, v := range str {
-		arr = append(arr, v)
-	}
-
-	req := model.CreateRequest{
-		Document: []map[string]interface{}{
-			{
-				"id":        "dfdsairfa",
-				"createdAt": 986413662654,
-				"text":      "Hello World!",
-				"location": map[string]interface{}{
-					"id":        "locatoinid",
-					"latitude":  5.5,
-					"longitude": 312.3,
-					"person": map[string]interface{}{
-						"name":    "sharad",
-						"sirName": "Regoti",
-						"age":     19,
-						"isMale":  true,
-						"dob":     "1999-10-19T11:45:26.371Z",
+	var testCases = []struct {
+		name          string
+		IsErrExpected bool
+		schema        schemaType
+		Data          config.Crud
+	}{
+		{
+			name:          "compulsory field with different datatypes/primary key on list",
+			IsErrExpected: true,
+			schema:        nil,
+			Data: config.Crud{
+				"mongo": &config.CrudStub{
+					Collections: map[string]*config.TableRule{
+						"tweet": &config.TableRule{
+							Schema: `
+						type tweet {
+							id: ID!
+							createdAt:DateTime
+							text: String
+							isMale: Boolean
+							age: Float!
+							exp: Integer
+							owner:[String]@primary
+						  }`,
+						},
 					},
 				},
-				"owner": arr,
+			},
+		},
+		{
+			name:          "invalid collection name",
+			schema:        nil,
+			IsErrExpected: true,
+			Data: config.Crud{
+				"mongo": &config.CrudStub{
+					Collections: map[string]*config.TableRule{
+						"tes": &config.TableRule{
+							Schema: `type test {
+						 id : ID @id
+						 person : sharad @link(table:sharad, from:Name, to:isMale)
+						}`,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:          "invalid linked field and valid directives",
+			schema:        nil,
+			IsErrExpected: true,
+			Data: config.Crud{
+				"mongo": &config.CrudStub{
+					Collections: map[string]*config.TableRule{
+						"test": &config.TableRule{
+							Schema: `type test {
+						 id : ID @primary
+						 text: String@unique
+						 createdAt:DateTime@createdAt
+						 updatedAt:DateTime@updatedAt
+						 loc:location@foreign(table:location,field:latitude)
+						 person : sharad @link(table:sharad, from:Name)
+						}
+						type location{
+							latitude:Float
+							longitude:Float
+						}`,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:          "collection could not be found in schema",
+			schema:        nil,
+			IsErrExpected: true,
+			Data: config.Crud{
+				"mongo": &config.CrudStub{
+					Collections: map[string]*config.TableRule{
+						"test": &config.TableRule{
+							Schema: `type test {
+						 id : ID @primary
+						 text: String@unique
+						 createdAt:DateTime@createdAt
+						 updatedAt:DateTime@updatedAt
+						 exp:Integera
+						 person : sharad @link(table:sharad, from:Name)
+						 
+						}`,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "valid schema",
+			schema: schemaType{
+				"mongo": schemaCollection{
+					"tweet": SchemaFields{
+						"ID": &SchemaFieldType{
+							FieldName: "ID",
+							Kind:      TypeID,
+							IsPrimary: true,
+						},
+						"age": &SchemaFieldType{
+							FieldName: "age",
+							Kind:      typeFloat,
+						},
+					},
+				},
+			},
+			IsErrExpected: false,
+			Data: config.Crud{
+				"mongo": &config.CrudStub{
+					Collections: map[string]*config.TableRule{
+						"tweet": &config.TableRule{
+							Schema: `type tweet {
+						 ID : ID @primary
+						 age: Float
+						}`,
+						},
+					},
+				},
 			},
 		},
 	}
 
-	tdd := []struct {
-		dbName, coll, description string
-		value                     model.CreateRequest
-	}{{
-		dbName:      "mongo",
-		coll:        "tweet",
-		description: "checking User defined type",
-		value:       req,
-	}}
-	temp := crud.Module{}
-	s := Init(&temp)
-	err := s.ParseSchema(ParseData)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, val := range tdd {
-		t.Run(val.description, func(t *testing.T) {
-			err := s.ValidateCreateOperation(val.dbName, val.coll, &val.value)
-			if err != nil {
-				t.Fatal(err)
+	s := Init(&crud.Module{}, false)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			r, err := s.parser(testCase.Data)
+			if (err != nil) != testCase.IsErrExpected {
+				t.Errorf("\n Schema.parseSchema() error = expected error-%v,got error-%v", testCase.IsErrExpected, err)
+				return
+			}
+			if !reflect.DeepEqual(r, testCase.schema) {
+				t.Errorf("parser()=got return value-%v,expected schema-%v", r, testCase.schema)
 			}
 		})
 	}
-
 }

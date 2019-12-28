@@ -2,15 +2,10 @@ package syncman
 
 import (
 	"log"
-	"strings"
 	"sync"
-
-	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/connect"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
-	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 )
 
@@ -24,53 +19,50 @@ type Manager struct {
 	configFile    string
 
 	// Configuration for cluster information
-	nodeID    string
-	clusterID string
-	port      int
-
-	// Configuration for clustering
-	isConsulEnabled bool
-	consulClient    *api.Client
-	consulService   *connect.Service
-	services        []*api.ServiceEntry
+	nodeID        string
+	clusterID     string
+	advertiseAddr string
+	port          int
 
 	// Global servers
 	adminMan *admin.Manager
+
+	// Configuration for clustering
+
+	storeType string
+	store     Store
+	services  []*service
+}
+
+type service struct {
+	id   string
+	addr string
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID string, isConsulEnabled bool, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
-	if isConsulEnabled {
-		client, err := api.NewClient(api.DefaultConfig())
-		if err != nil {
-			return nil, err
-		}
-
-		service, err := connect.NewService(utils.SpaceCloudServiceName, client)
-		if err != nil {
-			return nil, err
-		}
-
-		m.isConsulEnabled = true
-		m.consulClient = client
-		m.consulService = service
-
-		// Set the node id if not already exists
-		if m.nodeID == "" || strings.HasPrefix(m.nodeID, "auto") {
-			info, err := client.Agent().Self()
-			if err != nil {
-				return nil, err
-			}
-
-			m.nodeID = info["Config"]["NodeID"].(string)
-		}
-
+	switch storeType {
+	case "none":
 		return m, nil
+	case "consul":
+		s, err := NewConsulStore(nodeID, clusterID, advertiseAddr)
+		if err != nil {
+			return nil, err
+		}
+		m.store = s
+		m.store.Register()
+	case "etcd":
+		s, err := NewETCDStore(nodeID, clusterID, advertiseAddr)
+		if err != nil {
+			return nil, err
+		}
+		m.store = s
+		m.store.Register()
 	}
 
 	return m, nil
@@ -84,11 +76,12 @@ func (s *Manager) SetProjectCallbacks(projects *model.ProjectCallbacks) {
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string) error {
+func (s *Manager) Start(configFilePath string, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	s.port = port
 	s.configFile = configFilePath
 
 	// Write the config to file
@@ -102,14 +95,39 @@ func (s *Manager) Start(configFilePath string) error {
 		}
 	}
 
-	if s.isConsulEnabled {
+	if s.storeType != "none" {
 		// Start routine to observe active space-cloud services
-		if err := s.watchService(); err != nil {
+		if err := s.store.WatchProjects(func(projects []*config.Project) {
+			s.lock.Lock()
+			defer s.lock.Unlock()
+
+			s.projectConfig.Projects = projects
+			config.StoreConfigToFile(s.projectConfig, s.configFile)
+
+			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
+				for _, p := range s.projectConfig.Projects {
+
+					if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), p); !ok {
+						log.Println("Cannot create new project. Upgrade your plan")
+						break
+					}
+
+					if err := s.projects.StoreIgnoreError(p); err != nil {
+						log.Println("Load Project Error: ", err)
+					}
+				}
+			}
+		}); err != nil {
 			return err
 		}
 
 		// Start routine to observe space cloud projects
-		if err := s.watchProjects(); err != nil {
+		if err := s.store.WatchServices(func(services scServices) {
+			s.lock.Lock()
+			defer s.lock.Unlock()
+
+			s.services = services
+		}); err != nil {
 			return err
 		}
 	}
@@ -117,8 +135,8 @@ func (s *Manager) Start(configFilePath string) error {
 	return nil
 }
 
-//func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
-//	if !s.isConsulEnabled {
+// func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
+//	if !s.storeType {
 //		return errors.New("consul is not enabled")
 //	}
 //
@@ -133,7 +151,7 @@ func (s *Manager) Start(configFilePath string) error {
 //
 //	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
 //	return server.ListenAndServeTLS("", "")
-//}
+// }
 
 // SetGlobalConfig sets the global config. This must be called before the Start command.
 func (s *Manager) SetGlobalConfig(c *config.Config) {

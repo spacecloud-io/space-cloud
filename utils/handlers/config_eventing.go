@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/config"
@@ -28,12 +30,14 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		vars := mux.Vars(r)
 		ruleName := vars["ruleName"]
 		project := vars["project"]
 
-		if err := syncMan.SetEventingRule(project, ruleName, value); err != nil {
+		if err := syncMan.SetEventingRule(ctx, project, ruleName, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -60,12 +64,14 @@ func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		vars := mux.Vars(r)
 		ruleName := vars["ruleName"]
 		project := vars["project"]
 
-		if err := syncMan.SetDeleteEventingRule(project, ruleName); err != nil {
+		if err := syncMan.SetDeleteEventingRule(ctx, project, ruleName); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -92,6 +98,8 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		c := config.Eventing{}
 		json.NewDecoder(r.Body).Decode(&c)
@@ -99,7 +107,7 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		vars := mux.Vars(r)
 		project := vars["project"]
 
-		if err := syncMan.SetEventingConfig(project, c.DBType, c.Col, c.Enabled); err != nil {
+		if err := syncMan.SetEventingConfig(ctx, project, c.DBType, c.Col, c.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

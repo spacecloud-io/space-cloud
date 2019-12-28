@@ -3,55 +3,68 @@ package sql
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // DescribeTable return a description of sql table & foreign keys in table
 // NOTE: not to be exposed externally
-func (s *SQL) DescribeTable(ctx context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error) {
-	fields, err := s.getDescribeDetails(ctx, project, dbType, col)
+func (s *SQL) DescribeTable(ctx context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error) {
+	fields, err := s.getDescribeDetails(ctx, project, col)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	foreignKeys, err := s.getForeignKeyDetails(ctx, project, dbType, col)
+	foreignKeys, err := s.getForeignKeyDetails(ctx, project, col)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return fields, foreignKeys, nil
+
+	index, err := s.getIndexDetails(ctx, project, col)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return fields, foreignKeys, index, nil
 }
 
-func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col string) ([]utils.FieldType, error) {
+func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]utils.FieldType, error) {
 	queryString := ""
 	args := []interface{}{}
-	if utils.DBType(dbType) == utils.MySQL {
+	switch utils.DBType(s.dbType) {
+	case utils.MySQL:
 		queryString = `DESCRIBE ` + project + "." + col
-	} else {
-		queryString = `SELECT  
-		f.attnum AS "Default",  
-		f.attnum AS "Extra",
-		f.attname AS "Field",  
-		pg_catalog.format_type(f.atttypid,f.atttypmod) AS "Type",  
-		CASE  
-			WHEN p.contype = 'p' THEN 'PRI'  
-			WHEN p.contype = 'u' THEN 'UNI'
-			ELSE 'f'  
-		END AS "Key",
-		CASE
-			WHEN f.attnotnull = 't' THEN 'NO'
-			ELSE 'YES'
-		END AS "Null"
-	FROM pg_attribute f  
-		JOIN pg_class c ON c.oid = f.attrelid  
-		JOIN pg_type t ON t.oid = f.atttypid  
-		LEFT JOIN pg_attrdef d ON d.adrelid = c.oid AND d.adnum = f.attnum  
-		LEFT JOIN pg_namespace n ON n.oid = c.relnamespace  
-		LEFT JOIN pg_constraint p ON p.conrelid = c.oid AND f.attnum = ANY (p.conkey)  
-		LEFT JOIN pg_class AS g ON p.confrelid = g.oid  
-	WHERE c.relkind = 'r'::char    
-		AND c.relname = $1
-		AND n.nspname = $2
-		AND f.attnum > 0 ORDER BY "Default"`
+	case utils.Postgres:
+		queryString = `SELECT isc.column_name AS "Field", coalesce(isc.column_default,'') AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",isc.is_nullable as "Extra",
+CASE
+    WHEN istc.constraint_type = 'PRIMARY KEY' THEN 'PRI'
+    WHEN istc.constraint_type = 'UNIQUE' THEN 'UNI'
+    ELSE 'f'
+END AS "Key"
+FROM information_schema.columns isc
+    left join information_schema.constraint_column_usage cu on (cu.table_schema, cu.table_name, cu.column_name) = (isc.table_schema, isc.table_name, isc.column_name)
+    left JOIN information_schema.table_constraints istc  on (istc.table_schema,istc.table_name, istc.constraint_name) = (cu.table_schema,cu.table_name, cu.constraint_name)
+WHERE (isc.table_schema, isc.table_name) = ($2, $1)
+ORDER BY isc.ordinal_position;`
+
+		args = append(args, col, project)
+	case utils.SqlServer:
+
+		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , 
+    case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',c.CHARACTER_MAXIMUM_LENGTH,')') else C.DATA_TYPE end as 'Type',
+    C.COLUMN_DEFAULT as 'Default',C.DATA_TYPE as 'Extra',
+       CASE
+           WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
+           WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
+           ELSE isnull(TC.CONSTRAINT_TYPE,'NULL')
+           END AS 'Key'
+FROM INFORMATION_SCHEMA.COLUMNS AS C
+         FULL JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS CC
+                   ON C.COLUMN_NAME = CC.COLUMN_NAME
+         FULL JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS TC
+                   ON CC.CONSTRAINT_NAME = TC.CONSTRAINT_NAME
+WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 
 		args = append(args, col, project)
 	}
@@ -74,16 +87,18 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, dbType, col strin
 		result = append(result, *fieldType)
 	}
 	if count == 0 {
-		return result, errors.New(dbType + ":" + col + " not found during inspection")
+		return result, errors.New(s.dbType + ":" + col + " not found during inspection")
 	}
 	return result, nil
 }
 
-func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col string) ([]utils.ForeignKeysType, error) {
+func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]utils.ForeignKeysType, error) {
 	queryString := ""
-	if utils.DBType(dbType) == utils.MySQL {
+	switch utils.DBType(s.dbType) {
+
+	case utils.MySQL:
 		queryString = "select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = ? and TABLE_NAME = ?"
-	} else {
+	case utils.Postgres:
 		queryString = `SELECT
 		tc.table_name AS "TABLE_NAME", 
 		kcu.column_name AS "COLUMN_NAME", 
@@ -100,6 +115,16 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col str
 		  AND ccu.table_schema = tc.table_schema
 	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
 	`
+	case utils.SqlServer:
+		queryString = `SELECT 
+		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME,
+		isnull(KCU.TABLE_NAME,'') AS 'REFERENCED_TABLE_NAME', isnull(KCU.COLUMN_NAME,'') AS 'REFERENCED_COLUMN_NAME'
+	FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE CCU
+		FULL JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
+			ON CCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
+		FULL JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU 
+			ON KCU.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME  
+	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2`
 	}
 	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
 	if err != nil {
@@ -116,6 +141,86 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, dbType, col str
 		}
 
 		result = append(result, *foreignKey)
+	}
+	return result, nil
+}
+
+func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]utils.IndexType, error) {
+	queryString := ""
+	switch utils.DBType(s.dbType) {
+
+	case utils.MySQL:
+		queryString = `SELECT 
+		TABLE_NAME, COLUMN_NAME, INDEX_NAME, SEQ_IN_INDEX, 
+		(case when NON_UNIQUE = 0 then "yes" else "no" end) as IS_UNIQUE,
+		(case when COLLATION = "A" then "asc" else "desc" end) as SORT 
+		from INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME REGEXP '^index_'`
+	case utils.Postgres:
+		queryString = `select
+    	t.relname as "TABLE_NAME",
+    	a.attname as "COLUMN_NAME",
+    	i.relname as "INDEX_NAME",
+    	1 + array_position(ix.indkey, a.attnum) as "SEQ_IN_INDEX",
+    	(case when ix.indisunique = false then 'no' else 'yes' end) "IS_UNIQUE",
+    	(case when ix.indoption[array_position(ix.indkey, a.attnum)] = 0 then 'asc'
+         when ix.indoption[array_position(ix.indkey, a.attnum)] = 3 then 'desc'
+         else '' end) as "SORT"        
+			from
+     		pg_catalog.pg_class t
+				join pg_catalog.pg_attribute a on t.oid    =      a.attrelid 
+				join pg_catalog.pg_index ix    on t.oid    =     ix.indrelid
+				join pg_catalog.pg_class i     on a.attnum = any(ix.indkey)
+																			and i.oid    =     ix.indexrelid
+				join pg_catalog.pg_namespace n on n.oid    =      t.relnamespace
+				where n.nspname = $1 and t.relname = $2 and i.relname ~ '^index' and t.relkind = 'r' 
+			order by
+    		t.relname,
+    		i.relname,
+    		array_position(ix.indkey, a.attnum)`
+	case utils.SqlServer:
+		queryString = `SELECT 
+    	TABLE_NAME = t.name,
+    	COLUMN_NAME = col.name,
+    	INDEX_NAME = ind.name,
+    	SEQ_IN_INDEX = ic.index_column_id,
+    	case when ind.is_unique = 0 then 'no' else 'yes' end as IS_UNIQUE,
+    	case when ic.is_descending_key = 0 then 'asc' else 'desc' end as SORT 
+			FROM 
+     			sys.indexes ind 
+				INNER JOIN 
+     			sys.index_columns ic ON  ind.object_id = ic.object_id and ind.index_id = ic.index_id 
+				INNER JOIN 
+     			sys.columns col ON ic.object_id = col.object_id and ic.column_id = col.column_id 
+				INNER JOIN 
+     			sys.tables t ON ind.object_id = t.object_id 
+				INNER JOIN 
+        	sys.schemas s ON t.schema_id = s.schema_id
+			WHERE 
+     			ind.is_primary_key = 0  and s.name = @p1 and t.name = @p2 `
+	}
+	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := []utils.IndexType{}
+	for rows.Next() {
+		indexKey := new(utils.IndexType)
+
+		if err := rows.StructScan(indexKey); err != nil {
+			return nil, err
+		}
+
+		result = append(result, *indexKey)
+	}
+	for i, value := range result {
+		s := strings.Split(value.IndexName, "__")
+		if len(s) != 3 {
+			return nil, fmt.Errorf("invalid index name (%s) found", value.IndexName)
+		}
+		result[i].IndexName = s[2]
+		fmt.Println(s, value.IndexName)
 	}
 	return result, nil
 }

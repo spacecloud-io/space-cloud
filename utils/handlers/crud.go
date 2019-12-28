@@ -96,7 +96,7 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Check if the user is authenticated
-		status, err := state.Auth.IsReadOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
+		actions, status, err := state.Auth.IsReadOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -110,6 +110,9 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		// function to do postProcessing on result
+		_ = state.Auth.PostProcessMethod(actions, result)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)

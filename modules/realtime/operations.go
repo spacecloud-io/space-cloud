@@ -9,28 +9,33 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/spaceuptech/space-cloud/model"
+	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // Subscribe performs the realtime subscribe operation.
 func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
-
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
-	_, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
+	actions, _, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
 	if err != nil {
 		return nil, err
 	}
 
-	return m.DoRealtimeSubscribe(ctx, clientID, data, sendFeed)
+	return m.DoRealtimeSubscribe(ctx, clientID, data, actions, sendFeed)
 }
 
 // DoRealtimeSubscribe makes the realtime query
-func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
+func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, actions *auth.PostProcess, sendFeed SendFeed) ([]*model.FeedData, error) {
+	actualDbType, err := m.crud.GetDBType(data.DBType)
+	if err != nil {
+		return nil, err
+	}
+
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 	if data.Options.SkipInitial {
-		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, sendFeed)
+		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
 		return []*model.FeedData{}, nil
 	}
 
@@ -42,6 +47,8 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 		return nil, err
 	}
 
+	_ = m.auth.PostProcessMethod(actions, result)
+
 	feedData := make([]*model.FeedData, 0)
 	array, ok := result.([]interface{})
 	if ok {
@@ -49,7 +56,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 		for _, row := range array {
 			payload := row.(map[string]interface{})
 			idVar := "id"
-			if data.DBType == string(utils.Mongo) {
+			if actualDbType == string(utils.Mongo) {
 				idVar = "_id"
 			}
 			if docID, ok := utils.AcceptableIDType(payload[idVar]); ok {
@@ -67,7 +74,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	}
 
 	// Add the live query
-	m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, sendFeed)
+	m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
 	return feedData, nil
 }
 
@@ -92,22 +99,26 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Cl
 	ctx, cancel := context.WithTimeout(ctxRoot, 5*time.Second)
 	defer cancel()
 
-	for _, url := range urls {
-		go func() {
+	token, err := m.auth.GetInternalAccessToken()
+	if err != nil {
+		return err
+	}
+
+	scToken, err := m.auth.GetSCAccessToken()
+	if err != nil {
+		return err
+	}
+
+	for _, u := range urls {
+		go func(url string) {
 			defer wg.Done()
 
-			token, err := m.auth.GetInternalAccessToken()
-			if err != nil {
-				errCh <- err
-				return
-			}
-
 			var res interface{}
-			if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, eventDoc, &res); err != nil {
+			if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, scToken, eventDoc, &res); err != nil {
 				errCh <- err
 				return
 			}
-		}()
+		}(u)
 	}
 
 	go func() {

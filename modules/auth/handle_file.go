@@ -11,26 +11,26 @@ import (
 )
 
 // IsFileOpAuthorised checks if the caller is authorized to make the request
-func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path string, op utils.FileOpType, args map[string]interface{}) error {
+func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path string, op utils.FileOpType, args map[string]interface{}) (*PostProcess, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	// Get the rules corresponding to the requested path
 	params, rules, err := m.getFileRule(path)
 	if err != nil {
-		return err
+		return &PostProcess{}, err
 	}
 	rule := rules.Rule[string(op)]
 	if rule.Rule == "allow" {
 		if m.project == project {
-			return nil
+			return &PostProcess{}, nil
 		}
-		return errors.New("invalid project details provided")
+		return &PostProcess{}, errors.New("invalid project details provided")
 	}
 
 	auth, err := m.parseToken(token)
 	if err != nil {
-		return err
+		return &PostProcess{}, err
 	}
 
 	// Add the path params and auth object to the arguments list
@@ -43,7 +43,7 @@ func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path st
 }
 
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
-	pathParams := make(map[string]interface{})
+	pathParams := make(map[string]interface{}, 0)
 	ps := "/"
 	if m.fileStoreType == string(utils.Local) {
 		ps = string(os.PathSeparator)

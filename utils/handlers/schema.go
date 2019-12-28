@@ -42,7 +42,7 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, projects *projects.Proj
 			return
 		}
 
-		schemas, err := state.Auth.Schema.GetCollectionSchema(ctx, project, dbType)
+		schemas, err := state.Schema.GetCollectionSchema(ctx, project, dbType)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

@@ -18,15 +18,16 @@ type Crud interface {
 	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error)
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error)
-	DescribeTable(ctc context.Context, project, dbType, col string) ([]utils.FieldType, []utils.ForeignKeysType, error)
+	DescribeTable(ctc context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
 	RawExec(ctx context.Context, project string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, project, col string) error
+	CreateProjectIfNotExist(ctx context.Context, project string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
-	GetConnectionState(ctx context.Context, dbType string) bool
+	GetConnectionState(ctx context.Context) bool
 }
 
 // Handler is the object managing the database connections

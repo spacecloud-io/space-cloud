@@ -1,6 +1,8 @@
 package eventing
 
 import (
+	"time"
+
 	"github.com/spaceuptech/space-cloud/model"
 )
 
@@ -10,9 +12,17 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 	// Get the assigned token range
 	start, end := m.syncMan.GetAssignedTokens()
 
+	// Get current timestamp
+	t := time.Now()
+	currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
+
 	for _, eventDoc := range eventDocs {
 		if eventDoc.Token >= start && eventDoc.Token <= end {
-			go m.processStagedEvent(eventDoc)
+			timestamp := eventDoc.Timestamp
+
+			if currentTimestamp > timestamp {
+				go m.processStagedEvent(eventDoc)
+			}
 		}
 	}
 }

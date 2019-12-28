@@ -1,8 +1,12 @@
 package syncman
 
-import "github.com/spaceuptech/space-cloud/config"
+import (
+	"context"
 
-func (s *Manager) SetEventingRule(project, ruleName string, value config.EventingRule) error {
+	"github.com/spaceuptech/space-cloud/config"
+)
+
+func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value config.EventingRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -18,10 +22,10 @@ func (s *Manager) SetEventingRule(project, ruleName string, value config.Eventin
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
-func (s *Manager) SetDeleteEventingRule(project, ruleName string) error {
+func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -38,10 +42,10 @@ func (s *Manager) SetDeleteEventingRule(project, ruleName string) error {
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
-func (s *Manager) SetEventingConfig(project, dbType, col string, enabled bool) error {
+func (s *Manager) SetEventingConfig(ctx context.Context, project, dbType, col string, enabled bool) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -60,5 +64,5 @@ func (s *Manager) SetEventingConfig(project, dbType, col string, enabled bool) e
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
