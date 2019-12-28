@@ -38,17 +38,15 @@ type (
 )
 
 const (
-	typeInteger   string = "Integer"
-	typeString    string = "String"
-	typeFloat     string = "Float"
-	typeBoolean   string = "Boolean"
-	typeDateTime  string = "DateTime"
-	typeEnum      string = "Enum"
-	typeJSON      string = "Json"
-	TypeID        string = "ID"
-	sqlTypeIDSize string = "50"
-	typeObject    string = "Object"
-
+	typeInteger        string = "Integer"
+	typeString         string = "String"
+	typeFloat          string = "Float"
+	typeBoolean        string = "Boolean"
+	typeDateTime       string = "DateTime"
+	TypeID             string = "ID"
+	sqlTypeIDSize      string = "50"
+	typeObject         string = "Object"
+	typeEnum           string = "Enum"
 	directiveUnique    string = "unique"
 	directiveForeign   string = "foreign"
 	directivePrimary   string = "primary"
