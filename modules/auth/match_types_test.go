@@ -1,40 +1,36 @@
 package auth
 
 import (
-	"errors"
-	"reflect"
-	"testing"
-
 	"github.com/spaceuptech/space-cloud/config"
+	"testing"
 )
 
 func TestMatchString(t *testing.T) {
-	var authMatchString = []struct {
-		testName string
-		err      error
-		rule     *config.Rule
-		args     map[string]interface{}
+	var testCases = []struct {
+		name          string
+		err           error
+		isErrExpected bool
+		rule          *config.Rule
+		args          map[string]interface{}
 	}{
-		{testName: "Match String !=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match String ==", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "string", F1: "interfaceString1", F2: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match String eval is not provided !=", err: ErrIncorrectMatch, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match String !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match String !=", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
+		{name: "Match String !=", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfacestring", F2: "interfaceString"}},
+		{name: "Match String != loaded from state", isErrExpected: false, args: map[string]interface{}{"v1": "val1", "v2": "val2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "args.v1", F2: "args.v2"}},
+		{name: "Match String != without passing args", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfacestring", F2: "interfaceString"}},
+		{name: "Match String != variable contains invalid type", isErrExpected: true, args: map[string]interface{}{"v1": 10}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "args.v1", F2: "interfaceString"}},
+		{name: "Error Match String != passing only one value", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfacestring"}},
+		{name: "Error Match String != passing float value", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfacestring", F2: 3.0}},
+		{name: "Error Match String == value as an interface", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "string", F1: "interfacestring", F2: map[string]interface{}{"val": "interfacestring"}}},
+		{name: "Match String ==", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "string", F1: "interfaceString1", F2: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
+		{name: "Error Match String eval is not provided !=", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
+		{name: "Error Match String !=", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F2: "interfaceString2", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
+		{name: "Error Match String !=", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: "interfaceString1", DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
 	}
 
-	successTestCases := 1
-	for i, test := range authMatchString {
-		t.Run(test.testName, func(t *testing.T) {
-			err := matchString(test.rule, test.args)
-			if i <= successTestCases {
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			} else {
-
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Error Test", "| Got This |", err, "| Wanted This |", test.err)
-				}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			gotErr := matchString(testCase.rule, map[string]interface{}{"args": testCase.args})
+			if (gotErr != nil) != testCase.isErrExpected {
+				t.Errorf("got %v wanted %v", gotErr, testCase.isErrExpected)
 			}
 
 		})
@@ -43,69 +39,57 @@ func TestMatchString(t *testing.T) {
 
 func TestMatchNumber(t *testing.T) {
 	var authMatchNumber = []struct {
-		testName string
-		err      error
-		rule     *config.Rule
-		args     map[string]interface{}
+		testName      string
+		isErrExpected bool
+		rule          *config.Rule
+		args          map[string]interface{}
 	}{
-		{testName: "Match Number ==", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number <=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "<=", Type: "number", F1: 2.0, F2: 3.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number >=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: ">=", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number <", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "<", Type: "number", F1: 1.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number >", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: ">", Type: "number", F1: 3.0, F2: 2.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match Number !=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0, F2: 10.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Erro Match Number eval is not provided ==", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "", Type: "number", F1: 1.0, F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match number !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F2: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match number !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: 1.0, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
+		{testName: "Match Number ==", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "number", F1: 1.0, F2: 1}},
+		{testName: "Match Number loaded from state ==", isErrExpected: false, args: map[string]interface{}{"num1": 12.0, "num2": 12}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "number", F1: "args.num1", F2: "args.num2"}},
+		{testName: "Match Number <=", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "<=", Type: "number", F1: 2.54, F2: 3.67}},
+		{testName: "Match Number >=", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: ">=", Type: "number", F1: 3.67, F2: 2.54}},
+		{testName: "Match Number <", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "<", Type: "number", F1: 1, F2: 2.0}},
+		{testName: "Match Number >", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: ">", Type: "number", F1: 3.0, F2: 2.99}},
+		{testName: "Match Number !=", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: 10.1, F2: 10}},
+		{testName: "Match Number loaded from state !=", isErrExpected: false, args: map[string]interface{}{"num1": 12.34, "num2": 11}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: "args.num1", F2: "args.num2"}},
+		{testName: "Error Match Number eval is not provided", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "", Type: "number", F1: 1.0, F2: 100}},
+		{testName: "Error Match number !=(single field F2)", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F2: 1.0}},
+		{testName: "Error Match number !=(single field F1)", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0}},
+		{testName: "Error Match number != field does not exist", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0, F2: "args.num1"}},
+		{testName: "Error Match number != field is of incorrect type", isErrExpected: true, args: map[string]interface{}{"num1": "wrong type"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: 1.0, F2: "args.num1"}},
 	}
-	successTestCases := 5
-	for i, test := range authMatchNumber {
+	for _, test := range authMatchNumber {
 		t.Run(test.testName, func(t *testing.T) {
-			err := matchNumber(test.rule, test.args)
-			if i <= successTestCases {
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			} else {
-
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Error Test ", "| Got This |", err, "| Wanted This |", test.err)
-				}
+			err := matchNumber(test.rule, map[string]interface{}{"args": test.args})
+			if (err != nil) != test.isErrExpected {
+				t.Error("| Got This |", err, "| Wanted Error |", test.isErrExpected)
 			}
-
 		})
 	}
 }
 
 func TestMatchBool(t *testing.T) {
 	var authMatchBool = []struct {
-		testName string
-		err      error
-		rule     *config.Rule
-		args     map[string]interface{}
+		testName      string
+		isErrExpected bool
+		rule          *config.Rule
+		args          map[string]interface{}
 	}{
-		{testName: "Match bool ==", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Match bool !=", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "bool", F1: false, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match bool == eval is not provided", err: ErrIncorrectRuleFieldType, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "", Type: "bool", F1: true, F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match bool !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F2: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
-		{testName: "Error Match bool !=", err: errors.New("Store: Cloud not load value"), args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: true, DB: "DB", Col: "Col", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}},
+		{testName: "Match bool ==", args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "bool", F1: true, F2: true}},
+		{testName: "Match bool ==/invalid match error", isErrExpected: true, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "bool", F1: true, F2: false}},
+		{testName: "Match bool !=", isErrExpected: false, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "bool", F1: false, F2: true}},
+		{testName: "Match bool !=", isErrExpected: true, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "bool", F1: false, F2: false}},
+		{testName: "Error Match bool eval is not provided", isErrExpected: true, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "", Type: "bool", F1: true, F2: true}},
+		{testName: "Error Match bool !=(only F2 provided)", isErrExpected: true, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F2: true}},
+		{testName: "Error Match bool !=(only F1 provided)", isErrExpected: true, args: map[string]interface{}{"string1": "interface1", "string2": "interface2"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "string", F1: true}},
 	}
 
-	successTestCases := 1
-	for i, test := range authMatchBool {
+	for _, test := range authMatchBool {
 		t.Run(test.testName, func(t *testing.T) {
 			err := matchBool(test.rule, test.args)
-			if i <= successTestCases {
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Success Test ", "| Got This |", err, "| Wanted This |", test.err)
-				}
-			} else {
-
-				if !reflect.DeepEqual(err, test.err) {
-					t.Error("Error Test", "| Got This |", err, "| Wanted This |", test.err)
-				}
+			if (err != nil) != test.isErrExpected {
+				t.Error("| Got This |", err, "| Wanted Error |", test.isErrExpected)
 			}
-
 		})
 	}
 }

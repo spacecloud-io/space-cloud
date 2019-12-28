@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -162,7 +161,6 @@ func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{})
 				}
 			default:
 				err := fmt.Errorf("invalid action (%s) received in post processing read op", field.Action)
-				log.Println("Post processing error:", err)
 				return err
 			}
 		}
