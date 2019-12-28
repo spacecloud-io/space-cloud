@@ -43,7 +43,7 @@ func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path st
 }
 
 func (m *Module) getFileRule(path string) (map[string]interface{}, *config.FileRule, error) {
-	pathParams := make(map[string]interface{})
+	pathParams := make(map[string]interface{}, 0)
 	ps := "/"
 	if m.fileStoreType == string(utils.Local) {
 		ps = string(os.PathSeparator)
