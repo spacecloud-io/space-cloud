@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 )
 
+// StoreIgnoreErrors stores a project config while silently ignoring the errors
 func (p *Projects) StoreIgnoreErrors(project *config.Project) error {
 	// Get the project. Create if not exists
 	s, err := p.LoadProject(project.ID)
@@ -119,6 +120,7 @@ func (p *Projects) StoreProject(project *config.Project) error {
 	return nil
 }
 
+// SetGlobalConfig stores the global configuration of a project
 func (p *Projects) SetGlobalConfig(projectID, secret string) error {
 	s, err := p.LoadProject(projectID)
 	if err != nil {
@@ -129,6 +131,7 @@ func (p *Projects) SetGlobalConfig(projectID, secret string) error {
 	return nil
 }
 
+// SetCrudConfig sets the crud config
 func (p *Projects) SetCrudConfig(projectID string, c config.Crud) error {
 	s, err := p.LoadProject(projectID)
 	if err != nil {
@@ -160,6 +163,7 @@ func (p *Projects) SetCrudConfig(projectID string, c config.Crud) error {
 	return nil
 }
 
+// SetServicesConfig sets the config for the remote service module
 func (p *Projects) SetServicesConfig(projectID string, c *config.ServicesModule) error {
 	s, err := p.LoadProject(projectID)
 	if err != nil {
@@ -171,6 +175,7 @@ func (p *Projects) SetServicesConfig(projectID string, c *config.ServicesModule)
 	return nil
 }
 
+// SetFileStoreConfig sets the config for the file storage module
 func (p *Projects) SetFileStoreConfig(projectID string, c *config.FileStore) error {
 	s, err := p.LoadProject(projectID)
 	if err != nil {
@@ -188,6 +193,7 @@ func (p *Projects) SetFileStoreConfig(projectID string, c *config.FileStore) err
 	return nil
 }
 
+// SetEventingConfig sets the config for the eventing module
 func (p *Projects) SetEventingConfig(projectID string, eventing *config.Eventing) error {
 	s, err := p.LoadProject(projectID)
 	if err != nil {
@@ -202,6 +208,7 @@ func (p *Projects) SetEventingConfig(projectID string, eventing *config.Eventing
 	return nil
 }
 
+// SetUserManConfig sets the config for the user management module
 func (p *Projects) SetUserManConfig(projectID string, userMan config.Auth) error {
 	s, err := p.LoadProject(projectID)
 	if err != nil {

@@ -97,7 +97,7 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	defer p.lock.Unlock()
 
 	// Create the fundamental modules
-	c := crud.Init(p.h)
+	c := crud.Init(p.h, p.adminMan)
 	s := schema.Init(c, p.removeProjectScope)
 
 	a := auth.Init(p.nodeID, c, s, p.removeProjectScope)
@@ -135,6 +135,7 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	return state, nil
 }
 
+// GetProjectIDs returns an array of project ids present in the project configuration
 func (p *Projects) GetProjectIDs() []string {
 	p.lock.RLock()
 	defer p.lock.RUnlock()

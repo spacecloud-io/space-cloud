@@ -1,7 +1,6 @@
 package crud
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
 )
@@ -27,11 +27,14 @@ type Module struct {
 
 	// Drivers handler
 	h *driver.Handler
+
+	// Admin manager
+	adminMan *admin.Manager
 }
 
 // Init create a new instance of the Module object
-func Init(h *driver.Handler) *Module {
-	return &Module{blocks: make(map[string]*stub), h: h}
+func Init(h *driver.Handler, adminMan *admin.Manager) *Module {
+	return &Module{blocks: make(map[string]*stub), h: h, adminMan: adminMan}
 }
 
 // SetConfig set the rules and secret key required by the crud block
@@ -39,8 +42,8 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
 
-	if len(crud) > 1 {
-		return errors.New("crud module cannot have more than 1 db")
+	if err := m.adminMan.IsDBConfigValid(crud); err != nil {
+		return err
 	}
 
 	m.project = project

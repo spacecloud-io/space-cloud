@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 )
 
 func (m *Module) routineFlushMetricsToSink() {
@@ -25,7 +26,7 @@ func (m *Module) routineFlushMetricsToSink() {
 func initialiseSink(c *Config) (*crud.Module, error) {
 
 	// Create a new crud module
-	sink := crud.Init(driver.New(true))
+	sink := crud.Init(driver.New(true), admin.New("node"))
 
 	// Configure the crud module
 	if err := sink.SetConfig(c.Scope, config.Crud{c.SinkType: &config.CrudStub{Enabled: true, Conn: c.SinkConn}}); err != nil {
