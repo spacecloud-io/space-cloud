@@ -31,6 +31,8 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
+		w.Header().Set("Content-Type", "application/json")
+
 		state, err := p.LoadProject(project)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -49,7 +51,7 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 				return
 			}
 
-			w.WriteHeader(http.StatusOK) //http status codee
+			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
 			return
 		})

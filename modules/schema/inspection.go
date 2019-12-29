@@ -79,12 +79,15 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 
 			if utils.DBType(dbType) == utils.Postgres {
 				// split "'default-value'::text" to "default-value"
-				s := strings.Split(field.FieldDefault, ",")
+				s := strings.Split(field.FieldDefault, "::")
 				field.FieldDefault = s[0]
+				if fieldDetails.Kind == typeString || fieldDetails.Kind == typeDateTime || fieldDetails.Kind == TypeID {
+					field.FieldDefault = strings.Split(field.FieldDefault, "'")[1]
+				}
 			}
 
 			// add string between quotes
-			if fieldDetails.Kind == typeString {
+			if fieldDetails.Kind == typeString || fieldDetails.Kind == TypeID || fieldDetails.Kind == typeDateTime {
 				field.FieldDefault = fmt.Sprintf("\"%s\"", field.FieldDefault)
 			}
 			fieldDetails.Default = field.FieldDefault
