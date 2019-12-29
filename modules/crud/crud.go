@@ -17,9 +17,8 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	blocks    map[string]*stub
-	primaryDB string
-	project   string
+	blocks  map[string]*stub
+	project string
 
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
@@ -70,9 +69,8 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if err != nil {
 			log.Println("Error connecting to " + dbAlias + " : " + err.Error())
 			return err
-		} else {
-			log.Println("Successfully connected to " + dbAlias)
 		}
+		log.Println("Successfully connected to " + dbAlias)
 	}
 	return nil
 }
@@ -84,10 +82,9 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 }
 
 type stub struct {
-	conn    string
-	c       driver.Crud
-	dbType  utils.DBType
-	dbAlias string
+	conn   string
+	c      driver.Crud
+	dbType utils.DBType
 }
 
 func (m *Module) getCrudBlock(dbType string) (driver.Crud, error) {
@@ -95,7 +92,7 @@ func (m *Module) getCrudBlock(dbType string) (driver.Crud, error) {
 		return crud.c, nil
 	}
 
-	return nil, utils.ErrDatabaseConfigAbsent
+	return nil, fmt.Errorf("database (%s) does not exist", dbType)
 }
 
 // GetDBType returns the type of the db for the alias provided

@@ -51,5 +51,4 @@ func (m *Module) AddInternalRules(eventingRules []config.EventingRule) {
 			m.config.InternalRules[key] = incomingRule
 		}
 	}
-
 }

@@ -39,7 +39,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/nats-io/nats-server/v2 v2.0.2
+	github.com/nats-io/nats-server/v2 v2.0.2 // indirect
 	github.com/nats-io/nats.go v1.8.1
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0

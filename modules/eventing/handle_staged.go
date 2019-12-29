@@ -46,13 +46,16 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	eventDocs := results.([]interface{})
 	for _, temp := range eventDocs {
 		eventDoc := new(model.EventDocument)
-		if err := mapstructure.Decode(temp, eventDoc); err == nil {
-			timestamp := eventDoc.Timestamp
-			currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
+		if err := mapstructure.Decode(temp, eventDoc); err != nil {
+			log.Println("Could not decode eventing payload:", err)
+			continue
+		}
 
-			if currentTimestamp > timestamp {
-				go m.processStagedEvent(eventDoc)
-			}
+		timestamp := eventDoc.Timestamp
+		currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
+
+		if currentTimestamp > timestamp {
+			go m.processStagedEvent(eventDoc)
 		}
 	}
 }
@@ -89,6 +92,12 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		Time: time.Unix(0, eventDoc.Timestamp*int64(time.Millisecond)).Format(time.RFC3339), Data: eventDoc.Payload}
 
 	for {
+		internalToken, err := m.auth.GetInternalAccessToken()
+		if err != nil {
+			log.Println("Eventing: Couldn't trigger functions -", err)
+			return
+		}
+
 		scToken, err := m.auth.GetSCAccessToken()
 		if err != nil {
 			log.Println("Eventing: Couldn't trigger functions -", err)
@@ -96,7 +105,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		}
 
 		var eventResponse model.EventResponse
-		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, "", scToken, cloudEvent, &eventResponse)
+		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, internalToken, scToken, cloudEvent, &eventResponse)
 		if err == nil {
 			var eventRequests []*model.QueueEventRequest
 
@@ -132,7 +141,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		time.Sleep(5 * time.Second)
 	}
 
-	if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		log.Println("Eventing staged event handler could not update event doc:", err)
 	}
 }

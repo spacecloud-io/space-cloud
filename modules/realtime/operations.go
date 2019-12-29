@@ -85,7 +85,6 @@ func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) {
 
 // HandleRealtimeEvent handles an incoming realtime event from the eventing module
 func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.CloudEventPayload) error {
-
 	urls := m.syncMan.GetSpaceCloudNodeURLs(m.project)
 
 	// Create wait group
@@ -139,7 +138,6 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Cl
 
 // ProcessRealtimeRequests handles an incoming realtime process event
 func (m *Module) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error {
-
 	dbEvent := new(model.DatabaseEventMessage)
 	if err := mapstructure.Decode(eventDoc.Data, dbEvent); err != nil {
 		log.Println("Realtime Module Request Handler Error:", err)

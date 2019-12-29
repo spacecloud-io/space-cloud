@@ -119,7 +119,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			return s.update(ctx, project, col, req, executor)
 		}
 	default: // (case utils.One)
-		return 0, utils.ErrInvalidParams
+		return 0, errors.New("sql databases do no support op type `one` for updates")
 	}
 }
 
