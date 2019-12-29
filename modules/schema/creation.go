@@ -96,6 +96,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		if err := checkErrors(realColumnInfo); err != nil {
 			return nil, err
 		}
+
 		// Create the joint table first
 		if realColumnInfo.IsForeign {
 			if _, p := currentSchema[realColumnInfo.JointTable.Table]; !p {
@@ -195,6 +196,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			batchedQueries = append(batchedQueries, removeIndex(dbType, project, tableName, indexName, s.removeProjectScope))
 		}
 	}
+
 	return batchedQueries, nil
 }
 

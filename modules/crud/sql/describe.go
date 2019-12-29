@@ -34,7 +34,11 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]ut
 	args := []interface{}{}
 	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
-		queryString = `DESCRIBE ` + project + "." + col
+		queryString = `select column_name as 'Field', data_type as 'Type',is_nullable as 'Null',column_key as 'Key',coalesce(column_default,'') as 'Default',coalesce(column_default,'') as 'Extra'
+		from information_schema.columns
+		where (table_name,table_schema) = (?,?);`
+		args = append(args, col, project)
+
 	case utils.Postgres:
 		queryString = `SELECT isc.column_name AS "Field", coalesce(isc.column_default,'') AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",isc.is_nullable as "Extra",
 CASE
@@ -53,7 +57,7 @@ ORDER BY isc.ordinal_position;`
 
 		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , 
     case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',c.CHARACTER_MAXIMUM_LENGTH,')') else C.DATA_TYPE end as 'Type',
-    C.COLUMN_DEFAULT as 'Default',C.DATA_TYPE as 'Extra',
+    coalesce(C.COLUMN_DEFAULT,'') as 'Default',C.DATA_TYPE as 'Extra',
        CASE
            WHEN TC.CONSTRAINT_TYPE = 'PRIMARY KEY' THEN 'PRI'
            WHEN TC.CONSTRAINT_TYPE = 'UNIQUE' THEN 'UNI'
@@ -123,7 +127,7 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		FULL JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
 			ON CCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
 		FULL JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU 
-			ON KCU.CONSTRAINT_NAME = RC.UNIQUE_CONSTRAINT_NAME  
+			ON KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  
 	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2`
 	}
 	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
