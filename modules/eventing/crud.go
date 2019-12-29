@@ -217,7 +217,15 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 			doc.Payload = string(data)
 			doc.Timestamp = time.Now().UTC().UnixNano() / int64(time.Millisecond)
 
-			// TODO: update the event document in the database as well
+			updateRequest := model.UpdateRequest{
+				Find:      map[string]interface{}{"_id": doc.ID},
+				Operation: utils.All,
+				Update:    map[string]interface{}{"$set": map[string]interface{}{"payload": doc.Payload}},
+			}
+			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, &updateRequest); err != nil {
+				log.Println("Eventing Error: event could not be updated", err)
+				return
+			}
 		}
 	}
 

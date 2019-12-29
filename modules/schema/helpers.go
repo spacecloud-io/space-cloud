@@ -211,8 +211,10 @@ func (c *creationModule) removeDefaultKey() string {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER " + c.ColumnName + " DROP DEFAULT"
 
-	case utils.SqlServer, utils.Postgres:
+	case utils.Postgres:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " DROP DEFAULT"
+	case utils.SqlServer:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.ColumnName
 	}
 	return ""
 }

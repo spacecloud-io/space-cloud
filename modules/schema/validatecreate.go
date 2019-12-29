@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -23,6 +24,17 @@ func (s *Schema) schemaValidator(col string, collectionFields SchemaFields, doc 
 				return nil, fmt.Errorf("cannot insert value for a linked field %s", fieldKey)
 			}
 			continue
+		}
+
+		b, err := json.MarshalIndent(fieldValue, "", "  ")
+		if err != nil {
+			fmt.Println("error:", err)
+		}
+		fmt.Print(string(b), "ok", ok)
+
+		if !ok && fieldValue.IsDefault {
+			value = fieldValue.Default
+			ok = true
 		}
 
 		if fieldValue.Kind == TypeID && !ok {

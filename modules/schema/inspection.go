@@ -2,8 +2,10 @@ package schema
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -32,6 +34,14 @@ func (s *Schema) Inspector(ctx context.Context, dbAlias, project, col string) (s
 		return nil, err
 	}
 	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
+
+	log.Println("field", fields)
+	b, err := json.MarshalIndent(foreignkeys, "", "  ")
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	fmt.Println(string(b))
+	log.Println("index", indexes, err)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +67,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			}
 		} else {
 			if err := inspectionMySQLCheckFieldType(field.FieldType, &fieldDetails); err != nil {
+				log.Println("error", err)
 				return nil, err
 			}
 		}
@@ -67,6 +78,13 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			if utils.DBType(dbType) == utils.SqlServer {
 				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
 				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
+				if fieldDetails.Kind == typeBoolean {
+					if field.FieldDefault == "1" {
+						field.FieldDefault = "true"
+					} else {
+						field.FieldDefault = "false"
+					}
+				}
 			}
 
 			if utils.DBType(dbType) == utils.Postgres {
@@ -105,6 +123,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		// field name
 		inspectionFields[field.FieldName] = &fieldDetails
 	}
+
 	if len(inspectionFields) != 0 {
 		inspectionCollection[col] = inspectionFields
 	}
@@ -130,7 +149,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldTyp
 		fieldDetails.Kind = typeFloat
 	case "date", "time", "datetime", "timestamp":
 		fieldDetails.Kind = typeDateTime
-	case "tinyint", "boolean":
+	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = typeBoolean
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])

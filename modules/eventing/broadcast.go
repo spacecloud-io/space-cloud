@@ -20,7 +20,7 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 		if eventDoc.Token >= start && eventDoc.Token <= end {
 			timestamp := eventDoc.Timestamp
 
-			if currentTimestamp > timestamp {
+			if currentTimestamp >= timestamp {
 				go m.processStagedEvent(eventDoc)
 			}
 		}
