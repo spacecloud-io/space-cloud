@@ -801,7 +801,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeBoolean, IsDefault: true, Default: true}}},
 			},
 			fields:  fields{crud: crudSqlServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ALTER COLUMN col1 DROP DEFAULT"},
+			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_col1"},
 			wantErr: false,
 		},
 		{
