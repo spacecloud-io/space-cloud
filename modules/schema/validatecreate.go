@@ -25,6 +25,11 @@ func (s *Schema) schemaValidator(col string, collectionFields SchemaFields, doc 
 			continue
 		}
 
+		if !ok && fieldValue.IsDefault {
+			value = fieldValue.Default
+			ok = true
+		}
+
 		if fieldValue.Kind == TypeID && !ok {
 			value = ksuid.New().String()
 			ok = true

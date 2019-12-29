@@ -54,7 +54,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		timestamp := eventDoc.Timestamp
 		currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
 
-		if currentTimestamp > timestamp {
+		if currentTimestamp >= timestamp {
 			go m.processStagedEvent(eventDoc)
 		}
 	}
