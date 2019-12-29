@@ -14,11 +14,16 @@ import (
 
 // SchemaInspection returns the schema in schema definition language (SDL)
 func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
-	if dbAlias == "mongo" {
+	dbType, err := s.crud.GetDBType(dbAlias)
+	if err != nil {
+		return "", err
+	}
+
+	if dbType == "mongo" {
 		return "", nil
 	}
 
-	inspectionCollection, err := s.Inspector(ctx, dbAlias, project, col)
+	inspectionCollection, err := s.Inspector(ctx, dbType, project, col)
 	if err != nil {
 		return "", err
 	}
@@ -28,11 +33,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 }
 
 // Inspector generates schema
-func (s *Schema) Inspector(ctx context.Context, dbAlias, project, col string) (schemaCollection, error) {
-	dbType, err := s.crud.GetDBType(dbAlias)
-	if err != nil {
-		return nil, err
-	}
+func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (schemaCollection, error) {
 	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
 
 	log.Println("field", fields)

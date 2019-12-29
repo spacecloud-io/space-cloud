@@ -110,9 +110,9 @@ func (c *creationModule) addNewColumn() string {
 	case utils.SqlServer:
 		if c.columnType == "timestamp" && !c.realColumnInfo.IsFieldTypeRequired {
 			return "ALTER TABLE " + c.project + "." + c.TableName + " ADD " + c.ColumnName + " " + c.columnType + " NULL"
-		} else {
-			return "ALTER TABLE " + c.project + "." + c.TableName + " ADD " + c.ColumnName + " " + c.columnType
 		}
+
+		return "ALTER TABLE " + c.project + "." + c.TableName + " ADD " + c.ColumnName + " " + c.columnType
 	}
 	return ""
 }
