@@ -3,6 +3,9 @@ package sql
 import (
 	"context"
 	"database/sql"
+	"fmt"
+
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // RawBatch performs a batch operation for schema creation
@@ -40,7 +43,7 @@ func (s *SQL) RawExec(ctx context.Context, query string) error {
 }
 
 // GetConnectionState : Function to get connection state
-func (s *SQL) GetConnectionState(ctx context.Context, dbType string) bool {
+func (s *SQL) GetConnectionState(ctx context.Context) bool {
 	if !s.enabled || s.client == nil {
 		return false
 	}
@@ -48,4 +51,22 @@ func (s *SQL) GetConnectionState(ctx context.Context, dbType string) bool {
 	// Ping to check if connection is established
 	err := s.client.PingContext(ctx)
 	return err == nil
+}
+
+func (s *SQL) CreateProjectIfNotExist(ctx context.Context, project string) error {
+	var sql string
+	switch utils.DBType(s.dbType) {
+	case utils.MySQL:
+		sql = "create database if not exists " + project
+	case utils.Postgres:
+		sql = "create schema if not exists " + project
+	case utils.SqlServer:
+		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + project + `')) 
+					BEGIN
+    					EXEC ('CREATE SCHEMA [` + project + `] ')
+					END`
+	default:
+		return fmt.Errorf("invalid db type (%s) provided", s.dbType)
+	}
+	return s.RawExec(ctx, sql)
 }

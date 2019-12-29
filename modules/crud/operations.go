@@ -8,10 +8,11 @@ import (
 )
 
 // Create inserts a document (or multiple when op is "all") into the database based on dbType
-func (m *Module) Create(ctx context.Context, dbType, project, col string, req *model.CreateRequest) error {
+func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
-	crud, err := m.getCrudBlock(dbType)
+
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -21,7 +22,7 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 	}
 
 	// Invoke the create intent hook
-	intent, err := m.hooks.Create(ctx, dbType, col, req)
+	intent, err := m.hooks.Create(ctx, dbAlias, col, req)
 	if err != nil {
 		return err
 	}
@@ -31,7 +32,7 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbType, col, n, utils.Create)
+		m.metricHook(m.project, dbAlias, col, n, utils.Create)
 	}
 
 	// Invoke the stage hook
@@ -40,11 +41,11 @@ func (m *Module) Create(ctx context.Context, dbType, project, col string, req *m
 }
 
 // Read returns the document(s) which match a query from the database based on dbType
-func (m *Module) Read(ctx context.Context, dbType, project, col string, req *model.ReadRequest) (interface{}, error) {
+func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *model.ReadRequest) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return nil, err
 	}
@@ -57,18 +58,18 @@ func (m *Module) Read(ctx context.Context, dbType, project, col string, req *mod
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbType, col, n, utils.Read)
+		m.metricHook(m.project, dbAlias, col, n, utils.Read)
 	}
 
 	return result, err
 }
 
 // Update updates the document(s) which match a query from the database based on dbType
-func (m *Module) Update(ctx context.Context, dbType, project, col string, req *model.UpdateRequest) error {
+func (m *Module) Update(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func (m *Module) Update(ctx context.Context, dbType, project, col string, req *m
 	}
 
 	// Invoke the update intent hook
-	intent, err := m.hooks.Update(ctx, dbType, col, req)
+	intent, err := m.hooks.Update(ctx, dbAlias, col, req)
 	if err != nil {
 		return err
 	}
@@ -88,7 +89,7 @@ func (m *Module) Update(ctx context.Context, dbType, project, col string, req *m
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbType, col, n, utils.Update)
+		m.metricHook(m.project, dbAlias, col, n, utils.Update)
 	}
 
 	// Invoke the stage hook
@@ -97,11 +98,11 @@ func (m *Module) Update(ctx context.Context, dbType, project, col string, req *m
 }
 
 // Delete removes the document(s) which match a query from the database based on dbType
-func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *model.DeleteRequest) error {
+func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *model.DeleteRequest) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -111,7 +112,7 @@ func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *m
 	}
 
 	// Invoke the delete intent hook
-	intent, err := m.hooks.Delete(ctx, dbType, col, req)
+	intent, err := m.hooks.Delete(ctx, dbAlias, col, req)
 	if err != nil {
 		return err
 	}
@@ -121,7 +122,7 @@ func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *m
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbType, col, n, utils.Delete)
+		m.metricHook(m.project, dbAlias, col, n, utils.Delete)
 	}
 
 	// Invoke the stage hook
@@ -130,11 +131,11 @@ func (m *Module) Delete(ctx context.Context, dbType, project, col string, req *m
 }
 
 // Aggregate performs an aggregation defined via the pipeline
-func (m *Module) Aggregate(ctx context.Context, dbType, project, col string, req *model.AggregateRequest) (interface{}, error) {
+func (m *Module) Aggregate(ctx context.Context, dbAlias, project, col string, req *model.AggregateRequest) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return nil, err
 	}
@@ -147,11 +148,11 @@ func (m *Module) Aggregate(ctx context.Context, dbType, project, col string, req
 }
 
 // Batch performs a batch operation on the database
-func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.BatchRequest) error {
+func (m *Module) Batch(ctx context.Context, dbAlias, project string, req *model.BatchRequest) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -161,7 +162,7 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 	}
 
 	// Invoke the batch intent hook
-	intent, err := m.hooks.Batch(ctx, dbType, req)
+	intent, err := m.hooks.Batch(ctx, dbAlias, req)
 	if err != nil {
 		return err
 	}
@@ -172,7 +173,7 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		for i, r := range req.Requests {
-			m.metricHook(m.project, dbType, r.Col, counts[i], utils.OperationType(r.Operation))
+			m.metricHook(m.project, dbAlias, r.Col, counts[i], utils.OperationType(r.Operation))
 		}
 	}
 
@@ -182,28 +183,28 @@ func (m *Module) Batch(ctx context.Context, dbType, project string, req *model.B
 }
 
 // DescribeTable performs a db operation for describing a table
-func (m *Module) DescribeTable(ctx context.Context, dbType, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, error) {
+func (m *Module) DescribeTable(ctx context.Context, dbAlias, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return crud.DescribeTable(ctx, project, dbType, col)
+	return crud.DescribeTable(ctx, project, col)
 }
 
 // RawBatch performs a db operaion for schema creation
-func (m *Module) RawBatch(ctx context.Context, dbType string, batchedQueries []string) error {
+func (m *Module) RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -216,11 +217,11 @@ func (m *Module) RawBatch(ctx context.Context, dbType string, batchedQueries []s
 }
 
 // GetCollections returns collection / tables name of specified database
-func (m *Module) GetCollections(ctx context.Context, project, dbType string) ([]utils.DatabaseCollections, error) {
+func (m *Module) GetCollections(ctx context.Context, project, dbAlias string) ([]utils.DatabaseCollections, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +234,7 @@ func (m *Module) GetCollections(ctx context.Context, project, dbType string) ([]
 }
 
 // GetCollections returns collection / tables name of specified database
-func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType string) error {
+func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -242,19 +243,7 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 		return nil
 	}
 
-	var sql string
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
-		sql = "create database if not exists " + project
-	case utils.Postgres:
-		sql = "create schema if not exists " + project
-	case utils.SqlServer:
-		sql = "create schema if not exists " + project
-	default:
-		return nil
-	}
-
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -263,15 +252,15 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbType s
 		return err
 	}
 
-	return crud.RawExec(ctx, sql)
+	return crud.CreateProjectIfNotExist(ctx, project)
 }
 
 // GetConnectionState gets the current state of client
-func (m *Module) GetConnectionState(ctx context.Context, dbType string) bool {
+func (m *Module) GetConnectionState(ctx context.Context, dbAlias string) bool {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return false
 	}
@@ -280,15 +269,15 @@ func (m *Module) GetConnectionState(ctx context.Context, dbType string) bool {
 		return false
 	}
 
-	return crud.GetConnectionState(ctx, dbType)
+	return crud.GetConnectionState(ctx)
 }
 
 // DeleteTable drop specified table from database
-func (m *Module) DeleteTable(ctx context.Context, project, dbType, col string) error {
+func (m *Module) DeleteTable(ctx context.Context, project, dbAlias, col string) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}

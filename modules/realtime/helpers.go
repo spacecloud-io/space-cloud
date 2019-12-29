@@ -1,24 +1,23 @@
 package realtime
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-var dbEvents = []string{utils.EventCreate, utils.EventUpdate, utils.EventDelete}
+var dbEvents = []string{utils.EventDBCreate, utils.EventDBUpdate, utils.EventDBDelete}
 
 func eventingToRealtimeEvent(event string) string {
 	switch event {
-	case utils.EventCreate:
+	case utils.EventDBCreate:
 		return utils.RealtimeInsert
 
-	case utils.EventUpdate:
+	case utils.EventDBUpdate:
 		return utils.RealtimeUpdate
 
-	case utils.EventDelete:
+	case utils.EventDBDelete:
 		return utils.RealtimeDelete
 
 	default:
@@ -26,12 +25,12 @@ func eventingToRealtimeEvent(event string) string {
 	}
 }
 
-func generateEventRules(crudConfig config.Crud, project string) []config.EventingRule {
+func generateEventRules(crudConfig config.Crud, project, url string) []config.EventingRule {
 
 	var eventingRules []config.EventingRule
 
 	// Iterate over all dbTypes
-	for dbType, dbStub := range crudConfig {
+	for dbAlias, dbStub := range crudConfig {
 
 		// Proceed only if db is enabled
 		if dbStub.Enabled {
@@ -46,8 +45,8 @@ func generateEventRules(crudConfig config.Crud, project string) []config.Eventin
 					for _, eventType := range dbEvents {
 						rule := config.EventingRule{
 							Type:    eventType,
-							Url:     fmt.Sprintf("http://localhost:4122/v1/api/%s/realtime/handle", project),
-							Options: map[string]string{"db": dbType, "col": col},
+							Url:     url,
+							Options: map[string]string{"db": dbAlias, "col": col},
 						}
 						eventingRules = append(eventingRules, rule)
 					}

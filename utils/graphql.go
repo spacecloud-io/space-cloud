@@ -83,6 +83,10 @@ func ParseGraphqlValue(value ast.Value, store M) (interface{}, error) {
 
 		return val, nil
 
+	case kinds.BooleanValue:
+		boolValue := value.(*ast.BooleanValue)
+		return boolValue.Value, nil
+
 	default:
 		return nil, errors.New("Invalid data type `" + value.GetKind() + "` for value " + string(value.GetLoc().Source.Body)[value.GetLoc().Start:value.GetLoc().End])
 	}

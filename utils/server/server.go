@@ -19,6 +19,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	"github.com/spaceuptech/space-cloud/utils"
 	"github.com/spaceuptech/space-cloud/utils/admin"
@@ -46,10 +47,11 @@ type Server struct {
 	metrics        *metrics.Module
 	ssl            *config.SSL
 	graphql        *graphql.Module
+	schema         *schema.Schema
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 	r := mux.NewRouter()
 	r2 := mux.NewRouter()
 
@@ -62,24 +64,28 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 	}
 
 	adminMan := admin.New()
-	syncMan, err := syncman.New(nodeID, clusterID, isConsulEnabled)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType)
 	if err != nil {
 		return nil, err
 	}
 
-	fn := functions.Init(syncMan)
+	s := schema.Init(c, removeProjectScope)
+	a := auth.Init(nodeID, c, s, removeProjectScope)
 
-	a := auth.Init(c, fn, removeProjectScope)
+	fn := functions.Init(a, syncMan)
+
+	f := filestore.Init(a)
 
 	// Initialise the eventing module and set the crud module hooks
-	e := eventing.New(a, c, fn, adminMan, syncMan)
+	e := eventing.New(a, c, fn, adminMan, syncMan, f)
+	f.SetEventingModule(e)
 
 	c.SetHooks(&model.CrudHooks{
-		Create: e.HandleCreateIntent,
-		Update: e.HandleUpdateIntent,
-		Delete: e.HandleDeleteIntent,
-		Batch:  e.HandleBatchIntent,
-		Stage:  e.HandleStage,
+		Create: e.HookDBCreateIntent,
+		Update: e.HookDBUpdateIntent,
+		Delete: e.HookDBDeleteIntent,
+		Batch:  e.HookDBBatchIntent,
+		Stage:  e.HookStage,
 	}, m.AddDBOperation)
 
 	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
@@ -88,22 +94,21 @@ func New(nodeID, clusterID string, isConsulEnabled, removeProjectScope bool, met
 	}
 
 	u := userman.Init(c, a)
-	f := filestore.Init(a)
-	graphqlMan := graphql.New(a, c, fn)
+	graphqlMan := graphql.New(a, c, fn, s)
 
 	fmt.Println("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, router: r, routerSecure: r2, auth: a, crud: c,
 		user: u, file: f, syncMan: syncMan, adminMan: adminMan, metrics: m,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
-		eventing: e, graphql: graphqlMan}, nil
+		eventing: e, graphql: graphqlMan, schema: s}, nil
 }
 
 // Start begins the server operations
 func (s *Server) Start(disableMetrics bool, port int) error {
 
 	// Start the sync manager
-	if err := s.syncMan.Start(s.configFilePath, s.LoadConfig); err != nil {
+	if err := s.syncMan.Start(s.configFilePath, s.LoadConfig, port); err != nil {
 		return err
 	}
 
@@ -128,7 +133,7 @@ func (s *Server) Start(disableMetrics bool, port int) error {
 		}()
 	}
 
-	//go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
+	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.router)
 
@@ -160,6 +165,11 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		// Set the configuration for the crud module
 		if err := s.crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			log.Println("Error in crud module config: ", err)
+			return err
+		}
+
+		if err := s.schema.SetConfig(p.Modules.Crud, p.ID); err != nil {
+			log.Println("Error in schema module config: ", err)
 			return err
 		}
 

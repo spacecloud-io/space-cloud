@@ -7,13 +7,13 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-// InternalCreate inserts a document (or multiple when op is "all") into the database based on dbType.
+// InternalCreate inserts a document (or multiple when op is "all") into the database based on dbAlias.
 // It does not invoke any hooks. This should only be used by the eventing module.
-func (m *Module) InternalCreate(ctx context.Context, dbType, project, col string, req *model.CreateRequest) error {
+func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (m *Module) InternalCreate(ctx context.Context, dbType, project, col string
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbType, col, n, utils.Create)
+		m.metricHook(m.project, dbAlias, col, n, utils.Create)
 	}
 
 	return err
@@ -35,11 +35,11 @@ func (m *Module) InternalCreate(ctx context.Context, dbType, project, col string
 
 // InternalUpdate updates the document(s) which match a query from the database based on dbType.
 // It does not invoke any hooks. This should only be used by the eventing module.
-func (m *Module) InternalUpdate(ctx context.Context, dbType, project, col string, req *model.UpdateRequest) error {
+func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (m *Module) InternalUpdate(ctx context.Context, dbType, project, col string
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbType, col, n, utils.Update)
+		m.metricHook(m.project, dbAlias, col, n, utils.Update)
 	}
 
 	return err
@@ -61,11 +61,11 @@ func (m *Module) InternalUpdate(ctx context.Context, dbType, project, col string
 
 // InternalDelete removes the document(s) which match a query from the database based on dbType.
 // It does not invoke any hooks. This should only be used by the eventing module.
-func (m *Module) InternalDelete(ctx context.Context, dbType, project, col string, req *model.DeleteRequest) error {
+func (m *Module) InternalDelete(ctx context.Context, dbAlias, project, col string, req *model.DeleteRequest) error {
 	m.RLock()
 	defer m.RUnlock()
 
-	crud, err := m.getCrudBlock(dbType)
+	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (m *Module) InternalDelete(ctx context.Context, dbType, project, col string
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
-		m.metricHook(m.project, dbType, col, n, utils.Update)
+		m.metricHook(m.project, dbAlias, col, n, utils.Update)
 	}
 
 	return err

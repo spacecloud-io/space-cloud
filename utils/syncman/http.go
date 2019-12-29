@@ -11,7 +11,7 @@ import (
 )
 
 // MakeHTTPRequest fires an http request and returns a response
-func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token string, params, vPtr interface{}) error {
+func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 	// Marshal json into byte array
 	data, _ := json.Marshal(params)
 
@@ -21,14 +21,18 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token string
 		return err
 	}
 
-	// Add token header
-	req.Header.Add("Authorization", "Bearer "+token)
+	// Add the headers
+	if token != "" {
+		// Add the token only if its provided
+		req.Header.Add("Authorization", "Bearer "+token)
+	}
 	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("x-sc-token", "Bearer "+scToken)
 
 	// Create a http client and fire the request
 	client := &http.Client{}
 
-	// if s.isConsulEnabled && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
+	// if s.storeType && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
 	// 	 client = s.consulService.HTTPClient()
 	// }
 
@@ -43,7 +47,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token string
 		return err
 	}
 
-	if resp.StatusCode < 200 && resp.StatusCode >= 300 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
 	}
 

@@ -1,8 +1,8 @@
 package local
 
 import (
-	"strings"
 	"os"
+	"strings"
 )
 
 // DeleteDir deletes a directory if it exists

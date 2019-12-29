@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -31,19 +32,18 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
-// GetDBType returns the dbType of the request
-func GetDBType(field *ast.Field) (string, error) {
+// GetDBAlias returns the dbType of the request
+func (graph *Module) GetDBAlias(field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("database / service directive not provided")
 	}
-	dbType := field.Directives[0].Name.Value
-	switch dbType {
-	case "postgres", "mysql", "sqlserver":
-		return "sql-" + dbType, nil
+	dbAlias := field.Directives[0].Name.Value
 
-	default:
-		return dbType, nil
+	if _, err := graph.crud.GetDBType(dbAlias); err == nil {
+		return dbAlias, nil
 	}
+
+	return "", fmt.Errorf("provided db (%s) does not exists", dbAlias)
 }
 
 func getCollection(field *ast.Field) (string, error) {
@@ -169,7 +169,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 			}
 
 			// Check the linked table has a schema
-			s, isSchemaPresent := graph.auth.Schema.GetSchema(dbType, col)
+			s, isSchemaPresent := graph.schema.GetSchema(dbType, col)
 
 			length := len(array)
 			if !fieldStruct.IsList {

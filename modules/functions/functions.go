@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
+	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
 
@@ -12,6 +13,7 @@ type Module struct {
 	lock sync.RWMutex
 
 	// Dependencies
+	auth    *auth.Module
 	manager *syncman.Manager
 
 	// Variable configuration
@@ -20,8 +22,8 @@ type Module struct {
 }
 
 // Init returns a new instance of the Functions module
-func Init(manager *syncman.Manager) *Module {
-	return &Module{manager: manager}
+func Init(auth *auth.Module, manager *syncman.Manager) *Module {
+	return &Module{auth: auth, manager: manager}
 }
 
 // SetConfig sets the configuration of the functions module
