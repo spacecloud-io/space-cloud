@@ -2,9 +2,7 @@ package schema
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -48,11 +46,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 	if err != nil {
 		return nil, err
 	}
-	b, err := json.MarshalIndent(currentSchema, "", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	// fmt.Println("current schema", string(b))
+
 	// Return nil, if no tables are present in schema
 	if len(parsedSchema[dbAlias]) == 0 {
 		return nil, nil
@@ -202,11 +196,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			batchedQueries = append(batchedQueries, removeIndex(dbType, project, tableName, indexName, s.removeProjectScope))
 		}
 	}
-	b, err = json.MarshalIndent(batchedQueries, "", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	fmt.Print("bq", string(b))
+
 	return batchedQueries, nil
 }
 

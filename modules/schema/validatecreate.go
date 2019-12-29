@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -25,12 +24,6 @@ func (s *Schema) schemaValidator(col string, collectionFields SchemaFields, doc 
 			}
 			continue
 		}
-
-		b, err := json.MarshalIndent(fieldValue, "", "  ")
-		if err != nil {
-			fmt.Println("error:", err)
-		}
-		fmt.Print(string(b), "ok", ok)
 
 		if !ok && fieldValue.IsDefault {
 			value = fieldValue.Default

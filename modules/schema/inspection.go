@@ -2,7 +2,6 @@ package schema
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -36,13 +35,6 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (schemaCollection, error) {
 	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
 
-	log.Println("field", fields)
-	b, err := json.MarshalIndent(foreignkeys, "", "  ")
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	fmt.Println(string(b))
-	log.Println("index", indexes, err)
 	if err != nil {
 		return nil, err
 	}
