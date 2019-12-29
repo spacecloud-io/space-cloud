@@ -23,7 +23,8 @@ func (s *Manager) setProjectConfig(conf *config.Project) {
 func (s *Manager) delete(projectID string) {
 	for i, p := range s.projectConfig.Projects {
 		if p.ID == projectID {
-			remove(s.projectConfig.Projects, i)
+
+			s.projectConfig.Projects = remove(s.projectConfig.Projects, i)
 			break
 		}
 	}

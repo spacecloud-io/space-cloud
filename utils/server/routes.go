@@ -1,8 +1,6 @@
 package server
 
 import (
-	"net/http/pprof"
-
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/utils/handlers"
@@ -101,17 +99,17 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.projects))
 	router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.projects))
 
-	// Register pprof handlers if profiler set to true
-	if profiler {
-		router.HandleFunc("/debug/pprof/", pprof.Index)
-		router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
-		router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
-		router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
-		router.Handle("/debug/pprof/block", pprof.Handler("block"))
-	}
+	// // Register pprof handlers if profiler set to true
+	// if profiler {
+	// 	router.HandleFunc("/debug/pprof/", pprof.Index)
+	// 	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	// 	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	// 	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	// 	router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	// 	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	// 	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	// 	router.Handle("/debug/pprof/block", pprof.Handler("block"))
+	// }
 
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
 
