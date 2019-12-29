@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	goqu "github.com/doug-martin/goqu/v8"
+	"github.com/doug-martin/goqu/v8"
 
-	_ "github.com/denisenkom/go-mssqldb"                //Import for MsSQL
+	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
 	_ "github.com/go-sql-driver/mysql"                  // Import for MySQL
 	_ "github.com/lib/pq"                               // Import for postgres
@@ -29,10 +29,15 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 	return res.RowsAffected()
 }
 
-//generateCreateQuery makes query for create operation
+// generateCreateQuery makes query for create operation
 func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
-	dialect := goqu.Dialect(s.dbType)
+	dbType := s.dbType
+	if dbType == string(utils.SqlServer) {
+		dbType = string(utils.Postgres)
+	}
+
+	dialect := goqu.Dialect(dbType)
 	query := dialect.From(s.getDBName(project, col)).Prepared(true)
 
 	var insert []interface{}
@@ -65,5 +70,8 @@ func (s *SQL) generateCreateQuery(ctx context.Context, project, col string, req 
 	}
 
 	sqlQuery = strings.Replace(sqlQuery, "\"", "", -1)
+	if s.dbType == string(utils.SqlServer) {
+		sqlQuery = s.generateQuerySQLServer(sqlQuery)
+	}
 	return sqlQuery, args, nil
 }

@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
@@ -32,6 +31,8 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
+		w.Header().Set("Content-Type", "application/json")
+
 		state, err := p.LoadProject(project)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -50,7 +51,7 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 				return
 			}
 
-			w.WriteHeader(http.StatusOK) //http status codee
+			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
 			return
 		})
@@ -59,10 +60,7 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 		case <-ch:
 			return
 		case <-time.After(10 * time.Second):
-			log.Println("GraphQL Handler: Request timed out")
-
-			w.WriteHeader(http.StatusInternalServerError) //http status codee
-			errMes := map[string]interface{}{"message": "Request timed out"}
+			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
 			json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}

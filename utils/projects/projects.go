@@ -12,6 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
 	"github.com/spaceuptech/space-cloud/modules/realtime"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/modules/userman"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/graphql"
@@ -24,6 +25,7 @@ type ProjectState struct {
 	//Config         *config.Project
 	Auth           *auth.Module
 	Crud           *crud.Module
+	Schema         *schema.Schema
 	UserManagement *userman.Module
 	FileStore      *filestore.Module
 	Functions      *functions.Module
@@ -95,23 +97,27 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	defer p.lock.Unlock()
 
 	// Create the fundamental modules
-	c := crud.Init(p.h)
+	c := crud.Init(p.h, p.adminMan)
+	s := schema.Init(c, p.removeProjectScope)
 
-	fn := functions.Init(p.syncMan)
-
-	a := auth.Init(c, fn, p.removeProjectScope)
+	a := auth.Init(p.nodeID, c, s, p.removeProjectScope)
 	a.SetMakeHttpRequest(p.syncMan.MakeHTTPRequest)
 
-	// Initialise the eventing module and set the crud module hooks
-	e := eventing.New(a, c, fn, p.adminMan, p.syncMan)
+	f := filestore.Init(a)
 
+	fn := functions.Init(a, p.syncMan)
+	// Initialise the eventing module and set the crud module hooks
+	e := eventing.New(a, c, fn, p.adminMan, p.syncMan, f)
+
+	// Set hooks
 	c.SetHooks(&model.CrudHooks{
-		Create: e.HandleCreateIntent,
-		Update: e.HandleUpdateIntent,
-		Delete: e.HandleDeleteIntent,
-		Batch:  e.HandleBatchIntent,
-		Stage:  e.HandleStage,
+		Create: e.HookDBCreateIntent,
+		Update: e.HookDBUpdateIntent,
+		Delete: e.HookDBDeleteIntent,
+		Batch:  e.HookDBBatchIntent,
+		Stage:  e.HookStage,
 	}, p.metrics.AddDBOperation)
+	f.SetEventingModule(e)
 
 	rt, err := realtime.Init(p.nodeID, e, a, c, p.metrics, p.syncMan)
 	if err != nil {
@@ -119,10 +125,9 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	}
 
 	u := userman.Init(c, a)
-	f := filestore.Init(a)
-	graph := graphql.New(a, c, fn)
+	graph := graphql.New(a, c, fn, s)
 
-	state := &ProjectState{Crud: c, Functions: fn, Auth: a, UserManagement: u, FileStore: f, Realtime: rt,
+	state := &ProjectState{Crud: c, Schema: s, Functions: fn, Auth: a, UserManagement: u, FileStore: f, Realtime: rt,
 		Eventing: e, Graph: graph}
 
 	p.projects[project] = state
@@ -130,6 +135,7 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	return state, nil
 }
 
+// GetProjectIDs returns an array of project ids present in the project configuration
 func (p *Projects) GetProjectIDs() []string {
 	p.lock.RLock()
 	defer p.lock.RUnlock()

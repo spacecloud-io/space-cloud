@@ -19,6 +19,11 @@ func HandleRealtimeEvent(projects *projects.Projects) http.HandlerFunc {
 		vars := mux.Vars(r)
 		project := vars["project"]
 
+		// Load the params from the body
+		eventDoc := model.CloudEventPayload{}
+		json.NewDecoder(r.Body).Decode(&eventDoc)
+		defer r.Body.Close()
+
 		// Load the project state
 		state, err := projects.LoadProject(project)
 		if err != nil {
@@ -26,11 +31,6 @@ func HandleRealtimeEvent(projects *projects.Projects) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		// Load the params from the body
-		eventDoc := model.CloudEventPayload{}
-		json.NewDecoder(r.Body).Decode(&eventDoc)
-		defer r.Body.Close()
 
 		// Get the token
 		token := utils.GetTokenFromHeader(r)

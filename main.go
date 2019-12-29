@@ -27,18 +27,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Load space cloud config from `FILE`",
 		EnvVar: "CONFIG",
 	},
-	cli.StringFlag{
-		Name:   "ssl-cert",
-		Value:  "none",
-		Usage:  "Load ssl certificate from `FILE`",
-		EnvVar: "SSL_CERT",
-	},
-	cli.StringFlag{
-		Name:   "ssl-key",
-		Value:  "none",
-		Usage:  "Load ssl key from `FILE`",
-		EnvVar: "SSL_KEY",
-	},
 	cli.BoolFlag{
 		Name:   "dev",
 		Usage:  "Run space-cloud in development mode",
@@ -54,6 +42,46 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Enable profiler endpoints for profiling",
 		EnvVar: "PROFILER",
 	},
+	cli.StringFlag{
+		Name:   "cluster",
+		Usage:  "The cluster id to start space-cloud with",
+		EnvVar: "CLUSTER_ID",
+		Value:  "default-cluster",
+	},
+	cli.StringFlag{
+		Name:   "advertise-addr",
+		Usage:  "The address which will be broadcast to other space cloud instances",
+		EnvVar: "ADVERTISE_ADDR",
+	},
+	cli.StringFlag{
+		Name:   "store-type",
+		Usage:  "The config store to use for storing project configs and other meta data",
+		EnvVar: "STORE_TYPE",
+		Value:  "none",
+	},
+	cli.IntFlag{
+		Name:   "port",
+		EnvVar: "PORT",
+		Value:  4122,
+	},
+	cli.BoolFlag{
+		Name:   "remove-project-scope",
+		Usage:  "Removes the project level scope in the database and file storage modules",
+		EnvVar: "REMOVE_PROJECT_SCOPE",
+	},
+	cli.StringFlag{
+		Name:   "ssl-cert",
+		Value:  "none",
+		Usage:  "Load ssl certificate from `FILE`",
+		EnvVar: "SSL_CERT",
+	},
+	cli.StringFlag{
+		Name:   "ssl-key",
+		Value:  "none",
+		Usage:  "Load ssl key from `FILE`",
+		EnvVar: "SSL_KEY",
+	},
+	// flags for admin man
 	cli.StringFlag{
 		Name:   "admin-user",
 		Usage:  "Set the admin user name",
@@ -72,28 +100,6 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
 	},
-	cli.StringFlag{
-		Name:   "cluster",
-		Usage:  "The cluster id to start space-cloud with",
-		EnvVar: "CLUSTER_ID",
-		Value:  "default-cluster",
-	},
-	cli.BoolFlag{
-		Name:   "enable-consul",
-		Usage:  "Enable consul integration",
-		EnvVar: "ENABLE_CONSUL",
-	},
-	cli.IntFlag{
-		Name:   "port",
-		EnvVar: "PORT",
-		Value:  4122,
-	},
-	cli.BoolFlag{
-		Name:   "remove-project-scope",
-		Usage:  "Removes the project level scope in the database and file storage modules",
-		EnvVar: "REMOVE_PROJECT_SCOPE",
-	},
-
 	// Flags for the metrics module
 	cli.BoolFlag{
 		Name:   "enable-metrics",
@@ -161,8 +167,8 @@ func actionRun(c *cli.Context) error {
 	removeProjectScope := c.Bool("remove-project-scope")
 
 	// Load flags related to ssl
-	sslCert := c.String("ssl-cert")
 	sslKey := c.String("ssl-key")
+	sslCert := c.String("ssl-cert")
 
 	// Flags related to the admin details
 	adminUser := c.String("admin-user")
@@ -171,7 +177,8 @@ func actionRun(c *cli.Context) error {
 
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
-	enableConsul := c.Bool("enable-consul")
+	storeType := c.String("store-type")
+	advertiseAddr := c.String("advice-addr")
 
 	// Load the flags for the metrics module
 	enableMetrics := c.Bool("enable-metrics")
@@ -184,7 +191,7 @@ func actionRun(c *cli.Context) error {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, enableConsul, removeProjectScope,
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err

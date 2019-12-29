@@ -11,7 +11,7 @@ import (
 )
 
 func (graph *Module) execDeleteRequest(ctx context.Context, field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbType, err := GetDBType(field)
+	dbType, err := graph.GetDBAlias(field)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (graph *Module) execDeleteRequest(ctx context.Context, field *ast.Field, to
 }
 
 func (graph *Module) genrateDeleteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
-	dbType, err := GetDBType(field)
+	dbType, err := graph.GetDBAlias(field)
 	if err != nil {
 		return nil, err
 	}

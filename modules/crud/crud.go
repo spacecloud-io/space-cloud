@@ -1,12 +1,15 @@
 package crud
 
 import (
+	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
+	"github.com/spaceuptech/space-cloud/utils/admin"
 
 	"github.com/spaceuptech/space-cloud/modules/crud/driver"
 )
@@ -14,9 +17,8 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	blocks    map[string]*stub
-	primaryDB string
-	project   string
+	blocks  map[string]*stub
+	project string
 
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
@@ -24,17 +26,24 @@ type Module struct {
 
 	// Drivers handler
 	h *driver.Handler
+
+	// Admin manager
+	adminMan *admin.Manager
 }
 
 // Init create a new instance of the Module object
-func Init(h *driver.Handler) *Module {
-	return &Module{blocks: make(map[string]*stub), h: h}
+func Init(h *driver.Handler, adminMan *admin.Manager) *Module {
+	return &Module{blocks: make(map[string]*stub), h: h, adminMan: adminMan}
 }
 
-// SetConfig set the rules adn secret key required by the crud block
+// SetConfig set the rules and secret key required by the crud block
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
+
+	if err := m.adminMan.IsDBConfigValid(crud); err != nil {
+		return err
+	}
 
 	m.project = project
 
@@ -46,17 +55,22 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.blocks = make(map[string]*stub, len(crud))
 
 	// Create a new crud blocks
-	for dbType, v := range crud {
+	for dbAlias, v := range crud {
+		// For backward compatibilty support
+		if v.Type == "" {
+			v.Type = dbAlias
+		}
+		v.Type = strings.TrimPrefix(v.Type, "sql-")
+
 		// Initialise a new block
-		c, err := m.h.InitBlock(utils.DBType(dbType), v.Enabled, v.Conn)
-		m.blocks[dbType] = &stub{c: c, conn: v.Conn, dbType: utils.DBType(dbType)}
+		c, err := m.h.InitBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
+		m.blocks[dbAlias] = &stub{c: c, conn: v.Conn, dbType: utils.DBType(v.Type)}
 
 		if err != nil {
-			log.Println("Error connecting to " + dbType + " : " + err.Error())
+			log.Println("Error connecting to " + dbAlias + " : " + err.Error())
 			return err
-		} else {
-			log.Println("Successfully connected to " + dbType)
 		}
+		log.Println("Successfully connected to " + dbAlias)
 	}
 	return nil
 }
@@ -78,5 +92,15 @@ func (m *Module) getCrudBlock(dbType string) (driver.Crud, error) {
 		return crud.c, nil
 	}
 
-	return nil, utils.ErrDatabaseConfigAbsent
+	return nil, fmt.Errorf("database (%s) does not exist", dbType)
+}
+
+// GetDBType returns the type of the db for the alias provided
+func (m *Module) GetDBType(dbAlias string) (string, error) {
+	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
+	s, p := m.blocks[dbAlias]
+	if !p {
+		return "", fmt.Errorf("db (%s) not found", dbAlias)
+	}
+	return string(s.dbType), nil
 }

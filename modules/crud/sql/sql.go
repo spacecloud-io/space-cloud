@@ -59,7 +59,7 @@ func (s *SQL) Close() error {
 	return nil
 }
 
-// GetDBType returns the dbType of the crud block
+// GetDBAlias returns the dbType of the crud block
 func (s *SQL) GetDBType() utils.DBType {
 	switch s.dbType {
 	case "postgres":

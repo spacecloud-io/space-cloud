@@ -1,9 +1,8 @@
 package server
 
 import (
-	"net/http/pprof"
-
 	"github.com/gorilla/mux"
+
 	"github.com/spaceuptech/space-cloud/utils/handlers"
 )
 
@@ -29,14 +28,14 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// added endpoints for service
 	router.Methods("POST").Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleAddService(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleDeleteService(s.adminMan, s.syncMan))
-	//Initialize route for graphql schema inspection
-	//Initialize route for user management config
+	// Initialize route for graphql schema inspection
+	// Initialize route for user management config
 	router.Methods("POST").Path("/v1/config/projects/{project}/user-management/{provider}").HandlerFunc(handlers.HandleUserManagement(s.adminMan, s.syncMan))
-	//Initialize route for eventing config
+	// Initialize route for eventing config
 	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleAddEventingRule(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteEventingRule(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
-	//Initialize route for file storage config
+	// Initialize route for file storage config
 	router.Methods("POST").Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
 	router.Methods("GET").Path("/v1/config/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/file-storage/rules/{ruleName}").HandlerFunc(handlers.HandleSetFileRule(s.adminMan, s.syncMan))
@@ -48,6 +47,7 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/rules").HandlerFunc(handlers.HandleCollectionRules(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}").HandlerFunc(handlers.HandleDeleteCollection(s.adminMan, s.projects, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/config").HandlerFunc(handlers.HandleDatabaseConnection(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/config/projects/{project}/database/{dbType}").HandlerFunc(handlers.HandleRemoveDatabaseConfig(s.adminMan, s.projects, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/modify-schema").HandlerFunc(handlers.HandleModifyAllSchema(s.adminMan, s.projects, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/modify-schema").HandlerFunc(handlers.HandleModifySchema(s.adminMan, s.projects, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/database/{dbType}/reload-schema").HandlerFunc(handlers.HandleReloadSchema(s.adminMan, s.projects, s.syncMan))
@@ -99,17 +99,17 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.projects))
 	router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.projects))
 
-	// Register pprof handlers if profiler set to true
-	if profiler {
-		router.HandleFunc("/debug/pprof/", pprof.Index)
-		router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
-		router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
-		router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
-		router.Handle("/debug/pprof/block", pprof.Handler("block"))
-	}
+	// // Register pprof handlers if profiler set to true
+	// if profiler {
+	// 	router.HandleFunc("/debug/pprof/", pprof.Index)
+	// 	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	// 	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	// 	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	// 	router.Handle("/debug/pprof/goroutine", pprof.Handler("goroutine"))
+	// 	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
+	// 	router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
+	// 	router.Handle("/debug/pprof/block", pprof.Handler("block"))
+	// }
 
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
 

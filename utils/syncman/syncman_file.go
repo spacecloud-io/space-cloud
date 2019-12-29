@@ -1,12 +1,13 @@
 package syncman
 
 import (
+	"context"
 	"errors"
 
 	"github.com/spaceuptech/space-cloud/config"
 )
 
-func (s *Manager) SetFileStore(project string, value *config.FileStore) error {
+func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -27,10 +28,10 @@ func (s *Manager) SetFileStore(project string, value *config.FileStore) error {
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
-func (s *Manager) SetFileRule(project string, value *config.FileRule) error {
+func (s *Manager) SetFileRule(ctx context.Context, project string, value *config.FileRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -52,10 +53,10 @@ func (s *Manager) SetFileRule(project string, value *config.FileRule) error {
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
-func (s *Manager) SetDeleteFileRule(project, filename string) error {
+func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -80,5 +81,5 @@ func (s *Manager) SetDeleteFileRule(project, filename string) error {
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }

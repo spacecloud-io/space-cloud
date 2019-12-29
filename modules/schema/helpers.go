@@ -1,9 +1,10 @@
 package schema
 
 import (
-	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -15,6 +16,9 @@ func getSQLType(dbType, typename string) (string, error) {
 	case TypeID:
 		return "varchar(" + sqlTypeIDSize + ")", nil
 	case typeString:
+		if dbType == string(utils.SqlServer) {
+			return "varchar(max)", nil
+		}
 		return "text", nil
 	case typeDateTime:
 		if dbType == string(utils.MySQL) {
@@ -22,6 +26,9 @@ func getSQLType(dbType, typename string) (string, error) {
 		}
 		return "timestamp", nil
 	case typeBoolean:
+		if dbType == string(utils.SqlServer) {
+			return "bit", nil
+		}
 		return "boolean", nil
 	case typeFloat:
 		return "float", nil
@@ -48,103 +55,189 @@ func checkErrors(realFieldStruct *SchemaFieldType) error {
 		return errors.New("primary key should be of type ID")
 	}
 
+	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
+		return errors.New("cannot set default directive with other constraints")
+	}
+
 	return nil
 }
 
-func (c *creationModule) modifyColumnType() string {
-	switch utils.DBType(c.dbType) {
-	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " MODIFY " + c.FieldKey + " " + c.columnType
-	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ALTER COLUMN " + c.FieldKey + " TYPE " + c.columnType + " USING (" + c.FieldKey + "::" + c.columnType + ")"
-	}
-	return ""
-}
-
 func (c *creationModule) addNotNull() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " MODIFY " + c.FieldKey + " " + c.columnType + " NOT NULL"
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType + " NOT NULL"
 	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ALTER COLUMN " + c.FieldKey + " SET NOT NULL "
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " SET NOT NULL"
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.TableName + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NOT NULL"
 	}
 	return ""
 }
 
 func (c *creationModule) removeNotNull() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " MODIFY " + c.FieldKey + " " + c.columnType + " NULL"
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType + " NULL"
 	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ALTER COLUMN " + c.FieldKey + " DROP NOT NULL"
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " DROP NOT NULL"
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.TableName + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NULL" // adding NULL solves a bug that DateTime type is always not nullable even if (!) is not provided
 	}
 	return ""
 }
 
 func (c *creationModule) addNewColumn() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ADD " + c.FieldKey + " " + c.columnType
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD " + c.ColumnName + " " + c.columnType
 	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ADD COLUMN " + c.FieldKey + " " + c.columnType
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD COLUMN " + c.ColumnName + " " + c.columnType
+	case utils.SqlServer:
+		if c.columnType == "timestamp" && !c.realColumnInfo.IsFieldTypeRequired {
+			return "ALTER TABLE " + c.project + "." + c.TableName + " ADD " + c.ColumnName + " " + c.columnType + " NULL"
+		}
+
+		return "ALTER TABLE " + c.project + "." + c.TableName + " ADD " + c.ColumnName + " " + c.columnType
 	}
 	return ""
 }
 
 func (c *creationModule) removeColumn() string {
-	return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " DROP COLUMN " + c.FieldKey + ""
+	return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP COLUMN " + c.ColumnName + ""
 }
 
 func (c *creationModule) addPrimaryKey() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ADD PRIMARY KEY (" + c.FieldKey + ")"
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD PRIMARY KEY (" + c.ColumnName + ")"
 	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " PRIMARY KEY (" + c.FieldKey + ")"
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " PRIMARY KEY (" + c.ColumnName + ")"
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.TableName + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " PRIMARY KEY CLUSTERED (" + c.ColumnName + ")"
 	}
 	return ""
 }
 
 func (c *creationModule) removePrimaryKey() string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " DROP PRIMARY KEY"
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP PRIMARY KEY"
 	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName
+	case utils.SqlServer:
+		return "ALTER TABLE " + c.project + "." + c.TableName + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName
 	}
 	return ""
 
-}
-
-func (c *creationModule) addUniqueKey() string {
-	return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " UNIQUE (" + c.FieldKey + ")"
-}
-
-func (c *creationModule) removeUniqueKey() string {
-	switch utils.DBType(c.dbType) {
-	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " DROP INDEX c_" + c.ColName + "_" + c.FieldKey
-	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey
-	}
-	return ""
 }
 
 func (c *creationModule) addForeignKey() string {
-	return "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.ColName + "_" + c.FieldKey + " FOREIGN KEY (" + c.FieldKey + ") REFERENCES " + getTableName(c.project, c.realFieldStruct.JointTable.Table, c.removeProjectScope) + "(" + c.realFieldStruct.JointTable.To + ")"
+	return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " FOREIGN KEY (" + c.ColumnName + ") REFERENCES " + getTableName(c.project, c.realColumnInfo.JointTable.Table, c.removeProjectScope) + " (" + c.realColumnInfo.JointTable.To + ")"
+}
+
+func (c *creationModule) typeSwitch() string {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+
+	switch v := c.realColumnInfo.Default.(type) {
+	case string:
+		return "'" + fmt.Sprintf("%v", v) + "'"
+	case bool:
+		if utils.DBType(dbType) == utils.SqlServer {
+			if v {
+				return fmt.Sprintf("1")
+			} else {
+				return fmt.Sprintf("0")
+			}
+		}
+		return fmt.Sprintf("%v", v)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+func (c *creationModule) addDefaultKey() string {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+	switch utils.DBType(dbType) {
+	case utils.MySQL:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER " + c.ColumnName + " SET DEFAULT " + c.typeSwitch()
+
+	case utils.SqlServer:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.ColumnName + " DEFAULT " + c.typeSwitch() + " FOR " + c.ColumnName
+
+	case utils.Postgres:
+
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " SET DEFAULT " + c.typeSwitch()
+	}
+	return ""
+}
+
+func (c *creationModule) removeDefaultKey() string {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return ""
+	}
+	switch utils.DBType(dbType) {
+	case utils.MySQL:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER " + c.ColumnName + " DROP DEFAULT"
+
+	case utils.Postgres:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " DROP DEFAULT"
+	case utils.SqlServer:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.ColumnName
+	}
+	return ""
 }
 
 func (c *creationModule) removeForeignKey() []string {
-	switch utils.DBType(c.dbType) {
+	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
+	if err != nil {
+		return nil
+	}
+
+	switch utils.DBType(dbType) {
 	case utils.MySQL:
-		return []string{"ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " DROP FOREIGN KEY c_" + c.ColName + "_" + c.FieldKey, "ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " DROP INDEX c_" + c.ColName + "_" + c.FieldKey}
+		return []string{"ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP FOREIGN KEY c_" + c.TableName + "_" + c.ColumnName, "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP INDEX c_" + c.TableName + "_" + c.ColumnName}
 	case utils.Postgres:
-		return []string{"ALTER TABLE " + getTableName(c.project, c.ColName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.ColName + "_" + c.FieldKey}
+		return []string{"ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName}
+	case utils.SqlServer:
+		return []string{"ALTER TABLE " + c.project + "." + c.TableName + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName}
 	}
 	return nil
 }
 
 func addNewTable(project, dbType, realColName string, realColValue SchemaFields, removeProjectScope bool) (string, error) {
+
 	var query string
 	for realFieldKey, realFieldStruct := range realColValue {
 
@@ -186,7 +279,7 @@ func getTableName(project, table string, removeProjectScope bool) string {
 	return project + "." + table
 }
 
-func (c *creationModule) addField(ctx context.Context) ([]string, error) {
+func (c *creationModule) addColumn(dbType string) []string {
 	var queries []string
 
 	if c.columnType != "" {
@@ -194,68 +287,178 @@ func (c *creationModule) addField(ctx context.Context) ([]string, error) {
 		queries = append(queries, c.addNewColumn())
 	}
 
-	if c.realFieldStruct.IsFieldTypeRequired {
+	if c.realColumnInfo.IsFieldTypeRequired {
 		// make the new column not null
-		queries = append(queries, c.addNotNull())
+		if dbType == string(utils.SqlServer) && c.columnType == "timestamp" {
+		} else {
+			queries = append(queries, c.addNotNull())
+		}
 	}
 
-	if c.realFieldStruct.IsPrimary {
+	if c.realColumnInfo.IsPrimary {
 		queries = append(queries, c.addPrimaryKey())
 	}
 
-	if c.realFieldStruct.IsUnique {
-		queries = append(queries, c.addUniqueKey())
-	}
-
-	if c.realFieldStruct.IsForeign {
+	if c.realColumnInfo.IsForeign {
 		queries = append(queries, c.addForeignKey())
 	}
-	return queries, nil
+
+	if c.realColumnInfo.IsDefault {
+		queries = append(queries, c.addDefaultKey())
+	}
+
+	return queries
 }
 
 func (c *creationModule) removeField() string {
 	return c.removeColumn()
 }
 
-func (c *creationModule) modifyField(ctx context.Context) ([]string, error) {
+func (c *creationModule) modifyColumn() []string {
 	var queries []string
 
-	if !c.realFieldStruct.IsPrimary && c.currentFieldStruct.IsPrimary {
-		queries = append(queries, c.removePrimaryKey())
-	}
-
-	if !c.realFieldStruct.IsUnique && c.currentFieldStruct.IsUnique {
-		queries = append(queries, c.removeUniqueKey())
-	}
-
-	if !c.realFieldStruct.IsForeign && c.currentFieldStruct.IsForeign {
-		queries = append(queries, c.removeForeignKey()...)
-	}
-
-	if c.realFieldStruct.Kind != c.currentFieldStruct.Kind {
-		if c.columnType != "" {
-			queries = append(queries, c.modifyColumnType())
-		}
-	}
-
-	if c.realFieldStruct.IsFieldTypeRequired != c.currentFieldStruct.IsFieldTypeRequired {
-		if c.realFieldStruct.IsFieldTypeRequired {
+	if c.realColumnInfo.IsFieldTypeRequired != c.currentColumnInfo.IsFieldTypeRequired {
+		if c.realColumnInfo.IsFieldTypeRequired {
 			queries = append(queries, c.addNotNull())
 		} else {
 			queries = append(queries, c.removeNotNull())
 		}
 	}
 
-	if c.realFieldStruct.IsPrimary && !c.currentFieldStruct.IsPrimary {
+	if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
+		queries = append(queries, c.removePrimaryKey())
+	}
+
+	if !c.realColumnInfo.IsForeign && c.currentColumnInfo.IsForeign {
+		queries = append(queries, c.removeForeignKey()...)
+	}
+
+	if !c.realColumnInfo.IsDefault && c.currentColumnInfo.IsDefault {
+		queries = append(queries, c.removeDefaultKey())
+	}
+
+	if c.realColumnInfo.IsPrimary && !c.currentColumnInfo.IsPrimary {
 		queries = append(queries, c.addPrimaryKey())
 	}
 
-	if c.realFieldStruct.IsUnique && !c.currentFieldStruct.IsUnique {
-		queries = append(queries, c.addUniqueKey())
-	}
-
-	if c.realFieldStruct.IsForeign && !c.currentFieldStruct.IsForeign {
+	if c.realColumnInfo.IsForeign && !c.currentColumnInfo.IsForeign {
 		queries = append(queries, c.addForeignKey())
 	}
-	return queries, nil
+
+	if c.realColumnInfo.IsDefault && !c.currentColumnInfo.IsDefault {
+		queries = append(queries, c.addDefaultKey())
+	}
+
+	return queries
+}
+
+// modifyColumnType drop the column then creates a new column with provided type
+func (c *creationModule) modifyColumnType(dbType string) []string {
+	queries := []string{}
+
+	if c.currentColumnInfo.IsForeign {
+		queries = append(queries, c.removeForeignKey()...)
+	}
+	queries = append(queries, c.removeColumn())
+
+	q := c.addColumn(dbType)
+	queries = append(queries, q...)
+
+	return queries
+}
+
+func addIndex(dbType, project, tableName, indexName string, isIndexUnique bool, removeProjectScope bool, mapArray []*SchemaFieldType) string {
+	s := " ("
+	for _, schemaFieldType := range mapArray {
+		s += schemaFieldType.FieldName + " " + schemaFieldType.IndexInfo.Sort + ", "
+	}
+	s = strings.TrimSuffix(s, ", ")
+	p := ""
+	if isIndexUnique {
+		p = "CREATE UNIQUE INDEX " + "index__" + tableName + "__" + indexName + " ON " + getTableName(project, tableName, removeProjectScope) + s + ")"
+	} else {
+		p = "CREATE INDEX " + "index__" + tableName + "__" + indexName + " ON " + getTableName(project, tableName, removeProjectScope) + s + ")"
+	}
+	return p
+}
+
+func removeIndex(dbType, project, tableName, indexName string, removeProjectScope bool) string {
+
+	switch utils.DBType(dbType) {
+	case utils.MySQL:
+		return "DROP INDEX " + "index__" + tableName + "__" + indexName + " ON " + project + "." + tableName
+	case utils.SqlServer:
+		return "DROP INDEX " + "index__" + tableName + "__" + indexName + " ON " + getTableName(project, tableName, removeProjectScope)
+	case utils.Postgres:
+		indexname := "index__" + tableName + "__" + indexName
+		return "DROP INDEX " + getTableName(project, indexname, removeProjectScope)
+	}
+	return ""
+}
+
+type indexStruct struct {
+	IsIndexUnique bool
+	IndexMap      []*SchemaFieldType
+}
+
+func getRealIndexMap(realTableInfo SchemaFields) (map[string]*indexStruct, error) {
+	realIndexMap := make(map[string]*indexStruct)
+	for _, realColumnInfo := range realTableInfo {
+		if realColumnInfo.IsIndex {
+			if value, ok := realIndexMap[realColumnInfo.IndexInfo.Group]; ok {
+				value.IndexMap = append(value.IndexMap, realColumnInfo)
+			} else {
+				realIndexMap[realColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*SchemaFieldType{realColumnInfo}}
+			}
+			if realColumnInfo.IsUnique {
+				realIndexMap[realColumnInfo.IndexInfo.Group].IsIndexUnique = true
+			}
+			if !(realColumnInfo.IndexInfo.Sort == "asc" || realColumnInfo.IndexInfo.Sort == "desc") {
+				return nil, errors.New("Invalid Sort")
+			}
+		}
+	}
+
+	for _, indexValue := range realIndexMap {
+		var v indexStore
+		v = indexValue.IndexMap
+		sort.Stable(v)
+		indexValue.IndexMap = v
+		for i, column := range indexValue.IndexMap {
+			if i+1 != column.IndexInfo.Order {
+				return nil, errors.New("Index Order Invalid")
+			}
+		}
+	}
+	return realIndexMap, nil
+}
+
+func getCurrentIndexMap(currentTableInfo SchemaFields) (map[string]*indexStruct, error) {
+	currentIndexMap := make(map[string]*indexStruct)
+	for _, currentColumnInfo := range currentTableInfo {
+		if currentColumnInfo.IsIndex {
+			if value, ok := currentIndexMap[currentColumnInfo.IndexInfo.Group]; ok {
+				value.IndexMap = append(value.IndexMap, currentColumnInfo)
+			} else {
+				currentIndexMap[currentColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*SchemaFieldType{currentColumnInfo}}
+			}
+			if currentColumnInfo.IsUnique {
+				currentIndexMap[currentColumnInfo.IndexInfo.Group].IsIndexUnique = true
+			}
+		}
+	}
+
+	for _, indexValue := range currentIndexMap {
+		var v indexStore
+		v = indexValue.IndexMap
+		sort.Stable(v)
+		indexValue.IndexMap = v
+		for i, column := range indexValue.IndexMap {
+			if i+1 != column.IndexInfo.Order {
+				return nil, errors.New("Index Order Invalid")
+			}
+		}
+	}
+
+	return currentIndexMap, nil
 }

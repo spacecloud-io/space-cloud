@@ -1,12 +1,5 @@
 package projects
 
-import (
-	"encoding/json"
-
-	"github.com/spaceuptech/space-cloud/config"
-	"github.com/spaceuptech/space-cloud/utils"
-)
-
 // // LoadConfigFromDB reads the config from the specified datbase directly
 // func (p *Projects) LoadConfigFromDB(account, dbType, conn string) error {
 // 	state, err := p.NewProject(utils.SpaceCloudProject)
@@ -65,21 +58,21 @@ import (
 // 	}
 // 	return nil
 // }
-
-func (p *Projects) setConfig(action, project string, data string) error {
-
-	// Delete the project if the action was delete
-	if action == utils.RealtimeDelete {
-		p.DeleteProject(project)
-		return nil
-	}
-
-	// Parse the config string to a type config.Project
-	config := new(config.Project)
-	err := json.Unmarshal([]byte(data), config)
-	if err != nil {
-		return err
-	}
-
-	return p.StoreProject(config)
-}
+//
+// func (p *Projects) setConfig(action, project string, data string) error {
+//
+// 	// Delete the project if the action was delete
+// 	if action == utils.RealtimeDelete {
+// 		p.DeleteProject(project)
+// 		return nil
+// 	}
+//
+// 	// Parse the config string to a type config.Project
+// 	config := new(config.Project)
+// 	err := json.Unmarshal([]byte(data), config)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	return p.StoreProject(config)
+// }

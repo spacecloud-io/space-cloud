@@ -36,20 +36,19 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		_, err = state.Auth.IsFuncCallAuthorised(ctx, project, service, function, token, req.Params)
-		if err != nil {
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
+		defer cancel()
+
+		if _, err := state.Auth.IsFuncCallAuthorised(ctx, project, service, function, token, req.Params); err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		result, err := state.Functions.Call(service, function, token, req.Params, int(req.Timeout))
+		result, err := state.Functions.CallWithContext(ctx, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

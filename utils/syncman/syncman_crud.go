@@ -8,7 +8,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/schema"
 )
 
-func (s *Manager) SetDeleteCollection(project, dbType, col string) error {
+func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbType, col string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -31,10 +31,10 @@ func (s *Manager) SetDeleteCollection(project, dbType, col string) error {
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
-func (s *Manager) SetDatabaseConnection(project, dbType string, connection string, enabled bool) error {
+func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbType string, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -47,10 +47,11 @@ func (s *Manager) SetDatabaseConnection(project, dbType string, connection strin
 	// update database config
 	coll, ok := projectConfig.Modules.Crud[dbType]
 	if !ok {
-		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: connection, Enabled: enabled, Collections: map[string]*config.TableRule{}}
+		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type}
 	} else {
-		coll.Conn = connection
-		coll.Enabled = enabled
+		coll.Conn = v.Conn
+		coll.Enabled = v.Enabled
+		coll.Type = v.Type
 	}
 
 	// Set the crud config
@@ -59,10 +60,26 @@ func (s *Manager) SetDatabaseConnection(project, dbType string, connection strin
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
-func (s *Manager) SetModifySchema(project, dbType, col, schema string) error {
+func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+
+	// update database config
+	delete(projectConfig.Modules.Crud, dbAlias)
+
+	return s.setProject(ctx, projectConfig)
+}
+
+func (s *Manager) SetModifySchema(ctx context.Context, project, dbType, col, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -91,10 +108,10 @@ func (s *Manager) SetModifySchema(project, dbType, col, schema string) error {
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
-func (s *Manager) SetCollectionRules(project, dbType, col string, v *config.TableRule) error {
+func (s *Manager) SetCollectionRules(ctx context.Context, project, dbType, col string, v *config.TableRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -122,7 +139,7 @@ func (s *Manager) SetCollectionRules(project, dbType, col string, v *config.Tabl
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
 func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema) (map[string]interface{}, error) {
@@ -160,10 +177,10 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 	}
 
 	// Persist the config
-	return colResult, s.persistProjectConfig(projectConfig)
+	return colResult, s.persistProjectConfig(ctx, projectConfig)
 }
 
-func (s *Manager) SetSchemaInspection(project, dbType, col, schema string) error {
+func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbType, col, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -193,7 +210,7 @@ func (s *Manager) SetSchemaInspection(project, dbType, col, schema string) error
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }
 
 func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema, v config.CrudStub) error {
@@ -232,5 +249,5 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string
 	}
 
 	// Persist the config
-	return s.persistProjectConfig(projectConfig)
+	return s.persistProjectConfig(ctx, projectConfig)
 }

@@ -29,6 +29,18 @@ func (m *Manager) IsTokenValid(token string) error {
 	return err
 }
 
+// IsDBConfigValid checks if the database config is valid
+func (m *Manager) IsDBConfigValid(config config.Crud) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	if m.admin.Operation.Mode == 0 && len(config) > 2 {
+		return errors.New("community edition can have a maximum of 2 dbs in a single project")
+	}
+
+	return nil
+}
+
 // ValidateSyncOperation validates if an operation is permitted based on the mode
 func (m *Manager) ValidateSyncOperation(projects []string, project *config.Project) bool {
 	m.lock.RLock()
