@@ -34,9 +34,10 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]ut
 	args := []interface{}{}
 	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
-		queryString = `select column_name as 'Field', data_type as 'Type',is_nullable as 'Null',column_key as 'Key',coalesce(column_default,'') as 'Default',coalesce(column_default,'') as 'Extra'
-		from information_schema.columns
-		where (table_name,table_schema) = (?,?);`
+		queryString = `select column_name as 'Field',is_nullable as 'Null',column_key as 'Key',coalesce(column_default,'') as 'Default',coalesce(column_default,'') as 'Extra',
+case when data_type = 'varchar' then concat(DATA_TYPE,'(',CHARACTER_MAXIMUM_LENGTH,')') else DATA_TYPE end as 'Type'
+from information_schema.columns
+where (table_name,table_schema) = (?,?);`
 		args = append(args, col, project)
 
 	case utils.Postgres:
@@ -127,7 +128,8 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		FULL JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
 			ON CCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
 		FULL JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU 
-			ON KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  
+			ON KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME
+			  
 	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2`
 	}
 	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)

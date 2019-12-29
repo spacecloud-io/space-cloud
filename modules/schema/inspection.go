@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -34,7 +33,6 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 // Inspector generates schema
 func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (schemaCollection, error) {
 	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
-
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +58,6 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			}
 		} else {
 			if err := inspectionMySQLCheckFieldType(field.FieldType, &fieldDetails); err != nil {
-				log.Println("error", err)
 				return nil, err
 			}
 		}
@@ -82,12 +79,15 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 
 			if utils.DBType(dbType) == utils.Postgres {
 				// split "'default-value'::text" to "default-value"
-				s := strings.Split(field.FieldDefault, ",")
+				s := strings.Split(field.FieldDefault, "::")
 				field.FieldDefault = s[0]
+				if fieldDetails.Kind == typeString || fieldDetails.Kind == typeDateTime || fieldDetails.Kind == TypeID {
+					field.FieldDefault = strings.Split(field.FieldDefault, "'")[1]
+				}
 			}
 
 			// add string between quotes
-			if fieldDetails.Kind == typeString {
+			if fieldDetails.Kind == typeString || fieldDetails.Kind == TypeID || fieldDetails.Kind == typeDateTime {
 				field.FieldDefault = fmt.Sprintf("\"%s\"", field.FieldDefault)
 			}
 			fieldDetails.Default = field.FieldDefault

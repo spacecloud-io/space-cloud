@@ -2,7 +2,7 @@ package schema
 
 import (
 	"bytes"
-	"html/template"
+	"text/template"
 )
 
 func generateSDL(schemaCol schemaCollection) (string, error) {
