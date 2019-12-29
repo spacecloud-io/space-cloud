@@ -34,7 +34,11 @@ func (s *SQL) getDescribeDetails(ctx context.Context, project, col string) ([]ut
 	args := []interface{}{}
 	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
-		queryString = `DESCRIBE ` + project + "." + col
+		queryString = `select column_name as 'Field', data_type as 'Type',is_nullable as 'Null',column_key as 'Key',coalesce(column_default,'') as 'Default',coalesce(column_default,'') as 'Extra'
+		from information_schema.columns
+		where (table_name,table_schema) = (?,?);`
+		args = append(args, col, project)
+
 	case utils.Postgres:
 		queryString = `SELECT isc.column_name AS "Field", coalesce(isc.column_default,'') AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",isc.is_nullable as "Extra",
 CASE
