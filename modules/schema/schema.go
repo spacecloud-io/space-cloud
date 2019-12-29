@@ -3,6 +3,7 @@ package schema
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -158,16 +159,26 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 						fieldTypeStuct.IsUnique = directive.Name.Value == directiveUnique
 						fieldTypeStuct.IndexInfo = &TableProperties{Group: fieldTypeStuct.FieldName, Order: deafultIndexOrder, Sort: defaultIndexSort}
 						for _, arg := range directive.Arguments {
+							var ok bool
 							switch arg.Name.Value {
-							case "group":
+							case "name", "group":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								fieldTypeStuct.IndexInfo.Group = val.(string)
+								fieldTypeStuct.IndexInfo.Group, ok = val.(string)
+								if !ok {
+									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, arg.Name.Value)
+								}
 							case "order":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								fieldTypeStuct.IndexInfo.Order = val.(int)
+								fieldTypeStuct.IndexInfo.Order, ok = val.(int)
+								if !ok {
+									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, arg.Name.Value)
+								}
 							case "sort":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								fieldTypeStuct.IndexInfo.Sort = val.(string)
+								fieldTypeStuct.IndexInfo.Sort, ok = val.(string)
+								if !ok {
+									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, arg.Name.Value)
+								}
 							}
 						}
 					case directiveLink:
