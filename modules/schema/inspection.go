@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -33,6 +34,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 // Inspector generates schema
 func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (schemaCollection, error) {
 	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
+
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +60,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			}
 		} else {
 			if err := inspectionMySQLCheckFieldType(field.FieldType, &fieldDetails); err != nil {
+				log.Println("error", err)
 				return nil, err
 			}
 		}

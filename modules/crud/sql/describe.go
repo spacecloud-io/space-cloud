@@ -128,8 +128,7 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		FULL JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
 			ON CCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
 		FULL JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU 
-			ON KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME
-			  
+			ON KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  
 	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2`
 	}
 	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
