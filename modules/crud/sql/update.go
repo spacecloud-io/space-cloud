@@ -168,70 +168,112 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	}
 
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
-	log.Println("op", op)
+
 	switch op {
 	case "$set":
 	case "$inc":
 		for k, v := range m {
-			_, err := numToString(v)
+			_, err := checkIfNum(v)
 			if err != nil {
 				return "", nil, err
 			}
-			//log.Println("sqlString", sqlString)
-			//sqlString = strings.Replace(sqlString, k+"="+val, k+"="+k+"+"+val, -1)
-			sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"+?", -1)
-			//log.Println("sqlString", sqlString)
-		}
-	case "$mul":
-		for k, v := range m {
-			_, err := numToString(v)
-			if err != nil {
-				return "", nil, err
+			if s.dbType == string(utils.MySQL) {
+				sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"+?", -1)
+			}
+			if s.dbType == string(utils.Postgres) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"+$", -1)
+			}
+			if s.dbType == string(utils.SqlServer) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"+$", -1)
 			}
 
-			sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"*?", -1)
-			log.Println("sqlString", sqlString)
 		}
-	case "$max":
+		//sqlString = s.sanitiseUpdateQuery(sqlString)
+	case "$mul":
 		for k, v := range m {
-			_, err := numToString(v)
+			_, err := checkIfNum(v)
 			if err != nil {
 				return "", nil, err
 			}
-			sqlString = strings.Replace(sqlString, k+"=?", k+"=GREATEST("+k+","+"?"+")", 1)
+			if dbType == string(utils.MySQL) {
+				sqlString = strings.Replace(sqlString, k+"=?", k+"="+k+"*?", -1)
+			}
+			if dbType == string(utils.Postgres) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"*$", -1)
+			}
+			if dbType == string(utils.SqlServer) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"*$", -1)
+			}
+
 		}
+
+	case "$max":
+		for k, v := range m {
+			_, err := checkIfNum(v)
+			if err != nil {
+				return "", nil, err
+			}
+			if dbType == string(utils.MySQL) {
+				sqlString = strings.Replace(sqlString, k+"=?", k+"=GREATEST("+k+","+"?"+")", -1)
+			}
+			if s.dbType == string(utils.Postgres) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"=GREATEST("+k+","+"$"+"", -1)
+			}
+			if s.dbType == string(utils.SqlServer) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"=GREATEST("+k+","+"$"+"", -1)
+			}
+		}
+		sqlString = s.sanitiseUpdateQuery(sqlString)
 
 	case "$min":
 		for k, v := range m {
-			_, err := numToString(v)
+			_, err := checkIfNum(v)
 			if err != nil {
 				return "", nil, err
 			}
-			//log.Println("sqlString", sqlString)
-			sqlString = strings.Replace(sqlString, k+"=?", k+"=LEAST("+k+","+"?"+")", 1)
-			//sqlString = strings.Replace(sqlString, k+"="+val, k+"=LEAST("+k+","+val+")", -1)
-			//log.Println("sqlString", sqlString)
+			if dbType == string(utils.MySQL) {
+				sqlString = strings.Replace(sqlString, k+"=?", k+"=LEAST("+k+","+"?"+")", -1)
+			}
+			if dbType == string(utils.Postgres) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"=LEAST("+k+","+"$", -1)
+			}
+			if s.dbType == string(utils.SqlServer) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"=LEAST("+k+","+"$", -1)
+			}
 		}
+		sqlString = s.sanitiseUpdateQuery(sqlString)
+
 	case "$currentDate":
 		for k, v := range m {
 			val, ok := v.(string)
 			if !ok {
 				return "", nil, utils.ErrInvalidParams
 			}
-			sqlString = strings.Replace(sqlString, k+"=?", k+"="+val, -1)
-			args = nil
+			if dbType == string(utils.MySQL) {
+				sqlString = strings.Replace(sqlString, k+"=?", k+"="+val, -1)
+			}
+			if dbType == string(utils.Postgres) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
+			}
+			if dbType == string(utils.SqlServer) {
+				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
+			}
+
+			args = args[1:]
+
 		}
+		sqlString = s.sanitiseUpdateQuery2(sqlString)
 	default:
 		return "", nil, utils.ErrInvalidParams
 	}
 	if s.dbType == string(utils.SqlServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
-	log.Println("args2", args)
+
 	return sqlString, args, nil
 }
 
-func numToString(v interface{}) (string, error) {
+func checkIfNum(v interface{}) (string, error) {
 	switch val := v.(type) {
 	case float64:
 
@@ -268,4 +310,48 @@ func flattenForDate(m *map[string]interface{}) error {
 		}
 	}
 	return nil
+}
+
+func (s *SQL) sanitiseUpdateQuery(sqlString string) string {
+	var placeholder byte
+	switch utils.DBType(s.dbType) {
+	case utils.Postgres, utils.SqlServer:
+		placeholder = '$'
+	}
+	log.Println("sqlString", sqlString, "PlaceHolder", placeholder)
+	var start bool
+	for i := 0; i < len(sqlString); i++ {
+		c := sqlString[i]
+		log.Println("c", c, placeholder)
+		if c == placeholder {
+			start = true
+		}
+		if start && (c == ' ' || c == ',') {
+			sqlString = sqlString[0:i] + ")" + sqlString[i:]
+			start = false
+		}
+		if strings.HasPrefix(sqlString[i:], "WHERE") {
+			break
+		}
+	}
+	return sqlString
+}
+func (s *SQL) sanitiseUpdateQuery2(sqlString string) string {
+
+	for i := 0; i < len(sqlString); i++ {
+
+		if strings.HasPrefix(sqlString[i:], "CURRENT_TIMESTAMP") {
+			i += len("CURRENT_TIMESTAMP")
+			if sqlString[i] != ' ' && sqlString[i] != ',' {
+				sqlString = sqlString[:i] + sqlString[i+1:]
+			}
+		}
+		if strings.HasPrefix(sqlString[i:], "CURRENT_DATE") {
+			i += len("CURRENT_DATE")
+			if sqlString[i] != ' ' && sqlString[i] != ',' {
+				sqlString = sqlString[:i] + sqlString[i+1:]
+			}
+		}
+	}
+	return sqlString
 }

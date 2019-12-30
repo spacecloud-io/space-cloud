@@ -87,12 +87,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": "timestamp"}}},
 					Find: map[string]interface{}{
 						"today": "1",
-						"op2":   "2",
 					},
 				},
 			},
-			want: "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE ((today = ?) AND (op2 = ?))",
-
+			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE (today = ?)",
+			want1:   []interface{}{"1"},
 			wantErr: false,
 		},
 		{
@@ -278,8 +277,8 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want: "UPDATE project.col SET String1=CURRENT_DATE WHERE (today = ?)",
-
+			want:    "UPDATE project.col SET String1=CURRENT_DATE WHERE (today = ?)",
+			want1:   []interface{}{"1"},
 			wantErr: false,
 		},
 		{
@@ -441,6 +440,887 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 		{
 			name:   "test22",
 			fields: fields{dbType: "mysql"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDatefs",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDatshdge": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test23",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$set",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
+					Find: map[string]interface{}{
+						"FindString1": "1",
+						"FindString2": "2",
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=$1 WHERE ((FindString1 = $2) AND (FindString2 = $3))",
+			want1:   []interface{}{"1", "1", "2"},
+			wantErr: false,
+		},
+		{
+			name:   "test24",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$set",
+				req: model.UpdateRequest{
+
+					Find: map[string]interface{}{
+						"FindString1": "1",
+						"FindString2": "2",
+					},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test25",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": "timestamp"}}},
+					Find: map[string]interface{}{
+						"today": "1",
+						"op2":   "2",
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE ((today = $2) AND (op2 = $3))",
+			want1:   []interface{}{"1", "2"},
+			wantErr: false,
+		},
+		{
+			name:   "test26",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test27",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$inc",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": "1"}},
+					Find: map[string]interface{}{
+						"today": "1",
+					},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test28",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$inc",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": "r"}},
+					Find: map[string]interface{}{
+						"today": "d",
+					},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test29",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$mul",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$mul": map[string]interface{}{"String1": 6}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=String1*$1 WHERE ((op1 = $2) AND (op2 = $3))",
+			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "test30a",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$max",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132}},
+					Find: map[string]interface{}{
+						"op1": 121,
+						"op2": 21,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,$1) WHERE ((op1 = $2) AND (op2 = $3))",
+			want1:   []interface{}{int64(6132), int64(121), int64(21)},
+			wantErr: false,
+		}, {
+			name:   "test30b",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$max",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132, "s2": 12}},
+					Find: map[string]interface{}{
+						"op1": 121,
+						"op2": 21,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,$1),s2=GREATEST(s2,$2) WHERE ((op1 = $3) AND (op2 = $4))",
+			want1:   []interface{}{int64(6132), int64(12), int64(121), int64(21)},
+			wantErr: false,
+		},
+		{
+			name:   "test31",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$min",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": 6}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE ((op1 = $2) AND (op2 = $3))",
+			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "test32",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$min",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": -6.54}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE ((op1 = $2) AND (op2 = $3))",
+			want1:   []interface{}{float64(-6.54), int64(1), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "test33",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$min",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": int64(18)}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE ((op1 = $2) AND (op2 = $3))",
+			want1:   []interface{}{int64(18), int64(1), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "test34",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$mul",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": int64(18446744)}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test35",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": "date"}}},
+					Find: map[string]interface{}{
+						"today": "1",
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=CURRENT_DATE WHERE (today = $2)",
+			want1:   []interface{}{"1"},
+			wantErr: false,
+		},
+		{
+			name:   "test36",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": ""}}},
+					Find: map[string]interface{}{
+						"today": "1",
+					},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test37",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$mul",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": int64(18446744)}},
+					Find:   map[string]interface{}{},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test38",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$inc",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": 18446}},
+					Find: map[string]interface{}{
+						"op1": 67,
+						"op2": 78,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=String1+$1 WHERE ((op1 = $2) AND (op2 = $3))",
+			want1:   []interface{}{int64(18446), int64(67), int64(78)},
+			wantErr: false,
+		},
+		{
+			name:   "test39",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$max",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test40",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$min",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": "s18446"}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test41",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$maxjgf",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test42",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": "s18446"}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test43",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test44",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDatefs",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDatshdge": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test45",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$set",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
+					Find: map[string]interface{}{
+						"FindString1": "1",
+						"FindString2": "2",
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=@p1 WHERE ((FindString1 = @p2) AND (FindString2 = @p3))",
+			want1:   []interface{}{"1", "1", "2"},
+			wantErr: false,
+		},
+		{
+			name:   "test46",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$set",
+				req: model.UpdateRequest{
+
+					Find: map[string]interface{}{
+						"FindString1": "1",
+						"FindString2": "2",
+					},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test47",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": "timestamp"}}},
+					Find: map[string]interface{}{
+						"today": "1",
+						"op2":   "2",
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE ((today = @p2) AND (op2 = @p3))",
+			want1:   []interface{}{"1", "2"},
+			wantErr: false,
+		},
+		{
+			name:   "test48",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test49",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$inc",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": "1"}},
+					Find: map[string]interface{}{
+						"today": "1",
+					},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test50",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$inc",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": "r"}},
+					Find: map[string]interface{}{
+						"today": "d",
+					},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test51",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$mul",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$mul": map[string]interface{}{"String1": 6}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=String1*@p1 WHERE ((op1 = @p2) AND (op2 = @p3))",
+			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "test52a",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$max",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132}},
+					Find: map[string]interface{}{
+						"op1": 121,
+						"op2": 21,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,@p1) WHERE ((op1 = @p2) AND (op2 = @p3))",
+			want1:   []interface{}{int64(6132), int64(121), int64(21)},
+			wantErr: false,
+		},
+		{
+			name:   "test52b",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$max",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132, "s2": 12}},
+					Find: map[string]interface{}{
+						"op1": 121,
+						"op2": 21,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,@p1),s2=GREATEST(s2,@p2) WHERE ((op1 = @p3) AND (op2 = @p4))",
+			want1:   []interface{}{int64(6132), int64(12), int64(121), int64(21)},
+			wantErr: false,
+		},
+		{
+			name:   "test53",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$min",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": 6}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE ((op1 = @p2) AND (op2 = @p3))",
+			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "test54",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$min",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": -6.54}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE ((op1 = @p2) AND (op2 = @p3))",
+			want1:   []interface{}{float64(-6.54), int64(1), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "test55",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$min",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": int64(18)}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE ((op1 = @p2) AND (op2 = @p3))",
+			want1:   []interface{}{int64(18), int64(1), int64(2)},
+			wantErr: false,
+		},
+		{
+			name:   "test56",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$mul",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": int64(18446744)}},
+					Find: map[string]interface{}{
+						"op1": 1,
+						"op2": 2,
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test57",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": "date"}}},
+					Find: map[string]interface{}{
+						"today": "1",
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=CURRENT_DATE WHERE (today = @p2)",
+			want1:   []interface{}{"1"},
+			wantErr: false,
+		},
+		{
+			name:   "test58",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": ""}}},
+					Find: map[string]interface{}{
+						"today": "1",
+					},
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:   "test59",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$mul",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": int64(18446744)}},
+					Find:   map[string]interface{}{},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test60",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$inc",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": 18446}},
+					Find: map[string]interface{}{
+						"op1": 67,
+						"op2": 78,
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=String1+@p1 WHERE ((op1 = @p2) AND (op2 = @p3))",
+			want1:   []interface{}{int64(18446), int64(67), int64(78)},
+			wantErr: false,
+		},
+		{
+			name:   "test61",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$max",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test62",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$min",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": "s18446"}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test63",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$maxjgf",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test64",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": "s18446"}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test65",
+			fields: fields{dbType: "sqlserver"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$currentDate",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
+					Find: map[string]interface{}{
+						"op1": "67",
+						"op2": "78",
+					},
+				},
+			},
+			want: "",
+
+			wantErr: true,
+		},
+		{
+			name:   "test66",
+			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
 				project: "project",
