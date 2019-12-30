@@ -3,6 +3,7 @@ package schema
 import (
 	"context"
 	"errors"
+	"reflect"
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -86,6 +87,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			currentTableInfo[realColumnName] = &temp
 		}
 	}
+
 	for realColumnName, realColumnInfo := range realTableInfo {
 		// Ignore the field if its linked
 		if realColumnInfo.IsLinked {
@@ -103,7 +105,6 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 				}
 			}
 		}
-
 		currentColumnInfo, ok := currentTableInfo[realColumnName]
 		columnType, err := getSQLType(dbType, realColumnInfo.Kind)
 		if err != nil {
@@ -145,6 +146,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			}
 		}
 	}
+
 	for currentColName, currentColValue := range currentSchema {
 		realColValue, ok := realSchema[currentColName]
 		// if table doesn't exist handle it grace fully
@@ -170,6 +172,31 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			}
 		}
 	}
+
+	realIndexMap, err := getRealIndexMap(realTableInfo)
+	if err != nil {
+		return nil, err
+	}
+	currentIndexMap, err := getCurrentIndexMap(currentTableInfo)
+	if err != nil {
+		return nil, err
+	}
+	for indexName, fields := range realIndexMap {
+		if _, ok := currentIndexMap[indexName]; !ok {
+			batchedQueries = append(batchedQueries, addIndex(dbType, project, tableName, indexName, fields.IsIndexUnique, s.removeProjectScope, fields.IndexMap))
+			continue
+		}
+		if !reflect.DeepEqual(fields.IndexMap, currentIndexMap[indexName].IndexMap) {
+			batchedQueries = append(batchedQueries, removeIndex(dbType, project, tableName, indexName, s.removeProjectScope))
+			batchedQueries = append(batchedQueries, addIndex(dbType, project, tableName, indexName, fields.IsIndexUnique, s.removeProjectScope, fields.IndexMap))
+		}
+	}
+	for indexName, _ := range currentIndexMap {
+		if _, ok := realIndexMap[indexName]; !ok {
+			batchedQueries = append(batchedQueries, removeIndex(dbType, project, tableName, indexName, s.removeProjectScope))
+		}
+	}
+
 	return batchedQueries, nil
 }
 

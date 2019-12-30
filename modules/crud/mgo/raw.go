@@ -18,7 +18,7 @@ func (m *Mongo) RawExec(ctx context.Context, query string) error {
 }
 
 // GetConnectionState : function to check connection state
-func (m *Mongo) GetConnectionState(ctx context.Context, dbType string) bool {
+func (m *Mongo) GetConnectionState(ctx context.Context) bool {
 	if !m.enabled || m.client == nil {
 		return false
 	}
@@ -28,6 +28,6 @@ func (m *Mongo) GetConnectionState(ctx context.Context, dbType string) bool {
 	return err == nil
 }
 
-func (s *Mongo) CreateProjectIfNotExist(ctx context.Context, project, dbType string) error {
+func (s *Mongo) CreateProjectIfNotExist(ctx context.Context, project string) error {
 	return errors.New("create project exists cannot be performed over mongo")
 }

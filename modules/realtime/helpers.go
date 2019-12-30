@@ -7,17 +7,17 @@ import (
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
-var dbEvents = []string{utils.EventCreate, utils.EventUpdate, utils.EventDelete}
+var dbEvents = []string{utils.EventDBCreate, utils.EventDBUpdate, utils.EventDBDelete}
 
 func eventingToRealtimeEvent(event string) string {
 	switch event {
-	case utils.EventCreate:
+	case utils.EventDBCreate:
 		return utils.RealtimeInsert
 
-	case utils.EventUpdate:
+	case utils.EventDBUpdate:
 		return utils.RealtimeUpdate
 
-	case utils.EventDelete:
+	case utils.EventDBDelete:
 		return utils.RealtimeDelete
 
 	default:
@@ -30,7 +30,7 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 	var eventingRules []config.EventingRule
 
 	// Iterate over all dbTypes
-	for dbType, dbStub := range crudConfig {
+	for dbAlias, dbStub := range crudConfig {
 
 		// Proceed only if db is enabled
 		if dbStub.Enabled {
@@ -46,7 +46,7 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 						rule := config.EventingRule{
 							Type:    eventType,
 							Url:     url,
-							Options: map[string]string{"db": dbType, "col": col},
+							Options: map[string]string{"db": dbAlias, "col": col},
 						}
 						eventingRules = append(eventingRules, rule)
 					}

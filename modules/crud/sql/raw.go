@@ -3,6 +3,7 @@ package sql
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -42,7 +43,7 @@ func (s *SQL) RawExec(ctx context.Context, query string) error {
 }
 
 // GetConnectionState : Function to get connection state
-func (s *SQL) GetConnectionState(ctx context.Context, dbType string) bool {
+func (s *SQL) GetConnectionState(ctx context.Context) bool {
 	if !s.enabled || s.client == nil {
 		return false
 	}
@@ -52,9 +53,9 @@ func (s *SQL) GetConnectionState(ctx context.Context, dbType string) bool {
 	return err == nil
 }
 
-func (s *SQL) CreateProjectIfNotExist(ctx context.Context, project, dbType string) error {
+func (s *SQL) CreateProjectIfNotExist(ctx context.Context, project string) error {
 	var sql string
-	switch utils.DBType(dbType) {
+	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
 		sql = "create database if not exists " + project
 	case utils.Postgres:
@@ -65,7 +66,7 @@ func (s *SQL) CreateProjectIfNotExist(ctx context.Context, project, dbType strin
     					EXEC ('CREATE SCHEMA [` + project + `] ')
 					END`
 	default:
-		return nil
+		return fmt.Errorf("invalid db type (%s) provided", s.dbType)
 	}
 	return s.RawExec(ctx, sql)
 }

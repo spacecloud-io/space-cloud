@@ -5,7 +5,7 @@ import (
 )
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.14.0"
+const BuildVersion = "0.15.0"
 
 const (
 	// One operation returns a single document from the database
@@ -180,12 +180,12 @@ const (
 
 // FieldType is the type for storing sql inspection information
 type FieldType struct {
-	FieldName    string  `db:"Field"`
-	FieldType    string  `db:"Type"`
-	FieldNull    string  `db:"Null"`
-	FieldKey     string  `db:"Key"`
-	FieldDefault *string `db:"Default"`
-	FieldExtra   string  `db:"Extra"`
+	FieldName    string `db:"Field"`
+	FieldType    string `db:"Type"`
+	FieldNull    string `db:"Null"`
+	FieldKey     string `db:"Key"`
+	FieldDefault string `db:"Default"`
+	FieldExtra   string `db:"Extra"`
 }
 
 // ForeignKeysType is the type for storing  foreignkeys information of sql inspection
@@ -197,6 +197,16 @@ type ForeignKeysType struct {
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }
 
+//IndexType is the type use to indexkey information of sql inspection
+type IndexType struct {
+	TableName  string `db:"TABLE_NAME"`
+	ColumnName string `db:"COLUMN_NAME"`
+	IndexName  string `db:"INDEX_NAME"`
+	Order      int    `db:"SEQ_IN_INDEX"`
+	Sort       string `db:"SORT"`
+	IsUnique   string `db:"IS_UNIQUE"`
+}
+
 // DatabaseCollections stores all callections of sql or postgres or mongo
 type DatabaseCollections struct {
 	TableName string `db:"table_name" json:"tableName"`
@@ -206,14 +216,20 @@ type DatabaseCollections struct {
 const MaxEventTokens int = 100
 
 const (
-	// EventCreate is fired for create request
-	EventCreate string = "DB_INSERT"
+	// EventDBCreate is fired for create request
+	EventDBCreate string = "DB_INSERT"
 
-	// EventUpdate is fired for update request
-	EventUpdate string = "DB_UPDATE"
+	// EventDBUpdate is fired for update request
+	EventDBUpdate string = "DB_UPDATE"
 
-	// EventDelete is fired for delete request
-	EventDelete string = "DB_DELETE"
+	// EventDBDelete is fired for delete request
+	EventDBDelete string = "DB_DELETE"
+
+	// EventFileCreate is fired for create request
+	EventFileCreate string = "FILE_CREATE"
+
+	// EventFileDelete is fired for delete request
+	EventFileDelete string = "FILE_DELETE"
 )
 
 const (

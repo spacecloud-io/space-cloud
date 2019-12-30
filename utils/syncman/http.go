@@ -32,7 +32,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token, scTok
 	// Create a http client and fire the request
 	client := &http.Client{}
 
-	// if s.isConsulEnabled && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
+	// if s.storeType && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
 	// 	 client = s.consulService.HTTPClient()
 	// }
 
@@ -47,7 +47,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token, scTok
 		return err
 	}
 
-	if resp.StatusCode < 200 && resp.StatusCode >= 300 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
 	}
 

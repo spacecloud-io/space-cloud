@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -35,10 +36,8 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		contentType := strings.Split(r.Header.Get("Content-type"), ";")[0]
-
-		// Parse form
 		var err error
+		contentType := strings.Split(r.Header.Get("Content-type"), ";")[0]
 		if contentType == contentTypeEncodedForm || contentType == contentTypeMultiPartForm {
 			err = r.ParseMultipartForm((1 << 20) * 10)
 		} else {
@@ -46,30 +45,42 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 		}
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Internal Server Error"})
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Could not parse form: %s", err.Error())})
 			return
 		}
 
-		path := r.Form.Get("path")
-		fileType := r.Form.Get("fileType")
-		makeAll, err := strconv.ParseBool(r.Form.Get("makeAll"))
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Incorrect value for makeAll"})
-			return
+		v := map[string]interface{}{}
+		json.Unmarshal([]byte(r.FormValue("data")), &v)
+		path := r.FormValue("path")
+		fileType := r.FormValue("fileType")
+		var makeAll bool
+
+		makeAllString := r.FormValue("makeAll")
+		if makeAllString != "" {
+			makeAll, err = strconv.ParseBool(makeAllString)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Incorrect value for makeAll"})
+				return
+			}
 		}
 
 		if fileType == "file" {
 			file, header, err := r.FormFile("file")
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Incorrect value for file: %s", err)})
+				return
+			}
 			defer file.Close()
 
 			// Read file name from form if exists
 			fileName := header.Filename
-			if tempName := r.Form.Get("fileName"); tempName != "" {
+			if tempName := r.FormValue("fileName"); tempName != "" {
 				fileName = tempName
 			}
 
-			status, err := fileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll}, file)
+			status, err := fileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -77,8 +88,8 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 			}
 			json.NewEncoder(w).Encode(map[string]string{})
 		} else {
-			name := r.Form.Get("name")
-			status, err := fileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll})
+			name := r.FormValue("name")
+			status, err := fileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -134,10 +145,13 @@ func HandleDelete(auth *auth.Module, fileStore *filestore.Module) http.HandlerFu
 		token, project, path := getMetaData(r)
 		defer r.Body.Close()
 
+		v := map[string]interface{}{}
+		json.NewDecoder(r.Body).Decode(v)
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		status, err := fileStore.DeleteFile(ctx, project, token, path)
+		status, err := fileStore.DeleteFile(ctx, project, token, path, v)
 
 		w.WriteHeader(status)
 		if err != nil {

@@ -323,7 +323,10 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 			return
 		}
 
-		err, statusCode := syncman.CreateProjectConfig(&projectConfig)
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
+
+		err, statusCode := syncman.CreateProjectConfig(ctx, &projectConfig)
 		if err != nil {
 			w.WriteHeader(statusCode)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
