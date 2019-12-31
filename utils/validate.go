@@ -26,6 +26,13 @@ func attemptConvertIntToInt64(val interface{}) interface{} {
 	return val
 }
 
+func attemptConvertInt64ToFloat(val interface{}) interface{} {
+	if tempInt, ok := val.(int64); ok {
+		val = float64(tempInt)
+	}
+	return val
+}
+
 func compare(v1, v2 interface{}) bool {
 	if reflect.TypeOf(v1).String() == reflect.Int64.String() {
 		return fmt.Sprintf("%v", v1) == fmt.Sprintf("%v", v2)
@@ -41,6 +48,8 @@ func adjustValTypes(v1, v2 interface{}) (interface{}, interface{}) {
 	v1 = attemptConvertIntToInt64(v1)
 	v2 = attemptConvertIntToInt64(v2)
 
+	v1 = attemptConvertInt64ToFloat(v1)
+	v2 = attemptConvertInt64ToFloat(v2)
 	return v1, v2
 }
 
@@ -63,11 +72,13 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 			}
 
 			val, p := res[k]
+
 			if !p {
 				return false
 			}
 
 			// And clause
+
 			cond, ok := temp.(map[string]interface{})
 			if !ok {
 				temp, val = adjustValTypes(temp, val)
@@ -88,7 +99,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					if !compare(val, v2) {
 						return false
 					}
-				case "$neq":
+				case "$ne":
 					if compare(val, v2) {
 						return false
 					}
@@ -174,6 +185,9 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					default:
 						return false
 					}
+				default:
+					// Invalid operator
+					return false
 				}
 			}
 		}
