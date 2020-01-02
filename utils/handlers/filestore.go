@@ -50,7 +50,7 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 		}
 
 		v := map[string]interface{}{}
-		json.Unmarshal([]byte(r.FormValue("data")), &v)
+		json.Unmarshal([]byte(r.FormValue("meta")), &v)
 		path := r.FormValue("path")
 		fileType := r.FormValue("fileType")
 		var makeAll bool
