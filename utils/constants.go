@@ -5,7 +5,7 @@ import (
 )
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.15.1"
+const BuildVersion = "0.15.2"
 
 const (
 	// One operation returns a single document from the database
