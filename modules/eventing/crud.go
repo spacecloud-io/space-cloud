@@ -112,7 +112,7 @@ func (m *Module) HookDBUpdateIntent(ctx context.Context, dbType, col string, req
 		return &model.EventIntent{Invalid: true}, nil
 	}
 
-	return m.HookDBUpdateDeleteIntent(ctx, utils.EventDBUpdate, dbType, col, req.Find)
+	return m.hookDBUpdateDeleteIntent(ctx, utils.EventDBUpdate, dbType, col, req.Find)
 }
 
 // HookDBDeleteIntent handles the delete intent requests
@@ -125,11 +125,11 @@ func (m *Module) HookDBDeleteIntent(ctx context.Context, dbType, col string, req
 		return &model.EventIntent{Invalid: true}, nil
 	}
 
-	return m.HookDBUpdateDeleteIntent(ctx, utils.EventDBDelete, dbType, col, req.Find)
+	return m.hookDBUpdateDeleteIntent(ctx, utils.EventDBDelete, dbType, col, req.Find)
 }
 
-// HookDBUpdateDeleteIntent is used as the hook for update and delete events
-func (m *Module) HookDBUpdateDeleteIntent(ctx context.Context, eventType, dbType, col string, find map[string]interface{}) (*model.EventIntent, error) {
+// hookDBUpdateDeleteIntent is used as the hook for update and delete events
+func (m *Module) hookDBUpdateDeleteIntent(ctx context.Context, eventType, dbType, col string, find map[string]interface{}) (*model.EventIntent, error) {
 	// Create a unique batch id and token
 	batchID := ksuid.New().String()
 	token := rand.Intn(utils.MaxEventTokens)
@@ -190,13 +190,9 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 				log.Println("Eventing Staging Error:", err)
 				continue
 			}
-			dbType, err := m.crud.GetDBType(dbEvent.DBType)
-			if err != nil {
-				return
-			}
 
 			req := &model.ReadRequest{
-				Find:      map[string]interface{}{utils.GetIDVariable(dbType): dbEvent.DocID},
+				Find:      dbEvent.Doc.(map[string]interface{}),
 				Operation: utils.One,
 			}
 
@@ -274,34 +270,32 @@ func (m *Module) processCreateDocs(token int, batchID, dbAlias, col string, rows
 func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, col string, find map[string]interface{}) ([]*model.EventDocument, bool) {
 	// Get event listeners
 	rules := m.getMatchingRules(eventType, map[string]string{"col": col, "db": dbType})
-	actualDBType, err := m.crud.GetDBType(dbType)
-	if err != nil {
+
+	// Return if length of rules is zero
+	if len(rules) == 0 {
 		return nil, false
 	}
 
-	// Check if id field is valid
-	if idTemp, p := find[utils.GetIDVariable(actualDBType)]; p {
-		if id, ok := utils.AcceptableIDType(idTemp); ok {
-
-			eventDocs := make([]*model.EventDocument, len(rules))
-
-			for i, rule := range rules {
-				// Create an event doc
-				eventDocs[i] = m.generateQueueEventRequest(token, rule.Retries,
-					batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
-						Type:    eventType,
-						Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, DocID: id},
-					})
-			}
-
-			// Mark event as invalid if no events are generated
-			if len(eventDocs) == 0 {
-				return nil, false
-			}
-
-			return eventDocs, true
-		}
+	findForUpdate, possible := m.schema.CheckIfEventingIsPossible(dbType, col, find)
+	if !possible {
+		return nil, false
 	}
 
-	return nil, false
+	eventDocs := make([]*model.EventDocument, len(rules))
+
+	for i, rule := range rules {
+		// Create an event doc
+		eventDocs[i] = m.generateQueueEventRequest(token, rule.Retries,
+			batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
+				Type:    eventType,
+				Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, Doc: findForUpdate}, // The doc here contains the where clause
+			})
+	}
+
+	// Mark event as invalid if no events are generated
+	if len(eventDocs) == 0 {
+		return nil, false
+	}
+
+	return eventDocs, true
 }

@@ -90,7 +90,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					if !compare(val, v2) {
 						return false
 					}
-				case "$neq":
+				case "$ne":
 					if compare(val, v2) {
 						return false
 					}

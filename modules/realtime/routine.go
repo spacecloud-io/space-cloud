@@ -22,6 +22,11 @@ func (m *Module) helperSendFeed(data *model.FeedData) {
 		queries.Range(func(id interface{}, value interface{}) bool {
 			query := value.(*queryStub)
 
+			// Simply return if the user has not requested for the query
+			if !utils.Validate(query.whereObj, data.Payload) {
+				return true
+			}
+
 			dataPoint := &model.FeedData{
 				QueryID: id.(string), DocID: data.DocID, Group: data.Group, Payload: data.Payload,
 				TimeStamp: data.TimeStamp, Type: data.Type, DBType: data.DBType,

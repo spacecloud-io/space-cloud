@@ -107,11 +107,10 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		// Unmarshal the payload
 		updateEvent := model.DatabaseEventMessage{}
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &updateEvent)
-		idVar := utils.GetIDVariable(updateEvent.DBType)
 
 		// Get the document from the database
 		timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
-		readRequest := &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{idVar: updateEvent.DocID}}
+		readRequest := &model.ReadRequest{Operation: utils.One, Find: updateEvent.Doc.(map[string]interface{})}
 		result, err := m.crud.Read(ctx, updateEvent.DBType, m.project, updateEvent.Col, readRequest)
 		if err != nil {
 			// Do nothing if there is an error while reading
@@ -142,10 +141,9 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		// Unmarshal the payload
 		deleteEvent := model.DatabaseEventMessage{}
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &deleteEvent)
-		idVar := utils.GetIDVariable(deleteEvent.DBType)
 
 		// Check if document exists in database
-		readRequest := &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{idVar: deleteEvent.DocID}}
+		readRequest := &model.ReadRequest{Operation: utils.One, Find: deleteEvent.Doc.(map[string]interface{})}
 		if _, err := m.crud.Read(ctx, deleteEvent.DBType, m.project, deleteEvent.Col, readRequest); err == nil {
 
 			// Mark the event as cancelled if the document still exists
