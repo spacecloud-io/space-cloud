@@ -3,10 +3,14 @@ package schema
 import (
 	"fmt"
 	"time"
+
+	"github.com/segmentio/ksuid"
+
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // ValidateUpdateOperation validates the types of schema during a update request
-func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[string]interface{}) error {
+func (s *Schema) ValidateUpdateOperation(dbType, col, op string, updateDoc map[string]interface{}) error {
 	if len(updateDoc) == 0 {
 		return nil
 	}
@@ -45,7 +49,55 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 			return fmt.Errorf("%s update operator is not supported", key)
 		}
 	}
+
+	// Fill in absent ids and default values
+	for fieldName, fieldStruct := range SchemaDoc {
+		// Skip the field if it is not of type id or default
+		if fieldStruct.Kind != TypeID && !fieldStruct.IsDefault {
+			continue
+		}
+
+		// Skip the field if it's being operated on
+		if isFieldPresent(fieldName, updateDoc) {
+			continue
+		}
+
+		if fieldStruct.Kind == TypeID {
+			set := getSetOperator(updateDoc)
+			set[fieldName] = ksuid.New().String()
+			continue
+		}
+
+		if fieldStruct.IsDefault {
+			set := getSetOperator(updateDoc)
+			set[fieldName] = fieldStruct.Default
+			continue
+		}
+
+		if op == utils.Upsert && fieldStruct.IsFieldTypeRequired {
+			return fmt.Errorf("required field type (%s) not present during upsert", fieldName)
+		}
+	}
 	return nil
+}
+
+func isFieldPresent(field string, updateDoc map[string]interface{}) bool {
+	for _, operatorTemp := range updateDoc {
+		operator := operatorTemp.(map[string]interface{})
+		if _, p := operator[field]; p {
+			return true
+		}
+	}
+
+	return false
+}
+func getSetOperator(updateDoc map[string]interface{}) map[string]interface{} {
+	set, p := updateDoc["$set"]
+	if !p {
+		set = map[string]interface{}{}
+		updateDoc["$set"] = set
+	}
+	return set.(map[string]interface{})
 }
 
 func (s *Schema) validateArrayOperations(col string, doc interface{}, SchemaDoc SchemaFields) error {
