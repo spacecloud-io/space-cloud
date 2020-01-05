@@ -88,7 +88,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 		Stage:  e.HookStage,
 	}, m.AddDBOperation)
 
-	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
+	rt, err := realtime.Init(nodeID, e, a, c, s, m, syncMan)
 	if err != nil {
 		return nil, err
 	}

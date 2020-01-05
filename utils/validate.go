@@ -186,6 +186,9 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 						return false
 					}
 					return r.MatchString(vString)
+				default:
+					log.Printf("Invalid operator (%s) provided\n", k2)
+					return false
 				}
 			}
 		}

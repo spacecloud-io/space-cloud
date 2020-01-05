@@ -1,6 +1,6 @@
 package schema
 
-func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, find map[string]interface{}) (findForUpdate map[string]interface{}, present bool) {
+func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
 	// Struct to track counts
 	type trackCols struct {
 		want int
@@ -23,7 +23,7 @@ func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, find map[string]
 		if fieldSchema.IsIndex && fieldSchema.IsUnique {
 			t, p := tracker["i:"+fieldSchema.IndexInfo.Group]
 			if !p {
-				t := &trackCols{find: map[string]interface{}{}}
+				t = &trackCols{find: map[string]interface{}{}}
 				tracker["i:"+fieldSchema.IndexInfo.Group] = t
 			}
 
@@ -31,7 +31,7 @@ func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, find map[string]
 			t.want++
 
 			// Check if field is present in the find clause
-			if value, ok := isFieldPresentInFindAndIsValidForEventing(fieldName, find); ok {
+			if value, ok := isFieldPresentInFindAndIsValidForEventing(fieldName, obj, isFind); ok {
 				t.find[fieldName] = value
 			}
 		}
@@ -40,7 +40,7 @@ func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, find map[string]
 		if fieldSchema.IsPrimary {
 			t, p := tracker["p"]
 			if !p {
-				t := &trackCols{}
+				t = &trackCols{find: map[string]interface{}{}}
 				tracker["p"] = t
 			}
 
@@ -48,10 +48,15 @@ func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, find map[string]
 			t.want++
 
 			// Check if field is present in the find clause
-			if value, ok := isFieldPresentInFindAndIsValidForEventing(fieldName, find); ok {
-				find[fieldName] = value
+			if value, ok := isFieldPresentInFindAndIsValidForEventing(fieldName, obj, isFind); ok {
+				t.find[fieldName] = value
 			}
 		}
+	}
+
+	// First check if the primary key was provided
+	if t, p := tracker["p"]; p && t.want == len(t.find) {
+		return t.find, true
 	}
 
 	for _, t := range tracker {
@@ -63,10 +68,14 @@ func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, find map[string]
 	return nil, false
 }
 
-func isFieldPresentInFindAndIsValidForEventing(fieldName string, find map[string]interface{}) (interface{}, bool) {
-	if findValue, p := find[fieldName]; p {
+func isFieldPresentInFindAndIsValidForEventing(fieldName string, obj map[string]interface{}, isFind bool) (interface{}, bool) {
+	if findValue, p := obj[fieldName]; p {
 		findValueObj, ok := findValue.(map[string]interface{})
 		if !ok {
+			return findValue, true
+		}
+
+		if !isFind {
 			return findValue, true
 		}
 

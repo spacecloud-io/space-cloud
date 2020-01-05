@@ -15,11 +15,6 @@ import (
 // Subscribe performs the realtime subscribe operation.
 func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
 
-	actualDbType, err := m.crud.GetDBType(data.DBType)
-	if err != nil {
-		return nil, err
-	}
-
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
@@ -48,22 +43,19 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 	if ok {
 		timeStamp := time.Now().Unix()
 		for _, row := range array {
-			payload := row.(map[string]interface{})
-			idVar := "id"
-			if actualDbType == string(utils.Mongo) {
-				idVar = "_id"
+			find, possible := m.schema.CheckIfEventingIsPossible(data.DBType, data.Group, readReq.Find, true)
+			if !possible {
+				continue
 			}
-			if docID, ok := utils.AcceptableIDType(payload[idVar]); ok {
-				feedData = append(feedData, &model.FeedData{
-					Group:     data.Group,
-					Type:      utils.RealtimeInitial,
-					TimeStamp: timeStamp,
-					DocID:     docID,
-					DBType:    data.DBType,
-					Payload:   payload,
-					QueryID:   data.ID,
-				})
-			}
+			feedData = append(feedData, &model.FeedData{
+				Group:     data.Group,
+				Type:      utils.RealtimeInitial,
+				TimeStamp: timeStamp,
+				Find:      find,
+				DBType:    data.DBType,
+				Payload:   row,
+				QueryID:   data.ID,
+			})
 		}
 	}
 
@@ -141,14 +133,13 @@ func (m *Module) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) erro
 	}
 
 	t, _ := time.Parse(time.RFC3339, eventDoc.Time)
-
 	feedData := &model.FeedData{
-		DocID:     dbEvent.DocID,
 		Type:      eventingToRealtimeEvent(eventDoc.Type),
 		Payload:   dbEvent.Doc,
 		TimeStamp: t.UnixNano() / int64(time.Millisecond),
 		Group:     dbEvent.Col,
 		DBType:    dbEvent.DBType,
+		Find:      dbEvent.Find,
 	}
 
 	m.helperSendFeed(feedData)

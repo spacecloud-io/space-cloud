@@ -192,7 +192,7 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 			}
 
 			req := &model.ReadRequest{
-				Find:      dbEvent.Doc.(map[string]interface{}),
+				Find:      dbEvent.Find.(map[string]interface{}),
 				Operation: utils.One,
 			}
 
@@ -233,33 +233,27 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 
 func (m *Module) processCreateDocs(token int, batchID, dbAlias, col string, rows []interface{}) []*model.EventDocument {
 	// Get event listeners
-	actualDbType, err := m.crud.GetDBType(dbAlias)
-	if err != nil {
+	rules := m.getMatchingRules(utils.EventDBCreate, map[string]string{"col": col, "db": dbAlias})
+
+	// Return if length of rules is zero
+	if len(rules) == 0 {
 		return nil
 	}
-
-	rules := m.getMatchingRules(utils.EventDBCreate, map[string]string{"col": col, "db": dbAlias})
 
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, doc := range rows {
 
-		// Skip the doc if id isn't present
-		idTemp, p := doc.(map[string]interface{})[utils.GetIDVariable(actualDbType)]
-		if !p {
-			continue
+		findForCreate, possible := m.schema.CheckIfEventingIsPossible(dbAlias, col, doc.(map[string]interface{}), false)
+		if !possible {
+			return nil
 		}
 
-		// Skip the doc if id isn't of type string
-		docID, ok := idTemp.(string)
-		if !ok {
-			continue
-		}
 		// Iterate over all rules
 		for _, rule := range rules {
 			eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
 				batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 					Type:    utils.EventDBCreate,
-					Payload: model.DatabaseEventMessage{DBType: dbAlias, Col: col, Doc: doc, DocID: docID},
+					Payload: model.DatabaseEventMessage{DBType: dbAlias, Col: col, Doc: doc, Find: findForCreate},
 				}))
 		}
 	}
@@ -276,7 +270,7 @@ func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, 
 		return nil, false
 	}
 
-	findForUpdate, possible := m.schema.CheckIfEventingIsPossible(dbType, col, find)
+	findForUpdate, possible := m.schema.CheckIfEventingIsPossible(dbType, col, find, true)
 	if !possible {
 		return nil, false
 	}
@@ -288,7 +282,7 @@ func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, 
 		eventDocs[i] = m.generateQueueEventRequest(token, rule.Retries,
 			batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 				Type:    eventType,
-				Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, Doc: findForUpdate}, // The doc here contains the where clause
+				Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, Find: findForUpdate}, // The doc here contains the where clause
 			})
 	}
 

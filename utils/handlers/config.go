@@ -18,7 +18,7 @@ func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 		defer r.Body.Close()
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv()})
+		json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion})
 	}
 }
 

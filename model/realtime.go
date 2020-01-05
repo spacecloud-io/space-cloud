@@ -3,13 +3,13 @@ package model
 // FeedData is the format to send realtime data
 type FeedData struct {
 	QueryID   string      `json:"id" structs:"id"`
-	DocID     string      `json:"docId" structs:"docId"`
 	Type      string      `json:"type" structs:"type"`
 	Payload   interface{} `json:"payload" structs:"payload"`
 	TimeStamp int64       `json:"time" structs:"time"`
 	Group     string      `json:"group" structs:"group"`
 	DBType    string      `json:"dbType" structs:"dbType"`
 	TypeName  string      `json:"__typename,omitempty" structs:"__typename,omitempty"`
+	Find      interface{} `json:"find" structs:"find"`
 }
 
 // RealtimeRequest is the object sent for realtime requests

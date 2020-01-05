@@ -83,7 +83,7 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbType, col,
 		return http.StatusForbidden, err
 	}
 
-	if err := m.schema.ValidateUpdateOperation(dbType, col, req.Operation, req.Update); err != nil {
+	if err := m.schema.ValidateUpdateOperation(dbType, col, req.Operation, req.Update, req.Find); err != nil {
 		return http.StatusBadRequest, err
 	}
 

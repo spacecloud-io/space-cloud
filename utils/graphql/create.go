@@ -50,6 +50,7 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema
 	// FieldDates is the array of fields for which the current time needs to be set.
 	fieldIDs := make([]string, 0)
 	fieldDates := make([]string, 0)
+	fieldDefaults := make(map[string]interface{}, 0)
 
 	for fieldName, fieldSchema := range schemaFields {
 		if fieldSchema.Kind == schema.TypeID {
@@ -58,6 +59,10 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema
 
 		if fieldSchema.IsCreatedAt || fieldSchema.IsUpdatedAt {
 			fieldDates = append(fieldDates, fieldName)
+		}
+
+		if fieldSchema.IsDefault {
+			fieldDefaults[fieldName] = fieldSchema.Default
 		}
 	}
 
@@ -71,6 +76,13 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema
 	// Set the current time for all fieldDates
 	for _, field := range fieldDates {
 		doc[field] = time.Now().UTC()
+	}
+
+	// Set the default values if the field isn't set already
+	for field, defaultValue := range fieldDefaults {
+		if _, p := doc[field]; !p {
+			doc[field] = defaultValue
+		}
 	}
 }
 

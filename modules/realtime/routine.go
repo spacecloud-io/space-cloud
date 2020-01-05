@@ -4,6 +4,8 @@ import (
 	"log"
 	"sync"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -12,7 +14,7 @@ func (m *Module) helperSendFeed(data *model.FeedData) {
 	clientsTemp, ok := m.groups.Load(createGroupKey(data.DBType, data.Group))
 	if !ok {
 		// This should be on the debug level
-		log.Println("Realtime handler could not find key:", createGroupKey(data.DBType, data.Group))
+		logrus.Debugln("Realtime handler could not find key:", createGroupKey(data.DBType, data.Group))
 		return
 	}
 
@@ -22,13 +24,8 @@ func (m *Module) helperSendFeed(data *model.FeedData) {
 		queries.Range(func(id interface{}, value interface{}) bool {
 			query := value.(*queryStub)
 
-			// Simply return if the user has not requested for the query
-			if !utils.Validate(query.whereObj, data.Payload) {
-				return true
-			}
-
 			dataPoint := &model.FeedData{
-				QueryID: id.(string), DocID: data.DocID, Group: data.Group, Payload: data.Payload,
+				QueryID: id.(string), Group: data.Group, Payload: data.Payload, Find: data.Find,
 				TimeStamp: data.TimeStamp, Type: data.Type, DBType: data.DBType,
 			}
 

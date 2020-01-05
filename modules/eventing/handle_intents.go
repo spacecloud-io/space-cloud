@@ -80,10 +80,8 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		createEvent := model.DatabaseEventMessage{}
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &createEvent)
 
-		idVar := utils.GetIDVariable(createEvent.DBType)
-
 		// Check if document exists in database
-		readRequest := &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{idVar: createEvent.DocID}}
+		readRequest := &model.ReadRequest{Operation: utils.One, Find: createEvent.Find.(map[string]interface{})}
 		if _, err := m.crud.Read(ctx, createEvent.DBType, m.project, createEvent.Col, readRequest); err != nil {
 
 			// Mark event as cancelled if it document doesn't exist
@@ -110,7 +108,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		// Get the document from the database
 		timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
-		readRequest := &model.ReadRequest{Operation: utils.One, Find: updateEvent.Doc.(map[string]interface{})}
+		readRequest := &model.ReadRequest{Operation: utils.One, Find: updateEvent.Find.(map[string]interface{})}
 		result, err := m.crud.Read(ctx, updateEvent.DBType, m.project, updateEvent.Col, readRequest)
 		if err != nil {
 			// Do nothing if there is an error while reading
@@ -143,7 +141,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &deleteEvent)
 
 		// Check if document exists in database
-		readRequest := &model.ReadRequest{Operation: utils.One, Find: deleteEvent.Doc.(map[string]interface{})}
+		readRequest := &model.ReadRequest{Operation: utils.One, Find: deleteEvent.Find.(map[string]interface{})}
 		if _, err := m.crud.Read(ctx, deleteEvent.DBType, m.project, deleteEvent.Col, readRequest); err == nil {
 
 			// Mark the event as cancelled if the document still exists
