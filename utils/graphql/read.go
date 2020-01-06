@@ -179,7 +179,6 @@ func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, b
 			}
 
 			options.Distinct = &tempString
-
 		}
 	}
 	return &options, hasOptions, nil
