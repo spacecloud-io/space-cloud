@@ -145,7 +145,41 @@ func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, b
 			tempInt64 := int64(tempInt)
 			options.Limit = &tempInt64
 
-			// TODO: implement sort, distinct, etc.
+		case "sort":
+			hasOptions = true // Set the flag to true
+
+			temp, err := ParseValue(v.Value, store)
+			if err != nil {
+				return nil, hasOptions, err
+			}
+
+			tempInt, ok := temp.(map[string]interface{})
+			if !ok {
+				return nil, hasOptions, errors.New("Invalid type for sort")
+			}
+
+			sortObj := map[string]int32{}
+			for key, value := range tempInt {
+				sortObj[key] = int32(value.(int))
+			}
+
+			options.Sort = sortObj
+
+		case "distinct":
+			hasOptions = true // Set the flag to true
+
+			temp, err := ParseValue(v.Value, store)
+			if err != nil {
+				return nil, hasOptions, err
+			}
+
+			tempString, ok := temp.(string)
+			if !ok {
+				return nil, hasOptions, errors.New("Invalid type for distinct")
+			}
+
+			options.Distinct = &tempString
+
 		}
 	}
 	return &options, hasOptions, nil
