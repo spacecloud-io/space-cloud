@@ -66,6 +66,13 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema
 		}
 	}
 
+	// Set the default values if the field isn't set already. This always need to happen first
+	for field, defaultValue := range fieldDefaults {
+		if _, p := doc[field]; !p {
+			doc[field] = defaultValue
+		}
+	}
+
 	// Set a new id for all those field ids which do not have the field set already
 	for _, field := range fieldIDs {
 		if _, p := doc[field]; !p {
@@ -76,13 +83,6 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema
 	// Set the current time for all fieldDates
 	for _, field := range fieldDates {
 		doc[field] = time.Now().UTC()
-	}
-
-	// Set the default values if the field isn't set already
-	for field, defaultValue := range fieldDefaults {
-		if _, p := doc[field]; !p {
-			doc[field] = defaultValue
-		}
 	}
 }
 
