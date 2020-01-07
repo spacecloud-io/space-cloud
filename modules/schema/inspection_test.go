@@ -116,7 +116,7 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldDefault: "string"}},
+				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldDefault: "'string'::text"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
 			want:    schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"string\""}}},

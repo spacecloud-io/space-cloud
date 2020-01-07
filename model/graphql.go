@@ -1,6 +1,6 @@
 package model
 
-import "fmt"
+import "encoding/json"
 
 // GraphQLRequest is the payload received in a graphql request
 type GraphQLRequest struct {
@@ -19,7 +19,8 @@ type ReadRequestKey struct {
 
 // String returns a guaranteed unique string that can be used to identify an object
 func (key ReadRequestKey) String() string {
-	return fmt.Sprintf("%v", key)
+	data, _ := json.Marshal(key)
+	return string(data)
 }
 
 // Raw returns the raw, underlaying value of the key

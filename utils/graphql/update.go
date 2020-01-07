@@ -56,7 +56,7 @@ func extractUpdateOperation(args []*ast.Argument, store utils.M) (string, error)
 	for _, v := range args {
 		switch v.Name.Value {
 		case "op":
-			temp, err := ParseValue(v.Value, store)
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
 			if err != nil {
 				return "", err
 			}
@@ -97,7 +97,7 @@ func extractUpdateArgs(args []*ast.Argument, store utils.M) (utils.M, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "remove":
-			temp, err := ParseValue(v.Value, store)
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
 			if err != nil {
 				return nil, err
 			}

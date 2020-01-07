@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/spaceuptech/space-cloud/model"
 	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/utils"
@@ -59,98 +57,6 @@ func getCollection(field *ast.Field) (string, error) {
 		}
 	}
 	return field.Name.Value, nil
-}
-
-// ParseValue returns an interface that can be casted to string
-func ParseValue(value ast.Value, store utils.M) (interface{}, error) {
-	switch value.GetKind() {
-	case kinds.ObjectValue:
-		o := map[string]interface{}{}
-
-		obj := value.(*ast.ObjectValue)
-
-		for _, v := range obj.Fields {
-			temp, err := ParseValue(v.Value, store)
-			if err != nil {
-				return nil, err
-			}
-
-			o[adjustObjectKey(v.Name.Value)] = temp
-		}
-
-		return o, nil
-
-	case kinds.ListValue:
-		listValue := value.(*ast.ListValue)
-
-		array := make([]interface{}, len(listValue.Values))
-		for i, v := range listValue.Values {
-			val, err := ParseValue(v, store)
-			if err != nil {
-				return nil, err
-			}
-
-			array[i] = val
-		}
-		return array, nil
-
-	case kinds.EnumValue:
-		v := value.(*ast.EnumValue).Value
-		if strings.Contains(v, "__") {
-			v = strings.ReplaceAll(v, "__", ".")
-		}
-		val, err := utils.LoadValue(v, store)
-		if err == nil {
-			return val, nil
-		}
-
-		return v, nil
-
-	case kinds.StringValue:
-		v := value.(*ast.StringValue).Value
-		if strings.Contains(v, "__") {
-			v = strings.ReplaceAll(v, "__", ".")
-		}
-		val, err := utils.LoadValue(v, store)
-		if err == nil {
-			return val, nil
-		}
-
-		return v, nil
-
-	case kinds.IntValue:
-		intValue := value.(*ast.IntValue)
-
-		// Convert string to int
-		val, err := strconv.Atoi(intValue.Value)
-		if err != nil {
-			return nil, err
-		}
-
-		return val, nil
-
-	case kinds.FloatValue:
-		floatValue := value.(*ast.FloatValue)
-
-		// Convert string to int
-		val, err := strconv.ParseFloat(floatValue.Value, 64)
-		if err != nil {
-			return nil, err
-		}
-
-		return val, nil
-
-	case kinds.BooleanValue:
-		boolValue := value.(*ast.BooleanValue)
-		return boolValue.Value, nil
-
-	case kinds.Variable:
-		t := value.(*ast.Variable)
-		return utils.LoadValue("vars."+t.Name.Value, store)
-
-	default:
-		return nil, errors.New("Invalid data type `" + value.GetKind() + "` for value " + string(value.GetLoc().Source.Body)[value.GetLoc().Start:value.GetLoc().End])
-	}
 }
 
 func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.SchemaFieldType, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb callback) {
