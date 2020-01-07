@@ -19,7 +19,7 @@ import (
 )
 
 // generateReadQuery makes a query for read operation
-func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *model.ReadRequest) (string, []interface{}, error) {
+func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dbType := s.dbType
 	if dbType == string(utils.SqlServer) {
 		dbType = string(utils.Postgres)
@@ -46,7 +46,6 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 				selArray = append(selArray, key)
 			}
 		}
-
 		if req.Options.Skip != nil {
 			query = query.Offset(uint(*req.Options.Skip))
 		}
@@ -120,7 +119,7 @@ func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequ
 }
 
 func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequest, executor executor) (int64, interface{}, error) {
-	sqlString, args, err := s.generateReadQuery(ctx, project, col, req)
+	sqlString, args, err := s.generateReadQuery(project, col, req)
 	if err != nil {
 		return 0, nil, err
 	}
