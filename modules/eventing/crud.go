@@ -15,7 +15,7 @@ import (
 )
 
 // HookDBCreateIntent handles the create intent request
-func (m *Module) HookDBCreateIntent(ctx context.Context, dbType, col string, req *model.CreateRequest) (*model.EventIntent, error) {
+func (m *Module) HookDBCreateIntent(ctx context.Context, dbAlias, col string, req *model.CreateRequest) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -31,7 +31,7 @@ func (m *Module) HookDBCreateIntent(ctx context.Context, dbType, col string, req
 	batchID := ksuid.New().String()
 
 	// Process the documents
-	eventDocs := m.processCreateDocs(token, batchID, dbType, col, rows)
+	eventDocs := m.processCreateDocs(token, batchID, dbAlias, col, rows)
 
 	// Mark event as invalid if no events are generated
 	if len(eventDocs) == 0 {
@@ -217,7 +217,15 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 			doc.Payload = string(data)
 			doc.Timestamp = time.Now().UTC().UnixNano() / int64(time.Millisecond)
 
-			// TODO: update the event document in the database as well
+			updateRequest := model.UpdateRequest{
+				Find:      map[string]interface{}{"_id": doc.ID},
+				Operation: utils.All,
+				Update:    map[string]interface{}{"$set": map[string]interface{}{"payload": doc.Payload}},
+			}
+			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, m.config.Col, &updateRequest); err != nil {
+				log.Println("Eventing Error: event could not be updated", err)
+				return
+			}
 		}
 	}
 
@@ -227,14 +235,14 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 	}
 }
 
-func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows []interface{}) []*model.EventDocument {
+func (m *Module) processCreateDocs(token int, batchID, dbAlias, col string, rows []interface{}) []*model.EventDocument {
 	// Get event listeners
-	actualDbType, err := m.crud.GetDBType(dbType)
+	actualDbType, err := m.crud.GetDBType(dbAlias)
 	if err != nil {
 		return nil
 	}
 
-	rules := m.getMatchingRules(utils.EventDBCreate, map[string]string{"col": col, "db": dbType})
+	rules := m.getMatchingRules(utils.EventDBCreate, map[string]string{"col": col, "db": dbAlias})
 
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, doc := range rows {
@@ -255,7 +263,7 @@ func (m *Module) processCreateDocs(token int, batchID, dbType, col string, rows 
 			eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
 				batchID, utils.EventStatusIntent, rule.Url, &model.QueueEventRequest{
 					Type:    utils.EventDBCreate,
-					Payload: model.DatabaseEventMessage{DBType: dbType, Col: col, Doc: doc, DocID: docID},
+					Payload: model.DatabaseEventMessage{DBType: dbAlias, Col: col, Doc: doc, DocID: docID},
 				}))
 		}
 	}

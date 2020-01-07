@@ -3,6 +3,8 @@ package schema
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/utils"
 )
@@ -14,6 +16,9 @@ func getSQLType(dbType, typename string) (string, error) {
 	case TypeID:
 		return "varchar(" + sqlTypeIDSize + ")", nil
 	case typeString:
+		if dbType == string(utils.SqlServer) {
+			return "varchar(max)", nil
+		}
 		return "text", nil
 	case typeDateTime:
 		if dbType == string(utils.MySQL) {
@@ -105,9 +110,9 @@ func (c *creationModule) addNewColumn() string {
 	case utils.SqlServer:
 		if c.columnType == "timestamp" && !c.realColumnInfo.IsFieldTypeRequired {
 			return "ALTER TABLE " + c.project + "." + c.TableName + " ADD " + c.ColumnName + " " + c.columnType + " NULL"
-		} else {
-			return "ALTER TABLE " + c.project + "." + c.TableName + " ADD " + c.ColumnName + " " + c.columnType
 		}
+
+		return "ALTER TABLE " + c.project + "." + c.TableName + " ADD " + c.ColumnName + " " + c.columnType
 	}
 	return ""
 }
@@ -149,27 +154,6 @@ func (c *creationModule) removePrimaryKey() string {
 	}
 	return ""
 
-}
-
-func (c *creationModule) addUniqueKey() string {
-	return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " UNIQUE (" + c.ColumnName + ")"
-}
-
-func (c *creationModule) removeUniqueKey() string {
-	dbType, err := c.schemaModule.crud.GetDBType(c.dbAlias)
-	if err != nil {
-		return ""
-	}
-
-	switch utils.DBType(dbType) {
-	case utils.MySQL:
-		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP INDEX c_" + c.TableName + "_" + c.ColumnName
-	case utils.Postgres:
-		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName
-	case utils.SqlServer:
-		return "ALTER TABLE " + c.project + "." + c.TableName + " DROP CONSTRAINT c_" + c.TableName + "_" + c.ColumnName
-	}
-	return ""
 }
 
 func (c *creationModule) addForeignKey() string {
@@ -227,8 +211,10 @@ func (c *creationModule) removeDefaultKey() string {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER " + c.ColumnName + " DROP DEFAULT"
 
-	case utils.SqlServer, utils.Postgres:
+	case utils.Postgres:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER COLUMN " + c.ColumnName + " DROP DEFAULT"
+	case utils.SqlServer:
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP CONSTRAINT c_" + c.ColumnName
 	}
 	return ""
 }
@@ -313,10 +299,6 @@ func (c *creationModule) addColumn(dbType string) []string {
 		queries = append(queries, c.addPrimaryKey())
 	}
 
-	if c.realColumnInfo.IsUnique {
-		queries = append(queries, c.addUniqueKey())
-	}
-
 	if c.realColumnInfo.IsForeign {
 		queries = append(queries, c.addForeignKey())
 	}
@@ -347,10 +329,6 @@ func (c *creationModule) modifyColumn() []string {
 		queries = append(queries, c.removePrimaryKey())
 	}
 
-	if !c.realColumnInfo.IsUnique && c.currentColumnInfo.IsUnique {
-		queries = append(queries, c.removeUniqueKey())
-	}
-
 	if !c.realColumnInfo.IsForeign && c.currentColumnInfo.IsForeign {
 		queries = append(queries, c.removeForeignKey()...)
 	}
@@ -361,10 +339,6 @@ func (c *creationModule) modifyColumn() []string {
 
 	if c.realColumnInfo.IsPrimary && !c.currentColumnInfo.IsPrimary {
 		queries = append(queries, c.addPrimaryKey())
-	}
-
-	if c.realColumnInfo.IsUnique && !c.currentColumnInfo.IsUnique {
-		queries = append(queries, c.addUniqueKey())
 	}
 
 	if c.realColumnInfo.IsForeign && !c.currentColumnInfo.IsForeign {
@@ -391,4 +365,100 @@ func (c *creationModule) modifyColumnType(dbType string) []string {
 	queries = append(queries, q...)
 
 	return queries
+}
+
+func addIndex(dbType, project, tableName, indexName string, isIndexUnique bool, removeProjectScope bool, mapArray []*SchemaFieldType) string {
+	s := " ("
+	for _, schemaFieldType := range mapArray {
+		s += schemaFieldType.FieldName + " " + schemaFieldType.IndexInfo.Sort + ", "
+	}
+	s = strings.TrimSuffix(s, ", ")
+	p := ""
+	if isIndexUnique {
+		p = "CREATE UNIQUE INDEX " + "index__" + tableName + "__" + indexName + " ON " + getTableName(project, tableName, removeProjectScope) + s + ")"
+	} else {
+		p = "CREATE INDEX " + "index__" + tableName + "__" + indexName + " ON " + getTableName(project, tableName, removeProjectScope) + s + ")"
+	}
+	return p
+}
+
+func removeIndex(dbType, project, tableName, indexName string, removeProjectScope bool) string {
+
+	switch utils.DBType(dbType) {
+	case utils.MySQL:
+		return "DROP INDEX " + "index__" + tableName + "__" + indexName + " ON " + project + "." + tableName
+	case utils.SqlServer:
+		return "DROP INDEX " + "index__" + tableName + "__" + indexName + " ON " + getTableName(project, tableName, removeProjectScope)
+	case utils.Postgres:
+		indexname := "index__" + tableName + "__" + indexName
+		return "DROP INDEX " + getTableName(project, indexname, removeProjectScope)
+	}
+	return ""
+}
+
+type indexStruct struct {
+	IsIndexUnique bool
+	IndexMap      []*SchemaFieldType
+}
+
+func getRealIndexMap(realTableInfo SchemaFields) (map[string]*indexStruct, error) {
+	realIndexMap := make(map[string]*indexStruct)
+	for _, realColumnInfo := range realTableInfo {
+		if realColumnInfo.IsIndex {
+			if value, ok := realIndexMap[realColumnInfo.IndexInfo.Group]; ok {
+				value.IndexMap = append(value.IndexMap, realColumnInfo)
+			} else {
+				realIndexMap[realColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*SchemaFieldType{realColumnInfo}}
+			}
+			if realColumnInfo.IsUnique {
+				realIndexMap[realColumnInfo.IndexInfo.Group].IsIndexUnique = true
+			}
+			if !(realColumnInfo.IndexInfo.Sort == "asc" || realColumnInfo.IndexInfo.Sort == "desc") {
+				return nil, errors.New("Invalid Sort")
+			}
+		}
+	}
+
+	for _, indexValue := range realIndexMap {
+		var v indexStore
+		v = indexValue.IndexMap
+		sort.Stable(v)
+		indexValue.IndexMap = v
+		for i, column := range indexValue.IndexMap {
+			if i+1 != column.IndexInfo.Order {
+				return nil, errors.New("Index Order Invalid")
+			}
+		}
+	}
+	return realIndexMap, nil
+}
+
+func getCurrentIndexMap(currentTableInfo SchemaFields) (map[string]*indexStruct, error) {
+	currentIndexMap := make(map[string]*indexStruct)
+	for _, currentColumnInfo := range currentTableInfo {
+		if currentColumnInfo.IsIndex {
+			if value, ok := currentIndexMap[currentColumnInfo.IndexInfo.Group]; ok {
+				value.IndexMap = append(value.IndexMap, currentColumnInfo)
+			} else {
+				currentIndexMap[currentColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*SchemaFieldType{currentColumnInfo}}
+			}
+			if currentColumnInfo.IsUnique {
+				currentIndexMap[currentColumnInfo.IndexInfo.Group].IsIndexUnique = true
+			}
+		}
+	}
+
+	for _, indexValue := range currentIndexMap {
+		var v indexStore
+		v = indexValue.IndexMap
+		sort.Stable(v)
+		indexValue.IndexMap = v
+		for i, column := range indexValue.IndexMap {
+			if i+1 != column.IndexInfo.Order {
+				return nil, errors.New("Index Order Invalid")
+			}
+		}
+	}
+
+	return currentIndexMap, nil
 }

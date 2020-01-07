@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -12,11 +13,16 @@ import (
 
 // SchemaInspection returns the schema in schema definition language (SDL)
 func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col string) (string, error) {
-	if dbAlias == "mongo" {
+	dbType, err := s.crud.GetDBType(dbAlias)
+	if err != nil {
+		return "", err
+	}
+
+	if dbType == "mongo" {
 		return "", nil
 	}
 
-	inspectionCollection, err := s.Inspector(ctx, dbAlias, project, col)
+	inspectionCollection, err := s.Inspector(ctx, dbType, project, col)
 	if err != nil {
 		return "", err
 	}
@@ -25,20 +31,17 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 
 }
 
-// Inspector does something
-func (s *Schema) Inspector(ctx context.Context, dbAlias, project, col string) (schemaCollection, error) {
-	dbType, err := s.crud.GetDBType(dbAlias)
+// Inspector generates schema
+func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (schemaCollection, error) {
+	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
+
 	if err != nil {
 		return nil, err
 	}
-	fields, foreignkeys, err := s.crud.DescribeTable(ctx, dbType, project, col)
-	if err != nil {
-		return nil, err
-	}
-	return generateInspection(dbType, col, fields, foreignkeys)
+	return generateInspection(dbType, col, fields, foreignkeys, indexes)
 }
 
-func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType) (schemaCollection, error) {
+func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType, indexes []utils.IndexType) (schemaCollection, error) {
 	inspectionCollection := schemaCollection{}
 	inspectionFields := SchemaFields{}
 
@@ -57,6 +60,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			}
 		} else {
 			if err := inspectionMySQLCheckFieldType(field.FieldType, &fieldDetails); err != nil {
+				log.Println("error", err)
 				return nil, err
 			}
 		}
@@ -67,16 +71,26 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			if utils.DBType(dbType) == utils.SqlServer {
 				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
 				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
+				if fieldDetails.Kind == typeBoolean {
+					if field.FieldDefault == "1" {
+						field.FieldDefault = "true"
+					} else {
+						field.FieldDefault = "false"
+					}
+				}
 			}
 
 			if utils.DBType(dbType) == utils.Postgres {
 				// split "'default-value'::text" to "default-value"
-				s := strings.Split(field.FieldDefault, ",")
+				s := strings.Split(field.FieldDefault, "::")
 				field.FieldDefault = s[0]
+				if fieldDetails.Kind == typeString || fieldDetails.Kind == typeDateTime || fieldDetails.Kind == TypeID {
+					field.FieldDefault = strings.Split(field.FieldDefault, "'")[1]
+				}
 			}
 
 			// add string between quotes
-			if fieldDetails.Kind == typeString {
+			if fieldDetails.Kind == typeString || fieldDetails.Kind == TypeID || fieldDetails.Kind == typeDateTime {
 				field.FieldDefault = fmt.Sprintf("\"%s\"", field.FieldDefault)
 			}
 			fieldDetails.Default = field.FieldDefault
@@ -87,10 +101,6 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			fieldDetails.IsPrimary = true
 		}
 
-		if field.FieldKey == "UNI" {
-			fieldDetails.IsUnique = true
-		}
-
 		// check foreignKey & identify if relation exists
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == field.FieldName && foreignValue.RefTableName != "" && foreignValue.RefColumnName != "" {
@@ -98,10 +108,18 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 				fieldDetails.JointTable = &TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName}
 			}
 		}
+		for _, indexValue := range indexes {
+			if indexValue.ColumnName == field.FieldName {
+				fieldDetails.IsIndex = true
+				fieldDetails.IsUnique = indexValue.IsUnique == "yes"
+				fieldDetails.IndexInfo = &TableProperties{Group: indexValue.IndexName, Order: indexValue.Order, Sort: indexValue.Sort}
+			}
+		}
 
 		// field name
 		inspectionFields[field.FieldName] = &fieldDetails
 	}
+
 	if len(inspectionFields) != 0 {
 		inspectionCollection[col] = inspectionFields
 	}
@@ -118,7 +136,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldTyp
 
 	switch result[0] {
 	case "varchar":
-		fieldDetails.Kind = TypeID // for sql server
+		fieldDetails.Kind = typeString // for sql server
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = typeString
 	case "smallint", "mediumint", "int", "bigint":
@@ -127,7 +145,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldTyp
 		fieldDetails.Kind = typeFloat
 	case "date", "time", "datetime", "timestamp":
 		fieldDetails.Kind = typeDateTime
-	case "tinyint", "boolean":
+	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = typeBoolean
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])
