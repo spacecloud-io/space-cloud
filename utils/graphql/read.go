@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/graphql-go/graphql/language/ast"
 
@@ -81,6 +82,11 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 	readRequest.Options, hasOptions, err = generateOptions(field.Arguments, store)
 	if err != nil {
 		return nil, false, err
+	}
+	// if distinct option has been set then set operation to distinct from all
+	if hasOptions && readRequest.Options.Distinct != nil {
+		log.Println("true")
+		readRequest.Operation = utils.Distinct
 	}
 
 	return &readRequest, hasOptions, nil

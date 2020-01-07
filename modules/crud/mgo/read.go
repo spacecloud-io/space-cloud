@@ -35,7 +35,15 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 			return 0, nil, err
 		}
 
-		return int64(len(result)), result, nil
+		// convert result []string to []map[string]interface
+		finalResult := []interface{}{}
+		for _, value := range result {
+			doc := map[string]interface{}{}
+			doc[*distinct] = value
+			finalResult = append(finalResult, doc)
+		}
+
+		return int64(len(result)), finalResult, nil
 
 	case utils.All:
 		findOptions := options.Find()
