@@ -16,7 +16,7 @@ type M map[string]interface{}
 func ParseGraphqlValue(value ast.Value, store M) (interface{}, error) {
 	switch value.GetKind() {
 	case kinds.ObjectValue:
-		o := M{}
+		o := map[string]interface{}{}
 
 		obj := value.(*ast.ObjectValue)
 
@@ -46,20 +46,28 @@ func ParseGraphqlValue(value ast.Value, store M) (interface{}, error) {
 		return array, nil
 
 	case kinds.EnumValue:
-		enumValue := value.(*ast.EnumValue)
-		if strings.Contains(enumValue.Value, "__") {
-			temp := strings.ReplaceAll(enumValue.Value, "__", ".")
-			return LoadValue(temp, store)
+		v := value.(*ast.EnumValue).Value
+		if strings.Contains(v, "__") {
+			v = strings.ReplaceAll(v, "__", ".")
 		}
-		return enumValue.Value, nil
+		val, err := LoadValue(v, store)
+		if err == nil {
+			return val, nil
+		}
+
+		return v, nil
 
 	case kinds.StringValue:
-		stringValue := value.(*ast.StringValue)
-		if strings.Contains(stringValue.Value, "__") {
-			temp := strings.ReplaceAll(stringValue.Value, "__", ".")
-			return LoadValue(temp, store)
+		v := value.(*ast.StringValue).Value
+		if strings.Contains(v, "__") {
+			v = strings.ReplaceAll(v, "__", ".")
 		}
-		return stringValue.Value, nil
+		val, err := LoadValue(v, store)
+		if err == nil {
+			return val, nil
+		}
+
+		return v, nil
 
 	case kinds.IntValue:
 		intValue := value.(*ast.IntValue)
@@ -86,6 +94,10 @@ func ParseGraphqlValue(value ast.Value, store M) (interface{}, error) {
 	case kinds.BooleanValue:
 		boolValue := value.(*ast.BooleanValue)
 		return boolValue.Value, nil
+
+	case kinds.Variable:
+		t := value.(*ast.Variable)
+		return LoadValue("vars."+t.Name.Value, store)
 
 	default:
 		return nil, errors.New("Invalid data type `" + value.GetKind() + "` for value " + string(value.GetLoc().Source.Body)[value.GetLoc().Start:value.GetLoc().End])
