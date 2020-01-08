@@ -37,7 +37,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:   "test1",
+			name:   "sql: valid $set query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -57,7 +57,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test2",
+			name:   "sql: invalid $set query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -76,7 +76,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test3",
+			name:   "sql: valid $currentDate query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -95,7 +95,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test4",
+			name:   "sql: invalid $currentDate query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -107,7 +107,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test5",
+			name:   "sql: invalid $inc query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -125,7 +125,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test6",
+			name:   "sql: $inc wrong input",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -143,7 +143,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test7",
+			name:   "sql: valid $mul query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -163,7 +163,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test8",
+			name:   "sql: valid max query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -183,7 +183,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test9",
+			name:   "sql: valid $min ",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -203,7 +203,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test10",
+			name:   "sql: valid $min ",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -223,7 +223,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test11",
+			name:   "sql: valid $min query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -243,7 +243,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test12",
+			name:   "sql: invalid mul query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -263,7 +263,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test13",
+			name:   "sql: valid $currentDate query ",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -282,7 +282,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test14",
+			name:   "sql: invalid $currentDate query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -301,7 +301,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test15",
+			name:   "sql: different op",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -318,7 +318,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test16",
+			name:   "sql: valid $inc query",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -338,7 +338,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test17",
+			name:   "sql: invalid input to max",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -358,7 +358,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test18",
+			name:   "sql: invalid ip to min",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -378,7 +378,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test19",
+			name:   "sql: invalid op",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -398,7 +398,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test20",
+			name:   "sql: invalid ip to currentdate",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -418,7 +418,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test21",
+			name:   "sql:currentdate invalid ip",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -438,7 +438,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test22",
+			name:   "sql: trying default op",
 			fields: fields{dbType: "mysql"},
 			args: args{
 				ctx:     context.TODO(),
@@ -458,7 +458,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test23",
+			name:   "postgres: valid set",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -478,7 +478,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test24",
+			name:   "postgres: invalid set",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -497,7 +497,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test25",
+			name:   "postgres: valid current date",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -517,7 +517,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test26",
+			name:   "postgres: invalid currentdate ",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -529,7 +529,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test27",
+			name:   "postgres: inc wrong query",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -547,7 +547,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test28",
+			name:   "postgres: inc wrong ip",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -565,7 +565,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test29",
+			name:   "postgres: valid mul",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -585,7 +585,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test30a",
+			name:   "postgres valid max query",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -604,7 +604,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			want1:   []interface{}{int64(6132), int64(121), int64(21)},
 			wantErr: false,
 		}, {
-			name:   "test30b",
+			name:   "postgres: valid max 2 ip",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -624,7 +624,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test31",
+			name:   "postgres: valid min query",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -644,7 +644,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test32",
+			name:   "postgres: valid min query",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -664,7 +664,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test33",
+			name:   "postgres: valid min query int64",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -684,7 +684,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test34",
+			name:   "postgres: invalid different op query ",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -704,7 +704,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test35",
+			name:   "postgres: valid currentDate",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -723,7 +723,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test36",
+			name:   "postgres: currentdate wrong ip",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -741,7 +741,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test37",
+			name:   "postgres: wrong op",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -758,7 +758,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test38",
+			name:   "postgres: valid op ",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -778,7 +778,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test39",
+			name:   "postgres: wrong ip max",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -798,7 +798,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test40",
+			name:   "postgres:wrong ip min",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -818,7 +818,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test41",
+			name:   "postgres:wrong op",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -838,7 +838,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test42",
+			name:   "postgres: wrong ip currentdate",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -858,7 +858,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test43",
+			name:   "postgres: current date wrong ip",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -878,7 +878,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test44",
+			name:   "postgres: checking default",
 			fields: fields{dbType: "postgres"},
 			args: args{
 				ctx:     context.TODO(),
@@ -898,7 +898,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test45",
+			name:   "sqlserver: valid set ",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -918,7 +918,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test46",
+			name:   "sqlserver: invalid set",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -937,7 +937,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test47",
+			name:   "sqlserver: currentdate valid currentdate",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -957,7 +957,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test48",
+			name:   "sqlserver: invalid currentdate",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -969,7 +969,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test49",
+			name:   "sqlserver: invalid ip inc",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -987,7 +987,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test50",
+			name:   "sqlserver:invalid inc",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1005,7 +1005,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test51",
+			name:   "sqlserver: valid mul",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1025,7 +1025,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test52a",
+			name:   "sqlserver: max valid",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1045,7 +1045,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test52b",
+			name:   "sqlserver: max 2ip",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1065,7 +1065,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test53",
+			name:   "sqlserver: int64 min",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1085,7 +1085,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test54",
+			name:   "sqlserver: valid min",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1105,7 +1105,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test55",
+			name:   "sqlserver: int64 min",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1125,7 +1125,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test56",
+			name:   "sqlserver: different op",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1145,7 +1145,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test57",
+			name:   "sqlserver: valid current date",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1164,7 +1164,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test58",
+			name:   "sqlserver: wrong ip currentdate",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1182,7 +1182,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test59",
+			name:   "sqlserver: different op",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1199,7 +1199,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test60",
+			name:   "sqlserver: valid inc",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1219,7 +1219,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "test61",
+			name:   "sqlserver: max wrong ip",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1239,7 +1239,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test62",
+			name:   "sqlserver: wrong ip min",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1259,7 +1259,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test63",
+			name:   "sqlserver: wrong op",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1279,7 +1279,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test64",
+			name:   "sqlserver:wrong ip to current date",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1299,7 +1299,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test65",
+			name:   "sqlserver: wrong ip to currentdate",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),
@@ -1319,7 +1319,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "test66",
+			name:   "checking default sqlserver",
 			fields: fields{dbType: "sqlserver"},
 			args: args{
 				ctx:     context.TODO(),

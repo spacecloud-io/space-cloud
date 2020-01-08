@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -213,7 +212,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			if err != nil {
 				return "", nil, err
 			}
-			if dbType == string(utils.MySQL) {
+			if s.dbType == string(utils.MySQL) {
 				sqlString = strings.Replace(sqlString, k+"=?", k+"=GREATEST("+k+","+"?"+")", -1)
 			}
 			if s.dbType == string(utils.Postgres) {
@@ -314,15 +313,16 @@ func flattenForDate(m *map[string]interface{}) error {
 
 func (s *SQL) sanitiseUpdateQuery(sqlString string) string {
 	var placeholder byte
-	switch utils.DBType(s.dbType) {
-	case utils.Postgres, utils.SqlServer:
+	// switch utils.DBType(s.dbType) {
+	// case utils.Postgres, utils.SqlServer:
+	// 	placeholder = '$'
+	// }
+	if (utils.DBType(s.dbType) == utils.Postgres) || (utils.DBType(s.dbType) == utils.SqlServer) {
 		placeholder = '$'
 	}
-	log.Println("sqlString", sqlString, "PlaceHolder", placeholder)
 	var start bool
 	for i := 0; i < len(sqlString); i++ {
 		c := sqlString[i]
-		log.Println("c", c, placeholder)
 		if c == placeholder {
 			start = true
 		}
