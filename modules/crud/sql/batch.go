@@ -24,7 +24,7 @@ func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchR
 	for i, req := range txRequest.Requests {
 		switch req.Type {
 		case string(utils.Create):
-			sqlQuery, args, err := s.generateCreateQuery(ctx, project, req.Col, &model.CreateRequest{Document: req.Document, Operation: req.Operation})
+			sqlQuery, args, err := s.generateCreateQuery(project, req.Col, &model.CreateRequest{Document: req.Document, Operation: req.Operation})
 			if err != nil {
 				return counts, err
 			}
@@ -35,7 +35,7 @@ func (s *SQL) Batch(ctx context.Context, project string, txRequest *model.BatchR
 			counts[i], _ = res.RowsAffected()
 
 		case string(utils.Delete):
-			sqlQuery, args, err := s.generateDeleteQuery(ctx, project, req.Col, &model.DeleteRequest{Find: req.Find, Operation: req.Operation})
+			sqlQuery, args, err := s.generateDeleteQuery(project, req.Col, &model.DeleteRequest{Find: req.Find, Operation: req.Operation})
 			if err != nil {
 				return counts, err
 			}
