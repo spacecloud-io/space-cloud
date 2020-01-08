@@ -28,7 +28,7 @@ func (s *SQL) GetCollections(ctx context.Context, project string) ([]utils.Datab
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	result := make([]utils.DatabaseCollections, 0)
 	for rows.Next() {

@@ -57,22 +57,20 @@ func (s *SQL) generateReadQuery(ctx context.Context, project, col string, req *m
 
 		if req.Options.Sort != nil {
 			// Format the order array to a suitable type
-			orderMap := req.Options.Sort
-
-			orderBys := []exp.OrderedExpression{}
+			orderBys := make([]exp.OrderedExpression, len(req.Options.Sort))
 
 			// Iterate over order array
-			for k, value := range orderMap {
+			for i, value := range req.Options.Sort {
 				// Add order type based on type attribute of order element
-				var exp exp.OrderedExpression
-				if value < 0 {
-					exp = goqu.I(k).Desc()
+				var e exp.OrderedExpression
+				if strings.HasPrefix(value, "-") {
+					e = goqu.I(strings.TrimPrefix(value, "-")).Desc()
 				} else {
-					exp = goqu.I(k).Asc()
+					e = goqu.I(value).Asc()
 				}
 
 				// Append the order expression to the order expression array
-				orderBys = append(orderBys, exp)
+				orderBys[i] = e
 			}
 			query = query.Order(orderBys...)
 		}
@@ -131,13 +129,13 @@ func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequ
 	if err != nil {
 		return 0, nil, err
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	rows, err := stmt.QueryxContext(ctx, args...)
 	if err != nil {
 		return 0, nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var rowTypes []*sql.ColumnType
 
