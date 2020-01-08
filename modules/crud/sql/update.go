@@ -187,7 +187,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			}
 
 		}
-		//sqlString = s.sanitiseUpdateQuery(sqlString)
+
 	case "$mul":
 		for k, v := range m {
 			_, err := checkIfNum(v)
@@ -313,10 +313,6 @@ func flattenForDate(m *map[string]interface{}) error {
 
 func (s *SQL) sanitiseUpdateQuery(sqlString string) string {
 	var placeholder byte
-	// switch utils.DBType(s.dbType) {
-	// case utils.Postgres, utils.SqlServer:
-	// 	placeholder = '$'
-	// }
 	if (utils.DBType(s.dbType) == utils.Postgres) || (utils.DBType(s.dbType) == utils.SqlServer) {
 		placeholder = '$'
 	}
