@@ -77,7 +77,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 	f := filestore.Init(a)
 
 	// Initialise the eventing module and set the crud module hooks
-	e := eventing.New(a, c, fn, adminMan, syncMan, f)
+	e := eventing.New(a, c, s, fn, adminMan, syncMan, f)
 	f.SetEventingModule(e)
 
 	c.SetHooks(&model.CrudHooks{
@@ -88,7 +88,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 		Stage:  e.HookStage,
 	}, m.AddDBOperation)
 
-	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
+	rt, err := realtime.Init(nodeID, e, a, c, s, m, syncMan)
 	if err != nil {
 		return nil, err
 	}

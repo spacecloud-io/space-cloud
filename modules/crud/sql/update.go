@@ -114,10 +114,9 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			}
 
 			return res.RowsAffected()
-		} else {
-			req.Operation = utils.All
-			return s.update(ctx, project, col, req, executor)
 		}
+		req.Operation = utils.All
+		return s.update(ctx, project, col, req, executor)
 	default: // (case utils.One)
 		return 0, utils.ErrInvalidParams
 	}

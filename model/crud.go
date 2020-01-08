@@ -16,7 +16,7 @@ type ReadRequest struct {
 // ReadOptions is the options required for a read request
 type ReadOptions struct {
 	Select   map[string]int32 `json:"select"`
-	Sort     map[string]int32 `json:"sort"`
+	Sort     []string         `json:"sort"`
 	Skip     *int64           `json:"skip"`
 	Limit    *int64           `json:"limit"`
 	Distinct *string          `json:"distinct"`
