@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/config"
@@ -60,7 +59,6 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			}
 		} else {
 			if err := inspectionMySQLCheckFieldType(field.FieldType, &fieldDetails); err != nil {
-				log.Println("error", err)
 				return nil, err
 			}
 		}

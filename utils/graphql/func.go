@@ -80,7 +80,7 @@ func getFuncTimeout(field *ast.Field, store utils.M) (int, error) {
 	if len(field.Directives[0].Arguments) > 0 {
 		for _, v := range field.Directives[0].Arguments {
 			if v.Name.Value == "func" {
-				val, err := ParseValue(v.Value, store)
+				val, err := utils.ParseGraphqlValue(v.Value, store)
 				if err != nil {
 					return 0, err
 				}
@@ -100,7 +100,7 @@ func getFuncParams(field *ast.Field, store utils.M) (map[string]interface{}, err
 	obj := make(map[string]interface{}, len(field.Arguments))
 
 	for _, v := range field.Arguments {
-		val, err := ParseValue(v.Value, store)
+		val, err := utils.ParseGraphqlValue(v.Value, store)
 		if err != nil {
 			return nil, err
 		}

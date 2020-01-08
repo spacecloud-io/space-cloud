@@ -97,7 +97,7 @@ func ExtractWhereClause(args []*ast.Argument, store utils.M) (map[string]interfa
 	for _, v := range args {
 		switch v.Name.Value {
 		case "where":
-			temp, err := ParseValue(v.Value, store)
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
 			if err != nil {
 				return nil, err
 			}
@@ -122,7 +122,7 @@ func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, b
 		case "skip":
 			hasOptions = true // Set the flag to true
 
-			temp, err := ParseValue(v.Value, store)
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
 			if err != nil {
 				return nil, hasOptions, err
 			}
@@ -138,7 +138,7 @@ func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, b
 		case "limit":
 			hasOptions = true // Set the flag to true
 
-			temp, err := ParseValue(v.Value, store)
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
 			if err != nil {
 				return nil, hasOptions, err
 			}

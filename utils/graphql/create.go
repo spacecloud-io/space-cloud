@@ -207,7 +207,7 @@ func extractDocs(args []*ast.Argument, store utils.M) ([]interface{}, error) {
 	for _, v := range args {
 		switch v.Name.Value {
 		case "docs":
-			temp, err := ParseValue(v.Value, store)
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
 			if err != nil {
 				return nil, err
 			}
