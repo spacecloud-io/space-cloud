@@ -107,7 +107,7 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 
 	fn := functions.Init(a, p.syncMan)
 	// Initialise the eventing module and set the crud module hooks
-	e := eventing.New(a, c, fn, p.adminMan, p.syncMan, f)
+	e := eventing.New(a, c, s, fn, p.adminMan, p.syncMan, f)
 
 	// Set hooks
 	c.SetHooks(&model.CrudHooks{
@@ -119,7 +119,7 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	}, p.metrics.AddDBOperation)
 	f.SetEventingModule(e)
 
-	rt, err := realtime.Init(p.nodeID, e, a, c, p.metrics, p.syncMan)
+	rt, err := realtime.Init(p.nodeID, e, a, c, s, p.metrics, p.syncMan)
 	if err != nil {
 		return nil, err
 	}

@@ -55,6 +55,6 @@ type EventIntent struct {
 type DatabaseEventMessage struct {
 	DBType string      `json:"db" mapstructure:"db"`
 	Col    string      `json:"col" mapstructure:"col"`
-	DocID  string      `json:"docId" mapstructure:"docId"`
 	Doc    interface{} `json:"doc" mapstructure:"doc"`
+	Find   interface{} `json:"find" mapstructure:"find"`
 }

@@ -257,7 +257,7 @@ func (s *Server) handleGraphqlSocket() http.HandlerFunc {
 				feedData, err := state.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					feed.TypeName = "subscribe_" + feed.Group
 
-					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed)}}}
+					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed), "find": feed.Find}}}
 				})
 
 				if err != nil {

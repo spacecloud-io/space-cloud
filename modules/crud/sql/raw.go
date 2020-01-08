@@ -23,12 +23,12 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 	for _, query := range queries {
 		_, err := tx.ExecContext(ctx, query)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return err
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 
@@ -53,6 +53,7 @@ func (s *SQL) GetConnectionState(ctx context.Context) bool {
 	return err == nil
 }
 
+// CreateProjectIfNotExist creates a schema / database
 func (s *SQL) CreateProjectIfNotExist(ctx context.Context, project string) error {
 	var sql string
 	switch utils.DBType(s.dbType) {

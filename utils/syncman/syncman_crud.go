@@ -127,7 +127,11 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbType, col s
 	}
 	collection, ok := databaseConfig.Collections[col]
 	if !ok {
-		databaseConfig.Collections = map[string]*config.TableRule{col: v}
+		if databaseConfig.Collections == nil {
+			databaseConfig.Collections = map[string]*config.TableRule{col: v}
+		} else {
+			databaseConfig.Collections[col] = &config.TableRule{IsRealTimeEnabled: v.IsRealTimeEnabled, Rules: v.Rules}
+		}
 	} else {
 		collection.IsRealTimeEnabled = v.IsRealTimeEnabled
 		collection.Rules = v.Rules

@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/filestore"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/utils/admin"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
@@ -27,6 +28,7 @@ type Module struct {
 	// Variables defined during initialisation
 	auth      *auth.Module
 	crud      *crud.Module
+	schema    *schema.Schema
 	functions *functions.Module
 	adminMan  *admin.Manager
 	syncMan   *syncman.Manager
@@ -34,11 +36,12 @@ type Module struct {
 }
 
 // New creates a new instance of the eventing module
-func New(auth *auth.Module, crud *crud.Module, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
+func New(auth *auth.Module, crud *crud.Module, schema *schema.Schema, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
 
 	m := &Module{
 		auth:      auth,
 		crud:      crud,
+		schema:    schema,
 		functions: functions,
 		adminMan:  adminMan,
 		syncMan:   syncMan,

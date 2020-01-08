@@ -28,11 +28,6 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 
 // DoRealtimeSubscribe makes the realtime query
 func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, actions *auth.PostProcess, sendFeed SendFeed) ([]*model.FeedData, error) {
-	actualDbType, err := m.crud.GetDBType(data.DBType)
-	if err != nil {
-		return nil, err
-	}
-
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 	if data.Options.SkipInitial {
 		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
@@ -54,22 +49,19 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	if ok {
 		timeStamp := time.Now().Unix()
 		for _, row := range array {
-			payload := row.(map[string]interface{})
-			idVar := "id"
-			if actualDbType == string(utils.Mongo) {
-				idVar = "_id"
+			find, possible := m.schema.CheckIfEventingIsPossible(data.DBType, data.Group, readReq.Find, true)
+			if !possible {
+				continue
 			}
-			if docID, ok := utils.AcceptableIDType(payload[idVar]); ok {
-				feedData = append(feedData, &model.FeedData{
-					Group:     data.Group,
-					Type:      utils.RealtimeInitial,
-					TimeStamp: timeStamp,
-					DocID:     docID,
-					DBType:    data.DBType,
-					Payload:   payload,
-					QueryID:   data.ID,
-				})
-			}
+			feedData = append(feedData, &model.FeedData{
+				Group:     data.Group,
+				Type:      utils.RealtimeInitial,
+				TimeStamp: timeStamp,
+				Find:      find,
+				DBType:    data.DBType,
+				Payload:   row,
+				QueryID:   data.ID,
+			})
 		}
 	}
 
@@ -85,6 +77,7 @@ func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) {
 
 // HandleRealtimeEvent handles an incoming realtime event from the eventing module
 func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.CloudEventPayload) error {
+
 	urls := m.syncMan.GetSpaceCloudNodeURLs(m.project)
 
 	// Create wait group
@@ -138,6 +131,7 @@ func (m *Module) HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.Cl
 
 // ProcessRealtimeRequests handles an incoming realtime process event
 func (m *Module) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error {
+
 	dbEvent := new(model.DatabaseEventMessage)
 	if err := mapstructure.Decode(eventDoc.Data, dbEvent); err != nil {
 		log.Println("Realtime Module Request Handler Error:", err)
@@ -145,14 +139,13 @@ func (m *Module) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) erro
 	}
 
 	t, _ := time.Parse(time.RFC3339, eventDoc.Time)
-
 	feedData := &model.FeedData{
-		DocID:     dbEvent.DocID,
 		Type:      eventingToRealtimeEvent(eventDoc.Type),
 		Payload:   dbEvent.Doc,
 		TimeStamp: t.UnixNano() / int64(time.Millisecond),
 		Group:     dbEvent.Col,
 		DBType:    dbEvent.DBType,
+		Find:      dbEvent.Find,
 	}
 
 	m.helperSendFeed(feedData)

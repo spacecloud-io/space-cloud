@@ -77,7 +77,7 @@ WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	result := []utils.FieldType{}
 	count := 0
@@ -135,7 +135,7 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	result := []utils.ForeignKeysType{}
 	for rows.Next() {
@@ -207,7 +207,7 @@ func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]utils
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	result := []utils.IndexType{}
 	for rows.Next() {
