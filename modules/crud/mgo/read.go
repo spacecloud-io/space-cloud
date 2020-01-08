@@ -2,7 +2,10 @@ package mgo
 
 import (
 	"context"
+	"strings"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/spaceuptech/space-cloud/model"
@@ -35,7 +38,15 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 			return 0, nil, err
 		}
 
-		return int64(len(result)), result, nil
+		// convert result []string to []map[string]interface
+		finalResult := []interface{}{}
+		for _, value := range result {
+			doc := map[string]interface{}{}
+			doc[*distinct] = value
+			finalResult = append(finalResult, doc)
+		}
+
+		return int64(len(result)), finalResult, nil
 
 	case utils.All:
 		findOptions := options.Find()
@@ -54,7 +65,7 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 			}
 
 			if req.Options.Sort != nil {
-				findOptions = findOptions.SetSort(req.Options.Sort)
+				findOptions = findOptions.SetSort(generateSortOptions(req.Options.Sort))
 			}
 		}
 
@@ -101,7 +112,7 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 			}
 
 			if req.Options.Sort != nil {
-				findOneOptions = findOneOptions.SetSort(req.Options.Sort)
+				findOneOptions = findOneOptions.SetSort(generateSortOptions(req.Options.Sort))
 			}
 		}
 
@@ -116,4 +127,17 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 	default:
 		return 0, nil, utils.ErrInvalidParams
 	}
+}
+
+func generateSortOptions(array []string) bson.D {
+	sort := bson.D{}
+	for _, value := range array {
+		if strings.HasPrefix(value, "-") {
+			sort = append(sort, primitive.E{Key: strings.TrimPrefix(value, "-"), Value: -1})
+		} else {
+			sort = append(sort, primitive.E{Key: value, Value: 1})
+		}
+	}
+
+	return sort
 }

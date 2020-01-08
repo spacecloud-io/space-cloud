@@ -2,7 +2,9 @@ package utils
 
 import (
 	"fmt"
+	"log"
 	"reflect"
+	"regexp"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -88,7 +90,7 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					if !compare(val, v2) {
 						return false
 					}
-				case "$neq":
+				case "$ne":
 					if compare(val, v2) {
 						return false
 					}
@@ -174,6 +176,19 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					default:
 						return false
 					}
+
+				case "$regex":
+					regex := v2.(string)
+					vString := val.(string)
+					r, err := regexp.Compile(regex)
+					if err != nil {
+						log.Println("Couldn't compile regex")
+						return false
+					}
+					return r.MatchString(vString)
+				default:
+					log.Printf("Invalid operator (%s) provided\n", k2)
+					return false
 				}
 			}
 		}

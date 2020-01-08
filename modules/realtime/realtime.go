@@ -8,6 +8,7 @@ import (
 	"github.com/spaceuptech/space-cloud/modules/auth"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/eventing"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/utils/metrics"
 	"github.com/spaceuptech/space-cloud/utils/syncman"
 )
@@ -27,15 +28,16 @@ type Module struct {
 	eventing *eventing.Module
 	auth     *auth.Module
 	crud     *crud.Module
+	schema   *schema.Schema
 	metrics  *metrics.Module
 	syncMan  *syncman.Manager
 }
 
 // Init creates a new instance of the realtime module
-func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *crud.Module, metrics *metrics.Module, syncMan *syncman.Manager) (*Module, error) {
+func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *crud.Module, schema *schema.Schema, metrics *metrics.Module, syncMan *syncman.Manager) (*Module, error) {
 
 	m := &Module{nodeID: nodeID, syncMan: syncMan,
-		eventing: eventing, auth: auth, crud: crud, metrics: metrics}
+		eventing: eventing, auth: auth, crud: crud, schema: schema, metrics: metrics}
 
 	return m, nil
 }

@@ -150,7 +150,6 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFiel
 		}
 
 	case map[string]interface{}:
-		// TODO: allow this operation for nested insert using links
 		if fieldValue.Kind != typeObject {
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}
@@ -158,9 +157,8 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFiel
 		return s.schemaValidator(col, fieldValue.nestedObject, v)
 
 	case []interface{}:
-		// TODO: allow this operation for nested insert using links
-		if fieldValue.Kind != typeObject {
-			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
+		if !fieldValue.IsList {
+			return nil, fmt.Errorf("invalid type (array) received for field %s in collection %s", fieldValue.FieldName, col)
 		}
 
 		arr := make([]interface{}, len(v))

@@ -3,6 +3,8 @@ package graphql
 import (
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
 
 	"github.com/graphql-go/graphql/language/ast"
 
@@ -82,6 +84,10 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 	if err != nil {
 		return nil, false, err
 	}
+	// if distinct option has been set then set operation to distinct from all
+	if hasOptions && readRequest.Options.Distinct != nil {
+		readRequest.Operation = utils.Distinct
+	}
 
 	return &readRequest, hasOptions, nil
 }
@@ -145,7 +151,44 @@ func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, b
 			tempInt64 := int64(tempInt)
 			options.Limit = &tempInt64
 
-			// TODO: implement sort, distinct, etc.
+		case "sort":
+			hasOptions = true // Set the flag to true
+
+			temp, err := ParseValue(v.Value, store)
+			if err != nil {
+				return nil, hasOptions, err
+			}
+
+			tempInt, ok := temp.([]interface{})
+			if !ok {
+				return nil, hasOptions, fmt.Errorf("Invalid type (%s) for sort", reflect.TypeOf(temp))
+			}
+
+			sortArray := make([]string, len(tempInt))
+			for i, value := range tempInt {
+				valueString, ok := value.(string)
+				if !ok {
+					return nil, hasOptions, fmt.Errorf("Invalid type (%s) for sort", reflect.TypeOf(value))
+				}
+				sortArray[i] = valueString
+			}
+
+			options.Sort = sortArray
+
+		case "distinct":
+			hasOptions = true // Set the flag to true
+
+			temp, err := ParseValue(v.Value, store)
+			if err != nil {
+				return nil, hasOptions, err
+			}
+
+			tempString, ok := temp.(string)
+			if !ok {
+				return nil, hasOptions, errors.New("Invalid type for distinct")
+			}
+
+			options.Distinct = &tempString
 		}
 	}
 	return &options, hasOptions, nil

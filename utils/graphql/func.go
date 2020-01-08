@@ -12,11 +12,7 @@ import (
 )
 
 func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.Field, store utils.M, cb callback) {
-	serviceName, err := graph.GetDBAlias(field)
-	if err != nil {
-		cb(nil, err)
-		return
-	}
+	serviceName := field.Directives[0].Name.Value
 
 	funcName, err := getFuncName(field)
 	if err != nil {
