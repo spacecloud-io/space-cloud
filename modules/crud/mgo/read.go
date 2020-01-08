@@ -135,7 +135,7 @@ func generateSortOptions(array []string) bson.D {
 		if strings.HasPrefix(value, "-") {
 			sort = append(sort, primitive.E{Key: strings.TrimPrefix(value, "-"), Value: -1})
 		} else {
-			sort = append(sort, primitive.E{Key: value, Value: -1})
+			sort = append(sort, primitive.E{Key: value, Value: 1})
 		}
 	}
 

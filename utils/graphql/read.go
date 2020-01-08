@@ -3,6 +3,8 @@ package graphql
 import (
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
 
 	"github.com/graphql-go/graphql/language/ast"
 
@@ -157,17 +159,21 @@ func generateOptions(args []*ast.Argument, store utils.M) (*model.ReadOptions, b
 				return nil, hasOptions, err
 			}
 
-			tempInt, ok := temp.(map[string]interface{})
+			tempInt, ok := temp.([]interface{})
 			if !ok {
-				return nil, hasOptions, errors.New("Invalid type for sort")
+				return nil, hasOptions, fmt.Errorf("Invalid type (%s) for sort", reflect.TypeOf(temp))
 			}
 
-			sortObj := map[string]int32{}
-			for key, value := range tempInt {
-				sortObj[key] = int32(value.(int))
+			sortArray := make([]string, len(tempInt))
+			for i, value := range tempInt {
+				valueString, ok := value.(string)
+				if !ok {
+					return nil, hasOptions, fmt.Errorf("Invalid type (%s) for sort", reflect.TypeOf(value))
+				}
+				sortArray[i] = valueString
 			}
 
-			options.Sort = sortObj
+			options.Sort = sortArray
 
 		case "distinct":
 			hasOptions = true // Set the flag to true
