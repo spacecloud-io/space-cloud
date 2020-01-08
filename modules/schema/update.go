@@ -3,10 +3,12 @@ package schema
 import (
 	"fmt"
 	"time"
+
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 // ValidateUpdateOperation validates the types of schema during a update request
-func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[string]interface{}) error {
+func (s *Schema) ValidateUpdateOperation(dbType, col, op string, updateDoc, find map[string]interface{}) error {
 	if len(updateDoc) == 0 {
 		return nil
 	}
@@ -45,7 +47,28 @@ func (s *Schema) ValidateUpdateOperation(dbType, col string, updateDoc map[strin
 			return fmt.Errorf("%s update operator is not supported", key)
 		}
 	}
+
+	// Fill in absent ids and default values
+	for fieldName, fieldStruct := range SchemaDoc {
+		if op == utils.Upsert && fieldStruct.IsFieldTypeRequired {
+			if _, isFieldPresentInFind := find[fieldName]; isFieldPresentInFind || isFieldPresentInUpdate(fieldName, updateDoc) {
+				continue
+			}
+			return fmt.Errorf("required field (%s) not present during upsert", fieldName)
+		}
+	}
 	return nil
+}
+
+func isFieldPresentInUpdate(field string, updateDoc map[string]interface{}) bool {
+	for _, operatorTemp := range updateDoc {
+		operator := operatorTemp.(map[string]interface{})
+		if _, p := operator[field]; p {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *Schema) validateArrayOperations(col string, doc interface{}, SchemaDoc SchemaFields) error {
@@ -57,24 +80,24 @@ func (s *Schema) validateArrayOperations(col string, doc interface{}, SchemaDoc 
 
 	for fieldKey, fieldValue := range v {
 
-		SchemaDocValue, ok := SchemaDoc[fieldKey]
+		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
 			return fmt.Errorf("field %s from collection %s is not defined in the schema", fieldKey, col)
 		}
 
 		switch t := fieldValue.(type) {
 		case []interface{}:
-			if SchemaDocValue.IsForeign {
+			if schemaDocValue.IsForeign && !schemaDocValue.IsList {
 				return fmt.Errorf("invalid type provided for field %s in collection %s", fieldKey, col)
 			}
 			for _, value := range t {
-				if _, err := s.checkType(col, value, SchemaDocValue); err != nil {
+				if _, err := s.checkType(col, value, schemaDocValue); err != nil {
 					return err
 				}
 			}
 			return nil
 		case interface{}:
-			if _, err := s.checkType(col, t, SchemaDocValue); err != nil {
+			if _, err := s.checkType(col, t, schemaDocValue); err != nil {
 				return err
 			}
 		default:

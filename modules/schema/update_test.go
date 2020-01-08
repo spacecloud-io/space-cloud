@@ -5,27 +5,28 @@ import (
 
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
+	"github.com/spaceuptech/space-cloud/utils"
 )
 
 func TestSchema_ValidateUpdateOperation(t *testing.T) {
 
 	var Query = `type tweet {
-	id: ID! @id
-	createdAt: DateTime! @createdAt
-	text: String
-	owner: String!
-   	age : Integer!
-   	cpi: Float!
-   	diplomastudent: Boolean!@foreign(table:"shreyas",field:"diploma")
-	friends:[String!]!
-	update:DateTime@updatedAt
-   	mentor: shreyas
-  	}
-	type shreyas{
+		id: ID! @id
+		createdAt: DateTime! @createdAt
+		text: String
+		owner: String!
+		age : Integer!
+		cpi: Float!
+		diplomastudent: Boolean! @foreign(table:"shreyas",field:"diploma")
+		friends:[String!]!
+		update:DateTime@updatedAt
+		mentor: shreyas
+	}
+	type shreyas {
 		name:String!
 		surname:String!
 		diploma:Boolean
-  	}`
+	}`
 
 	var TestCases = config.Crud{
 		"mongo": &config.CrudStub{
@@ -220,7 +221,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-invalid type for field",
+			name:          "Invalid Test case-invalid type for field owner",
 			IsErrExpected: true,
 			args: args{
 				dbType: "mongo",
@@ -363,8 +364,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test Case-invalid type for field",
-			IsErrExpected: true,
+			name:          "set array type for field friends",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -573,7 +574,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 
 	for _, testcase := range tests {
 		t.Run(testcase.name, func(t *testing.T) {
-			err := s.ValidateUpdateOperation(testcase.args.dbType, testcase.args.col, testcase.args.updateDoc)
+			err := s.ValidateUpdateOperation(testcase.args.dbType, testcase.args.col, utils.All, testcase.args.updateDoc, nil)
 			if (err != nil) != testcase.IsErrExpected {
 				t.Errorf("\n ValidateUpdateOperation() error = expected error-%v, got-%v)", testcase.IsErrExpected, err)
 			}

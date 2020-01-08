@@ -1,7 +1,6 @@
 package sql
 
 import (
-	"context"
 	"reflect"
 	"testing"
 
@@ -23,7 +22,6 @@ func TestSQL_generateReadQuery(t *testing.T) {
 		removeProjectScope bool
 	}
 	type args struct {
-		ctx     context.Context
 		project string
 		col     string
 		req     *model.ReadRequest
@@ -171,7 +169,7 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			args: args{project: "test", col: "table",
 				req: &model.ReadRequest{
 					Find:      map[string]interface{}{},
-					Options:   &model.ReadOptions{Select: map[string]int32{"Column1": 1, "Column2": 1}, Sort: map[string]int32{"Column1": 1, "Column2": -1}},
+					Options:   &model.ReadOptions{Select: map[string]int32{"Column1": 1, "Column2": 1}, Sort: []string{"Column1", "-Column2"}},
 					Operation: "all"}},
 			want:    []string{"SELECT Column1, Column2 FROM test.table ORDER BY Column1 ASC, Column2 DESC", "SELECT Column2, Column1 FROM test.table ORDER BY Column1 ASC, Column2 DESC"},
 			want1:   []interface{}{},

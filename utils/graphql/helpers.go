@@ -145,7 +145,6 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 						return
 					}
 					newCB(obj, nil)
-					return
 				}(loopIndex, loopValue)
 			}
 

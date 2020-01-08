@@ -20,7 +20,7 @@ var testQueries = `
 	age : Float!
 	isMale:Boolean
 	exp:Integer
-	event:event_logs
+	event: event_logs
 	person : sharad @link(table:sharad, from:Name, to:isMale)
    }
 
@@ -392,12 +392,12 @@ func TestSchema_CheckType(t *testing.T) {
 		},
 		{
 			coll:          "tweet",
-			name:          "valid interface value for matching field",
+			name:          "valid interface value for matching field (event)",
 			IsErrExpected: false,
 			IsSkipable:    false,
-			result:        []interface{}{map[string]interface{}{"name": "Suyash"}},
+			result:        map[string]interface{}{"name": "Suyash"},
 			Document: map[string]interface{}{
-				"event": []interface{}{map[string]interface{}{"name": "Suyash"}},
+				"event": map[string]interface{}{"name": "Suyash"},
 			},
 		},
 		{
@@ -428,7 +428,7 @@ func TestSchema_CheckType(t *testing.T) {
 			for key, value := range testCase.Document {
 				retval, err := s.checkType(testCase.coll, value, r[key])
 				if (err != nil) != testCase.IsErrExpected {
-					t.Errorf("\n CheckType() error = Expected error-%v,got-%v)", testCase.IsErrExpected, err)
+					t.Errorf("\n CheckType() error = Expected error-%v, got-%v)", testCase.IsErrExpected, err)
 				}
 				if !testCase.IsSkipable {
 					if !reflect.DeepEqual(retval, testCase.result) {

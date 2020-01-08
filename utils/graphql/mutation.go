@@ -146,7 +146,6 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 	}
 
 	cb(filteredResults, nil)
-	return
 }
 
 func filterResults(field *ast.Field, results map[string]interface{}) map[string]interface{} {
