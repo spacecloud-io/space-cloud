@@ -173,7 +173,7 @@ func TestSQL_generateReadQuery(t *testing.T) {
 					Find:      map[string]interface{}{},
 					Options:   &model.ReadOptions{Select: map[string]int32{"Column1": 1, "Column2": 1}, Sort: map[string]int32{"Column1": 1, "Column2": -1}},
 					Operation: "all"}},
-			want:    []string{"SELECT Column1, Column2 FROM test.table ORDER BY Column1 ASC, Column2 DESC", "SELECT Column1, Column2 FROM test.table ORDER BY Column2 DESC, Column1 ASC"},
+			want:    []string{"SELECT Column1, Column2 FROM test.table ORDER BY Column1 ASC, Column2 DESC", "SELECT Column2, Column1 FROM test.table ORDER BY Column1 ASC, Column2 DESC"},
 			want1:   []interface{}{},
 			wantErr: false,
 		},
