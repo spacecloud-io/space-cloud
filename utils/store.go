@@ -219,15 +219,25 @@ func convert(key string, obj map[string]interface{}) (map[string]interface{}, er
 }
 
 func splitVariable(key string) []string {
-	var inBracket bool
+	var inBracket1 int
+	var inBracket2 int
+
 	var lastIndex int
 	array := []string{}
 	for i, c := range key {
-		if c == '[' || c == '(' {
-			inBracket = true
-		} else if c == ']' || c == ')' {
-			inBracket = false
-		} else if c == '.' && !inBracket {
+		if c == '[' {
+			inBracket1 += 1
+		}
+		if c == '(' {
+			inBracket2 += 1
+		}
+		if c == ']' {
+			inBracket1 -= 1
+		}
+		if c == ')' {
+			inBracket2 -= 1
+		}
+		if c == '.' && inBracket1 == 0 && inBracket2 == 0 {
 			sub := key[lastIndex:i]
 			array = append(array, sub)
 			lastIndex = i + 1
@@ -254,7 +264,10 @@ func StoreValue(key string, value interface{}, state map[string]interface{}) err
 		return errors.New("Scope not present for given variable")
 	}
 
-	obj := scope.(map[string]interface{})
+	obj, ok := scope.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid type (%s) received for state", reflect.TypeOf(scope))
+	}
 
 	for i, k := range keyArray {
 		if i == 0 {
@@ -351,7 +364,10 @@ func DeleteValue(key string, state map[string]interface{}) error {
 		return errors.New("Scope not present for given variable")
 	}
 
-	obj := scope.(map[string]interface{})
+	obj, ok := scope.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid type (%s) received for state", reflect.TypeOf(scope))
+	}
 
 	for i, k := range keyArray {
 		if i == 0 {

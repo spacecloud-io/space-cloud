@@ -48,12 +48,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
 					Find: map[string]interface{}{
 						"FindString1": "1",
-						"FindString2": "2",
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=? WHERE ((FindString1 = ?) AND (FindString2 = ?))",
-			want1:   []interface{}{"1", "1", "2"},
+			want:    "UPDATE project.col SET String1=? WHERE (FindString1 = ?)",
+			want1:   []interface{}{"1", "1"},
 			wantErr: false,
 		},
 		{
@@ -68,7 +67,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 
 					Find: map[string]interface{}{
 						"FindString1": "1",
-						"FindString2": "2",
 					},
 				},
 			},
@@ -154,12 +152,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$mul": map[string]interface{}{"String1": 6}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1*? WHERE ((op1 = ?) AND (op2 = ?))",
-			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=String1*? WHERE (op1 = ?)",
+			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -174,12 +171,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132}},
 					Find: map[string]interface{}{
 						"op1": 121,
-						"op2": 21,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=GREATEST(String1,?) WHERE ((op1 = ?) AND (op2 = ?))",
-			want1:   []interface{}{int64(6132), int64(121), int64(21)},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,?) WHERE (op1 = ?)",
+			want1:   []interface{}{int64(6132), int64(121)},
 			wantErr: false,
 		},
 		{
@@ -194,12 +190,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": 6}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE ((op1 = ?) AND (op2 = ?))",
-			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -214,12 +209,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": -6.54}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE ((op1 = ?) AND (op2 = ?))",
-			want1:   []interface{}{float64(-6.54), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want1:   []interface{}{float64(-6.54), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -234,12 +228,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": int64(18)}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE ((op1 = ?) AND (op2 = ?))",
-			want1:   []interface{}{int64(18), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want1:   []interface{}{int64(18), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -254,7 +247,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": int64(18446744)}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
@@ -329,12 +321,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": 18446}},
 					Find: map[string]interface{}{
 						"op1": 67,
-						"op2": 78,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1+? WHERE ((op1 = ?) AND (op2 = ?))",
-			want1:   []interface{}{int64(18446), int64(67), int64(78)},
+			want:    "UPDATE project.col SET String1=String1+? WHERE (op1 = ?)",
+			want1:   []interface{}{int64(18446), int64(67)},
 			wantErr: false,
 		},
 		{
@@ -349,7 +340,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -369,7 +359,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -389,7 +378,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -409,7 +397,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -429,7 +416,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -449,7 +435,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDatshdge": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -469,12 +454,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
 					Find: map[string]interface{}{
 						"FindString1": "1",
-						"FindString2": "2",
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=$1 WHERE ((FindString1 = $2) AND (FindString2 = $3))",
-			want1:   []interface{}{"1", "1", "2"},
+			want:    "UPDATE project.col SET String1=$1 WHERE (FindString1 = $2)",
+			want1:   []interface{}{"1", "1"},
 			wantErr: false,
 		},
 		{
@@ -508,12 +492,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": "timestamp"}}},
 					Find: map[string]interface{}{
 						"today": "1",
-						"op2":   "2",
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE ((today = $2) AND (op2 = $3))",
-			want1:   []interface{}{"1", "2"},
+			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE (today = $2)",
+			want1:   []interface{}{"1"},
 			wantErr: false,
 		},
 		{
@@ -576,12 +559,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$mul": map[string]interface{}{"String1": 6}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1*$1 WHERE ((op1 = $2) AND (op2 = $3))",
-			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=String1*$1 WHERE (op1 = $2)",
+			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -596,12 +578,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132}},
 					Find: map[string]interface{}{
 						"op1": 121,
-						"op2": 21,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=GREATEST(String1,$1) WHERE ((op1 = $2) AND (op2 = $3))",
-			want1:   []interface{}{int64(6132), int64(121), int64(21)},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,$1) WHERE (op1 = $2)",
+			want1:   []interface{}{int64(6132), int64(121)},
 			wantErr: false,
 		}, {
 			name:   "postgres: valid max 2 ip",
@@ -615,12 +596,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132, "s2": 12}},
 					Find: map[string]interface{}{
 						"op1": 121,
-						"op2": 21,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=GREATEST(String1,$1),s2=GREATEST(s2,$2) WHERE ((op1 = $3) AND (op2 = $4))",
-			want1:   []interface{}{int64(6132), int64(12), int64(121), int64(21)},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,$1),s2=GREATEST(s2,$2) WHERE (op1 = $3)",
+			want1:   []interface{}{int64(6132), int64(12), int64(121)},
 			wantErr: false,
 		},
 		{
@@ -635,12 +615,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": 6}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE ((op1 = $2) AND (op2 = $3))",
-			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE (op1 = $2)",
+			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -655,12 +634,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": -6.54}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE ((op1 = $2) AND (op2 = $3))",
-			want1:   []interface{}{float64(-6.54), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE (op1 = $2)",
+			want1:   []interface{}{float64(-6.54), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -675,12 +653,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": int64(18)}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE ((op1 = $2) AND (op2 = $3))",
-			want1:   []interface{}{int64(18), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,$1) WHERE (op1 = $2)",
+			want1:   []interface{}{int64(18), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -695,7 +672,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": int64(18446744)}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
@@ -769,12 +745,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": 18446}},
 					Find: map[string]interface{}{
 						"op1": 67,
-						"op2": 78,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1+$1 WHERE ((op1 = $2) AND (op2 = $3))",
-			want1:   []interface{}{int64(18446), int64(67), int64(78)},
+			want:    "UPDATE project.col SET String1=String1+$1 WHERE (op1 = $2)",
+			want1:   []interface{}{int64(18446), int64(67)},
 			wantErr: false,
 		},
 		{
@@ -789,7 +764,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -809,7 +783,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -829,7 +802,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -849,7 +821,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -869,7 +840,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -889,7 +859,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDatshdge": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -909,12 +878,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
 					Find: map[string]interface{}{
 						"FindString1": "1",
-						"FindString2": "2",
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=@p1 WHERE ((FindString1 = @p2) AND (FindString2 = @p3))",
-			want1:   []interface{}{"1", "1", "2"},
+			want:    "UPDATE project.col SET String1=@p1 WHERE (FindString1 = @p2)",
+			want1:   []interface{}{"1", "1"},
 			wantErr: false,
 		},
 		{
@@ -948,12 +916,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": "timestamp"}}},
 					Find: map[string]interface{}{
 						"today": "1",
-						"op2":   "2",
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE ((today = @p2) AND (op2 = @p3))",
-			want1:   []interface{}{"1", "2"},
+			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE (today = @p2)",
+			want1:   []interface{}{"1"},
 			wantErr: false,
 		},
 		{
@@ -1016,12 +983,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$mul": map[string]interface{}{"String1": 6}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1*@p1 WHERE ((op1 = @p2) AND (op2 = @p3))",
-			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=String1*@p1 WHERE (op1 = @p2)",
+			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -1036,12 +1002,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132}},
 					Find: map[string]interface{}{
 						"op1": 121,
-						"op2": 21,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=GREATEST(String1,@p1) WHERE ((op1 = @p2) AND (op2 = @p3))",
-			want1:   []interface{}{int64(6132), int64(121), int64(21)},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,@p1) WHERE (op1 = @p2)",
+			want1:   []interface{}{int64(6132), int64(121)},
 			wantErr: false,
 		},
 		{
@@ -1056,12 +1021,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": 6132, "s2": 12}},
 					Find: map[string]interface{}{
 						"op1": 121,
-						"op2": 21,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=GREATEST(String1,@p1),s2=GREATEST(s2,@p2) WHERE ((op1 = @p3) AND (op2 = @p4))",
-			want1:   []interface{}{int64(6132), int64(12), int64(121), int64(21)},
+			want:    "UPDATE project.col SET String1=GREATEST(String1,@p1),s2=GREATEST(s2,@p2) WHERE (op1 = @p3)",
+			want1:   []interface{}{int64(6132), int64(12), int64(121)},
 			wantErr: false,
 		},
 		{
@@ -1076,12 +1040,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": 6}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE ((op1 = @p2) AND (op2 = @p3))",
-			want1:   []interface{}{int64(6), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE (op1 = @p2)",
+			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -1096,12 +1059,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": -6.54}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE ((op1 = @p2) AND (op2 = @p3))",
-			want1:   []interface{}{float64(-6.54), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE (op1 = @p2)",
+			want1:   []interface{}{float64(-6.54), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -1116,12 +1078,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": int64(18)}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE ((op1 = @p2) AND (op2 = @p3))",
-			want1:   []interface{}{int64(18), int64(1), int64(2)},
+			want:    "UPDATE project.col SET String1=LEAST(String1,@p1) WHERE (op1 = @p2)",
+			want1:   []interface{}{int64(18), int64(1)},
 			wantErr: false,
 		},
 		{
@@ -1136,7 +1097,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": int64(18446744)}},
 					Find: map[string]interface{}{
 						"op1": 1,
-						"op2": 2,
 					},
 				},
 			},
@@ -1210,12 +1170,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$inc": map[string]interface{}{"String1": 18446}},
 					Find: map[string]interface{}{
 						"op1": 67,
-						"op2": 78,
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1+@p1 WHERE ((op1 = @p2) AND (op2 = @p3))",
-			want1:   []interface{}{int64(18446), int64(67), int64(78)},
+			want:    "UPDATE project.col SET String1=String1+@p1 WHERE (op1 = @p2)",
+			want1:   []interface{}{int64(18446), int64(67)},
 			wantErr: false,
 		},
 		{
@@ -1230,7 +1189,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -1250,7 +1208,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$min": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -1270,7 +1227,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$max": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -1290,7 +1246,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": "s18446"}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -1310,7 +1265,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDate": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},
@@ -1330,7 +1284,6 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					Update: map[string]interface{}{"$currentDatshdge": map[string]interface{}{"String1": map[string]interface{}{"$type": 1}}},
 					Find: map[string]interface{}{
 						"op1": "67",
-						"op2": "78",
 					},
 				},
 			},

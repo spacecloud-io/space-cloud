@@ -97,7 +97,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 					}
 				}
 			}
-			sqlQuery, args, err := s.generateCreateQuery(ctx, project, col, &model.CreateRequest{Document: doc, Operation: utils.One})
+			sqlQuery, args, err := s.generateCreateQuery(project, col, &model.CreateRequest{Document: doc, Operation: utils.One})
 			if err != nil {
 				return 0, err
 			}
