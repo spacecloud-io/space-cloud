@@ -20,7 +20,10 @@ node_modules
 css
 .sass-cache
 
+# Ignore the binaries
 space-cloud
+gateway/gateway
+
 raft-store
 publish.sh
 
