@@ -306,10 +306,10 @@ func TestSQL_generateDeleteQuery(t *testing.T) {
 			args: args{
 				project: "projectName",
 				col:     "fooTable",
-				req:     &model.DeleteRequest{Find: map[string]interface{}{"String1": "1", "String2": "2"}},
+				req:     &model.DeleteRequest{Find: map[string]interface{}{"String2": "2"}},
 			},
-			want:    "DELETE FROM projectName.fooTable WHERE ((String1 = $1) AND (String2 = $2))",
-			want1:   []interface{}{"1", "2"},
+			want:    "DELETE FROM projectName.fooTable WHERE (String2 = $1)",
+			want1:   []interface{}{"2"},
 			wantErr: false,
 		},
 		{

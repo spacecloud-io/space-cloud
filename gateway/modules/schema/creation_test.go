@@ -2,7 +2,7 @@ package schema
 
 import (
 	"context"
-	"sort"
+	"log"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -1288,6 +1288,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				parsedSchema:  schemaType{"sqlserver": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &TableProperties{Order: 1, Sort: "asc"}}}}},
 				currentSchema: schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: typeInteger}}},
 			},
+			isSort:  true,
 			fields:  fields{crud: crudSqlServer, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 ALTER COLUMN col1 bigint NOT NULL", "CREATE INDEX index__table1__ ON test.table1 (col1 asc)"},
 			wantErr: false,
@@ -1535,6 +1536,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				parsedSchema:  schemaType{"postgres": schemaCollection{"table1": SchemaFields{"col1": &SchemaFieldType{FieldName: "col1", Kind: TypeID}, "col2": &SchemaFieldType{FieldName: "col2", Kind: typeString}}}},
 				currentSchema: schemaCollection{"table1": SchemaFields{}},
 			},
+			isSort:  true,
 			fields:  fields{crud: crudPostgres, project: "test"},
 			want:    []string{"ALTER TABLE test.table1 ADD COLUMN col1 varchar(50)", "ALTER TABLE test.table1 ADD COLUMN col2 text"},
 			wantErr: false,
@@ -2189,11 +2191,12 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 					t.Errorf("name = %v, Schema.generateCreationQueries() length error = %v, want %v", tt.name, got, tt.want)
 				}
 				if tt.isSort {
-					sort.Stable(sort.StringSlice(got))
-					sort.Stable(sort.StringSlice(tt.want))
+					got = sortArray(got)
+					tt.want = sortArray(tt.want)
 				}
 				for i, v := range got {
 					if tt.want[i] != v {
+						log.Println("sort:", tt.isSort)
 						t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)
 						return
 					}
@@ -2201,4 +2204,16 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			}
 		})
 	}
+}
+
+func sortArray(a []string) []string {
+	l := len(a)
+	for i := 0; i < l; i++ {
+		for j := i; j < l; j++ {
+			if a[i] > a[j] {
+				a[i], a[j] = a[j], a[i]
+			}
+		}
+	}
+	return a
 }

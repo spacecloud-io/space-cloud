@@ -1,4 +1,4 @@
 [submodule "mission-control"]
 	path = mission-control
-	url = git@github.com:spaceuptech/mission-control.git
+	url = https://github.com/spaceuptech/mission-control.git
 
