@@ -41,9 +41,10 @@ type ProjectScope map[string][]string // (project name -> []scopes)
 
 // SSL holds the certificate and key file locations
 type SSL struct {
-	Enabled bool   `json:"enabled" yaml:"enabled"`
-	Crt     string `json:"crt" yaml:"crt"`
-	Key     string `json:"key" yaml:"key"`
+	Enabled     bool        `json:"enabled" yaml:"enabled"`
+	LetsEncrypt LetsEncrypt `json:"letsencrypt" yaml:"letsencrypt"`
+	Crt         string      `json:"crt" yaml:"crt"`
+	Key         string      `json:"key" yaml:"key"`
 }
 
 // Modules holds the config of all the modules of that environment
@@ -60,7 +61,7 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Type        string                `json:"type" yaml:"type"`  // database type
+	Type        string                `json:"type" yaml:"type"` // database type
 	Conn        string                `json:"conn" yaml:"conn"`
 	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
@@ -172,3 +173,21 @@ type EventingRule struct {
 	Url     string            `json:"url" yaml:"url"`
 	Options map[string]string `json:"options" yaml:"options"`
 }
+
+// LetsEncrypt describes the configuration for let's encrypt
+type LetsEncrypt struct {
+	Email              string               `json:"email" yaml:"email"`
+	WhitelistedDomains []string             `json:"whitelist" yaml:"whitelist"`
+	StoreType          LetsEncryptStoreType `json:"store" yaml:"store"`
+}
+
+// LetsEncryptStoreType describes the store used by the lets encrypt module
+type LetsEncryptStoreType string
+
+const (
+	// LetsEncryptStoreLocal is used when the local filesystem us used as a store
+	LetsEncryptStoreLocal LetsEncryptStoreType = "local"
+
+	// LetsEncryptStoreSC is used when SC is supposed to be used as a store
+	LetsEncryptStoreSC LetsEncryptStoreType = "sc"
+)

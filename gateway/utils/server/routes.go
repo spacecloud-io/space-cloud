@@ -8,17 +8,9 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 )
 
-// InitRoutes initialises the http routes
-func (s *Server) InitRoutes(profiler bool, staticPath string) {
-	s.routes(s.router, profiler, staticPath)
-}
+func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
+	router := mux.NewRouter()
 
-// InitSecureRoutes initialises the http routes
-func (s *Server) InitSecureRoutes(profiler bool, staticPath string) {
-	s.routes(s.routerSecure, profiler, staticPath)
-}
-
-func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// Initialize the routes for config management
 	router.Methods("GET").Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods("POST").Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
@@ -115,4 +107,6 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	}
 
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
+
+	return router
 }
