@@ -71,7 +71,7 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		service := vars["service"]
 		project := vars["project"]
 
-		if err := syncMan.SetDeleteService(ctx, project, service); err != nil {
+		if err := syncMan.DeleteService(ctx, project, service); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

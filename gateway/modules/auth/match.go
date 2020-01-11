@@ -71,7 +71,7 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHttpReque
 	}
 
 	var result interface{}
-	return MakeHttpRequest(ctx, "POST", rule.Url, token, scToken, obj, &result)
+	return MakeHttpRequest(ctx, "POST", rule.URL, token, scToken, obj, &result)
 }
 
 func matchQuery(ctx context.Context, project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {

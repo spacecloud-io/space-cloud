@@ -116,7 +116,7 @@ func writeConfig(i *input, configFilePath string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer utils.CloseTheCloser(f)
 
 	tmplString := templateString
 

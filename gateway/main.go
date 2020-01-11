@@ -69,6 +69,11 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Removes the project level scope in the database and file storage modules",
 		EnvVar: "REMOVE_PROJECT_SCOPE",
 	},
+	cli.BoolFlag{
+		Name:   "ssl-enable",
+		Usage:  "Enable https and lets encrypt support",
+		EnvVar: "SSL_ENABLE",
+	},
 	cli.StringFlag{
 		Name:   "ssl-cert",
 		Value:  "none",
@@ -168,6 +173,7 @@ func actionRun(c *cli.Context) error {
 	removeProjectScope := c.Bool("remove-project-scope")
 
 	// Load flags related to ssl
+	sslEnable := c.Bool("ssl-enable")
 	sslKey := c.String("ssl-key")
 	sslCert := c.String("ssl-cert")
 
@@ -224,19 +230,15 @@ func actionRun(c *cli.Context) error {
 		return err
 	}
 
-	// Initialise the routes
-	s.InitRoutes(profiler, staticPath)
-
 	// Set the ssl config
-	if sslCert != "none" && sslKey != "none" {
-		s.InitSecureRoutes(profiler, staticPath)
+	if sslEnable {
 		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(disableMetrics, port)
+	return s.Start(profiler, disableMetrics, staticPath, port)
 }
 
 func actionInit(*cli.Context) error {
