@@ -31,6 +31,9 @@ const (
 	// Mongo is the type used for MongoDB
 	Mongo DBType = "mongo"
 
+	// BoltDb is the type used for BoltDB
+	BoltDb DBType = "bolt"
+
 	// MySQL is the type used for MySQL
 	MySQL DBType = "mysql"
 
@@ -197,7 +200,7 @@ type ForeignKeysType struct {
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }
 
-//IndexType is the type use to indexkey information of sql inspection
+// IndexType is the type use to indexkey information of sql inspection
 type IndexType struct {
 	TableName  string `db:"TABLE_NAME"`
 	ColumnName string `db:"COLUMN_NAME"`

@@ -24,7 +24,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 	}
 
 	// Return gracefully if db type is mongo
-	if dbType == string(utils.Mongo) {
+	if dbType == string(utils.Mongo) || dbType == string(utils.BoltDb) {
 		return nil
 	}
 

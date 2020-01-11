@@ -10,6 +10,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/crud/bolt"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/mgo"
@@ -66,6 +67,8 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string)
 	switch dbType {
 	case utils.Mongo:
 		return mgo.Init(enabled, connection)
+	case utils.BoltDb:
+		return bolt.Init(enabled, connection)
 
 	case utils.MySQL, utils.Postgres, utils.SqlServer:
 		return sql.Init(dbType, enabled, m.removeProjectScope, connection)
