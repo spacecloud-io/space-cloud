@@ -155,6 +155,8 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.routes(profiler, staticPath))
+	handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
+	handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
 	logrus.Infoln("Starting http server on port: " + strconv.Itoa(port))
 
@@ -163,7 +165,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 	fmt.Println()
 
 	logrus.Infoln("Space cloud is running on the specified ports :D")
-	return http.ListenAndServe(":"+strconv.Itoa(port), handlers.HandleMetricMiddleWare(handler, s.metrics))
+	return http.ListenAndServe(":"+strconv.Itoa(port), handler)
 }
 
 // SetConfig sets the config
