@@ -66,7 +66,7 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -80,8 +80,7 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 		connState := crud.GetConnectionState(ctx, dbType)
 
 		w.WriteHeader(http.StatusOK) // http status code
-		json.NewEncoder(w).Encode(map[string]bool{"status": connState})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]bool{"status": connState})
 	}
 }
 
@@ -90,12 +89,12 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -110,19 +109,18 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 
 		if err := crud.DeleteTable(ctx, project, dbType, col); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if err := syncman.SetDeleteCollection(ctx, project, dbType, col); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status code
-		json.NewEncoder(w).Encode(map[string]string{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
 }
 
@@ -133,13 +131,13 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 		token := utils.GetTokenFromHeader(r)
 
 		v := config.CrudStub{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -151,13 +149,12 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 
 		if err := syncman.SetDatabaseConnection(ctx, project, dbType, v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 

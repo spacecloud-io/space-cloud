@@ -54,6 +54,7 @@ type Modules struct {
 	FileStore   *FileStore      `json:"fileStore" yaml:"fileStore"`
 	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
+	Routes      Routes          `json:"routes" yaml:"routes"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -178,3 +179,35 @@ type EventingRule struct {
 type LetsEncrypt struct {
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
 }
+
+// Routes describes the configuration for the routing module
+type Routes []Route
+
+// Route describes the parameters of a single route
+type Route struct {
+	Source      RouteSource      `json:"source" yaml:"source"`
+	Destination RouteDestination `json:"dest" yaml:"dest"`
+}
+
+type RouteSource struct {
+	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
+	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
+	RewriteURL string       `json:"rewrite,omitempty" yaml:"rewrite,omitempty"`
+	Type       RouteURLType `json:"type,omitempty" yaml:"type,omitempty"`
+}
+
+type RouteDestination struct {
+	Host string `json:"host,omitempty" yaml:"host,omitempty"`
+	Port string `json:"port,omitempty" yaml:"port,omitempty"`
+}
+
+// RouteURLType describes how the url should be evaluated / matched
+type RouteURLType string
+
+const (
+	// RoutePrefix is used for prefix matching
+	RoutePrefix RouteURLType = "prefix"
+
+	// RouteExact is used for matching the url exactly as it is
+	RouteExact RouteURLType = "exact"
+)
