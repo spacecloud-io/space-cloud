@@ -48,11 +48,12 @@ type SSL struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud      Crud            `json:"crud" yaml:"crud"`
-	Auth      Auth            `json:"auth" yaml:"auth"`
-	Services  *ServicesModule `json:"services" yaml:"services"`
-	FileStore *FileStore      `json:"fileStore" yaml:"fileStore"`
-	Eventing  Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
+	Crud        Crud            `json:"crud" yaml:"crud"`
+	Auth        Auth            `json:"auth" yaml:"auth"`
+	Services    *ServicesModule `json:"services" yaml:"services"`
+	FileStore   *FileStore      `json:"fileStore" yaml:"fileStore"`
+	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
+	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -60,7 +61,7 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Type        string                `json:"type" yaml:"type"`  // database type
+	Type        string                `json:"type" yaml:"type"` // database type
 	Conn        string                `json:"conn" yaml:"conn"`
 	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
@@ -85,10 +86,10 @@ type Rule struct {
 	DB      string                 `json:"db,omitempty" yaml:"db,omitempty"`
 	Col     string                 `json:"col,omitempty" yaml:"col,omitempty"`
 	Find    map[string]interface{} `json:"find,omitempty" yaml:"find,omitempty"`
-	Url     string                 `json:"url,omitempty" yaml:"url,omitempty"`
-	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty`
-	Field   string                 `json:"field,omitempty" yaml:"field,omitempty`
-	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty`
+	URL     string                 `json:"url,omitempty" yaml:"url,omitempty"`
+	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
+	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
+	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -169,6 +170,11 @@ type Eventing struct {
 type EventingRule struct {
 	Type    string            `json:"type" yaml:"type"`
 	Retries int               `json:"retries" yaml:"retries"`
-	Url     string            `json:"url" yaml:"url"`
+	URL     string            `json:"url" yaml:"url"`
 	Options map[string]string `json:"options" yaml:"options"`
+}
+
+// LetsEncrypt describes the configuration for let's encrypt
+type LetsEncrypt struct {
+	WhitelistedDomains []string `json:"domains" yaml:"domains"`
 }

@@ -59,7 +59,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, batchID, utils.EventStatusStaged, r.Url, req)
+			eventDoc := m.generateQueueEventRequest(token, r.Retries, batchID, utils.EventStatusStaged, r.URL, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -189,7 +189,7 @@ func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) boo
 		return false
 	}
 
-	if rule1.Url != rule2.Url {
+	if rule1.URL != rule2.URL {
 		return false
 	}
 
