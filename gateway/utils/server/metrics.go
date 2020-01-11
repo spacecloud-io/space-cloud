@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -79,14 +81,14 @@ func (s *Server) RoutineMetrics() {
 	find, update := s.generateMetricsRequest()
 	err := updateSCMetrics(find, update)
 	if err != nil {
-		// fmt.Println("Metrics Error -", err)
+		logrus.Debugln("Metrics Error -", err)
 	}
 
 	for range ticker.C {
 		find, update := s.generateMetricsRequest()
 		err := updateSCMetrics(find, update)
 		if err != nil {
-			// fmt.Println("Metrics Error -", err)
+			logrus.Debugln("Metrics Error -", err)
 		}
 	}
 }

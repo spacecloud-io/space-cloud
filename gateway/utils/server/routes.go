@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net/http"
 	"net/http/pprof"
 
 	"github.com/gorilla/mux"
@@ -50,6 +51,9 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 
 	// Initialize route for getting all schemas for all the collections present in config.crud
 	router.Methods("GET").Path("/v1/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.schema))
+
+	// Initialize routes for the routing module
+	router.Methods(http.MethodPost).Path("/v1/config/routing/letsencrypt").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.adminMan, s.letsencrypt))
 
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))

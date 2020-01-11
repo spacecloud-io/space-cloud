@@ -39,6 +39,7 @@ type Server struct {
 	configFilePath string
 	adminMan       *admin.Manager
 	syncMan        *syncman.Manager
+	letsencrypt    *letsencrypt.LetsEncrypt
 	metrics        *metrics.Module
 	ssl            *config.SSL
 	graphql        *graphql.Module
@@ -90,10 +91,16 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 	u := userman.Init(c, a)
 	graphqlMan := graphql.New(a, c, fn, s)
 
+	// Initialise a lets encrypt client
+	le, err := letsencrypt.New()
+	if err != nil {
+		return nil, err
+	}
+
 	logrus.Infoln("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, auth: a, crud: c,
-		user: u, file: f, syncMan: syncMan, adminMan: adminMan, metrics: m,
+		user: u, file: f, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, metrics: m,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
 		eventing: e, graphql: graphqlMan, schema: s}, nil
 }
@@ -115,21 +122,16 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 	corsObj := utils.CreateCorsObject()
 
 	if s.ssl != nil && s.ssl.Enabled {
-		// Initialise a lets encrypt client
-		le, err := letsencrypt.New()
-		if err != nil {
-			return err
-		}
 
 		// Setup the handler
 		handler := corsObj.Handler(s.routes(profiler, staticPath))
 		handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
-		handler = le.LetsEncryptHTTPChallengeHandler(handler)
+		handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
 		// Add existing certificates if any
 		if s.ssl.Key != "none" && s.ssl.Crt != "none" {
 			logrus.Debugln("Adding existing certificates")
-			if err := le.AddExistingCertificate(s.ssl.Crt, s.ssl.Key); err != nil {
+			if err := s.letsencrypt.AddExistingCertificate(s.ssl.Crt, s.ssl.Key); err != nil {
 				logrus.Errorf("Could not log existing certificates")
 				return err
 			}
@@ -138,7 +140,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 		go func() {
 			// Start the server
 			logrus.Info("Starting https server on port: " + strconv.Itoa(port+4))
-			httpsServer := &http.Server{Addr: ":" + strconv.Itoa(port+4), Handler: handler, TLSConfig: le.TLSConfig()}
+			httpsServer := &http.Server{Addr: ":" + strconv.Itoa(port+4), Handler: handler, TLSConfig: s.letsencrypt.TLSConfig()}
 			if err := httpsServer.ListenAndServeTLS("", ""); err != nil {
 				logrus.Fatalln("Error starting https server:", err)
 			}
