@@ -52,8 +52,9 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	// Initialize route for getting all schemas for all the collections present in config.crud
 	router.Methods("GET").Path("/v1/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.schema))
 
-	// Initialize routes for the routing module
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/letsencrypt").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.adminMan, s.syncMan))
+	// Initialize routes for the global modules
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/letsencrypt").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing").HandlerFunc(handlers.HandleRoutingConfigRequest(s.adminMan, s.syncMan))
 
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
@@ -110,7 +111,10 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 		router.Handle("/debug/pprof/block", pprof.Handler("block"))
 	}
 
+	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
 
+	// Add handler for routing module
+	router.PathPrefix("/").HandlerFunc(s.routing.HandleRoutes())
 	return router
 }

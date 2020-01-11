@@ -23,7 +23,7 @@ func (l *LetsEncrypt) AddExistingCertificate(certFile, keyFile string) error {
 	return l.client.CacheUnmanagedCertificatePEMFile(certFile, keyFile, []string{})
 }
 
-// SetProjectLetsEncryptDomains sets the config required by lets encrypt
+// SetProjectDomains sets the config required by lets encrypt
 func (l *LetsEncrypt) SetProjectDomains(project string, c config.LetsEncrypt) error {
 	l.lock.Lock()
 	defer l.lock.Unlock()
@@ -41,9 +41,10 @@ func (l *LetsEncrypt) SetProjectDomains(project string, c config.LetsEncrypt) er
 }
 
 // DeleteProjectDomains deletes a projects associated domains
-func (l *LetsEncrypt) DeleteProjectDomains(project string) {
+func (l *LetsEncrypt) DeleteProjectDomains(project string) error {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	l.domains.deleteProject(project)
+	return l.client.ManageSync(l.domains.getUniqueDomains())
 }

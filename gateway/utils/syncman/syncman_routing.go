@@ -6,8 +6,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
-// SetProjectLetsEncryptDomains sets a projects whitelisted domains
-func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project string, c config.LetsEncrypt) error {
+// SetProjectRoutes sets a projects routes
+func (s *Manager) SetProjectRoutes(ctx context.Context, project string, c config.Routes) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -17,8 +17,8 @@ func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project stri
 		return err
 	}
 
-	// Update the projects domains
-	projectConfig.Modules.LetsEncrypt = c
+	// Update the project's routes
+	projectConfig.Modules.Routes = c
 
 	return s.setProject(ctx, projectConfig)
 }
