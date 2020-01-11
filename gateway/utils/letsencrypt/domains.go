@@ -1,5 +1,7 @@
 package letsencrypt
 
+import "github.com/spaceuptech/space-cloud/gateway/utils"
+
 type domainMapping map[string][]string // key is project id and array is domain
 
 func (d domainMapping) setProjectDomains(project string, domains []string) {
@@ -17,20 +19,11 @@ func (d domainMapping) getUniqueDomains() []string {
 	for _, v := range d {
 		// Iterate over all domains in project
 		for _, domain := range v {
-			if !exists(domains, domain) {
+			if !utils.StringExists(domains, domain) {
 				domains = append(domains, domain)
 			}
 		}
 	}
 
 	return domains
-}
-
-func exists(array []string, element string) bool {
-	for _, v := range array {
-		if v == element {
-			return true
-		}
-	}
-	return false
 }

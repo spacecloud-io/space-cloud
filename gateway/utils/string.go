@@ -7,14 +7,14 @@ import (
 // SingleLeading ensures that a string s starts with ch, but doesnt end with it
 func SingleLeading(s string, ch string) string {
 	/*
-	Examples
-	/ 		-> /
-	// 		-> /
-	/a/ 	-> /a
-	/a/b/d 	-> /a/b/d
-	a/b 	-> /a/b
-	/a/b/ 	-> /a/b
-	a/b/ 	-> /a/b
+		Examples
+		/ 		-> /
+		// 		-> /
+		/a/ 	-> /a
+		/a/b/d 	-> /a/b/d
+		a/b 	-> /a/b
+		/a/b/ 	-> /a/b
+		a/b/ 	-> /a/b
 	*/
 	s = strings.Trim(s, ch)
 	return ch + s
@@ -29,17 +29,17 @@ func SingleTrailing(s string, ch string) string {
 // SingleLeadingTrailing ensures that a string s starts and ends with single occurence of ch
 func SingleLeadingTrailing(s string, ch string) string {
 	/*
-	Examples
-	/ 		-> /
-	// 		-> /
-	/a/ 	-> /a/
-	/a/b/d 	-> /a/b/d/
-	a/b 	-> /a/b/
-	/a/b/ 	-> /a/b/
-	a/b/ 	-> /a/b/
+		Examples
+		/ 		-> /
+		// 		-> /
+		/a/ 	-> /a/
+		/a/b/d 	-> /a/b/d/
+		a/b 	-> /a/b/
+		/a/b/ 	-> /a/b/
+		a/b/ 	-> /a/b/
 	*/
 	s = strings.Trim(s, ch)
-	s = strings.TrimRight(ch + s, ch)
+	s = strings.TrimRight(ch+s, ch)
 	return s + ch
 }
 
@@ -65,4 +65,14 @@ func JoinLeadingTrailing(s1 string, s2 string, ch string) string {
 	s2 = strings.Trim(s2, ch)
 	s := s1 + ch + s2
 	return SingleLeadingTrailing(s, ch)
+}
+
+// StringExists returns true if the given string exists in the array
+func StringExists(array []string, element string) bool {
+	for _, v := range array {
+		if v == element {
+			return true
+		}
+	}
+	return false
 }

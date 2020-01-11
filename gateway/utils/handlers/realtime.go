@@ -40,6 +40,8 @@ func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.Hand
 	}
 }
 
+// HandleRealtimeProcessRequest handles the request received from the realtime module. This is a request sent to every gateway
+// instance in the cluster to propagate realtime changes
 func HandleRealtimeProcessRequest(auth *auth.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Load the params from the body

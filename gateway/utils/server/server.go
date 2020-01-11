@@ -23,6 +23,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
@@ -40,6 +41,7 @@ type Server struct {
 	adminMan       *admin.Manager
 	syncMan        *syncman.Manager
 	letsencrypt    *letsencrypt.LetsEncrypt
+	routing        *routing.Routing
 	metrics        *metrics.Module
 	ssl            *config.SSL
 	graphql        *graphql.Module
@@ -97,10 +99,13 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 		return nil, err
 	}
 
+	// Initialise the routing module
+	r := routing.New()
+
 	logrus.Infoln("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, auth: a, crud: c,
-		user: u, file: f, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, metrics: m,
+		user: u, file: f, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m,
 		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
 		eventing: e, graphql: graphqlMan, schema: s}, nil
 }
@@ -220,11 +225,14 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		// Set the configuration for the graphql module
 		s.graphql.SetConfig(p.ID)
 
-		// Set the configuration for letsencrypt
+		// Set the configuration for the letsencrypt module
 		if err := s.letsencrypt.SetProjectDomains(p.ID, p.Modules.LetsEncrypt); err != nil {
 			logrus.Errorln("Error in letsencrypt module config: ", err)
 			return err
 		}
+
+		// Set the configuration for the routing module
+		s.routing.SetProjectRoutes(p.ID, p.Modules.Routes)
 	}
 
 	return nil
