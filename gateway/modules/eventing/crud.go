@@ -270,7 +270,9 @@ func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbType, 
 		return nil, false
 	}
 
+	log.Println("Hello", dbType, col, find)
 	findForUpdate, possible := m.schema.CheckIfEventingIsPossible(dbType, col, find, true)
+	log.Println("Hello2", findForUpdate, possible)
 	if !possible {
 		return nil, false
 	}
