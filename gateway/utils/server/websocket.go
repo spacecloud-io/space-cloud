@@ -72,7 +72,6 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 
 				// Send response to c
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true, Docs: feedData}
-
 				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 
 			case utils.TypeRealtimeUnsubscribe:
