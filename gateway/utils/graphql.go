@@ -105,7 +105,7 @@ func ParseGraphqlValue(value ast.Value, store M) (interface{}, error) {
 }
 
 func adjustObjectKey(key string) string {
-	if strings.HasPrefix(key, "_") {
+	if strings.HasPrefix(key, "_") && key != "_id" {
 		key = "$" + key[1:]
 	}
 
