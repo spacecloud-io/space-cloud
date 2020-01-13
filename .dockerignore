@@ -19,6 +19,11 @@ mission-control/node_modules/**
 
 .sass-cache
 
+
+# Ignore the binaries
+space-cloud
+gateway/gateway
+
 raft-store/**
 publish.sh
 

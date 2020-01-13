@@ -1,0 +1,199 @@
+package syncman
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+
+	"golang.org/x/net/context"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
+)
+
+// GetEventSource returns the source id for the space cloud instance
+func (s *Manager) GetEventSource() string {
+	return fmt.Sprintf("sc-%s", s.nodeID)
+}
+
+// GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
+func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	if s.storeType == "none" {
+		return fmt.Sprintf("http://localhost:%d/v1/api/%s/eventing/process", s.port, project), nil
+	}
+
+	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
+
+	return fmt.Sprintf("http://%s/v1/api/%s/eventing/process", s.services[index].addr, project), nil
+}
+
+// GetSpaceCloudNodeURLs returns the array of space cloud urls
+func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	if s.storeType == "none" {
+		return []string{fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/process", s.port, project)}
+	}
+
+	urls := make([]string, len(s.services))
+
+	for i, svc := range s.services {
+		urls[i] = fmt.Sprintf("http://%s/v1/api/%s/realtime/process", svc.addr, project)
+	}
+
+	return urls
+}
+
+func (s *Manager) GetRealtimeUrl(project string) string {
+	return string(fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project))
+}
+
+// GetAssignedTokens returns the array or tokens assigned to this node
+func (s *Manager) GetAssignedTokens() (start, end int) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Always return true if running in single mode
+	if s.storeType == "none" {
+		return calcTokens(1, utils.MaxEventTokens, 0)
+	}
+
+	index := 0
+
+	for i, v := range s.services {
+		if v.id == s.nodeID {
+			index = i
+			break
+		}
+	}
+
+	totalMembers := len(s.services)
+	return calcTokens(totalMembers, utils.MaxEventTokens, index)
+}
+
+// GetClusterSize returns the size of the cluster
+func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Return 1 if not running with consul
+	if s.storeType == "none" {
+		return 1, nil
+	}
+
+	return len(s.services), nil
+}
+
+func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Project) (error, int) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), project); !ok {
+		return errors.New("Cannot create new project. Upgrade your plan"), http.StatusBadRequest
+	}
+
+	for _, p := range s.projectConfig.Projects {
+		if p.ID == project.ID {
+			return errors.New("project already exists in config"), http.StatusConflict
+		}
+	}
+
+	go s.projects.StoreIgnoreError(project)
+
+	s.setProjectConfig(project)
+
+	if s.storeType == "none" {
+		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
+	}
+
+	return s.store.SetProject(ctx, project), http.StatusInternalServerError
+}
+
+// SetProjectGlobalConfig applies the set project config command to the raft log
+func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Project) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project.ID)
+	if err != nil {
+		return err
+	}
+
+	projectConfig.Secret = project.Secret
+	projectConfig.Name = project.Name
+
+	// Set the user man config
+	if err := s.projects.SetGlobalConfig(project.ID, projectConfig.Secret); err != nil {
+		return err
+	}
+
+	return s.persistProjectConfig(ctx, projectConfig)
+}
+
+// SetProjectConfig applies the set project config command to the raft log
+func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), project); !ok {
+		return errors.New("Cannot create new project. Upgrade your plan")
+	}
+
+	return s.setProject(ctx, project)
+}
+
+func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
+	if err := s.projects.Store(project); err != nil {
+		return err
+	}
+
+	return s.persistProjectConfig(ctx, project)
+}
+
+func (s *Manager) persistProjectConfig(ctx context.Context, project *config.Project) error {
+	s.setProjectConfig(project)
+
+	if s.storeType == "none" {
+		return config.StoreConfigToFile(s.projectConfig, s.configFile)
+	}
+
+	return s.store.SetProject(ctx, project)
+}
+
+// DeleteProjectConfig applies delete project config command to the raft log
+func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	s.delete(projectID)
+	s.projects.Delete(projectID)
+
+	if s.storeType == "none" {
+		return config.StoreConfigToFile(s.projectConfig, s.configFile)
+	}
+
+	return s.store.DeleteProject(ctx, projectID)
+}
+
+// GetConfig returns the config present in the state
+func (s *Manager) GetConfig(projectID string) (*config.Project, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Iterate over all projects stored
+	for _, p := range s.projectConfig.Projects {
+		if projectID == p.ID {
+			return p, nil
+		}
+	}
+
+	return nil, errors.New("given project is not present in state")
+}
