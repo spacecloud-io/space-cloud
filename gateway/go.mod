@@ -4,7 +4,6 @@ require (
 	cloud.google.com/go v0.38.0
 	github.com/armon/go-metrics v0.0.0-20190430140413-ec5e00d3c878 // indirect
 	github.com/aws/aws-sdk-go v1.19.7
-	github.com/boltdb/bolt v1.3.1
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.17+incompatible
 	github.com/coreos/go-semver v0.3.0 // indirect
@@ -54,7 +53,7 @@ require (
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
-	go.etcd.io/bbolt v1.3.3 // indirect
+	go.etcd.io/bbolt v1.3.3
 	go.mongodb.org/mongo-driver v1.1.1
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.13.0 // indirect
