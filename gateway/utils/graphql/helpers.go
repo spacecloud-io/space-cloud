@@ -268,13 +268,3 @@ func addFieldPath(store utils.M, field string) {
 
 	store["path"] = store["path"].(string) + "." + field
 }
-
-func adjustObjectKey(key string) string {
-	if strings.HasPrefix(key, "_") && key != "_id" {
-		key = "$" + key[1:]
-	}
-
-	key = strings.ReplaceAll(key, "__", ".")
-
-	return key
-}
