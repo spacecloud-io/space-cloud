@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// SetService adds a remote service
 func (s *Manager) SetService(ctx context.Context, project, service string, value *config.Service) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -20,7 +21,8 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	return s.setProject(ctx, projectConfig)
 }
 
-func (s *Manager) SetDeleteService(ctx context.Context, project, service string) error {
+// DeleteService deletes a remotes service
+func (s *Manager) DeleteService(ctx context.Context, project, service string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

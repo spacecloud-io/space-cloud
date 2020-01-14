@@ -1,7 +1,7 @@
 package syncman
 
 import (
-	"errors"
+	"fmt"
 	"math"
 
 	"github.com/getlantern/deepcopy"
@@ -62,10 +62,13 @@ func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error
 	for _, p := range s.projectConfig.Projects {
 		if projectID == p.ID {
 			proj := new(config.Project)
-			deepcopy.Copy(proj, p)
+			if err := deepcopy.Copy(proj, p); err != nil {
+				return nil, err
+			}
+
 			return proj, nil
 		}
 	}
 
-	return nil, errors.New("given project is not present in state")
+	return nil, fmt.Errorf("given project (%s) is not present in state", projectID)
 }

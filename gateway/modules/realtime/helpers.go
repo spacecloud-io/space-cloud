@@ -45,7 +45,7 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 					for _, eventType := range dbEvents {
 						rule := config.EventingRule{
 							Type:    eventType,
-							Url:     url,
+							URL:     url,
 							Options: map[string]string{"db": dbAlias, "col": col},
 						}
 						eventingRules = append(eventingRules, rule)

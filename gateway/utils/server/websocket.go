@@ -57,7 +57,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 			case utils.TypeRealtimeSubscribe:
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
-				mapstructure.Decode(req.Data, data)
+				_ = mapstructure.Decode(req.Data, data)
 				data.Project = project
 
 				// Subscribe to realtime feed
@@ -77,7 +77,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 			case utils.TypeRealtimeUnsubscribe:
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
-				mapstructure.Decode(req.Data, data)
+				_ = mapstructure.Decode(req.Data, data)
 				data.Project = project
 
 				s.realtime.Unsubscribe(clientID, data)
@@ -127,7 +127,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 			log.Println("upgrade:", err)
 			return
 		}
-		defer socket.Close()
+		defer utils.CloseTheCloser(socket)
 
 		clientID := ksuid.New().String()
 		defer s.realtime.RemoveClient(clientID)

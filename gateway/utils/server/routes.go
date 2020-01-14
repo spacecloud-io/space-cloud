@@ -1,6 +1,7 @@
 package server
 
 import (
+	"net/http"
 	"net/http/pprof"
 
 	"github.com/gorilla/mux"
@@ -8,17 +9,9 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 )
 
-// InitRoutes initialises the http routes
-func (s *Server) InitRoutes(profiler bool, staticPath string) {
-	s.routes(s.router, profiler, staticPath)
-}
+func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
+	router := mux.NewRouter()
 
-// InitSecureRoutes initialises the http routes
-func (s *Server) InitSecureRoutes(profiler bool, staticPath string) {
-	s.routes(s.routerSecure, profiler, staticPath)
-}
-
-func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 	// Initialize the routes for config management
 	router.Methods("GET").Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods("POST").Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
@@ -58,6 +51,10 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 
 	// Initialize route for getting all schemas for all the collections present in config.crud
 	router.Methods("GET").Path("/v1/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.schema))
+
+	// Initialize routes for the global modules
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/letsencrypt").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing").HandlerFunc(handlers.HandleRoutingConfigRequest(s.adminMan, s.syncMan))
 
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
@@ -114,5 +111,10 @@ func (s *Server) routes(router *mux.Router, profiler bool, staticPath string) {
 		router.Handle("/debug/pprof/block", pprof.Handler("block"))
 	}
 
+	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
+
+	// Add handler for routing module
+	router.PathPrefix("/").HandlerFunc(s.routing.HandleRoutes())
+	return router
 }

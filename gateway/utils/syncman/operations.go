@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/hashicorp/consul/api"
 	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -25,9 +24,6 @@ func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, 
 	if s.storeType == "none" {
 		return fmt.Sprintf("http://localhost:%d/v1/api/%s/eventing/process", s.port, project), nil
 	}
-
-	opts := &api.QueryOptions{AllowStale: true}
-	opts = opts.WithContext(ctx)
 
 	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
 

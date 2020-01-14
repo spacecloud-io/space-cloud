@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"io"
 	"net/http"
 	"strings"
 
@@ -29,4 +30,9 @@ func CreateCorsObject() *cors.Cors {
 		AllowedHeaders: []string{"Authorization", "Content-Type"},
 		ExposedHeaders: []string{"Authorization", "Content-Type"},
 	})
+}
+
+// CloseTheCloser closes the closer
+func CloseTheCloser(c io.Closer) {
+	_ = c.Close()
 }
