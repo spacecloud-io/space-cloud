@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -30,7 +31,7 @@ const (
 func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
-		token, project, _ := getMetaData(r)
+		token, project, _ := getFileStoreMeta(r)
 		defer r.Body.Close()
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -104,7 +105,7 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 func HandleRead(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
-		token, project, path := getMetaData(r)
+		token, project, path := getFileStoreMeta(r)
 		defer r.Body.Close()
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -115,7 +116,6 @@ func HandleRead(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc
 		// List the specified directory if op type is list
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
-
 			status, res, err := fileStore.ListFiles(ctx, project, token, &model.ListFilesRequest{Path: path, Type: mode})
 			w.WriteHeader(status)
 			if err != nil {
@@ -123,6 +123,16 @@ func HandleRead(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc
 				return
 			}
 			json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
+			return
+		} else if op == "exist" {
+			log.Println("ldsfilh", path)
+			if err := fileStore.DoesExists(ctx, project, token, path); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]string{})
 			return
 		}
 
@@ -142,11 +152,12 @@ func HandleRead(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc
 func HandleDelete(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
-		token, project, path := getMetaData(r)
+		token, project, path := getFileStoreMeta(r)
 		defer r.Body.Close()
 
 		v := map[string]interface{}{}
-		json.NewDecoder(r.Body).Decode(v)
+		json.NewDecoder(r.Body).Decode(&v)
+		log.Println("v", v)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
@@ -162,7 +173,7 @@ func HandleDelete(auth *auth.Module, fileStore *filestore.Module) http.HandlerFu
 	}
 }
 
-func getMetaData(r *http.Request) (token string, project string, path string) {
+func getFileStoreMeta(r *http.Request) (token string, project string, path string) {
 	// Load the path parameters
 	vars := mux.Vars(r)
 	project = vars["project"]
@@ -173,7 +184,11 @@ func getMetaData(r *http.Request) (token string, project string, path string) {
 		tokens = []string{""}
 	}
 	token = strings.TrimPrefix(tokens[0], "Bearer ")
-	a := strings.Split(r.URL.Path, "/")[5:]
-	path = string(os.PathSeparator) + strings.Join(a, "/")
+	a := strings.Split(r.URL.Path, "/")
+	for index, value := range a {
+		if value == "files" {
+			path = string(os.PathSeparator) + strings.Join(a[index+1:], "/")
+		}
+	}
 	return
 }

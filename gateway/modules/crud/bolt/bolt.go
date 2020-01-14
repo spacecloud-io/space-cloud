@@ -1,8 +1,11 @@
 package bolt
 
 import (
-	"github.com/boltdb/bolt"
+	"fmt"
+	"log"
+
 	"github.com/sirupsen/logrus"
+	"go.etcd.io/bbolt"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -10,15 +13,15 @@ import (
 type Bolt struct {
 	enabled    bool
 	connection string
-	client     *bolt.DB
+	client     *bbolt.DB
 }
 
 // Init initialises a new bolt instance
-func Init(enabled bool, connection string) (mongoStub *Bolt, err error) {
-	mongoStub = &Bolt{enabled: enabled, connection: connection, client: nil}
+func Init(enabled bool, connection string) (b *Bolt, err error) {
+	b = &Bolt{enabled: enabled, connection: connection}
 
-	if mongoStub.enabled {
-		err = mongoStub.connect()
+	if b.enabled {
+		err = b.connect()
 	}
 
 	return
@@ -50,11 +53,15 @@ func (b *Bolt) IsClientSafe() error {
 }
 
 func (b *Bolt) connect() error {
-	client, err := bolt.Open(b.connection, 0600, bolt.DefaultOptions)
+	if err := b.Close(); err != nil {
+		return fmt.Errorf("error closing previous database connection in bbolt db")
+	}
+
+	client, err := bbolt.Open(b.connection, 0600, bbolt.DefaultOptions)
 	if err != nil {
 		return err
 	}
-
+	log.Println("successfully connected to bbolt database")
 	b.client = client
 	return nil
 }
