@@ -28,7 +28,7 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		}
 
 		// Parse request body
-		project := new(model.Environment)
+		project := new(model.Project)
 		if err := json.NewDecoder(r.Body).Decode(project); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)

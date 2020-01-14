@@ -1,10 +1,7 @@
 package model
 
-// Environment describes the configuration of a project
-type Environment struct {
-	ID      string `json:"id" yaml:"id"`
-	Project string `json:"projectId" yaml:"projectId"`
+// ID describes the configuration of a project
+type Project struct {
+	ID          string `json:"id" yaml:"id"`
+	Environment string `json:"env" yaml:"env"`
 }
-
-// Environments describes a collection on environments
-type Environments []Environment

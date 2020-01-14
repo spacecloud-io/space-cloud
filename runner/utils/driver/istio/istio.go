@@ -33,6 +33,9 @@ type Istio struct {
 	// Drivers to talk to k8s and istio
 	kube  *kubernetes.Clientset
 	istio *versionedclient.Clientset
+
+	// For caching deployments
+	cache *cache
 }
 
 // NewIstioDriver creates a new instance of the istio driver
@@ -61,12 +64,18 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 		return nil, err
 	}
 
-	return &Istio{auth: auth, config: c, kube: kube, istio: istio}, nil
+	// Create a cache
+	cache, err := newCache(kube)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Istio{auth: auth, config: c, kube: kube, istio: istio, cache: cache}, nil
 }
 
 // ApplyService deploys the service on istio
 func (i *Istio) ApplyService(service *model.Service) error {
-	// TODO: do we need to rollback on failure? rollback to previous version if it existed else remove
+	// TODO: do we need to rollback on failure? rollback to previous version if it existed else remove. We also need to rollback the cache in this case
 	// TODO: Add support for custom runtime
 	// TODO: Add support for running multiple versions
 	// We are hard coding the version right now. But we need to create rules for running multiple versions of
@@ -106,6 +115,7 @@ func (i *Istio) ApplyService(service *model.Service) error {
 		if _, err := i.kube.AppsV1().Deployments(ns).Create(kubeDeployment); err != nil {
 			return err
 		}
+		_ = i.cache.setDeployment(ns, kubeDeployment.Name, kubeDeployment)
 
 		logrus.Debugf("Creating service for %s in %s", service.ID, ns)
 		if _, err := i.kube.CoreV1().Services(ns).Create(kubeService); err != nil {
@@ -140,6 +150,9 @@ func (i *Istio) ApplyService(service *model.Service) error {
 		// Update the resources
 		logrus.Debugf("Updating service for %s in %s", service.ID, ns)
 		if _, err := i.kube.AppsV1().Deployments(ns).Update(kubeDeployment); err != nil {
+			return err
+		}
+		if err := i.cache.setDeployment(ns, kubeDeployment.Name, kubeDeployment); err != nil {
 			return err
 		}
 
@@ -221,7 +234,7 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 	defer i.adjustScaleLock.Delete(uniqueName)
 
 	logrus.Debugf("Adjusting scale of service (%s:%s): Active reqs - %d", ns, service.ID, activeReqs)
-	deployment, err := i.kube.AppsV1().Deployments(ns).Get(getDeploymentName(service), metav1.GetOptions{})
+	deployment, err := i.cache.getDeployment(ns, getDeploymentName(service))
 	if err != nil {
 		return err
 	}
@@ -272,6 +285,10 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 	deployment.Spec.Replicas = &replicaCount
 	if _, err := i.kube.AppsV1().Deployments(ns).Update(deployment); err != nil {
 		logrus.Errorf("Could not adjust scale: %s", err.Error())
+		return err
+	}
+	if err := i.cache.setDeployment(ns, deployment.Name, deployment); err != nil {
+		logrus.Errorf("Could not update cache in adjust scale: %s", err.Error())
 		return err
 	}
 
@@ -327,8 +344,13 @@ func (i *Istio) WaitForService(service *model.Service) error {
 }
 
 // CreateProject creates a new namespace for the client
-func (i *Istio) CreateProject(project *model.Environment) error {
-	ns := &v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: project.ID, Labels: map[string]string{"istio-injection": "enabled"}}}
+func (i *Istio) CreateProject(project *model.Project) error {
+	ns := &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   getNamespaceName(project.ID, project.Environment),
+			Labels: map[string]string{"istio-injection": "enabled"},
+		},
+	}
 	_, err := i.kube.CoreV1().Namespaces().Create(ns)
 	return err
 }
