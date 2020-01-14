@@ -54,3 +54,29 @@ jobs:
         run: cd runner && go build -v .
       - name: Test
         run: cd runner && go test ./...
+  metric:
+    name: Build and test metric proxy
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Get dependencies
+        run: |
+          cd metric-proxy && go get -v -t -d ./...
+          if [ -f Gopkg.toml ]; then
+              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              dep ensure
+          fi
+
+      - name: Build
+        run: cd metric-proxy && go build -v .
+      - name: Test
+        run: cd metric-proxy && go test ./...

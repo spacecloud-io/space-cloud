@@ -57,7 +57,7 @@ func New(c *Config) (*Server, error) {
 
 	debounce := utils.NewDebounce()
 
-	opts := badger.DefaultOptions("/tmp/galaxy.db")
+	opts := badger.DefaultOptions("/tmp/runner.db")
 	opts.Logger = &logrus.Logger{Out: ioutil.Discard}
 	db, err := badger.Open(opts)
 	if err != nil {

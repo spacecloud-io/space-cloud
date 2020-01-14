@@ -82,7 +82,7 @@ func main() {
 				cli.BoolFlag{
 					Name:   "outside-cluster",
 					EnvVar: "OUTSIDE_CLUSTER",
-					Usage:  "Indicates whether galaxy in running inside the cluster",
+					Usage:  "Indicates whether runner in running inside the cluster",
 				},
 			},
 			Action: actionRunner,
@@ -91,6 +91,6 @@ func main() {
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatalln("Failed to start galaxy:", err)
+		logrus.Fatalln("Failed to start runner:", err)
 	}
 }

@@ -24,6 +24,7 @@ css
 space-cloud
 gateway/gateway
 runner/runner
+metric-proxy/metric-proxy
 
 raft-store
 publish.sh
