@@ -33,15 +33,20 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType string) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, scStoreProject, scStoreAddr, scStoreDb string) (*Manager, error) {
 
 	// Create a new manager instance
 	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType}
 
 	// Initialise the consul client if enabled
 	switch storeType {
-	case "none":
-		return m, nil
+	case "sc":
+		s, err := NewSCStore(clusterID, scStoreProject, scStoreAddr, scStoreDb)
+		if err != nil {
+			return nil, err
+		}
+		m.store = s
+		m.store.Register()
 	case "consul":
 		s, err := NewConsulStore(nodeID, clusterID, advertiseAddr)
 		if err != nil {

@@ -49,7 +49,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, scStoreProject, scStoreAddr, scStoreDb string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 
 	// Create the fundamental modules
 	c := crud.Init(removeProjectScope)
@@ -60,7 +60,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 	}
 
 	adminMan := admin.New()
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, scStoreProject, scStoreAddr, scStoreDb)
 	if err != nil {
 		return nil, err
 	}

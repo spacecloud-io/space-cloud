@@ -57,7 +57,25 @@ var essentialFlags = []cli.Flag{
 		Name:   "store-type",
 		Usage:  "The config store to use for storing project configs and other meta data",
 		EnvVar: "STORE_TYPE",
-		Value:  "none",
+		Value:  "sc",
+	},
+	cli.StringFlag{
+		Name:   "sc-store-project",
+		Usage:  "The project name of sc store",
+		EnvVar: "SC_STORE_PROJECT",
+		Value:  "project",
+	},
+	cli.StringFlag{
+		Name:   "sc-store-addr",
+		Usage:  "The address of the sc store",
+		EnvVar: "SC-STORE-ADDR",
+		Value:  "localhost:4122",
+	},
+	cli.StringFlag{
+		Name:   "sc-store-db",
+		Usage:  "The selected database of sc store",
+		EnvVar: "SC_STORE_DB",
+		Value:  "bolt",
 	},
 	cli.IntFlag{
 		Name:   "port",
@@ -193,12 +211,16 @@ func actionRun(c *cli.Context) error {
 	metricsConn := c.String("metrics-conn")
 	metricsScope := c.String("metrics-scope")
 
+	// Load the flags for sc store
+	scStoreProject := c.String("sc-store-project")
+	scStoreAddr := c.String("sc-store-addr")
+	scStoreDb := c.String("sc-store-db")
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, removeProjectScope,
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, scStoreProject, scStoreAddr, scStoreDb, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
