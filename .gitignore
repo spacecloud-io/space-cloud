@@ -23,6 +23,7 @@ css
 # Ignore the binaries
 space-cloud
 gateway/gateway
+runner/runner
 
 raft-store
 publish.sh
