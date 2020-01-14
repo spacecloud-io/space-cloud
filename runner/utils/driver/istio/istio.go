@@ -265,7 +265,7 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 	}
 
 	// Update the virtual service if the new replica count is zero. This is required to redirect incoming http requests to
-	// the galaxy runner proxy. The proxy is responsible to scale the service back up from zero.
+	// the runner proxy. The proxy is responsible to scale the service back up from zero.
 	if replicaCount == 0 {
 		virtualService, err := i.istio.NetworkingV1alpha3().VirtualServices(ns).Get(service.ID, metav1.GetOptions{})
 		if err != nil {

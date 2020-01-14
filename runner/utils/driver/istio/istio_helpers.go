@@ -74,15 +74,15 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 	if !isTCP {
 		token, _ := i.auth.SignProxyToken(ksuid.New().String(), service.ProjectID, service.ID, service.Environment, service.Version)
 		containers = append(containers, v1.Container{
-			Name: "galaxy-metrics",
+			Name: "metric-proxy",
 			Env:  []v1.EnvVar{{Name: "TOKEN", Value: token}},
 
 			// Resource Related
 			Resources: *generateResourceRequirements(&model.Resources{CPU: 20, Memory: 50}),
 
 			// Docker related
-			Image:           "spaceuptech/space-cloud/runner:latest",
-			Command:         []string{"./galaxy"},
+			Image:           "spaceuptech/metric-proxy:latest",
+			Command:         []string{"./metric-proxy"},
 			Args:            []string{"proxy"},
 			ImagePullPolicy: v1.PullIfNotPresent,
 		})
@@ -131,12 +131,12 @@ func makeOriginalVirtualService(service *model.Service, virtualService *v1alpha3
 func makeScaleZeroVirtualService(service *model.Service, virtualService *v1alpha3.VirtualService, proxyPort uint32) {
 	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
 
-	// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
+	// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
 	// to service incoming requests.
 	for _, httpRoute := range virtualService.Spec.Http {
 		for _, route := range httpRoute.Route {
-			// Set the destination to galaxy runner proxy
-			route.Destination.Host = "runner.galaxy.svc.cluster.local"
+			// Set the destination to runner proxy
+			route.Destination.Host = "runner.space-cloud.svc.cluster.local"
 			route.Destination.Port.Number = proxyPort
 
 			// Set the headers
@@ -170,7 +170,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 				destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
 				destPort := uint32(port.Port)
 
-				// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
+				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
 				// to service incoming requests.
 				if service.Scale.Replicas == 0 {
 					headers = &networkingv1alpha3.Headers{
@@ -186,7 +186,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 						},
 					}
 					retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
-					destHost = "runner.galaxy.svc.cluster.local"
+					destHost = "runner.space-cloud.svc.cluster.local"
 					destPort = proxyPort
 				}
 
@@ -235,7 +235,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 			destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
 			destPort := uint32(rule.Port)
 
-			// Redirect traffic to galaxy runner when no of replicas is equal to zero. The galaxy proxy will scale up the service
+			// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
 			// to service incoming requests.
 			if service.Scale.Replicas == 0 {
 				headers = &networkingv1alpha3.Headers{
@@ -251,7 +251,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 					},
 				}
 				retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
-				destHost = "runner.galaxy.svc.cluster.local"
+				destHost = "runner.space-cloud.svc.cluster.local"
 				destPort = proxyPort
 			}
 
@@ -365,8 +365,8 @@ func prepareAuthPolicyRules(service *model.Service) []*securityv1beta1.Rule {
 func prepareUpstreamHosts(service *model.Service) []string {
 	hosts := make([]string, len(service.Upstreams)+1)
 
-	// First entry will always be galaxy
-	hosts[0] = "galaxy/*"
+	// First entry will always be space-cloud
+	hosts[0] = "space-cloud/*"
 
 	for i, upstream := range service.Upstreams {
 		hosts[i+1] = upstream.ProjectID + "/" + upstream.Service
