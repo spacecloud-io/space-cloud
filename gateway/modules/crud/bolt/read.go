@@ -24,7 +24,7 @@ func (b *Bolt) Read(ctx context.Context, project, col string, req *model.ReadReq
 			c := tx.Bucket([]byte(project)).Cursor()
 
 			if c == nil {
-				fmt.Errorf("error reading from bbolt db unable to find specifed bucket")
+				return fmt.Errorf("error reading from bbolt db unable to find specifed bucket")
 			}
 
 			prefix := []byte(col + "/")

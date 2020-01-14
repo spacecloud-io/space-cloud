@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sirupsen/logrus"
 	"go.etcd.io/bbolt"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -47,20 +46,18 @@ func (b *Bolt) Create(ctx context.Context, project, col string, req *model.Creat
 					Operation: utils.Count,
 				})
 				if count > 0 || err != nil {
-					logrus.Errorf("error inserting into bboltdb data already exists - %v", err)
+					return fmt.Errorf("error inserting into bboltdb data already exists - %v", err)
 				}
 
 				b, err := tx.CreateBucketIfNotExists([]byte(project))
 				if err != nil {
-					logrus.Errorf("error creating bucket in bboltdb while inserting- %v", err)
-					return err
+					return fmt.Errorf("error creating bucket in bboltdb while inserting- %v", err)
 				}
 
 				// store value as json string
 				value, err := json.Marshal(&objToSet)
 				if err != nil {
-					logrus.Errorf("error marshalling while inserting in bboltdb - %v", err)
-					return err
+					return fmt.Errorf("error marshalling while inserting in bboltdb - %v", err)
 				}
 
 				// insert document in bucket

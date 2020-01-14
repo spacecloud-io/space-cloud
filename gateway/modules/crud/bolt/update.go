@@ -19,10 +19,7 @@ func (b *Bolt) Update(ctx context.Context, project, col string, req *model.Updat
 	case utils.One, utils.All, utils.Upsert:
 		if err := b.client.Update(func(tx *bbolt.Tx) error {
 			// Assume bucket exists and has keys
-			bucket, err := tx.CreateBucketIfNotExists([]byte(project))
-			if err != nil {
-				return fmt.Errorf("error updaing in bbolt db cannot create bucket")
-			}
+			bucket := tx.Bucket([]byte(project))
 			c := bucket.Cursor()
 
 			// get all keys matching the prefix
@@ -61,22 +58,28 @@ func (b *Bolt) Update(ctx context.Context, project, col string, req *model.Updat
 					}
 				}
 			}
-
-			// todo $set should be map or array ?
-			objToSet, ok := req.Update["$set"].(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("error unable to update in bbolt - $set db operator not found or the operator value is not map")
-			}
-
-			if req.Operation == utils.Upsert && count == 0 {
-				if rowsAffected, err := b.Create(ctx, project, col, &model.CreateRequest{Operation: utils.All, Document: objToSet}); err != nil || rowsAffected == 0 {
-					return fmt.Errorf("error while upserting in bbolt db - %v rows affected %v", err, rowsAffected)
-				}
-			}
-
 			return nil
 		}); err != nil {
 			return 0, err
+		}
+		// todo $set should be map or array ?
+		objToSet, ok := req.Update["$set"].(map[string]interface{})
+		if !ok {
+			return 0, fmt.Errorf("error unable to update in bbolt - $set db operator not found or the operator value is not map")
+		}
+
+		if req.Operation == utils.Upsert && count == 0 {
+			for findName, findValue := range req.Find {
+				_, ok := objToSet[findName]
+				if !ok {
+					objToSet[findName] = findValue
+				}
+			}
+			rowsAffected, err := b.Create(ctx, project, col, &model.CreateRequest{Operation: utils.One, Document: objToSet})
+			if err != nil || rowsAffected == 0 {
+				return 0, fmt.Errorf("error while upserting in bbolt db - %v rows affected %v", err, rowsAffected)
+			}
+			count = rowsAffected
 		}
 		return count, nil
 

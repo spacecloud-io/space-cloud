@@ -212,7 +212,7 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 	if err != nil {
 		return 0, nil, err
 	}
-	if actualDbType == string(utils.Mongo) || actualDbType == string(utils.Mongo) {
+	if actualDbType == string(utils.Mongo) || actualDbType == string(utils.BoltDb) {
 		idString = "_id"
 	} else {
 		idString = "id"
