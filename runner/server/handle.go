@@ -101,7 +101,7 @@ func (s *Server) HandleApplyService() http.HandlerFunc {
 			// verify path e.g -> /artifacts/acc_id/projectid/env/version/build.zip
 			arr := strings.Split(req.Data.Path, "/")
 			// 5 will ensure that there will not be any index out of range error
-			if len(arr) < 5 || arr[3] != req.Data.Meta.Service.ProjectID || arr[4] != req.Data.Meta.Service.Environment || arr[5] != req.Data.Meta.Service.Environment {
+			if len(arr) < 7 || arr[3] != req.Data.Meta.Service.ProjectID || arr[4] != req.Data.Meta.Service.Environment || arr[5] != req.Data.Meta.Service.Environment {
 				logrus.Errorf("error applying service path verification failed")
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, errors.New("error applying service path verification failed"))
 				return
