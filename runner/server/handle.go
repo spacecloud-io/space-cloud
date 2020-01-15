@@ -92,12 +92,12 @@ func (s *Server) HandleApplyService() http.HandlerFunc {
 			return
 		}
 
-		req := new(model.ServiceRequest)
+		req := new(model.CloudEventPayload)
 		json.NewDecoder(r.Body).Decode(req)
 
-		if req.IsDeploy {
+		if req.Data.Meta.IsDeploy {
 			// Apply the service config
-			if err := s.driver.ApplyService(req.Service); err != nil {
+			if err := s.driver.ApplyService(req.Data.Meta.Service); err != nil {
 				logrus.Errorf("Failed to apply service - %s", err.Error())
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 				return
@@ -107,7 +107,6 @@ func (s *Server) HandleApplyService() http.HandlerFunc {
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
-
 
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
