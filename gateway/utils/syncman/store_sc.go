@@ -2,14 +2,11 @@ package syncman
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"net/http"
 	"sort"
 
 	"github.com/sirupsen/logrus"
-	sc "github.com/spaceuptech/space-api-go"
-	"github.com/spaceuptech/space-api-go/db"
-	"github.com/spaceuptech/space-api-go/types"
 	v1 "k8s.io/api/core/v1"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -19,20 +16,18 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
-type SCStore struct {
-	clusterID  string
-	collection string
-	scDatabase *db.DB
-	kube       *kubernetes.Clientset
+type KubeStore struct {
+	clusterID string
+	kube      *kubernetes.Clientset
 }
 
 type scTableScheam struct {
-	clusterId string `json:"cluster_id"`
-	ProjectId string `json:"project_id"`
-	Project   string `json:"project"`
+	clusterId string          `json:"clusterId"`
+	ProjectId string          `json:"projectId"`
+	Project   *config.Project `json:"project"`
 }
 
-func NewSCStore(clusterID, scStoreProjectName, scStoreAddr, scStoreDatabaseName string) (*SCStore, error) {
+func NewKubeStore(clusterID string) (*KubeStore, error) {
 	// Create the kubernetes client
 	restConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -44,41 +39,51 @@ func NewSCStore(clusterID, scStoreProjectName, scStoreAddr, scStoreDatabaseName 
 		return nil, err
 	}
 
-	return &SCStore{
-		clusterID:  clusterID,
-		kube:       kube,
-		scDatabase: sc.New(scStoreProjectName, scStoreAddr, false).DB(scStoreDatabaseName)}, nil
+	return &KubeStore{clusterID: clusterID, kube: kube}, nil
 }
 
-func (s *SCStore) Register() {
+func (s *KubeStore) Register() {
 	// kubernetes will handle this automatically
 }
 
-func (s *SCStore) WatchProjects(cb func(projects []*config.Project)) error {
-	subObj := s.scDatabase.LiveQuery(s.collection).Where(types.M{"cluster_id": s.clusterID}).Subscribe()
-	for value := range subObj.C() {
-		if err := value.Err(); err != nil {
-			logrus.Errorf("error watching projects in sc store - %v", err)
-			continue
+func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
+	labels := fmt.Sprintf("app=%s,clusterId=%s", "project", s.clusterID) // todo verify this
+	watcher, err := s.kube.CoreV1().ConfigMaps(fmt.Sprintf("sc/projects/%s", s.clusterID)).Watch(v12.ListOptions{Watch: true, LabelSelector: labels})
+	if err != nil {
+		return err
+	}
+	defer watcher.Stop()
+
+	projectMap := map[string]scTableScheam{}
+	for ee := range watcher.ResultChan() {
+		switch ee.Type {
+		case watch.Added, watch.Modified:
+			configMap := ee.Object.(*v1.ConfigMap)
+			for key, value := range configMap.Data {
+				v := scTableScheam{}
+				if err := json.Unmarshal([]byte(value), &v); err != nil {
+					logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
+					continue
+				}
+				projectMap[key] = v
+			}
+			cb(s.getProjects(projectMap))
+
+		case watch.Deleted:
+			configMap := ee.Object.(*v1.ConfigMap)
+			for key := range configMap.Data {
+				delete(projectMap, key)
+			}
+			cb(s.getProjects(projectMap))
 		}
-		projects, err := s.getProjects(subObj.GetSnapshot())
-		if err != nil {
-			logrus.Errorf("error watching projects in sc store unable to get projects - %v", err)
-			continue
-		}
-		cb(projects)
 	}
 	return nil
 }
 
-func (s *SCStore) WatchServices(cb func(scServices)) error {
-	// services := scServices{}
-	// services = append(services, &service{id: "localhost", addr: "4122"})
-	// sort.Stable(services)
-	// cb(services)
+func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	services := scServices{}
-	labels := fmt.Sprintf("app=%s,clusterId=%s", "app", s.clusterID) // todo verify this
-	watcher, err := s.kube.CoreV1().Pods("").Watch(v12.ListOptions{Watch: true, LabelSelector: labels})
+	labels := fmt.Sprintf("app=%s,clusterId=%s", "service", s.clusterID) // todo verify this
+	watcher, err := s.kube.CoreV1().Pods(fmt.Sprintf("sc/instaces/%s", s.clusterID)).Watch(v12.ListOptions{Watch: true, LabelSelector: labels})
 	if err != nil {
 		return err
 	}
@@ -89,11 +94,13 @@ func (s *SCStore) WatchServices(cb func(scServices)) error {
 			pod := ee.Object.(*v1.Pod)
 			id, ok := pod.Annotations["id"] // "verify all off these
 			if !ok {
-				logrus.Errorf("error watching services id not found in pod annotations")
+				logrus.Errorf("error occurred watching services in kube store unable to find id in pod annotations while add event occurred")
+				break
 			}
 			addr, ok := pod.Annotations["addr"]
 			if !ok {
-				logrus.Errorf("error watching services addr not found in pod annotations")
+				logrus.Errorf("error occurred watching services in kube store unable to find addr in pod annotations while add event occurred")
+				break
 			}
 			services = append(services, &service{id: id, addr: addr})
 			sort.Stable(services)
@@ -103,11 +110,13 @@ func (s *SCStore) WatchServices(cb func(scServices)) error {
 			pod := ee.Object.(*v1.Pod)
 			id, ok := pod.Annotations["id"]
 			if !ok {
-				logrus.Errorf("error watching services id not found in pod annotations")
+				logrus.Errorf("error occurred watching services in kube store unable to find id in pod annotations while modified event occurred")
+				break
 			}
 			addr, ok := pod.Annotations["addr"]
 			if !ok {
-				logrus.Errorf("error watching services addr not found in pod annotations")
+				logrus.Errorf("error occurred watching services in kube store unable to find addr in pod annotations while modified event occurred")
+				break
 			}
 			count := 0
 			for _, service := range services {
@@ -119,6 +128,7 @@ func (s *SCStore) WatchServices(cb func(scServices)) error {
 					break
 				}
 			}
+			// if doesn't exit add to services
 			if count == 0 {
 				cb(append(services, &service{id: id, addr: addr}))
 			}
@@ -127,7 +137,8 @@ func (s *SCStore) WatchServices(cb func(scServices)) error {
 			pod := ee.Object.(*v1.Pod)
 			id, ok := pod.Annotations["id"]
 			if !ok {
-				logrus.Errorf("error watching services id not found in pod annotations")
+				logrus.Errorf("error occurred watching services in kube store unable to find id in pod annotations while delete event occurred")
+				break
 			}
 			for index, service := range services {
 				if service.id == id {
@@ -143,29 +154,42 @@ func (s *SCStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
-func (s *SCStore) SetProject(ctx context.Context, project *config.Project) error {
-	res, err := s.scDatabase.Upsert(s.collection).Set(types.M{"project": project, "cluster_id": s.clusterID, "project_id": project.ID}).Apply(ctx)
-	if res.Status != http.StatusOK || err != nil {
-		return fmt.Errorf("error unable to set project in sc store -%v", err)
+func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) error {
+	// TODO WHO WILL CREATE THIS CONFIG MAP
+	configMap, err := s.kube.CoreV1().ConfigMaps(fmt.Sprintf("sc/projects/%s", s.clusterID)).Get("", v12.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("error while setting project in kube store unable to get config map - %v", err)
+	}
+	data, err := json.Marshal(&scTableScheam{clusterId: s.clusterID, ProjectId: project.ID, Project: project})
+	if err != nil {
+		return fmt.Errorf("error while setting project in kube store unable to marshal data - %v", err)
+	}
+	configMap.Data[project.ID] = string(data)
+	_, err = s.kube.CoreV1().ConfigMaps("").Update(configMap)
+	if err != nil {
+		return fmt.Errorf("error while setting project in kube store unable to update config map - %v", err)
 	}
 	return nil
 }
 
-func (s *SCStore) DeleteProject(ctx context.Context, projectId string) error {
-	res, err := s.scDatabase.Delete(s.collection).Where(types.M{"cluster_id": s.clusterID, "project_id": projectId}).Apply(ctx)
-	if res.Status != http.StatusOK || err != nil {
-		return fmt.Errorf("error unable to get project from sc store -%v", err)
+func (s *KubeStore) DeleteProject(ctx context.Context, projectId string) error {
+	// TODO WHO WILL CREATE THIS CONFIG MAP
+	configMap, err := s.kube.CoreV1().ConfigMaps(fmt.Sprintf("sc/projects/%s", s.clusterID)).Get("", v12.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("error while deleting project in kube store unable to get config map - %v", err)
+	}
+	delete(configMap.Data, projectId)
+	_, err = s.kube.CoreV1().ConfigMaps("").Update(configMap)
+	if err != nil {
+		return fmt.Errorf("error while deleting project of kube store unable to update config map - %v", err)
 	}
 	return nil
 }
 
-func (s *SCStore) getProjects(v []types.DocumentSnapshot) ([]*config.Project, error) {
+func (s *KubeStore) getProjects(v map[string]scTableScheam) []*config.Project {
 	projects := []*config.Project{}
 	for _, value := range v {
-		scScheam := new(scTableScheam)
-		if err := value.Unmarshal(scScheam); err != nil {
-			return nil, fmt.Errorf("error unable to marshal in sc store - %v", err)
-		}
+		projects = append(projects, value.Project)
 	}
-	return projects, nil
+	return projects
 }
