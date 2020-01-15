@@ -46,9 +46,15 @@ func (b *Bolt) Read(ctx context.Context, project, col string, req *model.ReadReq
 		}); err != nil {
 			return 0, nil, err
 		}
-		if req.Operation == utils.One && count == 1 {
-			return count, results[0], nil
+		if req.Operation == utils.One {
+			if count == 0 {
+				return 0, nil, fmt.Errorf("error reading from bbolt db no match found for specifed find clause")
+			}
+			if count == 1 {
+				return count, results[0], nil
+			}
 		}
+
 		return count, results, nil
 	case utils.Count:
 		var count int64

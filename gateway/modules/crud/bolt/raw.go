@@ -10,7 +10,7 @@ func (b *Bolt) RawExec(ctx context.Context, project string) error {
 }
 
 func (b *Bolt) CreateProjectIfNotExist(ctx context.Context, project string) error {
-	return fmt.Errorf("errocr create project operation cannot be performed over selected database")
+	return fmt.Errorf("error create project operation cannot be performed over selected database")
 }
 
 func (b *Bolt) RawBatch(ctx context.Context, batchedQueries []string) error {

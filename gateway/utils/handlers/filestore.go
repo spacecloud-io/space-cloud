@@ -125,9 +125,8 @@ func HandleRead(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc
 			json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
 			return
 		} else if op == "exist" {
-			log.Println("ldsfilh", path)
 			if err := fileStore.DoesExists(ctx, project, token, path); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHeader(http.StatusNotFound)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
