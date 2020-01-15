@@ -96,7 +96,6 @@ func (s *Server) HandleApplyService() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(req)
 
 		if req.IsDeploy {
-			//  TODO PATH VERIFCATION
 			// Apply the service config
 			if err := s.driver.ApplyService(req.Service); err != nil {
 				logrus.Errorf("Failed to apply service - %s", err.Error())
