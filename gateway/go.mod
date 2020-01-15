@@ -51,7 +51,7 @@ require (
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
-	go.etcd.io/bbolt v1.3.3 // indirect
+	go.etcd.io/bbolt v1.3.3
 	go.mongodb.org/mongo-driver v1.1.1
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550

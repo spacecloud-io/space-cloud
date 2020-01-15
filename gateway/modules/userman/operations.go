@@ -27,7 +27,7 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 		return 0, nil, err
 	}
 	switch utils.DBType(actualDbType) {
-	case utils.Mongo:
+	case utils.Mongo, utils.BoltDB:
 		find["_id"] = id
 	default:
 		find["id"] = id
@@ -124,7 +124,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 		return 0, nil, err
 	}
 	// Create a token
-	if actualDbType == string(utils.Mongo) {
+	if actualDbType == string(utils.Mongo) || actualDbType == string(utils.BoltDB) {
 		req["id"] = userObj["_id"]
 	} else {
 		req["id"] = userObj["id"]
@@ -171,7 +171,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	}
 	// Create a create request
 	id := uuid.NewV1()
-	if actualDbType == string(utils.Mongo) {
+	if actualDbType == string(utils.Mongo) || actualDbType == string(utils.BoltDB) {
 		req["_id"] = id.String()
 	} else {
 		req["id"] = id.String()
@@ -212,7 +212,7 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 	if err != nil {
 		return 0, nil, err
 	}
-	if actualDbType == string(utils.Mongo) {
+	if actualDbType == string(utils.Mongo) || actualDbType == string(utils.BoltDB) {
 		idString = "_id"
 	} else {
 		idString = "id"
