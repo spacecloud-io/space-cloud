@@ -51,6 +51,25 @@ func TestBolt_Delete(t *testing.T) {
 			},
 		},
 		{
+			name: "delete single document where find clause is such that is exist multiple times",
+			want: 1,
+			fields: fields{
+				enabled:    true,
+				connection: "embedded.db",
+			},
+			args: args{
+				ctx:     context.Background(),
+				project: "gateway",
+				col:     "project",
+				req: &model.DeleteRequest{
+					Find: map[string]interface{}{
+						"isPrimary": true,
+					},
+					Operation: utils.One,
+				},
+			},
+		},
+		{
 			name: "delete multiple document",
 			want: 2,
 			fields: fields{
@@ -77,7 +96,7 @@ func TestBolt_Delete(t *testing.T) {
 	}
 
 	if err := createDatabaseWithTestData(b); err != nil {
-		log.Fatal("error test data cannot be created for executing read test")
+		log.Fatalf("error test data cannot be created for executing read test -%v", err)
 	}
 
 	for _, tt := range tests {
@@ -93,6 +112,6 @@ func TestBolt_Delete(t *testing.T) {
 		})
 	}
 	if err := os.Remove("embedded.db"); err != nil {
-		t.Log("error removing database file")
+		t.Error("error removing database file")
 	}
 }

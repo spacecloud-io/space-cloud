@@ -26,6 +26,6 @@ func TestBolt_Create(t *testing.T) {
 		})
 	}
 	if err := os.Remove("embedded.db"); err != nil {
-		t.Log("error removing database file")
+		t.Error("error removing database file")
 	}
 }

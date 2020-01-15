@@ -67,7 +67,7 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string)
 	switch dbType {
 	case utils.Mongo:
 		return mgo.Init(enabled, connection)
-	case utils.BoltDb:
+	case utils.BoltDB:
 		return bolt.Init(enabled, connection)
 
 	case utils.MySQL, utils.Postgres, utils.SqlServer:

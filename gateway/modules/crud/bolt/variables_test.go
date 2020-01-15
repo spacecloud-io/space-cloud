@@ -59,7 +59,7 @@ func generateCreateTestCases() []creatTestData {
 		},
 		{
 			name: "insert multiple document",
-			want: 2,
+			want: 3,
 			fields: fields{
 				enabled:    true,
 				connection: "embedded.db",
@@ -85,6 +85,16 @@ func generateCreateTestCases() []creatTestData {
 							"name":          "noorain",
 							"team":          "admin",
 							"project_count": float64(52),
+							"isPrimary":     true,
+							"project_details": map[string]interface{}{
+								"project_name": "project1",
+							},
+						},
+						map[string]interface{}{
+							"_id":           "4",
+							"name":          "ali",
+							"team":          "admin",
+							"project_count": float64(100),
 							"isPrimary":     true,
 							"project_details": map[string]interface{}{
 								"project_name": "project1",

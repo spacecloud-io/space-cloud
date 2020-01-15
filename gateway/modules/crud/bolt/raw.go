@@ -23,6 +23,5 @@ func (b *Bolt) GetConnectionState(ctx context.Context) bool {
 		return false
 	}
 
-	// Ping to check if connection is established
-	return b.connect() == nil
+	return b.client.Info() != nil
 }

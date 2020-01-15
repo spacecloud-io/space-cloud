@@ -36,7 +36,7 @@ func (b *Bolt) Update(ctx context.Context, project, col string, req *model.Updat
 					if !ok {
 						return fmt.Errorf("error unable to update in bbolt - $set db operator not found or the operator value is not map")
 					}
-					// todo can new fields added directly ?
+
 					for objToSetKey, objToSetValue := range objToSet {
 						currentObj[objToSetKey] = objToSetValue
 					}
@@ -62,13 +62,13 @@ func (b *Bolt) Update(ctx context.Context, project, col string, req *model.Updat
 		}); err != nil {
 			return 0, err
 		}
-		// todo $set should be map or array ?
-		objToSet, ok := req.Update["$set"].(map[string]interface{})
-		if !ok {
-			return 0, fmt.Errorf("error unable to update in bbolt - $set db operator not found or the operator value is not map")
-		}
 
 		if req.Operation == utils.Upsert && count == 0 {
+			objToSet, ok := req.Update["$set"].(map[string]interface{})
+			if !ok {
+				return 0, fmt.Errorf("error unable to update in bbolt - $set db operator not found or the operator value is not map")
+			}
+
 			for findName, findValue := range req.Find {
 				_, ok := objToSet[findName]
 				if !ok {

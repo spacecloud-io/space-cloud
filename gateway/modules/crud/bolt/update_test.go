@@ -34,16 +34,14 @@ func TestBolt_Update(t *testing.T) {
 		{
 			name: "update single document",
 			want: 1,
-			want1: []interface{}{
-				map[string]interface{}{
-					"_id":           "1",
-					"name":          "sharad regoti",
-					"team":          "admin",
-					"project_count": float64(15),
-					"isPrimary":     false,
-					"project_details": map[string]interface{}{
-						"project_name": "project1",
-					},
+			want1: map[string]interface{}{
+				"_id":           "1",
+				"name":          "sharad regoti",
+				"team":          "admin",
+				"project_count": float64(15),
+				"isPrimary":     false,
+				"project_details": map[string]interface{}{
+					"project_name": "project1",
 				},
 			},
 			fields: fields{
@@ -69,7 +67,7 @@ func TestBolt_Update(t *testing.T) {
 		},
 		{
 			name: "update multiple document",
-			want: 2,
+			want: 3,
 			want1: []interface{}{
 				map[string]interface{}{
 					"_id":           "2",
@@ -86,6 +84,16 @@ func TestBolt_Update(t *testing.T) {
 					"name":          "noorain",
 					"team":          "admin",
 					"project_count": float64(52),
+					"isPrimary":     true,
+					"project_details": map[string]interface{}{
+						"project_name": "project2",
+					},
+				},
+				map[string]interface{}{
+					"_id":           "4",
+					"name":          "ali",
+					"team":          "admin",
+					"project_count": float64(100),
 					"isPrimary":     true,
 					"project_details": map[string]interface{}{
 						"project_name": "project2",
@@ -121,7 +129,7 @@ func TestBolt_Update(t *testing.T) {
 			want: 1,
 			want1: []interface{}{
 				map[string]interface{}{
-					"_id":  "4",
+					"_id":  "5",
 					"team": "new",
 					"project_details": map[string]interface{}{
 						"project_name": "project4",
@@ -143,7 +151,7 @@ func TestBolt_Update(t *testing.T) {
 					Operation: utils.Upsert,
 					Update: map[string]interface{}{
 						"$set": map[string]interface{}{
-							"_id": "4",
+							"_id": "5",
 							"project_details": map[string]interface{}{
 								"project_name": "project4",
 							},
@@ -156,16 +164,14 @@ func TestBolt_Update(t *testing.T) {
 		{
 			name: "update only single document where the find clause is such that it has multiple documents",
 			want: 1,
-			want1: []interface{}{
-				map[string]interface{}{
-					"_id":           "2",
-					"name":          "sharad regoti",
-					"team":          "admin",
-					"project_count": float64(10),
-					"isPrimary":     true,
-					"project_details": map[string]interface{}{
-						"project_name": "project2",
-					},
+			want1: map[string]interface{}{
+				"_id":           "2",
+				"name":          "sharad regoti",
+				"team":          "admin",
+				"project_count": float64(10),
+				"isPrimary":     true,
+				"project_details": map[string]interface{}{
+					"project_name": "project2",
 				},
 			},
 			fields: fields{
@@ -230,6 +236,6 @@ func TestBolt_Update(t *testing.T) {
 	}
 
 	if err := os.Remove("embedded.db"); err != nil {
-		t.Log("error removing database file")
+		t.Error("error removing database file")
 	}
 }

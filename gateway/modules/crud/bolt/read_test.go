@@ -36,7 +36,7 @@ func TestBolt_Read(t *testing.T) {
 		{
 			name: "read single document",
 			want: 1,
-			want1: []interface{}{map[string]interface{}{
+			want1: map[string]interface{}{
 				"_id":           "1",
 				"name":          "sharad",
 				"team":          "admin",
@@ -45,7 +45,7 @@ func TestBolt_Read(t *testing.T) {
 				"project_details": map[string]interface{}{
 					"project_name": "project1",
 				},
-			}},
+			},
 			fields: fields{
 				enabled:    true,
 				connection: "embedded.db",
@@ -64,7 +64,7 @@ func TestBolt_Read(t *testing.T) {
 		},
 		{
 			name: "read multiple document",
-			want: 2,
+			want: 3,
 			want1: []interface{}{
 				map[string]interface{}{
 					"_id":           "2",
@@ -80,6 +80,15 @@ func TestBolt_Read(t *testing.T) {
 					"name":          "noorain",
 					"team":          "admin",
 					"project_count": float64(52),
+					"isPrimary":     true,
+					"project_details": map[string]interface{}{
+						"project_name": "project1",
+					},
+				}, map[string]interface{}{
+					"_id":           "4",
+					"name":          "ali",
+					"team":          "admin",
+					"project_count": float64(100),
 					"isPrimary":     true,
 					"project_details": map[string]interface{}{
 						"project_name": "project1",
@@ -109,7 +118,7 @@ func TestBolt_Read(t *testing.T) {
 	}
 
 	if err := createDatabaseWithTestData(b); err != nil {
-		log.Fatal("error test data cannot be created for executing read test")
+		log.Fatal("error test data cannot be created for executing read test", err, "sharad")
 	}
 
 	for _, tt := range tests {
@@ -129,6 +138,6 @@ func TestBolt_Read(t *testing.T) {
 		})
 	}
 	if err := os.Remove("embedded.db"); err != nil {
-		t.Log("error removing database file")
+		t.Error("error removing database file")
 	}
 }
