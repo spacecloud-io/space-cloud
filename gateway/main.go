@@ -57,7 +57,7 @@ var essentialFlags = []cli.Flag{
 		Name:   "store-type",
 		Usage:  "The config store to use for storing project configs and other meta data",
 		EnvVar: "STORE_TYPE",
-		Value:  "kube",
+		Value:  "none",
 	},
 	cli.IntFlag{
 		Name:   "port",
