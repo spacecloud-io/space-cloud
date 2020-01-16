@@ -49,7 +49,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, scProject, scUrl, scDatabase string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 
 	// Create the fundamental modules
 	c := crud.Init(removeProjectScope)
@@ -94,7 +94,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 	graphqlMan := graphql.New(a, c, fn, s)
 
 	// Initialise a lets encrypt client
-	le, err := letsencrypt.New()
+	le, err := letsencrypt.New(scProject, scUrl, scDatabase)
 	if err != nil {
 		return nil, err
 	}

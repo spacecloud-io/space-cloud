@@ -20,7 +20,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/google/go-cmp v0.3.0
 	github.com/gorilla/mux v1.7.3
-	github.com/gorilla/websocket v1.4.0
+	github.com/gorilla/websocket v1.4.1
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
 	github.com/graphql-go/graphql v0.7.8
 	github.com/grpc-ecosystem/go-grpc-middleware v1.1.0 // indirect
@@ -44,6 +44,7 @@ require (
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.2
 	github.com/soheilhy/cmux v0.1.4 // indirect
+	github.com/spaceuptech/space-api-go v0.16.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
