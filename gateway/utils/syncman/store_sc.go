@@ -22,7 +22,7 @@ type KubeStore struct {
 	kube      *kubernetes.Clientset
 }
 
-const spaceCloud string = spaceCloud
+const spaceCloud string = "spaceCloud"
 
 func NewKubeStore(clusterID string) (*KubeStore, error) {
 	// Create the kubernetes client

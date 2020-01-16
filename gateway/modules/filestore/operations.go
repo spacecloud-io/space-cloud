@@ -57,7 +57,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 	m.RLock()
 	defer m.RUnlock()
 
-	intent, err := m.eventing.DeleteFileIntentHook(ctx, path)
+	intent, err := m.eventing.DeleteFileIntentHook(ctx, path, meta)
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
