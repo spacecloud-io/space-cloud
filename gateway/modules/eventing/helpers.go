@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"time"
+	"fmt"
 
 	"github.com/fatih/structs"
 	"github.com/segmentio/ksuid"
@@ -59,7 +60,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, batchID, utils.EventStatusStaged, r.URL, req)
+			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.Name, batchID, utils.EventStatusStaged, r.URL, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -75,7 +76,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
 
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 
@@ -97,7 +98,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, 
 	return &model.EventDocument{
 		ID:             ksuid.New().String(),
 		BatchID:        batchID,
-		Type:           event.Type,
+		Type:           fmt.Sprintf("%s:%s", event.Type, name),
 		Token:          token,
 		Timestamp:      timestamp,
 		EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond),
@@ -165,30 +166,33 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 func (m *Module) getMatchingRules(name string, options map[string]string) []config.EventingRule {
 	var rules []config.EventingRule
 
-	for _, rule := range m.config.Rules {
+	for n, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
+			rule.Name = n
 			rules = append(rules, rule)
 		}
 	}
 
-	for _, rule := range m.config.InternalRules {
+	for n, rule := range m.config.InternalRules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
+			rule.Name = n
 			rules = append(rules, rule)
 		}
 	}
 	return rules
 }
 
-func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) bool {
 
+func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) bool {
+	
 	if rule1.Type != rule2.Type {
 		return false
 	}
-
+	
 	if !isOptionsValid(rule1.Options, rule2.Options) {
 		return false
 	}
-
+	
 	if rule1.URL != rule2.URL {
 		return false
 	}
@@ -198,11 +202,11 @@ func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) boo
 
 func convertToArray(eventDocs []*model.EventDocument) []interface{} {
 	docs := make([]interface{}, len(eventDocs))
-
+	
 	for i, doc := range eventDocs {
 		docs[i] = structs.Map(doc)
 	}
-
+	
 	return docs
 }
 
@@ -212,6 +216,16 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 			return false
 		}
 	}
-
+	
 	return true
+}
+
+func (m *Module) selectRule(name string) (config.EventingRule, error) {
+	if rule, ok := m.config.Rules[name]; ok {
+		return rule, nil
+	}
+	if rule, ok := m.config.InternalRules[name]; ok {
+		return rule, nil
+	}
+	return config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
 }

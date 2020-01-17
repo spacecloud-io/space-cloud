@@ -18,6 +18,7 @@ require (
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/google/go-cmp v0.3.0
+	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
@@ -56,12 +57,13 @@ require (
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
-	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
 	golang.org/x/tools v0.0.0-20191217033636-bbbf87ae2631 // indirect
 	google.golang.org/api v0.14.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.2
-	gopkg.in/yaml.v2 v2.2.3
-	sigs.k8s.io/yaml v1.1.0 // indirect
+	gopkg.in/yaml.v2 v2.2.7
+	k8s.io/api v0.0.0-20200113233642-3946df5ca773
+	k8s.io/apimachinery v0.0.0-20200113233504-44bd77c24ef9
+	k8s.io/client-go v0.0.0-20200114073902-7ec8a74ae980
 
 )
 

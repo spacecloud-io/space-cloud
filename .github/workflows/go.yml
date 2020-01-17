@@ -1,5 +1,5 @@
 name: Go
-on: [pull_request]
+on: [push, pull_request]
 jobs:
   gateway:
     name: Build and test gateway

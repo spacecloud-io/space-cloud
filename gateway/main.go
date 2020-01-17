@@ -69,6 +69,13 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Removes the project level scope in the database and file storage modules",
 		EnvVar: "REMOVE_PROJECT_SCOPE",
 	},
+	cli.StringFlag{
+		Name:   "runner-addr",
+		Usage:  "The address used to reach the runner",
+		EnvVar: "RUNNER_ADDR",
+	},
+
+	// Flags for ssl
 	cli.BoolFlag{
 		Name:   "ssl-enable",
 		Usage:  "Enable https and lets encrypt support",
@@ -86,6 +93,7 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Load ssl key from `FILE`",
 		EnvVar: "SSL_KEY",
 	},
+
 	// flags for admin man
 	cli.StringFlag{
 		Name:   "admin-user",
@@ -105,6 +113,7 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
 	},
+
 	// Flags for the metrics module
 	cli.BoolFlag{
 		Name:   "enable-metrics",
@@ -170,7 +179,9 @@ func actionRun(c *cli.Context) error {
 
 	// Load flag related to the port
 	port := c.Int("port")
+
 	removeProjectScope := c.Bool("remove-project-scope")
+	runnerAddr := c.String("runner-addr")
 
 	// Load flags related to ssl
 	sslEnable := c.Bool("ssl-enable")
@@ -198,7 +209,7 @@ func actionRun(c *cli.Context) error {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, removeProjectScope,
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
