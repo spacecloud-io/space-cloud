@@ -92,6 +92,13 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	// Generate internal access token
+	token, err := s.adminMan.GetInternalAccessToken()
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
 			return errors.New("project already exists in config"), http.StatusConflict
@@ -100,7 +107,16 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 
 	s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
-	s.cb(s.projectConfig)
+	// Create a project in the runner as well
+	if s.runnerAddr != "" {
+		params := map[string]interface{}{"id": project.ID}
+		if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project", s.runnerAddr), token, "", params, nil); err != nil {
+			return err, http.StatusInternalServerError
+		}
+	}
+
+	// We will ignore the error for the create project request
+	_ = s.cb(s.projectConfig)
 
 	if s.storeType == "none" {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
