@@ -7,7 +7,7 @@ import (
 
 func TestBolt_Create(t *testing.T) {
 
-	b, err := Init(true, "embedded.db")
+	b, err := Init(true, "create.db")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
@@ -25,7 +25,8 @@ func TestBolt_Create(t *testing.T) {
 			}
 		})
 	}
-	if err := os.Remove("embedded.db"); err != nil {
-		t.Error("error removing database file")
+	b.Close()
+	if err := os.Remove("create.db"); err != nil {
+		t.Error("error removing database file:", err)
 	}
 }

@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"log"
 	"time"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -73,19 +75,36 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	// Delete the event from the processing list without fail
 	defer m.processingEvents.Delete(eventDoc.ID)
 
+	typeAndName := strings.Split(eventDoc.Type, ":")
+	evType, name := typeAndName[0], typeAndName[1]
+
+	rule, err := m.selectRule(name)
+	if err != nil {
+		logrus.Errorln("Error processing staged event:", err)
+		return
+	}
+
+	var maxRetries int
+	if rule.Retries > 0 {
+		maxRetries = rule.Retries
+	} else {
+		maxRetries = 3
+	}
+	
 	// Call the function to process the event
-	ctxLocal, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(maxRetries*rule.Timeout)*time.Millisecond)
 	defer cancel()
 
 	// Create a variable to track retries
 	retries := 0
+
 
 	// Payload will be of type json. Unmarshal it before sending
 	var doc interface{}
 	_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
 	eventDoc.Payload = doc
 
-	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: eventDoc.Type, Source: m.syncMan.GetEventSource(), Id: eventDoc.ID,
+	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: evType, Source: m.syncMan.GetEventSource(), Id: eventDoc.ID,
 		Time: time.Unix(0, eventDoc.Timestamp*int64(time.Millisecond)).Format(time.RFC3339), Data: eventDoc.Payload}
 
 	for {
@@ -129,7 +148,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 		// Increment the retries. Exit the loop if max retries reached.
 		retries++
-		if retries >= eventDoc.Retries {
+		if retries >= maxRetries {
 			// Mark event as failed
 			break
 		}

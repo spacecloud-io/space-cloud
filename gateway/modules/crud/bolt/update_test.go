@@ -46,7 +46,7 @@ func TestBolt_Update(t *testing.T) {
 			},
 			fields: fields{
 				enabled:    true,
-				connection: "embedded.db",
+				connection: "update.db",
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -102,7 +102,7 @@ func TestBolt_Update(t *testing.T) {
 			},
 			fields: fields{
 				enabled:    true,
-				connection: "embedded.db",
+				connection: "update.db",
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -138,7 +138,7 @@ func TestBolt_Update(t *testing.T) {
 			},
 			fields: fields{
 				enabled:    true,
-				connection: "embedded.db",
+				connection: "update.db",
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -176,7 +176,7 @@ func TestBolt_Update(t *testing.T) {
 			},
 			fields: fields{
 				enabled:    true,
-				connection: "embedded.db",
+				connection: "update.db",
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -197,7 +197,7 @@ func TestBolt_Update(t *testing.T) {
 		},
 	}
 
-	b, err := Init(true, "embedded.db")
+	b, err := Init(true, "update.db")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
@@ -235,7 +235,8 @@ func TestBolt_Update(t *testing.T) {
 		})
 	}
 
-	if err := os.Remove("embedded.db"); err != nil {
+	b.Close()
+	if err := os.Remove("update.db"); err != nil {
 		t.Error("error removing database file")
 	}
 }

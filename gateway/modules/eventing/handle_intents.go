@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"time"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -73,7 +74,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	// Get the eventID
 	eventID := eventDoc.ID
 
-	switch eventDoc.Type {
+	switch strings.Split(eventDoc.Type, ":")[0] {
 
 	case utils.EventDBCreate:
 		// Unmarshal the payload
