@@ -54,7 +54,7 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 }
 
 // DeleteFileIntentHook handles the delete file intent requests
-func (m *Module) DeleteFileIntentHook(ctx context.Context, path string) (*model.EventIntent, error) {
+func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map[string]interface{}) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -76,6 +76,7 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string) (*model.
 				Type: utils.EventFileDelete,
 				Payload: &model.FilePayload{
 					Path: path,
+					Meta: meta,
 				},
 			}))
 	}

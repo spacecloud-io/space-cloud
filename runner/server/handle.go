@@ -80,6 +80,34 @@ func (s *Server) handleServiceRequest() http.HandlerFunc {
 	}
 }
 
+func (s *Server) HandleApplyService() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		req := new(model.CloudEventPayload)
+		json.NewDecoder(r.Body).Decode(req)
+
+		if req.Data.Meta.IsDeploy {
+			// Apply the service config
+			if err := s.driver.ApplyService(req.Data.Meta.Service); err != nil {
+				logrus.Errorf("Failed to apply service - %s", err.Error())
+				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+				return
+			}
+		}
+
+		utils.SendEmptySuccessResponse(w, r)
+	}
+}
+
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
