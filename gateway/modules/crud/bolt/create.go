@@ -45,8 +45,11 @@ func (b *Bolt) Create(ctx context.Context, project, col string, req *model.Creat
 					},
 					Operation: utils.Count,
 				})
-				if count > 0 || err != nil {
-					return fmt.Errorf("error inserting into bboltdb data already exists - %v", err)
+				if err != nil {
+					return fmt.Errorf("error reading existing data - %s", err.Error())
+				}
+				if count > 0 {
+					return fmt.Errorf("error inserting into bboltdb data already exists - %v", count)
 				}
 
 				b, err := tx.CreateBucketIfNotExists([]byte(project))
