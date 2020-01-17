@@ -36,7 +36,7 @@ func TestBolt_Delete(t *testing.T) {
 			want: 1,
 			fields: fields{
 				enabled:    true,
-				connection: "embedded.db",
+				connection: "delete.db",
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -55,7 +55,7 @@ func TestBolt_Delete(t *testing.T) {
 			want: 1,
 			fields: fields{
 				enabled:    true,
-				connection: "embedded.db",
+				connection: "delete.db",
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -74,7 +74,7 @@ func TestBolt_Delete(t *testing.T) {
 			want: 2,
 			fields: fields{
 				enabled:    true,
-				connection: "embedded.db",
+				connection: "delete.db",
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -90,7 +90,7 @@ func TestBolt_Delete(t *testing.T) {
 		},
 	}
 
-	b, err := Init(true, "embedded.db")
+	b, err := Init(true, "delete.db")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
@@ -111,7 +111,8 @@ func TestBolt_Delete(t *testing.T) {
 			}
 		})
 	}
-	if err := os.Remove("embedded.db"); err != nil {
+	b.client.Close()
+	if err := os.Remove("delete.db"); err != nil {
 		t.Error("error removing database file")
 	}
 }

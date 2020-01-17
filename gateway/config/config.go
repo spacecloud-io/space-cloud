@@ -171,6 +171,8 @@ type Eventing struct {
 type EventingRule struct {
 	Type    string            `json:"type" yaml:"type"`
 	Retries int               `json:"retries" yaml:"retries"`
+	Timeout int               `json:"timeout" yaml:"timeout"`
+	Name    string            `json:"name" yaml:"name"`
 	URL     string            `json:"url" yaml:"url"`
 	Options map[string]string `json:"options" yaml:"options"`
 }
