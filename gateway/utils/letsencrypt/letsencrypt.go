@@ -17,7 +17,7 @@ type LetsEncrypt struct {
 }
 
 // New creates a new letsencrypt module
-func New(project, url, dbAlias string) (*LetsEncrypt, error) {
+func New() (*LetsEncrypt, error) {
 	// Load config from environment variables
 	c := loadConfig()
 
@@ -30,7 +30,7 @@ func New(project, url, dbAlias string) (*LetsEncrypt, error) {
 	case StoreLocal:
 		client.Storage = certmagic.Default.Storage
 	case StoreSC:
-		client.Storage = NewScStore(project, url, dbAlias)
+		client.Storage = NewScStore()
 	default:
 		return nil, fmt.Errorf("unsupported store type (%s) provided for lets encrypt", c.StoreType)
 	}

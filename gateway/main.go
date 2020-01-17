@@ -131,21 +131,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "The database / topic to push the metrics to",
 		EnvVar: "METRICS_SCOPE",
 	},
-	cli.StringFlag{
-		Name:   "sc-project",
-		Usage:  "The project name running in space cloud which will be used as persistent storage",
-		EnvVar: "METRICS_SCOPE",
-	},
-	cli.StringFlag{
-		Name:   "sc-url",
-		Usage:  "The address of space cloud being used as persistent storage",
-		EnvVar: "METRICS_SCOPE",
-	},
-	cli.StringFlag{
-		Name:   "sc-database",
-		Usage:  "The database used by the space cloud to store data",
-		EnvVar: "METRICS_SCOPE",
-	},
 }
 
 func main() {
@@ -208,16 +193,12 @@ func actionRun(c *cli.Context) error {
 	metricsConn := c.String("metrics-conn")
 	metricsScope := c.String("metrics-scope")
 
-	scProject := c.String("sc-project")
-	scUrl := c.String("sc-url")
-	scDatabase := c.String("sc-database")
-
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, scProject, scUrl, scDatabase, removeProjectScope,
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
