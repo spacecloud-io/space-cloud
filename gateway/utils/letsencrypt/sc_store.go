@@ -42,7 +42,7 @@ func NewScStore() *storage {
 		scCollection = "certificates"
 	}
 
-	return &storage{db: apigo.New(scProject, scAddr, false).DB(scDatabase), collection: scCollection}
+	return &storage{db: apigo.New(scProject, scAddr, false).DB(scDatabase), collection: scCollection, path: "certmagic"}
 }
 
 func (s *storage) Store(key string, value []byte) error {
@@ -132,7 +132,7 @@ func (s *storage) List(prefix string, recursive bool) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	response, err := s.db.Get(s.collection).Where(types.Cond("_id", "regex", prefix)).Apply(ctx)
+	response, err := s.db.Get(s.collection).Where(types.Cond("_id", "regex", fmt.Sprintf("^%s", prefix))).Apply(ctx)
 	if err != nil || response.Status != http.StatusOK {
 		logrus.Errorf("error while listing response of lets encrypt - %v", err)
 		return nil, err
