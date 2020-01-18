@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 	"github.com/spaceuptech/space-cloud/runner/utils/driver/istio"
+	v1 "k8s.io/api/core/v1"
 )
 
 // New creates a new instance of the driver module
@@ -43,4 +44,12 @@ type Driver interface {
 	AdjustScale(service *model.Service, activeReqs int32) error
 	WaitForService(service *model.Service) error
 	Type() model.DriverType
+
+	// Secret methods!
+
+	CreateSecret(secretObj *model.Secret, projectID string) error
+	ListSecrets(secretObj *model.Secret, projectID string) (*v1.SecretList, error)
+	DelSecrets(secretObj *model.Secret, projectID string) error
+	SetKey(secretObj *model.SecretValue, projectID string, secretName string, secretKey string) error
+	DelKey(projectID string, secretName string, secretKey string) error
 }
