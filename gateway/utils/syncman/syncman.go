@@ -46,6 +46,9 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 	// Initialise the consul client if enabled
 	switch storeType {
 	case "none":
+		return m, nil
+	case "kube":
+
 		s, err := NewKubeStore(clusterID)
 		if err != nil {
 			return nil, err
