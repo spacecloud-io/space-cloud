@@ -54,7 +54,8 @@ func (s *Server) handleServiceRequest() http.HandlerFunc {
 		defer utils.CloseReaderCloser(r.Body)
 
 		// Verify token
-		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		token := utils.GetToken(r)
+		_, err := s.auth.VerifyToken(token)
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
@@ -72,7 +73,7 @@ func (s *Server) handleServiceRequest() http.HandlerFunc {
 		// TODO: Override the project id present in the service object with the one present in the token if user not admin
 
 		// Apply the service config
-		if err := s.driver.ApplyService(service); err != nil {
+		if err := s.driver.ApplyService(service, token); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -87,7 +88,8 @@ func (s *Server) HandleApplyService() http.HandlerFunc {
 		defer r.Body.Close()
 
 		// Verify token
-		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		token := utils.GetToken(r)
+		_, err := s.auth.VerifyToken(token)
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
@@ -107,7 +109,7 @@ func (s *Server) HandleApplyService() http.HandlerFunc {
 				return
 			}
 			// Apply the service config
-			if err := s.driver.ApplyService(req.Data.Meta.Service); err != nil {
+			if err := s.driver.ApplyService(req.Data.Meta.Service, token); err != nil {
 				logrus.Errorf("Failed to apply service - %s", err.Error())
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 				return

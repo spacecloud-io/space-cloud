@@ -6,4 +6,6 @@ type DriverType string
 const (
 	// TypeIstio is the driver type used to target istio on kubernetes
 	TypeIstio DriverType = "istio"
+
+	TypeDocker DriverType = "docker"
 )

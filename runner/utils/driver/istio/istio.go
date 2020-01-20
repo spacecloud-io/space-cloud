@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -74,7 +75,7 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 }
 
 // ApplyService deploys the service on istio
-func (i *Istio) ApplyService(service *model.Service) error {
+func (i *Istio) ApplyService(service *model.Service, token string) error {
 	// TODO: do we need to rollback on failure? rollback to previous version if it existed else remove. We also need to rollback the cache in this case
 	// TODO: Add support for custom runtime
 	// TODO: Add support for running multiple versions
@@ -217,6 +218,116 @@ func (i *Istio) ApplyService(service *model.Service) error {
 
 	logrus.Infof("Service %s in %s applied successfully", service.ID, ns)
 	return nil
+}
+
+func (i *Istio) DeleteService(serviceId, projectId, version string) (*model.Service, error) {
+	service := &model.Service{ID: serviceId, ProjectID: projectId, Version: version}
+	err := i.kube.CoreV1().ServiceAccounts(projectId).Delete(getServiceAccountName(service), &metav1.DeleteOptions{})
+	if kubeErrors.IsNotFound(err) {
+		// service account not found meaning no service present
+	} else if err == nil {
+		_ = i.kube.AppsV1().Deployments(projectId).Delete(getDeploymentName(service), &metav1.DeleteOptions{})
+		_ = i.kube.CoreV1().Services(projectId).Delete(serviceId, &metav1.DeleteOptions{})
+		_ = i.istio.NetworkingV1alpha3().VirtualServices(projectId).Delete(serviceId, &metav1.DeleteOptions{})
+		_ = i.istio.NetworkingV1alpha3().DestinationRules(projectId).Delete(serviceId, &metav1.DeleteOptions{})
+		// no gateway as it is to removed
+		_ = i.istio.SecurityV1beta1().AuthorizationPolicies(getAuthorizationPolicyName(service)).Delete(serviceId, &metav1.DeleteOptions{})
+		_ = i.istio.NetworkingV1alpha3().Sidecars(projectId).Delete(serviceId, &metav1.DeleteOptions{})
+	} else {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+func (i *Istio) GetService(serviceId, projectId, version string) (*model.Service, error) {
+	// assumption we don't have environment id in namespace
+	service := new(model.Service)
+	service.ProjectID = projectId
+	service.ID = serviceId
+	service.Version = version
+	deployment, _ := i.kube.AppsV1().Deployments(projectId).Get(getDeploymentName(service), metav1.GetOptions{})
+
+	s1, _ := strconv.Atoi(deployment.Annotations["concurrency"])
+	s2, _ := strconv.Atoi(deployment.Annotations["minReplicas"])
+	s3, _ := strconv.Atoi(deployment.Annotations["maxReplicas"])
+	service.Scale.Concurrency = int32(s1)
+	service.Scale.MinReplicas = int32(s2)
+	service.Scale.MaxReplicas = int32(s3)
+	service.Scale.Replicas = *deployment.Spec.Replicas
+
+	for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
+		ports := []model.Port{}
+		for _, port := range containerInfo.Ports {
+			ports = append(ports, model.Port{Name: port.Name, Port: port.ContainerPort})
+		}
+
+		envs := map[string]string{}
+		for _, env := range containerInfo.Env {
+			envs[env.Name] = env.Value
+		}
+
+		service.Tasks = append(service.Tasks, model.Task{
+			ID:    containerInfo.Name,
+			Name:  "",
+			Ports: ports,
+			Resources: model.Resources{
+				CPU:    containerInfo.Resources.Requests.Cpu().MilliValue(),
+				Memory: containerInfo.Resources.Requests.Memory().Value() / (1024 * 1024), // todo verify this
+			},
+			Docker: model.Docker{
+				Image: containerInfo.Image,
+				Creds: nil,
+				Cmd:   containerInfo.Command,
+			},
+			Env: envs,
+		})
+	}
+
+	authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectId).Get(getAuthorizationPolicyName(service), metav1.GetOptions{})
+	if len(authPolicy.Spec.Rules[0].From) != 0 {
+		for _, rule := range authPolicy.Spec.Rules[0].From {
+			for _, projectId := range rule.Source.Namespaces {
+				service.Whitelist = append(service.Whitelist, fmt.Sprintf("%s:*", projectId))
+			}
+			for _, serv := range rule.Source.Principals {
+				whitelistArr := strings.Split(serv, "/")
+				if len(whitelistArr) != 5 {
+					// err
+				}
+				service.Whitelist = append(service.Whitelist, fmt.Sprintf("%s:%s", whitelistArr[2], whitelistArr[4]))
+			}
+		}
+	} else {
+		service.Whitelist = []string{"*"} // todo verify this
+	}
+
+	sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectId).Get(serviceId, metav1.GetOptions{})
+	for key, value := range sideCar.Spec.Egress[0].Hosts {
+		upstream := model.Upstream{}
+		if key != 0 { // as at index 0 default upstream space-cloud is automatically inserted
+			a := strings.Split(value, "/")
+			upstream.ProjectID = a[0]
+			upstream.Service = a[1]
+		}
+		service.Upstreams = append(service.Upstreams, upstream)
+	}
+
+	virtualServices, _ := i.istio.NetworkingV1alpha3().VirtualServices(projectId).Get(serviceId, metav1.GetOptions{})
+	service.Expose.Hosts = virtualServices.Spec.Hosts[1:] // remove the first element inserted by us
+	// todo implement expose rules
+	// rules := model.ExposeRule{}
+	// for _, route := range virtualServices.Spec.Http {
+	// 	uri := model.ExposeRuleURI{}
+	// 	for _, match := range route.Match {
+	// 		uri.Exact = match.Uri.Mat
+	// 		match.
+	// 	}
+	// }
+
+	// todo labels, serviceName, affinity, runtime
+
+	return service, nil
 }
 
 // AdjustScale adjusts the number of instances based on the number of active requests. It tries to make sure that
