@@ -198,9 +198,11 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 						{
 							Headers: headers,
 							Destination: &networkingv1alpha3.Destination{
-								Host: destHost,
-								Port: &networkingv1alpha3.PortSelector{Number: destPort},
+								Host:   destHost,
+								Port:   &networkingv1alpha3.PortSelector{Number: destPort},
+								Subset: service.Version,
 							},
+							Weight: 1,
 						},
 					},
 				})
@@ -216,9 +218,11 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 					Route: []*networkingv1alpha3.RouteDestination{
 						{
 							Destination: &networkingv1alpha3.Destination{
-								Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment)),
-								Port: &networkingv1alpha3.PortSelector{Number: uint32(port.Port)},
+								Host:   fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment)),
+								Port:   &networkingv1alpha3.PortSelector{Number: uint32(port.Port)},
+								Subset: service.Version,
 							},
+							Weight: 1,
 						},
 					},
 				})
@@ -266,9 +270,11 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 					{
 						Headers: headers,
 						Destination: &networkingv1alpha3.Destination{
-							Host: destHost,
-							Port: &networkingv1alpha3.PortSelector{Number: destPort},
+							Host:   destHost,
+							Port:   &networkingv1alpha3.PortSelector{Number: destPort},
+							Subset: service.Version,
 						},
+						Weight: 5,
 					},
 				},
 			})
@@ -446,6 +452,11 @@ func generateDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment)),
 			TrafficPolicy: &networkingv1alpha3.TrafficPolicy{
 				Tls: &networkingv1alpha3.TLSSettings{Mode: networkingv1alpha3.TLSSettings_ISTIO_MUTUAL},
+			},
+			Subsets: []*networkingv1alpha3.Subset{{
+				Name:   service.Version,
+				Labels: map[string]string{"version": service.Version},
+			},
 			},
 		},
 	}
