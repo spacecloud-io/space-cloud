@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -9,10 +10,17 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
-func (s *Manager) HandleRunnerRequests() http.HandlerFunc {
+func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
+			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		// http: Request.RequestURI can't be set in client requests.
 		// http://golang.org/src/pkg/net/http/client.go
 		r.RequestURI = ""
@@ -26,6 +34,14 @@ func (s *Manager) HandleRunnerRequests() http.HandlerFunc {
 
 		// Set the url scheme to http
 		r.URL.Scheme = "http"
+
+		token, err := admin.GetInternalAccessToken()
+		if err != nil {
+			logrus.Errorf("error handling forwarding runner request failed to generate internal access token -%v", err)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := http.DefaultClient.Do(r)

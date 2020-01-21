@@ -7,34 +7,37 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
-func (s *Manager) HandleArtifactRequests(auth *auth.Module) http.HandlerFunc {
+func (s *Manager) HandleArtifactRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// http: Request.RequestURI can't be set in client requests.
-		// http://golang.org/src/pkg/net/http/client.go
+		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
+			logrus.Errorf("error handling forwarding artifact request failed to validate token -%v", err)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		r.Host = strings.Split(s.artifactAddr, ":")[0]
 		r.URL.Host = s.artifactAddr
 
+		// http: Request.RequestURI can't be set in client requests.
+		// http://golang.org/src/pkg/net/http/client.go
 		r.RequestURI = ""
+
 		r.URL.Scheme = "http"
 
-		vars := mux.Vars(r)
-		project := vars["project"]
-		r.URL.Path = fmt.Sprintf("/v1/api/%s/files", project)
+		r.URL.Path = "/v1/api/space_cloud/files"
 
-		token, err := auth.GetInternalAccessToken()
+		token, err := admin.GetInternalAccessToken()
 		if err != nil {
 			logrus.Errorf("error handling forwarding artifact request failed to generate internal access token -%v", err)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 		// TODO: Use http2 client if that was the incoming request protocol

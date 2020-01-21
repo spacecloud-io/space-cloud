@@ -112,10 +112,10 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	}
 
 	// Add addresses for runner
-	router.PathPrefix("/v1/runner").HandlerFunc(s.syncMan.HandleRunnerRequests())
+	router.PathPrefix("/v1/runner").HandlerFunc(s.syncMan.HandleRunnerRequests(s.adminMan))
 
 	// forward request to artifact store
-	router.PathPrefix("/v1/{project}/artifact").HandlerFunc(s.syncMan.HandleArtifactRequests(s.auth))
+	router.PathPrefix("/v1/artifact").HandlerFunc(s.syncMan.HandleArtifactRequests(s.adminMan))
 
 	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))

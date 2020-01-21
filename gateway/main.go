@@ -76,7 +76,7 @@ var essentialFlags = []cli.Flag{
 	},
 	cli.StringFlag{
 		Name:   "artifact-addr",
-		Usage:  "The address used to reach the artifact",
+		Usage:  "The address used to reach the artifact server",
 		EnvVar: "ARTIFACT_ADDR",
 	},
 
