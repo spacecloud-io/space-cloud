@@ -202,7 +202,6 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 								Port:   &networkingv1alpha3.PortSelector{Number: destPort},
 								Subset: service.Version,
 							},
-							Weight: 1,
 						},
 					},
 				})
@@ -222,7 +221,6 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 								Port:   &networkingv1alpha3.PortSelector{Number: uint32(port.Port)},
 								Subset: service.Version,
 							},
-							Weight: 1,
 						},
 					},
 				})
@@ -274,7 +272,6 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 							Port:   &networkingv1alpha3.PortSelector{Number: destPort},
 							Subset: service.Version,
 						},
-						Weight: 5,
 					},
 				},
 			})
