@@ -55,11 +55,16 @@ func (s *storage) Store(key string, value []byte) error {
 		"size":  len(value),
 	}
 
-	data, err := s.db.Upsert(s.collection).Set(m).Apply(ctx)
-	if err != nil || data.Status != http.StatusOK {
-		logrus.Errorf("error while storing data of lets encrypt - %v %v", err, data.Error)
+	response, err := s.db.Upsert(s.collection).Set(m).Apply(ctx)
+	if err != nil {
+		logrus.Errorf("error while storing in lets encrypt - %v", err)
+		return err
 	}
-	return err
+	if response.Status != http.StatusOK {
+		logrus.Errorf("error while storing in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return fmt.Errorf("error while storing in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+	}
+	return nil
 }
 
 func (s *storage) Load(key string) ([]byte, error) {
@@ -67,25 +72,29 @@ func (s *storage) Load(key string) ([]byte, error) {
 	defer cancel()
 
 	response, err := s.db.GetOne(s.collection).Where(types.M{"_id": key}).Apply(ctx)
-	if err != nil || response.Status != http.StatusOK {
-		logrus.Errorf("error while retrieving response of lets encrypt - %v", err)
+	if err != nil {
+		logrus.Errorf("error while getting data in lets encrypting %v", err)
 		return nil, err
+	}
+	if response.Status != http.StatusOK {
+		logrus.Errorf("error while getting data in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return nil, fmt.Errorf("error while getting data in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
 	}
 
 	result, ok := response.Data["result"]
 	if !ok {
-		logrus.Errorf("error while getting data of lets encrypt unable to find field result in response body")
-		return nil, fmt.Errorf("error while getting data of lets encrypt unable to find field result in response body")
+		logrus.Errorf("error while getting data in lets encrypt unable to find field result in response body")
+		return nil, fmt.Errorf("error while getting data in lets encrypt unable to find field result in response body")
 	}
 	data, ok := result.(map[string]interface{})
 	if !ok {
-		logrus.Errorf("error while getting data of lets encrypt unable to assert result to map")
-		return nil, fmt.Errorf("error while getting data of lets encrypt unable to assert result to map")
+		logrus.Errorf("error while getting data in lets encrypt unable to assert result to map")
+		return nil, fmt.Errorf("error while getting data in lets encrypt unable to assert result to map")
 	}
 	value, ok := data["value"]
 	if !ok {
-		logrus.Errorf("error while getting data of lets encrypt unable to find field value in received data")
-		return nil, fmt.Errorf("error while getting data of lets encrypt unable to find field value in received data")
+		logrus.Errorf("error while getting data in lets encrypt unable to find field value in received data")
+		return nil, fmt.Errorf("error while getting data in lets encrypt unable to find field value in received data")
 	}
 
 	return base64.StdEncoding.DecodeString(value.(string))
@@ -95,11 +104,16 @@ func (s *storage) Delete(key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	data, err := s.db.Delete(s.collection).Where(types.M{"_id": key}).Apply(ctx)
-	if err != nil || data.Status != http.StatusOK {
-		logrus.Errorf("error while deleting data of lets encrypt - %v %v", err, data.Error)
+	response, err := s.db.Delete(s.collection).Where(types.M{"_id": key}).Apply(ctx)
+	if err != nil {
+		logrus.Errorf("error while deleting in lets encrypt - %v", err)
+		return err
 	}
-	return err
+	if response.Status != http.StatusOK {
+		logrus.Errorf("error while deleting lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return fmt.Errorf("error while deleting lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+	}
+	return nil
 }
 
 func (s *storage) Exists(key string) bool {
@@ -107,8 +121,12 @@ func (s *storage) Exists(key string) bool {
 	defer cancel()
 
 	response, err := s.db.Get(s.collection).Where(types.M{"_id": key}).Apply(ctx)
-	if err != nil || response.Status != http.StatusOK {
-		logrus.Errorf("error while checking existence of in lets encrypt unable to specified key - %v %v", err, response.Error)
+	if err != nil {
+		logrus.Errorf("error while checking existence in lets encrypt - %v", err)
+		return false
+	}
+	if response.Status != http.StatusOK {
+		logrus.Errorf("error while checking existence of in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
 		return false
 	}
 	result, ok := response.Data["result"]
@@ -124,7 +142,6 @@ func (s *storage) Exists(key string) bool {
 	if len(data) > 0 {
 		return true
 	}
-	logrus.Errorf("error while checking existence in lets encrypt length less than zero")
 	return false
 }
 
@@ -133,9 +150,13 @@ func (s *storage) List(prefix string, recursive bool) ([]string, error) {
 	defer cancel()
 
 	response, err := s.db.Get(s.collection).Where(types.Cond("_id", "regex", fmt.Sprintf("^%s", prefix))).Apply(ctx)
-	if err != nil || response.Status != http.StatusOK {
-		logrus.Errorf("error while listing response of lets encrypt - %v", err)
+	if err != nil {
+		logrus.Errorf("error while listing in lets encrypt - %v", err)
 		return nil, err
+	}
+	if response.Status != http.StatusOK {
+		logrus.Errorf("error while listing response of lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return nil, fmt.Errorf("error while listing response of lets encrypt got http status %v with error message - %v", response.Status, response.Error)
 	}
 
 	result, ok := response.Data["result"]
@@ -164,13 +185,17 @@ func (s *storage) Stat(key string) (certmagic.KeyInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	data, err := s.db.GetOne(s.collection).Where(types.M{"_id": key}).Apply(ctx)
-	if err != nil || data.Status != http.StatusOK {
-		logrus.Errorf("error getting stats in lets encrypt - %v", err)
+	response, err := s.db.GetOne(s.collection).Where(types.M{"_id": key}).Apply(ctx)
+	if err != nil {
+		logrus.Errorf("error while getting stats in lets encrypt - %v", err)
 		return certmagic.KeyInfo{}, err
 	}
+	if response.Status != http.StatusOK {
+		logrus.Errorf("error while getting stats in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+		return certmagic.KeyInfo{}, fmt.Errorf("error while getting stats in lets encrypt got http status %v with error message - %v", response.Status, response.Error)
+	}
 
-	modifiedTime, err := time.Parse(time.RFC3339, data.Data["modified"].(string))
+	modifiedTime, err := time.Parse(time.RFC3339, response.Data["modified"].(string))
 	if err != nil {
 		return certmagic.KeyInfo{}, fmt.Errorf("error getting stats in lets encrypt unable to parse string to time - %v", err)
 	}
@@ -178,7 +203,7 @@ func (s *storage) Stat(key string) (certmagic.KeyInfo, error) {
 	return certmagic.KeyInfo{
 		Key:        key,
 		Modified:   modifiedTime,
-		Size:       data.Data["size"].(int64),
+		Size:       response.Data["size"].(int64),
 		IsTerminal: true,
 	}, nil
 }
@@ -223,7 +248,9 @@ func (s *storage) Lock(key string) error {
 
 		case s.fileLockIsStale(info):
 			logrus.Printf("error in lets encrypt lock file is in stale state removing and trying again")
-			s.deleteLockFile(lockFile)
+			if err := s.deleteLockFile(lockFile); err != nil {
+				return err
+			}
 			continue
 
 		case time.Since(start) > staleLockDuration*2:
@@ -278,6 +305,7 @@ func (s *storage) deleteLockFile(keyPath string) error {
 	err := s.Delete(keyPath)
 	if err != nil {
 		logrus.Errorf("error while deleting lock file in lets encrypt - %v", err)
+		return fmt.Errorf("error while deleting lock file in lets encrypt - %v", err)
 	}
-	return err
+	return nil
 }
