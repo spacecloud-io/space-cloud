@@ -30,7 +30,7 @@ func New() (*LetsEncrypt, error) {
 	case StoreLocal:
 		client.Storage = certmagic.Default.Storage
 	case StoreSC:
-		// TODO: implement this
+		client.Storage = NewScStore()
 	default:
 		return nil, fmt.Errorf("unsupported store type (%s) provided for lets encrypt", c.StoreType)
 	}
