@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
@@ -63,10 +63,6 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	// Create a context with 5 second timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	// Return if the event is already being processed
 	if _, loaded := m.processingEvents.LoadOrStore(eventDoc.ID, true); loaded {
 		return
@@ -90,14 +86,20 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	} else {
 		maxRetries = 3
 	}
-	
+
+	if rule.Timeout == 0 {
+		rule.Timeout = 5000
+	}
+
 	// Call the function to process the event
-	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(maxRetries*rule.Timeout)*time.Millisecond)
+	timeoutLocal := time.Duration(maxRetries*rule.Timeout+15000) * time.Millisecond
+	log.Println("Timeout time: ", timeoutLocal)
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutLocal)
 	defer cancel()
 
 	// Create a variable to track retries
 	retries := 0
-
 
 	// Payload will be of type json. Unmarshal it before sending
 	var doc interface{}
@@ -108,56 +110,66 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		Time: time.Unix(0, eventDoc.Timestamp*int64(time.Millisecond)).Format(time.RFC3339), Data: eventDoc.Payload}
 
 	for {
-		internalToken, err := m.auth.GetInternalAccessToken()
-		if err != nil {
-			log.Println("Eventing: Couldn't trigger functions -", err)
-			return
-		}
+		if err := m.invokeWebhook(ctx, rule.Timeout, eventDoc, &cloudEvent); err != nil {
+			log.Println("Eventing staged event handler could not get response from service:", err)
 
-		scToken, err := m.auth.GetSCAccessToken()
-		if err != nil {
-			log.Println("Eventing: Couldn't trigger functions -", err)
-			return
-		}
-
-		var eventResponse model.EventResponse
-		err = m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, internalToken, scToken, cloudEvent, &eventResponse)
-		if err == nil {
-			var eventRequests []*model.QueueEventRequest
-
-			// Check if response contains an event request
-			if eventResponse.Event != nil {
-				eventRequests = append(eventRequests, eventResponse.Event)
+			// Increment the retries. Exit the loop if max retries reached.
+			retries++
+			if retries >= maxRetries {
+				// Mark event as failed
+				break
 			}
 
-			if eventResponse.Events != nil {
-				eventRequests = append(eventRequests, eventResponse.Events...)
-			}
-
-			if len(eventRequests) > 0 {
-				if err := m.batchRequests(ctx, eventRequests); err != nil {
-					log.Println("Eventing: Couldn't persist events err -", err)
-				}
-			}
-
-			_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
-			return
+			// Sleep for 5 seconds
+			time.Sleep(5 * time.Second)
+			continue
 		}
 
-		log.Println("Eventing staged event handler could not get response from service:", err)
-
-		// Increment the retries. Exit the loop if max retries reached.
-		retries++
-		if retries >= maxRetries {
-			// Mark event as failed
-			break
-		}
-
-		// Sleep for 5 seconds
-		time.Sleep(5 * time.Second)
+		// Reaching here means the event was successfully processed. Let's simply return
+		return
 	}
 
 	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		log.Println("Eventing staged event handler could not update event doc:", err)
 	}
+}
+
+func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model.EventDocument, cloudEvent *model.CloudEventPayload) error {
+	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
+	defer cancel()
+	internalToken, err := m.auth.GetInternalAccessToken()
+	if err != nil {
+		log.Println("Eventing: Couldn't trigger functions -", err)
+		return err
+	}
+
+	scToken, err := m.auth.GetSCAccessToken()
+	if err != nil {
+		log.Println("Eventing: Couldn't trigger functions -", err)
+		return err
+	}
+
+	var eventResponse model.EventResponse
+	if err := m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+		return err
+	}
+
+	var eventRequests []*model.QueueEventRequest
+	// Check if response contains an event request
+	if eventResponse.Event != nil {
+		eventRequests = append(eventRequests, eventResponse.Event)
+	}
+
+	if eventResponse.Events != nil {
+		eventRequests = append(eventRequests, eventResponse.Events...)
+	}
+
+	if len(eventRequests) > 0 {
+		if err := m.batchRequests(ctx, eventRequests); err != nil {
+			log.Println("Eventing: Couldn't persist events err -", err)
+		}
+	}
+
+	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+	return nil
 }

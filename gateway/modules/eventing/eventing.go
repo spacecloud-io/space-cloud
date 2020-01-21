@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"errors"
+	"log"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -38,15 +39,16 @@ type Module struct {
 }
 
 // New creates a new instance of the eventing module
-func New(auth *auth.Module, crud *crud.Module, schema *schema.Schema, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
+func New(auth *auth.Module, crud *crud.Module, schemaModule *schema.Schema, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
 
 	m := &Module{
 		auth:      auth,
 		crud:      crud,
-		schema:    schema,
+		schema:    schemaModule,
 		functions: functions,
 		adminMan:  adminMan,
 		syncMan:   syncMan,
+		schemas:   map[string]schema.SchemaFields{},
 		fileStore: file,
 		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
@@ -63,7 +65,9 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	for eventType, schemaObj := range m.config.Schemas {
+	log.Println("checking schema string:", eventing.Schemas)
+
+	for eventType, schemaObj := range eventing.Schemas {
 		dummyCrud := config.Crud{
 			"dummyDBName": &config.CrudStub{
 				Collections: map[string]*config.TableRule{
@@ -82,6 +86,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 			m.schemas[eventType] = schemaType["dummyDBName"][eventType]
 		}
 	}
+	log.Println(m.schemas)
 
 	if eventing == nil || !eventing.Enabled {
 		m.config.Enabled = false

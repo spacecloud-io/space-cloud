@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"context"
+	"log"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -58,7 +59,14 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 	if err != nil {
 		return err
 	}
-	projectConfig.Modules.Eventing.Schemas[evType] = config.SchemaObject{Schema: schema}
+	if len(projectConfig.Modules.Eventing.Schemas) != 0 {
+		projectConfig.Modules.Eventing.Schemas[evType] = config.SchemaObject{Schema: schema}
+	} else {
+		projectConfig.Modules.Eventing.Schemas = map[string]config.SchemaObject{
+			evType: config.SchemaObject{Schema: schema},
+		}
+	}
+	log.Println("checking schema in handler:", projectConfig.Modules.Eventing.Schemas)
 
 	return s.setProject(ctx, projectConfig)
 }

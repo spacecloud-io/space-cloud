@@ -121,8 +121,12 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 }
 
 func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type schemaRequest struct {
+		Type   string `json:"type"`
+		Schema string `json:"schema"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		w.Header().Set("Content-Type", "application/json")
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer r.Body.Close()
@@ -136,18 +140,13 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		type SchemaRequest struct {
-			EvType string `json:evType`
-			Schema string `json:"schema"`
-		}
-
-		c := SchemaRequest{}
+		c := schemaRequest{}
 		json.NewDecoder(r.Body).Decode(&c)
 
 		vars := mux.Vars(r)
 		project := vars["project"]
 
-		if err := syncMan.SetEventingSchema(ctx, project, c.EvType, c.Schema); err != nil {
+		if err := syncMan.SetEventingSchema(ctx, project, c.Type, c.Schema); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -162,7 +161,7 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		w.Header().Set("Content-Type", "application/json")
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer r.Body.Close()
