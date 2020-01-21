@@ -113,6 +113,9 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 		router.Handle("/debug/pprof/block", pprof.Handler("block"))
 	}
 
+	// Add addresses for runner
+	router.PathPrefix("/v1/runner").HandlerFunc(s.syncMan.HandleRunnerRequests())
+
 	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
 

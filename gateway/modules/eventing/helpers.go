@@ -196,16 +196,17 @@ func (m *Module) getMatchingRules(name string, options map[string]string) []conf
 	return rules
 }
 
-func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) bool {
 
+func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) bool {
+	
 	if rule1.Type != rule2.Type {
 		return false
 	}
-
+	
 	if !isOptionsValid(rule1.Options, rule2.Options) {
 		return false
 	}
-
+	
 	if rule1.URL != rule2.URL {
 		return false
 	}
@@ -215,11 +216,11 @@ func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) boo
 
 func convertToArray(eventDocs []*model.EventDocument) []interface{} {
 	docs := make([]interface{}, len(eventDocs))
-
+	
 	for i, doc := range eventDocs {
 		docs[i] = structs.Map(doc)
 	}
-
+	
 	return docs
 }
 
@@ -229,7 +230,7 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 			return false
 		}
 	}
-
+	
 	return true
 }
 

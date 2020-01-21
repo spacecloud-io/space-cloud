@@ -2,10 +2,12 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -96,6 +98,14 @@ func (s *Server) HandleApplyService() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(req)
 
 		if req.Data.Meta.IsDeploy {
+			// verify path e.g -> /artifacts/acc_id/projectid/env/version/build.zip
+			arr := strings.Split(req.Data.Path, "/")
+			// 7 will ensure that there will not be any index out of range error
+			if len(arr) != 7 || arr[3] != req.Data.Meta.Service.ProjectID || arr[4] != req.Data.Meta.Service.Environment || arr[5] != req.Data.Meta.Service.Environment {
+				logrus.Errorf("error applying service path verification failed")
+				utils.SendErrorResponse(w, r, http.StatusInternalServerError, errors.New("error applying service path verification failed"))
+				return
+			}
 			// Apply the service config
 			if err := s.driver.ApplyService(req.Data.Meta.Service); err != nil {
 				logrus.Errorf("Failed to apply service - %s", err.Error())
