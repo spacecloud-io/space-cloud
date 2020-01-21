@@ -95,9 +95,9 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	userRouter.Methods("GET").Path("/edit_profile/{id}").HandlerFunc(handlers.HandleEmailEditProfile(s.user))
 
 	// Initialize the routes for the file management operations
-	router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.auth, s.file))
-	router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.auth, s.file))
-	router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.auth, s.file))
+	router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.file))
+	router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.file))
+	router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.file))
 
 	// Register pprof handlers if profiler set to true
 	if profiler {
@@ -113,6 +113,9 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 
 	// Add addresses for runner
 	router.PathPrefix("/v1/runner").HandlerFunc(s.syncMan.HandleRunnerRequests())
+
+	// forward request to artifact store
+	router.PathPrefix("/v1/{project}/artifact").HandlerFunc(s.syncMan.HandleArtifactRequests(s.auth))
 
 	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))

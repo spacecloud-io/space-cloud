@@ -74,6 +74,11 @@ var essentialFlags = []cli.Flag{
 		Usage:  "The address used to reach the runner",
 		EnvVar: "RUNNER_ADDR",
 	},
+	cli.StringFlag{
+		Name:   "artifact-addr",
+		Usage:  "The address used to reach the artifact",
+		EnvVar: "ARTIFACT_ADDR",
+	},
 
 	// Flags for ssl
 	cli.BoolFlag{
@@ -182,6 +187,7 @@ func actionRun(c *cli.Context) error {
 
 	removeProjectScope := c.Bool("remove-project-scope")
 	runnerAddr := c.String("runner-addr")
+	artifactAddr := c.String("artifact-addr")
 
 	// Load flags related to ssl
 	sslEnable := c.Bool("ssl-enable")
@@ -209,7 +215,7 @@ func actionRun(c *cli.Context) error {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, removeProjectScope,
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
