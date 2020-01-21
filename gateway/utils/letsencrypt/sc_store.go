@@ -33,7 +33,7 @@ func NewScStore() *storage {
 		scProject = "space_cloud"
 	}
 	if scAddr == "" {
-		scAddr = "store.space-cloud.svc.cluster.local:4122"
+		scAddr = "store.space_cloud.svc.cluster.local:4122"
 	}
 	if scDatabase == "" {
 		scDatabase = "bolt"
