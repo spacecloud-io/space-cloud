@@ -16,7 +16,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
 )
 
@@ -28,7 +27,7 @@ const (
 )
 
 // HandleCreateFile creates the create file or directory endpoint
-func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc {
+func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
 		token, project, _ := getFileStoreMeta(r)
@@ -102,7 +101,7 @@ func HandleCreateFile(auth *auth.Module, fileStore *filestore.Module) http.Handl
 }
 
 // HandleRead creates read file and list directory endpoint
-func HandleRead(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc {
+func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
 		token, project, path := getFileStoreMeta(r)
@@ -148,12 +147,11 @@ func HandleRead(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc
 }
 
 // HandleDelete creates read file and list directory endpoint
-func HandleDelete(auth *auth.Module, fileStore *filestore.Module) http.HandlerFunc {
+func HandleDelete(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
 		token, project, path := getFileStoreMeta(r)
 		defer r.Body.Close()
-
 		v := map[string]interface{}{}
 		json.NewDecoder(r.Body).Decode(&v)
 		log.Println("v", v)

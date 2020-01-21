@@ -13,31 +13,28 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
-func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
+func (s *Manager) HandleArtifactRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
-			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
+			logrus.Errorf("error handling forwarding artifact request failed to validate token -%v", err)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		r.Host = strings.Split(s.artifactAddr, ":")[0]
+		r.URL.Host = s.artifactAddr
 
 		// http: Request.RequestURI can't be set in client requests.
 		// http://golang.org/src/pkg/net/http/client.go
 		r.RequestURI = ""
 
-		// Get host from addr
-		host := strings.Split(s.runnerAddr, ":")[0]
-
-		// Change the request with the destination host, port and url
-		r.Host = host
-		r.URL.Host = s.runnerAddr
-
-		// Set the url scheme to http
 		r.URL.Scheme = "http"
+
+		r.URL.Path = "/v1/api/space_cloud/files"
 
 		token, err := admin.GetInternalAccessToken()
 		if err != nil {
-			logrus.Errorf("error handling forwarding runner request failed to generate internal access token -%v", err)
+			logrus.Errorf("error handling forwarding artifact request failed to generate internal access token -%v", err)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -66,4 +63,5 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 
 		logrus.Debugf("Successfully copied %d bytes from upstream server (%s)", n, r.URL.String())
 	}
+
 }
