@@ -48,3 +48,31 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbType, col st
 
 	return s.setProject(ctx, projectConfig)
 }
+
+func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType string, schema string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	projectConfig.Modules.Eventing.Schemas[evType] = config.SchemaObject{Schema: schema}
+
+	return s.setProject(ctx, projectConfig)
+}
+
+func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, evType string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	delete(projectConfig.Modules.Eventing.Schemas, evType)
+
+	return s.setProject(ctx, projectConfig)
+}

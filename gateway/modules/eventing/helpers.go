@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
-	"fmt"
 
 	"github.com/fatih/structs"
 	"github.com/segmentio/ksuid"
@@ -60,7 +60,10 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.Name, batchID, utils.EventStatusStaged, r.URL, req)
+			eventDoc, err := m.generateQueueEventRequest(token, r.Retries, r.Name, batchID, utils.EventStatusStaged, r.URL, req)
+			if err != nil {
+				return err
+			}
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -76,7 +79,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) (*model.EventDocument, error) {
 
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 
@@ -95,6 +98,17 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 		retries = 3
 	}
 
+	// if m.config.IsForce == true {
+	// 	return nil, errors.New("required key not present in request")
+	// }
+
+	// _, err := m.schema.SchemaValidator(event.Type, m.schemas[event.Type], event.Payload.(map[string]interface{}))
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	err := m.validate(event)
+
 	return &model.EventDocument{
 		ID:             ksuid.New().String(),
 		BatchID:        batchID,
@@ -106,7 +120,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 		Status:         status,
 		Retries:        retries,
 		Url:            url,
-	}
+	}, err
 }
 
 func (m *Module) generateCancelEventRequest(eventID string) *model.UpdateRequest {
@@ -182,17 +196,16 @@ func (m *Module) getMatchingRules(name string, options map[string]string) []conf
 	return rules
 }
 
-
 func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) bool {
-	
+
 	if rule1.Type != rule2.Type {
 		return false
 	}
-	
+
 	if !isOptionsValid(rule1.Options, rule2.Options) {
 		return false
 	}
-	
+
 	if rule1.URL != rule2.URL {
 		return false
 	}
@@ -202,11 +215,11 @@ func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) boo
 
 func convertToArray(eventDocs []*model.EventDocument) []interface{} {
 	docs := make([]interface{}, len(eventDocs))
-	
+
 	for i, doc := range eventDocs {
 		docs[i] = structs.Map(doc)
 	}
-	
+
 	return docs
 }
 
@@ -216,7 +229,7 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -228,4 +241,16 @@ func (m *Module) selectRule(name string) (config.EventingRule, error) {
 		return rule, nil
 	}
 	return config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
+}
+
+func (m *Module) validate(event *model.QueueEventRequest) error {
+	if event.Type == utils.EventDBCreate || event.Type == utils.EventDBDelete || event.Type == utils.EventDBUpdate || event.Type == utils.EventFileCreate || event.Type == utils.EventFileDelete {
+		return nil
+	}
+	schema, p := m.schemas[event.Type]
+	if !p && m.config.IsForce == true {
+		return errors.New("required key not present in request")
+	}
+	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
+	return err
 }

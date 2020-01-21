@@ -138,7 +138,7 @@ func TestParseSchema(t *testing.T) {
 	s := Init(&crud.Module{}, false)
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			r, err := s.parser(testCase.Data)
+			r, err := s.Parser(testCase.Data)
 			if (err != nil) != testCase.IsErrExpected {
 				t.Errorf("\n Schema.parseSchema() error = expected error-%v,got error-%v", testCase.IsErrExpected, err)
 				return

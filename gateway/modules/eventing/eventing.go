@@ -33,6 +33,8 @@ type Module struct {
 	adminMan  *admin.Manager
 	syncMan   *syncman.Manager
 	fileStore *filestore.Module
+
+	schemas map[string]schema.SchemaFields
 }
 
 // New creates a new instance of the eventing module
@@ -60,6 +62,26 @@ func New(auth *auth.Module, crud *crud.Module, schema *schema.Schema, functions 
 func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
+	for eventType, schemaObj := range m.config.Schemas {
+		dummyCrud := config.Crud{
+			"dummyDBName": &config.CrudStub{
+				Collections: map[string]*config.TableRule{
+					eventType: &config.TableRule{
+						Schema: schemaObj.Schema,
+					},
+				},
+			},
+		}
+
+		schemaType, err := m.schema.Parser(dummyCrud)
+		if err != nil {
+			return err
+		}
+		if len(schemaType["dummyDBName"][eventType]) != 0 {
+			m.schemas[eventType] = schemaType["dummyDBName"][eventType]
+		}
+	}
 
 	if eventing == nil || !eventing.Enabled {
 		m.config.Enabled = false

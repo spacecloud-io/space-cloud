@@ -119,3 +119,82 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 	}
 }
+
+func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		type SchemaRequest struct {
+			EvType string `json:evType`
+			Schema string `json:"schema"`
+		}
+
+		c := SchemaRequest{}
+		json.NewDecoder(r.Body).Decode(&c)
+
+		vars := mux.Vars(r)
+		project := vars["project"]
+
+		if err := syncMan.SetEventingSchema(ctx, project, c.EvType, c.Schema); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+
+	}
+}
+
+func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		type SchemaDeleteRequest struct {
+			EvType string `json:evType`
+		}
+
+		c := SchemaDeleteRequest{}
+		json.NewDecoder(r.Body).Decode(&c)
+
+		vars := mux.Vars(r)
+		project := vars["project"]
+
+		if err := syncMan.SetDeleteEventingSchema(ctx, project, c.EvType); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+
+	}
+}
