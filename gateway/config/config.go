@@ -188,10 +188,11 @@ type LetsEncrypt struct {
 }
 
 // Routes describes the configuration for the routing module
-type Routes []Route
+type Routes []*Route
 
 // Route describes the parameters of a single route
 type Route struct {
+	Id          string           `json:"id" yaml:"id"`
 	Source      RouteSource      `json:"source" yaml:"source"`
 	Destination RouteDestination `json:"dest" yaml:"dest"`
 }

@@ -5,6 +5,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
 const (
@@ -21,11 +23,11 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "runner"
-	app.Version = "0.1.0"
+	app.Version = model.Version
 
 	app.Commands = []cli.Command{
 		{
-			Name:  "runner",
+			Name:  "start",
 			Usage: "Starts a runner instance",
 			Flags: []cli.Flag{
 				cli.StringFlag{
@@ -48,12 +50,6 @@ func main() {
 				},
 
 				// JWT config
-				cli.StringFlag{
-					Name:   "jwt-algo",
-					EnvVar: "JWT_ALGO",
-					Usage:  "The jwt algorithm to use for verification and signing [ hs256 | rsa256 ]",
-					Value:  "hs256",
-				},
 				cli.StringFlag{
 					Name:   "jwt-secret",
 					EnvVar: "JWT_SECRET",
@@ -78,6 +74,12 @@ func main() {
 					Name:   "driver-config",
 					EnvVar: "DRIVER_CONFIG",
 					Usage:  "Driver config file path",
+				},
+				cli.StringFlag{
+					Name:   "artifact-addr",
+					EnvVar: "ARTIFACT_ADDR",
+					Usage:  "The address used to reach the artifact serverl",
+					Value:  "http://store.space-cloud.svc.cluster.local",
 				},
 				cli.BoolFlag{
 					Name:   "outside-cluster",

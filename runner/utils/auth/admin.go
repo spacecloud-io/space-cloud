@@ -11,34 +11,15 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return nil, nil
-
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-
-		// Declare the variables
-		var alg string
-		var key interface{}
-
-		// See which algorithm has been configured
-		switch m.config.JWTAlgorithm {
-		case RSA256:
-			alg = jwt.SigningMethodRS256.Alg()
-			key = m.config.PublicKey
-		case HS256:
-			alg = jwt.SigningMethodHS256.Alg()
-			key = []byte(m.config.Secret)
-		default:
-			return nil, errors.New("invalid signing methods configured")
-		}
-
-		// Don't forget to validate the alg is what you expect:
-		if token.Method.Alg() != alg {
+		// Don't forget to validate the alg is what you expect it to be
+		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, errors.New("invalid signing method")
 		}
 
 		// Return the key
-		return key, nil
+		return []byte(m.config.Secret), nil
 	})
 	if err != nil {
 		return nil, err
@@ -55,4 +36,14 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 	}
 
 	return nil, errors.New("token could not be verified")
+}
+
+// GenerateTokenForArtifactStore creates a token for the artifact store
+func (m *Module) GenerateTokenForArtifactStore(serviceID, projectID, version string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"id":      serviceID,
+		"project": projectID,
+		"version": version,
+	})
+	return token.SignedString([]byte(m.config.Secret))
 }
