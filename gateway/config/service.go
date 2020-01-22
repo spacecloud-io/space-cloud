@@ -11,10 +11,9 @@ type RunnerService struct {
 	Labels      map[string]string `json:"labels" yaml:"labels"`
 	Tasks       []Task            `json:"tasks" yaml:"tasks"`
 	Affinity    []Affinity        `json:"affinity" yaml:"affinity"`
-	Whitelist   []string          `json:"whitelist" yaml:"whitelist"`
+	Whitelist   []string          `json:"whitelists" yaml:"whitelists"`
 	Upstreams   []Upstream        `json:"upstreams" yaml:"upstreams"`
 	Runtime     string            `json:"runtime" yaml:"runtime"`
-	Expose      *Expose           `json:"expose" yaml:"expose"`
 }
 
 // ScaleConfig describes the config used to scale a service
@@ -66,23 +65,4 @@ type Affinity struct {
 type Upstream struct {
 	ProjectID string `json:"projectId" yaml:"projectId"`
 	Service   string `json:"service" yaml:"service"`
-}
-
-// Expose describes how an http service needs to be exposed
-type Expose struct {
-	Hosts []string     `json:"hosts" yaml:"hosts"`
-	Rules []ExposeRule `json:"rules" yaml:"rules"`
-}
-
-// ExposeRule describes the rules for exposing an http service
-type ExposeRule struct {
-	URI  ExposeRuleURI `json:"uri" yaml:"uri"`
-	Port int32         `json:"port" yaml:"port"`
-}
-
-// ExposeRuleURI describes the the http routes which need to be exposed
-type ExposeRuleURI struct {
-	Prefix  *string `json:"prefix" yaml:"prefix"`
-	Exact   *string `json:"exact" yaml:"exact"`
-	Rewrite *string `json:"rewrite" yaml:"rewrite"`
 }

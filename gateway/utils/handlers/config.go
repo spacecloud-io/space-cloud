@@ -91,12 +91,15 @@ func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.R
 
 	if httpRes.StatusCode != http.StatusOK {
 		logrus.Errorf("error while getting services in handler got http request -%v", httpRes.StatusCode)
-		return nil, err
+		return nil, fmt.Errorf("error while getting services in handler got http request -%v", httpRes.StatusCode)
 	}
 
-	services := []*config.RunnerService{}
-	_ = json.NewDecoder(httpRes.Body).Decode(&services)
-	return services, nil
+	type resp struct {
+		Services []*config.RunnerService `json:"services"`
+	}
+	data := resp{}
+	err = json.NewDecoder(httpRes.Body).Decode(&data)
+	return data.Services, err
 }
 
 // HandleLoadProjects returns the handler to load the projects via a REST endpoint
