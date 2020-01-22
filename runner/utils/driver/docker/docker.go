@@ -71,7 +71,7 @@ func (d *docker) ApplyService(ctx context.Context, service *model.Service) error
 
 		// set environment variables of docker container
 		task.Env["URL"] = fmt.Sprintf("http://service.artifact.svc.cluster.local:4122")
-		token, err := d.auth.GenerateHS256Token(service.ID, service.ProjectID, service.Version)
+		token, err := d.auth.GenerateTokenForArtifactStore(service.ID, service.ProjectID, service.Version)
 		if err != nil {
 			logrus.Errorf("error applying service in docker unable generate token - %v", err)
 			return err

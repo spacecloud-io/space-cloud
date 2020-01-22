@@ -8,4 +8,4 @@ FROM alpine:3.10
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=0 /build/app .
-CMD ["./app", "run"]
+CMD ["./app", "start"]

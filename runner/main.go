@@ -5,6 +5,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
 const (
@@ -21,11 +23,11 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "runner"
-	app.Version = "0.1.0"
+	app.Version = model.Version
 
 	app.Commands = []cli.Command{
 		{
-			Name:  "runner",
+			Name:  "start",
 			Usage: "Starts a runner instance",
 			Flags: []cli.Flag{
 				cli.StringFlag{
@@ -48,12 +50,6 @@ func main() {
 				},
 
 				// JWT config
-				cli.StringFlag{
-					Name:   "jwt-algo",
-					EnvVar: "JWT_ALGO",
-					Usage:  "The jwt algorithm to use for verification and signing [ hs256 | rsa256 ]",
-					Value:  "hs256",
-				},
 				cli.StringFlag{
 					Name:   "jwt-secret",
 					EnvVar: "JWT_SECRET",
