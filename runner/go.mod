@@ -16,6 +16,8 @@ require (
 	github.com/gorilla/websocket v1.4.1
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/opencontainers/runc v0.1.1 // indirect
+	github.com/opencontainers/selinux v1.3.0 // indirect
 	github.com/rs/cors v1.7.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.2

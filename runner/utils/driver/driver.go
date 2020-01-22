@@ -23,11 +23,12 @@ func New(auth *auth.Module, c *Config) (Driver, error) {
 			istioConfig = istio.GenerateOutsideClusterConfig(c.ConfigFilePath)
 		}
 		istioConfig.SetProxyPort(c.ProxyPort)
+		istioConfig.ArtifactAddr = c.ArtifactAddr
 
 		return istio.NewIstioDriver(auth, istioConfig)
 
 	case model.TypeDocker:
-		return docker.NewDockerDriver(auth)
+		return docker.NewDockerDriver(auth, c.ArtifactAddr)
 
 	default:
 		return nil, fmt.Errorf("invalid driver type (%s) provided", c.DriverType)
@@ -40,12 +41,15 @@ type Config struct {
 	ConfigFilePath string
 	IsInCluster    bool
 	ProxyPort      uint32
+	ArtifactAddr   string
 }
 
 // Driver is the interface of the modules which interact with the deployment targets
 type Driver interface {
 	CreateProject(project *model.Project) error
 	ApplyService(ctx context.Context, service *model.Service) error
+	GetServices(ctx context.Context, projectId string) ([]*model.Service, error)
+	DeleteService(ctx context.Context, serviceId, projectId, version string) error
 	AdjustScale(service *model.Service, activeReqs int32) error
 	WaitForService(service *model.Service) error
 	Type() model.DriverType

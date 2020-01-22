@@ -91,12 +91,17 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 		service.Scale.Concurrency = 50
 	}
 
+	token, err := i.auth.GenerateTokenForArtifactStore(service.ID, service.ProjectID, service.Version)
+	if err != nil {
+		return err
+	}
+
 	// Create necessary resources
 	// We do not need to setup destination rules since we will be enabling global mtls as described by this guide:
 	// https://istio.io/docs/tasks/security/authentication/authn-policy/#globally-enabling-istio-mutual-tls
 	// However we will need destination rules when routing between various versions
 	kubeServiceAccount := generateServiceAccount(service)
-	kubeDeployment := i.generateDeployment(service)
+	kubeDeployment := i.generateDeployment(service, token)
 	kubeService := generateService(service)
 	istioVirtualService := i.generateVirtualService(service)
 	istioDestRule := generateDestinationRule(service)
@@ -104,7 +109,7 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 	istioSidecar := generateSidecarConfig(service)
 
 	// Create a service account if it doesn't already exist. This is used as the identity of the service.
-	_, err := i.kube.CoreV1().ServiceAccounts(ns).Get(getServiceAccountName(service), metav1.GetOptions{})
+	_, err = i.kube.CoreV1().ServiceAccounts(ns).Get(getServiceAccountName(service), metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create the resources since they dont exist
 		logrus.Debugf("Creating service account for %s in %s", service.ID, ns)
@@ -204,7 +209,7 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 	return nil
 }
 
-func (i *Istio) DeleteService(serviceId, projectId, version string) error {
+func (i *Istio) DeleteService(ctx context.Context, serviceId, projectId, version string) error {
 	service := &model.Service{ID: serviceId, ProjectID: projectId, Version: version}
 	err := i.kube.CoreV1().ServiceAccounts(projectId).Delete(getServiceAccountName(service), &metav1.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) {
@@ -245,122 +250,124 @@ func (i *Istio) DeleteService(serviceId, projectId, version string) error {
 	return nil
 }
 
-func (i *Istio) GetServices(serviceId, projectId, version string) ([]*model.Service, error) {
-	// assumption we don't have environment id in namespace
-	service := new(model.Service)
-	service.ProjectID = projectId
-	service.ID = serviceId
-	service.Version = version
-	deployment, err := i.kube.AppsV1().Deployments(projectId).Get(getDeploymentName(service), metav1.GetOptions{})
+func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Service, error) {
+	deploymentList, err := i.kube.AppsV1().Deployments(projectId).List(metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("error getting service in istio unable to find deployment got error message - %v", err)
 		return nil, err
 	}
+	services := []*model.Service{}
+	for _, deployment := range deploymentList.Items {
+		service := new(model.Service)
+		service.ProjectID = projectId
+		service.ID = deployment.Labels["app"]
+		service.Version = deployment.Labels["version"]
+		s1, err := strconv.Atoi(deployment.Annotations["concurrency"])
+		if err != nil {
+			logrus.Errorf("error getting service in istio unable convert string to int annotation concurrency got error message - %v", err)
+			return nil, err
+		}
+		s2, err := strconv.Atoi(deployment.Annotations["minReplicas"])
+		if err != nil {
+			logrus.Errorf("error getting service in istio unable convert string to int annotation minReplicas got error message - %v", err)
+			return nil, err
+		}
+		s3, err := strconv.Atoi(deployment.Annotations["maxReplicas"])
+		if err != nil {
+			logrus.Errorf("error getting service in istio unable convert string to int annotation maxReplicas got error message - %v", err)
+			return nil, err
+		}
+		service.Scale.Concurrency = int32(s1)
+		service.Scale.MinReplicas = int32(s2)
+		service.Scale.MaxReplicas = int32(s3)
+		service.Scale.Replicas = *deployment.Spec.Replicas
 
-	s1, err := strconv.Atoi(deployment.Annotations["concurrency"])
-	if err != nil {
-		logrus.Errorf("error getting service in istio unable convert string to int annotation concurrency got error message - %v", err)
-		return nil, err
-	}
-	s2, err := strconv.Atoi(deployment.Annotations["minReplicas"])
-	if err != nil {
-		logrus.Errorf("error getting service in istio unable convert string to int annotation minReplicas got error message - %v", err)
-		return nil, err
-	}
-	s3, err := strconv.Atoi(deployment.Annotations["maxReplicas"])
-	if err != nil {
-		logrus.Errorf("error getting service in istio unable convert string to int annotation maxReplicas got error message - %v", err)
-		return nil, err
-	}
-	service.Scale.Concurrency = int32(s1)
-	service.Scale.MinReplicas = int32(s2)
-	service.Scale.MaxReplicas = int32(s3)
-	service.Scale.Replicas = *deployment.Spec.Replicas
+		for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
+			// get ports
+			ports := []model.Port{}
+			for _, port := range containerInfo.Ports {
+				ports = append(ports, model.Port{Name: port.Name, Port: port.ContainerPort})
+			}
 
-	for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
-		// get ports
-		ports := []model.Port{}
-		for _, port := range containerInfo.Ports {
-			ports = append(ports, model.Port{Name: port.Name, Port: port.ContainerPort})
+			// get environment variables
+			envs := map[string]string{}
+			for _, env := range containerInfo.Env {
+				envs[env.Name] = env.Value
+			}
+
+			// Extract the runtime from the environment variable
+			runtime := model.Runtime(envs[runtimeEnvVariable])
+			delete(envs, runtimeEnvVariable)
+
+			// Delete internal environment variables if runtime was code
+			if runtime == model.Code {
+				delete(envs, model.ArtifactURL)
+				delete(envs, model.ArtifactToken)
+				delete(envs, model.ArtifactProject)
+				delete(envs, model.ArtifactService)
+				delete(envs, model.ArtifactVersion)
+			}
+
+			// set tasks
+			service.Tasks = append(service.Tasks, model.Task{
+				ID:    containerInfo.Name,
+				Name:  containerInfo.Name,
+				Ports: ports,
+				Resources: model.Resources{
+					CPU:    containerInfo.Resources.Requests.Cpu().MilliValue(),
+					Memory: containerInfo.Resources.Requests.Memory().Value() / (1024 * 1024),
+				},
+				Docker: model.Docker{
+					Image: containerInfo.Image,
+					Creds: nil,
+					Cmd:   containerInfo.Command,
+				},
+				Env:     envs,
+				Runtime: runtime,
+			})
 		}
 
-		// get environment variables
-		envs := map[string]string{}
-		for _, env := range containerInfo.Env {
-			envs[env.Name] = env.Value
+		// set whitelist
+		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectId).Get(getAuthorizationPolicyName(service), metav1.GetOptions{})
+		if len(authPolicy.Spec.Rules[0].From) != 0 {
+			for _, rule := range authPolicy.Spec.Rules[0].From {
+				for _, projectId := range rule.Source.Namespaces {
+					if projectId == "space-cloud" {
+						continue
+					}
+					service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: projectId, Service: "*"})
+				}
+				for _, serv := range rule.Source.Principals {
+					whitelistArr := strings.Split(serv, "/")
+					if len(whitelistArr) != 5 {
+						logrus.Error("error getting service in istio length of whitelist array is not equal to 5")
+						continue
+					}
+					service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: whitelistArr[2], Service: whitelistArr[4]})
+				}
+			}
 		}
 
-		// Extract the runtime from the environment variable
-		runtime := model.Runtime(envs[runtimeEnvVariable])
-		delete(envs, runtimeEnvVariable)
-
-		// Delete internal environment variables if runtime was code
-		if runtime == model.Code {
-			delete(envs, model.ArtifactURL)
-			delete(envs, model.ArtifactToken)
-			delete(envs, model.ArtifactProject)
-			delete(envs, model.ArtifactService)
-			delete(envs, model.ArtifactVersion)
-		}
-
-		// set tasks
-		service.Tasks = append(service.Tasks, model.Task{
-			ID:    containerInfo.Name,
-			Name:  containerInfo.Name,
-			Ports: ports,
-			Resources: model.Resources{
-				CPU:    containerInfo.Resources.Requests.Cpu().MilliValue(),
-				Memory: containerInfo.Resources.Requests.Memory().Value() / (1024 * 1024),
-			},
-			Docker: model.Docker{
-				Image: containerInfo.Image,
-				Creds: nil,
-				Cmd:   containerInfo.Command,
-			},
-			Env:     envs,
-			Runtime: runtime,
-		})
-	}
-
-	// set whitelist
-	authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectId).Get(getAuthorizationPolicyName(service), metav1.GetOptions{})
-	if len(authPolicy.Spec.Rules[0].From) != 0 {
-		for _, rule := range authPolicy.Spec.Rules[0].From {
-			for _, projectId := range rule.Source.Namespaces {
-				if projectId == "space-cloud" {
+		// Set upstreams
+		sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectId).Get(service.ID, metav1.GetOptions{})
+		for key, value := range sideCar.Spec.Egress[0].Hosts {
+			upstream := model.Upstream{}
+			if key != 0 { // as at index 0 default upstream space-cloud is automatically inserted
+				a := strings.Split(value, "/")
+				if a[0] == "space-cloud" {
 					continue
 				}
-				service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: projectId, Service: "*"})
+				upstream.ProjectID = a[0]
+				upstream.Service = a[1]
 			}
-			for _, serv := range rule.Source.Principals {
-				whitelistArr := strings.Split(serv, "/")
-				if len(whitelistArr) != 5 {
-					logrus.Error("error getting service in istio length of whitelist array is not equal to 5")
-					continue
-				}
-				service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: whitelistArr[2], Service: whitelistArr[4]})
-			}
+			service.Upstreams = append(service.Upstreams, upstream)
 		}
+
+		// todo labels, serviceName, affinity, runtime
+		services = append(services, service)
 	}
 
-	// Set upstreams
-	sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectId).Get(serviceId, metav1.GetOptions{})
-	for key, value := range sideCar.Spec.Egress[0].Hosts {
-		upstream := model.Upstream{}
-		if key != 0 { // as at index 0 default upstream space-cloud is automatically inserted
-			a := strings.Split(value, "/")
-			if a[0] == "space-cloud" {
-				continue
-			}
-			upstream.ProjectID = a[0]
-			upstream.Service = a[1]
-		}
-		service.Upstreams = append(service.Upstreams, upstream)
-	}
-
-	// todo labels, serviceName, affinity, runtime
-
-	return []*model.Service{service}, nil
+	return services, nil
 }
 
 // AdjustScale adjusts the number of instances based on the number of active requests. It tries to make sure that

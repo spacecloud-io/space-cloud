@@ -27,6 +27,7 @@ func actionRunner(c *cli.Context) error {
 	driverConfig := c.String("driver-config")
 	outsideCluster := c.Bool("outside-cluster")
 
+	ArtifactAddr := c.String("artifact-addr")
 	// Set the log level
 	setLogLevel(loglevel)
 
@@ -42,6 +43,7 @@ func actionRunner(c *cli.Context) error {
 			DriverType:     model.DriverType(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
+			ArtifactAddr:   ArtifactAddr,
 		},
 	})
 	if err != nil {

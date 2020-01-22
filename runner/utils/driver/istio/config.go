@@ -4,6 +4,7 @@ package istio
 type Config struct {
 	IsInsideCluster bool
 	KubeConfigPath  string
+	ArtifactAddr    string
 	ProxyPort       uint32
 }
 

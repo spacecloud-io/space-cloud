@@ -20,13 +20,13 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
+func (i *Istio) prepareContainers(service *model.Service, token string) []v1.Container {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
 	// TODO: Add support for private repos
 	tasks := service.Tasks
 	containers := make([]v1.Container, len(tasks))
-	for i, task := range tasks {
+	for index, task := range tasks {
 		// Prepare env variables
 		var envVars []v1.EnvVar
 		for k, v := range task.Env {
@@ -35,8 +35,8 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 		// Add an environment variable to hold the runtime value
 		envVars = append(envVars, v1.EnvVar{Name: runtimeEnvVariable, Value: string(task.Runtime)})
 		if task.Runtime == model.Code {
-			artifactURL := v1.EnvVar{Name: model.ArtifactURL, Value: ""}
-			artifactToken := v1.EnvVar{Name: model.ArtifactToken, Value: ""}
+			artifactURL := v1.EnvVar{Name: model.ArtifactURL, Value: i.config.ArtifactAddr}
+			artifactToken := v1.EnvVar{Name: model.ArtifactToken, Value: token}
 			artifactProject := v1.EnvVar{Name: model.ArtifactProject, Value: service.ProjectID}
 			artifactService := v1.EnvVar{Name: model.ArtifactService, Value: service.ID}
 			artifactVersion := v1.EnvVar{Name: model.ArtifactVersion, Value: service.Version}
@@ -55,7 +55,7 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 			}
 		}
 
-		containers[i] = v1.Container{
+		containers[index] = v1.Container{
 			Name: task.ID,
 			Env:  envVars,
 			// Resource Related
@@ -386,7 +386,7 @@ func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 	return &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: saName, Labels: map[string]string{"account": service.ID}}}
 }
 
-func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
+func (i *Istio) generateDeployment(service *model.Service, token string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getDeploymentName(service),
@@ -410,7 +410,7 @@ func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
 				},
 				Spec: v1.PodSpec{
 					ServiceAccountName: getServiceAccountName(service),
-					Containers:         i.prepareContainers(service),
+					Containers:         i.prepareContainers(service, token),
 					// TODO: Add config for affinity
 				},
 			},

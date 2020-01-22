@@ -75,6 +75,12 @@ func main() {
 					EnvVar: "DRIVER_CONFIG",
 					Usage:  "Driver config file path",
 				},
+				cli.StringFlag{
+					Name:   "artifact-addr",
+					EnvVar: "ARTIFACT_ADDR",
+					Usage:  "The address used to reach the artifact serverl",
+					Value:  "http://store.space-cloud.svc.cluster.local",
+				},
 				cli.BoolFlag{
 					Name:   "outside-cluster",
 					EnvVar: "OUTSIDE_CLUSTER",

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
@@ -48,14 +50,16 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 	}
 }
 
-func (s *Server) handleServiceRequest() http.HandlerFunc {
+func (s *Server) handleApplyService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
 		defer utils.CloseReaderCloser(r.Body)
 
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
 		// Verify token
-		token := utils.GetToken(r)
-		_, err := s.auth.VerifyToken(token)
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
@@ -73,7 +77,7 @@ func (s *Server) handleServiceRequest() http.HandlerFunc {
 		// TODO: Override the project id present in the service object with the one present in the token if user not admin
 
 		// Apply the service config
-		if err := s.driver.ApplyService(service, token); err != nil {
+		if err := s.driver.ApplyService(ctx, service); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -83,13 +87,74 @@ func (s *Server) handleServiceRequest() http.HandlerFunc {
 	}
 }
 
-func (s *Server) HandleApplyService() http.HandlerFunc {
+func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
 		// Verify token
-		token := utils.GetToken(r)
-		_, err := s.auth.VerifyToken(token)
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		vars := mux.Vars(r)
+		projectId := vars["projectId"]
+		serviceId := vars["serviceId"]
+		version := vars["version"]
+
+		if err := s.driver.DeleteService(ctx, projectId, serviceId, version); err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
+		utils.SendEmptySuccessResponse(w, r)
+	}
+}
+
+func (s *Server) HandleGetServices() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		vars := mux.Vars(r)
+		projectId := vars["projectId"]
+
+		services, err := s.driver.GetServices(ctx, projectId)
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": services})
+	}
+}
+
+func (s *Server) HandleApplyEventingService() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
@@ -100,16 +165,16 @@ func (s *Server) HandleApplyService() http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(req)
 
 		if req.Data.Meta.IsDeploy {
-			// verify path e.g -> /artifacts/acc_id/projectid/env/version/build.zip
+			// verify path e.g -> /artifacts/acc_id/projectid/version/build.zip
 			arr := strings.Split(req.Data.Path, "/")
 			// 7 will ensure that there will not be any index out of range error
-			if len(arr) != 7 || arr[3] != req.Data.Meta.Service.ProjectID || arr[4] != req.Data.Meta.Service.Environment || arr[5] != req.Data.Meta.Service.Environment {
+			if len(arr) != 7 || arr[3] != req.Data.Meta.Service.ProjectID || arr[4] != req.Data.Meta.Service.Version {
 				logrus.Errorf("error applying service path verification failed")
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, errors.New("error applying service path verification failed"))
 				return
 			}
 			// Apply the service config
-			if err := s.driver.ApplyService(req.Data.Meta.Service, token); err != nil {
+			if err := s.driver.ApplyService(ctx, req.Data.Meta.Service); err != nil {
 				logrus.Errorf("Failed to apply service - %s", err.Error())
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 				return
@@ -134,7 +199,6 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		service := r.Header.Get("x-og-service")
 		ogHost := r.Header.Get("x-og-host")
 		ogPort := r.Header.Get("x-og-port")
-		ogEnv := r.Header.Get("x-og-env")
 		ogVersion := r.Header.Get("x-og-version")
 
 		// Delete the headers
@@ -154,11 +218,11 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 		// Add to active request count
 		// TODO: add support for multiple versions
-		s.chAppend <- &model.ProxyMessage{Service: service, Project: project, Environment: ogEnv, Version: ogVersion, NodeID: "s-proxy", ActiveRequests: 1}
+		s.chAppend <- &model.ProxyMessage{Service: service, Project: project, Version: ogVersion, NodeID: "s-proxy", ActiveRequests: 1}
 
 		// Wait for the service to scale up
 		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s", project, service), func() error {
-			return s.driver.WaitForService(&model.Service{ProjectID: project, ID: service, Environment: ogEnv, Version: ogVersion})
+			return s.driver.WaitForService(&model.Service{ProjectID: project, ID: service, Version: ogVersion})
 		}); err != nil {
 			utils.SendErrorResponse(w, r, http.StatusServiceUnavailable, err)
 			return
