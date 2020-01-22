@@ -55,16 +55,16 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		// Close the body of the request
 		defer utils.CloseReaderCloser(r.Body)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
 		// Verify token
-		_, err := s.auth.VerifyToken(utils.GetToken(r))
-		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
-			return
-		}
+		// _, err := s.auth.VerifyToken(utils.GetToken(r))
+		// if err != nil {
+		// 	logrus.Errorf("Failed to apply service - %s", err.Error())
+		// 	utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+		// 	return
+		// }
 
 		// Parse request body
 		service := new(model.Service)
@@ -91,23 +91,23 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 
 		// Verify token
-		_, err := s.auth.VerifyToken(utils.GetToken(r))
-		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
-			return
-		}
+		// _, err := s.auth.VerifyToken(utils.GetToken(r))
+		// if err != nil {
+		// 	logrus.Errorf("Failed to apply service - %s", err.Error())
+		// 	utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+		// 	return
+		// }
 
 		vars := mux.Vars(r)
 		projectId := vars["projectId"]
 		serviceId := vars["serviceId"]
 		version := vars["version"]
 
-		if err := s.driver.DeleteService(ctx, projectId, serviceId, version); err != nil {
+		if err := s.driver.DeleteService(ctx, serviceId, projectId, version); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -123,13 +123,13 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		// Verify token
-		_, err := s.auth.VerifyToken(utils.GetToken(r))
-		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
-			return
-		}
+		// // Verify token
+		// _, err := s.auth.VerifyToken(utils.GetToken(r))
+		// if err != nil {
+		// 	logrus.Errorf("Failed to apply service - %s", err.Error())
+		// 	utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+		// 	return
+		// }
 
 		vars := mux.Vars(r)
 		projectId := vars["projectId"]

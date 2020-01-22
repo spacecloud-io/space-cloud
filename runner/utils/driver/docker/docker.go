@@ -2,9 +2,8 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"io"
-	"os"
 	"strconv"
 	"strings"
 
@@ -53,42 +52,75 @@ func (d *docker) ApplyService(ctx context.Context, service *model.Service) error
 		return err
 	}
 
+	// get all the ports to be exposed of all tasks
+	ports := []model.Port{}
+	for _, task := range service.Tasks {
+		for _, port := range task.Ports {
+			ports = append(ports, port)
+		}
+	}
+
 	var containerName, containerIp string
 	for index, task := range service.Tasks {
 		if index == 0 {
-			containerName, containerIp, err = d.createContainer(ctx, task, service, "")
+			containerName, containerIp, err = d.createContainer(ctx, task, service, ports, "")
 			if err != nil {
 				return err
 			}
 			hostFile.AddHost(containerIp, fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID))
+			continue
 		}
-		_, _, err = d.createContainer(ctx, task, service, containerName)
+		_, _, err = d.createContainer(ctx, task, service, []model.Port{}, containerName)
 		return err
 	}
 
-	// TODO CHECK IF THE BELOW FUNCTION IS NEEDED WHILE TESTING
-	// if err := hostFile.Save(); err != nil {
-	// 	logrus.Errorf("error applying service in docker unable to save host file - %v", err)
-	// 	return err
-	// }
+	if err := hostFile.Save(); err != nil {
+		logrus.Errorf("error applying service in docker unable to save host file - %v", err)
+		return err
+	}
 	return nil
 }
 
-func (d *docker) createContainer(ctx context.Context, task model.Task, service *model.Service, cName string) (string, string, error) {
-	out, err := d.client.ImagePull(ctx, task.Docker.Image, types.ImagePullOptions{})
+func (d *docker) createContainer(ctx context.Context, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
+	// out, err := d.client.ImagePull(ctx, task.Docker.Image, types.ImagePullOptions{})
+	// if err != nil {
+	// 	return "", "", err
+	// }
+	// io.Copy(os.Stdout, out)
+	service.Labels["internalRuntime"] = string(task.Runtime)
+	portsJsonString, err := json.Marshal(&task.Ports)
 	if err != nil {
+		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
 		return "", "", err
 	}
-	io.Copy(os.Stdout, out)
-	service.Labels["internalRuntime"] = string(task.Runtime)
-
-	// expose ports of docker container as specified in task
-	exposedPorts := map[nat.Port]struct{}{}
-	for _, port := range task.Ports {
-		portString := strconv.Itoa(int(port.Port))
-		portWithProtocol := nat.Port(fmt.Sprintf("%s/%s", portString, port.Protocol))
-		exposedPorts[portWithProtocol] = struct{}{}
+	service.Labels["internalPorts"] = string(portsJsonString)
+	scaleJsonString, err := json.Marshal(&service.Scale)
+	if err != nil {
+		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
+		return "", "", err
 	}
+	service.Labels["internalScale"] = string(scaleJsonString)
+
+	affinityJsonString, err := json.Marshal(&service.Affinity)
+	if err != nil {
+		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
+		return "", "", err
+	}
+	service.Labels["internalAffinity"] = string(affinityJsonString)
+
+	whitelistJsonString, err := json.Marshal(&service.Whitelist)
+	if err != nil {
+		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
+		return "", "", err
+	}
+	service.Labels["internalWhitelist"] = string(whitelistJsonString)
+
+	upstreamJsonString, err := json.Marshal(&service.Upstreams)
+	if err != nil {
+		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
+		return "", "", err
+	}
+	service.Labels["internalUpstream"] = string(upstreamJsonString)
 
 	if task.Runtime == model.Code {
 		token, err := d.auth.GenerateTokenForArtifactStore(service.ID, service.ProjectID, service.Version)
@@ -116,11 +148,20 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 		// convert received mill cpus to cpus by diving by 1000 then multiply with 100000 to get cpu quota
 		Resources: container.Resources{Memory: task.Resources.Memory * 1024 * 1024, CPUQuota: task.Resources.CPU * 100},
 	}
+
+	exposedPorts := map[nat.Port]struct{}{}
 	if cName != "" {
 		hostConfig.NetworkMode = container.NetworkMode("container:" + cName)
+	} else {
+		// expose ports of docker container as specified for 1st task
+		task.Ports = overridePorts // override all ports while creating container for 1st task
+		for _, port := range task.Ports {
+			portString := strconv.Itoa(int(port.Port))
+			exposedPorts[nat.Port(portString)] = struct{}{}
+		}
 	}
 
-	containerName := fmt.Sprintf("%s--%s--%s--%s", service.ProjectID, service.ID, task.ID, service.Version)
+	containerName := fmt.Sprintf("%s--%s--%s--%s", service.ProjectID, service.ID, service.Version, task.ID)
 	resp, err := d.client.ContainerCreate(ctx, &container.Config{
 		Image:        task.Docker.Image,
 		Env:          envs,
@@ -149,7 +190,7 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 
 // DeleteService removes every docker container related to specified service id
 func (d *docker) DeleteService(ctx context.Context, serviceId, projectId, version string) error {
-	args := filters.Arg("name", fmt.Sprintf("%s--%s", serviceId, projectId))
+	args := filters.Arg("name", fmt.Sprintf("%s--%s--%s", projectId, serviceId, version))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
@@ -157,20 +198,10 @@ func (d *docker) DeleteService(ctx context.Context, serviceId, projectId, versio
 	}
 
 	for _, containerInfo := range containers {
-		containerInspect, err := d.client.ContainerInspect(ctx, containerInfo.ID)
-		if err != nil {
-			logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
+		// remove the container from host machine
+		if err := d.client.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
+			logrus.Errorf("error deleting service in docker unable to remove container %s got error message - %v", containerInfo.ID, err)
 			return err
-		}
-		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
-		pId := containerName[0]
-		sId := containerName[1]
-		if sId == serviceId && pId == projectId {
-			// remove the container from host machine
-			if err := d.client.ContainerRemove(ctx, containerInspect.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-				logrus.Errorf("error deleting service in docker unable to remove container %s got error message - %v", containerName, err)
-				return err
-			}
 		}
 	}
 	// handle gracefully if no containers found for specified serviceId
@@ -196,9 +227,10 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 			return nil, err
 		}
 		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
-		taskId := containerName[2]
-		service.Version = containerName[3]
+		taskId := containerName[3]
+		service.Version = containerName[2]
 		service.ID = containerName[1]
+		service.Name = service.ID
 
 		service.ProjectID = projectId
 		service.Whitelist = []model.Whitelist{{ProjectID: projectId, Service: "*"}}
@@ -211,19 +243,46 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 
 		runtime := model.Runtime(containerInspect.Config.Labels["internalRuntime"])
 		service.Labels = containerInspect.Config.Labels
-		delete(service.Labels, "internalRuntime")
-
-		// set ports of task
 		ports := []model.Port{}
-		for portWithProtocol := range containerInspect.Config.ExposedPorts {
-			arr := strings.Split(string(portWithProtocol), "/")
-			portNumber, err := strconv.Atoi(arr[0])
-			if err != nil {
-				logrus.Errorf("error getting service in docker unable to convert string to int got error message - %v", err)
-				return nil, err
-			}
-			ports = append(ports, model.Port{Protocol: model.Protocol(arr[1]), Port: int32(portNumber)}) // port name remaining
+		if err := json.Unmarshal([]byte(service.Labels["internalPorts"]), &ports); err != nil {
+			logrus.Errorf("error getting service in docker unable to unmarshal ports - %v", err)
+			return nil, err
 		}
+		scale := model.ScaleConfig{}
+		if err := json.Unmarshal([]byte(service.Labels["internalScale"]), &scale); err != nil {
+			logrus.Errorf("error getting service in docker unable to unmarshal scale - %v", err)
+			return nil, err
+		}
+		service.Scale = scale
+
+		whilteList := []model.Whitelist{}
+		if err := json.Unmarshal([]byte(service.Labels["internalWhitelist"]), &whilteList); err != nil {
+			logrus.Errorf("error getting service in docker unable to unmarshal whitelist - %v", err)
+			return nil, err
+		}
+		service.Whitelist = whilteList
+
+		upstream := []model.Upstream{}
+		if err := json.Unmarshal([]byte(service.Labels["internalUpstream"]), &upstream); err != nil {
+			logrus.Errorf("error getting service in docker unable to unmarshal upstream - %v", err)
+			return nil, err
+		}
+		service.Upstreams = upstream
+
+		affinity := []model.Affinity{}
+		if err := json.Unmarshal([]byte(service.Labels["internalAffinity"]), &affinity); err != nil {
+			logrus.Errorf("error getting service in docker unable to unmarshal affinity - %v", err)
+			return nil, err
+		}
+		service.Affinity = affinity
+		delete(service.Labels, "internalRuntime")
+		delete(service.Labels, "internalPorts")
+		delete(service.Labels, "internalProjectId")
+		delete(service.Labels, "internalServiceId")
+		delete(service.Labels, "internalScale")
+		delete(service.Labels, "internalWhitelist")
+		delete(service.Labels, "internalAffinity")
+		delete(service.Labels, "internalUpstream")
 
 		// set environment variable of task
 		envs := map[string]string{}
@@ -240,17 +299,19 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 		}
 
 		tasks = append(tasks, model.Task{
-			ID: taskId,
+			ID:   taskId,
+			Name: taskId,
 			Docker: model.Docker{
 				Image: containerInspect.Config.Image,
 				Cmd:   containerInspect.Config.Cmd,
 			},
 			Resources: model.Resources{
-				CPU:    containerInspect.HostConfig.Memory / (1024 * 1024),
-				Memory: containerInspect.HostConfig.CPUQuota / 100,
+				Memory: containerInspect.HostConfig.Memory / (1024 * 1024),
+				CPU:    containerInspect.HostConfig.CPUQuota / 100,
 			},
-			Env:   envs,
-			Ports: ports,
+			Env:     envs,
+			Ports:   ports,
+			Runtime: runtime,
 		})
 		service.Tasks = tasks
 		services[fmt.Sprintf("%s-%s", service.ID, service.Version)] = service
