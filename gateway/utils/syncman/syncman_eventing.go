@@ -2,7 +2,6 @@ package syncman
 
 import (
 	"context"
-	"log"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -66,7 +65,6 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 			evType: config.SchemaObject{Schema: schema},
 		}
 	}
-	log.Println("checking schema in handler:", projectConfig.Modules.Eventing.Schemas)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -81,6 +79,20 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 		return err
 	}
 	delete(projectConfig.Modules.Eventing.Schemas, evType)
+
+	return s.setProject(ctx, projectConfig)
+}
+
+func (s *Manager) SetEventingStrict(ctx context.Context, project string, strict bool) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	projectConfig.Modules.Eventing.Strict = strict
 
 	return s.setProject(ctx, projectConfig)
 }

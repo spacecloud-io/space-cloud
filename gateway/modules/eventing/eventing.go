@@ -2,7 +2,6 @@ package eventing
 
 import (
 	"errors"
-	"log"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -65,8 +64,6 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	log.Println("checking schema string:", eventing.Schemas)
-
 	for eventType, schemaObj := range eventing.Schemas {
 		dummyCrud := config.Crud{
 			"dummyDBName": &config.CrudStub{
@@ -86,7 +83,6 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 			m.schemas[eventType] = schemaType["dummyDBName"][eventType]
 		}
 	}
-	log.Println(m.schemas)
 
 	if eventing == nil || !eventing.Enabled {
 		m.config.Enabled = false

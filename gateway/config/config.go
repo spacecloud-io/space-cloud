@@ -166,7 +166,7 @@ type Eventing struct {
 	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
 	Schemas       map[string]SchemaObject `json:"schemas" yaml:"schemas"`
-	IsForce       bool                    `json:"isForce" yaml:"isForce"`
+	Strict        bool                    `json:"strict" yaml:"strict"`
 }
 
 // EventingRule holds an eventing rule

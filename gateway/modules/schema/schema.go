@@ -3,7 +3,6 @@ package schema
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 	"sync"
@@ -95,10 +94,8 @@ func (s *Schema) Parser(crud config.Crud) (schemaType, error) {
 			// parse the source
 			doc, err := parser.Parse(parser.ParseParams{Source: source})
 			if err != nil {
-				log.Println("error", err)
 				return nil, err
 			}
-			log.Println("parsed below")
 			value, err := getCollectionSchema(doc, dbName, collectionName)
 			if err != nil {
 				return nil, err
