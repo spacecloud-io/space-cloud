@@ -32,6 +32,16 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 		for k, v := range task.Env {
 			envVars = append(envVars, v1.EnvVar{Name: k, Value: v})
 		}
+		// Add an environment variable to hold the runtime value
+		envVars = append(envVars, v1.EnvVar{Name: runtimeEnvVariable, Value: string(task.Runtime)})
+		if task.Runtime == model.Code {
+			artifactURL := v1.EnvVar{Name: model.ArtifactURL, Value: ""}
+			artifactToken := v1.EnvVar{Name: model.ArtifactToken, Value: ""}
+			artifactProject := v1.EnvVar{Name: model.ArtifactProject, Value: service.ProjectID}
+			artifactService := v1.EnvVar{Name: model.ArtifactService, Value: service.ID}
+			artifactVersion := v1.EnvVar{Name: model.ArtifactVersion, Value: service.Version}
+			envVars = append(envVars, artifactURL, artifactToken, artifactProject, artifactService, artifactVersion)
+		}
 
 		// Prepare ports to be exposed
 		ports := prepareContainerPorts(task.Ports)
@@ -48,7 +58,6 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 		containers[i] = v1.Container{
 			Name: task.ID,
 			Env:  envVars,
-
 			// Resource Related
 			Ports:     ports,
 			Resources: *generateResourceRequirements(&task.Resources),
@@ -72,7 +81,7 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 		}
 	}
 	if !isTCP {
-		token, _ := i.auth.SignProxyToken(ksuid.New().String(), service.ProjectID, service.ID, service.Environment, service.Version)
+		token, _ := i.auth.SignProxyToken(ksuid.New().String(), service.ProjectID, service.ID, service.Version)
 		containers = append(containers, v1.Container{
 			Name: "metric-proxy",
 			Env:  []v1.EnvVar{{Name: "TOKEN", Value: token}},
@@ -112,7 +121,7 @@ func prepareServicePorts(tasks []model.Task) []v1.ServicePort {
 }
 
 func makeOriginalVirtualService(service *model.Service, virtualService *v1alpha3.VirtualService) {
-	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
+	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
 
 	// Redo the http routes. The tcp routes are lost anyways so we don't really care about them.
 	for _, httpRoute := range virtualService.Spec.Http {
@@ -129,7 +138,7 @@ func makeOriginalVirtualService(service *model.Service, virtualService *v1alpha3
 }
 
 func makeScaleZeroVirtualService(service *model.Service, virtualService *v1alpha3.VirtualService, proxyPort uint32) {
-	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
+	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
 
 	// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
 	// to service incoming requests.
@@ -147,7 +156,6 @@ func makeScaleZeroVirtualService(service *model.Service, virtualService *v1alpha
 						"x-og-service": service.ID,
 						"x-og-host":    ogHost,
 						"x-og-port":    strings.Split(httpRoute.Name, "-")[2],
-						"x-og-env":     service.Environment,
 						"x-og-version": service.Version,
 					},
 				},
@@ -167,7 +175,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 				// Prepare variables
 				var headers *networkingv1alpha3.Headers
 				retries := &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 90}}
-				destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
+				destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
 				destPort := uint32(port.Port)
 
 				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
@@ -180,7 +188,6 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 								"x-og-service": service.ID,
 								"x-og-host":    destHost,
 								"x-og-port":    strconv.Itoa(int(destPort)),
-								"x-og-env":     service.Environment,
 								"x-og-version": service.Version,
 							},
 						},
@@ -216,7 +223,7 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 					Route: []*networkingv1alpha3.RouteDestination{
 						{
 							Destination: &networkingv1alpha3.Destination{
-								Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment)),
+								Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
 								Port: &networkingv1alpha3.PortSelector{Number: uint32(port.Port)},
 							},
 						},
@@ -226,102 +233,103 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 		}
 	}
 
-	// Add http routes for the exposed http routes. Exposing a service is only supported for http services
-	if service.Expose != nil && service.Expose.Rules != nil && len(service.Expose.Rules) > 0 {
-		for i, rule := range service.Expose.Rules {
-			// Prepare variables
-			var headers *networkingv1alpha3.Headers
-			retries := &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 90}}
-			destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))
-			destPort := uint32(rule.Port)
-
-			// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
-			// to service incoming requests.
-			if service.Scale.Replicas == 0 {
-				headers = &networkingv1alpha3.Headers{
-					Request: &networkingv1alpha3.Headers_HeaderOperations{
-						Set: map[string]string{
-							"x-og-project": service.ProjectID,
-							"x-og-service": service.ID,
-							"x-og-host":    destHost,
-							"x-og-port":    strconv.Itoa(int(destPort)),
-							"x-og-env":     service.Environment,
-							"x-og-version": service.Version,
-						},
-					},
-				}
-				retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
-				destHost = "runner.space-cloud.svc.cluster.local"
-				destPort = proxyPort
-			}
-
-			match := prepareHTTPMatch(&rule)
-			match[0].Gateways = []string{getGatewayName(service)}
-			httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
-				Match:   match,
-				Rewrite: prepareHTTPMatchRewrite(&rule),
-				Name:    fmt.Sprintf("expose-%d-%d", i, rule.Port),
-				Retries: retries,
-				Route: []*networkingv1alpha3.HTTPRouteDestination{
-					{
-						Headers: headers,
-						Destination: &networkingv1alpha3.Destination{
-							Host: destHost,
-							Port: &networkingv1alpha3.PortSelector{Number: destPort},
-						},
-					},
-				},
-			})
-		}
-	}
+	// We dont need to expose services since space cloud will take care of it
+	// // Add http routes for the exposed http routes. Exposing a service is only supported for http services
+	// if service.Expose != nil && service.Expose.Rules != nil && len(service.Expose.Rules) > 0 {
+	// 	for i, rule := range service.Expose.Rules {
+	// 		// Prepare variables
+	// 		var headers *networkingv1alpha3.Headers
+	// 		retries := &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 90}}
+	// 		destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
+	// 		destPort := uint32(rule.Port)
+	//
+	// 		// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
+	// 		// to service incoming requests.
+	// 		if service.Scale.Replicas == 0 {
+	// 			headers = &networkingv1alpha3.Headers{
+	// 				Request: &networkingv1alpha3.Headers_HeaderOperations{
+	// 					Set: map[string]string{
+	// 						"x-og-project": service.ProjectID,
+	// 						"x-og-service": service.ID,
+	// 						"x-og-host":    destHost,
+	// 						"x-og-port":    strconv.Itoa(int(destPort)),
+	// 						"x-og-env":     service.Environment,
+	// 						"x-og-version": service.Version,
+	// 					},
+	// 				},
+	// 			}
+	// 			retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
+	// 			destHost = "runner.space-cloud.svc.cluster.local"
+	// 			destPort = proxyPort
+	// 		}
+	//
+	// 		match := prepareHTTPMatch(&rule)
+	// 		match[0].Gateways = []string{getGatewayName(service)}
+	// 		httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
+	// 			Match:   match,
+	// 			Rewrite: prepareHTTPMatchRewrite(&rule),
+	// 			Name:    fmt.Sprintf("expose-%d-%d", i, rule.Port),
+	// 			Retries: retries,
+	// 			Route: []*networkingv1alpha3.HTTPRouteDestination{
+	// 				{
+	// 					Headers: headers,
+	// 					Destination: &networkingv1alpha3.Destination{
+	// 						Host: destHost,
+	// 						Port: &networkingv1alpha3.PortSelector{Number: destPort},
+	// 					},
+	// 				},
+	// 			},
+	// 		})
+	// 	}
+	// }
 
 	return httpRoutes, tcpRoutes
 }
 
-func prepareHTTPMatch(rule *model.ExposeRule) []*networkingv1alpha3.HTTPMatchRequest {
-	// TODO: Add project level host
-	if rule.URI.Exact != nil {
-		return []*networkingv1alpha3.HTTPMatchRequest{
-			{Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Exact{Exact: *rule.URI.Exact}}},
-		}
+// func prepareHTTPMatch(rule *model.ExposeRule) []*networkingv1alpha3.HTTPMatchRequest {
+// 	// TODO: Add project level host
+// 	if rule.URI.Exact != nil {
+// 		return []*networkingv1alpha3.HTTPMatchRequest{
+// 			{Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Exact{Exact: *rule.URI.Exact}}},
+// 		}
+//
+// 	}
+// 	if rule.URI.Prefix != nil {
+// 		return []*networkingv1alpha3.HTTPMatchRequest{
+// 			{Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Prefix{Prefix: *rule.URI.Prefix}}},
+// 		}
+// 	}
+//
+// 	return nil
+// }
 
-	}
-	if rule.URI.Prefix != nil {
-		return []*networkingv1alpha3.HTTPMatchRequest{
-			{Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Prefix{Prefix: *rule.URI.Prefix}}},
-		}
-	}
-
-	return nil
-}
-
-func prepareHTTPMatchRewrite(rule *model.ExposeRule) *networkingv1alpha3.HTTPRewrite {
-	if rule.URI.Rewrite != nil {
-		return &networkingv1alpha3.HTTPRewrite{Uri: *rule.URI.Rewrite}
-	}
-	return nil
-}
+// func prepareHTTPMatchRewrite(rule *model.ExposeRule) *networkingv1alpha3.HTTPRewrite {
+// 	if rule.URI.Rewrite != nil {
+// 		return &networkingv1alpha3.HTTPRewrite{Uri: *rule.URI.Rewrite}
+// 	}
+// 	return nil
+// }
 
 func prepareVirtualServiceHosts(service *model.Service) []string {
-	hosts := []string{fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment))}
+	hosts := []string{fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)}
 
-	if service.Expose != nil && service.Expose.Hosts != nil {
-		hosts = append(hosts, service.Expose.Hosts...)
-	}
+	// if service.Expose != nil && service.Expose.Hosts != nil {
+	// 	hosts = append(hosts, service.Expose.Hosts...)
+	// }
 
 	return hosts
 }
 
-func prepareVirtualServiceGateways(service *model.Service) []string {
-	gateways := []string{"mesh"}
-
-	// Add gateway if the service is exposed
-	if service.Expose != nil {
-		gateways = append(gateways, getGatewayName(service))
-	}
-
-	return gateways
-}
+// func prepareVirtualServiceGateways(service *model.Service) []string {
+// 	gateways := []string{"mesh"}
+//
+// 	// Add gateway if the service is exposed
+// 	if service.Expose != nil {
+// 		gateways = append(gateways, getGatewayName(service))
+// 	}
+//
+// 	return gateways
+// }
 
 func prepareAuthPolicyRules(service *model.Service) []*securityv1beta1.Rule {
 	var froms []*securityv1beta1.Rule_From
@@ -329,20 +337,18 @@ func prepareAuthPolicyRules(service *model.Service) []*securityv1beta1.Rule {
 	var principals []string
 
 	for _, whitelist := range service.Whitelist {
-		array := strings.Split(whitelist, ":")
-		projectID, service := array[0], array[1]
 
-		if projectID == "*" {
+		if whitelist.ProjectID == "*" {
 			// This means this is an open service
 			return []*securityv1beta1.Rule{{}}
 		}
 
-		if service == "*" {
+		if whitelist.Service == "*" {
 			// This means that the service can be accessed from everyone in the project
-			namespaces = append(namespaces, projectID)
+			namespaces = append(namespaces, whitelist.ProjectID)
 		} else {
 			// This means that the service can be accessed only from that service in that project
-			principals = append(principals, fmt.Sprintf("cluster.local/ns/%s/sa/%s", projectID, service))
+			principals = append(principals, fmt.Sprintf("cluster.local/ns/%s/sa/%s", whitelist.ProjectID, whitelist.Service))
 		}
 	}
 
@@ -431,10 +437,10 @@ func (i *Istio) generateVirtualService(service *model.Service) *v1alpha3.Virtual
 	return &v1alpha3.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{Name: service.ID},
 		Spec: networkingv1alpha3.VirtualService{
-			Hosts:    prepareVirtualServiceHosts(service),
-			Gateways: prepareVirtualServiceGateways(service),
-			Http:     httpRoutes,
-			Tcp:      tcpRoutes,
+			Hosts: prepareVirtualServiceHosts(service),
+			// Gateways: prepareVirtualServiceGateways(service),
+			Http: httpRoutes,
+			Tcp:  tcpRoutes,
 		},
 	}
 }
@@ -443,7 +449,7 @@ func generateDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 	return &v1alpha3.DestinationRule{
 		ObjectMeta: metav1.ObjectMeta{Name: service.ID},
 		Spec: networkingv1alpha3.DestinationRule{
-			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, getNamespaceName(service.ProjectID, service.Environment)),
+			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
 			TrafficPolicy: &networkingv1alpha3.TrafficPolicy{
 				Tls: &networkingv1alpha3.TLSSettings{Mode: networkingv1alpha3.TLSSettings_ISTIO_MUTUAL},
 			},
@@ -472,35 +478,36 @@ func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 	}
 }
 
-func generateGateways(service *model.Service) *v1alpha3.Gateway {
-	hosts := make([]string, 0)
-
-	// Add the hosts if provided
-	if service.Expose != nil && service.Expose.Hosts != nil {
-		hosts = append(hosts, service.Expose.Hosts...)
-	}
-
-	// Add dummy host if none exist
-	hosts = append(hosts, "dummy.com")
-
-	return &v1alpha3.Gateway{
-		ObjectMeta: metav1.ObjectMeta{Name: getGatewayName(service)},
-		Spec: networkingv1alpha3.Gateway{
-			Selector: map[string]string{"istio": "ingressgateway"},
-			Servers: []*networkingv1alpha3.Server{
-				{
-					// TODO: make this https and load certificates dynamically
-					Port: &networkingv1alpha3.Port{
-						Number:   80,
-						Name:     "http",
-						Protocol: "HTTP",
-					},
-					Hosts: hosts,
-				},
-			},
-		},
-	}
-}
+// We don't need gateways anymore since space cloud gateway will take care of it
+// func generateGateways(service *model.Service) *v1alpha3.Gateway {
+// 	hosts := make([]string, 0)
+//
+// 	// Add the hosts if provided
+// 	if service.Expose != nil && service.Expose.Hosts != nil {
+// 		hosts = append(hosts, service.Expose.Hosts...)
+// 	}
+//
+// 	// Add dummy host if none exist
+// 	hosts = append(hosts, "dummy.com")
+//
+// 	return &v1alpha3.Gateway{
+// 		ObjectMeta: metav1.ObjectMeta{Name: getGatewayName(service)},
+// 		Spec: networkingv1alpha3.Gateway{
+// 			Selector: map[string]string{"istio": "ingressgateway"},
+// 			Servers: []*networkingv1alpha3.Server{
+// 				{
+// 					// TODO: make this https and load certificates dynamically
+// 					Port: &networkingv1alpha3.Port{
+// 						Number:   80,
+// 						Name:     "http",
+// 						Protocol: "HTTP",
+// 					},
+// 					Hosts: hosts,
+// 				},
+// 			},
+// 		},
+// 	}
+// }
 
 func generateResourceRequirements(c *model.Resources) *v1.ResourceRequirements {
 	// Set default values if either value is absent

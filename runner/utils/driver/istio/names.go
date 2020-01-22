@@ -10,8 +10,8 @@ func getNamespaceName(project, env string) string {
 	return fmt.Sprintf("%s-%s", project, env)
 }
 
-func getServiceUniqueName(project, service, environment, version string) string {
-	return fmt.Sprintf("%s-%s-%s-%s", project, service, environment, version)
+func getServiceUniqueName(project, service, version string) string {
+	return fmt.Sprintf("%s-%s-%s", project, service, version)
 }
 
 func getServiceAccountName(service *model.Service) string {
@@ -24,8 +24,4 @@ func getDeploymentName(service *model.Service) string {
 
 func getAuthorizationPolicyName(service *model.Service) string {
 	return fmt.Sprintf("auth-%s-%s", service.ProjectID, service.ID)
-}
-
-func getGatewayName(service *model.Service) string {
-	return fmt.Sprintf("gateway-%s", service.ID)
 }

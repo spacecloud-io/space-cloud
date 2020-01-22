@@ -51,8 +51,6 @@ func (d *docker) ApplyService(ctx context.Context, service *model.Service) error
 		return err
 	}
 
-	service.Labels["internalRuntime"] = string(service.Runtime)
-
 	for _, task := range service.Tasks {
 		// todo get image
 		// for now images have been created locally but not uploaded on docker hub
@@ -169,7 +167,7 @@ func (d *docker) GetService(serviceId, projectId, version string) (*model.Servic
 	service.ID = serviceId
 	service.ProjectID = projectId
 	service.Version = version
-	service.Whitelist = []string{fmt.Sprintf("%s:*", projectId)}
+	service.Whitelist = []model.Whitelist{{ProjectID: projectId, Service: "*"}}
 	service.Upstreams = []model.Upstream{{ProjectID: projectId, Service: "*"}}
 	tasks := []model.Task{}
 

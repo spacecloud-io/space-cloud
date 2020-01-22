@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"strconv"
@@ -75,7 +76,7 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 }
 
 // ApplyService deploys the service on istio
-func (i *Istio) ApplyService(service *model.Service, token string) error {
+func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error {
 	// TODO: do we need to rollback on failure? rollback to previous version if it existed else remove. We also need to rollback the cache in this case
 	// TODO: Add support for custom runtime
 	// TODO: Add support for running multiple versions
@@ -83,7 +84,7 @@ func (i *Istio) ApplyService(service *model.Service, token string) error {
 	// the same service. Also the traffic splitting between the versions needs to be configurable
 	service.Version = "v1"
 
-	ns := getNamespaceName(service.ProjectID, service.Environment)
+	ns := service.ProjectID
 
 	// Set the default concurrency value to 50
 	if service.Scale.Concurrency == 0 {
@@ -99,7 +100,6 @@ func (i *Istio) ApplyService(service *model.Service, token string) error {
 	kubeService := generateService(service)
 	istioVirtualService := i.generateVirtualService(service)
 	istioDestRule := generateDestinationRule(service)
-	istioGateway := generateGateways(service)
 	istioAuthPolicy := generateAuthPolicy(service)
 	istioSidecar := generateSidecarConfig(service)
 
@@ -130,11 +130,6 @@ func (i *Istio) ApplyService(service *model.Service, token string) error {
 
 		logrus.Debugf("Creating destination rule for %s in %s", service.ID, ns)
 		if _, err := i.istio.NetworkingV1alpha3().DestinationRules(ns).Create(istioDestRule); err != nil {
-			return err
-		}
-
-		logrus.Debugf("Creating gateway for %s in %s", service.ID, ns)
-		if _, err := i.istio.NetworkingV1alpha3().Gateways(ns).Create(istioGateway); err != nil {
 			return err
 		}
 
@@ -176,17 +171,6 @@ func (i *Istio) ApplyService(service *model.Service, token string) error {
 		prevVirtualService.Spec = istioVirtualService.Spec
 		prevVirtualService.Labels = istioVirtualService.Labels
 		if _, err := i.istio.NetworkingV1alpha3().VirtualServices(ns).Update(prevVirtualService); err != nil {
-			return err
-		}
-
-		logrus.Debugf("Updating gateway for %s in %s", service.ID, ns)
-		prevGateway, err := i.istio.NetworkingV1alpha3().Gateways(ns).Get(istioGateway.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		prevGateway.Spec = istioGateway.Spec
-		prevGateway.Labels = istioGateway.Labels
-		if _, err := i.istio.NetworkingV1alpha3().Gateways(ns).Update(prevGateway); err != nil {
 			return err
 		}
 
@@ -261,7 +245,7 @@ func (i *Istio) DeleteService(serviceId, projectId, version string) error {
 	return nil
 }
 
-func (i *Istio) GetServices(serviceId, projectId, version string) (*model.Service, error) {
+func (i *Istio) GetServices(serviceId, projectId, version string) ([]*model.Service, error) {
 	// assumption we don't have environment id in namespace
 	service := new(model.Service)
 	service.ProjectID = projectId
@@ -292,7 +276,6 @@ func (i *Istio) GetServices(serviceId, projectId, version string) (*model.Servic
 	service.Scale.MinReplicas = int32(s2)
 	service.Scale.MaxReplicas = int32(s3)
 	service.Scale.Replicas = *deployment.Spec.Replicas
-	service.Runtime = "code"
 
 	for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
 		// get ports
@@ -307,21 +290,35 @@ func (i *Istio) GetServices(serviceId, projectId, version string) (*model.Servic
 			envs[env.Name] = env.Value
 		}
 
+		// Extract the runtime from the environment variable
+		runtime := model.Runtime(envs[runtimeEnvVariable])
+		delete(envs, runtimeEnvVariable)
+
+		// Delete internal environment variables if runtime was code
+		if runtime == model.Code {
+			delete(envs, model.ArtifactURL)
+			delete(envs, model.ArtifactToken)
+			delete(envs, model.ArtifactProject)
+			delete(envs, model.ArtifactService)
+			delete(envs, model.ArtifactVersion)
+		}
+
 		// set tasks
 		service.Tasks = append(service.Tasks, model.Task{
 			ID:    containerInfo.Name,
-			Name:  containerInfo.Name, //
+			Name:  containerInfo.Name,
 			Ports: ports,
 			Resources: model.Resources{
-				CPU:    containerInfo.Resources.Requests.Cpu().MilliValue() * 1000,
-				Memory: containerInfo.Resources.Requests.Memory().Value() / (1024 * 1024), // todo verify this
+				CPU:    containerInfo.Resources.Requests.Cpu().MilliValue(),
+				Memory: containerInfo.Resources.Requests.Memory().Value() / (1024 * 1024),
 			},
 			Docker: model.Docker{
 				Image: containerInfo.Image,
 				Creds: nil,
 				Cmd:   containerInfo.Command,
 			},
-			Env: envs,
+			Env:     envs,
+			Runtime: runtime,
 		})
 	}
 
@@ -333,7 +330,7 @@ func (i *Istio) GetServices(serviceId, projectId, version string) (*model.Servic
 				if projectId == "space-cloud" {
 					continue
 				}
-				service.Whitelist = append(service.Whitelist, fmt.Sprintf("%s:*", projectId))
+				service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: projectId, Service: "*"})
 			}
 			for _, serv := range rule.Source.Principals {
 				whitelistArr := strings.Split(serv, "/")
@@ -341,13 +338,12 @@ func (i *Istio) GetServices(serviceId, projectId, version string) (*model.Servic
 					logrus.Error("error getting service in istio length of whitelist array is not equal to 5")
 					continue
 				}
-				service.Whitelist = append(service.Whitelist, fmt.Sprintf("%s:%s", whitelistArr[2], whitelistArr[4]))
+				service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: whitelistArr[2], Service: whitelistArr[4]})
 			}
 		}
 	}
-	service.Whitelist = []string{"*"}
 
-	// set upstream
+	// Set upstreams
 	sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectId).Get(serviceId, metav1.GetOptions{})
 	for key, value := range sideCar.Spec.Egress[0].Hosts {
 		upstream := model.Upstream{}
@@ -364,7 +360,7 @@ func (i *Istio) GetServices(serviceId, projectId, version string) (*model.Servic
 
 	// todo labels, serviceName, affinity, runtime
 
-	return service, nil
+	return []*model.Service{service}, nil
 }
 
 // AdjustScale adjusts the number of instances based on the number of active requests. It tries to make sure that
@@ -372,8 +368,8 @@ func (i *Istio) GetServices(serviceId, projectId, version string) (*model.Servic
 func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 	// We will process a single adjust scale request for a given service at any given time. We might miss out on some updates,
 	// but the adjust scale routine will eventually make sure we reach the desired scale
-	ns := getNamespaceName(service.ProjectID, service.Environment)
-	uniqueName := getServiceUniqueName(service.ProjectID, service.ID, service.Environment, service.Version)
+	ns := service.ProjectID
+	uniqueName := getServiceUniqueName(service.ProjectID, service.ID, service.Version)
 	if _, loaded := i.adjustScaleLock.LoadOrStore(uniqueName, struct{}{}); loaded {
 		logrus.Infof("Ignoring adjust scale request for service (%s:%s) since another request is already in progress", ns, service.ID)
 		return nil
@@ -447,7 +443,7 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 // WaitForService adjusts scales, up the service to scale up the number of nodes from zero to one
 // TODO: Do one watch per service. Right now its possible to have multiple watches for the same service
 func (i *Istio) WaitForService(service *model.Service) error {
-	ns := getNamespaceName(service.ProjectID, service.Environment)
+	ns := service.ProjectID
 	logrus.Debugf("Scaling up service (%s:%s) from zero", ns, service.ID)
 
 	// Scale up the service

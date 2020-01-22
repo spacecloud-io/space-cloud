@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
@@ -44,7 +45,7 @@ type Config struct {
 // Driver is the interface of the modules which interact with the deployment targets
 type Driver interface {
 	CreateProject(project *model.Project) error
-	ApplyService(service *model.Service, token string) error
+	ApplyService(ctx context.Context, service *model.Service) error
 	AdjustScale(service *model.Service, activeReqs int32) error
 	WaitForService(service *model.Service) error
 	Type() model.DriverType
