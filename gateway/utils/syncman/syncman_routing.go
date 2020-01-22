@@ -2,7 +2,6 @@ package syncman
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -38,8 +37,8 @@ func (s *Manager) GetProjectRoutes(ctx context.Context, project string) (config.
 	return projectConfig.Modules.Routes, nil
 }
 
-// AddProjectRoute adds a route in specified project config
-func (s *Manager) AddProjectRoute(ctx context.Context, project string, c *config.Route) error {
+// SetProjectRoute adds a route in specified project config
+func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config.Route) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -49,13 +48,17 @@ func (s *Manager) AddProjectRoute(ctx context.Context, project string, c *config
 		return err
 	}
 
-	// TODO SHOULD I UPDATE ALSO
+	doesExist := false
 	for _, route := range projectConfig.Modules.Routes {
 		if route.Id == c.Id {
-			return fmt.Errorf("error syncman adding project route project route with specified id already exists")
+			route = c
+			doesExist = true
 		}
 	}
-	projectConfig.Modules.Routes = append(projectConfig.Modules.Routes, c)
+	if !doesExist {
+		projectConfig.Modules.Routes = append(projectConfig.Modules.Routes, c)
+	}
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -80,5 +83,5 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeId strin
 			return s.setProject(ctx, projectConfig)
 		}
 	}
-	return fmt.Errorf("error syncman adding project route project route with specified id already exists")
+	return nil
 }

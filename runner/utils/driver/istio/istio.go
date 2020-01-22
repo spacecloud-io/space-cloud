@@ -226,7 +226,7 @@ func (i *Istio) DeleteService(serviceId, projectId, version string) error {
 	if kubeErrors.IsNotFound(err) {
 		// service account not found meaning no service present
 		logrus.Errorf("error deleting service in istio service account not found got error message - %v", err)
-		return err
+		return nil
 	} else if err == nil {
 		if err = i.kube.AppsV1().Deployments(projectId).Delete(getDeploymentName(service), &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find deployment got error message - %v", err)
@@ -236,6 +236,7 @@ func (i *Istio) DeleteService(serviceId, projectId, version string) error {
 			logrus.Errorf("error deleting service in istio unable to find services got error message - %v", err)
 			return err
 		}
+		// when we add versioning support, the destination rules and virtual services can only be removed when all service versions are removed
 		if err = i.istio.NetworkingV1alpha3().VirtualServices(projectId).Delete(serviceId, &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find virtual services got error message - %v", err)
 			return err
@@ -244,7 +245,6 @@ func (i *Istio) DeleteService(serviceId, projectId, version string) error {
 			logrus.Errorf("error deleting service in istio unable to find destination rule got error message - %v", err)
 			return err
 		}
-		// no gateway as it is to removed
 		if err = i.istio.SecurityV1beta1().AuthorizationPolicies(getAuthorizationPolicyName(service)).Delete(serviceId, &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find authorization policies got error message - %v", err)
 			return err
@@ -261,7 +261,7 @@ func (i *Istio) DeleteService(serviceId, projectId, version string) error {
 	return nil
 }
 
-func (i *Istio) GetService(serviceId, projectId, version string) (*model.Service, error) {
+func (i *Istio) GetServices(serviceId, projectId, version string) (*model.Service, error) {
 	// assumption we don't have environment id in namespace
 	service := new(model.Service)
 	service.ProjectID = projectId
@@ -292,6 +292,7 @@ func (i *Istio) GetService(serviceId, projectId, version string) (*model.Service
 	service.Scale.MinReplicas = int32(s2)
 	service.Scale.MaxReplicas = int32(s3)
 	service.Scale.Replicas = *deployment.Spec.Replicas
+	service.Runtime = "code"
 
 	for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
 		// get ports
@@ -329,19 +330,22 @@ func (i *Istio) GetService(serviceId, projectId, version string) (*model.Service
 	if len(authPolicy.Spec.Rules[0].From) != 0 {
 		for _, rule := range authPolicy.Spec.Rules[0].From {
 			for _, projectId := range rule.Source.Namespaces {
+				if projectId == "space-cloud" {
+					continue
+				}
 				service.Whitelist = append(service.Whitelist, fmt.Sprintf("%s:*", projectId))
 			}
 			for _, serv := range rule.Source.Principals {
 				whitelistArr := strings.Split(serv, "/")
 				if len(whitelistArr) != 5 {
-					// err
+					logrus.Error("error getting service in istio length of whitelist array is not equal to 5")
+					continue
 				}
 				service.Whitelist = append(service.Whitelist, fmt.Sprintf("%s:%s", whitelistArr[2], whitelistArr[4]))
 			}
 		}
-	} else {
-		service.Whitelist = []string{"*"} // todo verify this
 	}
+	service.Whitelist = []string{"*"}
 
 	// set upstream
 	sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectId).Get(serviceId, metav1.GetOptions{})
@@ -349,6 +353,9 @@ func (i *Istio) GetService(serviceId, projectId, version string) (*model.Service
 		upstream := model.Upstream{}
 		if key != 0 { // as at index 0 default upstream space-cloud is automatically inserted
 			a := strings.Split(value, "/")
+			if a[0] == "space-cloud" {
+				continue
+			}
 			upstream.ProjectID = a[0]
 			upstream.Service = a[1]
 		}

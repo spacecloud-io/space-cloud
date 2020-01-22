@@ -26,7 +26,7 @@ func New(auth *auth.Module, c *Config) (Driver, error) {
 		return istio.NewIstioDriver(auth, istioConfig)
 
 	case model.TypeDocker:
-		return docker.NewDockerDriver()
+		return docker.NewDockerDriver(auth)
 
 	default:
 		return nil, fmt.Errorf("invalid driver type (%s) provided", c.DriverType)

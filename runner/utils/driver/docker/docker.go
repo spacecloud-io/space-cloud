@@ -10,32 +10,34 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/sirupsen/logrus"
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/utils/auth"
 )
 
 type docker struct {
 	client *client.Client
+	auth   *auth.Module
 }
 
-func NewDockerDriver() (*docker, error) {
+func NewDockerDriver(auth *auth.Module) (*docker, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		logrus.Errorf("error creating docker module instance in docker in docker unable to initialize docker client - %v", err)
 		return nil, err
 	}
-	return &docker{client: cli}, nil
+	return &docker{client: cli, auth: auth}, nil
 }
 
 // ApplyService creates containers for specified service
-func (d *docker) ApplyService(service *model.Service, token string) error {
-	ctx := context.Background()
+func (d *docker) ApplyService(ctx context.Context, service *model.Service) error {
 	// remove containers if already exits
-	if err := d.DeleteService(service.ID); err != nil {
+	if err := d.DeleteService(ctx, service.ID, service.ProjectID, service.Version); err != nil {
 		logrus.Errorf("error applying service in docker unable delete existing containers - %v", err)
 		return err
 	}
@@ -48,6 +50,8 @@ func (d *docker) ApplyService(service *model.Service, token string) error {
 		logrus.Errorf("error applying service in docker unable to load host file with suitable default - %v", err)
 		return err
 	}
+
+	service.Labels["internalRuntime"] = string(service.Runtime)
 
 	for _, task := range service.Tasks {
 		// todo get image
@@ -69,16 +73,21 @@ func (d *docker) ApplyService(service *model.Service, token string) error {
 
 		// set environment variables of docker container
 		task.Env["URL"] = fmt.Sprintf("http://service.artifact.svc.cluster.local:4122")
-		task.Env["TOKEN"] = fmt.Sprintf("%s", token) // todo token
+		token, err := d.auth.GenerateHS256Token(service.ID, service.ProjectID, service.Version)
+		if err != nil {
+			logrus.Errorf("error applying service in docker unable generate token - %v", err)
+			return err
+		}
+		task.Env["TOKEN"] = token
 		envs := []string{}
 		for envName, envValue := range task.Env {
 			envs = append(envs, fmt.Sprintf("%s=%s", envName, envValue))
 		}
+		//
+		// service.Labels["internalServiceId"] = service.ID
+		// service.Labels["internalProjectId"] = service.ProjectID
 
-		// store docker image name in labels so that we get it back for constructing service struct in get service
-		service.Labels[fmt.Sprintf("dockerImage-%s", task.ID)] = task.Docker.Image
-
-		containerName := fmt.Sprintf("%s-%s-%s-%s", service.ID, service.ProjectID, task.ID, service.Version)
+		containerName := fmt.Sprintf("%s--%s--%s--%s", service.ProjectID, service.ID, task.ID, service.Version)
 		resp, err := d.client.ContainerCreate(ctx, &container.Config{
 			Image:        task.Docker.Image,
 			Env:          envs,
@@ -117,47 +126,40 @@ func (d *docker) ApplyService(service *model.Service, token string) error {
 }
 
 // DeleteService removes every docker container related to specified service id
-func (d *docker) DeleteService(serviceId string) error {
-	ctx := context.Background()
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{})
+func (d *docker) DeleteService(ctx context.Context, serviceId, projectId, version string) error {
+	args := filters.Arg("name", fmt.Sprintf("%s-%s", serviceId, projectId))
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
 		return err
 	}
 
 	for _, containerInfo := range containers {
-		// there will be only 1 container name set
-		if len(containerInfo.Names) != 1 {
-			logrus.Errorf("error deleting service in docker containers length not equal to one")
-			return fmt.Errorf("error deleting service in docker containers length not equal to one")
+		containerInspect, err := d.client.ContainerInspect(ctx, containerInfo.ID)
+		if err != nil {
+			logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
+			return err
 		}
-		// container name < serviceId-projectId-taskId-version >
-		containerName := containerInfo.Names[0]
-		if strings.Split(containerName, "-")[0] == serviceId {
-			// stop the container forcefully if status is running
-			if containerInfo.Status == "running" { // todo check the status
-				if err := d.client.ContainerKill(ctx, containerName, "SIGKILL"); err != nil {
-					logrus.Errorf("error deleting service in docker unable to kill container %s got error message - %v", containerName, err)
-					return err
-				}
-			}
-
+		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
+		pId := containerName[0]
+		sId := containerName[1]
+		if sId == serviceId && pId == projectId {
 			// remove the container from host machine
-			if err := d.client.ContainerRemove(ctx, containerName, types.ContainerRemoveOptions{}); err != nil {
+			if err := d.client.ContainerRemove(ctx, containerInspect.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				logrus.Errorf("error deleting service in docker unable to remove container %s got error message - %v", containerName, err)
 				return err
 			}
 		}
 	}
-
 	// handle gracefully if no containers found for specified serviceId
 	return nil
 }
 
-// GetService gets the specified service info from docker container
+// GetServices gets the specified service info from docker container
 func (d *docker) GetService(serviceId, projectId, version string) (*model.Service, error) {
 	ctx := context.Background()
-	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{})
+	args := filters.Arg("name", fmt.Sprintf("%s-%s", serviceId, projectId))
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
 		return nil, err
@@ -170,26 +172,23 @@ func (d *docker) GetService(serviceId, projectId, version string) (*model.Servic
 	service.Whitelist = []string{fmt.Sprintf("%s:*", projectId)}
 	service.Upstreams = []model.Upstream{{ProjectID: projectId, Service: "*"}}
 	tasks := []model.Task{}
+
 	for _, containerInfo := range containers {
-		// while creating containers we assign single name to the container that is in the form < serviceId-taskId >
-		// so if length not equal to 1 throw error
-		if len(containerInfo.Names) != 1 {
-			logrus.Errorf("error getting service in docker containers length not equal to one")
+		containerInspect, err := d.client.ContainerInspect(ctx, containerInfo.ID)
+		if err != nil {
+			logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
 			return nil, err
 		}
-		containerName := containerInfo.Names[0]
-		// container name < serviceId-projectId-taskId-version >
-		if strings.Split(containerName, "-")[0] == serviceId {
-			containerInspect, err := d.client.ContainerInspect(ctx, containerName)
-			if err != nil {
-				logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
-				return nil, err
-			}
-
-			service.Labels = containerInfo.Labels
+		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
+		pId := containerName[0]
+		sId := containerName[1]
+		taskId := containerName[2]
+		if sId == serviceId && pId == projectId {
+			runtime := containerInspect.Config.Labels["internalRuntime"]
+			service.Labels = containerInspect.Config.Labels
+			delete(service.Labels, "internalRuntime")
 
 			// set ports of task
-			task := model.Task{}
 			ports := []model.Port{}
 			for portWithProtocol := range containerInspect.Config.ExposedPorts {
 				arr := strings.Split(string(portWithProtocol), "/")
@@ -200,7 +199,6 @@ func (d *docker) GetService(serviceId, projectId, version string) (*model.Servic
 				}
 				ports = append(ports, model.Port{Protocol: model.Protocol(arr[1]), Port: int32(portNumber)}) // port name remaining
 			}
-			task.Ports = ports
 
 			// set environment variable of task
 			envs := map[string]string{}
@@ -208,22 +206,24 @@ func (d *docker) GetService(serviceId, projectId, version string) (*model.Servic
 				env := strings.Split(value, "=")
 				envs[env[0]] = env[1]
 			}
-			delete(envs, "URL")
-			delete(envs, "TOKEN")
-			task.Env = envs
+			if runtime == "code" {
+				delete(envs, "URL")
+				delete(envs, "TOKEN")
+			}
 
-			// container name < serviceId-projectId-taskId-version >
-			task.ID = strings.Split(containerName, "-")[3]
-
-			// set task resource struct
-			task.Resources.CPU = containerInspect.HostConfig.CPUShares
-			task.Resources.Memory = containerInspect.HostConfig.Memory / (1024 * 1024)
-
-			// set docker struct values
-			task.Docker.Cmd = []string{envs["CMD"]}
-			task.Docker.Image = containerInfo.Labels[fmt.Sprintf("dockerImage-%s", task.ID)]
-
-			tasks = append(tasks, task)
+			tasks = append(tasks, model.Task{
+				ID: taskId,
+				Docker: model.Docker{
+					Image: containerInspect.Config.Image,
+					Cmd:   []string{envs["CMD"]},
+				},
+				Resources: model.Resources{
+					CPU:    containerInspect.HostConfig.Memory / (1024 * 1024),
+					Memory: containerInspect.HostConfig.CPUQuota / 100,
+				},
+				Env:   envs,
+				Ports: ports,
+			})
 		}
 	}
 
@@ -236,14 +236,17 @@ func (d *docker) GetService(serviceId, projectId, version string) (*model.Servic
 }
 
 func (d *docker) CreateProject(project *model.Project) error {
+	logrus.Debug("create project not implemented for docker")
 	return nil
 }
 
 func (d *docker) AdjustScale(service *model.Service, activeReqs int32) error {
+	logrus.Debug("adjust scale not implemented for docker")
 	return nil
 }
 
 func (d *docker) WaitForService(service *model.Service) error {
+	logrus.Debug("wait for service not implemented for docker")
 	return nil
 }
 

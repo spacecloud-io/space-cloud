@@ -17,7 +17,14 @@ import (
 
 // HandleRoutingConfigRequest handles the routing config request
 func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type request struct {
+		Routes config.Routes `json:"routes"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		value := request{}
+		_ = json.NewDecoder(r.Body).Decode(&value)
+		defer utils.CloseTheCloser(r.Body)
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -25,18 +32,12 @@ func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manage
 			return
 		}
 
-		type request struct {
-			Routes config.Routes `json:"routes"`
-		}
-		value := request{}
-		_ = json.NewDecoder(r.Body).Decode(&value)
-		defer utils.CloseTheCloser(r.Body)
-
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
-		if err := syncMan.SetProjectRoutes(ctx, vars["project"], value.Routes); err != nil {
+		projectId := vars["project"]
+		if err := syncMan.SetProjectRoutes(ctx, projectId, value.Routes); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -50,6 +51,7 @@ func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manage
 // HandleGetRoutingConfig return all the routing config for specified project
 func HandleGetRoutingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
@@ -63,7 +65,8 @@ func HandleGetRoutingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		defer cancel()
 
 		vars := mux.Vars(r)
-		routes, err := syncMan.GetProjectRoutes(ctx, vars["project"])
+		projectId := vars["project"]
+		routes, err := syncMan.GetProjectRoutes(ctx, projectId)
 		if err != nil {
 			logrus.Errorf("error handling get routing config in handlers unable to get project routes got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -78,7 +81,13 @@ func HandleGetRoutingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 
 // HandleSetProjectRoute adds a route in specified project config
 func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type request struct {
+		Route config.Route `json:"route"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		value := request{}
+		_ = json.NewDecoder(r.Body).Decode(&value)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
@@ -88,18 +97,12 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			return
 		}
 
-		type request struct {
-			Route config.Route `json:"route"`
-		}
-		value := request{}
-		_ = json.NewDecoder(r.Body).Decode(&value)
-		defer utils.CloseTheCloser(r.Body)
-
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
-		if err := syncMan.AddProjectRoute(ctx, vars["project"], &value.Route); err != nil {
+		projectId := vars["project"]
+		if err := syncMan.SetProjectRoute(ctx, projectId, &value.Route); err != nil {
 			logrus.Errorf("error handling set project route in handlers unable to add route in project config got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -114,6 +117,8 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 // HandleDeleteProjectRoute deletes the specified route from project config
 func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer utils.CloseTheCloser(r.Body)
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling delete project route in handlers unable to validate token got error message - %v", err)
@@ -126,7 +131,9 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 		defer cancel()
 
 		vars := mux.Vars(r)
-		if err := syncMan.DeleteProjectRoute(ctx, vars["project"], vars["routeId"]); err != nil {
+		projectId := vars["project"]
+		routeId := vars["routeId"]
+		if err := syncMan.DeleteProjectRoute(ctx, projectId, routeId); err != nil {
 			logrus.Errorf("error handling delete project route in handlers unable to delete route in project config got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

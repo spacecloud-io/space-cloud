@@ -56,10 +56,8 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/letsencrypt").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.adminMan, s.syncMan))
 
 	// Initialize routes for routing module configuration
-	// global level
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing").HandlerFunc(handlers.HandleRoutingConfigRequest(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing").HandlerFunc(handlers.HandleGetRoutingConfig(s.adminMan, s.syncMan))
-	// individual level
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/{routeId}").HandlerFunc(handlers.HandleSetProjectRoute(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/{routeId}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.adminMan, s.syncMan))
 
