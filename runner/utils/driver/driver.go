@@ -5,6 +5,7 @@ import (
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
+	"github.com/spaceuptech/space-cloud/runner/utils/driver/docker"
 	"github.com/spaceuptech/space-cloud/runner/utils/driver/istio"
 )
 
@@ -23,6 +24,10 @@ func New(auth *auth.Module, c *Config) (Driver, error) {
 		istioConfig.SetProxyPort(c.ProxyPort)
 
 		return istio.NewIstioDriver(auth, istioConfig)
+
+	case model.TypeDocker:
+		return docker.NewDockerDriver(auth)
+
 	default:
 		return nil, fmt.Errorf("invalid driver type (%s) provided", c.DriverType)
 	}
@@ -39,7 +44,7 @@ type Config struct {
 // Driver is the interface of the modules which interact with the deployment targets
 type Driver interface {
 	CreateProject(project *model.Project) error
-	ApplyService(service *model.Service) error
+	ApplyService(service *model.Service, token string) error
 	AdjustScale(service *model.Service, activeReqs int32) error
 	WaitForService(service *model.Service) error
 	Type() model.DriverType

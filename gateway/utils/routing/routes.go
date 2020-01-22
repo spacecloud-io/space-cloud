@@ -18,7 +18,7 @@ func (r routeMapping) deleteProjectRoutes(project string) {
 	delete(r, project)
 }
 
-func (r routeMapping) selectRoute(host, url string) (config.Route, error) {
+func (r routeMapping) selectRoute(host, url string) (*config.Route, error) {
 	// Iterate over each project
 	for _, routes := range r {
 		// Iterate over each route of the project
@@ -39,15 +39,15 @@ func (r routeMapping) selectRoute(host, url string) (config.Route, error) {
 					return route, nil
 				}
 			default:
-				return config.Route{}, fmt.Errorf("invalid type (%s) provided for url matching", route.Source.Type)
+				return nil, fmt.Errorf("invalid type (%s) provided for url matching", route.Source.Type)
 			}
 		}
 	}
 
-	return config.Route{}, fmt.Errorf("route not found for provided host (%s) and url (%s)", host, url)
+	return nil, fmt.Errorf("route not found for provided host (%s) and url (%s)", host, url)
 }
 
-func (r *Routing) selectRoute(host, url string) (config.Route, error) {
+func (r *Routing) selectRoute(host, url string) (*config.Route, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
