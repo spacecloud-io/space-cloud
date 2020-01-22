@@ -27,7 +27,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 	type Request struct {
 		User string `json:"user"`
-		Pass string `json:"pass"`
+		Pass string `json:"key"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
