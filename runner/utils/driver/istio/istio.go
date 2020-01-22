@@ -209,36 +209,41 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 	return nil
 }
 
-func (i *Istio) DeleteService(ctx context.Context, serviceId, projectId, version string) error {
-	service := &model.Service{ID: serviceId, ProjectID: projectId, Version: version}
-	err := i.kube.CoreV1().ServiceAccounts(projectId).Delete(getServiceAccountName(service), &metav1.DeleteOptions{})
+// DeleteService deletes a service version
+func (i *Istio) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
+	service := &model.Service{ID: serviceID, ProjectID: projectID, Version: version}
+
+	// This will delete the service level service account. This will work fine as long as a service has only one version.
+	// TODO: Add support for multiple versions
+	service.Version = "v1"
+	err := i.kube.CoreV1().ServiceAccounts(projectID).Delete(getServiceAccountName(service), &metav1.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// service account not found meaning no service present
-		logrus.Errorf("error deleting service in istio service account not found got error message - %v", err)
+		logrus.Errorf("Service does not exist - %v", err)
 		return nil
 	} else if err == nil {
-		if err = i.kube.AppsV1().Deployments(projectId).Delete(getDeploymentName(service), &metav1.DeleteOptions{}); err != nil {
+		if err = i.kube.AppsV1().Deployments(projectID).Delete(getDeploymentName(service), &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find deployment got error message - %v", err)
 			return err
 		}
-		if err = i.kube.CoreV1().Services(projectId).Delete(serviceId, &metav1.DeleteOptions{}); err != nil {
+		if err = i.kube.CoreV1().Services(projectID).Delete(getServiceName(serviceID), &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find services got error message - %v", err)
 			return err
 		}
 		// when we add versioning support, the destination rules and virtual services can only be removed when all service versions are removed
-		if err = i.istio.NetworkingV1alpha3().VirtualServices(projectId).Delete(serviceId, &metav1.DeleteOptions{}); err != nil {
+		if err = i.istio.NetworkingV1alpha3().VirtualServices(projectID).Delete(getVirtualServiceName(serviceID), &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find virtual services got error message - %v", err)
 			return err
 		}
-		if err = i.istio.NetworkingV1alpha3().DestinationRules(projectId).Delete(serviceId, &metav1.DeleteOptions{}); err != nil {
+		if err = i.istio.NetworkingV1alpha3().DestinationRules(projectID).Delete(getDestRuleName(serviceID), &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find destination rule got error message - %v", err)
 			return err
 		}
-		if err = i.istio.SecurityV1beta1().AuthorizationPolicies(getAuthorizationPolicyName(service)).Delete(serviceId, &metav1.DeleteOptions{}); err != nil {
+		if err = i.istio.SecurityV1beta1().AuthorizationPolicies(projectID).Delete(getAuthorizationPolicyName(service), &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find authorization policies got error message - %v", err)
 			return err
 		}
-		if err = i.istio.NetworkingV1alpha3().Sidecars(projectId).Delete(serviceId, &metav1.DeleteOptions{}); err != nil {
+		if err = i.istio.NetworkingV1alpha3().Sidecars(projectID).Delete(getSidecarName(serviceID), &metav1.DeleteOptions{}); err != nil {
 			logrus.Errorf("error deleting service in istio unable to find sidecars got error message - %v", err)
 			return err
 		}
@@ -283,10 +288,14 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 		service.Scale.Replicas = *deployment.Spec.Replicas
 
 		for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
+			if containerInfo.Name == "metric-proxy" || containerInfo.Name == "istio-proxy" {
+				continue
+			}
 			// get ports
-			ports := []model.Port{}
-			for _, port := range containerInfo.Ports {
-				ports = append(ports, model.Port{Name: port.Name, Port: port.ContainerPort})
+			ports := make([]model.Port, len(containerInfo.Ports))
+			for i, port := range containerInfo.Ports {
+				array := strings.Split(port.Name, "-")
+				ports[i] = model.Port{Name: array[0], Protocol: model.Protocol(array[1]), Port: port.ContainerPort}
 			}
 
 			// get environment variables
@@ -331,11 +340,11 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectId).Get(getAuthorizationPolicyName(service), metav1.GetOptions{})
 		if len(authPolicy.Spec.Rules[0].From) != 0 {
 			for _, rule := range authPolicy.Spec.Rules[0].From {
-				for _, projectId := range rule.Source.Namespaces {
-					if projectId == "space-cloud" {
+				for _, projectID := range rule.Source.Namespaces {
+					if projectID == "space-cloud" || projectID == "istio-system" {
 						continue
 					}
-					service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: projectId, Service: "*"})
+					service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: projectID, Service: "*"})
 				}
 				for _, serv := range rule.Source.Principals {
 					whitelistArr := strings.Split(serv, "/")
@@ -350,17 +359,12 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 
 		// Set upstreams
 		sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectId).Get(service.ID, metav1.GetOptions{})
-		for key, value := range sideCar.Spec.Egress[0].Hosts {
-			upstream := model.Upstream{}
-			if key != 0 { // as at index 0 default upstream space-cloud is automatically inserted
-				a := strings.Split(value, "/")
-				if a[0] == "space-cloud" {
-					continue
-				}
-				upstream.ProjectID = a[0]
-				upstream.Service = a[1]
+		for _, value := range sideCar.Spec.Egress[0].Hosts {
+			a := strings.Split(value, "/")
+			if a[0] == "space-cloud" || a[0] == "istio-system" {
+				continue
 			}
-			service.Upstreams = append(service.Upstreams, upstream)
+			service.Upstreams = append(service.Upstreams, model.Upstream{ProjectID: a[0], Service: a[1]})
 		}
 
 		// todo labels, serviceName, affinity, runtime
@@ -443,7 +447,7 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 		return err
 	}
 
-	logrus.Infof("Scale of of service (%s:%s) adjusted to %d successfully", ns, service.ID, replicaCount)
+	logrus.Infof("Scale of service (%s:%s) adjusted to %d successfully", ns, service.ID, replicaCount)
 	return nil
 }
 

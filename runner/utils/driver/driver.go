@@ -48,8 +48,8 @@ type Config struct {
 type Driver interface {
 	CreateProject(project *model.Project) error
 	ApplyService(ctx context.Context, service *model.Service) error
-	GetServices(ctx context.Context, projectId string) ([]*model.Service, error)
-	DeleteService(ctx context.Context, serviceId, projectId, version string) error
+	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
+	DeleteService(ctx context.Context, projectID, serviceID, version string) error
 	AdjustScale(service *model.Service, activeReqs int32) error
 	WaitForService(service *model.Service) error
 	Type() model.DriverType

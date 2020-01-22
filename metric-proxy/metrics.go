@@ -44,6 +44,11 @@ func (p *Proxy) routineCollectMetrics(duration time.Duration) {
 			continue
 		}
 
+		if len(metrics.Stats) == 0 {
+			logrus.Errorln("Could not pull metrics. Is something wrong with envoy?")
+			continue
+		}
+
 		// Calculate the number of requests which occurred between subsequent requests
 		count := metrics.Stats[0].Value - prevValue
 		prevValue = metrics.Stats[0].Value

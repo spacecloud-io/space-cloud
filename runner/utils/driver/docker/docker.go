@@ -189,7 +189,7 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 }
 
 // DeleteService removes every docker container related to specified service id
-func (d *docker) DeleteService(ctx context.Context, serviceId, projectId, version string) error {
+func (d *docker) DeleteService(ctx context.Context, projectId, serviceId, version string) error {
 	args := filters.Arg("name", fmt.Sprintf("%s--%s--%s", projectId, serviceId, version))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
@@ -204,7 +204,7 @@ func (d *docker) DeleteService(ctx context.Context, serviceId, projectId, versio
 			return err
 		}
 	}
-	// handle gracefully if no containers found for specified serviceId
+	// handle gracefully if no containers found for specified service id
 	return nil
 }
 
