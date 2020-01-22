@@ -16,6 +16,7 @@ test
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+build/
 node_modules
 css
 .sass-cache
@@ -26,16 +27,25 @@ gateway/gateway
 runner/runner
 metric-proxy/metric-proxy
 
+# Ignore the vendor folders
+metric-proxy/vendor
+runner/vendor
+gateway/vendor
+
 raft-store
 publish.sh
+runner/runner.db
 
 test_config.yaml
 config.yaml
 
 # Helper scripts
 kube
+runner/scripts
+gateway/scripts
+metric-proxy/scripts
 docker-build.sh
-build/
+
 
 #IDEs
 .idea

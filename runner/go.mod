@@ -3,8 +3,9 @@ module github.com/spaceuptech/space-cloud/runner
 go 1.13
 
 require (
+	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/containerd/containerd v1.3.2 // indirect
-	github.com/coreos/bbolt v1.3.3
+	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible // indirect

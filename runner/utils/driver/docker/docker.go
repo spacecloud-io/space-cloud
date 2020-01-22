@@ -148,8 +148,8 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 }
 
 // DeleteService removes every docker container related to specified service id
-func (d *docker) DeleteService(ctx context.Context, serviceId, projectId, version string) error {
-	args := filters.Arg("name", fmt.Sprintf("%s--%s", serviceId, projectId))
+func (d *docker) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
+	args := filters.Arg("name", fmt.Sprintf("%s--%s", serviceID, projectID))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
@@ -165,7 +165,7 @@ func (d *docker) DeleteService(ctx context.Context, serviceId, projectId, versio
 		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
 		pId := containerName[0]
 		sId := containerName[1]
-		if sId == serviceId && pId == projectId {
+		if sId == serviceID && pId == projectID {
 			// remove the container from host machine
 			if err := d.client.ContainerRemove(ctx, containerInspect.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				logrus.Errorf("error deleting service in docker unable to remove container %s got error message - %v", containerName, err)
@@ -173,7 +173,7 @@ func (d *docker) DeleteService(ctx context.Context, serviceId, projectId, versio
 			}
 		}
 	}
-	// handle gracefully if no containers found for specified serviceId
+	// handle gracefully if no containers found for specified serviceID
 	return nil
 }
 

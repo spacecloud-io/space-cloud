@@ -56,8 +56,8 @@ func SendEmptySuccessResponse(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// CloseReaderCloser closes an io read closer while explicitly ignoring the error
-func CloseReaderCloser(r io.Closer) {
+// CloseTheCloser closes an io read closer while explicitly ignoring the error
+func CloseTheCloser(r io.Closer) {
 	_ = r.Close()
 }
 

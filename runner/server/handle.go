@@ -21,7 +21,7 @@ import (
 func (s *Server) handleCreateProject() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
-		defer utils.CloseReaderCloser(r.Body)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
@@ -53,7 +53,7 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 func (s *Server) handleApplyService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
-		defer utils.CloseReaderCloser(r.Body)
+		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -89,7 +89,7 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 
 func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -103,11 +103,11 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		projectId := vars["projectId"]
-		serviceId := vars["serviceId"]
+		projectID := vars["projectId"]
+		serviceID := vars["serviceId"]
 		version := vars["version"]
 
-		if err := s.driver.DeleteService(ctx, projectId, serviceId, version); err != nil {
+		if err := s.driver.DeleteService(ctx, projectID, serviceID, version); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -118,7 +118,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 
 func (s *Server) HandleGetServices() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -132,9 +132,9 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		projectId := vars["projectId"]
+		projectID := vars["projectId"]
 
-		services, err := s.driver.GetServices(ctx, projectId)
+		services, err := s.driver.GetServices(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
@@ -148,7 +148,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 
 func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -188,7 +188,7 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
-		defer utils.CloseReaderCloser(r.Body)
+		defer utils.CloseTheCloser(r.Body)
 
 		// http: Request.RequestURI can't be set in client requests.
 		// http://golang.org/src/pkg/net/http/client.go
@@ -247,10 +247,10 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 			// Close the body
 			_, _ = io.Copy(ioutil.Discard, res.Body)
-			utils.CloseReaderCloser(res.Body)
+			utils.CloseTheCloser(res.Body)
 		}
 
-		defer utils.CloseReaderCloser(res.Body)
+		defer utils.CloseTheCloser(res.Body)
 
 		// Copy headers and status code
 		w.WriteHeader(res.StatusCode)

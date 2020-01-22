@@ -19,7 +19,7 @@ func (s *Server) handleWebsocketRequest() http.HandlerFunc {
 			logrus.Errorln("Could not upgrade to websocket (autoscaler):", err)
 			return
 		}
-		defer utils.CloseReaderCloser(c)
+		defer utils.CloseTheCloser(c)
 
 		// Check if token is valid
 		claims, err := s.auth.VerifyProxyToken(utils.GetToken(r))

@@ -91,8 +91,8 @@ func (i *Istio) prepareContainers(service *model.Service, token string) []v1.Con
 
 			// Docker related
 			Image:           "spaceuptech/metric-proxy:latest",
-			Command:         []string{"./metric-proxy"},
-			Args:            []string{"proxy"},
+			Command:         []string{"./app"},
+			Args:            []string{"start"},
 			ImagePullPolicy: v1.PullIfNotPresent,
 		})
 	}
@@ -103,7 +103,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string) []v1.Con
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
 	ports := make([]v1.ContainerPort, len(taskPorts))
 	for i, p := range taskPorts {
-		ports[i] = v1.ContainerPort{Name: p.Name, ContainerPort: p.Port}
+		ports[i] = v1.ContainerPort{Name: fmt.Sprintf("%s-%s", p.Name, p.Protocol), ContainerPort: p.Port}
 	}
 
 	return ports
@@ -336,6 +336,8 @@ func prepareAuthPolicyRules(service *model.Service) []*securityv1beta1.Rule {
 	var namespaces []string
 	var principals []string
 
+	service.Whitelist = append(service.Whitelist, model.Whitelist{ProjectID: "space-cloud", Service: "*"}, model.Whitelist{ProjectID: "istio-system", Service: "*"})
+
 	for _, whitelist := range service.Whitelist {
 
 		if whitelist.ProjectID == "*" {
@@ -387,6 +389,14 @@ func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 }
 
 func (i *Istio) generateDeployment(service *model.Service, token string) *appsv1.Deployment {
+	// Make sure the desired replica count doesn't cross the min and max range
+	if service.Scale.Replicas < service.Scale.MinReplicas {
+		service.Scale.Replicas = service.Scale.MinReplicas
+	}
+	if service.Scale.Replicas > service.Scale.MaxReplicas {
+		service.Scale.Replicas = service.Scale.MaxReplicas
+	}
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getDeploymentName(service),
@@ -405,7 +415,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string) *appsv1
 			Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": service.ID, "version": service.Version}},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{"sidecar.istio.io/statsInclusionPrefixes": "cluster.outbound,listener,http,cluster_manager,listener_manager,http_mixer_filter,tcp_mixer_filter,server,cluster.xds-grpc"},
+					Annotations: map[string]string{"sidecar.istio.io/statsInclusionPrefixes": "cluster.outbound,listener,http.inbound,cluster_manager,listener_manager,http_mixer_filter,tcp_mixer_filter,server,cluster.xds-grpc"},
 					Labels:      map[string]string{"app": service.ID, "version": service.Version},
 				},
 				Spec: v1.PodSpec{
@@ -421,7 +431,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string) *appsv1
 func generateService(service *model.Service) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   service.ID,
+			Name:   getServiceName(service.ID),
 			Labels: map[string]string{"app": service.ID, "service": service.ID},
 		},
 		Spec: v1.ServiceSpec{
@@ -435,7 +445,7 @@ func generateService(service *model.Service) *v1.Service {
 func (i *Istio) generateVirtualService(service *model.Service) *v1alpha3.VirtualService {
 	httpRoutes, tcpRoutes := prepareVirtualServiceRoutes(service, i.config.ProxyPort)
 	return &v1alpha3.VirtualService{
-		ObjectMeta: metav1.ObjectMeta{Name: service.ID},
+		ObjectMeta: metav1.ObjectMeta{Name: getVirtualServiceName(service.ID)},
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: prepareVirtualServiceHosts(service),
 			// Gateways: prepareVirtualServiceGateways(service),
@@ -447,7 +457,7 @@ func (i *Istio) generateVirtualService(service *model.Service) *v1alpha3.Virtual
 
 func generateDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 	return &v1alpha3.DestinationRule{
-		ObjectMeta: metav1.ObjectMeta{Name: service.ID},
+		ObjectMeta: metav1.ObjectMeta{Name: getDestRuleName(service.ID)},
 		Spec: networkingv1alpha3.DestinationRule{
 			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
 			TrafficPolicy: &networkingv1alpha3.TrafficPolicy{
@@ -469,7 +479,7 @@ func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 
 func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 	return &v1alpha3.Sidecar{
-		ObjectMeta: metav1.ObjectMeta{Name: service.ID},
+		ObjectMeta: metav1.ObjectMeta{Name: getSidecarName(service.ID)},
 		Spec: networkingv1alpha3.Sidecar{
 			WorkloadSelector:      &networkingv1alpha3.WorkloadSelector{Labels: map[string]string{"app": service.ID}},
 			Egress:                []*networkingv1alpha3.IstioEgressListener{{Hosts: prepareUpstreamHosts(service)}},
