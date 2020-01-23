@@ -46,7 +46,7 @@ func generateRandomString() string {
 
 // CodeSetup initializes development environment
 func CodeSetup(username, key, url string, dev bool) error {
-	// todo auto login
+	// todo old keys always remain in accounts.yaml file
 
 	createDirIfNotExist(getSpaceCloudIpTableDirectory())
 	createDirIfNotExist(getSpaceCliDirectory())
@@ -97,8 +97,8 @@ func CodeSetup(username, key, url string, dev bool) error {
 			containerName:  "space-cloud-gateway--service--v1--task",
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs: []string{
-				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local",
-				"RUNNER_ADDR=runner.space-cloud.svc.cluster.local",
+				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
+				"RUNNER_ADDR=runner.space-cloud.svc.cluster.local:4050",
 				"ADMIN_USER=" + username,
 				"ADMIN_PASS=" + key,
 				"DEV=" + devMode,
@@ -124,7 +124,7 @@ func CodeSetup(username, key, url string, dev bool) error {
 			containerName:  "space-cloud-runner--service--v1--task",
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
-				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local", // TODO Change the default value in runner it starts with http
+				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122", // TODO Change the default value in runner it starts with http
 				"DRIVER=docker",
 			},
 			mount: []mount.Mount{

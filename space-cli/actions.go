@@ -31,7 +31,7 @@ func actionStartCode(c *cli.Context) error {
 	}
 	actionCodeStruct := &model.ActionCode{
 		Service:  service,
-		IsDeploy: false,
+		IsDeploy: true, //
 	}
 	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
 		return err
@@ -47,7 +47,7 @@ func actionBuildCode(c *cli.Context) error {
 	}
 	actionCodeStruct := &model.ActionCode{
 		Service:  service,
-		IsDeploy: true,
+		IsDeploy: false,
 	}
 	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
 		return err

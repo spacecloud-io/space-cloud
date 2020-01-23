@@ -33,14 +33,16 @@ func getSelectedAccount(credential *model.Credential) *model.Account {
 }
 
 func getCreds() (*model.Credential, error) {
-	fileName := fmt.Sprintf("/%s/galaxy/config.yaml", getHomeDirectory())
+	fileName := getAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return nil, fmt.Errorf("error reading yaml file: %s", err)
+		logrus.Error("error getting credential unable to read accounts config file - %v", err)
+		return nil, err
 	}
 
 	credential := new(model.Credential)
 	if err := yaml.Unmarshal(yamlFile, credential); err != nil {
+		logrus.Error("error getting credential unable to unmarshal accounts config file - %v", err)
 		return nil, err
 	}
 	return credential, nil

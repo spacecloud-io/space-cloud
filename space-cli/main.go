@@ -100,7 +100,7 @@ func main() {
 					Value:  "",
 				},
 				cli.StringFlag{
-					Name:   "URL",
+					Name:   "url",
 					Usage:  "Accepts the URL of server",
 					EnvVar: "URL",
 					Value:  "localhost:4122",

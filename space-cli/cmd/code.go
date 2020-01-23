@@ -30,7 +30,7 @@ func CodeStart(envID string) (*model.Service, *model.LoginResponse, error) {
 		return nil, nil, err
 	}
 
-	c, err := getServiceConfig(".galaxy.yaml")
+	c, err := getServiceConfig(getAccountConfigPath())
 	if err != nil {
 		c, err = generateServiceConfig(loginRes.Projects, selectedAccount, envID)
 		if err != nil {
@@ -45,8 +45,6 @@ func generateServiceConfig(projects []*model.Projects, selectedaccount *model.Ac
 	if err != nil {
 		return nil, err
 	}
-	var envNameID string
-	var clusters []string
 	serviceName := ""
 	if err := survey.AskOne(&survey.Input{Message: "Enter Service Name"}, &serviceName); err != nil {
 		return nil, err
@@ -61,33 +59,14 @@ func generateServiceConfig(projects []*model.Projects, selectedaccount *model.Ac
 		return nil, err
 	}
 	projectNameID := ""
-	if err := survey.AskOne(&survey.Select{Message: "Select Project Name", Options: getProjects(projects)}, &projectNameID); err != nil {
-		return nil, err
-	}
-
-	temp := strings.Split(projectNameID, " ")
-	projectID := temp[0]
-
-	var project model.Projects
-	if envID == "none" {
-		project, err := getProject(projectID, projects)
-		if err != nil {
-			return nil, err
-		}
-		if err := survey.AskOne(&survey.Select{Message: "Select Environment", Options: getEnvironments(project)}, &envNameID); err != nil {
-			return nil, err
-		}
-		temp := strings.Split(envNameID, " ")
-		envID = temp[0]
-	}
-
-	selectedEnv, err := getEnvironment(envID, project.Environments)
+	projs, err := getProjects(projects)
 	if err != nil {
 		return nil, err
 	}
-	if err := survey.AskOne(&survey.MultiSelect{Message: "Select Clusters", Options: getClusters(selectedEnv)}, &clusters); err != nil {
+	if err := survey.AskOne(&survey.Select{Message: "Select Project Name", Options: projs}, &projectNameID); err != nil {
 		return nil, err
 	}
+
 	var progCmd string
 	if err := survey.AskOne(&survey.Input{Message: "Enter Run Cmd", Default: strings.Join(getCmd(progLang), " ")}, &progCmd); err != nil {
 		return nil, err
@@ -100,7 +79,7 @@ func generateServiceConfig(projects []*model.Projects, selectedaccount *model.Ac
 	c := &model.Service{
 		ID:          serviceID,
 		Name:        serviceName,
-		ProjectID:   projectID,
+		ProjectID:   projectNameID,
 		Environment: envID,
 		Version:     "v1",
 		Scale:       model.ScaleConfig{Replicas: 0, MinReplicas: 0, MaxReplicas: 100, Concurrency: 50},
@@ -115,7 +94,7 @@ func generateServiceConfig(projects []*model.Projects, selectedaccount *model.Ac
 			},
 		},
 		Whitelist: []string{"project:*"},
-		Upstreams: []model.Upstream{model.Upstream{ProjectID: projectID, Service: "*"}},
+		Upstreams: []model.Upstream{model.Upstream{ProjectID: projectNameID, Service: "*"}},
 		Runtime:   "code",
 	}
 	return c, nil

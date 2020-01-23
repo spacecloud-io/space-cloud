@@ -114,12 +114,15 @@ func getEnvironment(envID string, environments []*model.Environment) (*model.Env
 	return nil, errors.New("Invalid Project Name")
 }
 
-func getProjects(projects []*model.Projects) []string {
+func getProjects(projects []*model.Projects) ([]string, error) {
 	var projnames []string
+	if len(projects) == 0 {
+		return nil, fmt.Errorf("error getting projects no projects founds, create new project from missioin control")
+	}
 	for _, val := range projects {
 		projnames = append(projnames, fmt.Sprintf("%s (%s)", val.ID, val.Name))
 	}
-	return projnames
+	return projnames, nil
 }
 
 func getEnvironments(project *model.Projects) []string {
