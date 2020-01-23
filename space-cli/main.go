@@ -84,9 +84,32 @@ func main() {
 			Action: actionLogin,
 		},
 		{
-			Name:   "setup",
-			Usage:  "setup development environment",
-			Flags:  []cli.Flag{},
+			Name:  "setup",
+			Usage: "setup development environment",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "username",
+					Usage:  "Accepts the username for login",
+					EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
+					Value:  "",
+				},
+				cli.StringFlag{
+					Name:   "key",
+					Usage:  "Accepts the access key to be verified during login",
+					EnvVar: "KEY",
+					Value:  "",
+				},
+				cli.StringFlag{
+					Name:   "URL",
+					Usage:  "Accepts the URL of server",
+					EnvVar: "URL",
+					Value:  "localhost:4122",
+				},
+				cli.BoolFlag{
+					Name:  "dev",
+					Usage: "Run space cloud in development mode",
+				},
+			},
 			Action: actionSetup,
 		},
 	}

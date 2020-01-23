@@ -9,8 +9,10 @@ import (
 	"regexp"
 	"runtime"
 
-	"github.com/spaceuptech/space-cli/model"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
+
+	"github.com/spaceuptech/space-cli/model"
 )
 
 func getHomeDirectory() string {
@@ -160,11 +162,26 @@ func generateYamlFile(credential *model.Credential) error {
 		return err
 	}
 
-	fileName := fmt.Sprintf("/%s/galaxy/config.yaml", getHomeDirectory())
+	if err := createDirIfNotExist(getSpaceCliDirectory()); err != nil {
+		logrus.Errorf("error in generating yaml file unable to create space cli directory - %v", err)
+		return err
+	}
+
+	fileName := getAccountConfigPath()
 	err = ioutil.WriteFile(fileName, d, 0644)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func createDirIfNotExist(dir string) error {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err = os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

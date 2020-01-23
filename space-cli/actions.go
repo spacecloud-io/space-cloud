@@ -60,7 +60,7 @@ func actionLogin(c *cli.Context) error {
 	key := c.String("key")
 	serverUrl := c.String("url")
 	local := c.Bool("local")
-	url := "url1" // todo set default url
+	url := ""
 	if local {
 		url = "localhost:4122"
 	}
@@ -71,5 +71,9 @@ func actionLogin(c *cli.Context) error {
 }
 
 func actionSetup(c *cli.Context) error {
-	return cmd.CodeSetup()
+	userName := c.String("username")
+	key := c.String("key")
+	serverUrl := c.String("url")
+	local := c.Bool("dev")
+	return cmd.CodeSetup(userName, key, serverUrl, local)
 }

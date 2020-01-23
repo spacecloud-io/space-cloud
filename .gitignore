@@ -25,6 +25,7 @@ space-cloud
 gateway/gateway
 runner/runner
 metric-proxy/metric-proxy
+space-cli/space-cli
 
 raft-store
 publish.sh
@@ -42,3 +43,6 @@ build/
 .vscode
 
 yarn.lock
+
+#boltdatabase
+gateway/testbolt.db

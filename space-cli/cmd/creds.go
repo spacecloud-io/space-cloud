@@ -4,10 +4,23 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/model"
 )
+
+func getSpaceCloudDirectory() string {
+	return fmt.Sprintf("%s/.space-cloud", getHomeDirectory())
+}
+
+func getSpaceCliDirectory() string {
+	return fmt.Sprintf("%s/space-cli", getSpaceCloudDirectory())
+}
+
+func getAccountConfigPath() string {
+	return fmt.Sprintf("%s/accounts.yaml", getSpaceCliDirectory())
+}
 
 func getSelectedAccount(credential *model.Credential) *model.Account {
 	var selectedaccount model.Account
@@ -34,7 +47,7 @@ func getCreds() (*model.Credential, error) {
 }
 
 func checkCred(selectedAccount *model.Account) error {
-	fileName := fmt.Sprintf("/%s/galaxy/config.yaml", getHomeDirectory())
+	fileName := getAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		credential := model.Credential{
@@ -42,6 +55,7 @@ func checkCred(selectedAccount *model.Account) error {
 			SelectedAccount: selectedAccount.ID,
 		}
 		if err := generateYamlFile(&credential); err != nil {
+			logrus.Errorf("error in checking credentials unable to create accounts yaml file - %v", err)
 			return err
 		}
 	}
@@ -53,6 +67,7 @@ func checkCred(selectedAccount *model.Account) error {
 		if val.ID == selectedAccount.ID {
 			val.ID, val.UserName, val.Key, val.ServerUrl = selectedAccount.ID, selectedAccount.UserName, selectedAccount.Key, selectedAccount.ServerUrl
 			if err := generateYamlFile(credential); err != nil {
+				logrus.Errorf("error in checking credentials unable to update accounts yaml file - %v", err)
 				return err
 			}
 			return nil
@@ -61,6 +76,7 @@ func checkCred(selectedAccount *model.Account) error {
 	credential.Accounts = append(credential.Accounts, *selectedAccount)
 	credential.SelectedAccount = selectedAccount.ID
 	if err := generateYamlFile(credential); err != nil {
+		logrus.Errorf("error in checking credentials unable to update accounts yaml file - %v", err)
 		return err
 	}
 	return nil
