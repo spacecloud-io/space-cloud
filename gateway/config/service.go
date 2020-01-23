@@ -1,7 +1,7 @@
-package model
+package config
 
-// Service describes a service's configurations
-type Service struct {
+// RunnerService describes a service's configurations
+type RunnerService struct {
 	ID        string            `json:"id" yaml:"id"`
 	Name      string            `json:"name" yaml:"name"`
 	ProjectID string            `json:"projectId" yaml:"projectId"`

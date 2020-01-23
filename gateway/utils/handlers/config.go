@@ -3,8 +3,11 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -27,7 +30,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 	type Request struct {
 		User string `json:"user"`
-		Pass string `json:"key"`
+		Key  string `json:"key"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +41,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		defer r.Body.Close()
 
 		// Check if the request is authorised
-		status, token, err := adminMan.Login(req.User, req.Pass)
+		status, token, err := adminMan.Login(req.User, req.Key)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -47,9 +50,61 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		c := syncMan.GetGlobalConfig()
 
+		token, err = adminMan.GetInternalAccessToken()
+		if err != nil {
+			logrus.Errorf("error in admin login of handler unable to generate internal access token - %s", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		for _, project := range c.Projects {
+			services, err := getServices(syncMan, project.ID, token)
+			if err != nil {
+				logrus.Errorf("error in admin login of handler unable to set deployments - %s", err.Error())
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
+			}
+			project.Modules.Deployments.Services = services
+		}
+		syncMan.SetGlobalConfig(c)
+
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
 	}
+}
+
+func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.RunnerService, error) {
+	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/%s/services", syncMan.GetRunnerAddr(), projectID), nil)
+	if err != nil {
+		logrus.Errorf("error while getting services in handler unable to create http request - %v", err)
+		return nil, err
+	}
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	httpRes, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		logrus.Errorf("error while getting services in handler unable to execute http request - %v", err)
+		return nil, err
+	}
+
+	type resp struct {
+		Services []*config.RunnerService `json:"services"`
+		Error    string                  `json:"error"`
+	}
+	data := resp{}
+	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
+		logrus.Errorf("error while getting services in handler unable to decode response boyd -%v", err)
+		return nil, err
+	}
+
+	if httpRes.StatusCode != http.StatusOK {
+		logrus.Errorf("error while getting services in handler got http request -%v", httpRes.StatusCode)
+		return nil, fmt.Errorf("error while getting services in handler got http request -%v -%v", httpRes.StatusCode, data.Error)
+	}
+
+	return data.Services, err
 }
 
 // HandleLoadProjects returns the handler to load the projects via a REST endpoint
@@ -68,6 +123,14 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 			return
 		}
 
+		adminToken, err := adminMan.GetInternalAccessToken()
+		if err != nil {
+			logrus.Errorf("error while loading projects handlers unable to generate internal access token - %s", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		// Load config from file
 		c := syncMan.GetGlobalConfig()
 
@@ -79,6 +142,14 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 			// Add the project to the array if user has read access
 			_, err := adminMan.IsAdminOpAuthorised(token, p.ID)
 			if err == nil {
+				services, err := getServices(syncMan, p.ID, adminToken)
+				if err != nil {
+					logrus.Errorf("error while loading projects in handler unable to get services - %s", err.Error())
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					return
+				}
+				p.Modules.Deployments.Services = services
 				projects = append(projects, p)
 			}
 
@@ -89,6 +160,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 				}
 			}
 		}
+		syncMan.SetGlobalConfig(c)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)

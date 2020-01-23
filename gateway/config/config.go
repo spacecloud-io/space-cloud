@@ -55,6 +55,11 @@ type Modules struct {
 	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
 	Routes      Routes          `json:"routes" yaml:"routes"`
+	Deployments Deployments     `json:"deployments" yaml:"deployments"`
+}
+
+type Deployments struct {
+	Services []*RunnerService `json:"services" yaml:"services"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -183,10 +188,11 @@ type LetsEncrypt struct {
 }
 
 // Routes describes the configuration for the routing module
-type Routes []Route
+type Routes []*Route
 
 // Route describes the parameters of a single route
 type Route struct {
+	Id          string           `json:"id" yaml:"id"`
 	Source      RouteSource      `json:"source" yaml:"source"`
 	Destination RouteDestination `json:"dest" yaml:"dest"`
 }
