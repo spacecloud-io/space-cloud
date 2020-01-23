@@ -52,7 +52,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		token, err = adminMan.GetInternalAccessToken()
 		if err != nil {
-			logrus.Error("error in admin login of handler unable to generate internal access token - %v", err)
+			logrus.Errorf("error in admin login of handler unable to generate internal access token - %s", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -61,7 +61,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		for _, project := range c.Projects {
 			services, err := getServices(syncMan, project.ID, token)
 			if err != nil {
-				logrus.Error("error in admin login of handler unable to set deployments - %v", err)
+				logrus.Errorf("error in admin login of handler unable to set deployments - %s", err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
@@ -125,7 +125,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 
 		adminToken, err := adminMan.GetInternalAccessToken()
 		if err != nil {
-			logrus.Error("error while loading projects handlers unable to generate internal access token - %v", err)
+			logrus.Errorf("error while loading projects handlers unable to generate internal access token - %s", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -144,7 +144,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 			if err == nil {
 				services, err := getServices(syncMan, p.ID, adminToken)
 				if err != nil {
-					logrus.Error("error while loading projects in handler unable to get services - %v", err)
+					logrus.Errorf("error while loading projects in handler unable to get services - %s", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
 					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 					return
