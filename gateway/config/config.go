@@ -55,6 +55,11 @@ type Modules struct {
 	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
 	Routes      Routes          `json:"routes" yaml:"routes"`
+	Deployments Deployments     `json:"deployments" yaml:"deployments"`
+}
+
+type Deployments struct {
+	Services []*RunnerService `json:"services" yaml:"services"`
 }
 
 // Crud holds the mapping of database level configuration
