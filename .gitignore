@@ -26,6 +26,7 @@ space-cloud
 gateway/gateway
 runner/runner
 metric-proxy/metric-proxy
+space-cli/space-cli
 
 # Ignore the vendor folders
 metric-proxy/vendor
@@ -53,4 +54,5 @@ docker-build.sh
 
 yarn.lock
 
-runner/vendor
+#boltdatabase
+gateway/testbolt.db
