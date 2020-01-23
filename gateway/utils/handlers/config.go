@@ -89,16 +89,21 @@ func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.R
 		return nil, err
 	}
 
-	if httpRes.StatusCode != http.StatusOK {
-		logrus.Errorf("error while getting services in handler got http request -%v", httpRes.StatusCode)
-		return nil, fmt.Errorf("error while getting services in handler got http request -%v", httpRes.StatusCode)
-	}
-
 	type resp struct {
 		Services []*config.RunnerService `json:"services"`
+		Error    string                  `json:"error"`
 	}
 	data := resp{}
-	err = json.NewDecoder(httpRes.Body).Decode(&data)
+	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
+		logrus.Errorf("error while getting services in handler unable to decode response boyd -%v", err)
+		return nil, err
+	}
+
+	if httpRes.StatusCode != http.StatusOK {
+		logrus.Errorf("error while getting services in handler got http request -%v", httpRes.StatusCode)
+		return nil, fmt.Errorf("error while getting services in handler got http request -%v -%v", httpRes.StatusCode, data.Error)
+	}
+
 	return data.Services, err
 }
 
