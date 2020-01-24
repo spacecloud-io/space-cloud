@@ -245,7 +245,7 @@ func (m *Module) validate(event *model.QueueEventRequest) error {
 	schema, p := m.schemas[event.Type]
 	if !p {
 		if m.config.Strict == true {
-			return fmt.Errorf("Schema not found for event provided {%s}", event.Type)
+			return fmt.Errorf("schema not found for event (%s)", event.Type)
 		}
 		return nil
 	}

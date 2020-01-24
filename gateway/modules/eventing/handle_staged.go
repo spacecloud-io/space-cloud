@@ -92,7 +92,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	}
 
 	// Call the function to process the event
-	timeoutLocal := time.Duration(maxRetries*rule.Timeout+15000) * time.Millisecond
+	timeoutLocal := time.Duration(5000*maxRetries*rule.Timeout) * time.Millisecond
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeoutLocal)
 	defer cancel()
