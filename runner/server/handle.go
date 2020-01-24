@@ -80,7 +80,7 @@ func (s *Server) handleServiceRequest() http.HandlerFunc {
 	}
 }
 
-func (s *Server) HandleApplyService() http.HandlerFunc {
+func (s *Server) handleApplyService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 

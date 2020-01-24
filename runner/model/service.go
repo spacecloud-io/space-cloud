@@ -132,7 +132,7 @@ type CloudEventPayload struct {
 	SpecVersion string `json:"specversion"`
 	Type        string `json:"type"`
 	Source      string `json:"source"`
-	Id          string `json:"id"`
+	ID          string `json:"id"`
 	Time        string `json:"time"`
 	Data        struct {
 		Path string         `json:"path"`
@@ -140,6 +140,7 @@ type CloudEventPayload struct {
 	} `json:"data"`
 }
 
+// ServiceRequest ()
 type ServiceRequest struct {
 	IsDeploy bool     `json:"isDeploy"`
 	Service  *Service `json:"service"`

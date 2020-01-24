@@ -10,12 +10,22 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/utils"
 )
 
-func (s *Server) handleUpsertSecret() http.HandlerFunc {
+func (s *Server) handleApplySecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
 		defer utils.CloseReaderCloser(r.Body)
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
 		// get nameSpace from requestUrl!
 		vars := mux.Vars(r)
+		projectID := vars["project"]
 
 		// Parse request body
 		secretObj := new(model.Secret)
@@ -26,7 +36,7 @@ func (s *Server) handleUpsertSecret() http.HandlerFunc {
 		}
 
 		// create/update secret
-		if err := s.driver.CreateSecret(secretObj, vars["projectID"]); err != nil {
+		if err := s.driver.CreateSecret(projectID, secretObj); err != nil {
 			logrus.Errorf("Failed to create secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -40,8 +50,17 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
 		defer utils.CloseReaderCloser(r.Body)
-		// get nameSpace from requestUrl!
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
 		vars := mux.Vars(r)
+		projectID := vars["project"]
 
 		// Parse request body
 		secretObj := new(model.Secret)
@@ -52,7 +71,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		}
 
 		// list all secrets
-		if _, err := s.driver.ListSecrets(secretObj, vars["projectID"]); err != nil {
+		if _, err := s.driver.ListSecrets(projectID, secretObj); err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -61,12 +80,22 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 	}
 }
 
-func (s *Server) handleDeleteSecrets() http.HandlerFunc {
+func (s *Server) handleDeleteSecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
 		defer utils.CloseReaderCloser(r.Body)
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
 		// get nameSpace from requestUrl!
 		vars := mux.Vars(r)
+		projectID := vars["project"]
 
 		// Parse request body
 		secretObj := new(model.Secret)
@@ -77,7 +106,7 @@ func (s *Server) handleDeleteSecrets() http.HandlerFunc {
 		}
 
 		// list all secrets
-		if err := s.driver.DelSecrets(secretObj, vars["projectID"]); err != nil {
+		if err := s.driver.DeleteSecret(projectID, secretObj); err != nil {
 			logrus.Errorf("Failed to delete secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -90,8 +119,20 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
 		defer utils.CloseReaderCloser(r.Body)
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
 		// get nameSpace and secretKey from requestUrl!
 		vars := mux.Vars(r)
+		projectID := vars["project"]
+		name := vars["name"] //secret-name
+		key := vars["key"]   //secret-key
 
 		// body will only contain "value": secretValue (not-encoded!)
 		secretVal := new(model.SecretValue)
@@ -101,12 +142,11 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 			return
 		}
 		// setSecretKey
-		if err := s.driver.SetKey(secretVal, vars["projectID"], vars["secretName"], vars["secretKey"]); err != nil {
+		if err := s.driver.SetKey(projectID, secretVal, name, key); err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -115,9 +155,21 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
 		defer utils.CloseReaderCloser(r.Body)
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
 		vars := mux.Vars(r)
+		projectID := vars["project"]
+		name := vars["name"] //secret-name
+		key := vars["key"]   //secret-key
 		// setSecretKey
-		if err := s.driver.DelKey(vars["projectID"], vars["secretName"], vars["secretKey"]); err != nil {
+		if err := s.driver.DeleteKey(projectID, name, key); err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
