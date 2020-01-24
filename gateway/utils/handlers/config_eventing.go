@@ -161,7 +161,7 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type schemaDeleteRequest struct {
-		Type string `json:type`
+		Type string `json:"type"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

@@ -11,6 +11,7 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -23,25 +24,25 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 
 	url, err := m.syncMan.GetAssignedSpaceCloudURL(ctx, m.project, eventToken)
 	if err != nil {
-		log.Println("Eventing module could not get space-cloud url:", err)
+		logrus.Errorln("Eventing module could not get space-cloud url:", err)
 		return
 	}
 
 	token, err := m.adminMan.GetInternalAccessToken()
 	if err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		return
 	}
 
 	scToken, err := m.auth.GetSCAccessToken()
 	if err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		return
 	}
 
 	var res interface{}
 	if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, scToken, eventDocs, &res); err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		log.Println(res)
 	}
 }
@@ -244,7 +245,7 @@ func (m *Module) validate(event *model.QueueEventRequest) error {
 	schema, p := m.schemas[event.Type]
 	if !p {
 		if m.config.Strict == true {
-			return errors.New("required key not present in request")
+			return fmt.Errorf("Schema not found for event provided {%s}", event.Type)
 		}
 		return nil
 	}
