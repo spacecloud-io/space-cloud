@@ -332,6 +332,30 @@ func TestValidate(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name: "valid regex(prefix)",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$regex": "^sharad/"}},
+				obj:   map[string]interface{}{"op2": "sharad/regoti"},
+			},
+			want: true,
+		},
+		{
+			name: "invalid regex(prefix)",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$regex": "^sharad/"}},
+				obj:   map[string]interface{}{"op2": "extra/sharad/regoti"},
+			},
+			want: false,
+		},
+		{
+			name: "valid regex(contains)",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$regex": "/sharad/"}},
+				obj:   map[string]interface{}{"op2": "extra/sharad/regoti"},
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
