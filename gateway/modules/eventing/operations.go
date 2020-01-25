@@ -27,7 +27,10 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	m.validate(ctx, project, token, req)
+	err := m.validate(ctx, project, token, req)
+	if err != nil {
+		return err
+	}
 
 	return m.batchRequests(ctx, []*model.QueueEventRequest{req})
 }
