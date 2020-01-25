@@ -82,17 +82,3 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 
 	return s.setProject(ctx, projectConfig)
 }
-
-func (s *Manager) SetEventingStrict(ctx context.Context, project string, strict bool) error {
-	// Acquire a lock
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	projectConfig, err := s.getConfigWithoutLock(project)
-	if err != nil {
-		return err
-	}
-	projectConfig.Modules.Eventing.Strict = strict
-
-	return s.setProject(ctx, projectConfig)
-}

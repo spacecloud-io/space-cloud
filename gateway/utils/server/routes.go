@@ -33,7 +33,6 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/schema").HandlerFunc(handlers.HandleSetEventingSchema(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/event-triggers/schema").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
-	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/strict").HandlerFunc(handlers.HandleSetEventingStrict(s.adminMan, s.syncMan))
 	// Initialize route for file storage config
 	router.Methods("POST").Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
 	router.Methods("GET").Path("/v1/config/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan))
