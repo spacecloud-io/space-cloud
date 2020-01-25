@@ -20,44 +20,94 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
+func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.Volume) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
 	// TODO: Add support for private repos
 	tasks := service.Tasks
 	containers := make([]v1.Container, len(tasks))
-	for i, task := range tasks {
-		// Prepare env variables
-		var envVars []v1.EnvVar
-		for k, v := range task.Env {
-			envVars = append(envVars, v1.EnvVar{Name: k, Value: v})
-		}
-
-		// Prepare ports to be exposed
-		ports := prepareContainerPorts(task.Ports)
-
-		// Prepare command and args
-		var cmd, args []string
-		if task.Docker.Cmd != nil {
-			cmd = task.Docker.Cmd[0:1]
-			if len(task.Docker.Cmd) > 1 {
-				args = task.Docker.Cmd[1:]
+	// Prepare Volume
+	volume := make([]v1.Volume, len(service.Secrets))
+	for j, task := range tasks {
+		for _, secretName := range service.Secrets {
+			// Prepare env variables
+			var envVars []v1.EnvVar
+			for k, v := range task.Env {
+				envVars = append(envVars, v1.EnvVar{Name: k, Value: v})
 			}
-		}
 
-		containers[i] = v1.Container{
-			Name: task.ID,
-			Env:  envVars,
+			// Prepare ports to be exposed
+			ports := prepareContainerPorts(task.Ports)
 
-			// Resource Related
-			Ports:     ports,
-			Resources: *generateResourceRequirements(&task.Resources),
+			// Prepare command and args
+			var cmd, args []string
+			if task.Docker.Cmd != nil {
+				cmd = task.Docker.Cmd[0:1]
+				if len(task.Docker.Cmd) > 1 {
+					args = task.Docker.Cmd[1:]
+				}
+			}
+			// get secrets
+			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
+			if err != nil {
+				// error getting secrets!! return error!!
+			}
+			name := secrets.ObjectMeta.Name
+			switch secrets.ObjectMeta.Annotations["secretType"] {
+			case "file":
+				rootPath := secrets.ObjectMeta.Annotations["rootPath"]
+				volume = append(volume, v1.Volume{Name: secrets.ObjectMeta.Name, VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: secrets.ObjectMeta.Name}}})
+				containers[j] = v1.Container{
+					Name: task.ID,
+					Env:  envVars,
+					// Resource Related
+					Ports:     ports,
+					Resources: *generateResourceRequirements(&task.Resources),
+					// Docker related
+					Image:           task.Docker.Image,
+					Command:         cmd,
+					Args:            args,
+					ImagePullPolicy: v1.PullIfNotPresent,
+					// Secrets Related
+					VolumeMounts: []v1.VolumeMount{{
+						Name:      name,
+						MountPath: rootPath,
+						ReadOnly:  true,
+					}},
+				}
 
-			// Docker related
-			Image:           task.Docker.Image,
-			Command:         cmd,
-			Args:            args,
-			ImagePullPolicy: v1.PullIfNotPresent,
+			case "env":
+				// for multiple keys...append!
+				for k := range secrets.Data {
+					envVars = append(envVars, v1.EnvVar{ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{LocalObjectReference: v1.LocalObjectReference{Name: name}, Key: k}}})
+				}
+				containers[j] = v1.Container{
+					Name: task.ID,
+					Env:  envVars,
+					// Resource Related
+					Ports:     ports,
+					Resources: *generateResourceRequirements(&task.Resources),
+					// Docker related
+					Image:           task.Docker.Image,
+					Command:         cmd,
+					Args:            args,
+					ImagePullPolicy: v1.PullIfNotPresent,
+				}
+			}
+			// TODO: Docker secret type
+			// case "docker":
+			// 	containers[j] = v1.Container{
+			// 		Name: task.ID,
+			// 		Env:  envVars,
+			// 		// Resource Related
+			// 		Ports:     ports,
+			// 		Resources: *generateResourceRequirements(&task.Resources),
+			// 		// Docker related
+			// 		Image:           task.Docker.Image,
+			// 		Command:         cmd,
+			// 		Args:            args,
+			// 		ImagePullPolicy: v1.PullIfNotPresent,
+			// 	}
 		}
 	}
 
@@ -88,7 +138,7 @@ func (i *Istio) prepareContainers(service *model.Service) []v1.Container {
 		})
 	}
 
-	return containers
+	return containers, volume
 }
 
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
@@ -381,6 +431,7 @@ func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 }
 
 func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
+	preparedContainer, _ := i.prepareContainers(service)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getDeploymentName(service),
@@ -404,7 +455,7 @@ func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
 				},
 				Spec: v1.PodSpec{
 					ServiceAccountName: getServiceAccountName(service),
-					Containers:         i.prepareContainers(service),
+					Containers:         preparedContainer,
 					// TODO: Add config for affinity
 				},
 			},

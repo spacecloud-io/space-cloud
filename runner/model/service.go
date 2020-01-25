@@ -15,6 +15,7 @@ type Service struct {
 	Upstreams   []Upstream        `json:"upstreams" yaml:"upstreams"`
 	Runtime     Runtime           `json:"runtime" yaml:"runtime"`
 	Expose      *Expose           `json:"expose" yaml:"expose"`
+	Secrets     []string          `json:"secrets" yaml:"secrets"`
 }
 
 // ScaleConfig describes the config used to scale a service
