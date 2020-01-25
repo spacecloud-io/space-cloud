@@ -23,9 +23,11 @@ func (m *Module) IsEnabled() bool {
 }
 
 // QueueEvent queues a new event
-func (m *Module) QueueEvent(ctx context.Context, req *model.QueueEventRequest) error {
+func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
+
+	m.validate(ctx, project, token, req)
 
 	return m.batchRequests(ctx, []*model.QueueEventRequest{req})
 }

@@ -61,10 +61,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc, err := m.generateQueueEventRequest(token, r.Retries, r.Name, batchID, utils.EventStatusStaged, r.URL, req)
-			if err != nil {
-				return err
-			}
+			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.Name, batchID, utils.EventStatusStaged, r.URL, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -80,7 +77,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) (*model.EventDocument, error) {
+func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
 
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 
@@ -99,11 +96,6 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 		retries = 3
 	}
 
-	err := m.validate(event)
-	if err != nil {
-		return nil, err
-	}
-
 	return &model.EventDocument{
 		ID:             ksuid.New().String(),
 		BatchID:        batchID,
@@ -115,7 +107,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 		Status:         status,
 		Retries:        retries,
 		Url:            url,
-	}, nil
+	}
 }
 
 func (m *Module) generateCancelEventRequest(eventID string) *model.UpdateRequest {
@@ -238,15 +230,17 @@ func (m *Module) selectRule(name string) (config.EventingRule, error) {
 	return config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
 }
 
-func (m *Module) validate(event *model.QueueEventRequest) error {
+func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
 	if event.Type == utils.EventDBCreate || event.Type == utils.EventDBDelete || event.Type == utils.EventDBUpdate || event.Type == utils.EventFileCreate || event.Type == utils.EventFileDelete {
 		return nil
 	}
+
+	if err := m.auth.IsEventingOpAuthorised(ctx, project, token, event); err != nil {
+		return err
+	}
+
 	schema, p := m.schemas[event.Type]
 	if !p {
-		if m.config.Strict == true {
-			return fmt.Errorf("schema not found for event (%s)", event.Type)
-		}
 		return nil
 	}
 	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
