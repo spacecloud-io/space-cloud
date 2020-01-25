@@ -62,16 +62,8 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		// Parse request body
-		secretObj := new(model.Secret)
-		if err := json.NewDecoder(r.Body).Decode(secretObj); err != nil {
-			logrus.Errorf("Failed to list secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
-			return
-		}
-
 		// list all secrets
-		if _, err := s.driver.ListSecrets(projectID, secretObj); err != nil {
+		if _, err := s.driver.ListSecrets(projectID); err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -96,6 +88,7 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		// get nameSpace from requestUrl!
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+		name := vars["name"]
 
 		// Parse request body
 		secretObj := new(model.Secret)
@@ -106,7 +99,7 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		}
 
 		// list all secrets
-		if err := s.driver.DeleteSecret(projectID, secretObj); err != nil {
+		if err := s.driver.DeleteSecret(projectID, name); err != nil {
 			logrus.Errorf("Failed to delete secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
