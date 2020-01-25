@@ -220,7 +220,11 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 	return true
 }
 
-func (m *Module) selectRule(name string) (config.EventingRule, error) {
+func (m *Module) selectRule(name, evType string) (config.EventingRule, error) {
+	if evType == utils.EventDBCreate || evType == utils.EventDBDelete || evType == utils.EventDBUpdate || evType == utils.EventFileCreate || evType == utils.EventFileDelete {
+		return config.EventingRule{Timeout: 5000, Type: evType, Retries: 3}, nil
+	}
+
 	if rule, ok := m.config.Rules[name]; ok {
 		return rule, nil
 	}

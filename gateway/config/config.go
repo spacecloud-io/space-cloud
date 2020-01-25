@@ -165,7 +165,7 @@ type Eventing struct {
 	Col           string                  `json:"col" yaml:"col"`
 	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
-	SecurityRules map[string]*Rule
+	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 	Schemas       map[string]SchemaObject `json:"schemas" yaml:"schemas"`
 }
 

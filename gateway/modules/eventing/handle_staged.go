@@ -74,7 +74,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	typeAndName := strings.Split(eventDoc.Type, ":")
 	evType, name := typeAndName[0], typeAndName[1]
 
-	rule, err := m.selectRule(name)
+	rule, err := m.selectRule(name, evType)
 	if err != nil {
 		logrus.Errorln("Error processing staged event:", err)
 		return
