@@ -63,7 +63,7 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(false), false)
 	s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, s, false)
-	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			r, err := (auth).IsCreateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
@@ -129,7 +129,7 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(false), false)
 	s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, s, false)
-	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			r, err := (auth).IsAggregateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
@@ -224,7 +224,7 @@ func TestPostProcessMethod(t *testing.T) {
 	s := schema.Init(crud.Init(false), false)
 	s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, s, false)
-	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			err := (auth).PostProcessMethod(test.postProcess, test.result)
@@ -284,7 +284,7 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(false), false)
 	s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, s, false)
-	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			_, r, err := (auth).IsReadOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
@@ -341,7 +341,7 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(false), false)
 	s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, s, false)
-	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
@@ -399,7 +399,7 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(false), false)
 	s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, s, false)
-	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			r, err := (auth).IsUpdateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
