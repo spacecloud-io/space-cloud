@@ -345,9 +345,11 @@ func (i *Istio) WaitForService(service *model.Service) error {
 
 // CreateProject creates a new namespace for the client
 func (i *Istio) CreateProject(project *model.Project) error {
+	// Project ID provided here is already in the form `project-env`
+	namespace := project.ID
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   getNamespaceName(project.ID, project.Environment),
+			Name:   namespace,
 			Labels: map[string]string{"istio-injection": "enabled"},
 		},
 	}

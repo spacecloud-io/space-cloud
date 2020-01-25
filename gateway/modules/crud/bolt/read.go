@@ -21,14 +21,14 @@ func (b *Bolt) Read(ctx context.Context, project, col string, req *model.ReadReq
 		results := []interface{}{}
 		if err := b.client.View(func(tx *bbolt.Tx) error {
 			// Assume bucket exists and has keys
-			bucket := tx.Bucket([]byte(project)).Cursor()
-
+			bucket := tx.Bucket([]byte(project))
 			if bucket == nil {
-				return fmt.Errorf("error reading from bbolt db unable to find specifed bucket")
+				return nil
 			}
 
+			cursor := bucket.Cursor()
 			prefix := []byte(col + "/")
-			for k, v := bucket.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = bucket.Next() {
+			for k, v := cursor.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = cursor.Next() {
 				result := map[string]interface{}{}
 				if err := json.Unmarshal(v, &result); err != nil {
 					logrus.Errorf("error un marshalling while reading from bboltdb - %v", err)

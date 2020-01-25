@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
 // Manager syncs the project config between folders
@@ -19,12 +20,17 @@ type Manager struct {
 	nodeID        string
 	clusterID     string
 	advertiseAddr string
+	runnerAddr    string
+	artifactAddr  string
 	port          int
 
 	// Configuration for clustering
 	storeType string
 	store     Store
 	services  []*service
+
+	// For authentication
+	adminMan *admin.Manager
 }
 
 type service struct {
@@ -33,15 +39,22 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType string) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, artifactAddr: artifactAddr}
 
 	// Initialise the consul client if enabled
 	switch storeType {
 	case "none":
 		return m, nil
+	case "kube":
+		s, err := NewKubeStore(clusterID)
+		if err != nil {
+			return nil, err
+		}
+		m.store = s
+		m.store.Register()
 	case "consul":
 		s, err := NewConsulStore(nodeID, clusterID, advertiseAddr)
 		if err != nil {

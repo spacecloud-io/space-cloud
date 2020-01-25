@@ -31,6 +31,8 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleAddEventingRule(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteEventingRule(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/schema").HandlerFunc(handlers.HandleSetEventingSchema(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/config/projects/{project}/event-triggers/schema").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
 	// Initialize route for file storage config
 	router.Methods("POST").Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
 	router.Methods("GET").Path("/v1/config/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan))
@@ -73,7 +75,7 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	router.Methods("POST").Path("/v1/api/{project}/realtime/process").HandlerFunc(handlers.HandleRealtimeProcessRequest(s.auth, s.realtime))
 
 	// Initialize the routes for eventing service
-	router.Methods("POST").Path("/v1/api/{project}/event-triggers/queue").HandlerFunc(handlers.HandleQueueEvent(s.adminMan, s.eventing))
+	router.Methods("POST").Path("/v1/api/{project}/event-triggers/queue").HandlerFunc(handlers.HandleQueueEvent(s.eventing))
 	router.Methods("POST").Path("/v1/api/{project}/eventing/process").HandlerFunc(handlers.HandleProcessEvent(s.adminMan, s.eventing))
 
 	// Initialize the routes for the crud operations
@@ -95,9 +97,9 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	userRouter.Methods("GET").Path("/edit_profile/{id}").HandlerFunc(handlers.HandleEmailEditProfile(s.user))
 
 	// Initialize the routes for the file management operations
-	router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.auth, s.file))
-	router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.auth, s.file))
-	router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.auth, s.file))
+	router.Methods("POST").Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.file))
+	router.Methods("GET").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleRead(s.file))
+	router.Methods("DELETE").PathPrefix("/v1/api/{project}/files").HandlerFunc(handlers.HandleDelete(s.file))
 
 	// Register pprof handlers if profiler set to true
 	if profiler {
@@ -110,6 +112,12 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 		router.Handle("/debug/pprof/threadcreate", pprof.Handler("threadcreate"))
 		router.Handle("/debug/pprof/block", pprof.Handler("block"))
 	}
+
+	// Add addresses for runner
+	router.PathPrefix("/v1/runner").HandlerFunc(s.syncMan.HandleRunnerRequests(s.adminMan))
+
+	// forward request to artifact store
+	router.PathPrefix("/v1/artifact").HandlerFunc(s.syncMan.HandleArtifactRequests(s.adminMan))
 
 	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))

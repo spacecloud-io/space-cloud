@@ -49,7 +49,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 
 	// Create the fundamental modules
 	c := crud.Init(removeProjectScope)
@@ -60,7 +60,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 	}
 
 	adminMan := admin.New()
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, adminMan)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		}
 
 		// Set the configuration for the auth module
-		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services); err != nil {
+		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 			logrus.Errorln("Error in auth module config: ", err)
 			return err
 		}

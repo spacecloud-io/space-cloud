@@ -165,6 +165,8 @@ type Eventing struct {
 	Col           string                  `json:"col" yaml:"col"`
 	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
+	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
+	Schemas       map[string]SchemaObject `json:"schemas" yaml:"schemas"`
 }
 
 // EventingRule holds an eventing rule
@@ -175,6 +177,10 @@ type EventingRule struct {
 	Name    string            `json:"name" yaml:"name"`
 	URL     string            `json:"url" yaml:"url"`
 	Options map[string]string `json:"options" yaml:"options"`
+}
+
+type SchemaObject struct {
+	Schema string `json:"schema" yaml:"schema"`
 }
 
 // LetsEncrypt describes the configuration for let's encrypt
