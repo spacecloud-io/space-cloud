@@ -216,7 +216,7 @@ func TestSchema_SchemaValidate(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			result, err := s.schemaValidator(testCase.coll, s.SchemaDoc["mongo"][testCase.coll], testCase.Document)
+			result, err := s.SchemaValidator(testCase.coll, s.SchemaDoc["mongo"][testCase.coll], testCase.Document)
 			if (err != nil) != testCase.IsErrExpected {
 				t.Errorf("\n SchemaValidateOperation() error : expected error-%v, got-%v)", testCase.IsErrExpected, err)
 			}

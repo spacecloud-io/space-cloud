@@ -31,6 +31,8 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleAddEventingRule(s.adminMan, s.syncMan))
 	router.Methods("DELETE").Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteEventingRule(s.adminMan, s.syncMan))
 	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
+	router.Methods("POST").Path("/v1/config/projects/{project}/event-triggers/schema").HandlerFunc(handlers.HandleSetEventingSchema(s.adminMan, s.syncMan))
+	router.Methods("DELETE").Path("/v1/config/projects/{project}/event-triggers/schema").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
 	// Initialize route for file storage config
 	router.Methods("POST").Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
 	router.Methods("GET").Path("/v1/config/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan))
@@ -73,7 +75,7 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	router.Methods("POST").Path("/v1/api/{project}/realtime/process").HandlerFunc(handlers.HandleRealtimeProcessRequest(s.auth, s.realtime))
 
 	// Initialize the routes for eventing service
-	router.Methods("POST").Path("/v1/api/{project}/event-triggers/queue").HandlerFunc(handlers.HandleQueueEvent(s.adminMan, s.eventing))
+	router.Methods("POST").Path("/v1/api/{project}/event-triggers/queue").HandlerFunc(handlers.HandleQueueEvent(s.eventing))
 	router.Methods("POST").Path("/v1/api/{project}/eventing/process").HandlerFunc(handlers.HandleProcessEvent(s.adminMan, s.eventing))
 
 	// Initialize the routes for the crud operations
