@@ -20,7 +20,7 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
+func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference,error) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
 	// TODO: Add support for private repos
@@ -52,6 +52,7 @@ func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.
 			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
 			if err != nil {
 				// error getting secrets!! return error!!
+				return err,err,err
 			}
 			name := secrets.ObjectMeta.Name
 			switch secrets.ObjectMeta.Annotations["secretType"] {
@@ -140,7 +141,7 @@ func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.
 		})
 	}
 
-	return containers, volume, imagePull
+	return containers, volume, imagePull,nil
 }
 
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
@@ -433,7 +434,10 @@ func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 }
 
 func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
-	preparedContainer, volume, imagePull := i.prepareContainers(service)
+	preparedContainer, volume, imagePull ,err := i.prepareContainers(service)
+	if err != nil{
+		// what to return?? where is this func used??
+	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getDeploymentName(service),
