@@ -15,7 +15,6 @@ type Service struct {
 	Upstreams   []Upstream        `json:"upstreams" yaml:"upstreams"`
 	Runtime     Runtime           `json:"runtime" yaml:"runtime"`
 	Expose      *Expose           `json:"expose" yaml:"expose"`
-	Secrets     []string          `json:"secrets" yaml:"secrets"`
 }
 
 // ScaleConfig describes the config used to scale a service
@@ -34,6 +33,7 @@ type Task struct {
 	Resources Resources         `json:"resources" yaml:"resources"`
 	Docker    Docker            `json:"docker" yaml:"docker"`
 	Env       map[string]string `json:"env" yaml:"env"`
+	Secrets   []string          `json:"secrets" yaml:"secrets"`
 }
 
 // Port describes the port used by a task

@@ -20,16 +20,17 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.Volume) {
+func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
 	// TODO: Add support for private repos
 	tasks := service.Tasks
 	containers := make([]v1.Container, len(tasks))
 	// Prepare Volume
-	volume := make([]v1.Volume, len(service.Secrets))
+	volume := make([]v1.Volume, 0)
+	imagePull := make([]v1.LocalObjectReference, 0)
 	for j, task := range tasks {
-		for _, secretName := range service.Secrets {
+		for _, secretName := range tasks[].Secrets {
 			// Prepare env variables
 			var envVars []v1.EnvVar
 			for k, v := range task.Env {
@@ -93,21 +94,22 @@ func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.
 					Args:            args,
 					ImagePullPolicy: v1.PullIfNotPresent,
 				}
-			}
 			// TODO: Docker secret type
-			// case "docker":
-			// 	containers[j] = v1.Container{
-			// 		Name: task.ID,
-			// 		Env:  envVars,
-			// 		// Resource Related
-			// 		Ports:     ports,
-			// 		Resources: *generateResourceRequirements(&task.Resources),
-			// 		// Docker related
-			// 		Image:           task.Docker.Image,
-			// 		Command:         cmd,
-			// 		Args:            args,
-			// 		ImagePullPolicy: v1.PullIfNotPresent,
-			// 	}
+			case "docker":
+				imagePull = append(imagePull, v1.LocalObjectReference{Name: name})
+				containers[j] = v1.Container{
+					Name: task.ID,
+					Env:  envVars,
+					// Resource Related
+					Ports:     ports,
+					Resources: *generateResourceRequirements(&task.Resources),
+					// Docker related
+					Image:           task.Docker.Image,
+					Command:         cmd,
+					Args:            args,
+					ImagePullPolicy: v1.PullIfNotPresent,
+				}
+			}
 		}
 	}
 
@@ -138,7 +140,7 @@ func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.
 		})
 	}
 
-	return containers, volume
+	return containers, volume, imagePull
 }
 
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
@@ -431,7 +433,7 @@ func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 }
 
 func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
-	preparedContainer, _ := i.prepareContainers(service)
+	preparedContainer, volume, imagePull := i.prepareContainers(service)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getDeploymentName(service),
@@ -456,6 +458,8 @@ func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
 				Spec: v1.PodSpec{
 					ServiceAccountName: getServiceAccountName(service),
 					Containers:         preparedContainer,
+					Volumes:            volume,
+					ImagePullSecrets:   imagePull,
 					// TODO: Add config for affinity
 				},
 			},
