@@ -49,6 +49,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbType, col st
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetEventingSchema sets the schema for the given event type
 func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType string, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -69,6 +70,7 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetDeleteEventingSchema deletes the schema for the given event type
 func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, evType string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -83,6 +85,7 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetEventingSecurityRules sets the securtiy rule for the given event type
 func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType string, rule *config.Rule) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -103,6 +106,7 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetDeleteEventingSecurityRules deletes the security rule for the given event type
 func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, evType string) error {
 	// Acquire a lock
 	s.lock.Lock()
