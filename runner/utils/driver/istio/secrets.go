@@ -160,17 +160,19 @@ func generateSecret(projectID string, secret *model.Secret) *v1.Secret {
 	} else if secret.Type == model.DockerType {
 		typeOfSecret = v1.SecretTypeDockerConfigJson
 		authSecret := secret.Data["username"] + ":" + secret.Data["password"]
-		encValue := b64.StdEncoding.EncodeToString([]byte(authSecret))
+		encAuthSecret := b64.StdEncoding.EncodeToString([]byte(authSecret))
 		// ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials
 		dockerJSON := map[string]interface{}{
 			"auths": map[string]interface{}{
 				"https://index.docker.io/v1/": map[string]string{
-					"auth": encValue,
+					"auth": encAuthSecret,
 				},
 			},
 		}
 		data, _ := json.Marshal(dockerJSON)
-		encodedData[v1.DockerConfigJsonKey] = []byte(string(data))
+		// encode the entire json object in base64 encoding
+		encValue := b64.StdEncoding.EncodeToString([]byte(data))
+		encodedData[v1.DockerConfigJsonKey] = []byte(encValue)
 	}
 	return &v1.Secret{Type: typeOfSecret, ObjectMeta: metav1.ObjectMeta{Name: secret.Name, Namespace: projectID, Annotations: map[string]string{"rootPath": secret.RootPath, "secretType": secret.Type}}, Data: encodedData}
 }
