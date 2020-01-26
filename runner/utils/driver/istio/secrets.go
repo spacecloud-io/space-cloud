@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	b64 "encoding/base64"
+	"encoding/json"
+
 	v1 "k8s.io/api/core/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -156,14 +158,19 @@ func generateSecret(projectID string, secret *model.Secret) *v1.Secret {
 			encodedData[k] = []byte(encValue)
 		}
 	} else if secret.Type == model.DockerType {
-		// for secretType : docker
 		typeOfSecret = v1.SecretTypeDockerConfigJson
-
-		// Base64 encoding!
-		for _, v := range secret.Data {
-			encValue := b64.StdEncoding.EncodeToString([]byte(v))
-			encodedData[v1.DockerConfigJsonKey] = []byte(encValue)
+		authSecret := secret.Data["username"] + ":" + secret.Data["password"]
+		encValue := b64.StdEncoding.EncodeToString([]byte(authSecret))
+		// ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials
+		dockerJSON := map[string]interface{}{
+			"auths": map[string]interface{}{
+				"https://index.docker.io/v1/": map[string]string{
+					"auth": encValue,
+				},
+			},
 		}
+		data, _ := json.Marshal(dockerJSON)
+		encodedData[v1.DockerConfigJsonKey] = []byte(string(data))
 	}
 	return &v1.Secret{Type: typeOfSecret, ObjectMeta: metav1.ObjectMeta{Name: secret.Name, Namespace: projectID, Annotations: map[string]string{"rootPath": secret.RootPath, "secretType": secret.Type}}, Data: encodedData}
 }
