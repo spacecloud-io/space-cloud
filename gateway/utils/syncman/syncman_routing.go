@@ -51,7 +51,8 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 	doesExist := false
 	for _, route := range projectConfig.Modules.Routes {
 		if route.Id == c.Id {
-			route = c
+			route.Source = c.Source
+			route.Destination = c.Destination
 			doesExist = true
 		}
 	}

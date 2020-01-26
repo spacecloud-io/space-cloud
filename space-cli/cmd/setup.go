@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"math/rand"
 	"strings"
 	"time"
@@ -19,24 +18,19 @@ import (
 	"github.com/spaceuptech/space-cli/model"
 )
 
-func getSpaceCloudIpTableDirectory() string {
-	return fmt.Sprintf("%s/space-ip-table", getSpaceCloudDirectory())
+func getSpaceCloudHostsFilePath() string {
+	return fmt.Sprintf("%s/hosts", getSpaceCloudDirectory())
 }
 
-func getSpaceCloudIpTablePath() string {
-	return fmt.Sprintf("%s/hosts", getSpaceCloudIpTableDirectory())
+func getSpaceCloudStoreFilePath() string {
+	return fmt.Sprintf("%s/store-config.yaml", getSpaceCloudDirectory())
 }
 
-func getSpaceCloudArtifactDirectory() string {
-	return fmt.Sprintf("%s/space-artifact", getSpaceCloudDirectory())
-}
-
-func generateRandomString() string {
+func generateRandomString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
 		"abcdefghijklmnopqrstuvwxyz" +
 		"0123456789")
-	length := 50
 	var b strings.Builder
 	for i := 0; i < length; i++ {
 		b.WriteRune(chars[rand.Intn(len(chars))])
@@ -45,30 +39,35 @@ func generateRandomString() string {
 }
 
 // CodeSetup initializes development environment
-func CodeSetup(username, key, url string, dev bool) error {
+func CodeSetup(id, username, key, secret string, dev bool) error {
 	// todo old keys always remain in accounts.yaml file
 
-	createDirIfNotExist(getSpaceCloudIpTableDirectory())
-	createDirIfNotExist(getSpaceCliDirectory())
-	createDirIfNotExist(getSpaceCloudArtifactDirectory())
-	// for now artifact.yaml need to be manually placed in this folder
-	// then docker container will mount it
+	_ = createDirIfNotExist(getSpaceCloudDirectory())
 
-	log.Println("username pas", username, key, url, dev)
+	// for now store-config.yaml need to be manually placed in this folder
+	// then docker container will mount it
+	// TODO: Automate this store-config.yaml problem
+
+	logrus.Infoln("Setting up space cloud on docker")
+
 	if username == "" {
-		username = generateRandomString()
-		fmt.Printf("Your New Username: %s\n", username)
+		username = "local-admin"
+	}
+	if id == "" {
+		id = username
 	}
 	if key == "" {
-		key = generateRandomString()
-		fmt.Printf("Your New Key: %s\n", key)
+		key = generateRandomString(12)
+	}
+	if secret == "" {
+		secret = generateRandomString(24)
 	}
 
 	selectedAccount := model.Account{
-		ID:        username,
+		ID:        id,
 		UserName:  username,
 		Key:       key,
-		ServerUrl: url,
+		ServerUrl: "http://localhost:4122",
 	}
 
 	if err := checkCred(&selectedAccount); err != nil {
@@ -91,18 +90,16 @@ func CodeSetup(username, key, url string, dev bool) error {
 		portMapping    nat.PortMap
 	}{
 		{
-			// http://store.space-cloud.svc.cluster.local
-			// gate way
 			containerImage: "spaceuptech/gateway",
-			containerName:  "space-cloud-gateway--service--v1--task",
+			containerName:  "space-cloud-gateway",
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs: []string{
 				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
 				"RUNNER_ADDR=runner.space-cloud.svc.cluster.local:4050",
 				"ADMIN_USER=" + username,
 				"ADMIN_PASS=" + key,
+				"ADMIN_SECRET=" + secret,
 				"DEV=" + devMode,
-				// todo set admin-secret
 			},
 			exposedPorts: nat.PortSet{
 				"4122": struct{}{},
@@ -113,7 +110,7 @@ func CodeSetup(username, key, url string, dev bool) error {
 			mount: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
-					Source: getSpaceCloudIpTablePath(),
+					Source: getSpaceCloudHostsFilePath(),
 					Target: "/etc/hosts",
 				},
 			},
@@ -121,41 +118,47 @@ func CodeSetup(username, key, url string, dev bool) error {
 		{
 			// runner
 			containerImage: "spaceuptech/runner",
-			containerName:  "space-cloud-runner--service--v1--task",
+			containerName:  "space-cloud-runner",
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
 				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122", // TODO Change the default value in runner it starts with http
 				"DRIVER=docker",
+				"JWT_SECRET=" + secret,
+				"JWT_PROXY_SECRET=" + generateRandomString(24),
 			},
 			mount: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
-					Source: getSpaceCloudIpTablePath(),
+					Source: getSpaceCloudHostsFilePath(),
 					Target: "/etc/hosts",
 				},
+				{
+					Type:   mount.TypeBind,
+					Source: "/var/run/docker.sock",
+					Target: "/var/run/docker.sock",
+				},
 			},
-			// todo set admin secret in envs
 		},
 
 		{
 			// artifact store
 			containerImage: "spaceuptech/gateway",
-			containerName:  "space-cloud-artifact--service--v1--task",
+			containerName:  "space-cloud-store",
 			dnsName:        "store.space-cloud.svc.cluster.local",
 			envs: []string{
-				"CONFIG=/home/artifact.yaml",
+				"CONFIG=/space-cloud/store.yaml",
+				"ADMIN_SECRET=" + secret,
 			},
-			// todo set admin secret in envs
 			mount: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
-					Source: getSpaceCloudIpTablePath(),
+					Source: getSpaceCloudHostsFilePath(),
 					Target: "/etc/hosts",
 				},
 				{
 					Type:   mount.TypeBind, // mount artifact.yaml that is config file
-					Source: getSpaceCloudArtifactDirectory(),
-					Target: "/home",
+					Source: getSpaceCloudStoreFilePath(),
+					Target: "/space-cloud/store.yaml",
 				},
 			},
 		},
@@ -175,14 +178,16 @@ func CodeSetup(username, key, url string, dev bool) error {
 	}
 	// change the default host file location for crud operation to our specified path
 	// default value /etc/hosts
-	hosts.WriteFilePath = getSpaceCloudIpTablePath()
-	if err := hosts.SaveAs(getSpaceCloudIpTablePath()); err != nil {
-		logrus.Errorf("error cli setup unable to save as host file to specified path (%s) got error message - %v", getSpaceCloudIpTablePath(), err)
+	hosts.WriteFilePath = getSpaceCloudHostsFilePath()
+	if err := hosts.SaveAs(getSpaceCloudHostsFilePath()); err != nil {
+		logrus.Errorf("error cli setup unable to save as host file to specified path (%s) got error message - %v", getSpaceCloudHostsFilePath(), err)
 		return err
 	}
 
 	for _, c := range containersToCreate {
-		// pull image from docker hub
+
+		logrus.Infof("Starting container %s...", c.containerName)
+		// TODO: pull image from docker hub
 		// out, err := cli.ImagePull(ctx, dockerImageSpaceCloud, types.ImagePullOptions{})
 		// if err != nil {
 		// 	logrus.Errorf("error cli setup unable to pull image from docker hub got error message - %v", err)
@@ -219,5 +224,8 @@ func CodeSetup(username, key, url string, dev bool) error {
 		logrus.Errorf("error cli setup unable to save host file got error message - %v", err)
 		return err
 	}
+	logrus.Infof("Space Cloud (id: \"%s\") has been successfully setup! :D", selectedAccount.ID)
+	logrus.Infof("You can visit mission control at %s/mission-control", selectedAccount.ServerUrl)
+	logrus.Infof("Your login credentials: [username: \"%s\"; key: \"%s\"]", selectedAccount.UserName, selectedAccount.Key)
 	return nil
 }

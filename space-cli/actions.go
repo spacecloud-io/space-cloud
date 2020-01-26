@@ -58,22 +58,15 @@ func actionBuildCode(c *cli.Context) error {
 func actionLogin(c *cli.Context) error {
 	userName := c.String("username")
 	key := c.String("key")
-	serverUrl := c.String("url")
-	local := c.Bool("local")
-	url := ""
-	if local {
-		url = "localhost:4122"
-	}
-	if serverUrl != "default url" { // todo get default url
-		url = serverUrl
-	}
-	return cmd.LoginStart(userName, key, url, local)
+	url := c.String("url")
+	return cmd.LoginStart(userName, key, url)
 }
 
 func actionSetup(c *cli.Context) error {
+	id := c.String("id")
 	userName := c.String("username")
 	key := c.String("key")
-	serverUrl := c.String("url")
+	secret := c.String("secret")
 	local := c.Bool("dev")
-	return cmd.CodeSetup(userName, key, serverUrl, local)
+	return cmd.CodeSetup(id, userName, key, secret, local)
 }

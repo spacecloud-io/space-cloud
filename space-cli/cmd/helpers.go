@@ -165,7 +165,7 @@ func generateYamlFile(credential *model.Credential) error {
 		return err
 	}
 
-	if err := createDirIfNotExist(getSpaceCliDirectory()); err != nil {
+	if err := createDirIfNotExist(getSpaceCloudDirectory()); err != nil {
 		logrus.Errorf("error in generating yaml file unable to create space cli directory - %v", err)
 		return err
 	}

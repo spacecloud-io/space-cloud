@@ -22,7 +22,7 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 		return nil, err
 	}
 
-	resp, err := http.Post(fmt.Sprintf("http://%s/v1/config/login", selectedAccount.ServerUrl), "application/json", bytes.NewBuffer(requestBody))
+	resp, err := http.Post(fmt.Sprintf("%s/v1/config/login", selectedAccount.ServerUrl), "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		logrus.Error("error in login unable to send http request - %v", err)
 		return nil, err
@@ -40,7 +40,7 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 }
 
 // LoginStart logs the user in galaxy
-func LoginStart(userName, key, url string, local bool) error {
+func LoginStart(userName, key, url string) error {
 	if userName == "None" {
 		if err := survey.AskOne(&survey.Input{Message: "Enter username:"}, &userName); err != nil {
 			logrus.Errorf("error in login start unable to get username - %v", err)
@@ -56,7 +56,7 @@ func LoginStart(userName, key, url string, local bool) error {
 	selectedAccount := model.Account{
 		UserName:  userName,
 		Key:       key,
-		ServerUrl: url, // todo server url is like localhost:4122
+		ServerUrl: url,
 	}
 	_, err := login(&selectedAccount)
 	if err != nil {

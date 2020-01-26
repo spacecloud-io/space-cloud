@@ -31,24 +31,24 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*docker, error) {
 		logrus.Errorf("error creating docker module instance in docker in docker unable to initialize docker client - %v", err)
 		return nil, err
 	}
+
 	return &docker{client: cli, auth: auth, artifactAddr: artifactAddr}, nil
 }
 
 // ApplyService creates containers for specified service
 func (d *docker) ApplyService(ctx context.Context, service *model.Service) error {
 	service.Version = "v1"
-	// remove containers if already exits
-	if err := d.DeleteService(ctx, service.ID, service.ProjectID, service.Version); err != nil {
-		logrus.Errorf("error applying service in docker unable delete existing containers - %v", err)
+
+	// Get the hosts file
+	hostFile, err := txeh.NewHostsDefault()
+	if err != nil {
+		logrus.Errorf("Could not load host file with suitable default - %v", err)
 		return err
 	}
 
-	// todo check host file overiding concern
-	// client for CRUD operation on host file
-	// default location /etc/hosts
-	hostFile, err := txeh.NewHostsDefault()
-	if err != nil {
-		logrus.Errorf("error applying service in docker unable to load host file with suitable default - %v", err)
+	// remove containers if already exits
+	if err := d.DeleteService(ctx, service.ProjectID, service.ID, service.Version); err != nil {
+		logrus.Errorf("error applying service in docker unable delete existing containers - %v", err)
 		return err
 	}
 
@@ -63,30 +63,33 @@ func (d *docker) ApplyService(ctx context.Context, service *model.Service) error
 	var containerName, containerIp string
 	for index, task := range service.Tasks {
 		if index == 0 {
+			var err error
 			containerName, containerIp, err = d.createContainer(ctx, task, service, ports, "")
 			if err != nil {
 				return err
 			}
-			hostFile.AddHost(containerIp, fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID))
+			hostFile.AddHost(containerIp, getServiceDomain(service.ProjectID, service.ID))
 			continue
 		}
-		_, _, err = d.createContainer(ctx, task, service, []model.Port{}, containerName)
+		_, _, err := d.createContainer(ctx, task, service, []model.Port{}, containerName)
 		return err
 	}
 
-	if err := hostFile.Save(); err != nil {
-		logrus.Errorf("error applying service in docker unable to save host file - %v", err)
-		return err
-	}
-	return nil
+	return hostFile.Save()
 }
 
 func (d *docker) createContainer(ctx context.Context, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
+	// TODO: pull the images
 	// out, err := d.client.ImagePull(ctx, task.Docker.Image, types.ImagePullOptions{})
 	// if err != nil {
 	// 	return "", "", err
 	// }
 	// io.Copy(os.Stdout, out)
+
+	// Create empty labels if not exists
+	if service.Labels == nil {
+		service.Labels = map[string]string{}
+	}
 	service.Labels["internalRuntime"] = string(task.Runtime)
 	portsJsonString, err := json.Marshal(&task.Ports)
 	if err != nil {
@@ -146,7 +149,7 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 	hostConfig := &container.HostConfig{
 		// receiving memory in mega bytes converting into bytes
 		// convert received mill cpus to cpus by diving by 1000 then multiply with 100000 to get cpu quota
-		Resources: container.Resources{Memory: task.Resources.Memory * 1024 * 1024, CPUQuota: task.Resources.CPU * 100},
+		Resources: container.Resources{Memory: task.Resources.Memory * 1024 * 1024, NanoCPUs: task.Resources.CPU * 1000000},
 	}
 
 	exposedPorts := map[nat.Port]struct{}{}
@@ -204,8 +207,15 @@ func (d *docker) DeleteService(ctx context.Context, projectId, serviceId, versio
 			return err
 		}
 	}
-	// handle gracefully if no containers found for specified service id
-	return nil
+
+	// Remove host from hosts file
+	hostFile, err := txeh.NewHostsDefault()
+	if err != nil {
+		logrus.Errorf("Could not load host file with suitable default - %v", err)
+		return err
+	}
+	hostFile.RemoveHost(getServiceDomain(projectId, serviceId))
+	return hostFile.Save()
 }
 
 // GetServices gets the specified service info from docker container
@@ -254,6 +264,9 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 			return nil, err
 		}
 		service.Scale = scale
+
+		// Force scale to 1
+		service.Scale.Replicas = 1
 
 		whilteList := []model.Whitelist{}
 		if err := json.Unmarshal([]byte(service.Labels["internalWhitelist"]), &whilteList); err != nil {
@@ -307,7 +320,7 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 			},
 			Resources: model.Resources{
 				Memory: containerInspect.HostConfig.Memory / (1024 * 1024),
-				CPU:    containerInspect.HostConfig.CPUQuota / 100,
+				CPU:    containerInspect.HostConfig.NanoCPUs / 1000000,
 			},
 			Env:     envs,
 			Ports:   ports,

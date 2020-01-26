@@ -14,12 +14,8 @@ func getSpaceCloudDirectory() string {
 	return fmt.Sprintf("%s/.space-cloud", getHomeDirectory())
 }
 
-func getSpaceCliDirectory() string {
-	return fmt.Sprintf("%s/space-cli", getSpaceCloudDirectory())
-}
-
 func getAccountConfigPath() string {
-	return fmt.Sprintf("%s/accounts.yaml", getSpaceCliDirectory())
+	return fmt.Sprintf("%s/accounts.yaml", getSpaceCloudDirectory())
 }
 
 func getSelectedAccount(credential *model.Credential) *model.Account {

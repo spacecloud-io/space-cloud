@@ -20,8 +20,8 @@ func main() {
 	logrus.SetOutput(os.Stdout)
 
 	app := cli.NewApp()
-	app.Name = "galaxy"
-	app.Version = "0.1.0"
+	app.Name = "space-cli"
+	app.Version = "0.16.0"
 	app.Commands = []cli.Command{
 		{
 			Name:  "code",
@@ -73,12 +73,7 @@ func main() {
 					Name:   "url",
 					Usage:  "Accepts the URL of server",
 					EnvVar: "URL",
-					Value:  "localhost:4122",
-				},
-				cli.BoolFlag{
-					Name:   "local",
-					Usage:  "Determines whether local URL is to be used as server URL",
-					EnvVar: "LOCAL",
+					Value:  "http://localhost:4122",
 				},
 			},
 			Action: actionLogin,
@@ -88,22 +83,28 @@ func main() {
 			Usage: "setup development environment",
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:   "id",
+					Usage:  "The unique id for the cluster",
+					EnvVar: "CLUSTER_ID",
+					Value:  "",
+				},
+				cli.StringFlag{
 					Name:   "username",
-					Usage:  "Accepts the username for login",
+					Usage:  "The username used for login",
 					EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
 					Value:  "",
 				},
 				cli.StringFlag{
 					Name:   "key",
-					Usage:  "Accepts the access key to be verified during login",
+					Usage:  "The access key used for login",
 					EnvVar: "KEY",
 					Value:  "",
 				},
 				cli.StringFlag{
-					Name:   "url",
-					Usage:  "Accepts the URL of server",
-					EnvVar: "URL",
-					Value:  "localhost:4122",
+					Name:   "secret",
+					Usage:  "The jwt secret to start space-cloud with",
+					EnvVar: "JWT_SECRET",
+					Value:  "",
 				},
 				cli.BoolFlag{
 					Name:  "dev",
