@@ -52,6 +52,37 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 	}
 }
 
+// HandleRefreshToken creates the refresh-token endpoint
+func HandleRefreshToken(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+
+	// TODO: Validate current token
+	// if successful..then create a new token and send it.
+	// else return status code 401 error
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+		
+		// Check if the token is valid
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		status,newToken, err := adminMan.RefreshToken(token)
+		if err != nil {
+			w.WriteHeader(status)
+			return 
+		}
+		// c := syncMan.GetGlobalConfig()
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"token": newToken})
+	}
+}
+
+
+
 // HandleLoadProjects returns the handler to load the projects via a REST endpoint
 func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

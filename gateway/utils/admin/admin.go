@@ -58,3 +58,20 @@ func (m *Manager) Login(user, pass string) (int, string, error) {
 
 	return http.StatusUnauthorized, "", errors.New("invalid credentials provided")
 }
+// RefreshToken is used to create a new token!
+func (m *Manager) RefreshToken(token string) (int,string,error){
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	// Parse the token to get userID and userRole
+	tokenClaims ,err := m.parseToken(token)
+	if err != nil {
+		return http.StatusUnauthorized,"", err
+	}
+	// Create a new token
+		newToken, err := m.createToken(map[string]interface{}{"id": tokenClaims["id"], "nodeID": tokenClaims["nodeID"]})
+		if err != nil {
+			return http.StatusInternalServerError, "", errors.New("Failed to create a JWT token")
+		}
+	return http.StatusOK,newToken,nil
+
+}
