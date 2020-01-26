@@ -48,7 +48,7 @@ type Driver interface {
 
 	CreateSecret(projectID string, secretObj *model.Secret) error
 	ListSecrets(projectID string) ([]*model.Secret, error)
-	DeleteSecret(projectID string, secretName string) error
-	SetKey(projectID string, secretObj *model.SecretValue, secretName string, secretKey string) error
-	DeleteKey(projectID string, secretName string, secretKey string) error
+	DeleteSecret(projectID, secretName string) error
+	SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error
+	DeleteKey(projectID, secretName, secretKey string) error
 }

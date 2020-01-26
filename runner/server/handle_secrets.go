@@ -90,14 +90,6 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		projectID := vars["project"]
 		name := vars["name"]
 
-		// Parse request body
-		secretObj := new(model.Secret)
-		if err := json.NewDecoder(r.Body).Decode(secretObj); err != nil {
-			logrus.Errorf("Failed to delete secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
-			return
-		}
-
 		// list all secrets
 		if err := s.driver.DeleteSecret(projectID, name); err != nil {
 			logrus.Errorf("Failed to delete secret - %s", err.Error())
@@ -135,7 +127,7 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 			return
 		}
 		// setSecretKey
-		if err := s.driver.SetKey(projectID, secretVal, name, key); err != nil {
+		if err := s.driver.SetKey(projectID, name, key, secretVal); err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return

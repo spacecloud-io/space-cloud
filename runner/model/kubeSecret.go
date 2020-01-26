@@ -12,3 +12,12 @@ type Secret struct {
 type SecretValue struct {
 	Value string `json:"value" yaml:"value"`
 }
+
+// FileType is the secretType:file
+const FileType string = "file"
+
+// EnvType is the secretType:file
+const EnvType string = "env"
+
+// DockerType is the secretType:file
+const DockerType string = "docker"
