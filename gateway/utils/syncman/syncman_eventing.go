@@ -82,3 +82,37 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 
 	return s.setProject(ctx, projectConfig)
 }
+
+func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType string, rule *config.Rule) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	if len(projectConfig.Modules.Eventing.SecurityRules) != 0 {
+		projectConfig.Modules.Eventing.SecurityRules[evType] = &config.Rule{Rule: rule.Rule, Eval: rule.Eval, Type: rule.Type, F1: rule.F1, F2: rule.F2, Clauses: rule.Clauses, DB: rule.DB, Col: rule.Col, Find: rule.Find, URL: rule.URL, Fields: rule.Fields, Field: rule.Field, Value: rule.Value}
+	} else {
+		projectConfig.Modules.Eventing.SecurityRules = map[string]*config.Rule{
+			evType: &config.Rule{Rule: rule.Rule, Eval: rule.Eval, Type: rule.Type, F1: rule.F1, F2: rule.F2, Clauses: rule.Clauses, DB: rule.DB, Col: rule.Col, Find: rule.Find, URL: rule.URL, Fields: rule.Fields, Field: rule.Field, Value: rule.Value},
+		}
+	}
+
+	return s.setProject(ctx, projectConfig)
+}
+
+func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, evType string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	delete(projectConfig.Modules.Eventing.SecurityRules, evType)
+
+	return s.setProject(ctx, projectConfig)
+}
