@@ -73,6 +73,25 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 	return &Istio{auth: auth, config: c, kube: kube, istio: istio, cache: cache}, nil
 }
 
+/////////////////////////////////
+
+func (i *Istio) getSecrets(service *model.Service) []*v1.Secret {
+	listOfSecrets := []*v1.Secret{}
+	tasks := service.Tasks
+	for _, task := range tasks {
+		for _, secretName := range task.Secrets {
+			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
+			if err != nil {
+				return nil
+			}
+			listOfSecrets = append(listOfSecrets, secrets)
+		}
+	}
+	return listOfSecrets
+}
+
+////////////////////////////////////
+
 // ApplyService deploys the service on istio
 func (i *Istio) ApplyService(service *model.Service) error {
 	// TODO: do we need to rollback on failure? rollback to previous version if it existed else remove. We also need to rollback the cache in this case
@@ -93,8 +112,12 @@ func (i *Istio) ApplyService(service *model.Service) error {
 	// We do not need to setup destination rules since we will be enabling global mtls as described by this guide:
 	// https://istio.io/docs/tasks/security/authentication/authn-policy/#globally-enabling-istio-mutual-tls
 	// However we will need destination rules when routing between various versions
+
+	// TODO: getSecrets()...and pass the returned value to generateDeployment
+	listOfSecrets := i.getSecrets(service)
+
 	kubeServiceAccount := generateServiceAccount(service)
-	kubeDeployment := i.generateDeployment(service)
+	kubeDeployment := i.generateDeployment(service, listOfSecrets)
 	kubeService := generateService(service)
 	istioVirtualService := i.generateVirtualService(service)
 	istioDestRule := generateDestinationRule(service)

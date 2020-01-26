@@ -20,97 +20,66 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference,error) {
+func (i *Istio) prepareContainers(service *model.Service, listOfSecrets []*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
 	// TODO: Add support for private repos
 	tasks := service.Tasks
 	containers := make([]v1.Container, len(tasks))
-	// Prepare Volume
 	volume := make([]v1.Volume, 0)
 	imagePull := make([]v1.LocalObjectReference, 0)
+	volumeMount := make([]v1.VolumeMount, 0)
+
 	for j, task := range tasks {
-		for _, secretName := range tasks[].Secrets {
-			// Prepare env variables
-			var envVars []v1.EnvVar
-			for k, v := range task.Env {
-				envVars = append(envVars, v1.EnvVar{Name: k, Value: v})
-			}
+		// Prepare env variables
+		var envVars []v1.EnvVar
+		for k, v := range task.Env {
+			envVars = append(envVars, v1.EnvVar{Name: k, Value: v})
+		}
 
-			// Prepare ports to be exposed
-			ports := prepareContainerPorts(task.Ports)
+		// Prepare ports to be exposed
+		ports := prepareContainerPorts(task.Ports)
 
-			// Prepare command and args
-			var cmd, args []string
-			if task.Docker.Cmd != nil {
-				cmd = task.Docker.Cmd[0:1]
-				if len(task.Docker.Cmd) > 1 {
-					args = task.Docker.Cmd[1:]
-				}
+		// Prepare command and args
+		var cmd, args []string
+		if task.Docker.Cmd != nil {
+			cmd = task.Docker.Cmd[0:1]
+			if len(task.Docker.Cmd) > 1 {
+				args = task.Docker.Cmd[1:]
 			}
-			// get secrets
-			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
-			if err != nil {
-				// error getting secrets!! return error!!
-				return err,err,err
-			}
-			name := secrets.ObjectMeta.Name
-			switch secrets.ObjectMeta.Annotations["secretType"] {
+		}
+		for _, secretName := range listOfSecrets {
+			// Check type of Secret..based on that..append :O
+			switch secretName.ObjectMeta.Annotations["secretType"] {
 			case "file":
-				rootPath := secrets.ObjectMeta.Annotations["rootPath"]
-				volume = append(volume, v1.Volume{Name: secrets.ObjectMeta.Name, VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: secrets.ObjectMeta.Name}}})
-				containers[j] = v1.Container{
-					Name: task.ID,
-					Env:  envVars,
-					// Resource Related
-					Ports:     ports,
-					Resources: *generateResourceRequirements(&task.Resources),
-					// Docker related
-					Image:           task.Docker.Image,
-					Command:         cmd,
-					Args:            args,
-					ImagePullPolicy: v1.PullIfNotPresent,
-					// Secrets Related
-					VolumeMounts: []v1.VolumeMount{{
-						Name:      name,
-						MountPath: rootPath,
-						ReadOnly:  true,
-					}},
-				}
+				// append to VolumeMount
+				volumeMount = append(volumeMount, v1.VolumeMount{Name: secretName.ObjectMeta.Name, MountPath: secretName.ObjectMeta.Annotations["rootPath"], ReadOnly: true})
+				volume = append(volume, v1.Volume{Name: secretName.ObjectMeta.Name, VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: secretName.ObjectMeta.Name}}})
 
 			case "env":
-				// for multiple keys...append!
-				for k := range secrets.Data {
-					envVars = append(envVars, v1.EnvVar{ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{LocalObjectReference: v1.LocalObjectReference{Name: name}, Key: k}}})
+				// append to env
+				for k := range secretName.Data {
+					envVars = append(envVars, v1.EnvVar{ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{LocalObjectReference: v1.LocalObjectReference{Name: secretName.ObjectMeta.Name}, Key: k}}})
 				}
-				containers[j] = v1.Container{
-					Name: task.ID,
-					Env:  envVars,
-					// Resource Related
-					Ports:     ports,
-					Resources: *generateResourceRequirements(&task.Resources),
-					// Docker related
-					Image:           task.Docker.Image,
-					Command:         cmd,
-					Args:            args,
-					ImagePullPolicy: v1.PullIfNotPresent,
-				}
-			// TODO: Docker secret type
+
 			case "docker":
-				imagePull = append(imagePull, v1.LocalObjectReference{Name: name})
-				containers[j] = v1.Container{
-					Name: task.ID,
-					Env:  envVars,
-					// Resource Related
-					Ports:     ports,
-					Resources: *generateResourceRequirements(&task.Resources),
-					// Docker related
-					Image:           task.Docker.Image,
-					Command:         cmd,
-					Args:            args,
-					ImagePullPolicy: v1.PullIfNotPresent,
-				}
+				// append to imagePulls
+				imagePull = append(imagePull, v1.LocalObjectReference{Name: secretName.ObjectMeta.Name})
 			}
+		}
+		containers[j] = v1.Container{
+			Name: task.ID,
+			Env:  envVars,
+			// Resource Related
+			Ports:     ports,
+			Resources: *generateResourceRequirements(&task.Resources),
+			// Docker related
+			Image:           task.Docker.Image,
+			Command:         cmd,
+			Args:            args,
+			ImagePullPolicy: v1.PullIfNotPresent,
+			// Secrets Related
+			VolumeMounts: volumeMount,
 		}
 	}
 
@@ -141,7 +110,7 @@ func (i *Istio) prepareContainers(service *model.Service) ([]v1.Container, []v1.
 		})
 	}
 
-	return containers, volume, imagePull,nil
+	return containers, volume, imagePull
 }
 
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
@@ -433,11 +402,9 @@ func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 	return &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: saName, Labels: map[string]string{"account": service.ID}}}
 }
 
-func (i *Istio) generateDeployment(service *model.Service) *appsv1.Deployment {
-	preparedContainer, volume, imagePull ,err := i.prepareContainers(service)
-	if err != nil{
-		// what to return?? where is this func used??
-	}
+func (i *Istio) generateDeployment(service *model.Service, listOfSecrets []*v1.Secret) *appsv1.Deployment {
+	preparedContainer, volume, imagePull := i.prepareContainers(service, listOfSecrets)
+
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: getDeploymentName(service),
