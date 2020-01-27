@@ -73,24 +73,23 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 	return &Istio{auth: auth, config: c, kube: kube, istio: istio, cache: cache}, nil
 }
 
-/////////////////////////////////
-
-func (i *Istio) getSecrets(service *model.Service) []*v1.Secret {
-	listOfSecrets := []*v1.Secret{}
+func (i *Istio) getSecrets(service *model.Service) (map[string]*v1.Secret, error) {
+	var listOfSecrets map[string]*v1.Secret
 	tasks := service.Tasks
 	for _, task := range tasks {
 		for _, secretName := range task.Secrets {
+			if _, p := listOfSecrets[secretName]; p {
+				continue
+			}
 			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
 			if err != nil {
-				return nil
+				return nil, err
 			}
-			listOfSecrets = append(listOfSecrets, secrets)
+			listOfSecrets[secretName] = secrets
 		}
 	}
-	return listOfSecrets
+	return listOfSecrets, nil
 }
-
-////////////////////////////////////
 
 // ApplyService deploys the service on istio
 func (i *Istio) ApplyService(service *model.Service) error {
@@ -113,9 +112,13 @@ func (i *Istio) ApplyService(service *model.Service) error {
 	// https://istio.io/docs/tasks/security/authentication/authn-policy/#globally-enabling-istio-mutual-tls
 	// However we will need destination rules when routing between various versions
 
-	// TODO: getSecrets()...and pass the returned value to generateDeployment
-	listOfSecrets := i.getSecrets(service)
+	// Get the list of secrets required for this service
+	listOfSecrets, err := i.getSecrets(service)
+	if err != nil {
+		return err
+	}
 
+	// Create the appropriate kubernetes and istio objects
 	kubeServiceAccount := generateServiceAccount(service)
 	kubeDeployment := i.generateDeployment(service, listOfSecrets)
 	kubeService := generateService(service)
@@ -126,7 +129,7 @@ func (i *Istio) ApplyService(service *model.Service) error {
 	istioSidecar := generateSidecarConfig(service)
 
 	// Create a service account if it doesn't already exist. This is used as the identity of the service.
-	_, err := i.kube.CoreV1().ServiceAccounts(ns).Get(getServiceAccountName(service), metav1.GetOptions{})
+	_, err = i.kube.CoreV1().ServiceAccounts(ns).Get(getServiceAccountName(service), metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create the resources since they dont exist
 		logrus.Debugf("Creating service account for %s in %s", service.ID, ns)

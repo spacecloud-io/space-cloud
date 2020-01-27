@@ -20,17 +20,18 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func (i *Istio) prepareContainers(service *model.Service, listOfSecrets []*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
+func (i *Istio) prepareContainers(service *model.Service, listOfSecrets map[string]*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
 	// TODO: Add support for private repos
 	tasks := service.Tasks
 	containers := make([]v1.Container, len(tasks))
-	volume := make([]v1.Volume, 0)
-	imagePull := make([]v1.LocalObjectReference, 0)
-	volumeMount := make([]v1.VolumeMount, 0)
+	var volume map[string]v1.Volume
+	var imagePull map[string]v1.LocalObjectReference
 
 	for j, task := range tasks {
+		volumeMount := make([]v1.VolumeMount, 0)
+
 		// Prepare env variables
 		var envVars []v1.EnvVar
 		for k, v := range task.Env {
@@ -48,25 +49,45 @@ func (i *Istio) prepareContainers(service *model.Service, listOfSecrets []*v1.Se
 				args = task.Docker.Cmd[1:]
 			}
 		}
-		for _, secretName := range listOfSecrets {
+
+		for _, secretName := range task.Secrets {
 			// Check type of Secret..based on that..append :O
-			switch secretName.ObjectMeta.Annotations["secretType"] {
+			mySecret := listOfSecrets[secretName]
+			switch mySecret.ObjectMeta.Annotations["secretType"] {
 			case "file":
 				// append to VolumeMount
-				volumeMount = append(volumeMount, v1.VolumeMount{Name: secretName.ObjectMeta.Name, MountPath: secretName.ObjectMeta.Annotations["rootPath"], ReadOnly: true})
-				volume = append(volume, v1.Volume{Name: secretName.ObjectMeta.Name, VolumeSource: v1.VolumeSource{Secret: &v1.SecretVolumeSource{SecretName: secretName.ObjectMeta.Name}}})
+				volumeMount = append(volumeMount, v1.VolumeMount{
+					Name:      mySecret.ObjectMeta.Name,
+					MountPath: mySecret.ObjectMeta.Annotations["rootPath"],
+					ReadOnly:  true})
+				volume[secretName] = v1.Volume{
+					Name: mySecret.ObjectMeta.Name,
+					VolumeSource: v1.VolumeSource{
+						Secret: &v1.SecretVolumeSource{
+							SecretName: mySecret.ObjectMeta.Name,
+						},
+					},
+				}
 
 			case "env":
 				// append to env
-				for k := range secretName.Data {
-					envVars = append(envVars, v1.EnvVar{ValueFrom: &v1.EnvVarSource{SecretKeyRef: &v1.SecretKeySelector{LocalObjectReference: v1.LocalObjectReference{Name: secretName.ObjectMeta.Name}, Key: k}}})
+				for k := range mySecret.Data {
+					envVars = append(envVars, v1.EnvVar{
+						ValueFrom: &v1.EnvVarSource{
+							SecretKeyRef: &v1.SecretKeySelector{
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: mySecret.ObjectMeta.Name,
+								},
+								Key: k,
+							},
+						},
+					})
 				}
-
-			case "docker":
-				// append to imagePulls
-				imagePull = append(imagePull, v1.LocalObjectReference{Name: secretName.ObjectMeta.Name})
 			}
 		}
+
+		imagePull[task.Docker.Secret] = v1.LocalObjectReference{Name: task.Docker.Secret}
+
 		containers[j] = v1.Container{
 			Name: task.ID,
 			Env:  envVars,
@@ -110,7 +131,16 @@ func (i *Istio) prepareContainers(service *model.Service, listOfSecrets []*v1.Se
 		})
 	}
 
-	return containers, volume, imagePull
+	// Convert map to array
+	arrVolume := make([]v1.Volume, 0)
+	for _, v := range volume {
+		arrVolume = append(arrVolume, v)
+	}
+	arrImagePull := make([]v1.LocalObjectReference, 0)
+	for _, v := range imagePull {
+		arrImagePull = append(arrImagePull, v)
+	}
+	return containers, arrVolume, arrImagePull
 }
 
 func prepareContainerPorts(taskPorts []model.Port) []v1.ContainerPort {
@@ -402,8 +432,8 @@ func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 	return &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: saName, Labels: map[string]string{"account": service.ID}}}
 }
 
-func (i *Istio) generateDeployment(service *model.Service, listOfSecrets []*v1.Secret) *appsv1.Deployment {
-	preparedContainer, volume, imagePull := i.prepareContainers(service, listOfSecrets)
+func (i *Istio) generateDeployment(service *model.Service, listOfSecrets map[string]*v1.Secret) *appsv1.Deployment {
+	preparedContainer, volumes, imagePull := i.prepareContainers(service, listOfSecrets)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -429,7 +459,7 @@ func (i *Istio) generateDeployment(service *model.Service, listOfSecrets []*v1.S
 				Spec: v1.PodSpec{
 					ServiceAccountName: getServiceAccountName(service),
 					Containers:         preparedContainer,
-					Volumes:            volume,
+					Volumes:            volumes,
 					ImagePullSecrets:   imagePull,
 					// TODO: Add config for affinity
 				},
