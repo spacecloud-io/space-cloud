@@ -219,7 +219,11 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 	return true
 }
 
-func (m *Module) selectRule(name string) (config.EventingRule, error) {
+func (m *Module) selectRule(name, evType string) (config.EventingRule, error) {
+	if evType == utils.EventDBCreate || evType == utils.EventDBDelete || evType == utils.EventDBUpdate || evType == utils.EventFileCreate || evType == utils.EventFileDelete {
+		return config.EventingRule{Timeout: 5000, Type: evType, Retries: 3}, nil
+	}
+
 	if rule, ok := m.config.Rules[name]; ok {
 		return rule, nil
 	}
@@ -227,4 +231,21 @@ func (m *Module) selectRule(name string) (config.EventingRule, error) {
 		return rule, nil
 	}
 	return config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
+}
+
+func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
+	if event.Type == utils.EventDBCreate || event.Type == utils.EventDBDelete || event.Type == utils.EventDBUpdate || event.Type == utils.EventFileCreate || event.Type == utils.EventFileDelete {
+		return nil
+	}
+
+	if err := m.auth.IsEventingOpAuthorised(ctx, project, token, event); err != nil {
+		return err
+	}
+
+	schema, p := m.schemas[event.Type]
+	if !p {
+		return nil
+	}
+	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
+	return err
 }
