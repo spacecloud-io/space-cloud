@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
@@ -44,9 +46,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
 		c := syncMan.GetGlobalConfig()
-
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
 	}
@@ -55,10 +55,6 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 // HandleRefreshToken creates the refresh-token endpoint
 func HandleRefreshToken(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 
-	// TODO: Validate current token
-	// if successful..then create a new token and send it.
-	// else return status code 401 error
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -66,16 +62,18 @@ func HandleRefreshToken(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		
 		// Check if the token is valid
 		if err := adminMan.IsTokenValid(token); err != nil {
+			logrus.Errorf("Error while validating token in handleRefreshToken - %s ",err.Error())
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
+			return 
 		}
 		status,newToken, err := adminMan.RefreshToken(token)
 		if err != nil {
+			logrus.Errorf("Error while refreshing token handleRefreshToken - %s ",err.Error())
 			w.WriteHeader(status)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return 
 		}
-		// c := syncMan.GetGlobalConfig()
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"token": newToken})
 	}
