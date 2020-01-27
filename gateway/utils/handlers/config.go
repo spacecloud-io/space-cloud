@@ -49,13 +49,11 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		}
 
 		c := syncMan.GetGlobalConfig()
-
-		token, err = adminMan.GetInternalAccessToken()
-		if err != nil {
-			logrus.Errorf("error in admin login of handler unable to generate internal access token - %s", err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
+		// if endpoint is called by cli don't insert deployments config in projects
+		cli, ok := r.URL.Query()["cli"]
+		if ok && cli[0] == "true" {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
 		}
 
 		for _, project := range c.Projects {
