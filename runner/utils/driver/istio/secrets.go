@@ -18,32 +18,31 @@ import (
 func (i *Istio) CreateSecret(projectID string, secretObj *model.Secret) error {
 	// check whether the secret type is correct!
 	if secretObj.Type != model.FileType && secretObj.Type != model.EnvType && secretObj.Type != model.DockerType {
-		return fmt.Errorf("invalid secret type provided - %s", secretObj.Type)
+		return fmt.Errorf("invalid secret type (%s) provided", secretObj.Type)
 	}
 
 	_, err := i.kube.CoreV1().Secrets(projectID).Get(secretObj.Name, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
-		logrus.Debugf("Creating secret for - %s ", secretObj.Name)
-
+		logrus.Debugf("Creating secret (%s)", secretObj.Name)
 		newSecret := generateSecret(projectID, secretObj)
 		_, err := i.kube.CoreV1().Secrets(projectID).Create(newSecret)
 		if err != nil {
-			return fmt.Errorf("secret could not be created- %s", err)
+			return err
 		}
 
 	} else if err == nil {
 		// secret already exists...update it!
-		logrus.Debugf("Updating secret for -%s ", secretObj.Name)
+		logrus.Debugf("Updating secret (%s)", secretObj.Name)
 		newSecret := generateSecret(projectID, secretObj)
 		_, err = i.kube.CoreV1().Secrets(projectID).Update(newSecret)
 		if err != nil {
-			return fmt.Errorf("secret could not be updated -%s", err)
+			return err
 		}
 		return nil
 	}
-	logrus.Errorf("secret could not be created- %s", err)
-	return fmt.Errorf("secret could not be created - %s", err)
+	logrus.Errorf("Failed to create secret (%s) - %s", secretObj.Name, err)
+	return err
 }
 
 // ListSecrets lists all the secrets in the provided name-space!
@@ -51,8 +50,8 @@ func (i *Istio) ListSecrets(projectID string) ([]*model.Secret, error) {
 
 	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).List(metav1.ListOptions{})
 	if err != nil {
-		logrus.Errorf("secret could not be listed - %s", err)
-		return nil, fmt.Errorf("secrets could not be listed - %s", err)
+		logrus.Errorf("Failed to fetch list of secrets - %s", err)
+		return nil, err
 	}
 	listOfSecrets := make([]*model.Secret, len(kubeSecret.Items))
 	// Modifying SecretValue with empty []byte
@@ -74,13 +73,11 @@ func (i *Istio) ListSecrets(projectID string) ([]*model.Secret, error) {
 // DeleteSecret is used to delete secrets!
 func (i *Istio) DeleteSecret(projectID string, secretName string) error {
 	err := i.kube.CoreV1().Secrets(projectID).Delete(secretName, &metav1.DeleteOptions{})
-	if kubeErrors.IsNotFound(err) {
-		return nil
-	} else if err == nil {
+	if kubeErrors.IsNotFound(err) || err == nil {
 		return nil
 	}
-	logrus.Errorf("secret could not be deleted- %s", err)
-	return fmt.Errorf("secret could not be deleted - %s", err)
+	logrus.Errorf("Failed to delete secret (%s) - %s", secretName, err)
+	return err
 }
 
 // SetKey adds a new secret key-value pair
@@ -95,12 +92,12 @@ func (i *Istio) SetKey(projectID string, secretName string, secretKey string, se
 	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretName, metav1.GetOptions{})
 
 	if kubeErrors.IsNotFound(err) {
-		return fmt.Errorf("secret with name (%s) does not exist- %s", secretName, err)
+		return err
 	} else if err == nil {
 		//Add secret key-value
 		switch kubeSecret.Type {
 		case v1.SecretTypeDockerConfigJson:
-			return fmt.Errorf("setKey operation cannot be performed on secrets with type -docker")
+			return fmt.Errorf("setKey operation cannot be performed on secrets with type docker")
 		case v1.SecretTypeOpaque:
 			kubeSecret.Data[secretKey] = []byte(encSecret)
 		default:
@@ -111,7 +108,7 @@ func (i *Istio) SetKey(projectID string, secretName string, secretKey string, se
 		//Update the secret
 		_, err := i.kube.CoreV1().Secrets(projectID).Update(kubeSecret)
 		if err != nil {
-			return fmt.Errorf("secret-key could not be set - %s", err)
+			return err
 		}
 	}
 	return nil
@@ -128,7 +125,7 @@ func (i *Istio) DeleteKey(projectID string, secretName string, secretKey string)
 		// check the type of secret (docker/opaque)
 		switch kubeSecret.Type {
 		case v1.SecretTypeDockerConfigJson:
-			return fmt.Errorf("deleteKey operation cannot be performed on secrets with type -docker")
+			return fmt.Errorf("deleteKey operation cannot be performed on secrets with type docker")
 		case v1.SecretTypeOpaque:
 			delete(kubeSecret.Data, secretKey)
 		default:
@@ -138,7 +135,7 @@ func (i *Istio) DeleteKey(projectID string, secretName string, secretKey string)
 		// Update the secret
 		_, err := i.kube.CoreV1().Secrets(projectID).Update(kubeSecret)
 		if err != nil {
-			return fmt.Errorf("secret-key could not be deleted - %s", err)
+			return err
 		}
 	}
 	return nil
@@ -164,7 +161,7 @@ func generateSecret(projectID string, secret *model.Secret) *v1.Secret {
 		// ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials
 		dockerJSON := map[string]interface{}{
 			"auths": map[string]interface{}{
-				"https://index.docker.io/v1/": map[string]string{
+				secret.Data["url"]: map[string]string{
 					"auth": encAuthSecret,
 				},
 			},
