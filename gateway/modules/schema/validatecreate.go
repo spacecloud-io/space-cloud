@@ -11,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (s *Schema) schemaValidator(col string, collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
+func (s *Schema) SchemaValidator(col string, collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
 
 	mutatedDoc := map[string]interface{}{}
 	for fieldKey, fieldValue := range collectionFields {
@@ -87,7 +87,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 		if !ok {
 			return fmt.Errorf("invalid document provided for collection (%s:%s)", dbType, col)
 		}
-		newDoc, err := s.schemaValidator(col, collectionFields, doc)
+		newDoc, err := s.SchemaValidator(col, collectionFields, doc)
 		if err != nil {
 			return err
 		}
@@ -154,7 +154,7 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFiel
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}
 
-		return s.schemaValidator(col, fieldValue.nestedObject, v)
+		return s.SchemaValidator(col, fieldValue.nestedObject, v)
 
 	case []interface{}:
 		if !fieldValue.IsList {

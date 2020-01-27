@@ -210,7 +210,7 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, project string, t
 		Enabled:     true,
 		Collections: tables,
 	}
-	parsedSchema, err := s.parser(crud)
+	parsedSchema, err := s.Parser(crud)
 	if err != nil {
 		return err
 	}

@@ -23,7 +23,7 @@ func (b *Bolt) Read(ctx context.Context, project, col string, req *model.ReadReq
 			// Assume bucket exists and has keys
 			bucket := tx.Bucket([]byte(project))
 			if bucket == nil {
-				return fmt.Errorf("error reading from bbolt db unable to find specifed bucket")
+				return nil
 			}
 
 			cursor := bucket.Cursor()

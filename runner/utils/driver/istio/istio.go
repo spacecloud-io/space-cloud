@@ -75,6 +75,24 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 	return &Istio{auth: auth, config: c, kube: kube, istio: istio, cache: cache}, nil
 }
 
+func (i *Istio) getSecrets(service *model.Service) (map[string]*v1.Secret, error) {
+	var listOfSecrets map[string]*v1.Secret
+	tasks := service.Tasks
+	for _, task := range tasks {
+		for _, secretName := range task.Secrets {
+			if _, p := listOfSecrets[secretName]; p {
+				continue
+			}
+			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			listOfSecrets[secretName] = secrets
+		}
+	}
+	return listOfSecrets, nil
+}
+
 // ApplyService deploys the service on istio
 func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error {
 	// TODO: do we need to rollback on failure? rollback to previous version if it existed else remove. We also need to rollback the cache in this case
@@ -100,8 +118,16 @@ func (i *Istio) ApplyService(ctx context.Context, service *model.Service) error 
 	// We do not need to setup destination rules since we will be enabling global mtls as described by this guide:
 	// https://istio.io/docs/tasks/security/authentication/authn-policy/#globally-enabling-istio-mutual-tls
 	// However we will need destination rules when routing between various versions
+
+	// Get the list of secrets required for this service
+	listOfSecrets, err := i.getSecrets(service)
+	if err != nil {
+		return err
+	}
+
+	// Create the appropriate kubernetes and istio objects
 	kubeServiceAccount := generateServiceAccount(service)
-	kubeDeployment := i.generateDeployment(service, token)
+	kubeDeployment := i.generateDeployment(service, token, listOfSecrets)
 	kubeService := generateService(service)
 	istioVirtualService := i.generateVirtualService(service)
 	istioDestRule := generateDestinationRule(service)
@@ -328,7 +354,6 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 				},
 				Docker: model.Docker{
 					Image: containerInfo.Image,
-					Creds: nil,
 					Cmd:   containerInfo.Command,
 				},
 				Env:     envs,
