@@ -33,18 +33,21 @@ type Module struct {
 	adminMan  *admin.Manager
 	syncMan   *syncman.Manager
 	fileStore *filestore.Module
+
+	schemas map[string]schema.SchemaFields
 }
 
 // New creates a new instance of the eventing module
-func New(auth *auth.Module, crud *crud.Module, schema *schema.Schema, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
+func New(auth *auth.Module, crud *crud.Module, schemaModule *schema.Schema, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
 
 	m := &Module{
 		auth:      auth,
 		crud:      crud,
-		schema:    schema,
+		schema:    schemaModule,
 		functions: functions,
 		adminMan:  adminMan,
 		syncMan:   syncMan,
+		schemas:   map[string]schema.SchemaFields{},
 		fileStore: file,
 		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
@@ -60,6 +63,26 @@ func New(auth *auth.Module, crud *crud.Module, schema *schema.Schema, functions 
 func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
+
+	for eventType, schemaObj := range eventing.Schemas {
+		dummyCrud := config.Crud{
+			"dummyDBName": &config.CrudStub{
+				Collections: map[string]*config.TableRule{
+					eventType: &config.TableRule{
+						Schema: schemaObj.Schema,
+					},
+				},
+			},
+		}
+
+		schemaType, err := m.schema.Parser(dummyCrud)
+		if err != nil {
+			return err
+		}
+		if len(schemaType["dummyDBName"][eventType]) != 0 {
+			m.schemas[eventType] = schemaType["dummyDBName"][eventType]
+		}
+	}
 
 	if eventing == nil || !eventing.Enabled {
 		m.config.Enabled = false

@@ -10,8 +10,9 @@ test
 *.so
 *.zip
 *.dylib
+*.db
 # Test binary, build with `go test -c`
-*.test
+*.test  
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out

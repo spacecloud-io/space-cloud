@@ -113,7 +113,7 @@ func TestMatch_Rule(t *testing.T) {
 	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	auth.SetConfig("default", "", rule, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig("default", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := (auth).matchRule(context.Background(), test.project, test.rule, test.args, test.auth)
@@ -159,7 +159,7 @@ func TestMatchForce_Rule(t *testing.T) {
 	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := matchForce(test.rule, test.args)
@@ -221,7 +221,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
+	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := matchRemove(test.rule, test.args)

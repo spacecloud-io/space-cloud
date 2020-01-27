@@ -119,3 +119,79 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 	}
 }
+
+func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type schemaRequest struct {
+		Type   string `json:"type"`
+		Schema string `json:"schema"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		c := schemaRequest{}
+		json.NewDecoder(r.Body).Decode(&c)
+
+		vars := mux.Vars(r)
+		project := vars["project"]
+
+		if err := syncMan.SetEventingSchema(ctx, project, c.Type, c.Schema); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+
+	}
+}
+
+func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type schemaDeleteRequest struct {
+		Type string `json:"type"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		c := schemaDeleteRequest{}
+		json.NewDecoder(r.Body).Decode(&c)
+
+		vars := mux.Vars(r)
+		project := vars["project"]
+
+		if err := syncMan.SetDeleteEventingSchema(ctx, project, c.Type); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+	}
+}
