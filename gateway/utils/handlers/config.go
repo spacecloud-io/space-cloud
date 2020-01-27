@@ -60,17 +60,10 @@ func HandleRefreshToken(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		token := utils.GetTokenFromHeader(r)
 		defer r.Body.Close()
 		
-		// Check if the token is valid
-		if err := adminMan.IsTokenValid(token); err != nil {
-			logrus.Errorf("Error while validating token in handleRefreshToken - %s ",err.Error())
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return 
-		}
-		status,newToken, err := adminMan.RefreshToken(token)
+		newToken, err := adminMan.RefreshToken(token)
 		if err != nil {
 			logrus.Errorf("Error while refreshing token handleRefreshToken - %s ",err.Error())
-			w.WriteHeader(status)
+			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return 
 		}

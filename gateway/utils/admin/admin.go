@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -61,27 +59,18 @@ func (m *Manager) Login(user, pass string) (int, string, error) {
 	return http.StatusUnauthorized, "", errors.New("Invalid credentials provided")
 }
 // RefreshToken is used to create a new token!
-func (m *Manager) RefreshToken(token string) (int,string,error){
+func (m *Manager) RefreshToken(token string) (string,error){
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	// Parse the token to get userID and userRole
 	tokenClaims ,err := m.parseToken(token)
 	if err != nil {
-		logrus.Errorf("Error while refreshing token in admin unable to parse token - %s ",err.Error())
-		return http.StatusUnauthorized,"", err
+		return "", err
 	}
-	// Check if tokenClaims has id
-	userID, ok := tokenClaims["id"]
-    if !ok {
-		// Id not found..return error
-		logrus.Errorf("Error: id not found in tokenClaims while refreshing-token! ")
-		return http.StatusUnauthorized, "", errors.New("Id not found in tokenClaims")
-    } 
 	// Create a new token
-	newToken, err := m.createToken(map[string]interface{}{"id": userID, "role": userID})
+	newToken, err := m.createToken(tokenClaims)
 	if err != nil {
-		logrus.Errorf("Error while refreshing token in admin unable to create new token - %s ",err.Error())
-		return http.StatusInternalServerError, "", err
+		return  "", err
 	}
-	return http.StatusOK,newToken,nil
+	return newToken,nil
 }
