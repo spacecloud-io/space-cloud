@@ -53,4 +53,12 @@ type Driver interface {
 	AdjustScale(service *model.Service, activeReqs int32) error
 	WaitForService(service *model.Service) error
 	Type() model.DriverType
+
+	// Secret methods!
+
+	CreateSecret(projectID string, secretObj *model.Secret) error
+	ListSecrets(projectID string) ([]*model.Secret, error)
+	DeleteSecret(projectID, secretName string) error
+	SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error
+	DeleteKey(projectID, secretName, secretKey string) error
 }

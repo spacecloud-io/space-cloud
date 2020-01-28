@@ -25,6 +25,31 @@ type docker struct {
 	artifactAddr string
 }
 
+func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
+	logrus.Debug("CreateSecret not implemented for docker")
+	return nil
+}
+
+func (d *docker) ListSecrets(projectID string) ([]*model.Secret, error) {
+	logrus.Debug("ListSecrets not implemented for docker")
+	return nil, nil
+}
+
+func (d *docker) DeleteSecret(projectID, secretName string) error {
+	logrus.Debug("DeleteSecret not implemented for docker")
+	return nil
+}
+
+func (d *docker) SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
+	logrus.Debug("SetKey not implemented for docker")
+	return nil
+}
+
+func (d *docker) DeleteKey(projectID, secretName, secretKey string) error {
+	logrus.Debug("DeleteKey not implemented for docker")
+	return nil
+}
+
 func NewDockerDriver(auth *auth.Module, artifactAddr string) (*docker, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

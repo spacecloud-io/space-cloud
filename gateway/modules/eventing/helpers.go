@@ -11,6 +11,7 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -23,25 +24,25 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 
 	url, err := m.syncMan.GetAssignedSpaceCloudURL(ctx, m.project, eventToken)
 	if err != nil {
-		log.Println("Eventing module could not get space-cloud url:", err)
+		logrus.Errorln("Eventing module could not get space-cloud url:", err)
 		return
 	}
 
 	token, err := m.adminMan.GetInternalAccessToken()
 	if err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		return
 	}
 
 	scToken, err := m.auth.GetSCAccessToken()
 	if err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		return
 	}
 
 	var res interface{}
 	if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, scToken, eventDocs, &res); err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		log.Println(res)
 	}
 }
@@ -215,11 +216,14 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 			return false
 		}
 	}
-
 	return true
 }
 
-func (m *Module) selectRule(name string) (config.EventingRule, error) {
+func (m *Module) selectRule(name, evType string) (config.EventingRule, error) {
+	if evType == utils.EventDBCreate || evType == utils.EventDBDelete || evType == utils.EventDBUpdate || evType == utils.EventFileCreate || evType == utils.EventFileDelete {
+		return config.EventingRule{Timeout: 5000, Type: evType, Retries: 3}, nil
+	}
+
 	if rule, ok := m.config.Rules[name]; ok {
 		return rule, nil
 	}
@@ -227,4 +231,21 @@ func (m *Module) selectRule(name string) (config.EventingRule, error) {
 		return rule, nil
 	}
 	return config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
+}
+
+func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
+	if event.Type == utils.EventDBCreate || event.Type == utils.EventDBDelete || event.Type == utils.EventDBUpdate || event.Type == utils.EventFileCreate || event.Type == utils.EventFileDelete {
+		return nil
+	}
+
+	if err := m.auth.IsEventingOpAuthorised(ctx, project, token, event); err != nil {
+		return err
+	}
+
+	schema, p := m.schemas[event.Type]
+	if !p {
+		return nil
+	}
+	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
+	return err
 }

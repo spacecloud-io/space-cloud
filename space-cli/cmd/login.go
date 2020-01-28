@@ -22,7 +22,7 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 		return nil, err
 	}
 
-	resp, err := http.Post(fmt.Sprintf("%s/v1/config/login", selectedAccount.ServerUrl), "application/json", bytes.NewBuffer(requestBody))
+	resp, err := http.Post(fmt.Sprintf("%s/v1/config/login?cli=true", selectedAccount.ServerUrl), "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		logrus.Error("error in login unable to send http request - %v", err)
 		return nil, err

@@ -196,7 +196,7 @@ func (s *Server) LoadConfig(config *config.Config) error {
 		}
 
 		// Set the configuration for the auth module
-		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services); err != nil {
+		if err := s.auth.SetConfig(p.ID, p.Secret, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 			logrus.Errorln("Error in auth module config: ", err)
 			return err
 		}

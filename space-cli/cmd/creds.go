@@ -48,6 +48,7 @@ func checkCred(selectedAccount *model.Account) error {
 	fileName := getAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(fileName)
 	if err != nil {
+		// file doesn't exist create new one
 		credential := model.Credential{
 			Accounts:        []model.Account{*selectedAccount},
 			SelectedAccount: selectedAccount.ID,

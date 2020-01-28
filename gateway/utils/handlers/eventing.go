@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -46,7 +47,7 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 }
 
 // HandleQueueEvent creates a queue event endpoint
-func HandleQueueEvent(adminMan *admin.Manager, eventing *eventing.Module) http.HandlerFunc {
+func HandleQueueEvent(eventing *eventing.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Load the params from the body
 		req := model.QueueEventRequest{}
@@ -61,21 +62,16 @@ func HandleQueueEvent(adminMan *admin.Manager, eventing *eventing.Module) http.H
 		}
 
 		// Get the path parameters
-		// vars := mux.Vars(r)
-		// project := vars["project"]
+		vars := mux.Vars(r)
+		project := vars["project"]
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		err := eventing.QueueEvent(ctx, &req)
+		err := eventing.QueueEvent(ctx, project, token, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

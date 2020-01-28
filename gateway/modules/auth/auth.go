@@ -28,6 +28,7 @@ type Module struct {
 	crud            *crud.Module
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
+	eventingRules   map[string]*config.Rule
 	project         string
 	fileStoreType   string
 	schema          *schema.Schema
@@ -52,7 +53,7 @@ func Init(nodeID string, crud *crud.Module, schema *schema.Schema, removeProject
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule) error {
+func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -70,6 +71,10 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 
 	if functions != nil {
 		m.funcRules = functions
+	}
+
+	if eventing.SecurityRules != nil {
+		m.eventingRules = eventing.SecurityRules
 	}
 
 	return nil
