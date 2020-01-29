@@ -30,7 +30,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 
 	switch rule.Rule {
 	case "deny":
-		return &PostProcess{}, ErrIncorrectMatch
+		return &PostProcess{}, errors.New("the operation being performed is denied")
 
 	case "match":
 		return &PostProcess{}, match(rule, args)
