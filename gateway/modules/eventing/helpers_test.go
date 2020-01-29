@@ -25,25 +25,25 @@ func TestModule_selectRule(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid test case - event type is an internal type",
+			name: "event type is an internal type",
 			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "DB_INSERT"}}}},
 			args: args{name: "some-rule", evType: "DB_INSERT"},
 			want: config.EventingRule{Type: "DB_INSERT", Retries: 3, Timeout: 5000},
 		},
 		{
-			name: "valid test case - event type is found in rules",
+			name: "event type is found in rules",
 			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "event"}}}},
 			args: args{name: "some-rule", evType: "event"},
 			want: config.EventingRule{Type: "event"},
 		},
 		{
-			name: "valid test case - event type is found in internal rules",
+			name: "event type is found in internal rules",
 			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "event"}}}},
 			args: args{name: "some-rule", evType: "event"},
 			want: config.EventingRule{Type: "event"},
 		},
 		{
-			name:    "valid test case - event type is not found",
+			name:    "event type is not found",
 			m:       &Module{config: &config.Eventing{}},
 			args:    args{name: "some-rule", evType: "event"},
 			want:    config.EventingRule{},
@@ -83,29 +83,29 @@ func TestModule_validate(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid test case - event type is an internal type",
+			name: "event type is an internal type",
 			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "DB_INSERT"}}}},
 			args: args{event: &model.QueueEventRequest{Type: "DB_INSERT", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
 		},
 		{
-			name:    "valid test case - invalid project details",
+			name:    "invalid project details",
 			m:       &Module{auth: &auth.Module{}},
 			args:    args{ctx: context.Background(), project: "some-project", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
 			wantErr: true,
 		},
 		{
-			name:    "valid test case - invalid token",
+			name:    "invalid token",
 			m:       &Module{auth: &auth.Module{}},
 			args:    args{ctx: context.Background(), token: "token", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
 			wantErr: true,
 		},
 		{
-			name: "valid test case - event type not in schemas",
+			name: "event type not in schemas",
 			m:    &Module{auth: authModule, config: &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}, Schemas: map[string]config.SchemaObject{"event": config.SchemaObject{Schema: "some-schema"}}}},
 			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: "some-schema", Options: make(map[string]string)}},
 		},
 		{
-			name: "valid test case - no schema given",
+			name: "no schema given",
 			m:    &Module{schemas: map[string]schema.SchemaFields{"event": schema.SchemaFields{}}, auth: authModule, config: &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}, Schemas: map[string]config.SchemaObject{"event": config.SchemaObject{Schema: "type event {id: ID! title: String}"}}}},
 			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: make(map[string]interface{}), Options: make(map[string]string)}},
 		},
