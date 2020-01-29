@@ -56,15 +56,25 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
 		}
 
-		for _, project := range c.Projects {
-			services, err := getServices(syncMan, project.ID, token)
-			if err != nil {
-				logrus.Errorf("error in admin login of handler unable to set deployments - %s", err.Error())
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
+		if syncMan.GetRunnerAddr() != "" {
+			for _, project := range c.Projects {
+				services, err := getServices(syncMan, project.ID, token)
+				if err != nil {
+					logrus.Errorf("error in admin login of handler unable to set deployments - %s", err.Error())
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					return
+				}
+				project.Modules.Deployments.Services = services
+				secrets, err := getSecrets(syncMan, project.ID, token)
+				if err != nil {
+					logrus.Errorf("error in admin login of handler unable to set secrets - %s", err.Error())
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					return
+				}
+				project.Modules.Secrets = secrets
 			}
-			project.Modules.Deployments.Services = services
 		}
 		syncMan.SetGlobalConfig(c)
 
@@ -93,7 +103,7 @@ func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.R
 	}
 	data := resp{}
 	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
-		logrus.Errorf("error while getting services in handler unable to decode response boyd -%v", err)
+		logrus.Errorf("error while getting services in handler unable to decode response body -%v", err)
 		return nil, err
 	}
 
@@ -103,6 +113,38 @@ func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.R
 	}
 
 	return data.Services, err
+}
+
+func getSecrets(syncMan *syncman.Manager, projectID, token string) ([]*config.Secret, error) {
+	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/%s/secrets", syncMan.GetRunnerAddr(), projectID), nil)
+	if err != nil {
+		logrus.Errorf("error while getting secrets in handler unable to create http request - %v", err)
+		return nil, err
+	}
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	httpRes, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		logrus.Errorf("error while getting secrets in handler unable to execute http request - %v", err)
+		return nil, err
+	}
+
+	type resp struct {
+		Secrets []*config.Secret `json:"secrets"`
+		Error   string           `json:"error"`
+	}
+	data := resp{}
+	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
+		logrus.Errorf("error while getting secrets in handler unable to decode response body -%v", err)
+		return nil, err
+	}
+
+	if httpRes.StatusCode != http.StatusOK {
+		logrus.Errorf("error while getting secrets in handler got http request -%v", httpRes.StatusCode)
+		return nil, fmt.Errorf("error while getting secrets in handler got http request -%v -%v", httpRes.StatusCode, data.Error)
+	}
+
+	return data.Secrets, err
 }
 
 // HandleLoadProjects returns the handler to load the projects via a REST endpoint
