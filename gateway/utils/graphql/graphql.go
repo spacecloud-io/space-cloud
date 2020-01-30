@@ -208,7 +208,8 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
 		if err != nil {
-			cb(nil, nil) // todo should we return error here
+			// if the field isn't found in the store means that field did not exist in the result. so return nil as error
+			cb(nil, nil)
 			return
 		}
 		if field.SelectionSet == nil {
