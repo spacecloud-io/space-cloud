@@ -65,7 +65,6 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 					return
 				}
-				project.Modules.Deployments.Services = services
 				secrets, err := getSecrets(syncMan, project.ID, token)
 				if err != nil {
 					logrus.Errorf("error in admin login of handler unable to set secrets - %s", err.Error())
@@ -73,8 +72,9 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 					return
 				}
-				project.Modules.Secrets = secrets
 			}
+			project.Modules.Deployments.Services = services
+			project.Modules.Secrets = secrets
 		}
 		syncMan.SetGlobalConfig(c)
 
@@ -140,8 +140,8 @@ func getSecrets(syncMan *syncman.Manager, projectID, token string) ([]*config.Se
 	}
 
 	if httpRes.StatusCode != http.StatusOK {
-		logrus.Errorf("error while getting secrets in handler got http request -%v", httpRes.StatusCode)
-		return nil, fmt.Errorf("error while getting secrets in handler got http request -%v -%v", httpRes.StatusCode, data.Error)
+		logrus.Errorf("error while getting secrets in handler got http status code -%v", httpRes.StatusCode)
+		return nil, fmt.Errorf("http status %v message -%v", httpRes.StatusCode, data.Error)
 	}
 
 	return data.Secrets, err
