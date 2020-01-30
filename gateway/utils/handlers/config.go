@@ -65,6 +65,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 					return
 				}
+				project.Modules.Deployments.Services = services
 				secrets, err := getSecrets(syncMan, project.ID, token)
 				if err != nil {
 					logrus.Errorf("error in admin login of handler unable to set secrets - %s", err.Error())
@@ -72,11 +73,10 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 					return
 				}
+				project.Modules.Secrets = secrets
 			}
-			project.Modules.Deployments.Services = services
-			project.Modules.Secrets = secrets
+			syncMan.SetGlobalConfig(c)
 		}
-		syncMan.SetGlobalConfig(c)
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
