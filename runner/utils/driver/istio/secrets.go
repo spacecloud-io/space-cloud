@@ -16,15 +16,15 @@ import (
 
 // CreateSecret is used to upsert secret
 func (i *Istio) CreateSecret(projectID string, secretObj *model.Secret) error {
-	// check whether the secret type is correct!
+	// check whether the oldSecret type is correct!
 	if secretObj.Type != model.FileType && secretObj.Type != model.EnvType && secretObj.Type != model.DockerType {
-		return fmt.Errorf("invalid secret type (%s) provided", secretObj.Type)
+		return fmt.Errorf("invalid oldSecret type (%s) provided", secretObj.Type)
 	}
 
-	_, err := i.kube.CoreV1().Secrets(projectID).Get(secretObj.Name, metav1.GetOptions{})
+	oldSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretObj.Name, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
-		logrus.Debugf("Creating secret (%s)", secretObj.Name)
+		logrus.Debugf("Creating oldSecret (%s)", secretObj.Name)
 		newSecret, err := generateSecret(projectID, secretObj)
 		if err != nil {
 			return err
@@ -34,8 +34,11 @@ func (i *Istio) CreateSecret(projectID string, secretObj *model.Secret) error {
 		return err
 
 	} else if err == nil {
-		// secret already exists...update it!
-		logrus.Debugf("Updating secret (%s)", secretObj.Name)
+		// oldSecret already exists...update it!
+		logrus.Debugf("Updating oldSecret (%s)", secretObj.Name)
+		if string(oldSecret.Type) != secretObj.Type {
+			return fmt.Errorf("secret already exists type mismatch")
+		}
 		newSecret, err := generateSecret(projectID, secretObj)
 		if err != nil {
 			return err
@@ -43,7 +46,7 @@ func (i *Istio) CreateSecret(projectID string, secretObj *model.Secret) error {
 		_, err = i.kube.CoreV1().Secrets(projectID).Update(newSecret)
 		return err
 	}
-	logrus.Errorf("Failed to create secret (%s) - %s", secretObj.Name, err)
+	logrus.Errorf("Failed to create oldSecret (%s) - %s", secretObj.Name, err)
 	return err
 }
 
