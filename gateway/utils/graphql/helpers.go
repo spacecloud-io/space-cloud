@@ -194,6 +194,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 
 					if f.Name.Value == "__typename" {
 						obj.Set(f.Name.Value, strings.Title(field.Name.Value))
+						wg.Done()
 						continue
 					}
 
@@ -238,6 +239,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 			f := sel.(*ast.Field)
 			if f.Name.Value == "__typename" {
 				obj.Set(f.Name.Value, strings.Title(field.Name.Value))
+				wg.Done()
 				continue
 			}
 			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(result interface{}, err error) {
