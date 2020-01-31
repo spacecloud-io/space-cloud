@@ -144,7 +144,7 @@ func (s *KubeStore) Lock(key string) error {
 
 		if err.Error() != lockFileExists {
 			// unexpected error
-			logrus.Errorf("error in kubernetes store of lets encrypt - %s", key, err.Error())
+			logrus.Errorf("error in kubernetes store of lets encrypt - %s", err.Error())
 			return fmt.Errorf("creating lock file: %+v", err)
 		}
 
