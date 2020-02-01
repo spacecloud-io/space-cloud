@@ -32,8 +32,10 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleAddEventingRule(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteEventingRule(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/event-triggers/schema").HandlerFunc(handlers.HandleSetEventingSchema(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/event-triggers/schema").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/schema/{type}").HandlerFunc(handlers.HandleSetEventingSchema(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/schema/{type}").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/rules/{type}").HandlerFunc(handlers.HandleAddEventingSecurityRules(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/rules/{type}").HandlerFunc(handlers.HandleDeleteEventingSecurityRules(s.adminMan, s.syncMan))
 	// Initialize route for file storage config
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan))
