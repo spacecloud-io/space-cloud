@@ -119,7 +119,7 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 	}
 }
-// HandleSetEventingSchema is used to handle eventing schema
+// HandleSetEventingSchema is an endpoint handler which sets a schema in eventing
 func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type schemaRequest struct {
 		Type   string `json:"type"`
@@ -159,7 +159,7 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 	}
 }
 
-// HandleDeleteEventingSchema is used to handle delete eventing schema
+// HandleDeleteEventingSchema is an endpoint handler which deletes a schema in eventing
 func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type schemaDeleteRequest struct {
 		Type string `json:"type"`
