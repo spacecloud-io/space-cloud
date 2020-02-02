@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -14,7 +15,19 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/server"
 )
 
+const (
+	loglevelDebug = "debug"
+	loglevelInfo  = "info"
+	logLevelError = "error"
+)
+
 var essentialFlags = []cli.Flag{
+	cli.StringFlag{
+		Name:   "log-level",
+		EnvVar: "LOG_LEVEL",
+		Usage:  "Set the log level [debug | info | error]",
+		Value:  loglevelInfo,
+	},
 	cli.StringFlag{
 		Name:   "id",
 		Value:  "none",
@@ -181,6 +194,8 @@ func actionRun(c *cli.Context) error {
 	disableMetrics := c.Bool("disable-metrics")
 	disableBandwidth := c.Bool("disable-bandwidth")
 	profiler := c.Bool("profiler")
+	logLevel := c.String("log-level")
+	setLogLevel(logLevel)
 
 	// Load flag related to the port
 	port := c.Int("port")
@@ -299,4 +314,19 @@ func initMissionContol(version string) (string, error) {
 		return "", err
 	}
 	return uiPath + "/build", nil
+}
+
+func setLogLevel(loglevel string) {
+	switch loglevel {
+	case loglevelDebug:
+		logrus.SetLevel(logrus.DebugLevel)
+	case loglevelInfo:
+		logrus.SetLevel(logrus.InfoLevel)
+	case logLevelError:
+		logrus.SetLevel(logrus.ErrorLevel)
+	default:
+		logrus.Errorf("Invalid log level (%s) provided", loglevel)
+		logrus.Infoln("Defaulting to `info` level")
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 }
