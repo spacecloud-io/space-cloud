@@ -63,12 +63,14 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		projectID := vars["project"]
 
 		// list all secrets
-		if _, err := s.driver.ListSecrets(projectID); err != nil {
+		secrets, err := s.driver.ListSecrets(projectID)
+		if err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		utils.SendEmptySuccessResponse(w, r)
+		
+		utils.SendSuccessResponse(w,r, map[string]interface{}{"secrets": secrets})
 	}
 }
 

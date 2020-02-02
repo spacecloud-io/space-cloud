@@ -26,8 +26,8 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 	// TODO: Add support for private repos
 	tasks := service.Tasks
 	containers := make([]v1.Container, len(tasks))
-	var volume map[string]v1.Volume
-	var imagePull map[string]v1.LocalObjectReference
+	volume := map[string]v1.Volume{}
+	imagePull := map[string]v1.LocalObjectReference{}
 
 	for j, task := range tasks {
 		volumeMount := make([]v1.VolumeMount, 0)
@@ -83,6 +83,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 				// append to env
 				for k := range mySecret.Data {
 					envVars = append(envVars, v1.EnvVar{
+						Name: k,
 						ValueFrom: &v1.EnvVarSource{
 							SecretKeyRef: &v1.SecretKeySelector{
 								LocalObjectReference: v1.LocalObjectReference{
@@ -108,7 +109,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 			Image:           task.Docker.Image,
 			Command:         cmd,
 			Args:            args,
-			ImagePullPolicy: v1.PullIfNotPresent,
+			ImagePullPolicy: v1.PullAlways, // TODO: make this configurable
 			// Secrets Related
 			VolumeMounts: volumeMount,
 		}
@@ -134,7 +135,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 			Resources: *generateResourceRequirements(&model.Resources{CPU: 20, Memory: 50}),
 
 			// Docker related
-			Image:           "spaceuptech/metric-proxy:latest",
+			Image:           "spaceuptech/metric-proxy:latest", // TODO: Lets use the version tag here to make sure we pull the latest image
 			Command:         []string{"./app"},
 			Args:            []string{"start"},
 			ImagePullPolicy: v1.PullIfNotPresent,

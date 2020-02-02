@@ -76,7 +76,7 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 }
 
 func (i *Istio) getSecrets(service *model.Service) (map[string]*v1.Secret, error) {
-	var listOfSecrets map[string]*v1.Secret
+	listOfSecrets := map[string]*v1.Secret{}
 	tasks := service.Tasks
 	for _, task := range tasks {
 		for _, secretName := range task.Secrets {

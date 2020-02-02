@@ -56,6 +56,14 @@ func SendEmptySuccessResponse(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// SendSuccessResponse sends an empty http ok response
+func SendSuccessResponse(w http.ResponseWriter, r *http.Request, body interface{}) {
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		logrus.Errorf("Error while sending error response for %s %s - %s", r.Method, r.URL.String(), err.Error())
+	}
+}
+
 // CloseTheCloser closes an io read closer while explicitly ignoring the error
 func CloseTheCloser(r io.Closer) {
 	_ = r.Close()
