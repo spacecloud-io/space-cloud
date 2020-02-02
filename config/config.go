@@ -60,7 +60,7 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Type        string                `json:"type" yaml:"type"`  // database type
+	Type        string                `json:"type" yaml:"type"` // database type
 	Conn        string                `json:"conn" yaml:"conn"`
 	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
@@ -89,6 +89,7 @@ type Rule struct {
 	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty`
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty`
+	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty`
 }
 
 // Auth holds the mapping of the sign in method
