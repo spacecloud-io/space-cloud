@@ -181,7 +181,7 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 	for _, field := range rule.Fields {
 		loadedValue, err := utils.LoadValue(field, args)
 		if err != nil {
-			logrus.Errorf("error loading value in matchEncrypt: ", err)
+			logrus.Errorln("error loading value in matchEncrypt: ", err)
 			return nil, err
 		}
 		if strings.HasPrefix(field, "res") {
@@ -191,12 +191,12 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 			encrypted := make([]byte, len(loadedValue.(string)))
 			err := encryptAESCFB(encrypted, []byte(loadedValue.(string)), []byte(m.secret), []byte(m.secret)[:aes.BlockSize])
 			if err != nil {
-				logrus.Errorf("error encrypting value in matchEncrypt: ", err)
+				logrus.Errorln("error encrypting value in matchEncrypt: ", err)
 				return nil, err
 			}
 			er := utils.StoreValue(field, encrypted, args)
 			if er != nil {
-				logrus.Errorf("error storing value in matchEncrypt: ", err)
+				logrus.Errorln("error storing value in matchEncrypt: ", err)
 				return nil, er
 			}
 		} else {
@@ -211,7 +211,7 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 	for _, field := range rule.Fields {
 		loadedValue, err := utils.LoadValue(field, args)
 		if err != nil {
-			logrus.Errorf("error loading value in matchEncrypt: ", err)
+			logrus.Errorln("error loading value in matchEncrypt: ", err)
 			return nil, err
 		}
 		if strings.HasPrefix(field, "res") {
@@ -221,12 +221,12 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 			decrypted := make([]byte, len(loadedValue.(string)))
 			err := decryptAESCFB(decrypted, []byte(loadedValue.(string)), []byte(m.secret), []byte(m.secret)[:aes.BlockSize])
 			if err != nil {
-				logrus.Errorf("error decrypting value in matchEncrypt: ", err)
+				logrus.Errorln("error decrypting value in matchEncrypt: ", err)
 				return nil, err
 			}
 			er := utils.StoreValue(field, decrypted, args)
 			if er != nil {
-				logrus.Errorf("error storing value in matchEncrypt: ", err)
+				logrus.Errorln("error storing value in matchEncrypt: ", err)
 				return nil, er
 			}
 		} else {
