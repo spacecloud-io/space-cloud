@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"crypto/aes"
+	"encoding/base64"
 	"reflect"
 	"testing"
 
@@ -124,7 +125,7 @@ func TestMatch_Rule(t *testing.T) {
 	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	auth.SetConfig("default", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	auth.SetConfig("default", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := (auth).matchRule(context.Background(), test.project, test.rule, test.args, test.auth)
@@ -170,7 +171,7 @@ func TestMatchForce_Rule(t *testing.T) {
 	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := matchForce(test.rule, test.args)
@@ -232,7 +233,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := matchRemove(test.rule, test.args)
@@ -249,6 +250,11 @@ func TestMatchRemove_Rule(t *testing.T) {
 	}
 }
 
+func stringToByteArray(key string) []byte {
+	decodedKey, _ := base64.StdEncoding.DecodeString(key)
+	return decodedKey
+}
+
 func TestModule_matchEncrypt(t *testing.T) {
 	type args struct {
 		rule *config.Rule
@@ -263,25 +269,25 @@ func TestModule_matchEncrypt(t *testing.T) {
 	}{
 		{
 			name:    "invalid field",
-			m:       &Module{secret: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="},
-			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []string{""}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
+			m:       &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"args.abc"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
 		{
 			name:    "invalid key",
-			m:       &Module{secret: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g"},
+			m:       &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g")},
 			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"args.username"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
 		{
 			name: "valid res",
-			m:    &Module{secret: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="},
+			m:    &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
-			want: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "encrypt", Field: "res.username", Value: "username1"}}},
+			want: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 		},
 		{
-			name:    "invalid prefix",
-			m:       &Module{secret: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="},
+			name:    "invalid field prefix",
+			m:       &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args:    args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"abc.username"}}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
@@ -314,25 +320,25 @@ func TestModule_matchDecrypt(t *testing.T) {
 	}{
 		{
 			name:    "invalid field",
-			m:       &Module{secret: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="},
-			args:    args{rule: &config.Rule{Rule: "decrypt", Fields: []string{""}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
+			m:       &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			args:    args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.abc"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
 		{
 			name:    "invalid key",
-			m:       &Module{secret: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g"},
+			m:       &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g")},
 			args:    args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.username"}}, args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
 		{
 			name: "valid res",
-			m:    &Module{secret: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="},
+			m:    &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
-			want: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "decrypt", Field: "res.username", Value: "username1"}}},
+			want: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "decrypt", Field: "res.username"}}},
 		},
 		{
-			name:    "invalid prefix",
-			m:       &Module{secret: "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="},
+			name:    "invalid field prefix",
+			m:       &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args:    args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"abc.username"}}, args: map[string]interface{}{"abc": map[string]interface{}{"username": "username1"}}},
 			wantErr: true,
 		},
@@ -361,6 +367,7 @@ func Test_encryptAESCFB(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
+		want    []byte
 		wantErr bool
 	}{
 		{
@@ -368,11 +375,18 @@ func Test_encryptAESCFB(t *testing.T) {
 			args:    args{dst: make([]byte, len("username1")), src: []byte("username1"), key: []byte("invalidKey"), iv: []byte("invalidKey123456")[:aes.BlockSize]},
 			wantErr: true,
 		},
+		{
+			name: "encryption takes place",
+			args: args{dst: make([]byte, len("username1")), src: []byte("username1"), key: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="), iv: []byte(stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="))[:aes.BlockSize]},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := encryptAESCFB(tt.args.dst, tt.args.src, tt.args.key, tt.args.iv); (err != nil) != tt.wantErr {
 				t.Errorf("encryptAESCFB() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && reflect.DeepEqual(tt.args.dst, tt.args.src) {
+				t.Errorf("encryptAESCFB() encryption did not take place")
 			}
 		})
 	}
@@ -395,11 +409,18 @@ func Test_decryptAESCFB(t *testing.T) {
 			args:    args{dst: make([]byte, len("username1")), src: []byte("username1"), key: []byte("invalidKey"), iv: []byte("invalidKey123456")[:aes.BlockSize]},
 			wantErr: true,
 		},
+		{
+			name: "decryption takes place",
+			args: args{dst: make([]byte, len("username1")), src: []byte{5, 120, 168, 68, 222, 6, 202, 246, 108}, key: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="), iv: []byte(stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g="))[:aes.BlockSize]},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := decryptAESCFB(tt.args.dst, tt.args.src, tt.args.key, tt.args.iv); (err != nil) != tt.wantErr {
 				t.Errorf("decryptAESCFB() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && reflect.DeepEqual(tt.args.dst, tt.args.src) {
+				t.Errorf("decryptAESCFB() decryption did not take place")
 			}
 		})
 	}

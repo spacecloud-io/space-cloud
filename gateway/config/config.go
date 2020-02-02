@@ -10,6 +10,7 @@ type Config struct {
 // Project holds the project level configuration
 type Project struct {
 	Secret  string   `json:"secret" yaml:"secret"`
+	AESkey  string   `json:"aesKey" yaml:"aesKey"`
 	ID      string   `json:"id" yaml:"id"`
 	Name    string   `json:"name" yaml:"name"`
 	Modules *Modules `json:"modules" yaml:"modules"`
