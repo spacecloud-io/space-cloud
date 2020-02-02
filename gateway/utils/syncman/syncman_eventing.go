@@ -49,6 +49,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbType, col st
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetEventingSchema sets the schema for the given event type
 func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType string, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -69,6 +70,7 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetDeleteEventingSchema deletes the schema for the given event type
 func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, evType string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -79,6 +81,42 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 		return err
 	}
 	delete(projectConfig.Modules.Eventing.Schemas, evType)
+
+	return s.setProject(ctx, projectConfig)
+}
+
+// SetEventingSecurityRules sets the securtiy rule for the given event type
+func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType string, rule *config.Rule) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	if len(projectConfig.Modules.Eventing.SecurityRules) != 0 {
+		projectConfig.Modules.Eventing.SecurityRules[evType] = rule
+	} else {
+		projectConfig.Modules.Eventing.SecurityRules = map[string]*config.Rule{
+			evType: rule,
+		}
+	}
+
+	return s.setProject(ctx, projectConfig)
+}
+
+// SetDeleteEventingSecurityRules deletes the security rule for the given event type
+func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, evType string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+	delete(projectConfig.Modules.Eventing.SecurityRules, evType)
 
 	return s.setProject(ctx, projectConfig)
 }
