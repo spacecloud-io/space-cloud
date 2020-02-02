@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/base64"
 	"errors"
 	"strings"
 	"time"
@@ -184,12 +185,13 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 			logrus.Errorln("error loading value in matchEncrypt: ", err)
 			return nil, err
 		}
+		key, err := base64.StdEncoding.DecodeString(m.secret)
 		if strings.HasPrefix(field, "res") {
 			addToStruct := PostProcessAction{Action: "encrypt", Field: field, Value: loadedValue}
 			actions.postProcessAction = append(actions.postProcessAction, addToStruct)
 		} else if strings.HasPrefix(field, "args") {
 			encrypted := make([]byte, len(loadedValue.(string)))
-			err := encryptAESCFB(encrypted, []byte(loadedValue.(string)), []byte(m.secret), []byte(m.secret)[:aes.BlockSize])
+			err := encryptAESCFB(encrypted, []byte(loadedValue.(string)), key, key[:aes.BlockSize])
 			if err != nil {
 				logrus.Errorln("error encrypting value in matchEncrypt: ", err)
 				return nil, err
@@ -214,12 +216,13 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 			logrus.Errorln("error loading value in matchEncrypt: ", err)
 			return nil, err
 		}
+		key, err := base64.StdEncoding.DecodeString(m.secret)
 		if strings.HasPrefix(field, "res") {
 			addToStruct := PostProcessAction{Action: "decrypt", Field: field, Value: loadedValue}
 			actions.postProcessAction = append(actions.postProcessAction, addToStruct)
 		} else if strings.HasPrefix(field, "args") {
 			decrypted := make([]byte, len(loadedValue.(string)))
-			err := decryptAESCFB(decrypted, []byte(loadedValue.(string)), []byte(m.secret), []byte(m.secret)[:aes.BlockSize])
+			err := decryptAESCFB(decrypted, []byte(loadedValue.(string)), key, key[:aes.BlockSize])
 			if err != nil {
 				logrus.Errorln("error decrypting value in matchEncrypt: ", err)
 				return nil, err
