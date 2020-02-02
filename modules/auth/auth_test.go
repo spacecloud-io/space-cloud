@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/config"
 	"github.com/spaceuptech/space-cloud/modules/crud"
 	"github.com/spaceuptech/space-cloud/modules/functions"
+	"github.com/spaceuptech/space-cloud/modules/schema"
 	"github.com/spaceuptech/space-cloud/utils"
 )
 
@@ -25,7 +26,7 @@ func TestGetRule(t *testing.T) {
 		{testName: "Error : Nothing is Provided"},
 	}
 	successTestCases := 0
-	authModule := Init(&crud.Module{}, &functions.Module{})
+	authModule := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
 	for i, test := range authGetRule {
 		t.Run(test.testName, func(t *testing.T) {
 			(*authModule).rules = test.authModuleRules
@@ -55,7 +56,7 @@ func TestCreateToken(t *testing.T) {
 		// {testName: "Error Test : nothing is provided "},
 	}
 	successTestCases := 0
-	authModule := Init(&crud.Module{}, &functions.Module{})
+	authModule := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
 	for i, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecret(test.secretKey)
@@ -85,10 +86,10 @@ func TestParseToken(t *testing.T) {
 		{name: "Test should fail for an invalid token", testType: "Fail", secretKey: "mySecretkey", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjic", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}, reason: ErrInvalidSigningMethod},
 	}
 
-	authModule := Init(&crud.Module{}, &functions.Module{})
+	authModule := Init(&crud.Module{}, &functions.Module{}, &schema.Schema{}, false)
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			authModule.SetConfig("", test.secretKey, config.Crud{}, &config.FileStore{}, &config.Functions{})
+			authModule.SetConfig("", test.secretKey, config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
 			tokenClaims, err := authModule.parseToken(test.token)
 			if test.testType == "Success" {
 				if !cmp.Equal(test.wantThis, tokenClaims) {
