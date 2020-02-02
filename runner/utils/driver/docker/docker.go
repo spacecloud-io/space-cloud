@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/sirupsen/logrus"
@@ -23,31 +26,7 @@ type docker struct {
 	client       *client.Client
 	auth         *auth.Module
 	artifactAddr string
-}
-
-func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
-	logrus.Debug("CreateSecret not implemented for docker")
-	return nil
-}
-
-func (d *docker) ListSecrets(projectID string) ([]*model.Secret, error) {
-	logrus.Debug("ListSecrets not implemented for docker")
-	return nil, nil
-}
-
-func (d *docker) DeleteSecret(projectID, secretName string) error {
-	logrus.Debug("DeleteSecret not implemented for docker")
-	return nil
-}
-
-func (d *docker) SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
-	logrus.Debug("SetKey not implemented for docker")
-	return nil
-}
-
-func (d *docker) DeleteKey(projectID, secretName, secretKey string) error {
-	logrus.Debug("DeleteKey not implemented for docker")
-	return nil
+	secretPath   string
 }
 
 func NewDockerDriver(auth *auth.Module, artifactAddr string) (*docker, error) {
@@ -57,7 +36,12 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*docker, error) {
 		return nil, err
 	}
 
-	return &docker{client: cli, auth: auth, artifactAddr: artifactAddr}, nil
+	secretPath := os.Getenv("SECRETS_PATH")
+	if secretPath == "" {
+		secretPath = "./"
+	}
+
+	return &docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath}, nil
 }
 
 // ApplyService creates containers for specified service
@@ -104,6 +88,7 @@ func (d *docker) ApplyService(ctx context.Context, service *model.Service) error
 }
 
 func (d *docker) createContainer(ctx context.Context, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
+	tempSecretPath := "/temp-secrets"
 	// TODO: pull the images
 	// out, err := d.client.ImagePull(ctx, task.Docker.Image, types.ImagePullOptions{})
 	// if err != nil {
@@ -168,6 +153,45 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 		envs = append(envs, fmt.Sprintf("%s=%s", envName, envValue))
 	}
 
+	// set secrets
+	mounts := []mount.Mount{}
+	for _, secretName := range task.Secrets {
+
+		// check if file exists
+		filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, service.ProjectID, secretName)
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			return "", "", fmt.Errorf("secret cannot be read - %v", err)
+		}
+
+		// file already exists read it's content
+		data, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return "", "", err
+		}
+		fileContent := new(model.Secret)
+		if err := json.Unmarshal(data, fileContent); err != nil {
+			return "", "", err
+		}
+		switch fileContent.Type {
+		case model.FileType:
+			uniqueDirName := fmt.Sprintf("%s--%s--%s", service.ProjectID, service.ID, task.ID)
+			path := fmt.Sprintf("%s/%s", tempSecretPath, uniqueDirName)
+			if err := os.MkdirAll(path, 0755); err != nil {
+				return "", "", err
+			}
+			for key, value := range fileContent.Data {
+				if err := ioutil.WriteFile(key, []byte(value), 0644); err != nil {
+					return "", "", err
+				}
+			}
+			mounts = append(mounts, mount.Mount{Type: mount.TypeBind, Source: path, Target: fileContent.RootPath})
+		case model.EnvType:
+			for key, value := range fileContent.Data {
+				envs = append(envs, fmt.Sprintf("%s=%s", key, value))
+			}
+		}
+	}
+
 	service.Labels["internalServiceId"] = service.ID
 	service.Labels["internalProjectId"] = service.ProjectID
 
@@ -180,6 +204,7 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 	exposedPorts := map[nat.Port]struct{}{}
 	if cName != "" {
 		hostConfig.NetworkMode = container.NetworkMode("container:" + cName)
+		hostConfig.Mounts = mounts
 	} else {
 		// expose ports of docker container as specified for 1st task
 		task.Ports = overridePorts // override all ports while creating container for 1st task
@@ -187,6 +212,7 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 			portString := strconv.Itoa(int(port.Port))
 			exposedPorts[nat.Port(portString)] = struct{}{}
 		}
+		hostConfig.Mounts = mounts
 	}
 
 	containerName := fmt.Sprintf("%s--%s--%s--%s", service.ProjectID, service.ID, service.Version, task.ID)
