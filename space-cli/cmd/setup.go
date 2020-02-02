@@ -26,6 +26,10 @@ func getSpaceCloudStoreFilePath() string {
 	return fmt.Sprintf("%s/store-config.yaml", getSpaceCloudDirectory())
 }
 
+func getSecretsDir() string {
+	return fmt.Sprintf("%s/.secrets", getSpaceCloudDirectory())
+}
+
 func generateRandomString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
@@ -43,6 +47,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 	// todo old keys always remain in accounts.yaml file
 
 	_ = createDirIfNotExist(getSpaceCloudDirectory())
+	_ = createDirIfNotExist(getSecretsDir())
 
 	// for now store-config.yaml need to be manually placed in this folder
 	// then docker container will mount it
@@ -125,8 +130,14 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 				"DRIVER=docker",
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
+				"SECRETS_PATH=/secrets",
 			},
 			mount: []mount.Mount{
+				{
+					Type:   mount.TypeBind, // TODO CHECK THIS
+					Source: getSecretsDir(),
+					Target: "/secrets",
+				},
 				{
 					Type:   mount.TypeBind,
 					Source: getSpaceCloudHostsFilePath(),
