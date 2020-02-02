@@ -49,6 +49,7 @@ Supported databases:heart::
 - **MongoDB**
 - **PostgreSQL** and PostgreSQL compatible databases (For eg. CockroachDB, Yugabyte, etc.)
 - **MySQL** and MySQL compatible databases (For eg. TiDB, MariaDB, etc.)
+- **SQL Server**
 
 ## Table of Contents
 
@@ -63,9 +64,9 @@ Supported databases:heart::
 
 ### Using Docker Compose
 
-Docker Compose is the easiest way to get started with Space Cloud. Let's see how to quickly get started with MongoDB and Space Cloud using Docker Compose.
+Docker Compose is the easiest way to get started with Space Cloud. Let's see how to quickly get started with Postgres and Space Cloud using Docker Compose.
 
-> **Note:** MongoDB is not a dependency of Space Cloud. Space Cloud can run with any of it's supported databases.
+> **Note:** Postgres is not a dependency of Space Cloud. Space Cloud can run with any of it's supported databases.
 
 **Prerequisites:**
 
@@ -75,10 +76,10 @@ Docker Compose is the easiest way to get started with Space Cloud. Let's see how
 1. Get the docker-compose file.
 
 ```bash
-wget https://raw.githubusercontent.com/spaceuptech/space-cloud/master/install-manifests/quick-start/docker-compose/mongo/docker-compose.yaml
+wget https://raw.githubusercontent.com/spaceuptech/space-cloud/master/install-manifests/quick-start/docker-compose/postgres/docker-compose.yaml
 ```
 
-2. Run Space Cloud & MongoDB.
+2. Run Space Cloud & Postgres.
 
 ```bash
 docker-compose up -d
@@ -88,7 +89,7 @@ docker-compose up -d
 
 4. Create a project.
 
-5. Head over to the Database section in Mission Control and edit the connection string to `mongodb://mongo:27017` in the connection string.
+5. Then add Postgres to your project with the following connection string: `postgres://postgres:mysecretpassword@postgres:5432/postgres?sslmode=disable` and hit `Save`.
 
 6. Head over to the `Explorer` section and follow this guide to [insert and read data via Space Cloud using GraphQL](https://docs.spaceuptech.com/getting-started/quick-start/explore-graphql).
 
@@ -104,7 +105,7 @@ GraphQL is the recommended way to use Space cloud, and it works with any GraphQL
 
 ### REST APIs
 
-You can use the [REST APIs of Space Cloud](https://app.swaggerhub.com/apis/YourTechBud/space-cloud/0.12.0) if you are more comfortable with REST. 
+You can use the [REST APIs of Space Cloud](https://app.swaggerhub.com/apis/YourTechBud/space-cloud/0.15.0) if you are more comfortable with REST. 
 
 To make it easy to consume the REST APIs in web projects, we have created a [**Javascript SDK**](https://docs.spaceuptech.com/getting-started/setting-up-project/javascript) for you.
 
