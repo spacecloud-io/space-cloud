@@ -26,7 +26,7 @@ type KubeStore struct {
 func NewKubeStore() (*KubeStore, error) {
 	scProject := os.Getenv("LETSENCRYPT_SC_PROJECT")
 	if scProject == "" {
-		scProject = "space_cloud"
+		scProject = "space-cloud"
 	}
 	restConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -44,17 +44,23 @@ func NewKubeStore() (*KubeStore, error) {
 }
 
 func (s *KubeStore) Store(key string, value []byte) error {
+	key = s.makeKey(key)
 	_, err := s.kubeClient.CoreV1().Secrets(s.projectId).Get(key, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
 		logrus.Debugf("Creating secret (%s)", key)
 		_, err = s.kubeClient.CoreV1().Secrets(s.projectId).Create(s.generateSecretValue(key, value))
+		if err != nil {
+			logrus.Errorf("error in kubernetes store of lets encrypt unable to create secret for key (%s) - %s", key, err.Error())
+		}
 		return err
-
 	} else if err == nil {
 		// secret already exists...update it!
 		logrus.Debugf("Updating secret (%s)", key)
 		_, err = s.kubeClient.CoreV1().Secrets(s.projectId).Update(s.generateSecretValue(key, value))
+		if err != nil {
+			logrus.Errorf("error in kubernetes store of lets encrypt unable to update secret for key (%s) - %s", key, err.Error())
+		}
 		return err
 	}
 	logrus.Errorf("error in kubernetes store of lets encrypt unable to set secret for key (%s) - %s", key, err.Error())
@@ -62,6 +68,7 @@ func (s *KubeStore) Store(key string, value []byte) error {
 }
 
 func (s *KubeStore) Load(key string) ([]byte, error) {
+	key = s.makeKey(key)
 	secret, err := s.kubeClient.CoreV1().Secrets(s.projectId).Get(key, metav1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("error in kubernetes store of lets encrypt unable to get secret for key (%s) - %s", key, err.Error())
@@ -71,6 +78,7 @@ func (s *KubeStore) Load(key string) ([]byte, error) {
 }
 
 func (s *KubeStore) Delete(key string) error {
+	key = s.makeKey(key)
 	err := s.kubeClient.CoreV1().Secrets(s.projectId).Delete(key, &metav1.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) || err == nil {
 		return nil
@@ -80,6 +88,7 @@ func (s *KubeStore) Delete(key string) error {
 }
 
 func (s *KubeStore) Exists(key string) bool {
+	key = s.makeKey(key)
 	_, err := s.kubeClient.CoreV1().Secrets(s.projectId).Get(key, metav1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("error in kubernetes store of lets encrypt unable to check secret if exists (%s) - %s", key, err.Error())
@@ -90,7 +99,7 @@ func (s *KubeStore) Exists(key string) bool {
 
 func (s *KubeStore) List(prefix string, recursive bool) ([]string, error) {
 	// List all secrets
-	kubeSecret, err := s.kubeClient.CoreV1().Secrets(s.projectId).List(metav1.ListOptions{})
+	kubeSecret, err := s.kubeClient.CoreV1().Secrets(s.projectId).List(metav1.ListOptions{LabelSelector: "app=letsencrypt"})
 	if err != nil {
 		logrus.Errorf("error in kubernetes store of lets encrypt unable to list secrets - %s", err.Error())
 		return nil, err
@@ -99,6 +108,7 @@ func (s *KubeStore) List(prefix string, recursive bool) ([]string, error) {
 
 	// Modifying SecretValue with empty []byte
 	for i, v := range kubeSecret.Items {
+		v.Name = s.getOriginalKey(v.Name)
 		if strings.HasPrefix(v.Name, prefix) {
 			keys[i] = v.Name
 		}
@@ -107,6 +117,7 @@ func (s *KubeStore) List(prefix string, recursive bool) ([]string, error) {
 }
 
 func (s *KubeStore) Stat(key string) (certmagic.KeyInfo, error) {
+	key = s.makeKey(key)
 	secret, err := s.kubeClient.CoreV1().Secrets(s.projectId).Get(key, metav1.GetOptions{})
 	if err != nil {
 		return certmagic.KeyInfo{}, err
@@ -216,9 +227,11 @@ func (s *KubeStore) deleteLockFile(keyPath string) error {
 
 func (s *KubeStore) generateSecretValue(key string, value []byte) *v1.Secret {
 	return &v1.Secret{
+		Type: v1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key,
 			Namespace: s.projectId,
+			Labels: map[string]string{"app": "letsencrypt"},
 		},
 		Data: map[string][]byte{
 			"value":    value,
@@ -226,4 +239,19 @@ func (s *KubeStore) generateSecretValue(key string, value []byte) *v1.Secret {
 			"modified": []byte(time.Now().String()),
 		},
 	}
+}
+
+func (s *KubeStore) makeKey(key string) string {
+	newKey := fmt.Sprintf("letsencrypt-%s", key)
+	newKey = strings.ReplaceAll(newKey, "/", "--")
+	newKey = strings.ReplaceAll(newKey, "_", "---")
+	return newKey
+}
+
+func (s *KubeStore) getOriginalKey(key string) string {
+	// Make sure you replace the maximum number of `-` first. It's in descending order
+	oldKey := strings.TrimPrefix(key, "letsencrypt-")
+	oldKey = strings.ReplaceAll(oldKey, "---", "_")
+	oldKey = strings.ReplaceAll(oldKey, "--", "/")
+	return oldKey
 }
