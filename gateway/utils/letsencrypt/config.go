@@ -21,6 +21,9 @@ const (
 
 	// StoreSC is used when SC is supposed to be used as a store
 	StoreSC StoreType = "sc"
+
+	// StoreKube is used when kubernetes is supposed to be used as a store
+	StoreKube StoreType = "kube"
 )
 
 func loadConfig() *Config {
