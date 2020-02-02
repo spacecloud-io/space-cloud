@@ -38,7 +38,7 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*docker, error) {
 
 	secretPath := os.Getenv("SECRETS_PATH")
 	if secretPath == "" {
-		secretPath = "./"
+		secretPath = "."
 	}
 
 	return &docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath}, nil
@@ -88,13 +88,12 @@ func (d *docker) ApplyService(ctx context.Context, service *model.Service) error
 }
 
 func (d *docker) createContainer(ctx context.Context, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
-	tempSecretPath := "/temp-secrets"
-	// TODO: pull the images
-	// out, err := d.client.ImagePull(ctx, task.Docker.Image, types.ImagePullOptions{})
-	// if err != nil {
-	// 	return "", "", err
-	// }
-	// io.Copy(os.Stdout, out)
+	tempSecretPath := fmt.Sprintf("%s/temp-secrets/%s/%s", os.Getenv("SECRETS_PATH"), service.ProjectID, fmt.Sprintf("%s--%s", service.ID, service.Version))
+
+	if err := d.pullImageIfDoesntExists(ctx, service.ProjectID, task.Docker); err != nil {
+		logrus.Error("error in docker unable to pull image ", err)
+		return "", "", err
+	}
 
 	// Create empty labels if not exists
 	if service.Labels == nil {
@@ -174,17 +173,17 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 		}
 		switch fileContent.Type {
 		case model.FileType:
-			uniqueDirName := fmt.Sprintf("%s--%s--%s", service.ProjectID, service.ID, task.ID)
+			uniqueDirName := fmt.Sprintf("%s--%s", task.ID, secretName)
 			path := fmt.Sprintf("%s/%s", tempSecretPath, uniqueDirName)
 			if err := os.MkdirAll(path, 0755); err != nil {
 				return "", "", err
 			}
 			for key, value := range fileContent.Data {
-				if err := ioutil.WriteFile(key, []byte(value), 0644); err != nil {
+				if err := ioutil.WriteFile(fmt.Sprintf("%s/%s", path, key), []byte(value), 0755); err != nil {
 					return "", "", err
 				}
 			}
-			mounts = append(mounts, mount.Mount{Type: mount.TypeBind, Source: path, Target: fileContent.RootPath})
+			mounts = append(mounts, mount.Mount{Type: mount.TypeBind, Source: fmt.Sprintf("%s/%s/%s/%s", os.Getenv("HOME_SECRETS_PATH"), service.ProjectID, fmt.Sprintf("%s--%s", service.ID, service.Version), uniqueDirName), Target: fileContent.RootPath})
 		case model.EnvType:
 			for key, value := range fileContent.Data {
 				envs = append(envs, fmt.Sprintf("%s=%s", key, value))
@@ -250,6 +249,7 @@ func (d *docker) DeleteService(ctx context.Context, projectId, serviceId, versio
 		logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
 		return err
 	}
+	// todo remove secret directory
 
 	for _, containerInfo := range containers {
 		// remove the container from host machine
@@ -257,6 +257,11 @@ func (d *docker) DeleteService(ctx context.Context, projectId, serviceId, versio
 			logrus.Errorf("error deleting service in docker unable to remove container %s got error message - %v", containerInfo.ID, err)
 			return err
 		}
+	}
+
+	tempSecretPath := fmt.Sprintf("%s/temp-secrets/%s/%s", os.Getenv("SECRETS_PATH"), projectId, fmt.Sprintf("%s--%s", serviceId, version))
+	if err := os.RemoveAll(tempSecretPath); err != nil {
+		return err
 	}
 
 	// Remove host from hosts file

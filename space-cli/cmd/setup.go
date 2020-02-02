@@ -22,12 +22,12 @@ func getSpaceCloudHostsFilePath() string {
 	return fmt.Sprintf("%s/hosts", getSpaceCloudDirectory())
 }
 
-func getSpaceCloudStoreFilePath() string {
-	return fmt.Sprintf("%s/store-config.yaml", getSpaceCloudDirectory())
+func getSecretsDir() string {
+	return fmt.Sprintf("%s/secrets", getSpaceCloudDirectory())
 }
 
-func getSecretsDir() string {
-	return fmt.Sprintf("%s/.secrets", getSpaceCloudDirectory())
+func getTempSecretsDir() string {
+	return fmt.Sprintf("%s/secrets/temp-secrets", getSpaceCloudDirectory())
 }
 
 func generateRandomString(length int) string {
@@ -47,11 +47,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 	// todo old keys always remain in accounts.yaml file
 
 	_ = createDirIfNotExist(getSpaceCloudDirectory())
-	_ = createDirIfNotExist(getSecretsDir())
-
-	// for now store-config.yaml need to be manually placed in this folder
-	// then docker container will mount it
-	// TODO: Automate this store-config.yaml problem
+	_ = createDirIfNotExist(getTempSecretsDir())
 
 	logrus.Infoln("Setting up space cloud on docker")
 
@@ -82,7 +78,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 
 	devMode := "false"
 	if dev {
-		devMode = "true" // even the flag set true in dev of container sc didn't start in prod mode
+		devMode = "true" // todo: even the flag set true in dev of container sc didn't start in prod mode
 	}
 
 	containersToCreate := []struct {
@@ -131,6 +127,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
 				"SECRETS_PATH=/secrets",
+				"HOME_SECRETS_PATH=" + getTempSecretsDir(),
 			},
 			mount: []mount.Mount{
 				{
@@ -147,29 +144,6 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 					Type:   mount.TypeBind,
 					Source: "/var/run/docker.sock",
 					Target: "/var/run/docker.sock",
-				},
-			},
-		},
-
-		{
-			// artifact store
-			containerImage: "spaceuptech/gateway",
-			containerName:  "space-cloud-store",
-			dnsName:        "store.space-cloud.svc.cluster.local",
-			envs: []string{
-				"CONFIG=/space-cloud/store.yaml",
-				"ADMIN_SECRET=" + secret,
-			},
-			mount: []mount.Mount{
-				{
-					Type:   mount.TypeBind,
-					Source: getSpaceCloudHostsFilePath(),
-					Target: "/etc/hosts",
-				},
-				{
-					Type:   mount.TypeBind, // mount artifact.yaml that is config file
-					Source: getSpaceCloudStoreFilePath(),
-					Target: "/space-cloud/store.yaml",
 				},
 			},
 		},

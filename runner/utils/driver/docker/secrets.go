@@ -16,7 +16,8 @@ func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	// create folder for project
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
 	if err := d.createDir(projectPath); err != nil {
-		return nil
+		logrus.Errorf("error creating secret in docker unable to create directory (%s) - %s", projectPath, err.Error())
+		return err
 	}
 
 	// check if file exists
@@ -24,15 +25,20 @@ func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		// create file & set it's content
 		return d.writeIntoFile(secretObj, filePath)
+	} else if err != nil {
+		logrus.Errorf("error creating secret in docker unable to check if file exists (%s) - %s", projectPath, err.Error())
+		return err
 	}
 
 	// file already exists read it's content
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
+		logrus.Errorf("error creating secret in docker unable to read file (%s) - %s", filePath, err.Error())
 		return err
 	}
 	fileContent := new(model.Secret)
 	if err := json.Unmarshal(data, fileContent); err != nil {
+		logrus.Errorf("error creating secret in docker unable to unmarshal data - %s", projectPath, err.Error())
 		return err
 	}
 	if fileContent.Type != secretObj.Type {
@@ -50,29 +56,30 @@ func (d *docker) ListSecrets(projectID string) ([]*model.Secret, error) {
 	}
 
 	secretArr := make([]*model.Secret, len(files))
-	for _, file := range files {
-		// there will be only files in this directory
-		filePath := fmt.Sprintf("%s/%s", projectPath, file.Name())
-		data, err := ioutil.ReadFile(filePath)
-		if err != nil {
-			return nil, err
-		}
-		fileContent := new(model.Secret)
-		if err := json.Unmarshal(data, fileContent); err != nil {
-			return nil, err
-		}
+	for index, file := range files {
+		if !file.IsDir() {
+			filePath := fmt.Sprintf("%s/%s", projectPath, file.Name())
+			data, err := ioutil.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			fileContent := new(model.Secret)
+			if err := json.Unmarshal(data, fileContent); err != nil {
+				return nil, err
+			}
 
-		// remove all value of secrets
-		secrets := map[string]string{}
-		for key := range fileContent.Data {
-			secrets[key] = ""
+			// remove all value of secrets
+			secrets := map[string]string{}
+			for key := range fileContent.Data {
+				secrets[key] = ""
+			}
+			secretArr[index] = &model.Secret{
+				Name:     fileContent.Name,
+				Type:     fileContent.Type,
+				RootPath: fileContent.RootPath,
+				Data:     secrets,
+			}
 		}
-		secretArr = append(secretArr, &model.Secret{
-			Name:     fileContent.Name,
-			Type:     fileContent.Type,
-			RootPath: fileContent.RootPath,
-			Data:     secrets,
-		})
 	}
 	return secretArr, nil
 }
@@ -127,16 +134,16 @@ func (d *docker) DeleteKey(projectID, secretName, secretKey string) error {
 func (d *docker) writeIntoFile(secretObj *model.Secret, filePath string) error {
 	data, err := json.Marshal(secretObj)
 	if err != nil {
-		logrus.Error("error creating secret in docker unable to marshal data")
+		logrus.Errorf("error writing data in file (%s) unable to marshal data - %v", err.Error())
 		return err
 	}
 	// create / update file content
-	return ioutil.WriteFile(filePath, data, 0644)
+	return ioutil.WriteFile(filePath, data, 0755)
 }
 
 func (d *docker) createDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return os.MkdirAll(path, 0644)
+		return os.MkdirAll(path, 0755)
 	}
 	return nil
 }
