@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/mholt/certmagic"
+	"github.com/sirupsen/logrus"
 )
 
 // LetsEncrypt manages letsencrypt certificates
@@ -31,6 +32,13 @@ func New() (*LetsEncrypt, error) {
 		client.Storage = certmagic.Default.Storage
 	case StoreSC:
 		client.Storage = NewScStore()
+	case StoreKube:
+		c, err := NewKubeStore()
+		if err != nil {
+			logrus.Errorf("error initializing lets encrypt unable to initialize kubernetes store - %s", err.Error())
+			return nil, err
+		}
+		client.Storage = c
 	default:
 		return nil, fmt.Errorf("unsupported store type (%s) provided for lets encrypt", c.StoreType)
 	}
