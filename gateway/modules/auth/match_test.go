@@ -3,11 +3,11 @@ package auth
 import (
 	"reflect"
 	"testing"
+	"context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
-	"golang.org/x/net/context"
 )
 
 func TestMatch_Rule(t *testing.T) {
@@ -124,6 +124,7 @@ func TestMatch_Rule(t *testing.T) {
 	}
 }
 func TestMatchForce_Rule(t *testing.T) {
+	m := Module{}
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
@@ -160,9 +161,10 @@ func TestMatchForce_Rule(t *testing.T) {
 		return nil
 	}
 	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
+	emptyAuth := make(map[string]interface{}, 0)
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			r, err := matchForce(test.rule, test.args)
+			r, err := m.matchForce(context.Background(),"abc",test.rule, test.args,emptyAuth)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
 			}
@@ -177,6 +179,7 @@ func TestMatchForce_Rule(t *testing.T) {
 }
 
 func TestMatchRemove_Rule(t *testing.T) {
+	m := Module{}
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
@@ -222,9 +225,11 @@ func TestMatchRemove_Rule(t *testing.T) {
 		return nil
 	}
 	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{})
+	emptyAuth := make(map[string]interface{},0)
+
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			r, err := matchRemove(test.rule, test.args)
+			r, err := m.matchRemove(context.Background(),"abc",test.rule, test.args,emptyAuth)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
 			}
