@@ -324,10 +324,30 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 				ports[i] = model.Port{Name: array[0], Protocol: model.Protocol(array[1]), Port: port.ContainerPort}
 			}
 
+			var dockerSecret string
+			var secrets []string
+
 			// get environment variables
 			envs := map[string]string{}
 			for _, env := range containerInfo.Env {
+				if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+					secrets = append(secrets, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+					continue
+				}
 				envs[env.Name] = env.Value
+			}
+
+			// Range over the file mounts for secrets
+			for _, volume := range containerInfo.VolumeMounts {
+				if checkIfVolumeIsSecret(volume.Name, deployment.Spec.Template.Spec.Volumes) {
+					secrets = append(secrets, volume.Name)
+				}
+			}
+
+			// Get docker secret
+			// TODO: Handle case when different tasks have different secrets
+			if len(deployment.Spec.Template.Spec.ImagePullSecrets) > 0 {
+				dockerSecret = deployment.Spec.Template.Spec.ImagePullSecrets[0].Name
 			}
 
 			// Extract the runtime from the environment variable
@@ -353,11 +373,13 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 					Memory: containerInfo.Resources.Requests.Memory().Value() / (1024 * 1024),
 				},
 				Docker: model.Docker{
-					Image: containerInfo.Image,
-					Cmd:   containerInfo.Command,
+					Image:  containerInfo.Image,
+					Cmd:    containerInfo.Command,
+					Secret: dockerSecret,
 				},
 				Env:     envs,
 				Runtime: runtime,
+				Secrets: secrets,
 			})
 		}
 
@@ -397,6 +419,15 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 	}
 
 	return services, nil
+}
+
+func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {
+	for _, v := range volumes {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 // AdjustScale adjusts the number of instances based on the number of active requests. It tries to make sure that
