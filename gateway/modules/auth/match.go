@@ -48,10 +48,10 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return &PostProcess{}, matchQuery(ctx, project, rule, m.crud, args)
 
 	case "force":
-		return matchForce(rule, args)
+		return m.matchForce(ctx, project, rule, args, auth)
 
 	case "remove":
-		return matchRemove(rule, args)
+		return m.matchRemove(ctx, project, rule, args, auth)
 	default:
 		return &PostProcess{}, ErrIncorrectMatch
 	}
@@ -127,7 +127,14 @@ func match(rule *config.Rule, args map[string]interface{}) error {
 	return ErrIncorrectMatch
 }
 
-func matchForce(rule *config.Rule, args map[string]interface{}) (*PostProcess, error) {
+func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*PostProcess, error) {
+	if rule.Clause != nil && rule.Clause.Rule != "" {
+		// Match clause with rule!
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		if err != nil {
+			return nil, err
+		}
+	}
 	value := rule.Value
 	if stringValue, ok := rule.Value.(string); ok {
 		loadedValue, err := utils.LoadValue(stringValue, args)
@@ -147,7 +154,14 @@ func matchForce(rule *config.Rule, args map[string]interface{}) (*PostProcess, e
 	}
 }
 
-func matchRemove(rule *config.Rule, args map[string]interface{}) (*PostProcess, error) {
+func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*PostProcess, error) {
+	if rule.Clause != nil && rule.Clause.Rule != "" {
+			// Match clause with rule!
+			_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+			if err != nil {
+				return nil, err
+			}
+	}
 	actions := &PostProcess{}
 	for _, field := range rule.Fields {
 		//"res" - add field to structure for post processing || "args" - delete field from args
