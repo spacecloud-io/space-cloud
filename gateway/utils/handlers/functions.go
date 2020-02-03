@@ -14,7 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// HandleRealtimeEvent creates a functions request endpoint
+// HandleFunctionCall creates a functions request endpoint
 func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

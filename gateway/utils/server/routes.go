@@ -15,6 +15,7 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/refresh-token").HandlerFunc(handlers.HandleRefreshToken(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects").HandlerFunc(handlers.HandleCreateProject(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/config").HandlerFunc(handlers.HandleGlobalConfig(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan, s.configFilePath))
