@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
@@ -24,8 +27,7 @@ func setLogLevel(loglevel string) {
 }
 
 func actionStartCode(c *cli.Context) error {
-	envID := c.String("env")
-	service, loginResp, err := cmd.CodeStart(envID)
+	service, loginResp, err := cmd.CodeStart()
 	if err != nil {
 		return err
 	}
@@ -40,8 +42,7 @@ func actionStartCode(c *cli.Context) error {
 }
 
 func actionBuildCode(c *cli.Context) error {
-	envID := c.String("env")
-	service, loginResp, err := cmd.CodeStart(envID)
+	service, loginResp, err := cmd.CodeStart()
 	if err != nil {
 		return err
 	}
@@ -52,6 +53,16 @@ func actionBuildCode(c *cli.Context) error {
 	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
 		return err
 	}
+	return nil
+}
+
+func actionGenerateService(c *cli.Context) error {
+	service, err := cmd.GenerateServiceConfigWithoutLogin()
+	if err != nil {
+		return err
+	}
+	data, _ := json.MarshalIndent(service, "", " ")
+	fmt.Println(string(data))
 	return nil
 }
 

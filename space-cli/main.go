@@ -29,14 +29,14 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name: "start",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:   "env",
-							Usage:  "Builds and deploys a codebase",
-							EnvVar: "ENV",
-							Value:  "none",
-						},
-					},
+					// Flags: []cli.Flag{
+					// 	cli.StringFlag{
+					// 		Name:   "env",
+					// 		Usage:  "Builds and deploys a codebase",
+					// 		EnvVar: "ENV",
+					// 		Value:  "none",
+					// 	},
+					// },
 					Action: actionStartCode,
 				},
 				{
@@ -53,7 +53,17 @@ func main() {
 				},
 			},
 		},
+
 		{
+			Name:  "generate",
+			Usage: "Commands to work generate service",
+			Subcommands: []cli.Command{
+				{
+					Name:   "service",
+					Action: actionGenerateService,
+				},
+			},
+		}, {
 			Name:  "login",
 			Usage: "Commands to log in",
 			Flags: []cli.Flag{

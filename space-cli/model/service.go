@@ -2,19 +2,16 @@ package model
 
 // Service describes a service's configurations
 type Service struct {
-	ID          string            `json:"id" yaml:"id"`
-	Name        string            `json:"name" yaml:"name"`
-	ProjectID   string            `json:"projectId" yaml:"projectId"`
-	Environment string            `json:"env" yaml:"env"`
-	Version     string            `json:"version" yaml:"version"`
-	Scale       ScaleConfig       `json:"scale" yaml:"scale"`
-	Labels      map[string]string `json:"labels" yaml:"labels"`
-	Tasks       []Task            `json:"tasks" yaml:"tasks"`
-	Affinity    []Affinity        `json:"affinity" yaml:"affinity"`
-	Whitelist   []string          `json:"whitelist" yaml:"whitelist"`
-	Upstreams   []Upstream        `json:"upstreams" yaml:"upstreams"`
-	Runtime     Runtime           `json:"runtime" yaml:"runtime"`
-	Expose      *Expose           `json:"expose" yaml:"expose"`
+	ID        string            `json:"id" yaml:"id"`
+	Name      string            `json:"name" yaml:"name"`
+	ProjectID string            `json:"projectId" yaml:"projectId"`
+	Version   string            `json:"version" yaml:"version"`
+	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
+	Labels    map[string]string `json:"labels" yaml:"labels"`
+	Tasks     []Task            `json:"tasks" yaml:"tasks"`
+	Affinity  []Affinity        `json:"affinity" yaml:"affinity"`
+	Whitelist []Whitelist       `json:"whitelists" yaml:"whitelists"`
+	Upstreams []Upstream        `json:"upstreams" yaml:"upstreams"`
 }
 
 // ScaleConfig describes the config used to scale a service
@@ -33,6 +30,8 @@ type Task struct {
 	Resources Resources         `json:"resources" yaml:"resources"`
 	Docker    Docker            `json:"docker" yaml:"docker"`
 	Env       map[string]string `json:"env" yaml:"env"`
+	Secrets   []string          `json:"secrets" yaml:"secrets"`
+	Runtime   Runtime           `json:"runtime" yaml:"runtime"`
 }
 
 // Port describes the port used by a task
@@ -61,15 +60,9 @@ type Resources struct {
 
 // Docker describes the docker configurations
 type Docker struct {
-	Image string           `json:"image" yaml:"image"`
-	Creds *DockerRepoCreds `json:"creds" yaml:"creds"`
-	Cmd   []string         `json:"cmd" yaml:"cmd"`
-}
-
-// DockerRepoCreds holds the credentials of the docker repo
-type DockerRepoCreds struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Image  string   `json:"image" yaml:"image"`
+	Cmd    []string `json:"cmd" yaml:"cmd"`
+	Secret string   `json:"secret" yaml:"secret"`
 }
 
 // Affinity describes the affinity rules of a service
@@ -97,6 +90,12 @@ type Upstream struct {
 	Service   string `json:"service" yaml:"service"`
 }
 
+// Whitelist is the allowed downstream services
+type Whitelist struct {
+	ProjectID string `json:"projectId" yaml:"projectId"`
+	Service   string `json:"service" yaml:"service"`
+}
+
 // Runtime is the container runtime
 type Runtime string
 
@@ -104,8 +103,8 @@ const (
 	// Image indicates that the user has provided a docker image
 	Image Runtime = "image"
 
-	// Custom indicates that the user's code isn't containerized. We need to use a custom runtime for this
-	Custom Runtime = "custom"
+	// Code indicates that the user's code isn't containerized. We need to use a custom runtime for this
+	Code Runtime = "code"
 )
 
 // Expose describes how an http service needs to be exposed
