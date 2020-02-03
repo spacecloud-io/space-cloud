@@ -91,6 +91,7 @@ type Rule struct {
 	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
+	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty`
 }
 
 // Auth holds the mapping of the sign in method
