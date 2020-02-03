@@ -11,7 +11,7 @@ import (
 
 // PostProcessMethod to do processing on result
 func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{}) error {
-	// Gracefully exist if the result is nil
+	// Gracefully exits if the result is nil
 	if result == nil {
 		return nil
 	}
@@ -44,36 +44,44 @@ func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{})
 			case "encrypt":
 				loadedValue, err := utils.LoadValue(field.Field, map[string]interface{}{"res": doc})
 				if err != nil {
-					logrus.Errorln("error loading value in matchEncrypt: ", err)
+					logrus.Errorln("error loading value in postProcessMethod: ", err)
 					return err
 				}
-				encrypted := make([]byte, len(loadedValue.(string)))
-				err1 := encryptAESCFB(encrypted, []byte(loadedValue.(string)), m.aesKey, m.aesKey[:aes.BlockSize])
+				stringValue, ok := loadedValue.(string)
+				if !ok {
+					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
+				}
+				encrypted := make([]byte, len(stringValue))
+				err1 := encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize])
 				if err1 != nil {
-					logrus.Errorln("error encrypting value in matchEncrypt: ", err1)
+					logrus.Errorln("error encrypting value in postProcessMethod: ", err1)
 					return err1
 				}
 				er := utils.StoreValue(field.Field, encrypted, map[string]interface{}{"res": doc})
 				if er != nil {
-					logrus.Errorln("error storing value in matchEncrypt: ", er)
+					logrus.Errorln("error storing value in postProcessMethod: ", er)
 					return er
 				}
 
 			case "decrypt":
 				loadedValue, err := utils.LoadValue(field.Field, map[string]interface{}{"res": doc})
 				if err != nil {
-					logrus.Errorln("error loading value in matchEncrypt: ", err)
+					logrus.Errorln("error loading value in postProcessMethod: ", err)
 					return err
 				}
-				decrypted := make([]byte, len(loadedValue.(string)))
-				err1 := decryptAESCFB(decrypted, []byte(loadedValue.(string)), m.aesKey, m.aesKey[:aes.BlockSize])
+				stringValue, ok := loadedValue.(string)
+				if !ok {
+					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
+				}
+				decrypted := make([]byte, len(stringValue))
+				err1 := decryptAESCFB(decrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize])
 				if err1 != nil {
-					logrus.Errorln("error decrypting value in matchEncrypt: ", err1)
+					logrus.Errorln("error decrypting value in postProcessMethod: ", err1)
 					return err1
 				}
 				er := utils.StoreValue(field.Field, decrypted, map[string]interface{}{"res": doc})
 				if er != nil {
-					logrus.Errorln("error storing value in matchEncrypt: ", er)
+					logrus.Errorln("error storing value in postProcessMethod: ", er)
 					return er
 				}
 

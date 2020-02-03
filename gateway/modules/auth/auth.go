@@ -55,7 +55,7 @@ func Init(nodeID string, crud *crud.Module, schema *schema.Schema, removeProject
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing, aesKey string) error {
+func (m *Module) SetConfig(project string, secret, aesKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -66,7 +66,11 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	m.project = project
 	m.rules = rules
 	m.secret = secret
-	m.aesKey, _ = base64.StdEncoding.DecodeString(aesKey)
+	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
 		m.fileStoreType = fileStore.StoreType

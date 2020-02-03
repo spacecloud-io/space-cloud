@@ -84,13 +84,73 @@ func TestPostProcessMethod(t *testing.T) {
 			finalResult: []interface{}{1234, "suyash"},
 			postProcess: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "forced", Field: "res.age", Value: "1234"}}},
 		},
+		{
+			testName:      "invalid field provided for encryption",
+			postProcess:   &PostProcess{[]PostProcessAction{PostProcessAction{Action: "encrypt", Field: "res.age"}}},
+			result:        map[string]interface{}{"username": "username1"},
+			finalResult:   map[string]interface{}{"username": "username1"},
+			IsErrExpected: true,
+		},
+		{
+			testName:      "invalid type of loaded value for encryption",
+			postProcess:   &PostProcess{[]PostProcessAction{PostProcessAction{Action: "encrypt", Field: "res.username"}}},
+			result:        map[string]interface{}{"username": 10},
+			finalResult:   map[string]interface{}{"username": 10},
+			IsErrExpected: true,
+		},
+		{
+			testName:    "valid key",
+			module:      &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			postProcess: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "encrypt", Field: "res.username"}}},
+			result:      map[string]interface{}{"username": "username1"},
+			finalResult: map[string]interface{}{"username": []byte{5, 120, 168, 68, 222, 6, 202, 246, 108}},
+		},
+		// TODO: Figure out below test case since currently gives error
+		// {
+		// 	testName:      "invalid key",
+		// 	module:        &Module{aesKey: []byte("invalidKey")},
+		// 	postProcess:   &PostProcess{[]PostProcessAction{PostProcessAction{Action: "encrypt", Field: "res.username"}}},
+		// 	result:        map[string]interface{}{"username": "username1"},
+		// 	finalResult:   map[string]interface{}{"username": "username1"},
+		// 	IsErrExpected: true,
+		// },
+		{
+			testName:      "invalid field provided for decryption",
+			postProcess:   &PostProcess{[]PostProcessAction{PostProcessAction{Action: "decrypt", Field: "res.age"}}},
+			result:        map[string]interface{}{"username": "username1"},
+			finalResult:   map[string]interface{}{"username": "username1"},
+			IsErrExpected: true,
+		},
+		{
+			testName:      "invalid type of loaded value for decryption",
+			postProcess:   &PostProcess{[]PostProcessAction{PostProcessAction{Action: "decrypt", Field: "res.username"}}},
+			result:        map[string]interface{}{"username": 10},
+			finalResult:   map[string]interface{}{"username": 10},
+			IsErrExpected: true,
+		},
+		{
+			testName:    "valid key",
+			module:      &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
+			postProcess: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "decrypt", Field: "res.username"}}},
+			result:      map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
+			finalResult: map[string]interface{}{"username": []byte{117, 115, 101, 114, 110, 97, 109, 101, 49}},
+		},
+		// TODO: Figure out below test case since currently gives error
+		// {
+		// 	testName:      "invalid key",
+		// 	module:        &Module{aesKey: []byte("invalidKey")},
+		// 	postProcess:   &PostProcess{[]PostProcessAction{PostProcessAction{Action: "decrypt", Field: "res.username"}}},
+		// 	result:        map[string]interface{}{"username": "username1"},
+		// 	finalResult:   map[string]interface{}{"username": "username1"},
+		// 	IsErrExpected: true,
+		// },
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 	s := schema.Init(crud.Init(false), false)
 	s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, s, false)
-	auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}, "")
+	auth.SetConfig(project, "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			err := (auth).PostProcessMethod(test.postProcess, test.result)

@@ -189,8 +189,12 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 				logrus.Errorln("error loading value in matchEncrypt: ", err)
 				return nil, err
 			}
-			encrypted := make([]byte, len(loadedValue.(string)))
-			err1 := encryptAESCFB(encrypted, []byte(loadedValue.(string)), m.aesKey, m.aesKey[:aes.BlockSize])
+			stringValue, ok := loadedValue.(string)
+			if !ok {
+				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+			}
+			encrypted := make([]byte, len(stringValue))
+			err1 := encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize])
 			if err1 != nil {
 				logrus.Errorln("error encrypting value in matchEncrypt: ", err1)
 				return nil, err1
@@ -216,18 +220,22 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 		} else if strings.HasPrefix(field, "args") {
 			loadedValue, err := utils.LoadValue(field, args)
 			if err != nil {
-				logrus.Errorln("error loading value in matchEncrypt: ", err)
+				logrus.Errorln("error loading value in matchDecrypt: ", err)
 				return nil, err
 			}
-			decrypted := make([]byte, len(loadedValue.(string)))
-			err1 := decryptAESCFB(decrypted, []byte(loadedValue.(string)), m.aesKey, m.aesKey[:aes.BlockSize])
+			stringValue, ok := loadedValue.(string)
+			if !ok {
+				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+			}
+			decrypted := make([]byte, len(stringValue))
+			err1 := decryptAESCFB(decrypted, []byte(stringValue), m.aesKey, []byte(m.aesKey)[:aes.BlockSize])
 			if err1 != nil {
-				logrus.Errorln("error decrypting value in matchEncrypt: ", err1)
+				logrus.Errorln("error decrypting value in matchDecrypt: ", err1)
 				return nil, err1
 			}
 			er := utils.StoreValue(field, decrypted, args)
 			if er != nil {
-				logrus.Errorln("error storing value in matchEncrypt: ", er)
+				logrus.Errorln("error storing value in matchDecrypt: ", er)
 				return nil, er
 			}
 		} else {
