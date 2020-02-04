@@ -10,9 +10,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 	kubeErrors "k8s.io/apimachinery/pkg/api/errors"
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/informers/internalinterfaces"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -43,92 +46,111 @@ func (s *KubeStore) Register() {
 	// kubernetes will handle this automatically
 }
 
-func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
-	labels := fmt.Sprintf("clusterId=%s", s.clusterID)
-	watcher, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Watch(v12.ListOptions{Watch: true, LabelSelector: labels})
-	if err != nil {
-		logrus.Errorf("error watching projects in kube store - %v", err)
-		return err
+func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Project) map[string]*config.Project {
+	configMap := obj.(*v1.ConfigMap)
+	projectJsonString, ok := configMap.Data["project"]
+	if !ok {
+		logrus.Errorf("error watching projects in kube store unable to find project in config map")
+		return nil
 	}
-	defer watcher.Stop()
+
+	v := new(config.Project)
+	if err := json.Unmarshal([]byte(projectJsonString), v); err != nil {
+		logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
+		return nil
+	}
+	projectMap[v.ID] = v
+	return projectMap
+}
+
+func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
+	var options internalinterfaces.TweakListOptionsFunc
+	// labels := fmt.Sprintf("clusterId=%s", s.clusterID)
+	factory := informers.NewFilteredSharedInformerFactory(s.kube, 0, spaceCloud, options)
+	informer := factory.Core().V1().ConfigMaps().Informer()
+	stopper := make(chan struct{})
+	defer close(stopper)
+	defer runtime.HandleCrash()
 
 	projectMap := map[string]*config.Project{}
-	for ee := range watcher.ResultChan() {
-		switch ee.Type {
-		case watch.Added, watch.Modified:
-			configMap := ee.Object.(*v1.ConfigMap)
-			projectJsonString, ok := configMap.Data["project"]
-			if !ok {
-				logrus.Errorf("error watching projects in kube store unable to find project in config map")
-				continue
-			}
 
-			v := new(config.Project)
-			if err := json.Unmarshal([]byte(projectJsonString), v); err != nil {
-				logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
-				continue
-			}
-			projectMap[v.ID] = v
-
-		case watch.Deleted:
-			configMap := ee.Object.(*v1.ConfigMap)
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			projMap := onAddOrUpdateProjects(obj, projectMap)
+			cb(s.getProjects(projMap))
+		},
+		DeleteFunc: func(obj interface{}) {
+			configMap := obj.(*v1.ConfigMap)
 			projectId, ok := configMap.Data["id"]
 			if !ok {
 				logrus.Errorf("error watching project in kube store unable to find project id in config map")
-				continue
+				return
 			}
 			delete(projectMap, projectId)
-		}
+			cb(s.getProjects(projectMap))
+		},
+		UpdateFunc: func(old, obj interface{}) {
+			projMap := onAddOrUpdateProjects(obj, projectMap)
+			cb(s.getProjects(projMap))
+		},
+	})
 
-		cb(s.getProjects(projectMap))
-	}
+	go informer.Run(stopper)
+
 	return nil
+}
+
+func onAddOrUpdateServices(obj interface{}, services []*service) []*service {
+	pod := obj.(*v1.Pod)
+	id, ok := pod.Annotations["id"]
+	if !ok {
+		logrus.Errorf("error occurred watching services in kube store unable to find id in pod annotations while add event occurred")
+		return nil
+	}
+	addr, ok := pod.Annotations["addr"]
+	if !ok {
+		logrus.Errorf("error occurred watching services in kube store unable to find addr in pod annotations while add event occurred")
+		return nil
+	}
+
+	doesExist := false
+	for _, service := range services {
+		if service.id == id {
+			doesExist = true
+			service.addr = addr
+			return nil
+		}
+	}
+
+	// add service if it doesn't exist
+	if !doesExist {
+		services = append(services, &service{id: id, addr: addr})
+	}
+	return services
 }
 
 func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	services := scServices{}
-	labels := fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
-	watcher, err := s.kube.CoreV1().Pods(spaceCloud).Watch(v12.ListOptions{Watch: true, LabelSelector: labels})
-	if err != nil {
-		logrus.Errorf("error watching services in kube store - %v", err)
-		return err
-	}
-	defer watcher.Stop()
-	for ee := range watcher.ResultChan() {
-		switch ee.Type {
-		case watch.Added, watch.Modified:
-			pod := ee.Object.(*v1.Pod)
-			id, ok := pod.Annotations["id"]
-			if !ok {
-				logrus.Errorf("error occurred watching services in kube store unable to find id in pod annotations while add event occurred")
-				break
-			}
-			addr, ok := pod.Annotations["addr"]
-			if !ok {
-				logrus.Errorf("error occurred watching services in kube store unable to find addr in pod annotations while add event occurred")
-				break
-			}
+	// labels := fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
+	var options internalinterfaces.TweakListOptionsFunc
+	factory := informers.NewFilteredSharedInformerFactory(s.kube, 0, spaceCloud, options)
+	informer := factory.Core().V1().Pods().Informer()
+	stopper := make(chan struct{})
+	defer close(stopper)
+	defer runtime.HandleCrash()
 
-			doesExist := false
-			for _, service := range services {
-				if service.id == id {
-					doesExist = true
-					service.addr = addr
-					break
-				}
-			}
-
-			// add service if it doesn't exist
-			if !doesExist {
-				services = append(services, &service{id: id, addr: addr})
-			}
-
-		case watch.Deleted:
-			pod := ee.Object.(*v1.Pod)
+	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			onAddOrUpdateServices(obj, services)
+			sort.Stable(services)
+			cb(services)
+		},
+		DeleteFunc: func(obj interface{}) {
+			pod := obj.(*v1.Pod)
 			id, ok := pod.Annotations["id"]
 			if !ok {
 				logrus.Errorf("error occurred watching services in kube store unable to find id in pod annotations while delete event occurred")
-				break
+				return
 			}
 			for index, service := range services {
 				if service.id == id {
@@ -137,10 +159,18 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 					break
 				}
 			}
-		}
-		sort.Stable(services)
-		cb(services)
-	}
+			sort.Stable(services)
+			cb(services)
+		},
+		UpdateFunc: func(old, obj interface{}) {
+			onAddOrUpdateServices(obj, services)
+			sort.Stable(services)
+			cb(services)
+		},
+	})
+
+	go informer.Run(stopper)
+
 	return nil
 }
 
