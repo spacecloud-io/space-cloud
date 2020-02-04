@@ -378,7 +378,7 @@ func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, s
 	}
 }
 
-// HandleModifySchema is an endpoint handler which updates the existing schema & updates the config
+// HandleModifyAllSchema is an endpoint handler which updates the existing schema & updates the config
 func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
