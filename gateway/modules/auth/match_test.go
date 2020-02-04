@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"context"
 	"reflect"
 	"testing"
-	"context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
@@ -156,6 +156,14 @@ func TestMatchForce_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Value: "1234", Field: "args.string1"},
 			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
 		},
+		{
+			name: "rule clause - allow",
+			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "allow"}},
+		},
+		{
+			name: "rule clause - deny",
+			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
+		},
 	}
 	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
@@ -164,7 +172,7 @@ func TestMatchForce_Rule(t *testing.T) {
 	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			r, err := m.matchForce(context.Background(),"testID",test.rule, test.args,emptyAuth)
+			r, err := m.matchForce(context.Background(), "testID", test.rule, test.args, emptyAuth)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
 			}
@@ -220,6 +228,14 @@ func TestMatchRemove_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "remove", Type: "number", Fields: []string{"arg.age.exp"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 		},
+		{
+			name: "rule clause - allow",
+			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "allow"}},
+		},
+		{
+			name: "rule clause - deny",
+			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
+		},
 	}
 	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	auth.makeHttpRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
@@ -228,7 +244,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 	auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			r, err := m.matchRemove(context.Background(),"testID",test.rule, test.args,emptyAuth)
+			r, err := m.matchRemove(context.Background(), "testID", test.rule, test.args, emptyAuth)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
 			}

@@ -132,7 +132,7 @@ func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.
 		// Match clause with rule!
 		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
 		if err != nil {
-			return nil, err
+			return nil, nil
 		}
 	}
 	value := rule.Value
@@ -156,11 +156,11 @@ func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.
 
 func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*PostProcess, error) {
 	if rule.Clause != nil && rule.Clause.Rule != "" {
-			// Match clause with rule!
-			_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
-			if err != nil {
-				return nil, err
-			}
+		// Match clause with rule!
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		if err != nil {
+			return nil, nil
+		}
 	}
 	actions := &PostProcess{}
 	for _, field := range rule.Fields {
