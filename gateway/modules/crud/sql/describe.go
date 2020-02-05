@@ -43,13 +43,16 @@ where (table_name,table_schema) = (?,?);`
 	case utils.Postgres:
 		queryString = `SELECT isc.column_name AS "Field", coalesce(isc.column_default,'') AS "Default" ,isc.data_type AS "Type",isc.is_nullable AS "Null",isc.is_nullable as "Extra",
 CASE
-    WHEN istc.constraint_type = 'PRIMARY KEY' THEN 'PRI'
-    WHEN istc.constraint_type = 'UNIQUE' THEN 'UNI'
+    WHEN t.constraint_type = 'PRIMARY KEY' THEN 'PRI'
+    WHEN t.constraint_type = 'UNIQUE' THEN 'UNI'
     ELSE 'f'
 END AS "Key"
 FROM information_schema.columns isc
-    left join information_schema.constraint_column_usage cu on (cu.table_schema, cu.table_name, cu.column_name) = (isc.table_schema, isc.table_name, isc.column_name)
-    left JOIN information_schema.table_constraints istc  on (istc.table_schema,istc.table_name, istc.constraint_name) = (cu.table_schema,cu.table_name, cu.constraint_name)
+    left join (select cu.table_schema, cu.table_name, cu.column_name, istc.constraint_type 
+    	from information_schema.constraint_column_usage cu 
+    	left join information_schema.table_constraints istc on (istc.table_schema,istc.table_name, istc.constraint_name) = (cu.table_schema,cu.table_name, cu.constraint_name) 
+    	where istc.constraint_type != 'CHECK') t
+    on (t.table_schema, t.table_name, t.column_name) = (isc.table_schema, isc.table_name, isc.column_name)
 WHERE (isc.table_schema, isc.table_name) = ($2, $1)
 ORDER BY isc.ordinal_position;`
 
