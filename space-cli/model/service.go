@@ -2,16 +2,16 @@ package model
 
 // Service describes a service's configurations
 type Service struct {
-	ID        string            `json:"id" yaml:"id,omitempty"`
-	Name      string            `json:"name" yaml:"name,omitempty"`
-	ProjectID string            `json:"projectId" yaml:"projectId,omitempty"`
-	Version   string            `json:"version" yaml:"version,omitempty"`
-	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
-	Labels    map[string]string `json:"labels" yaml:"labels"`
-	Tasks     []Task            `json:"tasks" yaml:"tasks"`
-	Affinity  []Affinity        `json:"affinity" yaml:"affinity"`
-	Whitelist []Whitelist       `json:"whitelists" yaml:"whitelists"`
-	Upstreams []Upstream        `json:"upstreams" yaml:"upstreams"`
+	ID        string            `json:"id" yaml:"id,omitempty" `
+	Name      string            `json:"name" yaml:"name,omitempty" `
+	ProjectID string            `json:"projectId" yaml:"projectId,omitempty" `
+	Version   string            `json:"version" yaml:"version,omitempty" `
+	Scale     ScaleConfig       `json:"scale" yaml:"scale" `
+	Labels    map[string]string `json:"labels" yaml:"labels" `
+	Tasks     []Task            `json:"tasks" yaml:"tasks" `
+	Affinity  []Affinity        `json:"affinity" yaml:"affinity" `
+	Whitelist []Whitelist       `json:"whitelists" yaml:"whitelists" `
+	Upstreams []Upstream        `json:"upstreams" yaml:"upstreams" `
 }
 
 // ScaleConfig describes the config used to scale a service

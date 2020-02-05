@@ -24,17 +24,8 @@ func GenerateService() (*model.Service, error) {
 		return nil, err
 	}
 
-	// read services.yaml file
-	c, err := getServiceConfig("./services.yaml") // todo verify this
-	if err != nil {
-		// create new services.yaml file
-		c, err = generateServiceConfig(loginResult.Projects)
-		if err != nil {
-			logrus.Errorf("error in generate service unable to generate service struct - %s", err.Error())
-			return nil, err
-		}
-	}
-	return c, nil
+	// create new services.yaml file
+	return generateServiceConfig(loginResult.Projects)
 }
 
 func generateServiceConfig(projects []*model.Projects) (*model.Service, error) {

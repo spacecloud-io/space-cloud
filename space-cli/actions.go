@@ -1,13 +1,9 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -33,47 +29,17 @@ func setLogLevel(loglevel string) {
 }
 
 func actionApply(c *cli.Context) error {
-	args := os.Args
-	if len(args) != 3 {
-		return fmt.Errorf("incorrect number of arguments provided")
-	}
-	data, err := ioutil.ReadFile(args[2])
-	if err != nil {
-		return err
-	}
-	fileContent := new(model.GitOp)
-	if err := json.Unmarshal(data, fileContent); err != nil {
-		return err
-	}
-	if fileContent.Type != "service" {
-		return fmt.Errorf("invalid type found in serivce file type should be (service)")
-	}
-	service := fileContent.Spec.(*model.Service)
-	service.ID = fileContent.Meta["id"]
-	service.ProjectID = fileContent.Meta["projectId"]
-	service.Version = fileContent.Meta["version"]
-
-	requestBody, err := json.Marshal(&fileContent.Spec)
-	if err != nil {
-		logrus.Error("error in apply service unable to marshal data - %v", err)
-		return err
-	}
-	urlPath := strings.Replace(fileContent.Api, "{projectId}", service.ProjectID, 1)
-	resp, err := http.Post(fmt.Sprintf("http://localhost:4122%s", urlPath), "application/json", bytes.NewBuffer(requestBody))
-	if err != nil {
-		logrus.Error("error in apply service unable to send http request - %v", err)
-		return err
-	}
-	defer resp.Body.Close()
-	v := map[string]interface{}{}
-	_ = json.NewDecoder(resp.Body).Decode(&v)
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("%v", v["error"])
-	}
-	return nil
+	return cmd.Apply()
 }
 
 func actionGenerateService(c *cli.Context) error {
+	// get filename from args in which service config will be stored
+	argsArr := os.Args
+	if len(argsArr) != 4 {
+		return fmt.Errorf("incorrect number of arguments")
+	}
+	serviceConfigFile := argsArr[3]
+
 	service, err := cmd.GenerateService()
 	if err != nil {
 		return err
@@ -91,9 +57,14 @@ func actionGenerateService(c *cli.Context) error {
 	service.ProjectID = ""
 	service.Version = ""
 	v.Spec = service
+
 	data, err := yaml.Marshal(v)
 	if err != nil {
 		logrus.Errorf("error pretty printing service struct - %s", err.Error())
+		return err
+	}
+
+	if err := ioutil.WriteFile(serviceConfigFile, data, 0755); err != nil {
 		return err
 	}
 	fmt.Printf(string(data))
