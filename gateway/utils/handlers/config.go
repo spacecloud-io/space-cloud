@@ -44,7 +44,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		status, token, err := adminMan.Login(req.User, req.Key)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -53,24 +53,33 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		cli, ok := r.URL.Query()["cli"]
 		if ok && cli[0] == "true" {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
+			return
 		}
 
 		if syncMan.GetRunnerAddr() != "" {
+			adminToken, err := adminMan.GetInternalAccessToken()
+			if err != nil {
+				logrus.Errorf("error while loading projects handlers unable to generate internal access token - %s", err.Error())
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
+			}
+
 			for _, project := range c.Projects {
-				services, err := getServices(syncMan, project.ID, token)
+				services, err := getServices(syncMan, project.ID, adminToken)
 				if err != nil {
 					logrus.Errorf("error in admin login of handler unable to set deployments - %s", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 					return
 				}
 				project.Modules.Deployments.Services = services
-				secrets, err := getSecrets(syncMan, project.ID, token)
+				secrets, err := getSecrets(syncMan, project.ID, adminToken)
 				if err != nil {
 					logrus.Errorf("error in admin login of handler unable to set secrets - %s", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 					return
 				}
 				project.Modules.Secrets = secrets
@@ -147,6 +156,26 @@ func getSecrets(syncMan *syncman.Manager, projectID, token string) ([]*config.Se
 	return data.Secrets, err
 }
 
+// HandleRefreshToken creates the refresh-token endpoint
+func HandleRefreshToken(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		newToken, err := adminMan.RefreshToken(token)
+		if err != nil {
+			logrus.Errorf("Error while refreshing token handleRefreshToken - %s ", err.Error())
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"token": newToken})
+	}
+}
+
 // HandleLoadProjects returns the handler to load the projects via a REST endpoint
 func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -163,48 +192,42 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 			return
 		}
 
-		adminToken, err := adminMan.GetInternalAccessToken()
-		if err != nil {
-			logrus.Errorf("error while loading projects handlers unable to generate internal access token - %s", err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Load config from file
 		c := syncMan.GetGlobalConfig()
 
-		// Create a projects array
-		projects := []*config.Project{}
+		if syncMan.GetRunnerAddr() != "" {
+			adminToken, err := adminMan.GetInternalAccessToken()
+			if err != nil {
+				logrus.Errorf("error while loading projects handlers unable to generate internal access token - %s", err.Error())
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
+			}
 
-		// Iterate over all projects
-		for _, p := range c.Projects {
-			// Add the project to the array if user has read access
-			_, err := adminMan.IsAdminOpAuthorised(token, p.ID)
-			if err == nil {
-				services, err := getServices(syncMan, p.ID, adminToken)
+			for _, project := range c.Projects {
+				services, err := getServices(syncMan, project.ID, adminToken)
 				if err != nil {
-					logrus.Errorf("error while loading projects in handler unable to get services - %s", err.Error())
+					logrus.Errorf("error in admin login of handler unable to set deployments - %s", err.Error())
 					w.WriteHeader(http.StatusInternalServerError)
-					json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 					return
 				}
-				p.Modules.Deployments.Services = services
-				projects = append(projects, p)
-			}
-
-			// Add an empty collections object is not present already
-			for k, v := range p.Modules.Crud {
-				if v.Collections == nil {
-					p.Modules.Crud[k].Collections = map[string]*config.TableRule{}
+				project.Modules.Deployments.Services = services
+				secrets, err := getSecrets(syncMan, project.ID, adminToken)
+				if err != nil {
+					logrus.Errorf("error in admin login of handler unable to set secrets - %s", err.Error())
+					w.WriteHeader(http.StatusInternalServerError)
+					_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					return
 				}
+				project.Modules.Secrets = secrets
 			}
+			syncMan.SetGlobalConfig(c)
 		}
-		syncMan.SetGlobalConfig(c)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"projects": projects})
+		json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects})
 	}
 }
 

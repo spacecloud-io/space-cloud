@@ -38,7 +38,7 @@ func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	}
 	fileContent := new(model.Secret)
 	if err := json.Unmarshal(data, fileContent); err != nil {
-		logrus.Errorf("error creating secret in docker unable to unmarshal data - %s", projectPath, err.Error())
+		logrus.Errorf("error creating secret in docker unable to unmarshal data - %s", err.Error())
 		return err
 	}
 	if fileContent.Type != secretObj.Type {
@@ -134,7 +134,7 @@ func (d *docker) DeleteKey(projectID, secretName, secretKey string) error {
 func (d *docker) writeIntoFile(secretObj *model.Secret, filePath string) error {
 	data, err := json.Marshal(secretObj)
 	if err != nil {
-		logrus.Errorf("error writing data in file (%s) unable to marshal data - %v", err.Error())
+		logrus.Errorf("error writing data in file (%s) unable to marshal data - %s", filePath, err.Error())
 		return err
 	}
 	// create / update file content
