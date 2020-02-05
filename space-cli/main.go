@@ -20,52 +20,28 @@ func main() {
 	logrus.SetOutput(os.Stdout)
 
 	app := cli.NewApp()
+	app.EnableBashCompletion = true
 	app.Name = "space-cli"
 	app.Version = "0.16.0"
 	app.Commands = []cli.Command{
 		{
-			Name:  "code",
-			Usage: "Commands to work with non dockerized code",
-			Subcommands: []cli.Command{
-				{
-					Name: "start",
-					// Flags: []cli.Flag{
-					// 	cli.StringFlag{
-					// 		Name:   "env",
-					// 		Usage:  "Builds and deploys a codebase",
-					// 		EnvVar: "ENV",
-					// 		Value:  "none",
-					// 	},
-					// },
-					Action: actionStartCode,
-				},
-				{
-					Name: "build",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:   "env",
-							Usage:  "Builds a codebase",
-							EnvVar: "ENV",
-							Value:  "none",
-						},
-					},
-					Action: actionBuildCode,
-				},
-			},
-		},
-
-		{
 			Name:  "generate",
-			Usage: "Commands to work generate service",
+			Usage: "generates service config",
 			Subcommands: []cli.Command{
 				{
 					Name:   "service",
 					Action: actionGenerateService,
 				},
 			},
-		}, {
+		},
+		{
+			Name:   "apply",
+			Usage:  "deploys service",
+			Action: actionApply,
+		},
+		{
 			Name:  "login",
-			Usage: "Commands to log in",
+			Usage: "Logs into space cloud",
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:   "username",

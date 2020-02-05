@@ -1,11 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/model"
@@ -26,43 +32,71 @@ func setLogLevel(loglevel string) {
 	}
 }
 
-func actionStartCode(c *cli.Context) error {
-	service, loginResp, err := cmd.CodeStart()
+func actionApply(c *cli.Context) error {
+	args := os.Args
+	if len(args) != 3 {
+		return fmt.Errorf("incorrect number of arguments provided")
+	}
+	data, err := ioutil.ReadFile(args[2])
 	if err != nil {
 		return err
 	}
-	actionCodeStruct := &model.ActionCode{
-		Service:  service,
-		IsDeploy: true, //
-	}
-	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
+	fileContent := new(model.GitOp)
+	if err := json.Unmarshal(data, fileContent); err != nil {
 		return err
 	}
-	return nil
-}
+	if fileContent.Type != "service" {
+		return fmt.Errorf("invalid type found in serivce file type should be (service)")
+	}
+	service := fileContent.Spec.(*model.Service)
+	service.ID = fileContent.Meta["id"]
+	service.ProjectID = fileContent.Meta["projectId"]
+	service.Version = fileContent.Meta["version"]
 
-func actionBuildCode(c *cli.Context) error {
-	service, loginResp, err := cmd.CodeStart()
+	requestBody, err := json.Marshal(&fileContent.Spec)
 	if err != nil {
+		logrus.Error("error in apply service unable to marshal data - %v", err)
 		return err
 	}
-	actionCodeStruct := &model.ActionCode{
-		Service:  service,
-		IsDeploy: false,
-	}
-	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
+	urlPath := strings.Replace(fileContent.Api, "{projectId}", service.ProjectID, 1)
+	resp, err := http.Post(fmt.Sprintf("http://localhost:4122%s", urlPath), "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		logrus.Error("error in apply service unable to send http request - %v", err)
 		return err
+	}
+	defer resp.Body.Close()
+	v := map[string]interface{}{}
+	_ = json.NewDecoder(resp.Body).Decode(&v)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("%v", v["error"])
 	}
 	return nil
 }
 
 func actionGenerateService(c *cli.Context) error {
-	service, err := cmd.GenerateServiceConfigWithoutLogin()
+	service, err := cmd.GenerateService()
 	if err != nil {
 		return err
 	}
-	data, _ := json.MarshalIndent(service, "", " ")
-	fmt.Println(string(data))
+	v := model.GitOp{
+		Api:  "/v1/runner/{projectId}/services",
+		Type: "service",
+		Meta: map[string]string{
+			"id":        service.ID,
+			"projectId": service.ProjectID,
+			"version":   "v1",
+		},
+	}
+	service.ID = ""
+	service.ProjectID = ""
+	service.Version = ""
+	v.Spec = service
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		logrus.Errorf("error pretty printing service struct - %s", err.Error())
+		return err
+	}
+	fmt.Printf(string(data))
 	return nil
 }
 

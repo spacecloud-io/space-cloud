@@ -2,10 +2,10 @@ package model
 
 // Service describes a service's configurations
 type Service struct {
-	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
-	ProjectID string            `json:"projectId" yaml:"projectId"`
-	Version   string            `json:"version" yaml:"version"`
+	ID        string            `json:"id" yaml:"id,omitempty"`
+	Name      string            `json:"name" yaml:"name,omitempty"`
+	ProjectID string            `json:"projectId" yaml:"projectId,omitempty"`
+	Version   string            `json:"version" yaml:"version,omitempty"`
 	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
 	Labels    map[string]string `json:"labels" yaml:"labels"`
 	Tasks     []Task            `json:"tasks" yaml:"tasks"`
@@ -130,4 +130,11 @@ type ActionCode struct {
 	Service   *Service `json:"service" yaml:"service"`
 	IsDeploy  bool     `json:"isdeploy" yaml:"isdeploy"`
 	Condition string   `json:"condition" yaml:"condition"`
+}
+
+type GitOp struct {
+	Api  string            `yaml:"api"`
+	Type string            `yaml:"type"`
+	Meta map[string]string `yaml:"meta"`
+	Spec interface{}       `yaml:"spec,omitempty"`
 }

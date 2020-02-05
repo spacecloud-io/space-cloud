@@ -7,8 +7,8 @@ type LoginResponse struct {
 }
 
 type Credential struct {
-	Accounts        []Account `json:"accounts" yaml:"accounts"`
-	SelectedAccount string    `json:"selectedAccount" yaml:"selectedAccount"`
+	Accounts        []*Account `json:"accounts" yaml:"accounts"`
+	SelectedAccount string     `json:"selectedAccount" yaml:"selectedAccount"`
 }
 
 type Account struct {
