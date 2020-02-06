@@ -15,10 +15,7 @@ import (
 func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	// create folder for project
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
-	if err := d.createDir(projectPath); err != nil {
-		logrus.Errorf("error creating secret in docker unable to create directory (%s) - %s", projectPath, err.Error())
-		return err
-	}
+	
 
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s.json", projectPath, secretObj.Name)

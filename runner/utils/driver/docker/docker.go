@@ -395,7 +395,11 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 }
 
 func (d *docker) CreateProject(project *model.Project) error {
-	logrus.Debug("create project not implemented for docker")
+	projectPath := fmt.Sprintf("%s/%s", d.secretPath, project.ID)
+	if err := d.createDir(projectPath); err != nil {
+		logrus.Errorf("error creating secret in docker unable to create directory (%s) - %s", projectPath, err.Error())
+		return err
+	}
 	return nil
 }
 
