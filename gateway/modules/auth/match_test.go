@@ -119,6 +119,12 @@ func TestMatch_Rule(t *testing.T) {
 			args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}},
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
+		{
+			name: "match-hash rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
 	}
 	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"default": {Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}}}
@@ -433,6 +439,52 @@ func Test_decryptAESCFB(t *testing.T) {
 			}
 			if !tt.wantErr && reflect.DeepEqual(tt.args.dst, tt.args.src) {
 				t.Errorf("decryptAESCFB() decryption did not take place")
+			}
+		})
+	}
+}
+
+func Test_matchHash(t *testing.T) {
+	type args struct {
+		rule *config.Rule
+		args map[string]interface{}
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *PostProcess
+		wantErr bool
+	}{
+		{
+			name:    "invalid field",
+			args:    args{rule: &config.Rule{Rule: "hash", Fields: []string{"args.abc"}}, args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}}},
+			wantErr: true,
+		},
+		{
+			name: "valid res",
+			args: args{rule: &config.Rule{Rule: "hash", Fields: []string{"res.password"}}, args: map[string]interface{}{"res": map[string]interface{}{"password": "password"}}},
+			want: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "hash", Field: "res.password"}}},
+		},
+		{
+			name:    "invalid value type",
+			args:    args{rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}}, args: map[string]interface{}{"args": map[string]interface{}{"password": 123456}}},
+			wantErr: true,
+		},
+		{
+			name:    "invalid field prefix",
+			args:    args{rule: &config.Rule{Rule: "hash", Fields: []string{"abc.password"}}, args: map[string]interface{}{"abc": map[string]interface{}{"password": "password"}}},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := matchHash(tt.args.rule, tt.args.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("matchHash() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("matchHash() = %v, want %v", got, tt.want)
 			}
 		})
 	}

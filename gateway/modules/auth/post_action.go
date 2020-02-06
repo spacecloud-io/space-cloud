@@ -2,6 +2,8 @@ package auth
 
 import (
 	"crypto/aes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -57,7 +59,7 @@ func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{})
 					logrus.Errorln("error encrypting value in postProcessMethod: ", err1)
 					return err1
 				}
-				er := utils.StoreValue(field.Field, encrypted, map[string]interface{}{"res": doc})
+				er := utils.StoreValue(field.Field, string(encrypted), map[string]interface{}{"res": doc})
 				if er != nil {
 					logrus.Errorln("error storing value in postProcessMethod: ", er)
 					return er
@@ -79,9 +81,28 @@ func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{})
 					logrus.Errorln("error decrypting value in postProcessMethod: ", err1)
 					return err1
 				}
-				er := utils.StoreValue(field.Field, decrypted, map[string]interface{}{"res": doc})
+				er := utils.StoreValue(field.Field, string(decrypted), map[string]interface{}{"res": doc})
 				if er != nil {
 					logrus.Errorln("error storing value in postProcessMethod: ", er)
+					return er
+				}
+
+			case "hash":
+				loadedValue, err := utils.LoadValue(field.Field, map[string]interface{}{"res": doc})
+				if err != nil {
+					logrus.Errorln("error loading value in postProcessMethod: ", err)
+					return err
+				}
+				stringValue, ok := loadedValue.(string)
+				if !ok {
+					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
+				}
+				h := sha256.New()
+				h.Write([]byte(stringValue))
+				hashed := hex.EncodeToString(h.Sum(nil))
+				er := utils.StoreValue(field.Field, hashed, map[string]interface{}{"res": doc})
+				if er != nil {
+					logrus.Errorln("error storing value in matchHash: ", er)
 					return er
 				}
 

@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"reflect"
 	"testing"
 
@@ -8,6 +10,13 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
+
+func hash(s string) string {
+	h := sha256.New()
+	h.Write([]byte(s))
+	hashed := hex.EncodeToString(h.Sum(nil))
+	return hashed
+}
 
 func TestPostProcessMethod(t *testing.T) {
 	var authMatchQuery = []struct {
@@ -98,10 +107,10 @@ func TestPostProcessMethod(t *testing.T) {
 			IsErrExpected: true,
 		},
 		{
-			testName:    "valid key",
+			testName:    "valid key in encryption",
 			postProcess: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 			result:      map[string]interface{}{"username": "username1"},
-			finalResult: map[string]interface{}{"username": []byte{5, 120, 168, 68, 222, 6, 202, 246, 108}},
+			finalResult: map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 		},
 		{
 			testName:      "invalid key in encryption",
@@ -125,10 +134,10 @@ func TestPostProcessMethod(t *testing.T) {
 			IsErrExpected: true,
 		},
 		{
-			testName:    "valid key",
+			testName:    "valid key in decryption",
 			postProcess: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "decrypt", Field: "res.username"}}},
 			result:      map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
-			finalResult: map[string]interface{}{"username": []byte{117, 115, 101, 114, 110, 97, 109, 101, 49}},
+			finalResult: map[string]interface{}{"username": "username1"},
 		},
 		{
 			testName:      "invalid key in decryption",
@@ -136,6 +145,26 @@ func TestPostProcessMethod(t *testing.T) {
 			result:        map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 			finalResult:   map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 			IsErrExpected: true,
+		},
+		{
+			testName:      "invalid field provided for hash",
+			postProcess:   &PostProcess{[]PostProcessAction{PostProcessAction{Action: "hash", Field: "res.age"}}},
+			result:        map[string]interface{}{"password": "password"},
+			finalResult:   map[string]interface{}{"password": "password"},
+			IsErrExpected: true,
+		},
+		{
+			testName:      "invalid type of loaded value for hash",
+			postProcess:   &PostProcess{[]PostProcessAction{PostProcessAction{Action: "hash", Field: "res.password"}}},
+			result:        map[string]interface{}{"password": 10},
+			finalResult:   map[string]interface{}{"password": 10},
+			IsErrExpected: true,
+		},
+		{
+			testName:    "valid hash",
+			postProcess: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "hash", Field: "res.password"}}},
+			result:      map[string]interface{}{"password": "password"},
+			finalResult: map[string]interface{}{"password": hash("password")},
 		},
 	}
 	project := "project"

@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -62,6 +64,9 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 
 	case "decrypt":
 		return m.matchDecrypt(rule, args)
+
+	case "hash":
+		return matchHash(rule, args)
 
 	default:
 		return &PostProcess{}, ErrIncorrectMatch
@@ -199,7 +204,7 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 				logrus.Errorln("error encrypting value in matchEncrypt: ", err1)
 				return nil, err1
 			}
-			er := utils.StoreValue(field, encrypted, args)
+			er := utils.StoreValue(field, string(encrypted), args)
 			if er != nil {
 				logrus.Errorln("error storing value in matchEncrypt: ", er)
 				return nil, er
@@ -233,7 +238,7 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 				logrus.Errorln("error decrypting value in matchDecrypt: ", err1)
 				return nil, err1
 			}
-			er := utils.StoreValue(field, decrypted, args)
+			er := utils.StoreValue(field, string(decrypted), args)
 			if er != nil {
 				logrus.Errorln("error storing value in matchDecrypt: ", er)
 				return nil, er
@@ -263,4 +268,35 @@ func decryptAESCFB(dst, src, key, iv []byte) error {
 	aesDecrypter := cipher.NewCFBDecrypter(aesBlockDecrypter, iv)
 	aesDecrypter.XORKeyStream(dst, src)
 	return nil
+}
+
+func matchHash(rule *config.Rule, args map[string]interface{}) (*PostProcess, error) {
+	actions := &PostProcess{}
+	for _, field := range rule.Fields {
+		if strings.HasPrefix(field, "res") {
+			addToStruct := PostProcessAction{Action: "hash", Field: field}
+			actions.postProcessAction = append(actions.postProcessAction, addToStruct)
+		} else if strings.HasPrefix(field, "args") {
+			loadedValue, err := utils.LoadValue(field, args)
+			if err != nil {
+				logrus.Errorln("error loading value in matchHash: ", err)
+				return nil, err
+			}
+			stringValue, ok := loadedValue.(string)
+			if !ok {
+				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+			}
+			h := sha256.New()
+			h.Write([]byte(stringValue))
+			hashed := hex.EncodeToString(h.Sum(nil))
+			er := utils.StoreValue(field, hashed, args)
+			if er != nil {
+				logrus.Errorln("error storing value in matchHash: ", er)
+				return nil, er
+			}
+		} else {
+			return nil, fmt.Errorf("invalid field (%s) provided", field)
+		}
+	}
+	return actions, nil
 }
