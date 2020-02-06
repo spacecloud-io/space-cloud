@@ -3,6 +3,8 @@ package bolt
 import (
 	"os"
 	"testing"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestBolt_Create(t *testing.T) {
@@ -25,7 +27,7 @@ func TestBolt_Create(t *testing.T) {
 			}
 		})
 	}
-	b.Close()
+	utils.CloseTheCloser(b)
 	if err := os.Remove("create.db"); err != nil {
 		t.Error("error removing database file:", err)
 	}

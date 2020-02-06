@@ -23,7 +23,6 @@ type Module struct {
 	block              Crud
 	dbType             string
 	alias              string
-	primaryDB          string
 	project            string
 	removeProjectScope bool
 
@@ -97,7 +96,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 	// Close the previous database connection
 	if m.block != nil {
-		m.block.Close()
+		utils.CloseTheCloser(m.block)
 	}
 
 	// Create a new crud blocks
@@ -118,9 +117,8 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if err != nil {
 			log.Println("Error connecting to " + k + " : " + err.Error())
 			return err
-		} else {
-			log.Println("Successfully connected to " + k)
 		}
+		log.Println("Successfully connected to " + k)
 	}
 	return nil
 }

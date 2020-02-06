@@ -4,17 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"go.etcd.io/bbolt"
+	// "go.etcd.io/bbolt"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-type fields struct {
-	enabled    bool
-	connection string
-	client     *bbolt.DB
-}
+// type fields struct {
+// 	enabled    bool
+// 	connection string
+// 	// client     *bbolt.DB
+// }
 type args struct {
 	ctx     context.Context
 	project string
@@ -22,8 +22,8 @@ type args struct {
 	req     *model.CreateRequest
 }
 type creatTestData struct {
-	name    string
-	fields  fields
+	name string
+	//fields  fields
 	args    args
 	want    int64
 	wantErr bool
@@ -34,10 +34,10 @@ func generateCreateTestCases() []creatTestData {
 		{
 			name: "insert single document",
 			want: 1,
-			fields: fields{
-				enabled:    true,
-				connection: "embedded.db",
-			},
+			// fields: fields{
+			// 	enabled:    true,
+			// 	connection: "embedded.db",
+			// },
 			args: args{
 				ctx:     context.Background(),
 				project: "gateway",
@@ -60,10 +60,10 @@ func generateCreateTestCases() []creatTestData {
 		{
 			name: "insert multiple document",
 			want: 3,
-			fields: fields{
-				enabled:    true,
-				connection: "embedded.db",
-			},
+			// fields: fields{
+			// 	enabled:    true,
+			// 	connection: "embedded.db",
+			// },
 			args: args{
 				ctx:     context.Background(),
 				project: "gateway",

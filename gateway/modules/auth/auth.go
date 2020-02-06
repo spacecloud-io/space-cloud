@@ -16,7 +16,8 @@ import (
 var (
 	// ErrInvalidSigningMethod denotes a jwt signing method type not used by Space Cloud.
 	ErrInvalidSigningMethod = errors.New("invalid signing method type")
-	ErrTokenVerification    = errors.New("AUTH: JWT token could not be verified")
+	// ErrTokenVerification is thrown when a jwt token could not be verified
+	ErrTokenVerification = errors.New("AUTH: JWT token could not be verified")
 )
 
 // Module is responsible for authentication and authorisation
@@ -32,7 +33,7 @@ type Module struct {
 	project         string
 	fileStoreType   string
 	schema          *schema.Schema
-	makeHttpRequest utils.MakeHttpRequest
+	makeHTTPRequest utils.MakeHttpRequest
 }
 
 // PostProcess is responsible for implementing force and remove rules
@@ -168,9 +169,10 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 	return nil, ErrTokenVerification
 }
 
-func (m *Module) SetMakeHttpRequest(function utils.MakeHttpRequest) {
+// SetMakeHTTPRequest sets the http request
+func (m *Module) SetMakeHTTPRequest(function utils.MakeHttpRequest) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.makeHttpRequest = function
+	m.makeHTTPRequest = function
 }

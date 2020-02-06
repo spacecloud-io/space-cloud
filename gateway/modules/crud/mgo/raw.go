@@ -28,6 +28,7 @@ func (m *Mongo) GetConnectionState(ctx context.Context) bool {
 	return err == nil
 }
 
-func (s *Mongo) CreateProjectIfNotExist(ctx context.Context, project string) error {
+// CreateProjectIfNotExist creates a project if none exist
+func (m *Mongo) CreateProjectIfNotExist(ctx context.Context, project string) error {
 	return errors.New("create project exists cannot be performed over mongo")
 }

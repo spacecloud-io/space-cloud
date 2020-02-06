@@ -5,14 +5,19 @@ import (
 	"fmt"
 )
 
+// RawExec performs an operation for schema creation
+// NOTE: not to be exposed externally
 func (b *Bolt) RawExec(ctx context.Context, project string) error {
 	return fmt.Errorf("error raw exec cannot be performed over selected database")
 }
 
+// CreateProjectIfNotExist creates a project if none exist
 func (b *Bolt) CreateProjectIfNotExist(ctx context.Context, project string) error {
 	return fmt.Errorf("error create project operation cannot be performed over selected database")
 }
 
+// RawBatch performs a batch operation for schema creation
+// NOTE: not to be exposed externally
 func (b *Bolt) RawBatch(ctx context.Context, batchedQueries []string) error {
 	return fmt.Errorf("error raw batchc cannot be performed over selected database")
 }
