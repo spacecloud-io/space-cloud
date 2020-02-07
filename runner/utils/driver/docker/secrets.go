@@ -88,6 +88,27 @@ func (d *docker) DeleteSecret(projectID, secretName string) error {
 	return os.RemoveAll(fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName))
 }
 
+func (d *docker) SetFileSecretRootPath(projectId string, secretName, rootPath string) error {
+	// check if file exists
+	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectId, secretName)
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return fmt.Errorf("file doesn't exists")
+	}
+
+	// file already exists read it's content
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	fileContent := new(model.Secret)
+	if err := json.Unmarshal(data, fileContent); err != nil {
+		return err
+	}
+
+	fileContent.RootPath = rootPath
+	return d.writeIntoFile(fileContent, filePath)
+}
+
 func (d *docker) SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName)

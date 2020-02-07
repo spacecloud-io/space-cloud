@@ -11,6 +11,7 @@ import (
 type routeMapping map[string]config.Routes // The key here is the project name
 
 func (r routeMapping) addProjectRoutes(project string, routes config.Routes) {
+	sortRoutes(routes) // This will sort the array in place
 	r[project] = routes
 }
 

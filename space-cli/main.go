@@ -103,6 +103,6 @@ func main() {
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatalln("Failed to start galaxy:", err)
+		logrus.Fatalln("Failed to start space cli:", err)
 	}
 }
