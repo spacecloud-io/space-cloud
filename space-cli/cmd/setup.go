@@ -3,7 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
@@ -173,12 +175,12 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 
 		logrus.Infof("Starting container %s...", c.containerName)
 		// TODO: pull image from docker hub
-		// out, err := cli.ImagePull(ctx, dockerImageSpaceCloud, types.ImagePullOptions{})
-		// if err != nil {
-		// 	logrus.Errorf("error cli setup unable to pull image from docker hub got error message - %v", err)
-		// 	return err
-		// }
-		// io.Copy(os.Stdout, out)
+		out, err := cli.ImagePull(ctx, c.containerImage, types.ImagePullOptions{})
+		if err != nil {
+			logrus.Errorf("error cli setup unable to pull image from docker hub got error message - %v", err)
+			return err
+		}
+		io.Copy(os.Stdout, out)
 
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
 			Image:        c.containerImage,

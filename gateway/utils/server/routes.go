@@ -9,9 +9,12 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 )
 
-func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
+func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Router {
 	router := mux.NewRouter()
-
+	// TODO: Only limit the host of config and runner apis
+	if configDomain != "" {
+		router.Host(configDomain)
+	}
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))

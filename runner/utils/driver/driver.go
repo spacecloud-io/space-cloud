@@ -61,4 +61,5 @@ type Driver interface {
 	DeleteSecret(projectID, secretName string) error
 	SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error
 	DeleteKey(projectID, secretName, secretKey string) error
+	SetFileSecretRootPath(projectId string, secretName, rootPath string) error
 }

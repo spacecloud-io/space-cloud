@@ -92,6 +92,33 @@ func (i *Istio) DeleteSecret(projectID string, secretName string) error {
 	return err
 }
 
+func (i *Istio) SetFileSecretRootPath(projectId string, secretName, rootPath string) error {
+	if secretName == "" || rootPath == "" {
+		logrus.Errorf("empty secret name or root path provided")
+		return fmt.Errorf("empty secret name or root path provided got (%s,%s)", secretName, rootPath)
+	}
+	// Get secret and then check type
+	kubeSecret, err := i.kube.CoreV1().Secrets(projectId).Get(secretName, metav1.GetOptions{})
+	if kubeErrors.IsNotFound(err) {
+		return err
+	} else if err == nil {
+		// Add secret key-value
+		switch kubeSecret.Type {
+		case v1.SecretTypeDockerConfigJson:
+			return fmt.Errorf("set root path operation cannot be performed on secrets with type docker")
+		case v1.SecretTypeOpaque:
+			kubeSecret.Annotations["rootPath"] = rootPath
+		default:
+			return fmt.Errorf("invalid secret type - %s", kubeSecret.Type)
+		}
+
+		// Update the secret
+		_, err := i.kube.CoreV1().Secrets(projectId).Update(kubeSecret)
+		return err
+	}
+	return err
+}
+
 // SetKey adds a new secret key-value pair
 func (i *Istio) SetKey(projectID string, secretName string, secretKey string, secretValObj *model.SecretValue) error {
 	if secretName == "" || secretValObj.Value == "" {
@@ -189,7 +216,7 @@ func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        secret.Name,
 			Namespace:   projectID,
-			Labels: map[string]string{"app": "space-cloud"},
+			Labels:      map[string]string{"app": "space-cloud"},
 			Annotations: map[string]string{"rootPath": secret.RootPath, "secretType": secret.Type},
 		},
 		Data: encodedData,

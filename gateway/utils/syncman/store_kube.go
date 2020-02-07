@@ -51,7 +51,7 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 		return err
 	}
 
-	go func(){
+	go func() {
 		defer watcher.Stop()
 
 		projectMap := map[string]*config.Project{}
@@ -64,14 +64,14 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 					logrus.Errorf("error watching projects in kube store unable to find project in config map")
 					continue
 				}
-	
+
 				v := new(config.Project)
 				if err := json.Unmarshal([]byte(projectJsonString), v); err != nil {
 					logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
 					continue
 				}
 				projectMap[v.ID] = v
-	
+
 			case watch.Deleted:
 				configMap := ee.Object.(*v1.ConfigMap)
 				projectId, ok := configMap.Data["id"]
@@ -81,7 +81,7 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 				}
 				delete(projectMap, projectId)
 			}
-	
+
 			cb(s.getProjects(projectMap))
 		}
 	}()
@@ -118,8 +118,8 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 					break
 				}
 
-				addr:= pod.Status.PodIP + ":4122"
-	
+				addr := pod.Status.PodIP + ":4122"
+
 				doesExist := false
 				for _, service := range services {
 					if service.id == id {
@@ -129,13 +129,13 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 						break
 					}
 				}
-	
+
 				// add service if it doesn't exist
 				if !doesExist {
-						logrus.Debugf("Added service (%s) with address (%s)", id, addr)
-						services = append(services, &service{id: id, addr: addr})
+					logrus.Debugf("Added service (%s) with address (%s)", id, addr)
+					services = append(services, &service{id: id, addr: addr})
 				}
-	
+
 			case watch.Deleted:
 				pod := ee.Object.(*v1.Pod)
 				id := pod.Name

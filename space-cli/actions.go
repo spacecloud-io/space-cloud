@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/model"
@@ -23,35 +28,46 @@ func setLogLevel(loglevel string) {
 	}
 }
 
-func actionStartCode(c *cli.Context) error {
-	envID := c.String("env")
-	service, loginResp, err := cmd.CodeStart(envID)
-	if err != nil {
-		return err
-	}
-	actionCodeStruct := &model.ActionCode{
-		Service:  service,
-		IsDeploy: true, //
-	}
-	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
-		return err
-	}
-	return nil
+func actionApply(c *cli.Context) error {
+	return cmd.Apply()
 }
 
-func actionBuildCode(c *cli.Context) error {
-	envID := c.String("env")
-	service, loginResp, err := cmd.CodeStart(envID)
+func actionGenerateService(c *cli.Context) error {
+	// get filename from args in which service config will be stored
+	argsArr := os.Args
+	if len(argsArr) != 4 {
+		return fmt.Errorf("incorrect number of arguments")
+	}
+	serviceConfigFile := argsArr[3]
+
+	service, err := cmd.GenerateService()
 	if err != nil {
 		return err
 	}
-	actionCodeStruct := &model.ActionCode{
-		Service:  service,
-		IsDeploy: false,
+	v := model.GitOp{
+		Api:  "/v1/runner/{projectId}/services",
+		Type: "service",
+		Meta: map[string]string{
+			"id":        service.ID,
+			"projectId": service.ProjectID,
+			"version":   "v1",
+		},
 	}
-	if err := cmd.RunDockerFile(actionCodeStruct, loginResp); err != nil {
+	service.ID = ""
+	service.ProjectID = ""
+	service.Version = ""
+	v.Spec = service
+
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		logrus.Errorf("error pretty printing service struct - %s", err.Error())
 		return err
 	}
+
+	if err := ioutil.WriteFile(serviceConfigFile, data, 0755); err != nil {
+		return err
+	}
+	fmt.Printf(string(data))
 	return nil
 }
 

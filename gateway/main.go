@@ -23,6 +23,11 @@ const (
 
 var essentialFlags = []cli.Flag{
 	cli.StringFlag{
+		Name:   "config-domain",
+		EnvVar: "CONFIG_DOMAIN",
+		Usage:  "Set mission control and config domain names",
+	},
+	cli.StringFlag{
 		Name:   "log-level",
 		EnvVar: "LOG_LEVEL",
 		Usage:  "Set the log level [debug | info | error]",
@@ -225,6 +230,8 @@ func actionRun(c *cli.Context) error {
 	metricsConn := c.String("metrics-conn")
 	metricsScope := c.String("metrics-scope")
 
+	configDomain := c.String("config-domain")
+
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
@@ -270,7 +277,7 @@ func actionRun(c *cli.Context) error {
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(profiler, disableMetrics, staticPath, port)
+	return s.Start(profiler, disableMetrics, staticPath, configDomain, port)
 }
 
 func actionInit(*cli.Context) error {
