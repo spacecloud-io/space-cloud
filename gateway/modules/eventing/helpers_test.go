@@ -66,7 +66,7 @@ func TestModule_selectRule(t *testing.T) {
 
 func TestModule_validate(t *testing.T) {
 	authModule := auth.Init("1", &crud.Module{}, &schema.Schema{}, false)
-	err := authModule.SetConfig("project", "mySecretkey", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}})
+	err := authModule.SetConfig("project", "mySecretkey", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())
 	}

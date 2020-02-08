@@ -76,7 +76,7 @@ func TestParseToken(t *testing.T) {
 	authModule := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			if err := authModule.SetConfig("default", test.secretKey, config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); err != nil {
+			if err := authModule.SetConfig("default", test.secretKey, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); err != nil {
 				t.Errorf("error setting config of auth module  - %s", err.Error())
 			}
 			tokenClaims, err := authModule.parseToken(test.token)
