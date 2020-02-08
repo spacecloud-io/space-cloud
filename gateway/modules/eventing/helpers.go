@@ -216,7 +216,6 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 			return false
 		}
 	}
-
 	return true
 }
 

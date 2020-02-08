@@ -120,6 +120,7 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 	}
 }
+
 // HandleSetEventingSchema is an endpoint handler which sets a schema in eventing
 func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type schemaRequest struct {

@@ -22,8 +22,12 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		token := utils.GetTokenFromHeader(r)
 
 		value := config.LetsEncrypt{}
-		_ = json.NewDecoder(r.Body).Decode(&value)
 		defer utils.CloseTheCloser(r.Body)
+		if err := json.NewDecoder(r.Body).Decode(&value); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {

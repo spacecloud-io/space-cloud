@@ -3,6 +3,7 @@ package syncman
 import (
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
@@ -98,7 +99,8 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 		if err := s.store.WatchProjects(func(projects []*config.Project) {
 			s.lock.Lock()
 			defer s.lock.Unlock()
-
+			
+			logrus.WithFields(logrus.Fields{"projects": projects}).Debugln("Updating projects")
 			s.projectConfig.Projects = projects
 			config.StoreConfigToFile(s.projectConfig, s.configFile)
 
@@ -113,6 +115,7 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 		if err := s.store.WatchServices(func(services scServices) {
 			s.lock.Lock()
 			defer s.lock.Unlock()
+			logrus.WithFields(logrus.Fields{"services": services}).Debugln("Updating services")
 
 			s.services = services
 		}); err != nil {

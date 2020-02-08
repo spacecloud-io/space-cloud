@@ -98,20 +98,19 @@ func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
 	return http.StatusForbidden, errors.New("You are not authorized to make this request")
 }
 
-
 // RefreshToken is used to create a new token based on an existing one
-func (m *Manager) RefreshToken(token string) (string,error){
+func (m *Manager) RefreshToken(token string) (string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	// Parse the token to get userID and userRole
-	tokenClaims ,err := m.parseToken(token)
+	tokenClaims, err := m.parseToken(token)
 	if err != nil {
 		return "", err
 	}
 	// Create a new token
 	newToken, err := m.createToken(tokenClaims)
 	if err != nil {
-		return  "", err
+		return "", err
 	}
-	return newToken,nil
+	return newToken, nil
 }

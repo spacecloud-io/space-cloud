@@ -9,9 +9,12 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 )
 
-func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
+func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Router {
 	router := mux.NewRouter()
-
+	// TODO: Only limit the host of config and runner apis
+	if configDomain != "" {
+		router.Host(configDomain)
+	}
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
@@ -59,7 +62,12 @@ func (s *Server) routes(profiler bool, staticPath string) *mux.Router {
 
 	// Initialize routes for the global modules
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/letsencrypt").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.adminMan, s.syncMan))
+
+	// Initialize routes for routing module configuration
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing").HandlerFunc(handlers.HandleRoutingConfigRequest(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing").HandlerFunc(handlers.HandleGetRoutingConfig(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/{routeId}").HandlerFunc(handlers.HandleSetProjectRoute(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/{routeId}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.adminMan, s.syncMan))
 
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
