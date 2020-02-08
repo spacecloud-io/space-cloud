@@ -4,6 +4,7 @@ package istio
 type Config struct {
 	IsInsideCluster bool
 	KubeConfigPath  string
+	ArtifactAddr    string
 	ProxyPort       uint32
 }
 
@@ -21,3 +22,5 @@ func GenerateOutsideClusterConfig(kubeConfigPath string) *Config {
 func (c *Config) SetProxyPort(port uint32) {
 	c.ProxyPort = port
 }
+
+const runtimeEnvVariable string = "SC_RUNTIME"

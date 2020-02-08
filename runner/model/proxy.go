@@ -5,7 +5,6 @@ type ProxyMessage struct {
 	ActiveRequests int32  `json:"active,omitempty"`
 	Project        string `json:"project,omitempty"`
 	Service        string `json:"service,omitempty"`
-	Environment    string `json:"env,omitempty"`
 	NodeID         string `json:"id,omitempty"`
 	Version        string `json:"version,omitempty"`
 }

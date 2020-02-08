@@ -37,8 +37,8 @@ func (m *Module) VerifyProxyToken(token string) (map[string]interface{}, error) 
 }
 
 // SignProxyToken returns a token to be used by a proxy service
-func (m *Module) SignProxyToken(nodeID, project, service, env, version string) (string, error) {
-	claims := jwt.MapClaims{"id": nodeID, "project": project, "service": service, "env": env, "version": version}
+func (m *Module) SignProxyToken(nodeID, project, service, version string) (string, error) {
+	claims := jwt.MapClaims{"id": nodeID, "project": project, "service": service, "version": version}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(m.config.ProxySecret))
 	if err != nil {
