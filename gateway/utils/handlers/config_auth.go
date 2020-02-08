@@ -22,12 +22,12 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		// Load the body of the request
 		value := new(config.AuthStub)
-		json.NewDecoder(r.Body).Decode(value)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(value)
+		defer utils.CloseTheCloser(r.Body)
 
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -41,12 +41,12 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		// Sync the config
 		if err := syncMan.SetUserManagement(ctx, project, provider, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give a positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }

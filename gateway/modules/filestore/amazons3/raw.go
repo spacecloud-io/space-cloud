@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+// DoesExists checks if path exists
 func (a *AmazonS3) DoesExists(path string) error {
 	svc := s3.New(a.client)
 	input := &s3.GetObjectInput{

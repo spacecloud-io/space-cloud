@@ -45,14 +45,14 @@ func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *cru
 // SendFeed is the function called whenever a data point (feed) is to be sent
 type SendFeed func(*model.FeedData)
 
-const (
-	serviceName string = "sc-realtime"
-	funcName    string = "handle"
-)
+// const (
+// serviceName string = "sc-realtime"
+// funcName    string = "handle"
+// )
 
-type handlerAck struct {
-	Ack bool
-}
+// type handlerAck struct {
+// 	Ack bool
+// }
 
 // SetConfig set the rules and secret key required by the realtime block
 func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
@@ -62,7 +62,7 @@ func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 	// Store the project id
 	m.project = project
 
-	url := m.syncMan.GetRealtimeUrl(m.project)
+	url := m.syncMan.GetRealtimeURL(m.project)
 
 	// add the rules to the eventing module
 	m.eventing.AddInternalRules(generateEventRules(crudConfig, project, url))

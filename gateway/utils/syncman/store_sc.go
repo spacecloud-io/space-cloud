@@ -17,6 +17,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// KubeStore is an object for storing kubestore information
 type KubeStore struct {
 	clusterID string
 	kube      *kubernetes.Clientset
@@ -24,6 +25,7 @@ type KubeStore struct {
 
 const spaceCloud string = "space-cloud"
 
+// NewKubeStore creates a new Kube store
 func NewKubeStore(clusterID string) (*KubeStore, error) {
 	// Create the kubernetes client
 	restConfig, err := rest.InClusterConfig()
@@ -39,10 +41,12 @@ func NewKubeStore(clusterID string) (*KubeStore, error) {
 	return &KubeStore{clusterID: clusterID, kube: kube}, nil
 }
 
+// Register registers space cloud to the kube store
 func (s *KubeStore) Register() {
 	// kubernetes will handle this automatically
 }
 
+// WatchProjects maintains consistency between all instances of sc
 func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 	labels := fmt.Sprintf("clusterId=%s", s.clusterID)
 	watcher, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Watch(v12.ListOptions{Watch: true, LabelSelector: labels})
@@ -57,14 +61,14 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 		switch ee.Type {
 		case watch.Added, watch.Modified:
 			configMap := ee.Object.(*v1.ConfigMap)
-			projectJsonString, ok := configMap.Data["project"]
+			projectJSONString, ok := configMap.Data["project"]
 			if !ok {
 				logrus.Errorf("error watching projects in kube store unable to find project in config map")
 				continue
 			}
 
 			v := new(config.Project)
-			if err := json.Unmarshal([]byte(projectJsonString), v); err != nil {
+			if err := json.Unmarshal([]byte(projectJSONString), v); err != nil {
 				logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
 				continue
 			}
@@ -72,12 +76,12 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 
 		case watch.Deleted:
 			configMap := ee.Object.(*v1.ConfigMap)
-			projectId, ok := configMap.Data["id"]
+			projectID, ok := configMap.Data["id"]
 			if !ok {
 				logrus.Errorf("error watching project in kube store unable to find project id in config map")
 				continue
 			}
-			delete(projectMap, projectId)
+			delete(projectMap, projectID)
 		}
 
 		cb(s.getProjects(projectMap))
@@ -85,6 +89,7 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 	return nil
 }
 
+// WatchServices maintains consistency between all instances of sc
 func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	services := scServices{}
 	labels := fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
@@ -144,8 +149,9 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
+// SetProject sets the project of the kube store
 func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) error {
-	projectJsonString, err := json.Marshal(project)
+	projectJSONString, err := json.Marshal(project)
 	if err != nil {
 		logrus.Errorf("error while setting project in kube store unable to marshal project config - %v", err)
 		return err
@@ -162,7 +168,7 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 			},
 			Data: map[string]string{
 				"id":      project.ID,
-				"project": string(projectJsonString),
+				"project": string(projectJSONString),
 			},
 		}
 		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(configMap)
@@ -176,7 +182,7 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 	}
 
 	configMap.Data["id"] = project.ID
-	configMap.Data["project"] = string(projectJsonString)
+	configMap.Data["project"] = string(projectJSONString)
 
 	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(configMap)
 	if err != nil {
@@ -185,8 +191,9 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 	return err
 }
 
-func (s *KubeStore) DeleteProject(ctx context.Context, projectId string) error {
-	err := s.kube.CoreV1().ConfigMaps(spaceCloud).Delete(fmt.Sprintf("%s-%s", s.clusterID, projectId), &v12.DeleteOptions{})
+// DeleteProject deletes the project from the kube store
+func (s *KubeStore) DeleteProject(ctx context.Context, projectID string) error {
+	err := s.kube.CoreV1().ConfigMaps(spaceCloud).Delete(fmt.Sprintf("%s-%s", s.clusterID, projectID), &v12.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) {
 		return nil
 	} else if err != nil {

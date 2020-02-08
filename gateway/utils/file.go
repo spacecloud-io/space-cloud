@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/spaceuptech/space-api-go/utils"
 )
 
 // Unzip unzips a source file to a given destination
@@ -18,7 +20,7 @@ func Unzip(src string, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer r.Close()
+	defer utils.CloseTheCloser(r)
 
 	for _, f := range r.File {
 
@@ -32,7 +34,7 @@ func Unzip(src string, dest string) error {
 
 		if f.FileInfo().IsDir() {
 			// Make Folder
-			os.MkdirAll(fpath, os.ModePerm)
+			_ = os.MkdirAll(fpath, os.ModePerm)
 			continue
 		}
 
@@ -54,8 +56,8 @@ func Unzip(src string, dest string) error {
 		_, err = io.Copy(outFile, rc)
 
 		// Close the file without defer to close before next iteration of loop
-		outFile.Close()
-		rc.Close()
+		utils.CloseTheCloser(outFile)
+		utils.CloseTheCloser(rc)
 
 		if err != nil {
 			return err
@@ -70,14 +72,14 @@ func DownloadFileFromURL(url, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer utils.CloseTheCloser(resp.Body)
 
 	// Create the file
 	out, err := os.Create(dest)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer utils.CloseTheCloser(out)
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)

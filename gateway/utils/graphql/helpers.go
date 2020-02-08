@@ -59,7 +59,7 @@ func getCollection(field *ast.Field) (string, error) {
 	return field.Name.Value, nil
 }
 
-func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.SchemaFieldType, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb callback) {
+func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.FieldType, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb callback) {
 	graph.execLinkedReadRequest(ctx, field, fieldStruct.LinkedTable.DBType, fieldStruct.LinkedTable.Table, token, req,
 		store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
 			if err != nil {
@@ -158,7 +158,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 		}))
 }
 
-func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, loader *loaderMap, schema schema.SchemaFields, cb callback) {
+func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, loader *loaderMap, schema schema.Fields, cb callback) {
 	addFieldPath(store, getFieldName(field))
 
 	switch val := result.(type) {

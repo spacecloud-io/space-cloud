@@ -54,7 +54,7 @@ WHERE (isc.table_schema, isc.table_name) = ($2, $1)
 ORDER BY isc.ordinal_position;`
 
 		args = append(args, col, project)
-	case utils.SqlServer:
+	case utils.SQLServer:
 
 		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , 
     case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',c.CHARACTER_MAXIMUM_LENGTH,')') else C.DATA_TYPE end as 'Type',
@@ -120,7 +120,7 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		  AND ccu.table_schema = tc.table_schema
 	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
 	`
-	case utils.SqlServer:
+	case utils.SQLServer:
 		queryString = `SELECT 
 		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME,
 		isnull(KCU.TABLE_NAME,'') AS 'REFERENCED_TABLE_NAME', isnull(KCU.COLUMN_NAME,'') AS 'REFERENCED_COLUMN_NAME'
@@ -182,7 +182,7 @@ func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]utils
     		t.relname,
     		i.relname,
     		array_position(ix.indkey, a.attnum)`
-	case utils.SqlServer:
+	case utils.SQLServer:
 		queryString = `SELECT 
     	TABLE_NAME = t.name,
     	COLUMN_NAME = col.name,

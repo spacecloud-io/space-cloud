@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// SetEventingRule sets the eventing rules
 func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value config.EventingRule) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -19,6 +20,7 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetDeleteEventingRule deletes an eventing rule
 func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -33,6 +35,7 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetEventingConfig sets the eventing config
 func (s *Manager) SetEventingConfig(ctx context.Context, project, dbType, col string, enabled bool) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -49,6 +52,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbType, col st
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetEventingSchema sets the schema for an event
 func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType string, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -69,6 +73,7 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetDeleteEventingSchema deletes the schema for an event
 func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, evType string) error {
 	// Acquire a lock
 	s.lock.Lock()

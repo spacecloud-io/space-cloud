@@ -21,7 +21,7 @@ import (
 // generateReadQuery makes a query for read operation
 func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dbType := s.dbType
-	if dbType == string(utils.SqlServer) {
+	if dbType == string(utils.SQLServer) {
 		dbType = string(utils.Postgres)
 	}
 
@@ -103,7 +103,7 @@ func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (st
 
 	}
 
-	if s.dbType == string(utils.SqlServer) {
+	if s.dbType == string(utils.SQLServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 	return sqlString, args, nil
