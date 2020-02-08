@@ -24,6 +24,8 @@ require (
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2
 	go.etcd.io/bbolt v1.3.3
+	golang.org/x/crypto v0.0.0-20200208060501-ecb85df21340 // indirect
+	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	istio.io/api v0.0.0-20191109011911-e51134872853
 	istio.io/client-go v0.0.0-20191206191348-5c576a7ecef0
