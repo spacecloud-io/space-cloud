@@ -53,12 +53,31 @@ func generateServiceConfig(projects []*model.Projects) (*model.Service, error) {
 		dockerImage = fmt.Sprintf("%s/%s", projectID, serviceID)
 	}
 
+	want := ""
 	dockerSecret := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Docker Secret", Default: "none"}, &dockerSecret); err != nil {
+	fileEnvSecret := ""
+	secrets := []string{}
+	if err := survey.AskOne(&survey.Input{Message: "Is this a private repository (Y / N) ?", Default: "N"}, &want); err != nil {
 		return nil, err
 	}
-	if dockerSecret == "none" {
-		dockerSecret = ""
+	if want == "Y" {
+		if err := survey.AskOne(&survey.Input{Message: "Enter Docker Secret"}, &dockerSecret); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := survey.AskOne(&survey.Input{Message: "Do you want to add other secrets (Y / N) ?", Default: "N"}, &want); err != nil {
+		return nil, err
+	}
+	if want == "Y" {
+		if err := survey.AskOne(&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &fileEnvSecret); err != nil {
+			return nil, err
+		}
+		if fileEnvSecret != "" {
+			for _, value := range strings.Split(fileEnvSecret, ",") {
+				secrets = append(secrets, value)
+			}
+		}
 	}
 
 	replicaRange := ""
@@ -81,17 +100,6 @@ func generateServiceConfig(projects []*model.Projects) (*model.Service, error) {
 			return nil, err
 		}
 		replicaMax = max
-	}
-
-	secret := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &secret); err != nil {
-		return nil, err
-	}
-	secrets := []string{}
-	if secret != "" {
-		for _, value := range strings.Split(secret, ",") {
-			secrets = append(secrets, value)
-		}
 	}
 
 	c := &model.Service{

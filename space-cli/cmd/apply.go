@@ -4,21 +4,24 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/ghodss/yaml"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"os"
 
+	"github.com/ghodss/yaml"
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cli/model"
 )
 
+// Apply
 func Apply() error {
 	args := os.Args
 	if len(args) != 3 {
 		logrus.Errorf("error while applying service incorrect number of arguments provided")
 		return fmt.Errorf("incorrect number of arguments provided")
 	}
+
 	fileName := args[2]
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -51,9 +54,7 @@ func Apply() error {
 		logrus.Errorf("error while applying service unable to login - %s", err.Error())
 		return err
 	}
-	//urlPathArr := strings.Split(fileContent.Api, "{")
-	//path := strings.Split(urlPathArr[1], "}")
-	//logrus.Print("path:",fmt.Sprintf("%s%s%s%s", account.ServerUrl, fileContent.Api))
+
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", account.ServerUrl, fileContent.Api), bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err
@@ -64,7 +65,8 @@ func Apply() error {
 		logrus.Errorf("error while applying service unable to send http request - %s", err.Error())
 		return err
 	}
-	defer resp.Body.Close()
+	defer CloseTheCloser(req.Body)
+
 	v := map[string]interface{}{}
 	_ = json.NewDecoder(resp.Body).Decode(&v)
 	if resp.StatusCode != 200 {

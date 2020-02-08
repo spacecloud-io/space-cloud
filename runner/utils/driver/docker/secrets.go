@@ -89,6 +89,10 @@ func (d *docker) DeleteSecret(projectID, secretName string) error {
 }
 
 func (d *docker) SetFileSecretRootPath(projectId string, secretName, rootPath string) error {
+	if secretName == "" || rootPath == "" {
+		logrus.Errorf("Empty key/value provided. Key not set")
+		return fmt.Errorf("key/value not provided; got (%s,%s)", secretName, rootPath)
+	}
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectId, secretName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -159,12 +163,12 @@ func (d *docker) writeIntoFile(secretObj *model.Secret, filePath string) error {
 		return err
 	}
 	// create / update file content
-	return ioutil.WriteFile(filePath, data, 0755)
+	return ioutil.WriteFile(filePath, data, 0777)
 }
 
 func (d *docker) createDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return os.MkdirAll(path, 0755)
+		return os.MkdirAll(path, 0777)
 	}
 	return nil
 }

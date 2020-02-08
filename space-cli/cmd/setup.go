@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
@@ -46,9 +47,12 @@ func generateRandomString(length int) string {
 
 // CodeSetup initializes development environment
 func CodeSetup(id, username, key, secret string, dev bool) error {
-	// todo old keys always remain in accounts.yaml file
+	// TODO: old keys always remain in accounts.yaml file
+	const ContainerGateway string = "space--cloud--gateway"
+	const ContainerRunner string = "space--cloud--runner"
 
 	_ = createDirIfNotExist(getSpaceCloudDirectory())
+	_ = createDirIfNotExist(getSecretsDir())
 	_ = createDirIfNotExist(getTempSecretsDir())
 
 	logrus.Infoln("Setting up space cloud on docker")
@@ -94,7 +98,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 	}{
 		{
 			containerImage: "spaceuptech/gateway",
-			containerName:  "space-cloud-gateway",
+			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs: []string{
 				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
@@ -121,9 +125,10 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 		{
 			// runner
 			containerImage: "spaceuptech/runner",
-			containerName:  "space-cloud-runner",
+			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
+				"DEV=" + devMode,
 				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122", // TODO Change the default value in runner it starts with http
 				"DRIVER=docker",
 				"JWT_SECRET=" + secret,
@@ -172,16 +177,25 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 	}
 
 	for _, c := range containersToCreate {
-
 		logrus.Infof("Starting container %s...", c.containerName)
-		// TODO: pull image from docker hub
-		out, err := cli.ImagePull(ctx, c.containerImage, types.ImagePullOptions{})
+		// check if image already exists
+		if err := pullImageIfNotExist(ctx, cli, c.containerImage); err == nil {
+			logrus.Infof("Image %s already exists", c.containerImage)
+		}
+
+		// check if container is already running
+		args := filters.Arg("name", c.containerName)
+		containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 		if err != nil {
-			logrus.Errorf("error cli setup unable to pull image from docker hub got error message - %v", err)
+			logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
 			return err
 		}
-		io.Copy(os.Stdout, out)
+		if len(containers) != 0 {
+			logrus.Errorf("error in cli setup container already running with name %s", c.containerName)
+			return fmt.Errorf("container already running with name %s", c.containerName)
+		}
 
+		// create container with specified defaults
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
@@ -200,6 +214,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 			return err
 		}
 
+		// get the ip address assigned to container
 		data, err := cli.ContainerInspect(ctx, c.containerName)
 		if err != nil {
 			logrus.Errorf("error cli setup unable to inspect container %s got error message - %v", c.containerName, err)
@@ -214,5 +229,20 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 	logrus.Infof("Space Cloud (id: \"%s\") has been successfully setup! :D", selectedAccount.ID)
 	logrus.Infof("You can visit mission control at %s/mission-control", selectedAccount.ServerUrl)
 	logrus.Infof("Your login credentials: [username: \"%s\"; key: \"%s\"]", selectedAccount.UserName, selectedAccount.Key)
+	return nil
+}
+
+func pullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image string) error {
+	_, _, err := dockerClient.ImageInspectWithRaw(ctx, image)
+	if err != nil {
+		// pull image from public repository
+		out, err := dockerClient.ImagePull(ctx, image, types.ImagePullOptions{})
+		if err != nil {
+			logrus.Errorf("error cli setup unable to pull public image with id (%s) - %s", image, err.Error())
+			return err
+		}
+		io.Copy(os.Stdout, out)
+		logrus.Infof("Image %s already exists", image)
+	}
 	return nil
 }

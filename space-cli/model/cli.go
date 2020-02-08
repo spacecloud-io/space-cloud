@@ -1,16 +1,19 @@
 package model
 
+// LoginResponse is the object for storing payload for login response
 type LoginResponse struct {
 	Token    string      `json:"token" yaml:"token"`
 	Projects []*Projects `json:"projects" yaml:"projects"`
 	Error    string      `json:"error"`
 }
 
+// Credential is the object for representing all the account information in accounts.yaml file
 type Credential struct {
 	Accounts        []*Account `json:"accounts" yaml:"accounts"`
 	SelectedAccount string     `json:"selectedAccount" yaml:"selectedAccount"`
 }
 
+// Account is the object for representing individual account information
 type Account struct {
 	ID        string `json:"id" yaml:"id"`
 	UserName  string `json:"username" yaml:"username"`

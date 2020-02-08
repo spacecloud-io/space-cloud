@@ -171,8 +171,19 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-
+	// Generate internal access token
+	token, err := s.adminMan.GetInternalAccessToken()
+	if err != nil {
+		return err
+	}
 	s.delete(projectID)
+
+	// Create a project in the runner as well
+	if s.runnerAddr != "" {
+		if err := s.MakeHTTPRequest(ctx, http.MethodDelete, fmt.Sprintf("http://%s/v1/runner/%s", s.runnerAddr, projectID), token, "", "", &map[string]interface{}{}); err != nil {
+			return err
+		}
+	}
 	if err := s.cb(s.projectConfig); err != nil {
 		return err
 	}

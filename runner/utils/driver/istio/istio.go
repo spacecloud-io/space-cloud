@@ -555,7 +555,7 @@ func (i *Istio) WaitForService(service *model.Service) error {
 }
 
 // CreateProject creates a new namespace for the client
-func (i *Istio) CreateProject(project *model.Project) error {
+func (i *Istio) CreateProject(ctx context.Context, project *model.Project) error {
 	// Project ID provided here is already in the form `project-env`
 	namespace := project.ID
 	ns := &v1.Namespace{
@@ -566,6 +566,11 @@ func (i *Istio) CreateProject(project *model.Project) error {
 	}
 	_, err := i.kube.CoreV1().Namespaces().Create(ns)
 	return err
+}
+
+// DeleteProject deletes a namespace for the client
+func (i *Istio) DeleteProject(ctx context.Context, projectID string) error {
+	return i.kube.CoreV1().Namespaces().Delete(projectID, &metav1.DeleteOptions{})
 }
 
 // Type returns the type of the driver
