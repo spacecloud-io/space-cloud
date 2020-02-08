@@ -5,7 +5,6 @@ jobs:
     name: Build and test gateway
     runs-on: ubuntu-latest
     steps:
-
       - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
@@ -27,12 +26,13 @@ jobs:
         run: cd gateway && go build -v .
       - name: Test
         run: cd gateway && go test ./...
+      - name: Lint
+        run: cd gateway && golangci-lint run -E golint --exclude-use-default=false ./...
 
   runner:
     name: Build and test Runner
     runs-on: ubuntu-latest
     steps:
-
       - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
@@ -58,7 +58,6 @@ jobs:
     name: Build and test metric proxy
     runs-on: ubuntu-latest
     steps:
-
       - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
