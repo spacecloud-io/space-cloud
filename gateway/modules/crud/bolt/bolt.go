@@ -69,5 +69,5 @@ func (b *Bolt) connect() error {
 
 // GetDBType returns the dbType of the crud block
 func (b *Bolt) GetDBType() utils.DBType {
-	return utils.BoltDB
+	return utils.EmbeddedDB
 }

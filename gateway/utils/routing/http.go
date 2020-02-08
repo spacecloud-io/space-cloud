@@ -19,7 +19,7 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 		defer utils.CloseTheCloser(request.Body)
 
 		// Extract the host and url to select route
-		host := request.Host
+		host := strings.Split(request.Host, ":")[0]
 		url := request.URL.Path
 
 		// Select a route based on host and url

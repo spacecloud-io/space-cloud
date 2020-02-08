@@ -56,6 +56,21 @@ type Modules struct {
 	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
 	Routes      Routes          `json:"routes" yaml:"routes"`
+	Deployments Deployments     `json:"deployments" yaml:"deployments"`
+	Secrets     []*Secret       `json:"secrets" yaml:"secrets"`
+}
+
+// Deployments store all services information for particular project
+type Deployments struct {
+	Services []*RunnerService `json:"services" yaml:"services"`
+}
+
+// Secret stores secrets information
+type Secret struct {
+	Name     string            `json:"name" yaml:"name"`
+	Type     string            `json:"type" yaml:"type"`
+	RootPath string            `json:"rootPath" yaml:"rootPath"`
+	Data     map[string]string `json:"data" yaml:"data"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -92,6 +107,7 @@ type Rule struct {
 	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
+	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -191,10 +207,11 @@ type LetsEncrypt struct {
 }
 
 // Routes describes the configuration for the routing module
-type Routes []Route
+type Routes []*Route
 
 // Route describes the parameters of a single route
 type Route struct {
+	ID          string           `json:"id" yaml:"id"`
 	Source      RouteSource      `json:"source" yaml:"source"`
 	Destination RouteDestination `json:"dest" yaml:"dest"`
 }

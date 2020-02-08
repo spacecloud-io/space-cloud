@@ -27,7 +27,7 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name:  "proxy",
+			Name:  "start",
 			Usage: "Starts the proxy to collect metrics directly from envoy",
 			Flags: []cli.Flag{
 				cli.StringFlag{
