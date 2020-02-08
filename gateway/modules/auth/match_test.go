@@ -124,6 +124,8 @@ func TestMatch_Rule(t *testing.T) {
 	}
 }
 func TestMatchForce_Rule(t *testing.T) {
+	m := Module{}
+	emptyAuth := make(map[string]interface{})
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
@@ -154,6 +156,14 @@ func TestMatchForce_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Value: "1234", Field: "args.string1"},
 			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
 		},
+		{
+			name: "rule clause - allow",
+			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "allow"}},
+		},
+		{
+			name: "rule clause - deny",
+			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
+		},
 	}
 	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
@@ -162,7 +172,7 @@ func TestMatchForce_Rule(t *testing.T) {
 	_ = auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			r, err := matchForce(test.rule, test.args)
+			r, err := m.matchForce(context.Background(), "testID", test.rule, test.args, emptyAuth)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
 			}
@@ -177,6 +187,8 @@ func TestMatchForce_Rule(t *testing.T) {
 }
 
 func TestMatchRemove_Rule(t *testing.T) {
+	m := Module{}
+	emptyAuth := make(map[string]interface{})
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
@@ -216,6 +228,14 @@ func TestMatchRemove_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "remove", Type: "number", Fields: []string{"arg.age.exp"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 		},
+		{
+			name: "rule clause - allow",
+			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "allow"}},
+		},
+		{
+			name: "rule clause - deny",
+			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
+		},
 	}
 	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
@@ -224,7 +244,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 	_ = auth.SetConfig("default", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			r, err := matchRemove(test.rule, test.args)
+			r, err := m.matchRemove(context.Background(), "testID", test.rule, test.args, emptyAuth)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
 			}

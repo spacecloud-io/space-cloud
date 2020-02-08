@@ -75,6 +75,20 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			_, err := LoadValue(function[pre+1:post], state)
 			return err == nil, nil
 		}
+		if strings.HasPrefix(function, "length") {
+			value, err := LoadValue(function[pre+1:post], state)
+			if err != nil {
+				return nil, err
+			}
+			switch v := value.(type) {
+			case []interface{}:
+				return int64(len(v)), nil
+			case map[string]interface{}:
+				return int64(len(v)), nil
+			default:
+				return nil, fmt.Errorf("invalid type found for length")
+			}
+		}
 
 		return nil, errors.New("Invalid utils operation")
 	}
