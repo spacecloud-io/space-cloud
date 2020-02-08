@@ -17,6 +17,7 @@ type CreateFileRequest struct {
 	MakeAll bool                   `json:"makeAll"` // This option is only available for creating directories
 }
 
+// DeleteFileRequest is the request received to delete a new file or directory
 type DeleteFileRequest struct {
 	Meta map[string]interface{} `json:"meta"`
 	Path string                 `json:"path"`
@@ -34,6 +35,7 @@ type ListFilesResponse struct {
 	Type string `json:"type"` // Type could be dir or file
 }
 
+// FilePayload is body of request to file module
 type FilePayload struct {
 	Meta map[string]interface{} `json:"meta"`
 	Path string                 `json:"path"`
