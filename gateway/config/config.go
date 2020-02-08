@@ -179,6 +179,7 @@ type EventingRule struct {
 	Options map[string]string `json:"options" yaml:"options"`
 }
 
+// SchemaObject is the body of the request for adding schema
 type SchemaObject struct {
 	Schema string `json:"schema" yaml:"schema"`
 }
@@ -197,6 +198,7 @@ type Route struct {
 	Destination RouteDestination `json:"dest" yaml:"dest"`
 }
 
+// RouteSource is the source of routing
 type RouteSource struct {
 	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
 	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
@@ -204,6 +206,7 @@ type RouteSource struct {
 	Type       RouteURLType `json:"type,omitempty" yaml:"type,omitempty"`
 }
 
+// RouteDestination is the destination of routing
 type RouteDestination struct {
 	Host string `json:"host,omitempty" yaml:"host,omitempty"`
 	Port string `json:"port,omitempty" yaml:"port,omitempty"`
