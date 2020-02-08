@@ -232,10 +232,10 @@ func splitVariable(key string) []string {
 			inBracket2++
 		}
 		if c == ']' {
-			inBracket1++
+			inBracket1--
 		}
 		if c == ')' {
-			inBracket2++
+			inBracket2--
 		}
 		if c == '.' && inBracket1 == 0 && inBracket2 == 0 {
 			sub := key[lastIndex:i]
@@ -345,7 +345,7 @@ func convertOrCreate(k string, obj map[string]interface{}) (map[string]interface
 	var ok bool
 	obj2, ok := tempObj.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("The variable cannot be mapped")
+		return nil, errors.New("the variable cannot be mapped")
 	}
 	return obj2, nil
 }
