@@ -281,8 +281,9 @@ func (i *Istio) DeleteService(ctx context.Context, projectID, serviceID, version
 	return nil
 }
 
-func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Service, error) {
-	deploymentList, err := i.kube.AppsV1().Deployments(projectId).List(metav1.ListOptions{})
+// GetServices gets the services for istio
+func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
+	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("error getting service in istio unable to find deployment got error message - %v", err)
 		return nil, err
@@ -290,7 +291,7 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 	services := []*model.Service{}
 	for _, deployment := range deploymentList.Items {
 		service := new(model.Service)
-		service.ProjectID = projectId
+		service.ProjectID = projectID
 		service.ID = deployment.Labels["app"]
 		service.Version = deployment.Labels["version"]
 		s1, err := strconv.Atoi(deployment.Annotations["concurrency"])
@@ -384,7 +385,7 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 		}
 
 		// set whitelist
-		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectId).Get(getAuthorizationPolicyName(service), metav1.GetOptions{})
+		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectID).Get(getAuthorizationPolicyName(service), metav1.GetOptions{})
 		if len(authPolicy.Spec.Rules[0].From) != 0 {
 			for _, rule := range authPolicy.Spec.Rules[0].From {
 				for _, projectID := range rule.Source.Namespaces {
@@ -405,7 +406,7 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 		}
 
 		// Set upstreams
-		sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectId).Get(service.ID, metav1.GetOptions{})
+		sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectID).Get(service.ID, metav1.GetOptions{})
 		for _, value := range sideCar.Spec.Egress[0].Hosts {
 			a := strings.Split(value, "/")
 			if a[0] == "space-cloud" || a[0] == "istio-system" {
