@@ -134,6 +134,15 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 	}
 	service.Labels["internalUpstream"] = string(upstreamJsonString)
 
+	secretsJsonString, err := json.Marshal(&task.Secrets)
+	if err != nil {
+		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
+		return "", "", err
+	}
+	service.Labels["internalSecrets"] = string(secretsJsonString)
+
+	service.Labels["internalDockerSecrets"] = task.Docker.Secret
+
 	if task.Runtime == model.Code {
 		token, err := d.auth.GenerateTokenForArtifactStore(service.ID, service.ProjectID, service.Version)
 		if err != nil {
@@ -175,11 +184,11 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 		case model.FileType:
 			uniqueDirName := fmt.Sprintf("%s--%s", task.ID, secretName)
 			path := fmt.Sprintf("%s/%s", tempSecretPath, uniqueDirName)
-			if err := os.MkdirAll(path, 0755); err != nil {
+			if err := os.MkdirAll(path, 0777); err != nil {
 				return "", "", err
 			}
 			for key, value := range fileContent.Data {
-				if err := ioutil.WriteFile(fmt.Sprintf("%s/%s", path, key), []byte(value), 0755); err != nil {
+				if err := ioutil.WriteFile(fmt.Sprintf("%s/%s", path, key), []byte(value), 0777); err != nil {
 					return "", "", err
 				}
 			}
@@ -244,6 +253,9 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 // DeleteService removes every docker container related to specified service id
 func (d *docker) DeleteService(ctx context.Context, projectId, serviceId, version string) error {
 	args := filters.Arg("name", fmt.Sprintf("%s--%s--%s", projectId, serviceId, version))
+	if serviceId == "" || version == "" {
+		args = filters.Arg("name", fmt.Sprintf("%s", projectId))
+	}
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
@@ -344,6 +356,16 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 			return nil, err
 		}
 		service.Affinity = affinity
+
+		secrets := []string{}
+		if err := json.Unmarshal([]byte(service.Labels["internalSecrets"]), &secrets); err != nil {
+			logrus.Errorf("error getting service in docker unable to unmarshal secrets - %v", err)
+			return nil, err
+		}
+		dockerSecrets := service.Labels["internalDockerSecrets"]
+
+		delete(service.Labels, "internalSecrets")
+		delete(service.Labels, "internalDockerSecrets")
 		delete(service.Labels, "internalRuntime")
 		delete(service.Labels, "internalPorts")
 		delete(service.Labels, "internalProjectId")
@@ -359,6 +381,31 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 			env := strings.Split(value, "=")
 			envs[env[0]] = env[1]
 		}
+
+		for _, secret := range secrets {
+			// check if file exists
+			filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, service.ProjectID, secret)
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				return nil, fmt.Errorf("secret cannot be read - %v", err)
+			}
+
+			// file already exists read it's content
+			data, err := ioutil.ReadFile(filePath)
+			if err != nil {
+				return nil, err
+			}
+			fileContent := new(model.Secret)
+			if err := json.Unmarshal(data, fileContent); err != nil {
+				return nil, err
+			}
+
+			if fileContent.Type == "env" {
+				for key := range fileContent.Data {
+					delete(envs, key)
+				}
+			}
+		}
+
 		if runtime == model.Code {
 			delete(envs, model.ArtifactURL)
 			delete(envs, model.ArtifactToken)
@@ -368,11 +415,13 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 		}
 
 		tasks = append(tasks, model.Task{
-			ID:   taskId,
-			Name: taskId,
+			ID:      taskId,
+			Name:    taskId,
+			Secrets: secrets,
 			Docker: model.Docker{
-				Image: containerInspect.Config.Image,
-				Cmd:   containerInspect.Config.Cmd,
+				Image:  containerInspect.Config.Image,
+				Cmd:    containerInspect.Config.Cmd,
+				Secret: dockerSecrets,
 			},
 			Resources: model.Resources{
 				Memory: containerInspect.HostConfig.Memory / (1024 * 1024),
@@ -392,11 +441,6 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 	}
 
 	return serviceArr, nil
-}
-
-func (d *docker) CreateProject(project *model.Project) error {
-	logrus.Debug("create project not implemented for docker")
-	return nil
 }
 
 func (d *docker) AdjustScale(service *model.Service, activeReqs int32) error {

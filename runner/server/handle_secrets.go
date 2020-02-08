@@ -17,7 +17,6 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
-
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
@@ -29,7 +28,7 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		// get nameSpace from requestUrl!
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		secretName := vars["secretName"]
+		secretName := vars["name"]
 
 		// Parse request body
 		reqBody := new(request)

@@ -7,12 +7,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-const (
-	loglevelDebug = "debug"
-	loglevelInfo  = "info"
-	logLevelError = "error"
-)
-
 func main() {
 
 	// Setup logrus
@@ -38,6 +32,11 @@ func main() {
 			Name:   "apply",
 			Usage:  "deploys service",
 			Action: actionApply,
+		},
+		{
+			Name:   "destroy",
+			Usage:  "clean development environment & remove secrets",
+			Action: actionDestroy,
 		},
 		{
 			Name:  "login",

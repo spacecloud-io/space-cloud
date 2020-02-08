@@ -60,7 +60,6 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
-	delete(obj, "token")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

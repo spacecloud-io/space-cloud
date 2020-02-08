@@ -13,23 +13,12 @@ import (
 	"github.com/spaceuptech/space-cli/model"
 )
 
-func setLogLevel(loglevel string) {
-	switch loglevel {
-	case loglevelDebug:
-		logrus.SetLevel(logrus.DebugLevel)
-	case loglevelInfo:
-		logrus.SetLevel(logrus.InfoLevel)
-	case logLevelError:
-		logrus.SetLevel(logrus.ErrorLevel)
-	default:
-		logrus.Errorf("Invalid log level (%s) provided", loglevel)
-		logrus.Infoln("Defaulting to `info` level")
-		logrus.SetLevel(logrus.InfoLevel)
-	}
-}
-
 func actionApply(c *cli.Context) error {
 	return cmd.Apply()
+}
+
+func actionDestroy(c *cli.Context) error {
+	return cmd.Destroy()
 }
 
 func actionGenerateService(c *cli.Context) error {
@@ -67,7 +56,7 @@ func actionGenerateService(c *cli.Context) error {
 	if err := ioutil.WriteFile(serviceConfigFile, data, 0755); err != nil {
 		return err
 	}
-	fmt.Printf(string(data))
+	fmt.Printf("%s", string(data))
 	return nil
 }
 

@@ -631,6 +631,22 @@ func TestLoadValue(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "utils testing length arr",
+			args: args{
+				key: "utils.length(a.b.somearray)",
+				state: map[string]interface{}{
+					"a": map[string]interface{}{
+						"b": map[string]interface{}{
+							"somearray": []interface{}{1, 2, 3},
+						},
+					},
+				},
+			},
+			want:    int64(3),
+			wantErr: false,
+		},
+
+		{
 			name: "utils testing (not split)",
 			args: args{
 				key: "utils.exists(a.(b.c))",

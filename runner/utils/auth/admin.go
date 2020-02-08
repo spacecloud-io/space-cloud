@@ -10,7 +10,9 @@ import (
 func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-
+	if m.config.IsDev {
+		return nil, nil
+	}
 	// Parse the JWT token
 	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect it to be
@@ -36,6 +38,7 @@ func (m *Module) VerifyToken(token string) (map[string]interface{}, error) {
 	}
 
 	return nil, errors.New("token could not be verified")
+
 }
 
 // GenerateTokenForArtifactStore creates a token for the artifact store

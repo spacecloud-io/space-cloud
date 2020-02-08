@@ -27,7 +27,7 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 		logrus.Error("error in login unable to send http request - %v", err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer CloseTheCloser(resp.Body)
 
 	loginResp := new(model.LoginResponse)
 	err = json.NewDecoder(resp.Body).Decode(loginResp)

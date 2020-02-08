@@ -99,23 +99,22 @@ func (i *Istio) SetFileSecretRootPath(projectId string, secretName, rootPath str
 	}
 	// Get secret and then check type
 	kubeSecret, err := i.kube.CoreV1().Secrets(projectId).Get(secretName, metav1.GetOptions{})
-	if kubeErrors.IsNotFound(err) {
-		return err
-	} else if err == nil {
-		// Add secret key-value
-		switch kubeSecret.Type {
-		case v1.SecretTypeDockerConfigJson:
-			return fmt.Errorf("set root path operation cannot be performed on secrets with type docker")
-		case v1.SecretTypeOpaque:
-			kubeSecret.Annotations["rootPath"] = rootPath
-		default:
-			return fmt.Errorf("invalid secret type - %s", kubeSecret.Type)
-		}
-
-		// Update the secret
-		_, err := i.kube.CoreV1().Secrets(projectId).Update(kubeSecret)
+	if err != nil {
 		return err
 	}
+
+	// update root path
+	switch kubeSecret.Type {
+	case v1.SecretTypeDockerConfigJson:
+		return fmt.Errorf("set root path operation cannot be performed on secrets with type docker")
+	case v1.SecretTypeOpaque:
+		kubeSecret.Annotations["rootPath"] = rootPath
+	default:
+		return fmt.Errorf("invalid secret type - %s", kubeSecret.Type)
+	}
+
+	// Update the secret
+	_, err = i.kube.CoreV1().Secrets(projectId).Update(kubeSecret)
 	return err
 }
 

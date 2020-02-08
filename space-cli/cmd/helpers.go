@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"runtime"
@@ -21,24 +22,6 @@ func getHomeDirectory() string {
 		return home
 	}
 	return os.Getenv("HOME")
-}
-
-func getServiceConfig(filename string) (*model.Service, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	fileName := fmt.Sprintf("/%s/%s", dir, filename)
-	file, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return nil, err
-	}
-	c := new(model.Service)
-	err = yaml.Unmarshal(file, c)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
 }
 
 func getProjects(projects []*model.Projects) ([]string, error) {
@@ -81,4 +64,8 @@ func createDirIfNotExist(dir string) error {
 		}
 	}
 	return nil
+}
+
+func CloseTheCloser(c io.Closer) {
+	_ = c.Close()
 }

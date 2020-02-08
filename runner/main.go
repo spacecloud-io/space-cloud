@@ -30,6 +30,11 @@ func main() {
 			Name:  "start",
 			Usage: "Starts a runner instance",
 			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:   "dev",
+					EnvVar: "DEV",
+					Usage:  "start runner without authentication",
+				},
 				cli.StringFlag{
 					Name:   "port",
 					EnvVar: "PORT",
