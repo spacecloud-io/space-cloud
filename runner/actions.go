@@ -19,7 +19,6 @@ func actionRunner(c *cli.Context) error {
 	loglevel := c.String("log-level")
 
 	// Get jwt config
-	jwtAlgo := auth.JWTAlgorithm(c.String("jwt-algo"))
 	jwtSecret := c.String("jwt-secret")
 	jwtProxySecret := c.String("jwt-proxy-secret")
 
@@ -28,6 +27,9 @@ func actionRunner(c *cli.Context) error {
 	driverConfig := c.String("driver-config")
 	outsideCluster := c.Bool("outside-cluster")
 
+	isDev := c.Bool("dev")
+
+	ArtifactAddr := c.String("artifact-addr")
 	// Set the log level
 	setLogLevel(loglevel)
 
@@ -36,15 +38,15 @@ func actionRunner(c *cli.Context) error {
 		Port:      port,
 		ProxyPort: proxyPort,
 		Auth: &auth.Config{
-			Mode:         auth.Runner,
-			JWTAlgorithm: jwtAlgo,
-			Secret:       jwtSecret,
-			ProxySecret:  jwtProxySecret,
+			Secret:      jwtSecret,
+			ProxySecret: jwtProxySecret,
+			IsDev:       isDev,
 		},
 		Driver: &driver.Config{
 			DriverType:     model.DriverType(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
+			ArtifactAddr:   ArtifactAddr,
 		},
 	})
 	if err != nil {

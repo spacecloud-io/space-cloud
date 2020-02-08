@@ -47,15 +47,17 @@ func (c *cache) setDeployment(ns, name string, deployment *v1.Deployment) error 
 }
 
 func (c *cache) getDeployment(ns, name string) (*v1.Deployment, error) {
-	var deployment *v1.Deployment
+	deployment := new(v1.Deployment)
 	var foundInCache bool
 	var err error
 
 	if err := c.db.View(func(tx *bolt.Tx) error {
 		// There will be a bucket for each namespace
-		bucket, err := tx.CreateBucketIfNotExists([]byte(ns))
-		if err != nil {
-			return err
+		bucket := tx.Bucket([]byte(ns))
+
+		// Exit if the bucket does not exist. This signifies that the cache is empty
+		if bucket == nil {
+			return nil
 		}
 
 		// Get the deployment from the cache. The value returned will be nil if the key doesn't not exist.
@@ -79,7 +81,8 @@ func (c *cache) getDeployment(ns, name string) (*v1.Deployment, error) {
 	}
 
 	// Query kubernetes if the deployment wasn't found in the cache. Also, update the cache with the deployment received.
-	if foundInCache {
+	if !foundInCache {
+		logrus.Debugf("Service (%s) not found in cache... Querying kubernetes", name)
 		deployment, err = c.kube.AppsV1().Deployments(ns).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
