@@ -68,7 +68,7 @@ func (a *AmazonS3) ReadFile(path string) (*model.File, error) {
 		return nil, err
 	}
 	return &model.File{File: bufio.NewReader(tmpfile), Close: func() error {
-		defer os.Remove(tmpfile.Name())
+		defer func() { _ = os.Remove(tmpfile.Name()) }()
 		return tmpfile.Close()
 	}}, nil
 }

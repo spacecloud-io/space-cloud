@@ -20,7 +20,7 @@ import (
 // Schema data stucture for schema package
 type Schema struct {
 	lock               sync.RWMutex
-	SchemaDoc          schemaType
+	SchemaDoc          Type
 	crud               *crud.Module
 	project            string
 	config             config.Crud
@@ -29,7 +29,7 @@ type Schema struct {
 
 // Init creates a new instance of the schema object
 func Init(crud *crud.Module, removeProjectScope bool) *Schema {
-	return &Schema{SchemaDoc: schemaType{}, crud: crud, removeProjectScope: removeProjectScope}
+	return &Schema{SchemaDoc: Type{}, crud: crud, removeProjectScope: removeProjectScope}
 }
 
 // SetConfig modifies the tables according to the schema on save
@@ -47,7 +47,8 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	return nil
 }
 
-func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
+// GetSchema gets the schema for the given dbtype and collection
+func (s *Schema) GetSchema(dbType, col string) (Fields, bool) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -61,7 +62,7 @@ func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
 		return nil, false
 	}
 
-	fields := make(SchemaFields, len(colSchema))
+	fields := make(Fields, len(colSchema))
 	for k, v := range colSchema {
 		fields[k] = v
 	}
@@ -79,11 +80,12 @@ func (s *Schema) parseSchema(crud config.Crud) error {
 	return nil
 }
 
-func (s *Schema) Parser(crud config.Crud) (schemaType, error) {
+// Parser parses a crud object to return a schema type
+func (s *Schema) Parser(crud config.Crud) (Type, error) {
 
-	schema := make(schemaType, len(crud))
+	schema := make(Type, len(crud))
 	for dbName, v := range crud {
-		collection := schemaCollection{}
+		collection := Collection{}
 		for collectionName, v := range v.Collections {
 			if v.Schema == "" {
 				continue
@@ -111,10 +113,10 @@ func (s *Schema) Parser(crud config.Crud) (schemaType, error) {
 	return schema, nil
 }
 
-func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (SchemaFields, error) {
+func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Fields, error) {
 	var isCollectionFound bool
 
-	fieldMap := SchemaFields{}
+	fieldMap := Fields{}
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
 
@@ -127,7 +129,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 
 		for _, field := range v.(*ast.ObjectDefinition).Fields {
 
-			fieldTypeStuct := SchemaFieldType{
+			fieldTypeStuct := FieldType{
 				FieldName: field.Name.Value,
 			}
 			if len(field.Directives) > 0 {
@@ -251,7 +253,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (Sche
 	return fieldMap, nil
 }
 
-func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *SchemaFieldType, doc *ast.Document) (string, error) {
+func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *FieldType, doc *ast.Document) (string, error) {
 	switch fieldType.GetKind() {
 	case kinds.NonNull:
 		fieldTypeStuct.IsFieldTypeRequired = true

@@ -12,7 +12,7 @@ func TestParseSchema(t *testing.T) {
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
-		schema        schemaType
+		schema        Type
 		Data          config.Crud
 	}{
 		{
@@ -104,15 +104,15 @@ func TestParseSchema(t *testing.T) {
 		},
 		{
 			name: "valid schema",
-			schema: schemaType{
-				"mongo": schemaCollection{
-					"tweet": SchemaFields{
-						"ID": &SchemaFieldType{
+			schema: Type{
+				"mongo": Collection{
+					"tweet": Fields{
+						"ID": &FieldType{
 							FieldName: "ID",
 							Kind:      TypeID,
 							IsPrimary: true,
 						},
-						"age": &SchemaFieldType{
+						"age": &FieldType{
 							FieldName: "age",
 							Kind:      typeFloat,
 						},

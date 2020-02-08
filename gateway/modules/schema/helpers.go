@@ -39,7 +39,7 @@ func getSQLType(dbType, typename string) (string, error) {
 	}
 }
 
-func checkErrors(realFieldStruct *SchemaFieldType) error {
+func checkErrors(realFieldStruct *FieldType) error {
 	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
 		return fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName)
 	}
@@ -173,9 +173,8 @@ func (c *creationModule) typeSwitch() string {
 		if utils.DBType(dbType) == utils.SqlServer {
 			if v {
 				return fmt.Sprintf("1")
-			} else {
-				return fmt.Sprintf("0")
 			}
+			return fmt.Sprintf("0")
 		}
 		return fmt.Sprintf("%v", v)
 	default:
@@ -236,7 +235,7 @@ func (c *creationModule) removeForeignKey() []string {
 	return nil
 }
 
-func addNewTable(project, dbType, realColName string, realColValue SchemaFields, removeProjectScope bool) (string, error) {
+func addNewTable(project, dbType, realColName string, realColValue Fields, removeProjectScope bool) (string, error) {
 
 	var query string
 	for realFieldKey, realFieldStruct := range realColValue {
@@ -310,9 +309,9 @@ func (c *creationModule) addColumn(dbType string) []string {
 	return queries
 }
 
-func (c *creationModule) removeField() string {
-	return c.removeColumn()
-}
+// func (c *creationModule) removeField() string {
+// 	return c.removeColumn()
+// }
 
 func (c *creationModule) modifyColumn() []string {
 	var queries []string
@@ -367,7 +366,7 @@ func (c *creationModule) modifyColumnType(dbType string) []string {
 	return queries
 }
 
-func addIndex(dbType, project, tableName, indexName string, isIndexUnique bool, removeProjectScope bool, mapArray []*SchemaFieldType) string {
+func addIndex(dbType, project, tableName, indexName string, isIndexUnique bool, removeProjectScope bool, mapArray []*FieldType) string {
 	s := " ("
 	for _, schemaFieldType := range mapArray {
 		s += schemaFieldType.FieldName + " " + schemaFieldType.IndexInfo.Sort + ", "
@@ -398,17 +397,17 @@ func removeIndex(dbType, project, tableName, indexName string, removeProjectScop
 
 type indexStruct struct {
 	IsIndexUnique bool
-	IndexMap      []*SchemaFieldType
+	IndexMap      []*FieldType
 }
 
-func getRealIndexMap(realTableInfo SchemaFields) (map[string]*indexStruct, error) {
+func getRealIndexMap(realTableInfo Fields) (map[string]*indexStruct, error) {
 	realIndexMap := make(map[string]*indexStruct)
 	for _, realColumnInfo := range realTableInfo {
 		if realColumnInfo.IsIndex {
 			if value, ok := realIndexMap[realColumnInfo.IndexInfo.Group]; ok {
 				value.IndexMap = append(value.IndexMap, realColumnInfo)
 			} else {
-				realIndexMap[realColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*SchemaFieldType{realColumnInfo}}
+				realIndexMap[realColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*FieldType{realColumnInfo}}
 			}
 			if realColumnInfo.IsUnique {
 				realIndexMap[realColumnInfo.IndexInfo.Group].IsIndexUnique = true
@@ -420,8 +419,7 @@ func getRealIndexMap(realTableInfo SchemaFields) (map[string]*indexStruct, error
 	}
 
 	for _, indexValue := range realIndexMap {
-		var v indexStore
-		v = indexValue.IndexMap
+		var v indexStore = indexValue.IndexMap
 		sort.Stable(v)
 		indexValue.IndexMap = v
 		for i, column := range indexValue.IndexMap {
@@ -433,14 +431,14 @@ func getRealIndexMap(realTableInfo SchemaFields) (map[string]*indexStruct, error
 	return realIndexMap, nil
 }
 
-func getCurrentIndexMap(currentTableInfo SchemaFields) (map[string]*indexStruct, error) {
+func getCurrentIndexMap(currentTableInfo Fields) (map[string]*indexStruct, error) {
 	currentIndexMap := make(map[string]*indexStruct)
 	for _, currentColumnInfo := range currentTableInfo {
 		if currentColumnInfo.IsIndex {
 			if value, ok := currentIndexMap[currentColumnInfo.IndexInfo.Group]; ok {
 				value.IndexMap = append(value.IndexMap, currentColumnInfo)
 			} else {
-				currentIndexMap[currentColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*SchemaFieldType{currentColumnInfo}}
+				currentIndexMap[currentColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*FieldType{currentColumnInfo}}
 			}
 			if currentColumnInfo.IsUnique {
 				currentIndexMap[currentColumnInfo.IndexInfo.Group].IsIndexUnique = true
@@ -449,8 +447,7 @@ func getCurrentIndexMap(currentTableInfo SchemaFields) (map[string]*indexStruct,
 	}
 
 	for _, indexValue := range currentIndexMap {
-		var v indexStore
-		v = indexValue.IndexMap
+		var v indexStore = indexValue.IndexMap
 		sort.Stable(v)
 		indexValue.IndexMap = v
 		for i, column := range indexValue.IndexMap {
