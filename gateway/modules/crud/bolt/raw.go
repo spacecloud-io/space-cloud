@@ -11,8 +11,8 @@ func (b *Bolt) RawExec(ctx context.Context, project string) error {
 	return fmt.Errorf("error raw exec cannot be performed over selected database")
 }
 
-// CreateProjectIfNotExist creates a project if none exist
-func (b *Bolt) CreateProjectIfNotExist(ctx context.Context, project string) error {
+// CreateDatabaseIfNotExist creates a project if none exist
+func (b *Bolt) CreateDatabaseIfNotExist(ctx context.Context, project string) error {
 	return fmt.Errorf("error create project operation cannot be performed over selected database")
 }
 

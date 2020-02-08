@@ -28,7 +28,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		return nil
 	}
 
-	if err := s.crud.CreateProjectIfNotExists(ctx, project, dbAlias); err != nil {
+	if err := s.crud.CreateDatabaseIfNotExist(ctx, project, dbAlias); err != nil {
 		return err
 	}
 

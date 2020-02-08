@@ -44,7 +44,7 @@ type Crud interface {
 	RawExec(ctx context.Context, project string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, project, col string) error
-	CreateProjectIfNotExist(ctx context.Context, project string) error
+	CreateDatabaseIfNotExist(ctx context.Context, project string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
