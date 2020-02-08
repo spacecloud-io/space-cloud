@@ -16,11 +16,13 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// ConsulStore is an object for storing consul information
 type ConsulStore struct {
 	consulClient                     *api.Client
 	nodeID, clusterID, advertiseAddr string
 }
 
+// NewConsulStore creates new consul store
 func NewConsulStore(nodeID, clusterID, advertiseAddr string) (*ConsulStore, error) {
 	client, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
@@ -30,6 +32,7 @@ func NewConsulStore(nodeID, clusterID, advertiseAddr string) (*ConsulStore, erro
 	return &ConsulStore{consulClient: client, nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr}, nil
 }
 
+// Register registers space cloud to the consul store
 func (s *ConsulStore) Register() {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(context.Background())
@@ -64,6 +67,7 @@ func (s *ConsulStore) Register() {
 	}()
 }
 
+// WatchProjects maintains consistency between all instances of sc
 func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 	watchParams := map[string]interface{}{
 		"type":   "keyprefix",
@@ -102,6 +106,7 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 	return nil
 }
 
+// WatchServices maintains consistency between all instances of sc
 func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 	watchParams := map[string]interface{}{
 		"type":   "keyprefix",
@@ -145,6 +150,7 @@ func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
+// SetProject sets the project of the consul store
 func (s *ConsulStore) SetProject(ctx context.Context, project *config.Project) error {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)
@@ -159,6 +165,7 @@ func (s *ConsulStore) SetProject(ctx context.Context, project *config.Project) e
 	return err
 }
 
+// DeleteProject deletes the project from the consul store
 func (s *ConsulStore) DeleteProject(ctx context.Context, projectID string) error {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)

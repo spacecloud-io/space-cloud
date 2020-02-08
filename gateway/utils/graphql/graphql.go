@@ -100,7 +100,7 @@ func createDBCallback(cb dbCallback) dbCallback {
 	}
 }
 
-func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, loader *loaderMap, schema schema.SchemaFields, cb callback) {
+func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, loader *loaderMap, schema schema.Fields, cb callback) {
 	switch node.GetKind() {
 
 	case kinds.Document:

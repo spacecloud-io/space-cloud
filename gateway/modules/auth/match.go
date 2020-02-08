@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -42,7 +41,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return m.matchOr(ctx, project, rule, args, auth)
 
 	case "webhook":
-		return &PostProcess{}, m.matchFunc(ctx, rule, m.makeHttpRequest, args)
+		return &PostProcess{}, m.matchFunc(ctx, rule, m.makeHTTPRequest, args)
 
 	case "query":
 		return &PostProcess{}, matchQuery(ctx, project, rule, m.crud, args)
@@ -57,13 +56,10 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 	}
 }
 
-func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
+func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPRequest utils.MakeHTTPRequest, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
 	delete(obj, "token")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	scToken, err := m.GetSCAccessToken()
 	if err != nil {
@@ -71,7 +67,7 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHttpReque
 	}
 
 	var result interface{}
-	return MakeHttpRequest(ctx, "POST", rule.URL, token, scToken, obj, &result)
+	return MakeHTTPRequest(ctx, "POST", rule.URL, token, scToken, obj, &result)
 }
 
 func matchQuery(ctx context.Context, project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {

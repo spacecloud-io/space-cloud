@@ -64,19 +64,19 @@ func (m *Module) createCrudDocument(project, dbType, col string, op utils.Operat
 	}
 }
 
-func (m *Module) createFileDocument(project string, storeType utils.FileStoreType, op utils.FileOpType, count uint64, t time.Time) interface{} {
-	return map[string]interface{}{
-		"id":         ksuid.New().String(),
-		"project_id": project,
-		"module":     "file",
-		"type":       op,
-		"sub_type":   "na",
-		"ts":         t,
-		"count":      count,
-		"driver":     storeType,
-		"node_id":    "sc-" + m.nodeID,
-	}
-}
+// func (m *Module) createFileDocument(project string, storeType utils.FileStoreType, op utils.FileOpType, count uint64, t time.Time) interface{} {
+// 	return map[string]interface{}{
+// 		"id":         ksuid.New().String(),
+// 		"project_id": project,
+// 		"module":     "file",
+// 		"type":       op,
+// 		"sub_type":   "na",
+// 		"ts":         t,
+// 		"count":      count,
+// 		"driver":     storeType,
+// 		"node_id":    "sc-" + m.nodeID,
+// 	}
+// }
 
 func (m *Module) createBWDocuments(project string, bw *bwMetrics, t *time.Time) []interface{} {
 	docs := make([]interface{}, 0)

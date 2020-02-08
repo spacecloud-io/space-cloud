@@ -235,7 +235,7 @@ func TestBolt_Update(t *testing.T) {
 		})
 	}
 
-	b.Close()
+	utils.CloseTheCloser(b)
 	if err := os.Remove("update.db"); err != nil {
 		t.Error("error removing database file")
 	}

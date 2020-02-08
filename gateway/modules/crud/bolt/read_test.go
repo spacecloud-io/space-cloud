@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"go.etcd.io/bbolt"
+	// "go.etcd.io/bbolt"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -17,7 +17,7 @@ func TestBolt_Read(t *testing.T) {
 	type fields struct {
 		enabled    bool
 		connection string
-		client     *bbolt.DB
+		// client     *bbolt.DB
 	}
 	type args struct {
 		ctx     context.Context
@@ -137,7 +137,7 @@ func TestBolt_Read(t *testing.T) {
 			}
 		})
 	}
-	b.Close()
+	utils.CloseTheCloser(b)
 	if err := os.Remove("read.db"); err != nil {
 		t.Error("error removing database file")
 	}

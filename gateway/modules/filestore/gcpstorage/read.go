@@ -66,7 +66,7 @@ func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rc.Close()
+	defer utils.CloseTheCloser(rc)
 
 	data, err := ioutil.ReadAll(rc)
 	if err != nil {
@@ -83,7 +83,7 @@ func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
 	}
 
 	return &model.File{File: bufio.NewReader(tmpfile), Close: func() error {
-		defer os.Remove(tmpfile.Name())
+		defer func() { _ = os.Remove(tmpfile.Name()) }()
 		return tmpfile.Close()
 	}}, nil
 }

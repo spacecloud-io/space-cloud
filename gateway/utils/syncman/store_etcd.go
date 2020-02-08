@@ -16,11 +16,11 @@ import (
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/hashicorp/consul/api"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// ETCDStore is an object for storing ETCD information
 type ETCDStore struct {
 	etcdClient                       *clientv3.Client
 	kv                               clientv3.KV
@@ -34,6 +34,7 @@ type trackedItemMeta struct {
 	project        *config.Project
 }
 
+// NewETCDStore creates new etcd store
 func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
 	config, err := loadConfig()
 	if err != nil {
@@ -93,12 +94,13 @@ func loadConfig() (clientv3.Config, error) {
 	return client, nil
 }
 
+// Register registers space cloud to the etcd store
 func (s *ETCDStore) Register() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	opts := &api.WriteOptions{}
-	opts = opts.WithContext(ctx)
+	// opts := &api.WriteOptions{}
+	// opts = opts.WithContext(ctx)
 
 	lease, err := s.etcdClient.Grant(ctx, 10)
 	if err != nil {
@@ -122,6 +124,7 @@ func (s *ETCDStore) Register() {
 	}()
 }
 
+// WatchProjects maintains consistency between all instances of sc
 func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 	idxID := 3
 	itemsMeta := map[string]*trackedItemMeta{}
@@ -187,7 +190,6 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 						meta.project = project
 						itemsMeta[id] = meta
 						cb(s.getProjects(itemsMeta))
-						break
 					}
 
 				case mvccpb.DELETE:
@@ -212,6 +214,7 @@ func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 	return nil
 }
 
+// WatchServices maintains consistency between all instances of sc
 func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 	idxID := 3
 	itemsMeta := map[string]*trackedItemMeta{}
@@ -268,7 +271,6 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 						meta.service = &service{id: id, addr: string(kv.Value)}
 						itemsMeta[id] = meta
 						cb(s.getServices(itemsMeta))
-						break
 					}
 
 				case mvccpb.DELETE:
@@ -294,12 +296,14 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
+// SetProject sets the project of the etcd store
 func (s *ETCDStore) SetProject(ctx context.Context, project *config.Project) error {
 	_, err := s.kv.Put(ctx, fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID), project.ID)
 
 	return err
 }
 
+// DeleteProject deletes the project from the etcd store
 func (s *ETCDStore) DeleteProject(ctx context.Context, projectID string) error {
 	_, err := s.kv.Delete(ctx, fmt.Sprintf("sc/projects/%s/%s", s.clusterID, projectID))
 	return err

@@ -26,7 +26,7 @@ func (m *Mongo) Batch(ctx context.Context, project string, txRequest *model.Batc
 
 				counts[i], err = m.Create(session, project, col, &model.CreateRequest{Document: doc, Operation: op})
 				if err != nil {
-					session.AbortTransaction(session)
+					_ = session.AbortTransaction(session)
 					return err
 				}
 			case string(utils.Update):
@@ -36,7 +36,7 @@ func (m *Mongo) Batch(ctx context.Context, project string, txRequest *model.Batc
 
 				counts[i], err = m.Update(session, project, col, &model.UpdateRequest{Find: find, Operation: op, Update: update})
 				if err != nil {
-					session.AbortTransaction(session)
+					_ = session.AbortTransaction(session)
 					return err
 				}
 			case string(utils.Delete):
@@ -45,14 +45,14 @@ func (m *Mongo) Batch(ctx context.Context, project string, txRequest *model.Batc
 
 				counts[i], err = m.Delete(session, project, col, &model.DeleteRequest{Find: find, Operation: op})
 				if err != nil {
-					session.AbortTransaction(session)
+					_ = session.AbortTransaction(session)
 					return err
 				}
 			}
 		}
 		err = session.CommitTransaction(session)
 		if err != nil {
-			session.AbortTransaction(session)
+			_ = session.AbortTransaction(session)
 			return err
 		}
 		return nil

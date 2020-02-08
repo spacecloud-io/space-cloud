@@ -206,16 +206,14 @@ func matchBool(rule *config.Rule, args map[string]interface{}) error {
 	case "==":
 		if f1 == f2 {
 			return nil
-		} else {
-			return ErrIncorrectMatch
 		}
+		return ErrIncorrectMatch
 
 	case "!=":
 		if f1 != f2 {
 			return nil
-		} else {
-			return ErrIncorrectMatch
 		}
+		return ErrIncorrectMatch
 	}
 	return ErrIncorrectRuleFieldType
 }

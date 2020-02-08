@@ -44,7 +44,7 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 	return reqs, returningDocs, nil
 }
 
-func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema.SchemaFields) {
+func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema.Fields) {
 	// FieldIDs is the array of fields for which an unique id needs to be generated. These will only be done for those
 	// fields which have the type ID.
 	// FieldDates is the array of fields for which the current time needs to be set.

@@ -17,10 +17,10 @@ import (
 // HandleLoadEnv returns the handler to load the projects via a REST endpoint
 func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion})
 	}
 }
 
@@ -36,19 +36,19 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		// Load the request from the body
 		req := new(Request)
-		json.NewDecoder(r.Body).Decode(req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		status, token, err := adminMan.Login(req.User, req.Pass)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		c := syncMan.GetGlobalConfig()
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
 	}
 }
 
@@ -81,12 +81,12 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -114,7 +114,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"projects": projects})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"projects": projects})
 	}
 }
 
@@ -128,12 +128,12 @@ func HandleGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// Load the body of the request
 		c := new(config.Project)
 		err := json.NewDecoder(r.Body).Decode(c)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Throw error if request was of incorrect type
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
 			return
 		}
 
@@ -141,7 +141,7 @@ func HandleGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		status, err := adminMan.IsAdminOpAuthorised(token, c.ID)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -150,13 +150,13 @@ func HandleGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// Sync the config
 		if err := syncMan.SetProjectGlobalConfig(ctx, c); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
@@ -170,12 +170,12 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 		// Load the body of the request
 		c := new(config.Project)
 		err := json.NewDecoder(r.Body).Decode(c)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Throw error if request was of incorrect type
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
 			return
 		}
 
@@ -183,7 +183,7 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 		status, err := adminMan.IsAdminOpAuthorised(token, c.ID)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -192,13 +192,13 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 		// Sync the config
 		if err := syncMan.SetProjectConfig(ctx, c); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
@@ -206,10 +206,10 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager, configPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Give negative acknowledgement
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]interface{}{"error": "Operation not supported"})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"error": "Operation not supported"})
 	}
 }

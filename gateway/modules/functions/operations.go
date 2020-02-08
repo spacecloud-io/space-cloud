@@ -27,6 +27,7 @@ func (m *Module) CallWithContext(ctx context.Context, service, function, token s
 	return m.handleCall(ctx, service, function, token, params)
 }
 
+// AddInternalRule add an internal rule to internal service
 func (m *Module) AddInternalRule(service string, rule *config.Service) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

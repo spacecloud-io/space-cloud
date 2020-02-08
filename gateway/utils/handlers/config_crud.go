@@ -22,12 +22,12 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		// Create a context of execution
@@ -41,7 +41,7 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 		collections, err := crud.GetCollections(ctx, project, dbType)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -51,7 +51,7 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"collections": cols})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"collections": cols})
 	}
 }
 
@@ -61,7 +61,7 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -161,7 +161,7 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 // HandleRemoveDatabaseConfig is an endpoint handler which removes database config
 func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -169,7 +169,7 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, sync
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -181,13 +181,13 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, sync
 
 		if err := syncman.RemoveDatabaseConfig(ctx, project, dbAlias); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		// return
 	}
 }
 
@@ -198,13 +198,13 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		token := utils.GetTokenFromHeader(r)
 
 		v := config.TableRule{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -218,19 +218,19 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		defer cancel()
 		if err := schemaArg.SchemaModifyAll(ctx, dbType, project, map[string]*config.TableRule{col: &v}); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if err := syncman.SetModifySchema(ctx, project, dbType, col, v.Schema); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		// return
 	}
 }
 
@@ -241,13 +241,13 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		token := utils.GetTokenFromHeader(r)
 
 		v := config.TableRule{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -259,13 +259,13 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 
 		if err := syncman.SetCollectionRules(ctx, project, dbType, col, &v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		// return
 	}
 }
 
@@ -274,12 +274,12 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -294,13 +294,13 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		colResult, err := syncman.SetReloadSchema(ctx, dbType, project, schemaArg)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"collections": colResult})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"collections": colResult})
+		// return
 	}
 }
 
@@ -310,29 +310,29 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		projectConfig := config.Project{}
-		json.NewDecoder(r.Body).Decode(&projectConfig)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&projectConfig)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		err, statusCode := syncman.CreateProjectConfig(ctx, &projectConfig)
+		statusCode, err := syncman.CreateProjectConfig(ctx, &projectConfig)
 		if err != nil {
 			w.WriteHeader(statusCode)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		// return
 	}
 }
 
@@ -341,12 +341,12 @@ func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, s
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -362,19 +362,19 @@ func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, s
 		schema, err := schemaArg.SchemaInspection(ctx, dbType, project, col)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if err := syncman.SetSchemaInspection(ctx, project, dbType, col, schema); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
+		// return
 	}
 }
 
@@ -385,13 +385,13 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 		token := utils.GetTokenFromHeader(r)
 
 		v := config.CrudStub{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -404,12 +404,12 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 
 		if err := syncman.SetModifyAllSchema(ctx, dbType, project, schemaArg, v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
+		// return
 	}
 }

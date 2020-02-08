@@ -13,7 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// Create deletes a document (or multiple when op is "all") from the database
+// Delete deletes a document (or multiple when op is "all") from the database
 func (b *Bolt) Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error) {
 	var count int64
 	switch req.Operation {

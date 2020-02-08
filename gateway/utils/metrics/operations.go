@@ -39,6 +39,7 @@ func (m *Module) AddIngress(project string, bytes uint64) {
 	atomic.AddUint64(&metrics.bw.ingressBW, bytes)
 }
 
+// AddDBOperation adds a operation to the database
 func (m *Module) AddDBOperation(project, dbType, col string, count int64, op utils.OperationType) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
@@ -72,6 +73,7 @@ func (m *Module) AddDBOperation(project, dbType, col string, count int64, op uti
 	}
 }
 
+// LoadMetrics loads the metrics
 func (m *Module) LoadMetrics() []interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()
