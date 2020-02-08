@@ -68,3 +68,8 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 		logrus.Debugf("Successfully copied %d bytes from upstream server (%s)", n, r.URL.String())
 	}
 }
+
+// GetRunnerAddr returns runner address
+func (s *Manager) GetRunnerAddr() string {
+	return s.runnerAddr
+}

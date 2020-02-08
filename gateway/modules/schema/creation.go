@@ -24,7 +24,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 	}
 
 	// Return gracefully if db type is mongo
-	if dbType == string(utils.Mongo) || dbType == string(utils.BoltDB) {
+	if dbType == string(utils.Mongo) || dbType == string(utils.EmbeddedDB) {
 		return nil
 	}
 
@@ -32,7 +32,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		return err
 	}
 
-	currentSchema, _ := s.Inspector(ctx, dbAlias, project, tableName)
+	currentSchema, _ := s.Inspector(ctx, dbType, project, tableName)
 
 	queries, err := s.generateCreationQueries(ctx, dbAlias, tableName, project, parsedSchema, currentSchema)
 	if err != nil {
