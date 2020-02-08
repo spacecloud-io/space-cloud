@@ -2,9 +2,15 @@ package auth
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -51,6 +57,16 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 
 	case "remove":
 		return m.matchRemove(ctx, project, rule, args, auth)
+
+	case "encrypt":
+		return m.matchEncrypt(rule, args)
+
+	case "decrypt":
+		return m.matchDecrypt(rule, args)
+
+	case "hash":
+		return matchHash(rule, args)
+
 	default:
 		return &PostProcess{}, ErrIncorrectMatch
 	}
@@ -174,6 +190,125 @@ func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config
 			}
 		} else {
 			return nil, ErrIncorrectRuleFieldType
+		}
+	}
+	return actions, nil
+}
+
+func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*PostProcess, error) {
+	actions := &PostProcess{}
+	for _, field := range rule.Fields {
+		if strings.HasPrefix(field, "res") {
+			addToStruct := PostProcessAction{Action: "encrypt", Field: field}
+			actions.postProcessAction = append(actions.postProcessAction, addToStruct)
+		} else if strings.HasPrefix(field, "args") {
+			loadedValue, err := utils.LoadValue(field, args)
+			if err != nil {
+				logrus.Errorln("error loading value in matchEncrypt: ", err)
+				return nil, err
+			}
+			stringValue, ok := loadedValue.(string)
+			if !ok {
+				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+			}
+			encrypted := make([]byte, len(stringValue))
+			err1 := encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize])
+			if err1 != nil {
+				logrus.Errorln("error encrypting value in matchEncrypt: ", err1)
+				return nil, err1
+			}
+			er := utils.StoreValue(field, string(encrypted), args)
+			if er != nil {
+				logrus.Errorln("error storing value in matchEncrypt: ", er)
+				return nil, er
+			}
+		} else {
+			return nil, fmt.Errorf("invalid field (%s) provided", field)
+		}
+	}
+	return actions, nil
+}
+
+func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*PostProcess, error) {
+	actions := &PostProcess{}
+	for _, field := range rule.Fields {
+		if strings.HasPrefix(field, "res") {
+			addToStruct := PostProcessAction{Action: "decrypt", Field: field}
+			actions.postProcessAction = append(actions.postProcessAction, addToStruct)
+		} else if strings.HasPrefix(field, "args") {
+			loadedValue, err := utils.LoadValue(field, args)
+			if err != nil {
+				logrus.Errorln("error loading value in matchDecrypt: ", err)
+				return nil, err
+			}
+			stringValue, ok := loadedValue.(string)
+			if !ok {
+				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+			}
+			decrypted := make([]byte, len(stringValue))
+			err1 := decryptAESCFB(decrypted, []byte(stringValue), m.aesKey, []byte(m.aesKey)[:aes.BlockSize])
+			if err1 != nil {
+				logrus.Errorln("error decrypting value in matchDecrypt: ", err1)
+				return nil, err1
+			}
+			er := utils.StoreValue(field, string(decrypted), args)
+			if er != nil {
+				logrus.Errorln("error storing value in matchDecrypt: ", er)
+				return nil, er
+			}
+		} else {
+			return nil, fmt.Errorf("invalid field (%s) provided", field)
+		}
+	}
+	return actions, nil
+}
+
+func encryptAESCFB(dst, src, key, iv []byte) error {
+	aesBlockEncrypter, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return err
+	}
+	aesEncrypter := cipher.NewCFBEncrypter(aesBlockEncrypter, iv)
+	aesEncrypter.XORKeyStream(dst, src)
+	return nil
+}
+
+func decryptAESCFB(dst, src, key, iv []byte) error {
+	aesBlockDecrypter, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return err
+	}
+	aesDecrypter := cipher.NewCFBDecrypter(aesBlockDecrypter, iv)
+	aesDecrypter.XORKeyStream(dst, src)
+	return nil
+}
+
+func matchHash(rule *config.Rule, args map[string]interface{}) (*PostProcess, error) {
+	actions := &PostProcess{}
+	for _, field := range rule.Fields {
+		if strings.HasPrefix(field, "res") {
+			addToStruct := PostProcessAction{Action: "hash", Field: field}
+			actions.postProcessAction = append(actions.postProcessAction, addToStruct)
+		} else if strings.HasPrefix(field, "args") {
+			loadedValue, err := utils.LoadValue(field, args)
+			if err != nil {
+				logrus.Errorln("error loading value in matchHash: ", err)
+				return nil, err
+			}
+			stringValue, ok := loadedValue.(string)
+			if !ok {
+				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+			}
+			h := sha256.New()
+			_, _ = h.Write([]byte(stringValue))
+			hashed := hex.EncodeToString(h.Sum(nil))
+			er := utils.StoreValue(field, hashed, args)
+			if er != nil {
+				logrus.Errorln("error storing value in matchHash: ", er)
+				return nil, er
+			}
+		} else {
+			return nil, fmt.Errorf("invalid field (%s) provided", field)
 		}
 	}
 	return actions, nil
