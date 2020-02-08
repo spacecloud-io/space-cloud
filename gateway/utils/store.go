@@ -226,16 +226,16 @@ func splitVariable(key string) []string {
 	array := []string{}
 	for i, c := range key {
 		if c == '[' {
-			inBracket1 += 1
+			inBracket1++
 		}
 		if c == '(' {
-			inBracket2 += 1
+			inBracket2++
 		}
 		if c == ']' {
-			inBracket1 -= 1
+			inBracket1++
 		}
 		if c == ')' {
-			inBracket2 -= 1
+			inBracket2++
 		}
 		if c == '.' && inBracket1 == 0 && inBracket2 == 0 {
 			sub := key[lastIndex:i]

@@ -33,7 +33,7 @@ type Module struct {
 	project         string
 	fileStoreType   string
 	schema          *schema.Schema
-	makeHTTPRequest utils.MakeHttpRequest
+	makeHTTPRequest utils.MakeHTTPRequest
 }
 
 // PostProcess is responsible for implementing force and remove rules
@@ -170,7 +170,7 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 }
 
 // SetMakeHTTPRequest sets the http request
-func (m *Module) SetMakeHTTPRequest(function utils.MakeHttpRequest) {
+func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 	m.Lock()
 	defer m.Unlock()
 

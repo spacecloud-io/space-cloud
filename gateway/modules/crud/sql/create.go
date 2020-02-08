@@ -33,7 +33,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 func (s *SQL) generateCreateQuery(project, col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dbType := s.dbType
-	if dbType == string(utils.SqlServer) {
+	if dbType == string(utils.SQLServer) {
 		dbType = string(utils.Postgres)
 	}
 
@@ -70,7 +70,7 @@ func (s *SQL) generateCreateQuery(project, col string, req *model.CreateRequest)
 	}
 
 	sqlQuery = strings.Replace(sqlQuery, "\"", "", -1)
-	if s.dbType == string(utils.SqlServer) {
+	if s.dbType == string(utils.SQLServer) {
 		sqlQuery = s.generateQuerySQLServer(sqlQuery)
 	}
 	return sqlQuery, args, nil

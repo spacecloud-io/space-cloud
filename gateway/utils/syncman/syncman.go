@@ -87,10 +87,10 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 	s.configFile = configFilePath
 
 	// Write the config to file
-	config.StoreConfigToFile(s.projectConfig, s.configFile)
+	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 	if len(s.projectConfig.Projects) > 0 {
-		cb(s.projectConfig)
+		_ = cb(s.projectConfig)
 	}
 
 	if s.storeType != "none" {
@@ -100,10 +100,10 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 			defer s.lock.Unlock()
 
 			s.projectConfig.Projects = projects
-			config.StoreConfigToFile(s.projectConfig, s.configFile)
+			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
-				s.cb(s.projectConfig)
+				_ = s.cb(s.projectConfig)
 			}
 		}); err != nil {
 			return err

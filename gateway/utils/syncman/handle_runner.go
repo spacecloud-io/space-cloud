@@ -13,6 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
+// HandleRunnerRequests handles requests of the runner
 func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {

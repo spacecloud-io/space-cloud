@@ -61,7 +61,7 @@ func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, project string) erro
 		sql = "create database if not exists " + project
 	case utils.Postgres:
 		sql = "create schema if not exists " + project
-	case utils.SqlServer:
+	case utils.SQLServer:
 		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + project + `')) 
 					BEGIN
     					EXEC ('CREATE SCHEMA [` + project + `] ')

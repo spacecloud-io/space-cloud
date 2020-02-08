@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// Store abstracts the implementation of letsencrypt storage operations
 type Store interface {
 	WatchProjects(cb func(projects []*config.Project)) error
 	WatchServices(cb func(projects scServices)) error

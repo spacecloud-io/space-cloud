@@ -70,7 +70,7 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string)
 	case utils.BoltDB:
 		return bolt.Init(enabled, connection)
 
-	case utils.MySQL, utils.Postgres, utils.SqlServer:
+	case utils.MySQL, utils.Postgres, utils.SQLServer:
 		return sql.Init(dbType, enabled, m.removeProjectScope, connection)
 	default:
 		return nil, utils.ErrInvalidParams

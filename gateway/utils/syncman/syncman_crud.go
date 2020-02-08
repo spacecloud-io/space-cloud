@@ -8,6 +8,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
+// SetDeleteCollection deletes a collection from the database
 func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbType, col string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -28,6 +29,7 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbType, col 
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetDatabaseConnection sets the database connection
 func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbType string, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -51,6 +53,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbType str
 	return s.setProject(ctx, projectConfig)
 }
 
+// RemoveDatabaseConfig removes the database config
 func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -67,6 +70,7 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetModifySchema modifies the schema of table
 func (s *Manager) SetModifySchema(ctx context.Context, project, dbType, col, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -93,6 +97,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbType, col, sch
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetCollectionRules sets the collection rules of the database
 func (s *Manager) SetCollectionRules(ctx context.Context, project, dbType, col string, v *config.TableRule) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -121,6 +126,7 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbType, col s
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetReloadSchema reloads of the schema
 func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema) (map[string]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
@@ -153,6 +159,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 	return colResult, s.setProject(ctx, projectConfig)
 }
 
+// SetSchemaInspection inspects the schema
 func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbType, col, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -180,6 +187,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbType, col,
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetModifyAllSchema modifies schema of all tables
 func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()

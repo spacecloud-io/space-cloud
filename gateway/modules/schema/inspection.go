@@ -66,7 +66,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		// default key
 		if field.FieldDefault != "" {
 			fieldDetails.IsDefault = true
-			if utils.DBType(dbType) == utils.SqlServer {
+			if utils.DBType(dbType) == utils.SQLServer {
 				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
 				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
 				if fieldDetails.Kind == typeBoolean {

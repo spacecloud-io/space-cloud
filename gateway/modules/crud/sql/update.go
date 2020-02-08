@@ -128,7 +128,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	// Generate a prepared query builder
 
 	dbType := s.dbType
-	if dbType == string(utils.SqlServer) {
+	if dbType == string(utils.SQLServer) {
 		dbType = string(utils.Postgres)
 	}
 	dialect := goqu.Dialect(dbType)
@@ -181,7 +181,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			if s.dbType == string(utils.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"+$", -1)
 			}
-			if s.dbType == string(utils.SqlServer) {
+			if s.dbType == string(utils.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"+$", -1)
 			}
 
@@ -199,7 +199,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			if dbType == string(utils.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"*$", -1)
 			}
-			if dbType == string(utils.SqlServer) {
+			if dbType == string(utils.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+k+"*$", -1)
 			}
 
@@ -217,7 +217,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			if s.dbType == string(utils.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=GREATEST("+k+","+"$"+"", -1)
 			}
-			if s.dbType == string(utils.SqlServer) {
+			if s.dbType == string(utils.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=GREATEST("+k+","+"$"+"", -1)
 			}
 		}
@@ -235,7 +235,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			if dbType == string(utils.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=LEAST("+k+","+"$", -1)
 			}
-			if s.dbType == string(utils.SqlServer) {
+			if s.dbType == string(utils.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"=LEAST("+k+","+"$", -1)
 			}
 		}
@@ -253,7 +253,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 			if dbType == string(utils.Postgres) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
 			}
-			if dbType == string(utils.SqlServer) {
+			if dbType == string(utils.SQLServer) {
 				sqlString = strings.Replace(sqlString, k+"=$", k+"="+val, -1)
 			}
 
@@ -264,7 +264,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 	default:
 		return "", nil, utils.ErrInvalidParams
 	}
-	if s.dbType == string(utils.SqlServer) {
+	if s.dbType == string(utils.SQLServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 
@@ -312,7 +312,7 @@ func flattenForDate(m *map[string]interface{}) error {
 
 func (s *SQL) sanitiseUpdateQuery(sqlString string) string {
 	var placeholder byte
-	if (utils.DBType(s.dbType) == utils.Postgres) || (utils.DBType(s.dbType) == utils.SqlServer) {
+	if (utils.DBType(s.dbType) == utils.Postgres) || (utils.DBType(s.dbType) == utils.SQLServer) {
 		placeholder = '$'
 	}
 	var start bool

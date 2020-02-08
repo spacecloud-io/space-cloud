@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 )
 
@@ -27,15 +28,15 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 
 		// Load the request from the body
 		req := model.GraphQLRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		w.Header().Set("Content-Type", "application/json")
 
 		if projectID != pid {
 			// throw some error
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "project id doesn't match"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "project id doesn't match"})
 			return
 		}
 
@@ -48,13 +49,13 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 			defer func() { ch <- struct{}{} }()
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
-				json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 				return
 			}
 
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
-			return
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
+			// return
 		})
 
 		select {
@@ -63,7 +64,7 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 		case <-time.After(10 * time.Second):
 			log.Println("GraphQL Handler: Request timed out")
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
-			json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
 	}

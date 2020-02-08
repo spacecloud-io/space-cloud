@@ -159,15 +159,15 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 
 			var token string
 			switch m.Type {
-			case utils.GQL_CONNECTION_INIT:
+			case utils.GqlConnectionInit:
 				// Check if the request is authorised
 				token = m.Payload.ConnectionParams.Token
 				if err := adminMan.IsTokenValid(token); err != nil {
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_CONNECTION_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlConnectionError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					return
 				}
 
-				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GQL_CONNECTION_ACK, Payload: payloadObject{}})
+				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GqlConnectionAck, Payload: payloadObject{}})
 
 				if onlyOnce {
 					onlyOnce = false
@@ -179,13 +179,13 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 							case <-closeConnAliveRoutine:
 								return
 							case <-ticker.C:
-								channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_CONNECTION_KEEP_ALIVE, Payload: payloadObject{}}
+								channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlConnectionKeepAlive, Payload: payloadObject{}}
 							}
 						}
 					}()
 				}
 
-			case utils.GQL_START:
+			case utils.GqlStart:
 
 				parserSource := source.NewSource(&source.Source{
 					Body: []byte(m.Payload.Query),
@@ -193,34 +193,34 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				// parse the source
 				doc, err := parser.Parse(parser.ParseParams{Source: parserSource})
 				if err != nil {
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
 				opDefinition, ok := doc.Definitions[0].(*ast.OperationDefinition)
 				if !ok {
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: errors.New("erros in operation definition of schema").Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: errors.New("erros in operation definition of schema").Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
 				v, ok := opDefinition.SelectionSet.Selections[0].(*ast.Field)
 				if !ok {
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: errors.New("error in selection set of schema").Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: errors.New("error in selection set of schema").Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
 				whereData, err := graphql.ExtractWhereClause(v.Arguments, utils.M{})
 				if err != nil {
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 				dbType, err := s.graphql.GetDBAlias(v)
 				if err != nil {
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
@@ -240,11 +240,11 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					feed.TypeName = "subscribe_" + feed.Group
 
-					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed), "find": feed.Find}}}
+					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GqlData, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed), "find": feed.Find}}}
 				})
 
 				if err != nil {
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
@@ -252,13 +252,13 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				for _, feed := range feedData {
 					feed.TypeName = "subscribe_" + feed.Group
 
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_DATA, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed)}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlData, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed)}}}
 				}
 
-			case utils.GQL_STOP:
+			case utils.GqlStop:
 				group, ok := graphqlIDMapper.Load(m.ID)
 				if !ok {
-					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: errors.New("got " + utils.GQL_STOP + " wanted " + utils.GQL_START).Error()}}}}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: errors.New("got " + utils.GqlStop + " wanted " + utils.GqlStart).Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
@@ -267,7 +267,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				data.Group = group.(string)
 
 				s.realtime.Unsubscribe(clientID, data)
-				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GQL_STOP, Payload: payloadObject{}})
+				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GqlStop, Payload: payloadObject{}})
 				graphqlIDMapper.Delete(m.ID)
 			}
 		}
