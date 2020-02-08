@@ -31,8 +31,8 @@ const (
 	// Mongo is the type used for MongoDB
 	Mongo DBType = "mongo"
 
-	// BoltDB is the type used for BoltDB
-	BoltDB DBType = "bolt"
+	// EmbeddedDB is the type used for EmbeddedDB
+	EmbeddedDB DBType = "embedded"
 
 	// MySQL is the type used for MySQL
 	MySQL DBType = "mysql"
