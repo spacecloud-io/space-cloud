@@ -1,8 +1,6 @@
 package realtime
 
 import (
-	"strings"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -62,11 +60,11 @@ func createGroupKey(dbType, col string) string {
 	return dbType + "::" + col
 }
 
-func getSubjectName(project, dbType, col string) string {
-	return "realtime:" + project + ":" + dbType + ":" + col
-}
+// func getSubjectName(project, dbType, col string) string {
+// 	return "realtime:" + project + ":" + dbType + ":" + col
+// }
 
-func getDBTypeAndColFromGroupKey(key string) (dbType string, col string) {
-	array := strings.Split(key, "::")
-	return array[0], array[1]
-}
+// func getDBTypeAndColFromGroupKey(key string) (dbType string, col string) {
+// 	array := strings.Split(key, "::")
+// 	return array[0], array[1]
+// }

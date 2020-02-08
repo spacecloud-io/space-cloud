@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// DoesExists checks if the path exists
 func (l *Local) DoesExists(path string) error {
 	// check if file / folder exists
 	ps := string(os.PathSeparator)

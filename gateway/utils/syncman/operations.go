@@ -48,7 +48,8 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	return urls
 }
 
-func (s *Manager) GetRealtimeUrl(project string) string {
+// GetRealtimeURL get the url of realtime
+func (s *Manager) GetRealtimeURL(project string) string {
 	return string(fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project))
 }
 
@@ -88,7 +89,8 @@ func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
 	return len(s.services), nil
 }
 
-func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Project) (error, int) {
+// CreateProjectConfig creates the config for the project
+func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Project) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -96,12 +98,12 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 	// Generate internal access token
 	token, err := s.adminMan.GetInternalAccessToken()
 	if err != nil {
-		return err, http.StatusInternalServerError
+		return http.StatusInternalServerError, err
 	}
 
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
-			return errors.New("project already exists in config"), http.StatusConflict
+			return http.StatusConflict, errors.New("project already exists in config")
 		}
 	}
 
@@ -111,7 +113,7 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 	if s.runnerAddr != "" {
 		params := map[string]interface{}{"id": project.ID}
 		if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project", s.runnerAddr), token, "", params, nil); err != nil {
-			return err, http.StatusInternalServerError
+			return http.StatusInternalServerError, err
 		}
 	}
 
@@ -119,10 +121,10 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 	_ = s.cb(s.projectConfig)
 
 	if s.storeType == "none" {
-		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
+		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	return s.store.SetProject(ctx, project), http.StatusInternalServerError
+	return http.StatusInternalServerError, s.store.SetProject(ctx, project)
 }
 
 // SetProjectGlobalConfig applies the set project config command to the raft log
@@ -149,7 +151,7 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.cb(s.projectConfig)
+	_ = s.cb(s.projectConfig)
 	return s.setProject(ctx, project)
 }
 

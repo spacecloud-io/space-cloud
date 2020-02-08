@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// SetFileStore sets the file store module
 func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -25,6 +26,7 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetFileRule sets the rule for file store
 func (s *Manager) SetFileRule(ctx context.Context, project string, value *config.FileRule) error {
 	// Acquire a lock
 	s.lock.Lock()
@@ -44,6 +46,7 @@ func (s *Manager) SetFileRule(ctx context.Context, project string, value *config
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetDeleteFileRule deletes a rule from file store
 func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename string) error {
 	// Acquire a lock
 	s.lock.Lock()

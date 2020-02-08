@@ -14,7 +14,7 @@ type EventDocument struct {
 	Payload        interface{} `structs:"payload" json:"payload" bson:"payload" mapstructure:"payload"`
 	Status         string      `structs:"status" json:"status" bson:"status" mapstructure:"status"`
 	Retries        int         `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
-	Url            string      `structs:"url" json:"url" bson:"url" mapstructure:"url"`
+	URL            string      `structs:"url" json:"url" bson:"url" mapstructure:"url"`
 	Remark         string      `structs:"remark" json:"remark" bson:"remark" mapstructure:"remark"`
 }
 
@@ -23,11 +23,12 @@ type CloudEventPayload struct {
 	SpecVersion string      `json:"specversion"`
 	Type        string      `json:"type"`
 	Source      string      `json:"source"`
-	Id          string      `json:"id"`
+	ID          string      `json:"id"`
 	Time        string      `json:"time"`
 	Data        interface{} `json:"data"`
 }
 
+// EventResponse is struct reponse of events
 type EventResponse struct {
 	Event  *QueueEventRequest   `json:"event"`
 	Events []*QueueEventRequest `json:"events"`

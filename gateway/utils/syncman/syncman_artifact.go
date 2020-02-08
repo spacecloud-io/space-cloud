@@ -13,6 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
+// HandleArtifactRequests stores artifacts in filestore
 func (s *Manager) HandleArtifactRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {

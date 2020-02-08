@@ -34,7 +34,7 @@ type Module struct {
 	syncMan   *syncman.Manager
 	fileStore *filestore.Module
 
-	schemas map[string]schema.SchemaFields
+	schemas map[string]schema.Fields
 }
 
 // New creates a new instance of the eventing module
@@ -47,7 +47,7 @@ func New(auth *auth.Module, crud *crud.Module, schemaModule *schema.Schema, func
 		functions: functions,
 		adminMan:  adminMan,
 		syncMan:   syncMan,
-		schemas:   map[string]schema.SchemaFields{},
+		schemas:   map[string]schema.Fields{},
 		fileStore: file,
 		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}

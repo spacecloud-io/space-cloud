@@ -71,7 +71,7 @@ func isFieldPresentInUpdate(field string, updateDoc map[string]interface{}) bool
 	return false
 }
 
-func (s *Schema) validateArrayOperations(col string, doc interface{}, SchemaDoc SchemaFields) error {
+func (s *Schema) validateArrayOperations(col string, doc interface{}, SchemaDoc Fields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -108,7 +108,7 @@ func (s *Schema) validateArrayOperations(col string, doc interface{}, SchemaDoc 
 	return nil
 }
 
-func validateMathOperations(col string, doc interface{}, SchemaDoc SchemaFields) error {
+func validateMathOperations(col string, doc interface{}, SchemaDoc Fields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -141,7 +141,7 @@ func validateMathOperations(col string, doc interface{}, SchemaDoc SchemaFields)
 	return nil
 }
 
-func validateDateOperations(col string, doc interface{}, SchemaDoc SchemaFields) error {
+func validateDateOperations(col string, doc interface{}, SchemaDoc Fields) error {
 
 	v, ok := doc.(map[string]interface{})
 	if !ok {
@@ -163,7 +163,7 @@ func validateDateOperations(col string, doc interface{}, SchemaDoc SchemaFields)
 	return nil
 }
 
-func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc SchemaFields) (interface{}, error) {
+func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc Fields) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("document not of type object in collection %s", col)

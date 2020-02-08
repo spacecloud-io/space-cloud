@@ -67,7 +67,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 
 	s := schema.Init(c, removeProjectScope)
 	a := auth.Init(nodeID, c, s, removeProjectScope)
-	a.SetMakeHttpRequest(syncMan.MakeHTTPRequest)
+	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
 	fn := functions.Init(a, syncMan)
 

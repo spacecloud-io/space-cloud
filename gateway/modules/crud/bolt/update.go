@@ -13,6 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+// Update updates the document(s) which match the condition provided.
 func (b *Bolt) Update(ctx context.Context, project, col string, req *model.UpdateRequest) (int64, error) {
 	var count int64
 	switch req.Operation {

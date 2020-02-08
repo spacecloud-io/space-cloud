@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
 )
 
+// HandleMetricMiddleWare measures the project level metrics
 func HandleMetricMiddleWare(next http.Handler, metrics *metrics.Module) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)

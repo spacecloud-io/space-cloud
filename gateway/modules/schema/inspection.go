@@ -31,7 +31,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 }
 
 // Inspector generates schema
-func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (schemaCollection, error) {
+func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (Collection, error) {
 	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
 
 	if err != nil {
@@ -40,12 +40,12 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (sc
 	return generateInspection(dbType, col, fields, foreignkeys, indexes)
 }
 
-func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType, indexes []utils.IndexType) (schemaCollection, error) {
-	inspectionCollection := schemaCollection{}
-	inspectionFields := SchemaFields{}
+func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType, indexes []utils.IndexType) (Collection, error) {
+	inspectionCollection := Collection{}
+	inspectionFields := Fields{}
 
 	for _, field := range fields {
-		fieldDetails := SchemaFieldType{FieldName: field.FieldName}
+		fieldDetails := FieldType{FieldName: field.FieldName}
 
 		// check if field nullable (!)
 		if field.FieldNull == "NO" {
@@ -66,7 +66,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		// default key
 		if field.FieldDefault != "" {
 			fieldDetails.IsDefault = true
-			if utils.DBType(dbType) == utils.SqlServer {
+			if utils.DBType(dbType) == utils.SQLServer {
 				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
 				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
 				if fieldDetails.Kind == typeBoolean {
@@ -124,7 +124,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 	return inspectionCollection, nil
 }
 
-func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
+func inspectionMySQLCheckFieldType(typeName string, fieldDetails *FieldType) error {
 	if typeName == "varchar("+sqlTypeIDSize+")" {
 		fieldDetails.Kind = TypeID
 		return nil
@@ -151,7 +151,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *SchemaFieldTyp
 	return nil
 }
 
-func inspectionPostgresCheckFieldType(typeName string, fieldDetails *SchemaFieldType) error {
+func inspectionPostgresCheckFieldType(typeName string, fieldDetails *FieldType) error {
 	if typeName == "character varying" {
 		fieldDetails.Kind = TypeID
 		return nil

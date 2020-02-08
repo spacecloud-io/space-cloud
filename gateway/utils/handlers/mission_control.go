@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // HandleMissionControl hosts the static resources for mission control
@@ -11,7 +13,7 @@ func HandleMissionControl(staticPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		url := r.URL.Path
 
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		path := strings.TrimPrefix(url, "/mission-control")
 		if !strings.HasPrefix(path, "/") {
