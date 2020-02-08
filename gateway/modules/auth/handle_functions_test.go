@@ -116,9 +116,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 	authModule := Init("1", &crud.Module{}, &schema.Schema{}, false)
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			er := authModule.SetConfig("project", test.secretKey, config.Crud{}, &config.FileStore{}, test.module.funcRules, &config.Eventing{})
-			if er != nil {
-				t.Error("error setting config of auth module")
+			if er := authModule.SetConfig("project", test.secretKey, config.Crud{}, &config.FileStore{}, test.module.funcRules, &config.Eventing{}); er != nil {
+				t.Errorf("error setting config of auth module  - %s", er.Error())
 			}
 			auth, err := (authModule).IsFuncCallAuthorised(context.Background(), test.project, test.service, test.function, test.token, test.params)
 			if (err != nil) != test.IsErrExpected {

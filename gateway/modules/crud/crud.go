@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/bolt"
@@ -118,7 +119,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			log.Println("Error connecting to " + k + " : " + err.Error())
 			return err
 		}
-		log.Println("Successfully connected to " + k)
+		logrus.Info("Successfully connected to " + k)
 	}
 	return nil
 }

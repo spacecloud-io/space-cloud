@@ -233,7 +233,7 @@ func (m *Module) GetCollections(ctx context.Context, project, dbAlias string) ([
 	return crud.GetCollections(ctx, project)
 }
 
-// CreateProjectIfNotExists creates a project if none exist
+// CreateProjectIfNotExists creates a database if not exist which has same name of project
 func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error {
 	m.RLock()
 	defer m.RUnlock()

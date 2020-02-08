@@ -61,14 +61,12 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"create": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 	s := schema.Init(crud.Init(false), false)
-	err := s.SetConfig(rule, project)
-	if err != nil {
-		t.Error("error setting config of schema")
+	if err := s.SetConfig(rule, project); err != nil {
+		t.Errorf("error setting config of schema - %s", err.Error())
 	}
 	auth := Init("1", &crud.Module{}, s, false)
-	er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
-	if er != nil {
-		t.Error("error setting config of auth module")
+	if er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
@@ -133,14 +131,12 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 	s := schema.Init(crud.Init(false), false)
-	err := s.SetConfig(rule, project)
-	if err != nil {
-		t.Error("error setting config of schema")
+	if err := s.SetConfig(rule, project); err != nil {
+		t.Errorf("error setting config of schema - %s", err.Error())
 	}
 	auth := Init("1", &crud.Module{}, s, false)
-	er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
-	if er != nil {
-		t.Error("error setting config of auth module")
+	if er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
@@ -234,14 +230,12 @@ func TestPostProcessMethod(t *testing.T) {
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 	s := schema.Init(crud.Init(false), false)
-	err := s.SetConfig(rule, project)
-	if err != nil {
-		t.Error("error setting config of schema")
+	if err := s.SetConfig(rule, project); err != nil {
+		t.Errorf("error setting config of schema - %s", err.Error())
 	}
 	auth := Init("1", &crud.Module{}, s, false)
-	er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
-	if er != nil {
-		t.Error("error setting config of auth module")
+	if er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
@@ -300,14 +294,12 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"read": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 	s := schema.Init(crud.Init(false), false)
-	err := s.SetConfig(rule, project)
-	if err != nil {
-		t.Error("error setting config of schema")
+	if err := s.SetConfig(rule, project); err != nil {
+		t.Errorf("error setting config of schema - %s", err.Error())
 	}
 	auth := Init("1", &crud.Module{}, s, false)
-	er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
-	if er != nil {
-		t.Error("error setting config of auth module")
+	if er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
@@ -363,14 +355,12 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"delete": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 	s := schema.Init(crud.Init(false), false)
-	err := s.SetConfig(rule, project)
-	if err != nil {
-		t.Error("error setting config of schema")
+	if err := s.SetConfig(rule, project); err != nil {
+		t.Errorf("error setting config of schema - %s", err.Error())
 	}
 	auth := Init("1", &crud.Module{}, s, false)
-	er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
-	if er != nil {
-		t.Error("error setting config of auth module")
+	if er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
@@ -426,14 +416,12 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"update": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
 	s := schema.Init(crud.Init(false), false)
-	err := s.SetConfig(rule, project)
-	if err != nil {
-		t.Error("error setting config of schema")
+	if err := s.SetConfig(rule, project); err != nil {
+		t.Errorf("error setting config of schema - %s", err.Error())
 	}
 	auth := Init("1", &crud.Module{}, s, false)
-	er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
-	if er != nil {
-		t.Error("error setting config of auth module")
+	if er := auth.SetConfig(project, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
