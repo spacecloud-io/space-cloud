@@ -82,3 +82,8 @@ jobs:
         run: cd metric-proxy && go build -v .
       - name: Test
         run: cd metric-proxy && go test ./...
+      - name: Lint
+        run: |
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s latest
+          sudo cp ./bin/golangci-lint $GOPATH/bin/
+          cd metric-proxy && golangci-lint run -E golint --exclude-use-default=false ./...
