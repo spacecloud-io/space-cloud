@@ -283,7 +283,7 @@ func matchHash(rule *config.Rule, args map[string]interface{}) (*PostProcess, er
 				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
 			}
 			h := sha256.New()
-			h.Write([]byte(stringValue))
+			_, _ = h.Write([]byte(stringValue))
 			hashed := hex.EncodeToString(h.Sum(nil))
 			er := utils.StoreValue(field, hashed, args)
 			if er != nil {

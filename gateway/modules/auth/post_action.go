@@ -98,7 +98,7 @@ func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{})
 					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
 				}
 				h := sha256.New()
-				h.Write([]byte(stringValue))
+				_, _ = h.Write([]byte(stringValue))
 				hashed := hex.EncodeToString(h.Sum(nil))
 				er := utils.StoreValue(field.Field, hashed, map[string]interface{}{"res": doc})
 				if er != nil {
