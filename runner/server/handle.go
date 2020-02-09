@@ -119,6 +119,7 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 	}
 }
 
+// HandleDeleteService handles the request to delete a service
 func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer utils.CloseTheCloser(r.Body)
@@ -148,6 +149,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 	}
 }
 
+// HandleGetServices handles the request to get all services
 func (s *Server) HandleGetServices() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer utils.CloseTheCloser(r.Body)
@@ -178,6 +180,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 	}
 }
 
+// HandleApplyEventingService handles request to apply eventing service
 func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer utils.CloseTheCloser(r.Body)
@@ -194,7 +197,7 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 		}
 
 		req := new(model.CloudEventPayload)
-		json.NewDecoder(r.Body).Decode(req)
+		_ = json.NewDecoder(r.Body).Decode(req)
 
 		if req.Data.Meta.IsDeploy {
 			// verify path e.g -> /artifacts/acc_id/projectid/version/build.zip
