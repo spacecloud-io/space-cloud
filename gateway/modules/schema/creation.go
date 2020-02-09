@@ -11,28 +11,28 @@ import (
 
 type creationModule struct {
 	dbAlias, project, TableName, ColumnName, columnType string
-	currentColumnInfo, realColumnInfo                   *SchemaFieldType
+	currentColumnInfo, realColumnInfo                   *FieldType
 	schemaModule                                        *Schema
 	removeProjectScope                                  bool
 }
 
 // SchemaCreation creates or alters tables of sql
-func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project string, parsedSchema schemaType) error {
+func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project string, parsedSchema Type) error {
 	dbType, err := s.crud.GetDBType(dbAlias)
 	if err != nil {
 		return err
 	}
 
 	// Return gracefully if db type is mongo
-	if dbType == string(utils.Mongo) || dbType == string(utils.BoltDB) {
+	if dbType == string(utils.Mongo) || dbType == string(utils.EmbeddedDB) {
 		return nil
 	}
 
-	if err := s.crud.CreateProjectIfNotExists(ctx, project, dbAlias); err != nil {
+	if err := s.crud.CreateDatabaseIfNotExist(ctx, project, dbAlias); err != nil {
 		return err
 	}
 
-	currentSchema, _ := s.Inspector(ctx, dbAlias, project, tableName)
+	currentSchema, _ := s.Inspector(ctx, dbType, project, tableName)
 
 	queries, err := s.generateCreationQueries(ctx, dbAlias, tableName, project, parsedSchema, currentSchema)
 	if err != nil {
@@ -41,7 +41,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 	return s.crud.RawBatch(ctx, dbAlias, queries)
 }
 
-func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName, project string, parsedSchema schemaType, currentSchema schemaCollection) ([]string, error) {
+func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName, project string, parsedSchema Type, currentSchema Collection) ([]string, error) {
 	dbType, err := s.crud.GetDBType(dbAlias)
 	if err != nil {
 		return nil, err
@@ -74,9 +74,9 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			return nil, err
 		}
 		batchedQueries = append(batchedQueries, query)
-		currentTableInfo = SchemaFields{}
+		currentTableInfo = Fields{}
 		for realColumnName, realColumnInfo := range realTableInfo {
-			temp := SchemaFieldType{
+			temp := FieldType{
 				FieldName:           realColumnInfo.FieldName,
 				IsFieldTypeRequired: realColumnInfo.IsFieldTypeRequired,
 				IsList:              realColumnInfo.IsList,
@@ -191,7 +191,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			batchedQueries = append(batchedQueries, addIndex(dbType, project, tableName, indexName, fields.IsIndexUnique, s.removeProjectScope, fields.IndexMap))
 		}
 	}
-	for indexName, _ := range currentIndexMap {
+	for indexName := range currentIndexMap {
 		if _, ok := realIndexMap[indexName]; !ok {
 			batchedQueries = append(batchedQueries, removeIndex(dbType, project, tableName, indexName, s.removeProjectScope))
 		}

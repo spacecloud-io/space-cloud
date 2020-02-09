@@ -2,20 +2,23 @@ package schema
 
 type (
 
-	// schemaType is the data structure for storing the parsed values of schema string
-	schemaType       map[string]schemaCollection // key is database name
-	schemaCollection map[string]SchemaFields     // key is collection name
-	SchemaFields     map[string]*SchemaFieldType // key is field name
-	directiveArgs    map[string]string           // key is Directive's argument name
-	fieldType        int
+	// Type is the data structure for storing the parsed values of schema string
+	Type map[string]Collection // key is database name
+	// Collection is a data structure for storing fields of schema
+	Collection map[string]Fields // key is collection name
+	// Fields is a data structure for storing the type of field
+	Fields map[string]*FieldType // key is field name
+	// directiveArgs    map[string]string           // key is Directive's argument name
+	// fieldType int
 
-	SchemaFieldType struct {
+	// FieldType stores information about a particular column in table
+	FieldType struct {
 		FieldName           string
 		IsFieldTypeRequired bool
 		IsList              bool
 		Kind                string
 		//Directive           string
-		nestedObject SchemaFields
+		nestedObject Fields
 
 		// For directives
 		IsPrimary   bool
@@ -32,6 +35,7 @@ type (
 		Default     interface{}
 	}
 
+	// TableProperties are properties of the table
 	TableProperties struct {
 		From, To     string
 		Table, Field string
@@ -42,11 +46,12 @@ type (
 )
 
 const (
-	typeInteger        string = "Integer"
-	typeString         string = "String"
-	typeFloat          string = "Float"
-	typeBoolean        string = "Boolean"
-	typeDateTime       string = "DateTime"
+	typeInteger  string = "Integer"
+	typeString   string = "String"
+	typeFloat    string = "Float"
+	typeBoolean  string = "Boolean"
+	typeDateTime string = "DateTime"
+	// TypeID represents ID of schema
 	TypeID             string = "ID"
 	sqlTypeIDSize      string = "50"
 	typeObject         string = "Object"
@@ -60,12 +65,12 @@ const (
 	directiveLink      string = "link"
 	directiveDefault   string = "default"
 
-	defaultIndexName  string = ""
+	// defaultIndexName  string = ""
 	defaultIndexSort  string = "asc"
 	deafultIndexOrder int    = 1
 )
 
-type indexStore []*SchemaFieldType
+type indexStore []*FieldType
 
 func (a indexStore) Len() int           { return len(a) }
 func (a indexStore) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }

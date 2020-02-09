@@ -18,53 +18,52 @@ func getAccountConfigPath() string {
 	return fmt.Sprintf("%s/accounts.yaml", getSpaceCloudDirectory())
 }
 
-func getSelectedAccount(credential *model.Credential) *model.Account {
-	var selectedaccount model.Account
-	for _, v := range credential.Accounts {
-		if credential.SelectedAccount == v.ID {
-			selectedaccount = v
-		}
-	}
-	return &selectedaccount
-}
-
-func getCreds() (*model.Credential, error) {
-	fileName := getAccountConfigPath()
-	yamlFile, err := ioutil.ReadFile(fileName)
+func getSelectedAccount() (*model.Account, error) {
+	filePath := getAccountConfigPath()
+	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		logrus.Error("error getting credential unable to read accounts config file - %v", err)
+		logrus.Error("error getting credential unable to read accounts config file - %s", err.Error())
 		return nil, err
 	}
 
 	credential := new(model.Credential)
 	if err := yaml.Unmarshal(yamlFile, credential); err != nil {
-		logrus.Error("error getting credential unable to unmarshal accounts config file - %v", err)
+		logrus.Error("error getting credential unable to unmarshal accounts config file - %s", err.Error())
 		return nil, err
 	}
-	return credential, nil
+
+	var account *model.Account
+	for _, v := range credential.Accounts {
+		if credential.SelectedAccount == v.ID {
+			account = v
+		}
+	}
+	return account, nil
 }
 
-func checkCred(selectedAccount *model.Account) error {
-	fileName := getAccountConfigPath()
-	yamlFile, err := ioutil.ReadFile(fileName)
+func checkCred(account *model.Account) error {
+	yamlFile, err := ioutil.ReadFile(getAccountConfigPath())
 	if err != nil {
-		// file doesn't exist create new one
+		// accounts.yaml file doesn't exist create new one
 		credential := model.Credential{
-			Accounts:        []model.Account{*selectedAccount},
-			SelectedAccount: selectedAccount.ID,
+			Accounts:        []*model.Account{account},
+			SelectedAccount: account.ID,
 		}
 		if err := generateYamlFile(&credential); err != nil {
 			logrus.Errorf("error in checking credentials unable to create accounts yaml file - %v", err)
 			return err
 		}
 	}
+	// file already exists, read data from accounts.yaml file
 	credential := new(model.Credential)
 	if err := yaml.Unmarshal(yamlFile, credential); err != nil {
 		return err
 	}
 	for _, val := range credential.Accounts {
-		if val.ID == selectedAccount.ID {
-			val.ID, val.UserName, val.Key, val.ServerUrl = selectedAccount.ID, selectedAccount.UserName, selectedAccount.Key, selectedAccount.ServerUrl
+		// update account if already exists
+		if val.ID == account.ID {
+			val.ID, val.UserName, val.Key, val.ServerUrl = account.ID, account.UserName, account.Key, account.ServerUrl
+			credential.SelectedAccount = account.ID
 			if err := generateYamlFile(credential); err != nil {
 				logrus.Errorf("error in checking credentials unable to update accounts yaml file - %v", err)
 				return err
@@ -72,8 +71,9 @@ func checkCred(selectedAccount *model.Account) error {
 			return nil
 		}
 	}
-	credential.Accounts = append(credential.Accounts, *selectedAccount)
-	credential.SelectedAccount = selectedAccount.ID
+	// add new account to already existing accounts.yaml file
+	credential.Accounts = append(credential.Accounts, account)
+	credential.SelectedAccount = account.ID
 	if err := generateYamlFile(credential); err != nil {
 		logrus.Errorf("error in checking credentials unable to update accounts yaml file - %v", err)
 		return err

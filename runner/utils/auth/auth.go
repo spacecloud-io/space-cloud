@@ -19,6 +19,9 @@ type Config struct {
 
 	// For proxy authentication
 	ProxySecret string
+
+	// disable authentication while development
+	IsDev bool
 }
 
 // JWTAlgorithm describes the jwt algorithm to use

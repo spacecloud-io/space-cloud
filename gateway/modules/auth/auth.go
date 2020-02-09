@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"errors"
 	"sync"
 
@@ -16,7 +17,8 @@ import (
 var (
 	// ErrInvalidSigningMethod denotes a jwt signing method type not used by Space Cloud.
 	ErrInvalidSigningMethod = errors.New("invalid signing method type")
-	ErrTokenVerification    = errors.New("AUTH: JWT token could not be verified")
+	// ErrTokenVerification is thrown when a jwt token could not be verified
+	ErrTokenVerification = errors.New("AUTH: JWT token could not be verified")
 )
 
 // Module is responsible for authentication and authorisation
@@ -25,6 +27,7 @@ type Module struct {
 	rules           config.Crud
 	nodeID          string
 	secret          string
+	aesKey          []byte
 	crud            *crud.Module
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
@@ -32,7 +35,7 @@ type Module struct {
 	project         string
 	fileStoreType   string
 	schema          *schema.Schema
-	makeHttpRequest utils.MakeHttpRequest
+	makeHTTPRequest utils.MakeHTTPRequest
 }
 
 // PostProcess is responsible for implementing force and remove rules
@@ -53,7 +56,7 @@ func Init(nodeID string, crud *crud.Module, schema *schema.Schema, removeProject
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secret, aesKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -64,6 +67,11 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	m.project = project
 	m.rules = rules
 	m.secret = secret
+	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
 		m.fileStoreType = fileStore.StoreType
@@ -168,9 +176,10 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 	return nil, ErrTokenVerification
 }
 
-func (m *Module) SetMakeHttpRequest(function utils.MakeHttpRequest) {
+// SetMakeHTTPRequest sets the http request
+func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.makeHttpRequest = function
+	m.makeHTTPRequest = function
 }

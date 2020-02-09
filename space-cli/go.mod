@@ -11,6 +11,7 @@ require (
 	github.com/docker/docker v1.4.2-0.20190927142053-ada3c14355ce
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
+	github.com/ghodss/yaml v1.0.0
 	github.com/gogo/protobuf v1.3.0 // indirect
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
@@ -24,7 +25,7 @@ require (
 	github.com/urfave/cli v1.22.2
 	golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392 // indirect
 	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
-	golang.org/x/sys v0.0.0-20190924154521-2837fb4f24fe // indirect
+	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	google.golang.org/genproto v0.0.0-20190916214212-f660b8655731 // indirect

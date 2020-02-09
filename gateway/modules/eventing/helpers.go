@@ -106,7 +106,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 		Payload:        string(data),
 		Status:         status,
 		Retries:        retries,
-		Url:            url,
+		URL:            url,
 	}
 }
 

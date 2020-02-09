@@ -27,6 +27,8 @@ func actionRunner(c *cli.Context) error {
 	driverConfig := c.String("driver-config")
 	outsideCluster := c.Bool("outside-cluster")
 
+	isDev := c.Bool("dev")
+
 	ArtifactAddr := c.String("artifact-addr")
 	// Set the log level
 	setLogLevel(loglevel)
@@ -38,6 +40,7 @@ func actionRunner(c *cli.Context) error {
 		Auth: &auth.Config{
 			Secret:      jwtSecret,
 			ProxySecret: jwtProxySecret,
+			IsDev:       isDev,
 		},
 		Driver: &driver.Config{
 			DriverType:     model.DriverType(driverType),

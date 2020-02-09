@@ -33,14 +33,14 @@ func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 
 		// Load the request from the body
 		req := model.CreateRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the user is authenticated
 		status, err := auth.IsCreateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -50,13 +50,13 @@ func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 
 			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{})
+		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
 }
 
@@ -73,8 +73,8 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 
 		// Load the request from the body
 		req := model.ReadRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Create empty read options if it does not exist
 		if req.Options == nil {
@@ -85,7 +85,7 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 		actions, status, err := auth.IsReadOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -93,7 +93,7 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 		result, err := crud.Read(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -102,7 +102,7 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
 }
 
@@ -119,13 +119,13 @@ func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 
 		// Load the request from the body
 		req := model.UpdateRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		status, err := auth.IsUpdateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -135,13 +135,13 @@ func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 
 			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
@@ -158,13 +158,13 @@ func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 
 		// Load the request from the body
 		req := model.DeleteRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		status, err := auth.IsDeleteOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -173,13 +173,13 @@ func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 		if err != nil {
 			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
@@ -196,13 +196,13 @@ func HandleCrudAggregate(auth *auth.Module, crud *crud.Module) http.HandlerFunc 
 
 		// Load the request from the body
 		req := model.AggregateRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		status, err := auth.IsAggregateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -210,13 +210,13 @@ func HandleCrudAggregate(auth *auth.Module, crud *crud.Module) http.HandlerFunc 
 		result, err := crud.Aggregate(ctx, meta.dbType, meta.project, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
 }
 
@@ -250,8 +250,8 @@ func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Mo
 
 		// Load the request from the body
 		var txRequest model.BatchRequest
-		json.NewDecoder(r.Body).Decode(&txRequest)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&txRequest)
+		defer utils.CloseTheCloser(r.Body)
 
 		for _, req := range txRequest.Requests {
 
@@ -278,7 +278,7 @@ func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Mo
 			if err != nil {
 				// Send http response
 				w.WriteHeader(status)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
 		}
@@ -287,12 +287,12 @@ func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Mo
 		err := crud.Batch(ctx, meta.dbType, meta.project, &txRequest)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }

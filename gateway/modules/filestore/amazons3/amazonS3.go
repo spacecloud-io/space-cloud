@@ -27,7 +27,7 @@ func (a *AmazonS3) GetStoreType() utils.FileStoreType {
 	return utils.AmazonS3
 }
 
-// Gracefully close the s3 filestore module
+// Close gracefully close the s3 filestore module
 func (a *AmazonS3) Close() error {
 	return nil
 }

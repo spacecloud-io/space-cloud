@@ -10,6 +10,45 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/utils"
 )
 
+func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
+	type request struct {
+		RootPath string `json:"rootPath"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Close the body of the request
+		defer utils.CloseTheCloser(r.Body)
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		// get nameSpace from requestUrl!
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		secretName := vars["name"]
+
+		// Parse request body
+		reqBody := new(request)
+		if err := json.NewDecoder(r.Body).Decode(reqBody); err != nil {
+			logrus.Errorf("Failed to set file secret root path - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		// set file secret root path
+		if err := s.driver.SetFileSecretRootPath(projectID, secretName, reqBody.RootPath); err != nil {
+			logrus.Errorf("Failed to create secret - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		utils.SendEmptySuccessResponse(w, r)
+	}
+}
+
 func (s *Server) handleApplySecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
@@ -63,12 +102,14 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		projectID := vars["project"]
 
 		// list all secrets
-		if _, err := s.driver.ListSecrets(projectID); err != nil {
+		secrets, err := s.driver.ListSecrets(projectID)
+		if err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		utils.SendEmptySuccessResponse(w, r)
+
+		utils.SendSuccessResponse(w, r, map[string]interface{}{"secrets": secrets})
 	}
 }
 

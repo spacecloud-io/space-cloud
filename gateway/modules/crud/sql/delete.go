@@ -34,7 +34,7 @@ func (s *SQL) generateDeleteQuery(project, col string, req *model.DeleteRequest)
 	// Generate a prepared query builder
 
 	dbType := s.dbType
-	if dbType == string(utils.SqlServer) {
+	if dbType == string(utils.SQLServer) {
 		dbType = string(utils.Postgres)
 	}
 
@@ -53,7 +53,7 @@ func (s *SQL) generateDeleteQuery(project, col string, req *model.DeleteRequest)
 	}
 	sqlString = strings.Replace(sqlString, "\"", "", -1)
 
-	if s.dbType == string(utils.SqlServer) {
+	if s.dbType == string(utils.SQLServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 	return sqlString, args, nil

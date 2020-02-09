@@ -36,8 +36,8 @@ func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manage
 		defer cancel()
 
 		vars := mux.Vars(r)
-		projectId := vars["project"]
-		if err := syncMan.SetProjectRoutes(ctx, projectId, value.Routes); err != nil {
+		projectID := vars["project"]
+		if err := syncMan.SetProjectRoutes(ctx, projectID, value.Routes); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -65,8 +65,8 @@ func HandleGetRoutingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		defer cancel()
 
 		vars := mux.Vars(r)
-		projectId := vars["project"]
-		routes, err := syncMan.GetProjectRoutes(ctx, projectId)
+		projectID := vars["project"]
+		routes, err := syncMan.GetProjectRoutes(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("error handling get routing config in handlers unable to get project routes got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -101,8 +101,8 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		defer cancel()
 
 		vars := mux.Vars(r)
-		projectId := vars["project"]
-		if err := syncMan.SetProjectRoute(ctx, projectId, &value.Route); err != nil {
+		projectID := vars["project"]
+		if err := syncMan.SetProjectRoute(ctx, projectID, &value.Route); err != nil {
 			logrus.Errorf("error handling set project route in handlers unable to add route in project config got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -131,9 +131,9 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 		defer cancel()
 
 		vars := mux.Vars(r)
-		projectId := vars["project"]
-		routeId := vars["routeId"]
-		if err := syncMan.DeleteProjectRoute(ctx, projectId, routeId); err != nil {
+		projectID := vars["project"]
+		routeID := vars["routeID"]
+		if err := syncMan.DeleteProjectRoute(ctx, projectID, routeID); err != nil {
 			logrus.Errorf("error handling delete project route in handlers unable to delete route in project config got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

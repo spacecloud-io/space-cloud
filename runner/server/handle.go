@@ -23,6 +23,9 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
@@ -40,7 +43,36 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		}
 
 		// Apply the service config
-		if err := s.driver.CreateProject(project); err != nil {
+		if err := s.driver.CreateProject(ctx, project); err != nil {
+			logrus.Errorf("Failed to create project - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		utils.SendEmptySuccessResponse(w, r)
+	}
+}
+
+func (s *Server) handleDeleteProject() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Close the body of the request
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to create project - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		vars := mux.Vars(r)
+		projectID := vars["projectId"]
+		// Apply the service config
+		if err := s.driver.DeleteProject(ctx, projectID); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -87,6 +119,7 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 	}
 }
 
+// HandleDeleteService handles the request to delete a service
 func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer utils.CloseTheCloser(r.Body)
@@ -116,6 +149,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 	}
 }
 
+// HandleGetServices handles the request to get all services
 func (s *Server) HandleGetServices() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer utils.CloseTheCloser(r.Body)
@@ -146,6 +180,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 	}
 }
 
+// HandleApplyEventingService handles request to apply eventing service
 func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer utils.CloseTheCloser(r.Body)
@@ -162,7 +197,7 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 		}
 
 		req := new(model.CloudEventPayload)
-		json.NewDecoder(r.Body).Decode(req)
+		_ = json.NewDecoder(r.Body).Decode(req)
 
 		if req.Data.Meta.IsDeploy {
 			// verify path e.g -> /artifacts/acc_id/projectid/version/build.zip

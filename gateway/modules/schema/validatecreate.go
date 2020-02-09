@@ -11,7 +11,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (s *Schema) SchemaValidator(col string, collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
+// SchemaValidator validates the schema
+func (s *Schema) SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 
 	mutatedDoc := map[string]interface{}{}
 	for fieldKey, fieldValue := range collectionFields {
@@ -100,7 +101,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 
 	return nil
 }
-func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
+func (s *Schema) checkType(col string, value interface{}, fieldValue *FieldType) (interface{}, error) {
 
 	switch v := value.(type) {
 	case int:

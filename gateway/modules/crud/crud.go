@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/bolt"
@@ -23,7 +24,6 @@ type Module struct {
 	block              Crud
 	dbType             string
 	alias              string
-	primaryDB          string
 	project            string
 	removeProjectScope bool
 
@@ -44,7 +44,7 @@ type Crud interface {
 	RawExec(ctx context.Context, project string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, project, col string) error
-	CreateProjectIfNotExist(ctx context.Context, project string) error
+	CreateDatabaseIfNotExist(ctx context.Context, project string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
@@ -67,10 +67,9 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string)
 	switch dbType {
 	case utils.Mongo:
 		return mgo.Init(enabled, connection)
-	case utils.BoltDB:
+	case utils.EmbeddedDB:
 		return bolt.Init(enabled, connection)
-
-	case utils.MySQL, utils.Postgres, utils.SqlServer:
+	case utils.MySQL, utils.Postgres, utils.SQLServer:
 		return sql.Init(dbType, enabled, m.removeProjectScope, connection)
 	default:
 		return nil, utils.ErrInvalidParams
@@ -97,7 +96,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 	// Close the previous database connection
 	if m.block != nil {
-		m.block.Close()
+		utils.CloseTheCloser(m.block)
 	}
 
 	// Create a new crud blocks
@@ -118,9 +117,8 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if err != nil {
 			log.Println("Error connecting to " + k + " : " + err.Error())
 			return err
-		} else {
-			log.Println("Successfully connected to " + k)
 		}
+		logrus.Info("Successfully connected to " + k)
 	}
 	return nil
 }

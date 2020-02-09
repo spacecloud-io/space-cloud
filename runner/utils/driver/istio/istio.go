@@ -76,7 +76,7 @@ func NewIstioDriver(auth *auth.Module, c *Config) (*Istio, error) {
 }
 
 func (i *Istio) getSecrets(service *model.Service) (map[string]*v1.Secret, error) {
-	var listOfSecrets map[string]*v1.Secret
+	listOfSecrets := map[string]*v1.Secret{}
 	tasks := service.Tasks
 	for _, task := range tasks {
 		for _, secretName := range task.Secrets {
@@ -281,8 +281,9 @@ func (i *Istio) DeleteService(ctx context.Context, projectID, serviceID, version
 	return nil
 }
 
-func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Service, error) {
-	deploymentList, err := i.kube.AppsV1().Deployments(projectId).List(metav1.ListOptions{})
+// GetServices gets the services for istio
+func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
+	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("error getting service in istio unable to find deployment got error message - %v", err)
 		return nil, err
@@ -290,7 +291,7 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 	services := []*model.Service{}
 	for _, deployment := range deploymentList.Items {
 		service := new(model.Service)
-		service.ProjectID = projectId
+		service.ProjectID = projectID
 		service.ID = deployment.Labels["app"]
 		service.Version = deployment.Labels["version"]
 		s1, err := strconv.Atoi(deployment.Annotations["concurrency"])
@@ -324,10 +325,30 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 				ports[i] = model.Port{Name: array[0], Protocol: model.Protocol(array[1]), Port: port.ContainerPort}
 			}
 
+			var dockerSecret string
+			var secrets []string
+
 			// get environment variables
 			envs := map[string]string{}
 			for _, env := range containerInfo.Env {
+				if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
+					secrets = append(secrets, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+					continue
+				}
 				envs[env.Name] = env.Value
+			}
+
+			// Range over the file mounts for secrets
+			for _, volume := range containerInfo.VolumeMounts {
+				if checkIfVolumeIsSecret(volume.Name, deployment.Spec.Template.Spec.Volumes) {
+					secrets = append(secrets, volume.Name)
+				}
+			}
+
+			// Get docker secret
+			// TODO: Handle case when different tasks have different secrets
+			if len(deployment.Spec.Template.Spec.ImagePullSecrets) > 0 {
+				dockerSecret = deployment.Spec.Template.Spec.ImagePullSecrets[0].Name
 			}
 
 			// Extract the runtime from the environment variable
@@ -353,16 +374,18 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 					Memory: containerInfo.Resources.Requests.Memory().Value() / (1024 * 1024),
 				},
 				Docker: model.Docker{
-					Image: containerInfo.Image,
-					Cmd:   containerInfo.Command,
+					Image:  containerInfo.Image,
+					Cmd:    containerInfo.Command,
+					Secret: dockerSecret,
 				},
 				Env:     envs,
 				Runtime: runtime,
+				Secrets: secrets,
 			})
 		}
 
 		// set whitelist
-		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectId).Get(getAuthorizationPolicyName(service), metav1.GetOptions{})
+		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectID).Get(getAuthorizationPolicyName(service), metav1.GetOptions{})
 		if len(authPolicy.Spec.Rules[0].From) != 0 {
 			for _, rule := range authPolicy.Spec.Rules[0].From {
 				for _, projectID := range rule.Source.Namespaces {
@@ -383,7 +406,7 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 		}
 
 		// Set upstreams
-		sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectId).Get(service.ID, metav1.GetOptions{})
+		sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectID).Get(service.ID, metav1.GetOptions{})
 		for _, value := range sideCar.Spec.Egress[0].Hosts {
 			a := strings.Split(value, "/")
 			if a[0] == "space-cloud" || a[0] == "istio-system" {
@@ -397,6 +420,15 @@ func (i *Istio) GetServices(ctx context.Context, projectId string) ([]*model.Ser
 	}
 
 	return services, nil
+}
+
+func checkIfVolumeIsSecret(name string, volumes []v1.Volume) bool {
+	for _, v := range volumes {
+		if v.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 // AdjustScale adjusts the number of instances based on the number of active requests. It tries to make sure that
@@ -524,7 +556,7 @@ func (i *Istio) WaitForService(service *model.Service) error {
 }
 
 // CreateProject creates a new namespace for the client
-func (i *Istio) CreateProject(project *model.Project) error {
+func (i *Istio) CreateProject(ctx context.Context, project *model.Project) error {
 	// Project ID provided here is already in the form `project-env`
 	namespace := project.ID
 	ns := &v1.Namespace{
@@ -535,6 +567,11 @@ func (i *Istio) CreateProject(project *model.Project) error {
 	}
 	_, err := i.kube.CoreV1().Namespaces().Create(ns)
 	return err
+}
+
+// DeleteProject deletes a namespace for the client
+func (i *Istio) DeleteProject(ctx context.Context, projectID string) error {
+	return i.kube.CoreV1().Namespaces().Delete(projectID, &metav1.DeleteOptions{})
 }
 
 // Type returns the type of the driver

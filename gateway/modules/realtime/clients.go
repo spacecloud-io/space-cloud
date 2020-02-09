@@ -3,7 +3,7 @@ package realtime
 import (
 	"sync"
 
-	"github.com/nats-io/nats.go"
+	// "github.com/nats-io/nats.go"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 )
 
@@ -15,8 +15,8 @@ type queryStub struct {
 
 type clientsStub struct {
 	sync.Mutex
-	clients      sync.Map
-	subscription *nats.Subscription
+	clients sync.Map
+	// subscription *nats.Subscription
 }
 
 // AddLiveQuery tracks a client for a live query

@@ -50,7 +50,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 
 	doesExist := false
 	for _, route := range projectConfig.Modules.Routes {
-		if route.Id == c.Id {
+		if route.ID == c.ID {
 			route.Source = c.Source
 			route.Destination = c.Destination
 			doesExist = true
@@ -64,7 +64,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 }
 
 // DeleteProjectRoute deletes a route from specified project config
-func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeId string) error {
+func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -76,7 +76,7 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeId strin
 
 	routes := projectConfig.Modules.Routes
 	for index, route := range routes {
-		if route.Id == routeId {
+		if route.ID == routeID {
 			// delete the route at specified index
 			routes[index] = routes[len(routes)-1]
 			projectConfig.Modules.Routes = routes[:len(routes)-1]

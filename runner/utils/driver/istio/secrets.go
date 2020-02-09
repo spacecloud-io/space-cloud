@@ -16,15 +16,15 @@ import (
 
 // CreateSecret is used to upsert secret
 func (i *Istio) CreateSecret(projectID string, secretObj *model.Secret) error {
-	// check whether the secret type is correct!
+	// check whether the oldSecret type is correct!
 	if secretObj.Type != model.FileType && secretObj.Type != model.EnvType && secretObj.Type != model.DockerType {
-		return fmt.Errorf("invalid secret type (%s) provided", secretObj.Type)
+		return fmt.Errorf("invalid oldSecret type (%s) provided", secretObj.Type)
 	}
 
-	_, err := i.kube.CoreV1().Secrets(projectID).Get(secretObj.Name, metav1.GetOptions{})
+	oldSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretObj.Name, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
-		logrus.Debugf("Creating secret (%s)", secretObj.Name)
+		logrus.Debugf("Creating oldSecret (%s)", secretObj.Name)
 		newSecret, err := generateSecret(projectID, secretObj)
 		if err != nil {
 			return err
@@ -34,8 +34,11 @@ func (i *Istio) CreateSecret(projectID string, secretObj *model.Secret) error {
 		return err
 
 	} else if err == nil {
-		// secret already exists...update it!
-		logrus.Debugf("Updating secret (%s)", secretObj.Name)
+		// oldSecret already exists...update it!
+		logrus.Debugf("Updating oldSecret (%s)", secretObj.Name)
+		if string(oldSecret.Type) != secretObj.Type {
+			return fmt.Errorf("secret already exists type mismatch")
+		}
 		newSecret, err := generateSecret(projectID, secretObj)
 		if err != nil {
 			return err
@@ -43,14 +46,14 @@ func (i *Istio) CreateSecret(projectID string, secretObj *model.Secret) error {
 		_, err = i.kube.CoreV1().Secrets(projectID).Update(newSecret)
 		return err
 	}
-	logrus.Errorf("Failed to create secret (%s) - %s", secretObj.Name, err)
+	logrus.Errorf("Failed to create oldSecret (%s) - %s", secretObj.Name, err)
 	return err
 }
 
 // ListSecrets lists all the secrets in the provided name-space!
 func (i *Istio) ListSecrets(projectID string) ([]*model.Secret, error) {
 	// List all secrets
-	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).List(metav1.ListOptions{})
+	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).List(metav1.ListOptions{LabelSelector: "app=space-cloud"})
 	if err != nil {
 		logrus.Errorf("Failed to fetch list of secrets - %s", err)
 		return nil, err
@@ -65,8 +68,14 @@ func (i *Istio) ListSecrets(projectID string) ([]*model.Secret, error) {
 			RootPath: v.ObjectMeta.Annotations["rootPath"],
 			Data:     make(map[string]string, len(v.Data)),
 		}
-		for k1 := range v.Data {
-			s.Data[k1] = ""
+		if s.Type == model.FileType || s.Type == model.EnvType {
+			for k1 := range v.Data {
+				s.Data[k1] = ""
+			}
+		} else if s.Type == model.DockerType {
+			s.Data["username"] = ""
+			s.Data["password"] = ""
+			s.Data["url"] = ""
 		}
 		listOfSecrets[i] = s
 	}
@@ -83,14 +92,39 @@ func (i *Istio) DeleteSecret(projectID string, secretName string) error {
 	return err
 }
 
+// SetFileSecretRootPath is used to set the file secret root path
+func (i *Istio) SetFileSecretRootPath(projectID string, secretName, rootPath string) error {
+	if secretName == "" || rootPath == "" {
+		logrus.Errorf("empty secret name or root path provided")
+		return fmt.Errorf("empty secret name or root path provided got (%s,%s)", secretName, rootPath)
+	}
+	// Get secret and then check type
+	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	// update root path
+	switch kubeSecret.Type {
+	case v1.SecretTypeDockerConfigJson:
+		return fmt.Errorf("set root path operation cannot be performed on secrets with type docker")
+	case v1.SecretTypeOpaque:
+		kubeSecret.Annotations["rootPath"] = rootPath
+	default:
+		return fmt.Errorf("invalid secret type - %s", kubeSecret.Type)
+	}
+
+	// Update the secret
+	_, err = i.kube.CoreV1().Secrets(projectID).Update(kubeSecret)
+	return err
+}
+
 // SetKey adds a new secret key-value pair
 func (i *Istio) SetKey(projectID string, secretName string, secretKey string, secretValObj *model.SecretValue) error {
 	if secretName == "" || secretValObj.Value == "" {
 		logrus.Errorf("Empty key/value provided. Key not set")
 		return fmt.Errorf("key/value not provided; got (%s,%s)", secretName, secretValObj.Value)
 	}
-	// Encoding secret value to base64
-	encSecret := b64.StdEncoding.EncodeToString([]byte(secretValObj.Value))
 
 	// Get secret and then check type
 	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretName, metav1.GetOptions{})
@@ -103,7 +137,7 @@ func (i *Istio) SetKey(projectID string, secretName string, secretKey string, se
 		case v1.SecretTypeDockerConfigJson:
 			return fmt.Errorf("set key operation cannot be performed on secrets with type docker")
 		case v1.SecretTypeOpaque:
-			kubeSecret.Data[secretKey] = []byte(encSecret)
+			kubeSecret.Data[secretKey] = []byte(secretValObj.Value)
 		default:
 			return fmt.Errorf("invalid secret type - %s", kubeSecret.Type)
 		}
@@ -149,10 +183,8 @@ func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) 
 	switch secret.Type {
 	case model.FileType, model.EnvType:
 		typeOfSecret = v1.SecretTypeOpaque
-		// Base64 encoding!
 		for k, v := range secret.Data {
-			encValue := b64.StdEncoding.EncodeToString([]byte(v))
-			encodedData[k] = []byte(encValue)
+			encodedData[k] = []byte(v)
 		}
 	case model.DockerType:
 		username, p1 := secret.Data["username"]
@@ -175,9 +207,7 @@ func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) 
 			},
 		}
 		data, _ := json.Marshal(dockerJSON)
-		// encode the entire json object in base64 encoding
-		encValue := b64.StdEncoding.EncodeToString([]byte(data))
-		encodedData[v1.DockerConfigJsonKey] = []byte(encValue)
+		encodedData[v1.DockerConfigJsonKey] = []byte(data)
 	default:
 		return nil, fmt.Errorf("invalid secret type (%s) provided", secret.Type)
 	}
@@ -186,6 +216,7 @@ func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        secret.Name,
 			Namespace:   projectID,
+			Labels:      map[string]string{"app": "space-cloud"},
 			Annotations: map[string]string{"rootPath": secret.RootPath, "secretType": secret.Type},
 		},
 		Data: encodedData,

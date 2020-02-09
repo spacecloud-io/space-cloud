@@ -75,6 +75,20 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			_, err := LoadValue(function[pre+1:post], state)
 			return err == nil, nil
 		}
+		if strings.HasPrefix(function, "length") {
+			value, err := LoadValue(function[pre+1:post], state)
+			if err != nil {
+				return nil, err
+			}
+			switch v := value.(type) {
+			case []interface{}:
+				return int64(len(v)), nil
+			case map[string]interface{}:
+				return int64(len(v)), nil
+			default:
+				return nil, fmt.Errorf("invalid type found for length")
+			}
+		}
 
 		return nil, errors.New("Invalid utils operation")
 	}
@@ -226,16 +240,16 @@ func splitVariable(key string) []string {
 	array := []string{}
 	for i, c := range key {
 		if c == '[' {
-			inBracket1 += 1
+			inBracket1++
 		}
 		if c == '(' {
-			inBracket2 += 1
+			inBracket2++
 		}
 		if c == ']' {
-			inBracket1 -= 1
+			inBracket1--
 		}
 		if c == ')' {
-			inBracket2 -= 1
+			inBracket2--
 		}
 		if c == '.' && inBracket1 == 0 && inBracket2 == 0 {
 			sub := key[lastIndex:i]
@@ -345,7 +359,7 @@ func convertOrCreate(k string, obj map[string]interface{}) (map[string]interface
 	var ok bool
 	obj2, ok := tempObj.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("The variable cannot be mapped")
+		return nil, errors.New("the variable cannot be mapped")
 	}
 	return obj2, nil
 }

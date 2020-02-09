@@ -46,7 +46,8 @@ type Config struct {
 
 // Driver is the interface of the modules which interact with the deployment targets
 type Driver interface {
-	CreateProject(project *model.Project) error
+	CreateProject(ctx context.Context, project *model.Project) error
+	DeleteProject(ctx context.Context, projectID string) error
 	ApplyService(ctx context.Context, service *model.Service) error
 	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
 	DeleteService(ctx context.Context, projectID, serviceID, version string) error
@@ -61,4 +62,5 @@ type Driver interface {
 	DeleteSecret(projectID, secretName string) error
 	SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error
 	DeleteKey(projectID, secretName, secretKey string) error
+	SetFileSecretRootPath(projectID string, secretName, rootPath string) error
 }

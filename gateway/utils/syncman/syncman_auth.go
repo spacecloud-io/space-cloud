@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// SetUserManagement sets the user management
 func (s *Manager) SetUserManagement(ctx context.Context, project, provider string, value *config.AuthStub) error {
 	// Acquire a lock
 	s.lock.Lock()

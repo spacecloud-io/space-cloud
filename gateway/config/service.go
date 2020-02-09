@@ -30,6 +30,7 @@ type Task struct {
 	Resources Resources         `json:"resources" yaml:"resources"`
 	Docker    Docker            `json:"docker" yaml:"docker"`
 	Env       map[string]string `json:"env" yaml:"env"`
+	Secrets   []string          `json:"secrets" yaml:"secrets"`
 	Runtime   Runtime           `json:"runtime" yaml:"runtime"`
 }
 
@@ -59,15 +60,9 @@ type Resources struct {
 
 // Docker describes the docker configurations
 type Docker struct {
-	Image string           `json:"image" yaml:"image"`
-	Creds *DockerRepoCreds `json:"creds" yaml:"creds"`
-	Cmd   []string         `json:"cmd" yaml:"cmd"`
-}
-
-// DockerRepoCreds holds the credentials of the docker repo
-type DockerRepoCreds struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Image  string   `json:"image" yaml:"image"`
+	Cmd    []string `json:"cmd" yaml:"cmd"`
+	Secret string   `json:"secret" yaml:"secret"`
 }
 
 // Affinity describes the affinity rules of a service

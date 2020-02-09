@@ -100,7 +100,7 @@ func createDBCallback(cb dbCallback) dbCallback {
 	}
 }
 
-func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, loader *loaderMap, schema schema.SchemaFields, cb callback) {
+func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, loader *loaderMap, schema schema.Fields, cb callback) {
 	switch node.GetKind() {
 
 	case kinds.Document:
@@ -208,6 +208,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
 		if err != nil {
+			// if the field isn't found in the store means that field did not exist in the result. so return nil as error
 			cb(nil, nil)
 			return
 		}
@@ -216,34 +217,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			return
 		}
 
-		obj := utils.NewObject()
-
-		// Create a wait group
-		var wg sync.WaitGroup
-		wg.Add(len(field.SelectionSet.Selections))
-
-		for _, sel := range field.SelectionSet.Selections {
-			storeNew := shallowClone(store)
-			storeNew[getFieldName(field)] = currentValue
-			storeNew["coreParentKey"] = getFieldName(field)
-
-			f := sel.(*ast.Field)
-
-			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(object interface{}, err error) {
-				defer wg.Done()
-
-				if err != nil {
-					cb(nil, err)
-					return
-				}
-
-				obj.Set(getFieldName(f), object)
-			}))
-		}
-
-		// Wait then return the result
-		wg.Wait()
-		cb(obj.GetAll(), nil)
+		graph.processQueryResult(ctx, field, token, store, currentValue, loader, schema, cb)
 		return
 
 	default:

@@ -14,7 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// HandleRealtimeEvent creates a functions request endpoint
+// HandleFunctionCall creates a functions request endpoint
 func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -26,8 +26,8 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 
 		// Load the params from the body
 		req := model.FunctionsRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -38,17 +38,17 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 		_, err := auth.IsFuncCallAuthorised(ctx, project, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		result, err := functions.CallWithContext(ctx, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
 }

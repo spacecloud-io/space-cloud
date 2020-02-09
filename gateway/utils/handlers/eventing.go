@@ -18,13 +18,13 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		eventDocs := []*model.EventDocument{}
-		json.NewDecoder(r.Body).Decode(&eventDocs)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&eventDocs)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
 			return
 		}
 
@@ -33,7 +33,7 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -41,7 +41,7 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 		eventing.ProcessTransmittedEvents(eventDocs)
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 
 }
@@ -51,13 +51,13 @@ func HandleQueueEvent(eventing *eventing.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Load the params from the body
 		req := model.QueueEventRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
 			return
 		}
 
@@ -74,10 +74,10 @@ func HandleQueueEvent(eventing *eventing.Module) http.HandlerFunc {
 		err := eventing.QueueEvent(ctx, project, token, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }

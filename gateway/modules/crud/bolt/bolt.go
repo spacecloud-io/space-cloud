@@ -10,6 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+// Bolt holds the bolt session
 type Bolt struct {
 	enabled    bool
 	connection string
@@ -66,7 +67,7 @@ func (b *Bolt) connect() error {
 	return nil
 }
 
-// GetDBAlias returns the dbType of the crud block
+// GetDBType returns the dbType of the crud block
 func (b *Bolt) GetDBType() utils.DBType {
-	return utils.BoltDB
+	return utils.EmbeddedDB
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 )
 
+// Module struct for metrics
 type Module struct {
 	lock sync.RWMutex
 
@@ -20,7 +21,7 @@ type Module struct {
 	sink *crud.Module
 }
 
-// The configuration required by the metrics module
+// Config is the configuration required by the metrics module
 type Config struct {
 	IsEnabled        bool
 	DisableBandwidth bool
@@ -29,6 +30,7 @@ type Config struct {
 	Scope            string
 }
 
+// New creates a new instance of the metrics module
 func New(nodeID string, config *Config) (*Module, error) {
 
 	// Return an empty object if the module isn't enabled

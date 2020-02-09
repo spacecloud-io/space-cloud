@@ -27,7 +27,7 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 		logrus.Error("error in login unable to send http request - %v", err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer CloseTheCloser(resp.Body)
 
 	loginResp := new(model.LoginResponse)
 	err = json.NewDecoder(resp.Body).Decode(loginResp)
@@ -39,7 +39,7 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 	return loginResp, err
 }
 
-// LoginStart logs the user in galaxy
+// LoginStart logs the user in space cloud
 func LoginStart(userName, key, url string) error {
 	if userName == "None" {
 		if err := survey.AskOne(&survey.Input{Message: "Enter username:"}, &userName); err != nil {
@@ -53,23 +53,24 @@ func LoginStart(userName, key, url string) error {
 			return err
 		}
 	}
-	selectedAccount := model.Account{
+	account := model.Account{
 		UserName:  userName,
 		Key:       key,
 		ServerUrl: url,
 	}
-	_, err := login(&selectedAccount)
+	_, err := login(&account)
 	if err != nil {
 		logrus.Errorf("error in login start unable to login - %v", err)
 		return err
 	}
-	selectedAccount = model.Account{
+	account = model.Account{
 		ID:        userName,
 		UserName:  userName,
 		Key:       key,
 		ServerUrl: url,
 	}
-	if err := checkCred(&selectedAccount); err != nil {
+	// write credentials into accounts.yaml file
+	if err := checkCred(&account); err != nil {
 		logrus.Errorf("error in login start unable to check credentials - %v", err)
 		return err
 	}

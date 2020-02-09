@@ -10,6 +10,7 @@ type Config struct {
 // Project holds the project level configuration
 type Project struct {
 	Secret  string   `json:"secret" yaml:"secret"`
+	AESkey  string   `json:"aesKey" yaml:"aesKey"`
 	ID      string   `json:"id" yaml:"id"`
 	Name    string   `json:"name" yaml:"name"`
 	Modules *Modules `json:"modules" yaml:"modules"`
@@ -56,10 +57,20 @@ type Modules struct {
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
 	Routes      Routes          `json:"routes" yaml:"routes"`
 	Deployments Deployments     `json:"deployments" yaml:"deployments"`
+	Secrets     []*Secret       `json:"secrets" yaml:"secrets"`
 }
 
+// Deployments store all services information for particular project
 type Deployments struct {
 	Services []*RunnerService `json:"services" yaml:"services"`
+}
+
+// Secret stores secrets information
+type Secret struct {
+	Name     string            `json:"name" yaml:"name"`
+	Type     string            `json:"type" yaml:"type"`
+	RootPath string            `json:"rootPath" yaml:"rootPath"`
+	Data     map[string]string `json:"data" yaml:"data"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -96,6 +107,7 @@ type Rule struct {
 	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
+	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -184,6 +196,7 @@ type EventingRule struct {
 	Options map[string]string `json:"options" yaml:"options"`
 }
 
+// SchemaObject is the body of the request for adding schema
 type SchemaObject struct {
 	Schema string `json:"schema" yaml:"schema"`
 }
@@ -198,11 +211,12 @@ type Routes []*Route
 
 // Route describes the parameters of a single route
 type Route struct {
-	Id          string           `json:"id" yaml:"id"`
+	ID          string           `json:"id" yaml:"id"`
 	Source      RouteSource      `json:"source" yaml:"source"`
 	Destination RouteDestination `json:"dest" yaml:"dest"`
 }
 
+// RouteSource is the source of routing
 type RouteSource struct {
 	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
 	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
@@ -210,6 +224,7 @@ type RouteSource struct {
 	Type       RouteURLType `json:"type,omitempty" yaml:"type,omitempty"`
 }
 
+// RouteDestination is the destination of routing
 type RouteDestination struct {
 	Host string `json:"host,omitempty" yaml:"host,omitempty"`
 	Port string `json:"port,omitempty" yaml:"port,omitempty"`
