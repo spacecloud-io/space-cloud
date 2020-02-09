@@ -51,14 +51,14 @@ func (s *KubeStore) Register() {
 
 func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Project) map[string]*config.Project {
 	configMap := obj.(*v1.ConfigMap)
-	projectJsonString, ok := configMap.Data["project"]
+	projectJSONString, ok := configMap.Data["project"]
 	if !ok {
 		logrus.Errorf("error watching projects in kube store unable to find project in config map")
 		return nil
 	}
 
 	v := new(config.Project)
-	if err := json.Unmarshal([]byte(projectJsonString), v); err != nil {
+	if err := json.Unmarshal([]byte(projectJSONString), v); err != nil {
 		logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
 		return nil
 	}
@@ -66,6 +66,7 @@ func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Projec
 	return projectMap
 }
 
+// WatchProjects maintains consistency over all projects
 func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 	var options internalinterfaces.TweakListOptionsFunc
 	// labels := fmt.Sprintf("clusterId=%s", s.clusterID)
@@ -84,12 +85,12 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 		},
 		DeleteFunc: func(obj interface{}) {
 			configMap := obj.(*v1.ConfigMap)
-			projectId, ok := configMap.Data["id"]
+			projectID, ok := configMap.Data["id"]
 			if !ok {
 				logrus.Errorf("error watching project in kube store unable to find project id in config map")
 				return
 			}
-			delete(projectMap, projectId)
+			delete(projectMap, projectID)
 			cb(s.getProjects(projectMap))
 		},
 		UpdateFunc: func(old, obj interface{}) {
@@ -121,7 +122,7 @@ func onAddOrUpdateServices(obj interface{}, services []*service) []*service {
 		if service.id == id {
 			doesExist = true
 			service.addr = addr
-			return nil
+			break
 		}
 	}
 
@@ -132,6 +133,7 @@ func onAddOrUpdateServices(obj interface{}, services []*service) []*service {
 	return services
 }
 
+// WatchServices maintains consistency over all services
 func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	services := scServices{}
 	// labels := fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
