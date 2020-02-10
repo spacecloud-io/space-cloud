@@ -15,10 +15,6 @@ import (
 func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	// create folder for project
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
-	if err := d.createDir(projectPath); err != nil {
-		logrus.Errorf("error creating secret in docker unable to create directory (%s) - %s", projectPath, err.Error())
-		return err
-	}
 
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s.json", projectPath, secretObj.Name)
@@ -86,31 +82,6 @@ func (d *docker) ListSecrets(projectID string) ([]*model.Secret, error) {
 
 func (d *docker) DeleteSecret(projectID, secretName string) error {
 	return os.RemoveAll(fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName))
-}
-
-func (d *docker) SetFileSecretRootPath(projectId string, secretName, rootPath string) error {
-	if secretName == "" || rootPath == "" {
-		logrus.Errorf("Empty key/value provided. Key not set")
-		return fmt.Errorf("key/value not provided; got (%s,%s)", secretName, rootPath)
-	}
-	// check if file exists
-	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectId, secretName)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return fmt.Errorf("file doesn't exists")
-	}
-
-	// file already exists read it's content
-	data, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return err
-	}
-	fileContent := new(model.Secret)
-	if err := json.Unmarshal(data, fileContent); err != nil {
-		return err
-	}
-
-	fileContent.RootPath = rootPath
-	return d.writeIntoFile(fileContent, filePath)
 }
 
 func (d *docker) SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
