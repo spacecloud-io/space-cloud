@@ -16,7 +16,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleGraphQLRequest creates the graphql operation endpoint
+// HandleGraphQLRequest executes graphql queries
 func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -26,8 +26,8 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 
 		// Throw error if request was of incorrect type
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
+			logrus.Errorf("Config was of invalid type - - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
 
@@ -36,6 +36,8 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 
 		projectConfig, err := syncMan.GetConfig(projectID)
 		if err != nil {
+			logrus.Errorf("Config was of invalid type - - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
 

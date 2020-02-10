@@ -14,7 +14,7 @@ type Project struct {
 	ID          string   `json:"id" yaml:"id"`
 	Name        string   `json:"name" yaml:"name"`
 	Modules     *Modules `json:"modules" yaml:"modules"`
-	ContextTime int      `json:"contextTime" yaml:"contextTime"`
+	ContextTime int      `json:"contextTime" yaml:"contextTime"` //contextTime sets the timeout of query
 }
 
 // Admin stores the admin credentials
