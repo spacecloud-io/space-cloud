@@ -25,9 +25,26 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	router.Methods(http.MethodPut).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleStoreProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
 
+	//gets
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/config").HandlerFunc(handlers.HandleGetGlobalConfig(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleGetService(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/user-management").HandlerFunc(handlers.GetUserManagement(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/event-triggers/rules").HandlerFunc(handlers.HandleGetEventingTriggers(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleGetEventingConfig(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/schema").HandlerFunc(handlers.HandleGetEventingSchema(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/rules").HandlerFunc(handlers.HandleGetEventingSecurityRules(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleGetFileStore(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/rules").HandlerFunc(handlers.HandleGetFileRule(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/collections/rules").HandlerFunc(handlers.HandleGetCollectionRules(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/config").HandlerFunc(handlers.HandleGetDatabaseConnection(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/collections/modify-schema").HandlerFunc(handlers.HandleGetSchema(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/letsencrypt").HandlerFunc(handlers.HandleGetEncryptWhitelistedDomain(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing/route").HandlerFunc(handlers.HandleGetProjectRoute(s.adminMan, s.syncMan))
+
 	// added endpoints for service
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleAddService(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleDeleteService(s.adminMan, s.syncMan))
+
 	// Initialize route for graphql schema inspection
 	// Initialize route for user management config
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/{provider}").HandlerFunc(handlers.HandleUserManagement(s.adminMan, s.syncMan))

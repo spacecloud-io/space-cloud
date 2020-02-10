@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
@@ -48,6 +49,47 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 
+	}
+}
+
+//HandleGetEventingTriggers returns handler to get event trigger
+func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get projectId and ruleName from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		ruleName, exists := r.URL.Query()["ruleName"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//check if ruleName exists
+		if exists {
+			rule := project.Modules.Eventing.Rules[ruleName[0]]
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{"rule": rule})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"rules": project.Modules.Eventing.Rules})
+		return
 	}
 }
 
@@ -121,6 +163,36 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 	}
 }
 
+//HandleGetEventingConfig returns handler to get event config
+func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"dbType": project.Modules.Eventing.DBType, "col": project.Modules.Eventing.Col, "enabled": project.Modules.Eventing.Enabled})
+	}
+}
+
 // HandleSetEventingSchema is an endpoint handler which sets a schema in eventing
 func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type schemaRequest struct {
@@ -156,9 +228,48 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		w.WriteHeader(http.StatusOK) //http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+	}
+}
 
+//HandleGetEventingSchema returns handler to get event schema
+func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id and type from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		typ, exists := r.URL.Query()["type"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//check id typ is present in url
+		if exists {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{"schema": project.Modules.Eventing.Schemas[typ[0]]})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"schemas": project.Modules.Eventing.Schemas})
+		return
 	}
 }
 
@@ -231,6 +342,46 @@ func HandleAddEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 
 		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+	}
+}
+
+//HandleGetEventingSecurityRules returns handler to get event security rules
+func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id and type from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		typ, exists := r.URL.Query()["type"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//check if typ present in url
+		if exists {
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]interface{}{"securityRule": project.Modules.Eventing.SecurityRules[typ[0]]})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"securityRules": project.Modules.Eventing.SecurityRules})
+		return
 	}
 }
 

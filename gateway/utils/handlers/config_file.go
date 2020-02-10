@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -45,6 +46,43 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 
 		// return
+	}
+}
+
+//HandleGetFileStore returns handler to get file store
+func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"enabled":   project.Modules.FileStore.Enabled,
+			"storeType": project.Modules.FileStore.StoreType,
+			"conn":      project.Modules.FileStore.Conn,
+			"endpoint":  project.Modules.FileStore.Endpoint,
+			"bucket":    project.Modules.FileStore.Bucket,
+		})
 	}
 }
 
@@ -118,6 +156,56 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 
 		// return
+	}
+}
+
+//HandleGetFileRule returns handler to get file rule
+func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id and ruleName
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		ruleName, exists := r.URL.Query()["ruleName"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//check if ruleName exists in url
+		if exists {
+			for _, val := range project.Modules.FileStore.Rules {
+				if val.Name == ruleName[0] {
+					w.WriteHeader(http.StatusOK)
+					json.NewEncoder(w).Encode(map[string]interface{}{"rule": val})
+					return
+				}
+			}
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Filerule not found")})
+			return
+		}
+		fileRules := make(map[string]*config.FileRule)
+		for _, val := range project.Modules.FileStore.Rules {
+			fileRules[val.Name] = val
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]interface{}{"rules": fileRules})
+		return
 	}
 }
 
