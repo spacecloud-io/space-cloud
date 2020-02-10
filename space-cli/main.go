@@ -29,6 +29,75 @@ func main() {
 			},
 		},
 		{
+			Name:  "get",
+			Usage: "gets different services",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "project",
+					Usage:  "The id of the project",
+					EnvVar: "PROJECT_ID",
+				},
+			},
+			Subcommands: []cli.Command{
+				{
+					Name:   "global-config",
+					Action: actionGetGlobalConfig,
+				},
+				{
+					Name:   "remote-services",
+					Action: actionGetRemoteServices,
+				},
+				{
+					Name:   "auth-providers",
+					Action: actionGetAuthProviders,
+				},
+				{
+					Name:   "eventing-triggers",
+					Action: actionGetEventingTrigger,
+				},
+				{
+					Name:   "eventing-config",
+					Action: actionGetEventingConfig,
+				},
+				{
+					Name:   "eventing-schema",
+					Action: actionGetEventingSchema,
+				},
+				{
+					Name:   "eventing-rule",
+					Action: actionGetEventingSecurityRule,
+				},
+				{
+					Name:   "filestore-config",
+					Action: actionGetFileStoreConfig,
+				},
+				{
+					Name:   "filestore-rules",
+					Action: actionGetFileStoreRule,
+				},
+				{
+					Name:   "db-rule",
+					Action: actionGetDbRule,
+				},
+				{
+					Name:   "db-config",
+					Action: actionGetDbConfig,
+				},
+				{
+					Name:   "db-schema",
+					Action: actionGetDbSchema,
+				},
+				{
+					Name:   "letsencrypt-domain",
+					Action: actionGetLetsEncryptDomain,
+				},
+				{
+					Name:   "routes",
+					Action: actionGetRoutes,
+				},
+			},
+		},
+		{
 			Name:   "apply",
 			Usage:  "deploys service",
 			Action: actionApply,
@@ -102,6 +171,6 @@ func main() {
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatalln("Failed to start space cli:", err)
+		logrus.Fatalln("Failed to run execute command:", err)
 	}
 }
