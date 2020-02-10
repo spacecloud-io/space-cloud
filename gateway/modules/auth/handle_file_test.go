@@ -104,7 +104,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 		op                             utils.FileOpType
 		args                           map[string]interface{}
 		IsErrExpected                  bool
-		result                         *PostProcess
+		result                         *model.PostProcess
 	}{
 		{
 			testName: "Successful Test allow", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
@@ -112,7 +112,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 				Prefix: string(os.PathSeparator),
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allow"}},
 			}},
-				project: "project"}, result: &PostProcess{},
+				project: "project"}, result: &model.PostProcess{},
 			IsErrExpected: false, op: "read", args: map[string]interface{}{"age": 12}, path: string(os.PathSeparator),
 		},
 		{

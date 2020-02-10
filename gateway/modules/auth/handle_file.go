@@ -7,30 +7,31 @@ import (
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // IsFileOpAuthorised checks if the caller is authorized to make the request
-func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path string, op utils.FileOpType, args map[string]interface{}) (*PostProcess, error) {
+func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path string, op utils.FileOpType, args map[string]interface{}) (*model.PostProcess, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	// Get the rules corresponding to the requested path
 	params, rules, err := m.getFileRule(path)
 	if err != nil {
-		return &PostProcess{}, err
+		return &model.PostProcess{}, err
 	}
 	rule := rules.Rule[string(op)]
 	if rule.Rule == "allow" {
 		if m.project == project {
-			return &PostProcess{}, nil
+			return &model.PostProcess{}, nil
 		}
-		return &PostProcess{}, errors.New("invalid project details provided")
+		return &model.PostProcess{}, errors.New("invalid project details provided")
 	}
 
 	auth, err := m.parseToken(token)
 	if err != nil {
-		return &PostProcess{}, err
+		return &model.PostProcess{}, err
 	}
 
 	// Add the path params and auth object to the arguments list

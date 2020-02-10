@@ -8,7 +8,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore/amazons3"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore/gcpstorage"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore/local"
@@ -19,12 +18,12 @@ type Module struct {
 	sync.RWMutex
 	store    FileStore
 	enabled  bool
-	auth     *auth.Module
+	auth     model.AuthFilestoreInterface
 	eventing model.EventingModule
 }
 
 // Init creates a new instance of the file store object
-func Init(auth *auth.Module) *Module {
+func Init(auth model.AuthFilestoreInterface) *Module {
 	return &Module{enabled: false, store: nil, auth: auth}
 }
 

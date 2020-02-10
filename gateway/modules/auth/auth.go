@@ -8,9 +8,9 @@ import (
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 
+	//"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -27,31 +27,31 @@ type Module struct {
 	rules           config.Crud
 	nodeID          string
 	secret          string
-	aesKey          []byte
-	crud            *crud.Module
+	crud            model.CrudAuthInterface
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
 	eventingRules   map[string]*config.Rule
 	project         string
 	fileStoreType   string
-	schema          *schema.Schema
+	schema          model.SchemaAuthInterface
 	makeHTTPRequest utils.MakeHTTPRequest
+	aesKey          []byte
 }
 
-// PostProcess is responsible for implementing force and remove rules
-type PostProcess struct {
-	postProcessAction []PostProcessAction
-}
+// // model.PostProcess is responsible for implementing force and remove rules
+// type model.PostProcess struct {
+// 	postProcessAction []model.PostProcessAction
+// }
 
-// PostProcessAction has action ->  force/remove and field,value depending on the Action.
-type PostProcessAction struct {
-	Action string
-	Field  string
-	Value  interface{}
-}
+// // model.PostProcessAction has action ->  force/remove and field,value depending on the Action.
+// type model.PostProcessAction struct {
+// 	Action string
+// 	Field  string
+// 	Value  interface{}
+// }
 
 // Init creates a new instance of the auth object
-func Init(nodeID string, crud *crud.Module, schema *schema.Schema, removeProjectScope bool) *Module {
+func Init(nodeID string, crud model.CrudAuthInterface, schema model.SchemaAuthInterface, removeProjectScope bool) *Module {
 	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, schema: schema}
 }
 
@@ -113,7 +113,7 @@ func (m *Module) GetSCAccessToken() (string, error) {
 }
 
 // CreateToken generates a new JWT Token with the token claims
-func (m *Module) CreateToken(tokenClaims TokenClaims) (string, error) {
+func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 	m.RLock()
 	defer m.RUnlock()
 

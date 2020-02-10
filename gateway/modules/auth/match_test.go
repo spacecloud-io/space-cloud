@@ -148,12 +148,12 @@ func TestMatchForce_Rule(t *testing.T) {
 		name          string
 		IsErrExpected bool
 		IsSkipable    bool
-		result        *PostProcess
+		result        *model.PostProcess
 		rule          *config.Rule
 		args          map[string]interface{}
 	}{
 		{name: "res directly passing value", IsErrExpected: false, IsSkipable: false,
-			result: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			result: &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "1234", Field: "res.age"},
 			args:   map[string]interface{}{"string1": "interface1", "string2": "interface2"},
 		},
@@ -162,7 +162,7 @@ func TestMatchForce_Rule(t *testing.T) {
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
 		{name: "res indirectly passing value", IsErrExpected: false, IsSkipable: false,
-			result: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			result: &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "args.string2", Field: "res.age"},
 			args:   map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "1234"}},
 		},
@@ -170,7 +170,7 @@ func TestMatchForce_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Value: "args.string2", Field: "arg.string1"},
 			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
 		},
-		{name: "Valid args", IsErrExpected: false, IsSkipable: false, result: &PostProcess{},
+		{name: "Valid args", IsErrExpected: false, IsSkipable: false, result: &model.PostProcess{},
 			rule: &config.Rule{Rule: "force", Value: "1234", Field: "args.string1"},
 			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
 		},
@@ -211,7 +211,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 		name          string
 		IsErrExpected bool
 		rule          *config.Rule
-		result        *PostProcess
+		result        *model.PostProcess
 		IsSkipable    bool
 		args          map[string]interface{}
 	}{
@@ -219,7 +219,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 			IsSkipable: false,
 			rule:       &config.Rule{Rule: "remove", Value: "12", Fields: []string{"res.age"}},
 			args:       map[string]interface{}{"res": map[string]interface{}{"age": "12"}},
-			result:     &PostProcess{[]PostProcessAction{PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
+			result:     &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
 		},
 		{name: "invalid field provided", IsErrExpected: true, IsSkipable: true,
 			rule: &config.Rule{Rule: "remove", Type: "string", Fields: []string{"args:age"}},
@@ -230,7 +230,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
 		{name: "remove multiple args", IsErrExpected: false, IsSkipable: false,
-			result: &PostProcess{},
+			result: &model.PostProcess{},
 			rule:   &config.Rule{Rule: "remove", Type: "number", Fields: []string{"args.age", "args.exp"}},
 			args:   map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 		},
