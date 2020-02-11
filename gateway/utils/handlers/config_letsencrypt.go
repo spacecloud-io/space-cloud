@@ -37,12 +37,12 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		}
 
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetProjectLetsEncryptDomains(ctx, project, value); err != nil {
+		if err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

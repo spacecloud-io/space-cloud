@@ -32,9 +32,9 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	// Initialize route for user management config
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/{provider}").HandlerFunc(handlers.HandleUserManagement(s.adminMan, s.syncMan))
 	// Initialize route for eventing config
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleAddEventingRule(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/event-triggers/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteEventingRule(s.adminMan, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/triggers/{triggerName}").HandlerFunc(handlers.HandleAddEventingRule(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/triggers/{triggerName}").HandlerFunc(handlers.HandleDeleteEventingRule(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/config").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/schema/{type}").HandlerFunc(handlers.HandleSetEventingSchema(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/schema/{type}").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/rules/{type}").HandlerFunc(handlers.HandleAddEventingSecurityRules(s.adminMan, s.syncMan))
@@ -46,19 +46,19 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/file-storage/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteFileRule(s.adminMan, s.syncMan))
 
 	// Initialize route for getting database config
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/{dbType}/connection-state").HandlerFunc(handlers.HandleGetConnectionState(s.adminMan, s.crud))
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/{dbType}/list-collections").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.crud, s.syncMan)) // TODO: Check response type
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/rules").HandlerFunc(handlers.HandleCollectionRules(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}").HandlerFunc(handlers.HandleDeleteCollection(s.adminMan, s.crud, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbType}/config").HandlerFunc(handlers.HandleDatabaseConnection(s.adminMan, s.crud, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbType}").HandlerFunc(handlers.HandleRemoveDatabaseConfig(s.adminMan, s.crud, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbType}/modify-schema").HandlerFunc(handlers.HandleModifyAllSchema(s.adminMan, s.schema, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/modify-schema").HandlerFunc(handlers.HandleModifySchema(s.adminMan, s.schema, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbType}/reload-schema").HandlerFunc(handlers.HandleReloadSchema(s.adminMan, s.schema, s.syncMan))
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/{dbType}/collections/{col}/inspect-schema").HandlerFunc(handlers.HandleSchemaInspection(s.adminMan, s.schema, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/{dbAlias}/connection-state").HandlerFunc(handlers.HandleGetConnectionState(s.adminMan, s.crud))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/{dbAlias}/list-collections").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.crud, s.syncMan)) // TODO: Check response type
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules").HandlerFunc(handlers.HandleCollectionRules(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}").HandlerFunc(handlers.HandleDeleteCollection(s.adminMan, s.crud, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/config").HandlerFunc(handlers.HandleDatabaseConnection(s.adminMan, s.crud, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}").HandlerFunc(handlers.HandleRemoveDatabaseConfig(s.adminMan, s.crud, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/modify-schema").HandlerFunc(handlers.HandleModifyAllSchema(s.adminMan, s.schema, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/modify-schema").HandlerFunc(handlers.HandleModifySchema(s.adminMan, s.schema, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/reload-schema").HandlerFunc(handlers.HandleReloadSchema(s.adminMan, s.schema, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/inspect-schema").HandlerFunc(handlers.HandleSchemaInspection(s.adminMan, s.schema, s.syncMan))
 
 	// Initialize route for getting all schemas for all the collections present in config.crud
-	router.Methods(http.MethodGet).Path("/v1/config/inspect/{project}/{dbType}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.schema))
+	router.Methods(http.MethodGet).Path("/v1/config/inspect/{project}/{dbAlias}").HandlerFunc(handlers.HandleGetCollectionSchemas(s.adminMan, s.schema))
 
 	// Initialize routes for the global modules
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/letsencrypt").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.adminMan, s.syncMan))
@@ -86,13 +86,13 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/realtime/process").HandlerFunc(handlers.HandleRealtimeProcessRequest(s.auth, s.realtime))
 
 	// Initialize the routes for eventing service
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/event-triggers/queue").HandlerFunc(handlers.HandleQueueEvent(s.eventing))
+	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/queue").HandlerFunc(handlers.HandleQueueEvent(s.eventing))
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process").HandlerFunc(handlers.HandleProcessEvent(s.adminMan, s.eventing))
 
 	// Initialize the routes for the crud operations
-	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbType}/batch").HandlerFunc(handlers.HandleCrudBatch(s.auth, s.crud, s.realtime))
+	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/batch").HandlerFunc(handlers.HandleCrudBatch(s.auth, s.crud, s.realtime))
 
-	crudRouter := router.Methods(http.MethodPost).PathPrefix("/v1/api/{project}/crud/{dbType}/{col}").Subrouter()
+	crudRouter := router.Methods(http.MethodPost).PathPrefix("/v1/api/{project}/crud/{dbAlias}/{col}").Subrouter()
 	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.auth, s.crud, s.realtime))
 	crudRouter.HandleFunc("/read", handlers.HandleCrudRead(s.auth, s.crud))
 	crudRouter.HandleFunc("/update", handlers.HandleCrudUpdate(s.auth, s.crud, s.realtime))
@@ -100,7 +100,7 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	crudRouter.HandleFunc("/aggr", handlers.HandleCrudAggregate(s.auth, s.crud))
 
 	// Initialize the routes for the user management operations
-	userRouter := router.PathPrefix("/v1/api/{project}/auth/{dbType}").Subrouter()
+	userRouter := router.PathPrefix("/v1/api/{project}/auth/{dbAlias}").Subrouter()
 	userRouter.Methods(http.MethodPost).Path("/email/signin").HandlerFunc(handlers.HandleEmailSignIn(s.user))
 	userRouter.Methods(http.MethodPost).Path("/email/signup").HandlerFunc(handlers.HandleEmailSignUp(s.user))
 	userRouter.Methods(http.MethodGet).Path("/profile/{id}").HandlerFunc(handlers.HandleProfile(s.user))

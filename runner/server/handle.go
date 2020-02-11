@@ -70,7 +70,7 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		projectID := vars["projectId"]
+		projectID := vars["project"]
 		// Apply the service config
 		if err := s.driver.DeleteProject(ctx, projectID); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
@@ -135,7 +135,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		projectID := vars["projectId"]
+		projectID := vars["project"]
 		serviceID := vars["serviceId"]
 		version := vars["version"]
 
@@ -164,7 +164,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		projectID := vars["projectId"]
+		projectID := vars["project"]
 
 		services, err := s.driver.GetServices(ctx, projectID)
 		if err != nil {

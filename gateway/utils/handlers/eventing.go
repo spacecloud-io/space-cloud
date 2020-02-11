@@ -63,7 +63,7 @@ func HandleQueueEvent(eventing *eventing.Module) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -71,7 +71,7 @@ func HandleQueueEvent(eventing *eventing.Module) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		err := eventing.QueueEvent(ctx, project, token, &req)
+		err := eventing.QueueEvent(ctx, projectID, token, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

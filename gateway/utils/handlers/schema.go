@@ -31,10 +31,10 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) 
 		defer cancel()
 
 		vars := mux.Vars(r)
-		dbType := vars["dbType"]
-		project := vars["project"]
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
 
-		schemas, err := schema.GetCollectionSchema(ctx, project, dbType)
+		schemas, err := schema.GetCollectionSchema(ctx, projectID, dbAlias)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

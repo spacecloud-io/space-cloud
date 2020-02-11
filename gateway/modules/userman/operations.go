@@ -15,14 +15,14 @@ import (
 )
 
 // Profile fetches the profile of the user
-func (m *Module) Profile(ctx context.Context, token, dbType, project, id string) (int, map[string]interface{}, error) {
+func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string) (int, map[string]interface{}, error) {
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
 
 	// Create the find object
 	find := map[string]interface{}{}
-	actualDbType, err := m.crud.GetDBType(dbType)
+	actualDbType, err := m.crud.GetDBType(dbAlias)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -37,13 +37,13 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 	req := &model.ReadRequest{Find: find, Operation: utils.One}
 
 	// Check if the user is authenticated
-	actions, status, err := m.auth.IsReadOpAuthorised(ctx, project, dbType, "users", token, req)
+	actions, status, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req)
 	if err != nil {
 		return status, nil, err
 	}
 
 	// Perform database read operation
-	res, err := m.crud.Read(ctx, dbType, project, "users", req)
+	res, err := m.crud.Read(ctx, dbAlias, project, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -57,7 +57,7 @@ func (m *Module) Profile(ctx context.Context, token, dbType, project, id string)
 }
 
 // Profiles fetches all the user profiles
-func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (int, map[string]interface{}, error) {
+func (m *Module) Profiles(ctx context.Context, token, dbAlias, project string) (int, map[string]interface{}, error) {
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
@@ -68,12 +68,12 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 	req := &model.ReadRequest{Find: find, Operation: utils.All}
 
 	// Check if the user is authenticated
-	actions, status, err := m.auth.IsReadOpAuthorised(ctx, project, dbType, "users", token, req)
+	actions, status, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req)
 	if err != nil {
 		return status, nil, err
 	}
 
-	res, err := m.crud.Read(ctx, dbType, project, "users", req)
+	res, err := m.crud.Read(ctx, dbAlias, project, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -92,7 +92,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbType, project string) (i
 }
 
 // EmailSignIn signins the user and returns a JWT token
-func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, password string) (int, map[string]interface{}, error) {
+func (m *Module) EmailSignIn(ctx context.Context, dbAlias, project, email, password string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
 	if !m.IsActive("email") {
 		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
@@ -101,7 +101,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 	// Create read request
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
 
-	user, err := m.crud.Read(ctx, dbType, project, "users", readReq)
+	user, err := m.crud.Read(ctx, dbAlias, project, "users", readReq)
 	if err != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
 	}
@@ -119,7 +119,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 
 	req := map[string]interface{}{}
 	req["email"] = email
-	actualDbType, err := m.crud.GetDBType(dbType)
+	actualDbType, err := m.crud.GetDBType(dbAlias)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -139,7 +139,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbType, project, email, passwo
 }
 
 // EmailSignUp signs up a user and return a JWT token
-func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, password, role string) (int, map[string]interface{}, error) {
+func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name, password, role string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
 	if !m.IsActive("email") {
 		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
@@ -155,7 +155,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 
 	// Create read request
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
-	_, err = m.crud.Read(ctx, dbType, project, "users", readReq)
+	_, err = m.crud.Read(ctx, dbAlias, project, "users", readReq)
 	if err == nil {
 		return http.StatusConflict, nil, errors.New("User with provided email already exists")
 	}
@@ -165,7 +165,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 	req["pass"] = password
 	req["name"] = name
 	req["role"] = role
-	actualDbType, err := m.crud.GetDBType(dbType)
+	actualDbType, err := m.crud.GetDBType(dbAlias)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -177,7 +177,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 		req["id"] = id.String()
 	}
 	createReq := &model.CreateRequest{Operation: utils.One, Document: req}
-	err = m.crud.Create(ctx, dbType, project, "users", createReq)
+	err = m.crud.Create(ctx, dbAlias, project, "users", createReq)
 	if err != nil {
 		log.Println("Err: ", err)
 		return http.StatusInternalServerError, nil, errors.New("Failed to create user account")
@@ -199,7 +199,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbType, project, email, name, 
 }
 
 // EmailEditProfile allows the user to edit a profile
-func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, id, email, name, password string) (int, map[string]interface{}, error) {
+func (m *Module) EmailEditProfile(ctx context.Context, token, dbAlias, project, id, email, name, password string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
 	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
@@ -208,7 +208,7 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 	req := &model.UpdateRequest{}
 	find := map[string]interface{}{}
 	var idString string
-	actualDbType, err := m.crud.GetDBType(dbType)
+	actualDbType, err := m.crud.GetDBType(dbAlias)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -241,18 +241,18 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbType, project, i
 	req.Update = update
 	req.Operation = utils.One
 
-	status, err := m.auth.IsUpdateOpAuthorised(ctx, project, dbType, "users", token, req)
+	status, err := m.auth.IsUpdateOpAuthorised(ctx, project, dbAlias, "users", token, req)
 	if err != nil {
 		return status, nil, err
 	}
 
-	err = m.crud.Update(ctx, dbType, project, "users", req)
+	err = m.crud.Update(ctx, dbAlias, project, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
 	readReq := &model.ReadRequest{Find: map[string]interface{}{idString: id}, Operation: utils.One}
-	user, err1 := m.crud.Read(ctx, dbType, project, "users", readReq)
+	user, err1 := m.crud.Read(ctx, dbAlias, project, "users", readReq)
 	if err1 != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
 	}
