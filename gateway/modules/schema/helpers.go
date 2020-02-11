@@ -15,7 +15,7 @@ func getSQLType(dbType, typename string) (string, error) {
 
 	switch typename {
 	case model.TypeID:
-		return "varchar(" + model.SqlTypeIDSize + ")", nil
+		return "varchar(" + model.SQLTypeIDSize + ")", nil
 	case model.TypeString:
 		if dbType == string(utils.SQLServer) {
 			return "varchar(max)", nil

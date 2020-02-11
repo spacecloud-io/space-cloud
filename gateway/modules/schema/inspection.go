@@ -126,7 +126,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 }
 
 func inspectionMySQLCheckFieldType(typeName string, fieldDetails *model.FieldType) error {
-	if typeName == "varchar("+model.SqlTypeIDSize+")" {
+	if typeName == "varchar("+model.SQLTypeIDSize+")" {
 		fieldDetails.Kind = model.TypeID
 		return nil
 	}

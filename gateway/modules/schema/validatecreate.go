@@ -11,6 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+//SchemaValidator function validates the schema which it gets from module
 func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 
 	mutatedDoc := map[string]interface{}{}

@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
@@ -153,7 +155,7 @@ func TestMatchForce_Rule(t *testing.T) {
 		args          map[string]interface{}
 	}{
 		{name: "res directly passing value", IsErrExpected: false, IsSkipable: false,
-			result: &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "1234", Field: "res.age"},
 			args:   map[string]interface{}{"string1": "interface1", "string2": "interface2"},
 		},
@@ -162,7 +164,7 @@ func TestMatchForce_Rule(t *testing.T) {
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
 		{name: "res indirectly passing value", IsErrExpected: false, IsSkipable: false,
-			result: &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "args.string2", Field: "res.age"},
 			args:   map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "1234"}},
 		},
@@ -219,7 +221,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 			IsSkipable: false,
 			rule:       &config.Rule{Rule: "remove", Value: "12", Fields: []string{"res.age"}},
 			args:       map[string]interface{}{"res": map[string]interface{}{"age": "12"}},
-			result:     &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
+			result:     &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
 		},
 		{name: "invalid field provided", IsErrExpected: true, IsSkipable: true,
 			rule: &config.Rule{Rule: "remove", Type: "string", Fields: []string{"args:age"}},
@@ -290,7 +292,7 @@ func TestModule_matchEncrypt(t *testing.T) {
 		name    string
 		m       *Module
 		args    args
-		want    *PostProcess
+		want    *model.PostProcess
 		wantErr bool
 	}{
 		{
@@ -315,7 +317,7 @@ func TestModule_matchEncrypt(t *testing.T) {
 			name: "valid res",
 			m:    &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{rule: &config.Rule{Rule: "encrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
-			want: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "encrypt", Field: "res.username"}}},
+			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 		},
 		{
 			name:    "invalid field prefix",
@@ -347,7 +349,7 @@ func TestModule_matchDecrypt(t *testing.T) {
 		name    string
 		m       *Module
 		args    args
-		want    *PostProcess
+		want    *model.PostProcess
 		wantErr bool
 	}{
 		{
@@ -372,7 +374,7 @@ func TestModule_matchDecrypt(t *testing.T) {
 			name: "valid res",
 			m:    &Module{aesKey: stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")},
 			args: args{rule: &config.Rule{Rule: "decrypt", Fields: []string{"res.username"}}, args: map[string]interface{}{"res": map[string]interface{}{"username": "username1"}}},
-			want: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "decrypt", Field: "res.username"}}},
+			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
 		},
 		{
 			name:    "invalid field prefix",
@@ -472,7 +474,7 @@ func Test_matchHash(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *PostProcess
+		want    *model.PostProcess
 		wantErr bool
 	}{
 		{
@@ -483,7 +485,7 @@ func Test_matchHash(t *testing.T) {
 		{
 			name: "valid res",
 			args: args{rule: &config.Rule{Rule: "hash", Fields: []string{"res.password"}}, args: map[string]interface{}{"res": map[string]interface{}{"password": "password"}}},
-			want: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "hash", Field: "res.password"}}},
+			want: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "hash", Field: "res.password"}}},
 		},
 		{
 			name:    "invalid value type",

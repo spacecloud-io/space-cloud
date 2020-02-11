@@ -46,6 +46,7 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	return nil
 }
 
+//GetSchema function gets schema
 func (s *Schema) GetSchema(dbType, col string) (model.Fields, bool) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -78,6 +79,7 @@ func (s *Schema) parseSchema(crud config.Crud) error {
 	return nil
 }
 
+// Parser function parses the schema im module
 func (s *Schema) Parser(crud config.Crud) (model.Type, error) {
 
 	schema := make(model.Type, len(crud))

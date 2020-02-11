@@ -46,25 +46,45 @@ type (
 )
 
 const (
-	TypeInteger        string = "Integer"
-	TypeString         string = "String"
-	TypeFloat          string = "Float"
-	TypeBoolean        string = "Boolean"
-	TypeDateTime       string = "DateTime"
-	TypeID             string = "ID"
-	SqlTypeIDSize      string = "50"
-	TypeObject         string = "Object"
-	TypeEnum           string = "Enum"
-	DirectiveUnique    string = "unique"
-	DirectiveIndex     string = "index"
-	DirectiveForeign   string = "foreign"
-	DirectivePrimary   string = "primary"
+	//TypeInteger is variable used for Variable of type Interger
+	TypeInteger string = "Integer"
+	//TypeString is variable used for Variable of type String
+	TypeString string = "String"
+	//TypeFloat is variable used for Variable of type Float
+	TypeFloat string = "Float"
+	//TypeBoolean is variable used for Variable of type Boolean
+	TypeBoolean string = "Boolean"
+	//TypeDateTime is variable used for Variable of type DateTime
+	TypeDateTime string = "DateTime"
+	//TypeID is variable used for Variable of type ID
+	TypeID string = "ID"
+	//SQLTypeIDSize is variable used for specifing size of sql type ID
+	SQLTypeIDSize string = "50"
+	// TypeObject is a string with value object
+	TypeObject string = "Object"
+	//TypeEnum is a variable type enum
+	TypeEnum string = "Enum"
+	//DirectiveUnique is used in schema module to add unique index
+	DirectiveUnique string = "unique"
+	//DirectiveIndex is used in schema module to add index
+	DirectiveIndex string = "index"
+	//DirectiveForeign is used in schema module to add foreign key
+	DirectiveForeign string = "foreign"
+	//DirectivePrimary is used in schema module to add primary key
+	DirectivePrimary string = "primary"
+	//DirectiveCreatedAt is used in schema module to specify the created location
 	DirectiveCreatedAt string = "createdAt"
+	//DirectiveUpdatedAt  is used in schema module to add Updated location
 	DirectiveUpdatedAt string = "updatedAt"
-	DirectiveLink      string = "link"
-	DirectiveDefault   string = "default"
+	//DirectiveLink is used in schema module to add link
+	DirectiveLink string = "link"
+	//DirectiveDefault is used to add default key
+	DirectiveDefault string = "default"
 
 	//DefaultIndexName  string = ""
-	DefaultIndexSort  string = "asc"
-	DefaultIndexOrder int    = 1
+
+	//DefaultIndexSort specifies default order of sorting
+	DefaultIndexSort string = "asc"
+	//DefaultIndexOrder specifies default order of order
+	DefaultIndexOrder int = 1
 )
