@@ -2,6 +2,10 @@ package crud
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/google/uuid"
+	"github.com/graph-gophers/dataloader"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -54,7 +58,21 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 		return nil, err
 	}
 
-	n, result, err := crud.Read(ctx, project, col, req)
+	var n int64
+	var result interface{}
+	var dataLoader *dataloader.Loader
+	var key model.ReadRequestKey
+	if req.Options != nil {
+		if req.Options.Prefix != "" {
+			key = model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req}
+			dataLoader = newLoaderMap().get(fmt.Sprintf("%s-%s", req.Options.Prefix, uuid.New().String()), m)
+			result, err = dataLoader.Load(ctx, key)()
+			// clear the key
+			_ = dataLoader.Clear(ctx, key)
+		}
+	} else {
+		n, result, err = crud.Read(ctx, project, col, req)
+	}
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {

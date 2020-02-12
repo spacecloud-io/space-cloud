@@ -1,4 +1,4 @@
-package graphql
+package crud
 
 import (
 	"context"
@@ -96,24 +96,24 @@ func newLoaderMap() *loaderMap {
 	return &loaderMap{m: map[string]*dataloader.Loader{}}
 }
 
-func (l *loaderMap) get(key string, graph *Module) *dataloader.Loader {
+func (l *loaderMap) get(key string, m *Module) *dataloader.Loader {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
 	if _, ok := l.m[key]; !ok {
-		l.m[key] = graph.createLoader()
+		l.m[key] = m.createLoader()
 	}
 
 	return l.m[key]
 }
 
-func (graph *Module) createLoader() *dataloader.Loader {
+func (m *Module) createLoader() *dataloader.Loader {
 	// DataLoaderBatchFn is the batch function of the data loader
 	cache := &dataloader.NoCache{}
-	return dataloader.NewBatchedLoader(graph.dataLoaderBatchFn, dataloader.WithCache(cache))
+	return dataloader.NewBatchedLoader(m.dataLoaderBatchFn, dataloader.WithCache(cache))
 }
 
-func (graph *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*dataloader.Result {
+func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*dataloader.Result {
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(c)
 	defer cancel()
@@ -144,8 +144,20 @@ func (graph *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) 
 			go func(i int) {
 				defer wg.Done()
 
+				crud, err := m.getCrudBlock(dbType)
+				if err != nil {
+					cancel()
+					holder.addResult(i, &dataloader.Result{Error: err})
+					return
+				}
+
+				if err := crud.IsClientSafe(); err != nil {
+					cancel()
+					holder.addResult(i, &dataloader.Result{Error: err})
+					return
+				}
 				// Execute the query
-				res, err := graph.crud.Read(ctx, req.DBType, graph.project, req.Col, &req.Req)
+				_, res, err := crud.Read(ctx, m.project, req.Col, &req.Req)
 				if err != nil {
 
 					// Cancel the context and add the error response to the result
@@ -173,7 +185,16 @@ func (graph *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) 
 	req := model.ReadRequest{Find: map[string]interface{}{"$or": holder.getWhereClauses()}, Operation: utils.All, Options: &model.ReadOptions{}}
 
 	// Fire the merged request
-	res, err := graph.crud.Read(ctx, dbType, graph.project, col, &req)
+
+	crud, err := m.getCrudBlock(dbType)
+	if err != nil {
+		return []*dataloader.Result{}
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return []*dataloader.Result{}
+	}
+	_, res, err := crud.Read(ctx, m.project, col, &req)
 	if err != nil {
 		holder.fillErrorMessage(err)
 	} else {

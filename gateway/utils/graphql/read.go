@@ -12,7 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbType, col, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb dbCallback) {
+func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbType, col, token string, req *model.ReadRequest, store utils.M, cb dbCallback) {
 	// Check if read op is authorised
 	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbType, col, token, req)
 	if err != nil {
@@ -20,19 +20,19 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
-	dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string)+".linked."+col, graph)
+	// dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string)+".linked."+col, graph)
 
 	go func() {
-		// Create dataloader key
-		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: false, Req: *req}
-		result, err := dataLoader.Load(ctx, key)()
+		req.Options.Prefix = fmt.Sprintf("%s.%s.linked.%s", getFieldName(field), store["path"].(string), col)
+		req.Options.HasOptions = false
+		result, err := graph.crud.Read(ctx, dbType, graph.project, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
 
 		cb(dbType, col, result, err)
 	}()
 }
 
-func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, loader *loaderMap, cb dbCallback) {
+func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
 	dbType, err := graph.GetDBAlias(field)
 	if err != nil {
 		cb("", "", nil, err)
@@ -57,12 +57,12 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		return
 	}
 
-	dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string), graph)
+	// dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string), graph)
 
 	go func() {
-		// Create dataloader key
-		key := model.ReadRequestKey{DBType: dbType, Col: col, HasOptions: hasOptions, Req: *req}
-		result, err := dataLoader.Load(ctx, key)()
+		req.Options.Prefix = fmt.Sprintf("%s.%s", getFieldName(field), store["path"].(string))
+		req.Options.HasOptions = hasOptions
+		result, err := graph.crud.Read(ctx, dbType, graph.project, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbType, col, result, err)
 	}()
