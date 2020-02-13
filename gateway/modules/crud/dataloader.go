@@ -144,20 +144,9 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 			go func(i int) {
 				defer wg.Done()
 
-				crud, err := m.getCrudBlock(dbType)
-				if err != nil {
-					cancel()
-					holder.addResult(i, &dataloader.Result{Error: err})
-					return
-				}
-
-				if err := crud.IsClientSafe(); err != nil {
-					cancel()
-					holder.addResult(i, &dataloader.Result{Error: err})
-					return
-				}
 				// Execute the query
-				_, res, err := crud.Read(ctx, m.project, req.Col, &req.Req)
+				req.Req.Options.Prefix = ""
+				res, err := m.Read(ctx, dbType, m.project, req.Col, &req.Req)
 				if err != nil {
 
 					// Cancel the context and add the error response to the result
@@ -186,15 +175,8 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 
 	// Fire the merged request
 
-	crud, err := m.getCrudBlock(dbType)
-	if err != nil {
-		return []*dataloader.Result{}
-	}
-
-	if err := crud.IsClientSafe(); err != nil {
-		return []*dataloader.Result{}
-	}
-	_, res, err := crud.Read(ctx, m.project, col, &req)
+	req.Options.Prefix = ""
+	res, err := m.Read(ctx, dbType, m.project, col, &req)
 	if err != nil {
 		holder.fillErrorMessage(err)
 	} else {
