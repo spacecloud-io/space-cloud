@@ -114,11 +114,13 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
 
-		if err != nil {
-			log.Println("Error connecting to " + k + " : " + err.Error())
-			return err
+		if v.Enabled {
+			if err != nil {
+				log.Println("Error connecting to " + k + " : " + err.Error())
+				return err
+			}
+			logrus.Info("Successfully connected to " + k)
 		}
-		logrus.Info("Successfully connected to " + k)
 	}
 	return nil
 }
