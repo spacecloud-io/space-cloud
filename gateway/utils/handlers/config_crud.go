@@ -179,7 +179,7 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 		dbType, exists := r.URL.Query()["dbType"]
 		if !exists {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbtype not provided in url", r.URL)})
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbType not provided in url")})
 			return
 		}
 
@@ -195,7 +195,7 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 		coll, ok := project.Modules.Crud[dbType[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("collection not found", r.URL)})
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found", r.URL)})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -300,7 +300,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 		dbType, exists := r.URL.Query()["dbType"]
 		if !exists {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbtype not provided in url", r.URL)})
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbType not provided in url")})
 		}
 
 		//gel col from url
@@ -318,7 +318,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 		coll, ok := project.Modules.Crud[dbType[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("collection not found", r.URL)})
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found")})
 			return
 		}
 
@@ -327,7 +327,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			temp, ok := coll.Collections[col[0]]
 			if !ok {
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("collection not found", r.URL)})
+				json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found")})
 				return
 			}
 			w.WriteHeader(http.StatusOK)
@@ -400,7 +400,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 		if !exists {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbtype not provided in url", r.URL)})
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbType not provided in url")})
 		}
 
 		//gel collection id
@@ -418,7 +418,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 		databaseConfig, ok := project.Modules.Crud[dbType[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("specified database not present in config")})
+			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("specified database not present in config")})
 			return
 		}
 
@@ -428,7 +428,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			collection, ok := databaseConfig.Collections[col[0]]
 			if !ok {
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("specified collection not present in config")})
+				json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("specified collection not present in config")})
 				return
 			}
 			collectionsRule := make(map[string]*config.TableRule)
