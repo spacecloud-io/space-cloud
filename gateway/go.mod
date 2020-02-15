@@ -15,10 +15,8 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/go-sql-driver/mysql v1.4.1
-	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
-	github.com/google/go-cmp v0.3.0
-	github.com/googleapis/gnostic v0.3.1 // indirect
+	github.com/google/go-cmp v0.3.1
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
@@ -31,7 +29,6 @@ require (
 	github.com/hashicorp/memberlist v0.1.5 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
-	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
@@ -39,6 +36,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nats-io/nats-server/v2 v2.0.2 // indirect
 	github.com/nats-io/nats.go v1.8.1
+	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/ksuid v1.0.2
@@ -61,9 +59,12 @@ require (
 	google.golang.org/api v0.14.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.5
 	gopkg.in/yaml.v2 v2.2.7
-	k8s.io/api v0.0.0-20200113233642-3946df5ca773
-	k8s.io/apimachinery v0.0.0-20200113233504-44bd77c24ef9
-	k8s.io/client-go v0.0.0-20200114073902-7ec8a74ae980
+	istio.io/api v0.0.0-20200213230120-00efe7317328 // indirect
+	istio.io/client-go v0.0.0-20200212163417-ad75bb5565ef // indirect
+	k8s.io/api v0.17.2
+	k8s.io/apimachinery v0.17.2
+	k8s.io/client-go v0.17.2
+	k8s.io/utils v0.0.0-20191217005138-9e5e9d854fcc // indirect
 
 )
 
