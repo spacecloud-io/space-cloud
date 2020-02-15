@@ -27,8 +27,10 @@ type docker struct {
 	auth         *auth.Module
 	artifactAddr string
 	secretPath   string
+	hostFilePath string
 }
 
+// NewDockerDriver creates a docker client
 func NewDockerDriver(auth *auth.Module, artifactAddr string) (*docker, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -41,7 +43,12 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*docker, error) {
 		secretPath = "."
 	}
 
-	return &docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath}, nil
+	hostFilePath := os.Getenv("HOSTS_FILE_PATH")
+	if hostFilePath == "" {
+		logrus.Fatal("Failed to create docker driver: HOSTS_FILE_PATH environment variable not provided")
+	}
+
+	return &docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath, hostFilePath: hostFilePath}, nil
 }
 
 // ApplyService creates containers for specified service
@@ -69,15 +76,15 @@ func (d *docker) ApplyService(ctx context.Context, service *model.Service) error
 		}
 	}
 
-	var containerName, containerIp string
+	var containerName, containerIP string
 	for index, task := range service.Tasks {
 		if index == 0 {
 			var err error
-			containerName, containerIp, err = d.createContainer(ctx, task, service, ports, "")
+			containerName, containerIP, err = d.createContainer(ctx, task, service, ports, "")
 			if err != nil {
 				return err
 			}
-			hostFile.AddHost(containerIp, getServiceDomain(service.ProjectID, service.ID))
+			hostFile.AddHost(containerIP, getServiceDomain(service.ProjectID, service.ID))
 			continue
 		}
 		_, _, err := d.createContainer(ctx, task, service, []model.Port{}, containerName)
@@ -100,46 +107,46 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 		service.Labels = map[string]string{}
 	}
 	service.Labels["internalRuntime"] = string(task.Runtime)
-	portsJsonString, err := json.Marshal(&task.Ports)
+	portsJSONString, err := json.Marshal(&task.Ports)
 	if err != nil {
 		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
 		return "", "", err
 	}
-	service.Labels["internalPorts"] = string(portsJsonString)
-	scaleJsonString, err := json.Marshal(&service.Scale)
+	service.Labels["internalPorts"] = string(portsJSONString)
+	scaleJSONString, err := json.Marshal(&service.Scale)
 	if err != nil {
 		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
 		return "", "", err
 	}
-	service.Labels["internalScale"] = string(scaleJsonString)
+	service.Labels["internalScale"] = string(scaleJSONString)
 
-	affinityJsonString, err := json.Marshal(&service.Affinity)
+	affinityJSONString, err := json.Marshal(&service.Affinity)
 	if err != nil {
 		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
 		return "", "", err
 	}
-	service.Labels["internalAffinity"] = string(affinityJsonString)
+	service.Labels["internalAffinity"] = string(affinityJSONString)
 
-	whitelistJsonString, err := json.Marshal(&service.Whitelist)
+	whitelistJSONString, err := json.Marshal(&service.Whitelist)
 	if err != nil {
 		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
 		return "", "", err
 	}
-	service.Labels["internalWhitelist"] = string(whitelistJsonString)
+	service.Labels["internalWhitelist"] = string(whitelistJSONString)
 
-	upstreamJsonString, err := json.Marshal(&service.Upstreams)
+	upstreamJSONString, err := json.Marshal(&service.Upstreams)
 	if err != nil {
 		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
 		return "", "", err
 	}
-	service.Labels["internalUpstream"] = string(upstreamJsonString)
+	service.Labels["internalUpstream"] = string(upstreamJSONString)
 
-	secretsJsonString, err := json.Marshal(&task.Secrets)
+	secretsJSONString, err := json.Marshal(&task.Secrets)
 	if err != nil {
 		logrus.Errorf("error applying service in docker unable to marshal ports - %v", err)
 		return "", "", err
 	}
-	service.Labels["internalSecrets"] = string(secretsJsonString)
+	service.Labels["internalSecrets"] = string(secretsJSONString)
 
 	service.Labels["internalDockerSecrets"] = task.Docker.Secret
 
@@ -162,7 +169,13 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 	}
 
 	// set secrets
-	mounts := []mount.Mount{}
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: d.hostFilePath,
+			Target: "/etc/hosts",
+		},
+	}
 	for _, secretName := range task.Secrets {
 
 		// check if file exists
@@ -207,12 +220,12 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 		// receiving memory in mega bytes converting into bytes
 		// convert received mill cpus to cpus by diving by 1000 then multiply with 100000 to get cpu quota
 		Resources: container.Resources{Memory: task.Resources.Memory * 1024 * 1024, NanoCPUs: task.Resources.CPU * 1000000},
+		Mounts:    mounts,
 	}
 
 	exposedPorts := map[nat.Port]struct{}{}
 	if cName != "" {
 		hostConfig.NetworkMode = container.NetworkMode("container:" + cName)
-		hostConfig.Mounts = mounts
 	} else {
 		// expose ports of docker container as specified for 1st task
 		task.Ports = overridePorts // override all ports while creating container for 1st task
@@ -220,7 +233,6 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 			portString := strconv.Itoa(int(port.Port))
 			exposedPorts[nat.Port(portString)] = struct{}{}
 		}
-		hostConfig.Mounts = mounts
 	}
 
 	containerName := fmt.Sprintf("%s--%s--%s--%s", service.ProjectID, service.ID, service.Version, task.ID)
@@ -251,10 +263,10 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 }
 
 // DeleteService removes every docker container related to specified service id
-func (d *docker) DeleteService(ctx context.Context, projectId, serviceId, version string) error {
-	args := filters.Arg("name", fmt.Sprintf("%s--%s--%s", projectId, serviceId, version))
-	if serviceId == "" || version == "" {
-		args = filters.Arg("name", fmt.Sprintf("%s", projectId))
+func (d *docker) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
+	args := filters.Arg("name", fmt.Sprintf("%s--%s--%s", projectID, serviceID, version))
+	if serviceID == "" || version == "" {
+		args = filters.Arg("name", fmt.Sprintf("%s", projectID))
 	}
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
@@ -271,7 +283,7 @@ func (d *docker) DeleteService(ctx context.Context, projectId, serviceId, versio
 		}
 	}
 
-	tempSecretPath := fmt.Sprintf("%s/temp-secrets/%s/%s", os.Getenv("SECRETS_PATH"), projectId, fmt.Sprintf("%s--%s", serviceId, version))
+	tempSecretPath := fmt.Sprintf("%s/temp-secrets/%s/%s", os.Getenv("SECRETS_PATH"), projectID, fmt.Sprintf("%s--%s", serviceID, version))
 	if err := os.RemoveAll(tempSecretPath); err != nil {
 		return err
 	}
@@ -282,13 +294,13 @@ func (d *docker) DeleteService(ctx context.Context, projectId, serviceId, versio
 		logrus.Errorf("Could not load host file with suitable default - %v", err)
 		return err
 	}
-	hostFile.RemoveHost(getServiceDomain(projectId, serviceId))
+	hostFile.RemoveHost(getServiceDomain(projectID, serviceID))
 	return hostFile.Save()
 }
 
 // GetServices gets the specified service info from docker container
-func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Service, error) {
-	args := filters.Arg("name", fmt.Sprintf("%s", projectId))
+func (d *docker) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
+	args := filters.Arg("name", fmt.Sprintf("%s", projectID))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
@@ -305,14 +317,14 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 			return nil, err
 		}
 		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
-		taskId := containerName[3]
+		taskID := containerName[3]
 		service.Version = containerName[2]
 		service.ID = containerName[1]
 		service.Name = service.ID
 
-		service.ProjectID = projectId
-		service.Whitelist = []model.Whitelist{{ProjectID: projectId, Service: "*"}}
-		service.Upstreams = []model.Upstream{{ProjectID: projectId, Service: "*"}}
+		service.ProjectID = projectID
+		service.Whitelist = []model.Whitelist{{ProjectID: projectID, Service: "*"}}
+		service.Upstreams = []model.Upstream{{ProjectID: projectID, Service: "*"}}
 		tasks := []model.Task{}
 		existingService, ok := services[fmt.Sprintf("%s-%s", service.ID, service.Version)]
 		if ok {
@@ -415,8 +427,8 @@ func (d *docker) GetServices(ctx context.Context, projectId string) ([]*model.Se
 		}
 
 		tasks = append(tasks, model.Task{
-			ID:      taskId,
-			Name:    taskId,
+			ID:      taskID,
+			Name:    taskID,
 			Secrets: secrets,
 			Docker: model.Docker{
 				Image:  containerInspect.Config.Image,

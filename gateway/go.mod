@@ -59,7 +59,7 @@ require (
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
 	golang.org/x/tools v0.0.0-20191217033636-bbbf87ae2631 // indirect
 	google.golang.org/api v0.14.0
-	gopkg.in/AlecAivazis/survey.v1 v1.8.2
+	gopkg.in/AlecAivazis/survey.v1 v1.8.5
 	gopkg.in/yaml.v2 v2.2.7
 	k8s.io/api v0.0.0-20200113233642-3946df5ca773
 	k8s.io/apimachinery v0.0.0-20200113233504-44bd77c24ef9
