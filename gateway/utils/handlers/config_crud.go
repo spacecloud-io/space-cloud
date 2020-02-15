@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -158,6 +159,50 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 	}
 }
 
+//HandleGetDatabaseConnection returns handler to get Database Collection
+func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id and dbType from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbType, exists := r.URL.Query()["dbType"]
+		if !exists {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbType not provided in url")})
+			return
+		}
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get collection
+		coll, ok := project.Modules.Crud[dbType[0]]
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found", r.URL)})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"conn": coll.Conn, "enabled": coll.Enabled, "collections": coll.Collections})
+	}
+}
+
 // HandleRemoveDatabaseConfig is an endpoint handler which removes database config
 func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -234,6 +279,70 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 	}
 }
 
+//HandleGetSchema returns handler to get schema
+func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id and dbType from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		dbType, exists := r.URL.Query()["dbType"]
+		if !exists {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbType not provided in url")})
+		}
+
+		//gel col from url
+		col, exists := r.URL.Query()["col"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get collection
+		coll, ok := project.Modules.Crud[dbType[0]]
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found")})
+			return
+		}
+
+		//check if col exists in url
+		if exists {
+			temp, ok := coll.Collections[col[0]]
+			if !ok {
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found")})
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": temp.Schema})
+			return
+		}
+		schemas := make(map[string]*config.TableRule)
+		for p, val := range coll.Collections {
+			schemas[p] = &config.TableRule{Schema: val.Schema}
+		}
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": schemas})
+	}
+}
+
 // HandleCollectionRules is an endpoint handler which update database collection rules in config & creates collection if it doesn't exist
 func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -266,6 +375,74 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
+	}
+}
+
+//HandleGetCollectionRules returns handler to get collection rule
+func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id and dbType
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbType, exists := r.URL.Query()["dbType"]
+
+		if !exists {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbType not provided in url")})
+		}
+
+		//gel collection id
+		col, exists := r.URL.Query()["col"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get databaseConfig
+		databaseConfig, ok := project.Modules.Crud[dbType[0]]
+		if !ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("specified database not present in config")})
+			return
+		}
+
+		//check col present in url
+		if exists {
+			//get collection
+			collection, ok := databaseConfig.Collections[col[0]]
+			if !ok {
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("specified collection not present in config")})
+				return
+			}
+			collectionsRule := make(map[string]*config.TableRule)
+			collectionsRule[col[0]] = &config.TableRule{IsRealTimeEnabled: collection.IsRealTimeEnabled, Rules: collection.Rules}
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rule": collectionsRule})
+			return
+		}
+
+		collectionsRules := make(map[string]*config.TableRule)
+		for p, val := range databaseConfig.Collections {
+			collectionsRules[p] = &config.TableRule{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
+		}
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionsRules})
 	}
 }
 

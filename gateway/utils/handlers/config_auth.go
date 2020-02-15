@@ -50,3 +50,40 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
+
+//GetUserManagement returns handler to get auth
+func GetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		providerID, exists := r.URL.Query()["provider"]
+
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		if exists {
+			provider := project.Modules.Auth[providerID[0]]
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"provider": provider})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"providers": project.Modules.Auth})
+	}
+}
