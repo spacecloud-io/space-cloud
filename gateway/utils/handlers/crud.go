@@ -224,7 +224,7 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 	// Get the path parameters
 	vars := mux.Vars(r)
 	projectID := vars["project"]
-	dbType := vars["dbType"]
+	dbAlias := vars["dbAlias"]
 	col := vars["col"]
 
 	// Get the JWT token from header
@@ -235,7 +235,7 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 
 	token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-	return &requestMetaData{projectID: projectID, dbType: dbType, col: col, token: token}
+	return &requestMetaData{projectID: projectID, dbType: dbAlias, col: col, token: token}
 }
 
 // HandleCrudBatch creates the batch operation endpoint

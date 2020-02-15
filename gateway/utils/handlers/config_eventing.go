@@ -14,8 +14,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleAddEventingRule is an endpoint handler which adds a rule to eventing
-func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleAddEventingTriggerRule is an endpoint handler which adds a trigger rule to eventing
+func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -35,7 +35,7 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		defer cancel()
 
 		vars := mux.Vars(r)
-		ruleName := vars["ruleName"]
+		ruleName := vars["triggerName"]
 		projectID := vars["project"]
 
 		if err := syncMan.SetEventingRule(ctx, projectID, ruleName, value); err != nil {
@@ -51,8 +51,8 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 	}
 }
 
-// HandleDeleteEventingRule is an endpoint handler which deletes a rule in eventing
-func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleDeleteEventingTriggerRule is an endpoint handler which deletes a trigger rule in eventing
+func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -69,7 +69,7 @@ func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager)
 		defer cancel()
 
 		vars := mux.Vars(r)
-		ruleName := vars["ruleName"]
+		ruleName := vars["triggerName"]
 		projectID := vars["project"]
 
 		if err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName); err != nil {
@@ -196,8 +196,8 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 	}
 }
 
-// HandleAddEventingSecurityRules is an endpoint handler which adds a security rule in eventing
-func HandleAddEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleAddEventingSecurityRule is an endpoint handler which adds a security rule in eventing
+func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type setSecurityRules struct {
 		Rule *config.Rule `json:"rule"`
 	}
@@ -236,8 +236,8 @@ func HandleAddEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 	}
 }
 
-// HandleDeleteEventingSecurityRules is an endpoint handler which deletes a security rule in eventing
-func HandleDeleteEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleDeleteEventingSecurityRule is an endpoint handler which deletes a security rule in eventing
+func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)

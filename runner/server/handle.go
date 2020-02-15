@@ -98,6 +98,9 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 			return
 		}
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
 		// Parse request body
 		service := new(model.Service)
 		if err := json.NewDecoder(r.Body).Decode(service); err != nil {
@@ -105,6 +108,8 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		service.ProjectID = projectID
 
 		// TODO: Override the project id present in the service object with the one present in the token if user not admin
 
