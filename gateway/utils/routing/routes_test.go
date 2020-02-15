@@ -60,7 +60,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "2 routes present",
+			name: "does not confuses exact with prefix",
 			r: routeMapping{
 				"test": config.Routes{
 					&config.Route{

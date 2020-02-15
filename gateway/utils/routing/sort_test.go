@@ -118,9 +118,9 @@ func Test_sortFileRule(t *testing.T) {
 			sortRoutes(tt.args.rules)
 			if !reflect.DeepEqual(tt.args.rules, tt.want.rules) {
 				t.Errorf("error sorting routes unablt to sort routes properly")
+				val, _ := json.MarshalIndent(tt.args.rules, "", " ")
+				log.Println(string(val))
 			}
-			val, _ := json.MarshalIndent(tt.args.rules, "", " ")
-			log.Println(string(val))
 		})
 	}
 }
