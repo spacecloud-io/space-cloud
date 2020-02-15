@@ -17,7 +17,7 @@ import (
 )
 
 type requestMetaData struct {
-	project, dbType, col, token string
+	projectID, dbType, col, token string
 }
 
 // HandleCrudCreate creates the create operation endpoint
@@ -37,7 +37,7 @@ func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 		defer r.Body.Close()
 
 		// Check if the user is authenticated
-		status, err := auth.IsCreateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -45,7 +45,7 @@ func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 		}
 
 		// Perform the write operation
-		err = crud.Create(ctx, meta.dbType, meta.project, meta.col, &req)
+		err = crud.Create(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 
 			// Send http response
@@ -82,7 +82,7 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 		}
 
 		// Check if the user is authenticated
-		actions, status, err := auth.IsReadOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
+		actions, status, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -90,7 +90,7 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 		}
 
 		// Perform the read operation
-		result, err := crud.Read(ctx, meta.dbType, meta.project, meta.col, &req)
+		result, err := crud.Read(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -122,7 +122,7 @@ func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, err := auth.IsUpdateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -130,7 +130,7 @@ func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 		}
 
 		// Perform the update operation
-		err = crud.Update(ctx, meta.dbType, meta.project, meta.col, &req)
+		err = crud.Update(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 
 			// Send http response
@@ -161,7 +161,7 @@ func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, err := auth.IsDeleteOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -169,7 +169,7 @@ func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 		}
 
 		// Perform the delete operation
-		err = crud.Delete(ctx, meta.dbType, meta.project, meta.col, &req)
+		err = crud.Delete(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 			// Send http response
 			w.WriteHeader(http.StatusInternalServerError)
@@ -199,7 +199,7 @@ func HandleCrudAggregate(auth *auth.Module, crud *crud.Module) http.HandlerFunc 
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, err := auth.IsAggregateOpAuthorised(ctx, meta.project, meta.dbType, meta.col, meta.token, &req)
+		status, err := auth.IsAggregateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -207,7 +207,7 @@ func HandleCrudAggregate(auth *auth.Module, crud *crud.Module) http.HandlerFunc 
 		}
 
 		// Perform the aggregate operation
-		result, err := crud.Aggregate(ctx, meta.dbType, meta.project, meta.col, &req)
+		result, err := crud.Aggregate(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -223,7 +223,7 @@ func HandleCrudAggregate(auth *auth.Module, crud *crud.Module) http.HandlerFunc 
 func getRequestMetaData(r *http.Request) *requestMetaData {
 	// Get the path parameters
 	vars := mux.Vars(r)
-	project := vars["project"]
+	projectID := vars["project"]
 	dbType := vars["dbType"]
 	col := vars["col"]
 
@@ -235,7 +235,7 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 
 	token := strings.TrimPrefix(tokens[0], "Bearer ")
 
-	return &requestMetaData{project: project, dbType: dbType, col: col, token: token}
+	return &requestMetaData{projectID: projectID, dbType: dbType, col: col, token: token}
 }
 
 // HandleCrudBatch creates the batch operation endpoint
@@ -262,15 +262,15 @@ func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Mo
 			switch req.Type {
 			case string(utils.Create):
 				r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
-				status, err = auth.IsCreateOpAuthorised(ctx, meta.project, meta.dbType, req.Col, meta.token, &r)
+				status, err = auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			case string(utils.Update):
 				r := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
-				status, err = auth.IsUpdateOpAuthorised(ctx, meta.project, meta.dbType, req.Col, meta.token, &r)
+				status, err = auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			case string(utils.Delete):
 				r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
-				status, err = auth.IsDeleteOpAuthorised(ctx, meta.project, meta.dbType, req.Col, meta.token, &r)
+				status, err = auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			}
 
@@ -284,7 +284,7 @@ func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Mo
 		}
 
 		// Perform the batch operation
-		err := crud.Batch(ctx, meta.dbType, meta.project, &txRequest)
+		err := crud.Batch(ctx, meta.dbType, meta.projectID, &txRequest)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

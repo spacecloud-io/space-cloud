@@ -58,7 +58,7 @@ func (s *Schema) SchemaValidator(col string, collectionFields SchemaFields, doc 
 }
 
 // ValidateCreateOperation validates schema on create operation
-func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRequest) error {
+func (s *Schema) ValidateCreateOperation(dbAlias, col string, req *model.CreateRequest) error {
 
 	if s.SchemaDoc == nil {
 		return errors.New("schema not initialized")
@@ -73,9 +73,9 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 		v = append(v, t)
 	}
 
-	collection, ok := s.SchemaDoc[dbType]
+	collection, ok := s.SchemaDoc[dbAlias]
 	if !ok {
-		return errors.New("No db was found named " + dbType)
+		return errors.New("No db was found named " + dbAlias)
 	}
 	collectionFields, ok := collection[col]
 	if !ok {
@@ -85,7 +85,7 @@ func (s *Schema) ValidateCreateOperation(dbType, col string, req *model.CreateRe
 	for index, docTemp := range v {
 		doc, ok := docTemp.(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("invalid document provided for collection (%s:%s)", dbType, col)
+			return fmt.Errorf("invalid document provided for collection (%s:%s)", dbAlias, col)
 		}
 		newDoc, err := s.SchemaValidator(col, collectionFields, doc)
 		if err != nil {
