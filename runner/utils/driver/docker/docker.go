@@ -27,6 +27,7 @@ type docker struct {
 	auth         *auth.Module
 	artifactAddr string
 	secretPath   string
+	hostFilePath string
 }
 
 // NewDockerDriver creates a docker client
@@ -42,7 +43,12 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*docker, error) {
 		secretPath = "."
 	}
 
-	return &docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath}, nil
+	hostFilePath := os.Getenv("HOSTS_FILE_PATH")
+	if hostFilePath == "" {
+		logrus.Fatal("Failed to create docker driver: HOSTS_FILE_PATH environment variable not provided")
+	}
+
+	return &docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath, hostFilePath: hostFilePath}, nil
 }
 
 // ApplyService creates containers for specified service
@@ -166,7 +172,7 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
-			Source: getSpaceCloudHostsFilePath(),
+			Source: d.hostFilePath,
 			Target: "/etc/hosts",
 		},
 	}

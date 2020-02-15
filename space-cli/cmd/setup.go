@@ -135,6 +135,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
 				"SECRETS_PATH=/secrets",
 				"HOME_SECRETS_PATH=" + getTempSecretsDir(),
+				"HOSTS_FILE_PATH=" + getSpaceCloudHostsFilePath(),
 			},
 			mount: []mount.Mount{
 				{

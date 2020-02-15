@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"runtime"
 
 	"github.com/docker/docker/api/types"
 	"github.com/sirupsen/logrus"
@@ -62,23 +61,4 @@ func (d *docker) pullImageIfDoesntExists(ctx context.Context, projectId string, 
 		}
 	}
 	return nil
-}
-
-func getSpaceCloudHostsFilePath() string {
-	return fmt.Sprintf("%s/hosts", getSpaceCloudDirectory())
-}
-
-func getSpaceCloudDirectory() string {
-	return fmt.Sprintf("%s/.space-cloud", getHomeDirectory())
-}
-
-func getHomeDirectory() string {
-	if runtime.GOOS == "windows" {
-		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
-		if home == "" {
-			home = os.Getenv("USERPROFILE")
-		}
-		return home
-	}
-	return os.Getenv("HOME")
 }

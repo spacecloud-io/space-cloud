@@ -11,6 +11,10 @@ require (
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20191001013358-cfbb681360f0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/docker/distribution v2.7.1+incompatible // indirect
+	github.com/docker/docker v1.13.1 // indirect
+	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/go-units v0.4.0 // indirect
 	github.com/doug-martin/goqu/v8 v8.1.0
 	github.com/fatih/structs v1.1.0
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
@@ -39,15 +43,18 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nats-io/nats-server/v2 v2.0.2 // indirect
 	github.com/nats-io/nats.go v1.8.1
+	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.2
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spaceuptech/space-api-go v0.16.1
+	github.com/spaceuptech/space-cli v0.0.0-20190721153730-40ccd297f6de // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
+	github.com/txn2/txeh v1.3.0 // indirect
 	github.com/urfave/cli v1.22.1
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
 	github.com/xdg/stringprep v1.0.0 // indirect
@@ -59,7 +66,7 @@ require (
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
 	golang.org/x/tools v0.0.0-20191217033636-bbbf87ae2631 // indirect
 	google.golang.org/api v0.14.0
-	gopkg.in/AlecAivazis/survey.v1 v1.8.2
+	gopkg.in/AlecAivazis/survey.v1 v1.8.5
 	gopkg.in/yaml.v2 v2.2.7
 	k8s.io/api v0.0.0-20200113233642-3946df5ca773
 	k8s.io/apimachinery v0.0.0-20200113233504-44bd77c24ef9
