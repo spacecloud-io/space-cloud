@@ -59,7 +59,54 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			},
 			wantErr: false,
 		},
-
+		{
+			name: "2 routes present",
+			r: routeMapping{
+				"test": config.Routes{
+					&config.Route{
+						Id: "1234",
+						Source: config.RouteSource{
+							Hosts: []string{"spaceuptech.com"},
+							URL:   "/abc/xyz",
+							Type:  config.RouteExact,
+						},
+						Destination: config.RouteDestination{
+							Host: "git.com",
+							Port: "8080",
+						},
+					},
+					&config.Route{
+						Id: "567",
+						Source: config.RouteSource{
+							Hosts: []string{"spaceuptech.com"},
+							URL:   "/abc",
+							Type:  config.RoutePrefix,
+						},
+						Destination: config.RouteDestination{
+							Host: "git.com",
+							Port: "8080",
+						},
+					},
+				},
+			},
+			args: args{
+				host: "spaceuptech.com",
+				url:  "/abc/xyz/123",
+			},
+			want: &config.Route{
+				Id: "567",
+				Source: config.RouteSource{
+					Hosts: []string{"spaceuptech.com"},
+					URL:   "/abc",
+					Type:  config.RoutePrefix,
+				},
+				Destination: config.RouteDestination{
+					Host: "git.com",
+					Port: "8080",
+				},
+			},
+			wantErr: false,
+		},
 		{
 			name: "host match and url prefix match",
 			r: routeMapping{
