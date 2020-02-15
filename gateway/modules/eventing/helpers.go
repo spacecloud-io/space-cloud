@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
 
 	"github.com/fatih/structs"
 	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -22,25 +24,25 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 
 	url, err := m.syncMan.GetAssignedSpaceCloudURL(ctx, m.project, eventToken)
 	if err != nil {
-		log.Println("Eventing module could not get space-cloud url:", err)
+		logrus.Errorln("Eventing module could not get space-cloud url:", err)
 		return
 	}
 
 	token, err := m.adminMan.GetInternalAccessToken()
 	if err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		return
 	}
 
 	scToken, err := m.auth.GetSCAccessToken()
 	if err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		return
 	}
 
 	var res interface{}
 	if err := m.syncMan.MakeHTTPRequest(ctx, "POST", url, token, scToken, eventDocs, &res); err != nil {
-		log.Println("Eventing module could not transmit event:", err)
+		logrus.Errorln("Eventing module could not transmit event:", err)
 		log.Println(res)
 	}
 }
@@ -59,7 +61,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, batchID, utils.EventStatusStaged, r.URL, req)
+			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.Name, batchID, utils.EventStatusStaged, r.URL, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -75,7 +77,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
 
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
 
@@ -97,7 +99,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, batchID, status, 
 	return &model.EventDocument{
 		ID:             ksuid.New().String(),
 		BatchID:        batchID,
-		Type:           event.Type,
+		Type:           fmt.Sprintf("%s:%s", event.Type, name),
 		Token:          token,
 		Timestamp:      timestamp,
 		EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond),
@@ -165,14 +167,16 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 func (m *Module) getMatchingRules(name string, options map[string]string) []config.EventingRule {
 	var rules []config.EventingRule
 
-	for _, rule := range m.config.Rules {
+	for n, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
+			rule.Name = n
 			rules = append(rules, rule)
 		}
 	}
 
-	for _, rule := range m.config.InternalRules {
+	for n, rule := range m.config.InternalRules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
+			rule.Name = n
 			rules = append(rules, rule)
 		}
 	}
@@ -212,6 +216,36 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 			return false
 		}
 	}
-
 	return true
+}
+
+func (m *Module) selectRule(name, evType string) (config.EventingRule, error) {
+	if evType == utils.EventDBCreate || evType == utils.EventDBDelete || evType == utils.EventDBUpdate || evType == utils.EventFileCreate || evType == utils.EventFileDelete {
+		return config.EventingRule{Timeout: 5000, Type: evType, Retries: 3}, nil
+	}
+
+	if rule, ok := m.config.Rules[name]; ok {
+		return rule, nil
+	}
+	if rule, ok := m.config.InternalRules[name]; ok {
+		return rule, nil
+	}
+	return config.EventingRule{}, fmt.Errorf("could not find rule with name %s", name)
+}
+
+func (m *Module) validate(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
+	if event.Type == utils.EventDBCreate || event.Type == utils.EventDBDelete || event.Type == utils.EventDBUpdate || event.Type == utils.EventFileCreate || event.Type == utils.EventFileDelete {
+		return nil
+	}
+
+	if err := m.auth.IsEventingOpAuthorised(ctx, project, token, event); err != nil {
+		return err
+	}
+
+	schema, p := m.schemas[event.Type]
+	if !p {
+		return nil
+	}
+	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
+	return err
 }

@@ -8,6 +8,8 @@ import (
 	"strconv"
 
 	"golang.org/x/net/context"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // MakeHTTPRequest fires an http request and returns a response
@@ -41,7 +43,7 @@ func (s *Manager) MakeHTTPRequest(ctx context.Context, method, url, token, scTok
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer utils.CloseTheCloser(resp.Body)
 
 	if err := json.NewDecoder(resp.Body).Decode(vPtr); err != nil {
 		return err

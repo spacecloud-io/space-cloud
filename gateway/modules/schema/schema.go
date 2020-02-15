@@ -47,11 +47,11 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	return nil
 }
 
-func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
+func (s *Schema) GetSchema(dbAlias, col string) (SchemaFields, bool) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	dbSchema, p := s.SchemaDoc[dbType]
+	dbSchema, p := s.SchemaDoc[dbAlias]
 	if !p {
 		return nil, false
 	}
@@ -71,7 +71,7 @@ func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
 
 // parseSchema Initializes Schema field in Module struct
 func (s *Schema) parseSchema(crud config.Crud) error {
-	schema, err := s.parser(crud)
+	schema, err := s.Parser(crud)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (s *Schema) parseSchema(crud config.Crud) error {
 	return nil
 }
 
-func (s *Schema) parser(crud config.Crud) (schemaType, error) {
+func (s *Schema) Parser(crud config.Crud) (schemaType, error) {
 
 	schema := make(schemaType, len(crud))
 	for dbName, v := range crud {

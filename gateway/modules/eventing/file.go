@@ -30,14 +30,15 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
-		eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
+		eventDoc := m.generateQueueEventRequest(token, rule.Retries, rule.Name,
 			batchID, utils.EventStatusIntent, rule.URL, &model.QueueEventRequest{
 				Type: utils.EventFileCreate,
 				Payload: &model.FilePayload{
 					Meta: req.Meta,
 					Path: req.Path,
 				},
-			}))
+			})
+		eventDocs = append(eventDocs, eventDoc)
 	}
 
 	if len(eventDocs) == 0 {
@@ -54,7 +55,7 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 }
 
 // DeleteFileIntentHook handles the delete file intent requests
-func (m *Module) DeleteFileIntentHook(ctx context.Context, path string) (*model.EventIntent, error) {
+func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map[string]interface{}) (*model.EventIntent, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -71,13 +72,15 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string) (*model.
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
-		eventDocs = append(eventDocs, m.generateQueueEventRequest(token, rule.Retries,
+		eventDoc := m.generateQueueEventRequest(token, rule.Retries, rule.Name,
 			batchID, utils.EventStatusIntent, rule.URL, &model.QueueEventRequest{
 				Type: utils.EventFileDelete,
 				Payload: &model.FilePayload{
 					Path: path,
+					Meta: meta,
 				},
-			}))
+			})
+		eventDocs = append(eventDocs, eventDoc)
 	}
 
 	if len(eventDocs) == 0 {

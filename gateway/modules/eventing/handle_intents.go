@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -20,7 +21,7 @@ func (m *Module) processIntents(t *time.Time) {
 	}
 	m.lock.RLock()
 	project := m.project
-	dbType, col := m.config.DBType, m.config.Col
+	dbAlias, col := m.config.DBType, m.config.Col
 	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
@@ -37,7 +38,7 @@ func (m *Module) processIntents(t *time.Time) {
 		},
 	}}
 
-	results, err := m.crud.Read(ctx, dbType, project, col, &readRequest)
+	results, err := m.crud.Read(ctx, dbAlias, project, col, &readRequest)
 	if err != nil {
 		log.Println("Eventing intent routine error:", err)
 		return
@@ -73,7 +74,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 	// Get the eventID
 	eventID := eventDoc.ID
 
-	switch eventDoc.Type {
+	switch strings.Split(eventDoc.Type, ":")[0] {
 
 	case utils.EventDBCreate:
 		// Unmarshal the payload

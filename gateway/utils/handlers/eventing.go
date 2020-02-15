@@ -59,7 +59,7 @@ func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) ht
 }
 
 // HandleQueueEvent creates a queue event endpoint
-func HandleQueueEvent(adminMan *admin.Manager, projects *projects.Projects) http.HandlerFunc {
+func HandleQueueEvent(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Load the params from the body
 		req := model.QueueEventRequest{}
@@ -68,9 +68,9 @@ func HandleQueueEvent(adminMan *admin.Manager, projects *projects.Projects) http
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Project id isn't present in the state"})
@@ -87,15 +87,10 @@ func HandleQueueEvent(adminMan *admin.Manager, projects *projects.Projects) http
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		if err := state.Eventing.QueueEvent(ctx, &req); err != nil {
+		if err := state.Eventing.QueueEvent(ctx, projectID, token, &req); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

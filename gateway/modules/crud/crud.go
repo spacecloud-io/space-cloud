@@ -36,6 +36,12 @@ func Init(h *driver.Handler, adminMan *admin.Manager) *Module {
 	return &Module{blocks: make(map[string]*stub), h: h, adminMan: adminMan}
 }
 
+// SetHooks sets the internal hooks
+func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHook) {
+	m.hooks = hooks
+	m.metricHook = metricHook
+}
+
 // SetConfig set the rules and secret key required by the crud block
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
@@ -73,12 +79,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		log.Println("Successfully connected to " + dbAlias)
 	}
 	return nil
-}
-
-// SetHooks sets the internal hooks
-func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHook) {
-	m.hooks = hooks
-	m.metricHook = metricHook
 }
 
 type stub struct {

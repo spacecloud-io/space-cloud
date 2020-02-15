@@ -95,5 +95,5 @@ func (m *Manager) Login(user, pass string) (int, string, error) {
 		}
 	}
 
-	return http.StatusUnauthorized, "", errors.New("invalid credentials provided")
+	return http.StatusUnauthorized, "", errors.New("Invalid credentials provided")
 }

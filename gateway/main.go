@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -14,7 +15,24 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/server"
 )
 
+const (
+	loglevelDebug = "debug"
+	loglevelInfo  = "info"
+	logLevelError = "error"
+)
+
 var essentialFlags = []cli.Flag{
+	cli.StringFlag{
+		Name:   "config-domain",
+		EnvVar: "CONFIG_DOMAIN",
+		Usage:  "Set mission control and config domain names",
+	},
+	cli.StringFlag{
+		Name:   "log-level",
+		EnvVar: "LOG_LEVEL",
+		Usage:  "Set the log level [debug | info | error]",
+		Value:  loglevelInfo,
+	},
 	cli.StringFlag{
 		Name:   "id",
 		Value:  "none",
@@ -69,6 +87,18 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Removes the project level scope in the database and file storage modules",
 		EnvVar: "REMOVE_PROJECT_SCOPE",
 	},
+	cli.StringFlag{
+		Name:   "runner-addr",
+		Usage:  "The address used to reach the runner",
+		EnvVar: "RUNNER_ADDR",
+	},
+	cli.StringFlag{
+		Name:   "artifact-addr",
+		Usage:  "The address used to reach the artifact server",
+		EnvVar: "ARTIFACT_ADDR",
+	},
+
+	// Flags for ssl
 	cli.BoolFlag{
 		Name:   "ssl-enable",
 		Usage:  "Enable https and lets encrypt support",
@@ -86,6 +116,7 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Load ssl key from `FILE`",
 		EnvVar: "SSL_KEY",
 	},
+
 	// flags for admin man
 	cli.StringFlag{
 		Name:   "admin-user",
@@ -105,6 +136,7 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "ADMIN_SECRET",
 		Value:  "",
 	},
+
 	// Flags for the metrics module
 	cli.BoolFlag{
 		Name:   "enable-metrics",
@@ -166,10 +198,15 @@ func actionRun(c *cli.Context) error {
 	isDev := c.Bool("dev")
 	disableMetrics := c.Bool("disable-metrics")
 	disableBandwidth := c.Bool("disable-bandwidth")
+	logLevel := c.String("log-level")
+	setLogLevel(logLevel)
 
 	// Load flag related to the port
 	port := c.Int("port")
+
 	removeProjectScope := c.Bool("remove-project-scope")
+	runnerAddr := c.String("runner-addr")
+	artifactAddr := c.String("artifact-addr")
 
 	// Load flags related to ssl
 	sslEnable := c.Bool("ssl-enable")
@@ -192,12 +229,14 @@ func actionRun(c *cli.Context) error {
 	metricsConn := c.String("metrics-conn")
 	metricsScope := c.String("metrics-scope")
 
+	configDomain := c.String("config-domain")
+
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, removeProjectScope,
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, removeProjectScope,
 		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
@@ -237,7 +276,7 @@ func actionRun(c *cli.Context) error {
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(false, disableMetrics, staticPath, port)
+	return s.Start(false, disableMetrics, staticPath, configDomain, port)
 }
 
 func actionInit(*cli.Context) error {
@@ -281,4 +320,19 @@ func initMissionContol(version string) (string, error) {
 		return "", err
 	}
 	return uiPath + "/build", nil
+}
+
+func setLogLevel(loglevel string) {
+	switch loglevel {
+	case loglevelDebug:
+		logrus.SetLevel(logrus.DebugLevel)
+	case loglevelInfo:
+		logrus.SetLevel(logrus.InfoLevel)
+	case logLevelError:
+		logrus.SetLevel(logrus.ErrorLevel)
+	default:
+		logrus.Errorf("Invalid log level (%s) provided", loglevel)
+		logrus.Infoln("Defaulting to `info` level")
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 }

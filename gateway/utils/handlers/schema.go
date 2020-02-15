@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	
+
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
@@ -32,18 +32,18 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, projects *projects.Proj
 		defer cancel()
 
 		vars := mux.Vars(r)
-		dbType := vars["dbType"]
-		project := vars["project"]
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		schemas, err := state.Schema.GetCollectionSchema(ctx, project, dbType)
+		schemas, err := state.Schema.GetCollectionSchema(ctx, projectID, dbAlias)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

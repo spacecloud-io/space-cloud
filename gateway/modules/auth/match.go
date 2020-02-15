@@ -30,7 +30,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 
 	switch rule.Rule {
 	case "deny":
-		return &PostProcess{}, ErrIncorrectMatch
+		return &PostProcess{}, errors.New("the operation being performed is denied")
 
 	case "match":
 		return &PostProcess{}, match(rule, args)
@@ -45,13 +45,13 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return &PostProcess{}, m.matchFunc(ctx, rule, m.makeHttpRequest, args)
 
 	case "query":
-		return &PostProcess{}, matchQuery(ctx, project, rule, m.crud, args)
+		return m.matchQuery(ctx, project, rule, m.crud, args)
 
 	case "force":
-		return matchForce(rule, args)
+		return m.matchForce(ctx, project, rule, args, auth)
 
 	case "remove":
-		return matchRemove(rule, args)
+		return m.matchRemove(ctx, project, rule, args, auth)
 	default:
 		return &PostProcess{}, ErrIncorrectMatch
 	}
@@ -60,7 +60,6 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHttpRequest utils.MakeHttpRequest, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
-	delete(obj, "token")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -74,16 +73,20 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHttpReque
 	return MakeHttpRequest(ctx, "POST", rule.URL, token, scToken, obj, &result)
 }
 
-func matchQuery(ctx context.Context, project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) error {
+func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud *crud.Module, args map[string]interface{}) (*PostProcess, error) {
 	// Adjust the find object to load any variables referenced from state
 	rule.Find = utils.Adjust(rule.Find, args).(map[string]interface{})
 
 	// Create a new read request
-	req := &model.ReadRequest{Find: rule.Find, Operation: utils.One}
+	req := &model.ReadRequest{Find: rule.Find, Operation: utils.All}
 
 	// Execute the read request
-	_, err := crud.Read(ctx, rule.DB, project, rule.Col, req)
-	return err
+	data, err := crud.Read(ctx, rule.DB, project, rule.Col, req)
+	if err != nil {
+		return nil, err
+	}
+	args["result"] = data
+	return m.matchRule(ctx, project, rule.Clause, args, nil)
 }
 
 func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*PostProcess, error) {
@@ -127,7 +130,14 @@ func match(rule *config.Rule, args map[string]interface{}) error {
 	return ErrIncorrectMatch
 }
 
-func matchForce(rule *config.Rule, args map[string]interface{}) (*PostProcess, error) {
+func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*PostProcess, error) {
+	if rule.Clause != nil && rule.Clause.Rule != "" {
+		// Match clause with rule!
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		if err != nil {
+			return nil, nil
+		}
+	}
 	value := rule.Value
 	if stringValue, ok := rule.Value.(string); ok {
 		loadedValue, err := utils.LoadValue(stringValue, args)
@@ -147,7 +157,14 @@ func matchForce(rule *config.Rule, args map[string]interface{}) (*PostProcess, e
 	}
 }
 
-func matchRemove(rule *config.Rule, args map[string]interface{}) (*PostProcess, error) {
+func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*PostProcess, error) {
+	if rule.Clause != nil && rule.Clause.Rule != "" {
+		// Match clause with rule!
+		_, err := m.matchRule(ctx, projectID, rule.Clause, args, auth)
+		if err != nil {
+			return nil, nil
+		}
+	}
 	actions := &PostProcess{}
 	for _, field := range rule.Fields {
 		//"res" - add field to structure for post processing || "args" - delete field from args

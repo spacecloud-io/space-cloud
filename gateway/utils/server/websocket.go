@@ -32,7 +32,7 @@ var upgrader = websocket.Upgrader{
 func (s *Server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
 		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -43,7 +43,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 		// Create a new client
 		c := client.CreateWebsocketClient(socket)
 
-		state, err := s.projects.LoadProject(project)
+		state, err := s.projects.LoadProject(projectID)
 		if err != nil {
 			log.Println("Websocket error:", err)
 			return
@@ -67,7 +67,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				_ = mapstructure.Decode(req.Data, data)
-				data.Project = project
+				data.Project = projectID
 
 				// Subscribe to the realtime feed
 				feedData, err := state.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
@@ -87,7 +87,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				_ = mapstructure.Decode(req.Data, data)
-				data.Project = project
+				data.Project = projectID
 
 				state.Realtime.Unsubscribe(clientID, data)
 
@@ -128,10 +128,10 @@ var graphqlIDMapper sync.Map
 
 func (s *Server) handleGraphqlSocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		project := mux.Vars(r)["project"]
+		projectID := mux.Vars(r)["project"]
 
 		// Load the project state
-		state, err := s.projects.LoadProject(project)
+		state, err := s.projects.LoadProject(projectID)
 		if err != nil {
 			log.Println("Websocket graphql: invalid project provided")
 			return
@@ -235,14 +235,14 @@ func (s *Server) handleGraphqlSocket() http.HandlerFunc {
 					closeConnAliveRoutine <- true
 					return
 				}
-				dbType, err := state.Graph.GetDBAlias(v)
+				dbAlias, err := state.Graph.GetDBAlias(v)
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GQL_ERROR, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
-				data := &model.RealtimeRequest{Token: token, Where: whereData, DBType: dbType, Project: project, Group: v.Name.Value, Type: m.Type, ID: m.ID}
+				data := &model.RealtimeRequest{Token: token, Where: whereData, DBType: dbAlias, Project: projectID, Group: v.Name.Value, Type: m.Type, ID: m.ID}
 				for _, dirValue := range v.Arguments {
 					if dirValue.Name.Value == "skipInitial" {
 						if dirValue.Value.(*ast.BooleanValue).Value {

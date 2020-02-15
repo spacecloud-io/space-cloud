@@ -22,12 +22,12 @@ func HandleProfile(projects *projects.Projects) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
-		dbType := vars["dbType"]
+		projectID := vars["project"]
+		dbAlias := vars["dbAlias"]
 		id := vars["id"]
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -37,7 +37,7 @@ func HandleProfile(projects *projects.Projects) http.HandlerFunc {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		status, result, err := state.UserManagement.Profile(ctx, token, dbType, project, id)
+		status, result, err := state.UserManagement.Profile(ctx, token, dbAlias, projectID, id)
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -57,11 +57,11 @@ func HandleProfiles(projects *projects.Projects) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
-		dbType := vars["dbType"]
+		projectID := vars["project"]
+		dbAlias := vars["dbAlias"]
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -72,7 +72,7 @@ func HandleProfiles(projects *projects.Projects) http.HandlerFunc {
 		token := utils.GetTokenFromHeader(r)
 		defer r.Body.Close()
 
-		status, result, err := state.UserManagement.Profiles(ctx, token, dbType, project)
+		status, result, err := state.UserManagement.Profiles(ctx, token, dbAlias, projectID)
 		if err != nil {
 			return
 		}
@@ -89,11 +89,11 @@ func HandleEmailSignIn(projects *projects.Projects) http.HandlerFunc {
 		defer cancel()
 
 		vars := mux.Vars(r)
-		dbType := vars["dbType"]
-		project := vars["project"]
+		projectID := vars["project"]
+		dbAlias := vars["dbAlias"]
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -105,7 +105,7 @@ func HandleEmailSignIn(projects *projects.Projects) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := state.UserManagement.EmailSignIn(ctx, dbType, project, req["email"].(string), req["pass"].(string))
+		status, result, err := state.UserManagement.EmailSignIn(ctx, dbAlias, projectID, req["email"].(string), req["pass"].(string))
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -125,11 +125,11 @@ func HandleEmailSignUp(projects *projects.Projects) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
-		dbType := vars["dbType"]
+		projectID := vars["project"]
+		dbAlias := vars["dbAlias"]
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -141,7 +141,7 @@ func HandleEmailSignUp(projects *projects.Projects) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := state.UserManagement.EmailSignUp(ctx, dbType, project, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
+		status, result, err := state.UserManagement.EmailSignUp(ctx, dbAlias, projectID, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
 		if err != nil {
 			w.WriteHeader(status)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -162,12 +162,12 @@ func HandleEmailEditProfile(projects *projects.Projects) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := vars["dbAlias"]
 		id := vars["id"]
-		dbType := vars["dbType"]
-		project := vars["project"]
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -182,7 +182,7 @@ func HandleEmailEditProfile(projects *projects.Projects) http.HandlerFunc {
 		json.NewDecoder(r.Body).Decode(&req)
 		defer r.Body.Close()
 
-		status, result, err := state.UserManagement.EmailEditProfile(ctx, token, dbType, project, id, req["email"].(string), req["name"].(string), req["pass"].(string))
+		status, result, err := state.UserManagement.EmailEditProfile(ctx, token, dbAlias, projectID, id, req["email"].(string), req["name"].(string), req["pass"].(string))
 
 		w.WriteHeader(status)
 		if err != nil {

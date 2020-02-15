@@ -55,6 +55,19 @@ type Modules struct {
 	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
 	Routes      Routes          `json:"routes" yaml:"routes"`
+	Deployments Deployments     `json:"deployments" yaml:"deployments"`
+	Secrets     []*Secret       `json:"secrets" yaml:"secrets"`
+}
+
+type Deployments struct {
+	Services []*RunnerService `json:"services" yaml:"services"`
+}
+
+type Secret struct {
+	Name     string            `json:"name" yaml:"name"`
+	Type     string            `json:"type" yaml:"type"`
+	RootPath string            `json:"rootPath" yaml:"rootPath"`
+	Data     map[string]string `json:"data" yaml:"data"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -91,6 +104,7 @@ type Rule struct {
 	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
+	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty`
 }
 
 // Auth holds the mapping of the sign in method
@@ -165,14 +179,22 @@ type Eventing struct {
 	Col           string                  `json:"col" yaml:"col"`
 	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
+	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
+	Schemas       map[string]SchemaObject `json:"schemas" yaml:"schemas"`
 }
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
 	Type    string            `json:"type" yaml:"type"`
 	Retries int               `json:"retries" yaml:"retries"`
+	Timeout int               `json:"timeout" yaml:"timeout"`
+	Name    string            `json:"name" yaml:"name"`
 	URL     string            `json:"url" yaml:"url"`
 	Options map[string]string `json:"options" yaml:"options"`
+}
+
+type SchemaObject struct {
+	Schema string `json:"schema" yaml:"schema"`
 }
 
 // LetsEncrypt describes the configuration for let's encrypt
@@ -181,10 +203,11 @@ type LetsEncrypt struct {
 }
 
 // Routes describes the configuration for the routing module
-type Routes []Route
+type Routes []*Route
 
 // Route describes the parameters of a single route
 type Route struct {
+	Id          string           `json:"id" yaml:"id"`
 	Source      RouteSource      `json:"source" yaml:"source"`
 	Destination RouteDestination `json:"dest" yaml:"dest"`
 }

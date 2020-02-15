@@ -19,10 +19,11 @@ mission-control/node_modules/**
 
 .sass-cache
 
-
 # Ignore the binaries
 space-cloud
 gateway/gateway
+runner/runner
+metric-proxy/metric-proxy
 
 raft-store/**
 publish.sh

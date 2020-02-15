@@ -97,15 +97,29 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 		return errors.New("Cannot create new project. Upgrade your plan"), http.StatusBadRequest
 	}
 
+	// Generate internal access token
+	token, err := s.adminMan.GetInternalAccessToken()
+	if err != nil {
+		return err, http.StatusInternalServerError
+	}
+
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
 			return errors.New("project already exists in config"), http.StatusConflict
 		}
 	}
 
-	go s.projects.StoreIgnoreError(project)
+	// Create a project in the runner as well
+	if s.runnerAddr != "" {
+		params := map[string]interface{}{"id": project.ID}
+		if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project", s.runnerAddr), token, "", params, &map[string]interface{}{}); err != nil {
+			return err, http.StatusInternalServerError
+		}
+	}
 
+	// We will ignore the error for the create project request
 	s.setProjectConfig(project)
+	go s.projects.StoreIgnoreError(project)
 
 	if s.storeType == "none" {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
@@ -172,6 +186,18 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	// Generate internal access token
+	token, err := s.adminMan.GetInternalAccessToken()
+	if err != nil {
+		return err
+	}
+
+	// Create a project in the runner as well
+	if s.runnerAddr != "" {
+		if err := s.MakeHTTPRequest(ctx, http.MethodDelete, fmt.Sprintf("http://%s/v1/runner/%s", s.runnerAddr, projectID), token, "", "", &map[string]interface{}{}); err != nil {
+			return err
+		}
+	}
 
 	s.delete(projectID)
 	s.projects.Delete(projectID)

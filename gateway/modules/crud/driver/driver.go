@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/crud/bolt"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/mgo"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/sql"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -90,6 +91,9 @@ func (h *Handler) addBlock(dbType utils.DBType, enabled bool, connection string)
 	switch dbType {
 	case utils.Mongo:
 		c, err = mgo.Init(enabled, connection)
+
+	case utils.EmbeddedDB:
+		c, err = bolt.Init(enabled, connection)
 
 	case utils.MySQL, utils.Postgres, utils.SqlServer:
 		c, err = sql.Init(dbType, enabled, h.RemoveProjectScope, connection)

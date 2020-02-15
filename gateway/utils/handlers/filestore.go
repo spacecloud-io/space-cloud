@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 )
 
@@ -29,12 +30,12 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
 		defer r.Body.Close()
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -49,7 +50,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Extract the path from the url
-		token, project, _ := getMetaData(r)
+		token := utils.GetTokenFromHeader(r)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
@@ -97,7 +98,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 				fileName = tempName
 			}
 
-			status, err := state.FileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
+			status, err := state.FileStore.UploadFile(ctx, projectID, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -106,7 +107,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 			json.NewEncoder(w).Encode(map[string]string{})
 		} else {
 			name := r.FormValue("name")
-			status, err := state.FileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
+			status, err := state.FileStore.CreateDir(ctx, projectID, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -120,12 +121,9 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 // HandleRead creates read file and list directory endpoint
 func HandleRead(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Get the path parameters
-		vars := mux.Vars(r)
-		project := vars["project"]
 
 		// Extract the path from the url
-		token, project, path := getMetaData(r)
+		token, projectID, path := getFileStoreMeta(r)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
@@ -135,7 +133,7 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 		defer r.Body.Close()
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -146,7 +144,7 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
 
-			status, res, err := state.FileStore.ListFiles(ctx, project, token, &model.ListFilesRequest{Path: path, Type: mode})
+			status, res, err := state.FileStore.ListFiles(ctx, projectID, token, &model.ListFilesRequest{Path: path, Type: mode})
 			w.WriteHeader(status)
 			if err != nil {
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -154,10 +152,19 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 			}
 			json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
 			return
+		} else if op == "exist" {
+			if err := state.FileStore.DoesExists(ctx, projectID, token, path); err != nil {
+				w.WriteHeader(http.StatusNotFound)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]string{})
+			return
 		}
 
 		// Read the file from file storage
-		status, file, err := state.FileStore.DownloadFile(ctx, project, token, path)
+		status, file, err := state.FileStore.DownloadFile(ctx, projectID, token, path)
 		w.WriteHeader(status)
 		if err != nil {
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -171,16 +178,12 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 // HandleDelete creates read file and list directory endpoint
 func HandleDelete(projects *projects.Projects) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Get the path parameters
-		vars := mux.Vars(r)
-		project := vars["project"]
-
 		// Extract the path from the url
-		token, project, path := getMetaData(r)
+		token, projectID, path := getFileStoreMeta(r)
 		defer r.Body.Close()
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -188,12 +191,12 @@ func HandleDelete(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		v := map[string]interface{}{}
-		json.NewDecoder(r.Body).Decode(v)
+		json.NewDecoder(r.Body).Decode(&v)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		status, err := state.FileStore.DeleteFile(ctx, project, token, path, v)
+		status, err := state.FileStore.DeleteFile(ctx, projectID, token, path, v)
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -204,10 +207,10 @@ func HandleDelete(projects *projects.Projects) http.HandlerFunc {
 	}
 }
 
-func getMetaData(r *http.Request) (token string, project string, path string) {
+func getFileStoreMeta(r *http.Request) (token string, projectID string, path string) {
 	// Load the path parameters
 	vars := mux.Vars(r)
-	project = vars["project"]
+	projectID = vars["project"]
 
 	// Get the JWT token from header
 	tokens, ok := r.Header["Authorization"]
@@ -215,7 +218,11 @@ func getMetaData(r *http.Request) (token string, project string, path string) {
 		tokens = []string{""}
 	}
 	token = strings.TrimPrefix(tokens[0], "Bearer ")
-	a := strings.Split(r.URL.Path, "/")[5:]
-	path = string(os.PathSeparator) + strings.Join(a, "/")
+	a := strings.Split(r.URL.Path, "/")
+	for index, value := range a {
+		if value == "files" {
+			path = string(os.PathSeparator) + strings.Join(a[index+1:], "/")
+		}
+	}
 	return
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -19,8 +20,7 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 		defer utils.CloseTheCloser(request.Body)
 
 		// Extract the host and url to select route
-		host := request.Host
-		url := request.URL.Path
+		host, url := getHostAndURL(request)
 
 		// Select a route based on host and url
 		route, err := r.selectRoute(host, url)
@@ -34,27 +34,13 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 
 		// Apply the rewrite url if provided. It is the users responsibility to make sure both url
 		// and rewrite url starts with a '/'
-		if route.Source.RewriteURL != "" {
-			// First strip away the url provided
-			url = strings.TrimLeft(url, route.Source.URL)
-
-			// Apply the rewrite url at the prefix
-			url = route.Source.RewriteURL + url
-		}
+		url = rewriteURL(url, route)
 
 		// Proxy the request
 
 		// http: Request.RequestURI can't be set in client requests.
 		// http://golang.org/src/pkg/net/http/client.go
-		request.RequestURI = ""
-
-		// Change the request with the destination host, port and url
-		request.Host = route.Destination.Host
-		request.URL.Host = fmt.Sprintf("%s:%s", route.Destination.Host, route.Destination.Port)
-		request.URL.Path = url
-
-		// Set the url scheme to http
-		request.URL.Scheme = "http"
+		setRequest(request, route, url)
 
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := http.DefaultClient.Do(request)
@@ -79,4 +65,31 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 
 		logrus.Debugf("Successfully copied %d bytes from upstream server (%s)", n, request.URL.String())
 	}
+}
+
+func getHostAndURL(request *http.Request) (string, string) {
+	return strings.Split(request.Host, ":")[0], request.URL.Path
+}
+
+func rewriteURL(url string, route *config.Route) string {
+	if route.Source.RewriteURL != "" {
+		// First strip away the url provided
+		url = strings.TrimPrefix(url, route.Source.URL)
+
+		// Apply the rewrite url at the prefix
+		url = route.Source.RewriteURL + url
+	}
+	return url
+}
+
+func setRequest(request *http.Request, route *config.Route, url string) {
+	request.RequestURI = ""
+
+	// Change the request with the destination host, port and url
+	request.Host = route.Destination.Host
+	request.URL.Host = fmt.Sprintf("%s:%s", route.Destination.Host, route.Destination.Port)
+	request.URL.Path = url
+
+	// Set the url scheme to http
+	request.URL.Scheme = "http"
 }

@@ -112,11 +112,13 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 	a := auth.Init(p.nodeID, c, s, p.removeProjectScope)
 	a.SetMakeHttpRequest(p.syncMan.MakeHTTPRequest)
 
+	fn := functions.Init(a, p.syncMan)
+
 	f := filestore.Init(a)
 
-	fn := functions.Init(a, p.syncMan)
 	// Initialise the eventing module and set the crud module hooks
 	e := eventing.New(a, c, s, fn, p.adminMan, p.syncMan, f)
+	f.SetEventingModule(e)
 
 	// Set hooks
 	c.SetHooks(&model.CrudHooks{
@@ -126,7 +128,6 @@ func (p *Projects) NewProject(project string) (*ProjectState, error) {
 		Batch:  e.HookDBBatchIntent,
 		Stage:  e.HookStage,
 	}, p.metrics.AddDBOperation)
-	f.SetEventingModule(e)
 
 	rt, err := realtime.Init(p.nodeID, e, a, c, s, p.metrics, p.syncMan)
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 )
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.15.3"
+const BuildVersion = "0.16.0"
 
 const (
 	// One operation returns a single document from the database
@@ -30,6 +30,9 @@ type DBType string
 const (
 	// Mongo is the type used for MongoDB
 	Mongo DBType = "mongo"
+
+	// EmbeddedDB is the type used for EmbeddedDB
+	EmbeddedDB DBType = "embedded"
 
 	// MySQL is the type used for MySQL
 	MySQL DBType = "mysql"
@@ -197,7 +200,7 @@ type ForeignKeysType struct {
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }
 
-//IndexType is the type use to indexkey information of sql inspection
+// IndexType is the type use to indexkey information of sql inspection
 type IndexType struct {
 	TableName  string `db:"TABLE_NAME"`
 	ColumnName string `db:"COLUMN_NAME"`

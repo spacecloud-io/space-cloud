@@ -30,7 +30,7 @@ func (p *Projects) StoreIgnoreErrors(project *config.Project) error {
 	}
 
 	// Set the configuration for the auth module
-	if err := s.Auth.SetConfig(project.ID, project.Secret, project.Modules.Crud, project.Modules.FileStore, project.Modules.Services); err != nil {
+	if err := s.Auth.SetConfig(project.ID, project.Secret, project.Modules.Crud, project.Modules.FileStore, project.Modules.Services, &project.Modules.Eventing); err != nil {
 		logrus.Errorln("Error in auth module config:", err)
 	}
 
@@ -95,7 +95,7 @@ func (p *Projects) StoreProject(project *config.Project) error {
 	}
 
 	// Set the configuration for the auth module
-	if err := s.Auth.SetConfig(project.ID, project.Secret, project.Modules.Crud, project.Modules.FileStore, project.Modules.Services); err != nil {
+	if err := s.Auth.SetConfig(project.ID, project.Secret, project.Modules.Crud, project.Modules.FileStore, project.Modules.Services, &project.Modules.Eventing); err != nil {
 		logrus.Errorln("Error in auth module config:", err)
 		return err
 	}

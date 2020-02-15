@@ -24,7 +24,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 	}
 
 	// Return gracefully if db type is mongo
-	if dbType == string(utils.Mongo) {
+	if dbType == string(utils.Mongo) || dbType == string(utils.EmbeddedDB) {
 		return nil
 	}
 
@@ -210,7 +210,7 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, project string, t
 		Enabled:     true,
 		Collections: tables,
 	}
-	parsedSchema, err := s.parser(crud)
+	parsedSchema, err := s.Parser(crud)
 	if err != nil {
 		return err
 	}

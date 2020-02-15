@@ -61,7 +61,7 @@ func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLReq
 }
 
 type callback func(op interface{}, err error)
-type dbCallback func(dbType, col string, op interface{}, err error)
+type dbCallback func(dbAlias, col string, op interface{}, err error)
 
 func createCallback(cb callback) callback {
 	var lock sync.Mutex
@@ -85,7 +85,7 @@ func createDBCallback(cb dbCallback) dbCallback {
 	var lock sync.Mutex
 	var isCalled bool
 
-	return func(dbType, col string, result interface{}, err error) {
+	return func(dbAlias, col string, result interface{}, err error) {
 		lock.Lock()
 		defer lock.Unlock()
 
@@ -96,7 +96,7 @@ func createDBCallback(cb dbCallback) dbCallback {
 
 		// Set the flag to prevent duplicate invocation
 		isCalled = true
-		cb(dbType, col, result, err)
+		cb(dbAlias, col, result, err)
 	}
 }
 
@@ -160,14 +160,14 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			directive := field.Directives[0].Name.Value
 			kind := graph.getQueryKind(directive)
 			if kind == "read" {
-				graph.execReadRequest(ctx, field, token, store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
+				graph.execReadRequest(ctx, field, token, store, loader, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 					if err != nil {
 						cb(nil, err)
 						return
 					}
 
 					// Load the schema
-					s, _ := graph.schema.GetSchema(dbType, col)
+					s, _ := graph.schema.GetSchema(dbAlias, col)
 
 					graph.processQueryResult(ctx, field, token, store, result, loader, s, cb)
 				}))
@@ -208,6 +208,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		currentValue, err := utils.LoadValue(fmt.Sprintf("%s.%s", store["coreParentKey"], field.Name.Value), store)
 		if err != nil {
+			// if the field isn't found in the store means that field did not exist in the result. so return nil as error
 			cb(nil, nil)
 			return
 		}
@@ -216,34 +217,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			return
 		}
 
-		obj := utils.NewObject()
-
-		// Create a wait group
-		var wg sync.WaitGroup
-		wg.Add(len(field.SelectionSet.Selections))
-
-		for _, sel := range field.SelectionSet.Selections {
-			storeNew := shallowClone(store)
-			storeNew[getFieldName(field)] = currentValue
-			storeNew["coreParentKey"] = getFieldName(field)
-
-			f := sel.(*ast.Field)
-
-			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(object interface{}, err error) {
-				defer wg.Done()
-
-				if err != nil {
-					cb(nil, err)
-					return
-				}
-
-				obj.Set(getFieldName(f), object)
-			}))
-		}
-
-		// Wait then return the result
-		wg.Wait()
-		cb(obj.GetAll(), nil)
+		graph.processQueryResult(ctx, field, token, store, currentValue, loader, schema, cb)
 		return
 
 	default:

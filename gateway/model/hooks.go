@@ -7,19 +7,19 @@ import (
 )
 
 // MetricCrudHook is used to log a database operation
-type MetricCrudHook func(project, dbType, col string, count int64, op utils.OperationType)
+type MetricCrudHook func(project, dbAlias, col string, count int64, op utils.OperationType)
 
 // CreateIntentHook is used to log a create intent
-type CreateIntentHook func(ctx context.Context, dbType, col string, req *CreateRequest) (*EventIntent, error)
+type CreateIntentHook func(ctx context.Context, dbAlias, col string, req *CreateRequest) (*EventIntent, error)
 
 // UpdateIntentHook is used to log a create intent
-type UpdateIntentHook func(ctx context.Context, dbType, col string, req *UpdateRequest) (*EventIntent, error)
+type UpdateIntentHook func(ctx context.Context, dbAlias, col string, req *UpdateRequest) (*EventIntent, error)
 
 // DeleteIntentHook is used to log a create intent
-type DeleteIntentHook func(ctx context.Context, dbType, col string, req *DeleteRequest) (*EventIntent, error)
+type DeleteIntentHook func(ctx context.Context, dbAlias, col string, req *DeleteRequest) (*EventIntent, error)
 
 // BatchIntentHook is used to log a create intent
-type BatchIntentHook func(ctx context.Context, dbType string, req *BatchRequest) (*EventIntent, error)
+type BatchIntentHook func(ctx context.Context, dbAlias string, req *BatchRequest) (*EventIntent, error)
 
 // StageEventHook is used to stage an intended event
 type StageEventHook func(ctx context.Context, intent *EventIntent, err error)
@@ -35,6 +35,6 @@ type CrudHooks struct {
 
 type EventingModule interface {
 	CreateFileIntentHook(ctx context.Context, req *CreateFileRequest) (*EventIntent, error)
-	DeleteFileIntentHook(ctx context.Context, path string) (*EventIntent, error)
+	DeleteFileIntentHook(ctx context.Context, path string, meta map[string]interface{}) (*EventIntent, error)
 	HookStage(ctx context.Context, intent *EventIntent, err error)
 }

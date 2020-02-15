@@ -49,15 +49,11 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	if ok {
 		timeStamp := time.Now().Unix()
 		for _, row := range array {
-			find, possible := m.schema.CheckIfEventingIsPossible(data.DBType, data.Group, readReq.Find, true)
-			if !possible {
-				continue
-			}
 			feedData = append(feedData, &model.FeedData{
 				Group:     data.Group,
 				Type:      utils.RealtimeInitial,
 				TimeStamp: timeStamp,
-				Find:      find,
+				Find:      data.Where,
 				DBType:    data.DBType,
 				Payload:   row,
 				QueryID:   data.ID,

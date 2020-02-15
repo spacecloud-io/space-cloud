@@ -30,7 +30,7 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
-// GetDBAlias returns the dbType of the request
+// GetDBAlias returns the dbAlias of the request
 func (graph *Module) GetDBAlias(field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("database / service directive not provided")
@@ -61,7 +61,7 @@ func getCollection(field *ast.Field) (string, error) {
 
 func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.SchemaFieldType, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb callback) {
 	graph.execLinkedReadRequest(ctx, field, fieldStruct.LinkedTable.DBType, fieldStruct.LinkedTable.Table, token, req,
-		store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
+		store, loader, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 			if err != nil {
 				cb(nil, err)
 				return
@@ -75,7 +75,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 			}
 
 			// Check the linked table has a schema
-			s, isSchemaPresent := graph.schema.GetSchema(dbType, col)
+			s, isSchemaPresent := graph.schema.GetSchema(dbAlias, col)
 
 			length := len(array)
 			if !fieldStruct.IsList {
@@ -193,6 +193,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 
 					if f.Name.Value == "__typename" {
 						obj.Set(f.Name.Value, strings.Title(field.Name.Value))
+						wg.Done()
 						continue
 					}
 
@@ -237,6 +238,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 			f := sel.(*ast.Field)
 			if f.Name.Value == "__typename" {
 				obj.Set(f.Name.Value, strings.Title(field.Name.Value))
+				wg.Done()
 				continue
 			}
 			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(result interface{}, err error) {
@@ -266,14 +268,4 @@ func addFieldPath(store utils.M, field string) {
 	}
 
 	store["path"] = store["path"].(string) + "." + field
-}
-
-func adjustObjectKey(key string) string {
-	if strings.HasPrefix(key, "_") && key != "_id" {
-		key = "$" + key[1:]
-	}
-
-	key = strings.ReplaceAll(key, "__", ".")
-
-	return key
 }

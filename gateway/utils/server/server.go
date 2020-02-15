@@ -39,7 +39,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 
 	m, err := metrics.New(nodeID, metricsConfig)
 	if err != nil {
@@ -47,7 +47,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 	}
 
 	adminMan := admin.New(nodeID)
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, adminMan)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, adminMan)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType string, removeProjectScope 
 }
 
 // Start begins the server operations
-func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port int) error {
+func (s *Server) Start(profiler, disableMetrics bool, staticPath, configDomain string, port int) error {
 
 	// Start the sync manager
 	if err := s.syncMan.Start(s.configFilePath, port); err != nil {
@@ -105,7 +105,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 	if s.ssl != nil && s.ssl.Enabled {
 
 		// Setup the handler
-		handler := corsObj.Handler(s.routes(profiler, staticPath))
+		handler := corsObj.Handler(s.routes(profiler, staticPath, configDomain))
 		handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 		handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
@@ -130,7 +130,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 
 	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
-	handler := corsObj.Handler(s.routes(profiler, staticPath))
+	handler := corsObj.Handler(s.routes(profiler, staticPath, configDomain))
 	handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 	handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 

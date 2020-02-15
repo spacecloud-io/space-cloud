@@ -7,14 +7,15 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleAddEventingRule is an endpoint handler which adds a rule to eventing
-func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleAddEventingTriggerRule is an endpoint handler which adds a trigger rule to eventing
+func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -34,10 +35,10 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		defer cancel()
 
 		vars := mux.Vars(r)
-		ruleName := vars["ruleName"]
-		project := vars["project"]
+		ruleName := vars["triggerName"]
+		projectID := vars["project"]
 
-		if err := syncMan.SetEventingRule(ctx, project, ruleName, value); err != nil {
+		if err := syncMan.SetEventingRule(ctx, projectID, ruleName, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -50,8 +51,8 @@ func HandleAddEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 	}
 }
 
-// HandleDeleteEventingRule is an endpoint handler which deletes a rule in eventing
-func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleDeleteEventingTriggerRule is an endpoint handler which deletes a trigger rule in eventing
+func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -68,10 +69,10 @@ func HandleDeleteEventingRule(adminMan *admin.Manager, syncMan *syncman.Manager)
 		defer cancel()
 
 		vars := mux.Vars(r)
-		ruleName := vars["ruleName"]
-		project := vars["project"]
+		ruleName := vars["triggerName"]
+		projectID := vars["project"]
 
-		if err := syncMan.SetDeleteEventingRule(ctx, project, ruleName); err != nil {
+		if err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -105,9 +106,9 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		json.NewDecoder(r.Body).Decode(&c)
 
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
-		if err := syncMan.SetEventingConfig(ctx, project, c.DBType, c.Col, c.Enabled); err != nil {
+		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBType, c.Col, c.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -117,5 +118,154 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 		return
 
+	}
+}
+
+// HandleSetEventingSchema is an endpoint handler which sets a schema in eventing
+func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type schemaRequest struct {
+		Schema string `json:"schema"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		c := schemaRequest{}
+		json.NewDecoder(r.Body).Decode(&c)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		evType := vars["type"]
+
+		if err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema); err != nil {
+			logrus.Errorf("Failed to set eventing schema - %s", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+
+	}
+}
+
+// HandleDeleteEventingSchema is an endpoint handler which deletes a schema in eventing
+func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			logrus.Errorf("Failed to validate token for delete eventing schema - %s", err.Error())
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		evType := vars["type"]
+
+		if err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType); err != nil {
+			logrus.Errorf("Failed to delete eventing schema - %s", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+	}
+}
+
+// HandleAddEventingSecurityRule is an endpoint handler which adds a security rule in eventing
+func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type setSecurityRules struct {
+		Rule *config.Rule `json:"rule"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			logrus.Errorf("Failed to validate token for set eventing rules - %s", err.Error())
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		c := setSecurityRules{}
+		json.NewDecoder(r.Body).Decode(&c)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		evType := vars["type"]
+
+		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c.Rule); err != nil {
+			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
+	}
+}
+
+// HandleDeleteEventingSecurityRule is an endpoint handler which deletes a security rule in eventing
+func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer r.Body.Close()
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			logrus.Errorf("Failed to validate token for delete eventing rules - %s", err.Error())
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		evType := vars["type"]
+
+		if err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType); err != nil {
+			logrus.Errorf("Failed to delete eventing rules - %s", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK) //http status codee
+		json.NewEncoder(w).Encode(map[string]interface{}{})
+		return
 	}
 }

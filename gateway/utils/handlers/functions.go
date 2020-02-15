@@ -19,7 +19,7 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 		service := vars["service"]
 		function := vars["func"]
 
@@ -29,7 +29,7 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 		defer r.Body.Close()
 
 		// Load the project state
-		state, err := projects.LoadProject(project)
+		state, err := projects.LoadProject(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -42,7 +42,7 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
 		defer cancel()
 
-		if _, err := state.Auth.IsFuncCallAuthorised(ctx, project, service, function, token, req.Params); err != nil {
+		if _, err := state.Auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params); err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

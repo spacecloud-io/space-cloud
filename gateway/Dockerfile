@@ -1,18 +1,27 @@
-FROM alpine:3.9
-WORKDIR /space-cloud
-# Copy the space-cloud binary from the build context to the container's working directory
-COPY space-cloud .
-RUN set -ex  \
-  && apk add --no-cache ca-certificates wget \
-  && chmod +x space-cloud \ 
-  && mkdir -p /root/.space-cloud/mission-control-v0.15.0
+FROM golang:1.13.5-alpine3.10
+WORKDIR /build
 
-COPY mission-control /root/.space-cloud/mission-control-v0.15.0
+# Take the current space cloud version as a argument
+ARG SC_VERSION=0.16.0
 
-ENV PROD=false
-ENV PATH="/space-cloud:${PATH}"
+# Copy all the source files
+COPY . .
+# Install the required packages
+RUN apk --no-cache add ca-certificates wget unzip
 
-# ports for the http and https servers
-EXPOSE 4122 4126
+# Build SC
+RUN GOOS=linux CGO_ENABLED=0 go build -a -ldflags '-s -w -extldflags "-static"' -o app .
 
-CMD ./space-cloud run
+# Download mission control
+RUN echo $SC_VERSION && wget https://spaceuptech.com/downloads/mission-control/mission-control-v$SC_VERSION.zip && unzip mission-control-v$SC_VERSION.zip
+
+FROM alpine:3.10
+ARG SC_VERSION=0.16.0
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /app
+COPY --from=0 /build/build /root/.space-cloud/mission-control-v$SC_VERSION/build
+COPY --from=0 /build/app .
+
+CMD ["./app", "run"]
