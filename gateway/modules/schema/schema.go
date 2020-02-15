@@ -47,11 +47,11 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	return nil
 }
 
-func (s *Schema) GetSchema(dbType, col string) (SchemaFields, bool) {
+func (s *Schema) GetSchema(dbAlias, col string) (SchemaFields, bool) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	dbSchema, p := s.SchemaDoc[dbType]
+	dbSchema, p := s.SchemaDoc[dbAlias]
 	if !p {
 		return nil, false
 	}

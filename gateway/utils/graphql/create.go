@@ -15,7 +15,7 @@ import (
 )
 
 func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]model.AllRequest, []interface{}, error) {
-	dbType, err := graph.GetDBAlias(field)
+	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -27,7 +27,7 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 		return nil, nil, err
 	}
 
-	reqs, returningDocs, err := graph.processNestedFields(docs, dbType, col)
+	reqs, returningDocs, err := graph.processNestedFields(docs, dbAlias, col)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -35,7 +35,7 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 	// Check if the requests are authorised
 	for _, req := range reqs {
 		r := &model.CreateRequest{Document: req.Document, Operation: req.Operation}
-		_, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, dbType, req.Col, token, r)
+		_, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, dbAlias, req.Col, token, r)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -95,12 +95,12 @@ func copyDoc(doc map[string]interface{}) map[string]interface{} {
 	return newDoc
 }
 
-func (graph *Module) processNestedFields(docs []interface{}, dbType, col string) ([]model.AllRequest, []interface{}, error) {
+func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string) ([]model.AllRequest, []interface{}, error) {
 	createRequests := make([]model.AllRequest, 0)
 	afterRequests := make([]model.AllRequest, 0)
 
 	// Check if we can the schema for this collection
-	schemaFields, p := graph.schema.GetSchema(dbType, col)
+	schemaFields, p := graph.schema.GetSchema(dbAlias, col)
 	if !p {
 		// Return the docs as is if no schema is available
 		return []model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil
@@ -179,7 +179,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbType, col string)
 				}
 			}
 
-			linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(linkedDocs, dbType, fieldSchema.LinkedTable.Table)
+			linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(linkedDocs, dbAlias, fieldSchema.LinkedTable.Table)
 			if err != nil {
 				return nil, nil, err
 			}

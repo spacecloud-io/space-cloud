@@ -20,7 +20,7 @@ type HTTPMeta struct {
 func GetMetaInfo(r *http.Request) *HTTPMeta {
 	// Get path parameters
 	vars := mux.Vars(r)
-	projectID := vars["projectID"]
+	projectID := vars["project"]
 
 	// Get the JWT token from header
 	token := GetToken(r)

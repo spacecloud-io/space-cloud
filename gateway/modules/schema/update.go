@@ -8,13 +8,13 @@ import (
 )
 
 // ValidateUpdateOperation validates the types of schema during a update request
-func (s *Schema) ValidateUpdateOperation(dbType, col, op string, updateDoc, find map[string]interface{}) error {
+func (s *Schema) ValidateUpdateOperation(dbAlias, col, op string, updateDoc, find map[string]interface{}) error {
 	if len(updateDoc) == 0 {
 		return nil
 	}
-	schemaDb, ok := s.SchemaDoc[dbType]
+	schemaDb, ok := s.SchemaDoc[dbAlias]
 	if !ok {
-		return fmt.Errorf("%s is not present in schema", dbType)
+		return fmt.Errorf("%s is not present in schema", dbAlias)
 	}
 	SchemaDoc, ok := schemaDb[col]
 	if !ok {

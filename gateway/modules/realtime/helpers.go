@@ -58,15 +58,15 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 	return eventingRules
 }
 
-func createGroupKey(dbType, col string) string {
-	return dbType + "::" + col
+func createGroupKey(dbAlias, col string) string {
+	return dbAlias + "::" + col
 }
 
-func getSubjectName(project, dbType, col string) string {
-	return "realtime:" + project + ":" + dbType + ":" + col
+func getSubjectName(project, dbAlias, col string) string {
+	return "realtime:" + project + ":" + dbAlias + ":" + col
 }
 
-func getDBTypeAndColFromGroupKey(key string) (dbType string, col string) {
+func getDBTypeAndColFromGroupKey(key string) (dbAlias string, col string) {
 	array := strings.Split(key, "::")
 	return array[0], array[1]
 }

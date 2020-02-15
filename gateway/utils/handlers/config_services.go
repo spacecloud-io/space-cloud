@@ -35,9 +35,9 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		vars := mux.Vars(r)
 		service := vars["service"]
-		project := vars["project"]
+		projectID := vars["project"]
 
-		if err := syncMan.SetService(ctx, project, service, &v); err != nil {
+		if err := syncMan.SetService(ctx, projectID, service, &v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -69,9 +69,9 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 
 		vars := mux.Vars(r)
 		service := vars["service"]
-		project := vars["project"]
+		projectID := vars["project"]
 
-		if err := syncMan.DeleteService(ctx, project, service); err != nil {
+		if err := syncMan.DeleteService(ctx, projectID, service); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
