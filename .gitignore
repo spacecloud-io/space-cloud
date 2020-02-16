@@ -1,3 +1,7 @@
+.idea
+.vscode
+
+test
 
 # Binaries for programs and plugins
 *.exe
@@ -6,31 +10,48 @@
 *.so
 *.zip
 *.dylib
+*.db
 # Test binary, build with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+build/
 node_modules
 css
 .sass-cache
 
+# Ignore the binaries
 space-cloud
+gateway/gateway
+runner/runner
+metric-proxy/metric-proxy
+space-cli/space-cli
+
+# Ignore the vendor folders
+metric-proxy/vendor
+runner/vendor
+gateway/vendor
+
 raft-store
 publish.sh
+runner/runner.db
 
 test_config.yaml
 config.yaml
 
 # Helper scripts
 kube
+runner/scripts
+gateway/scripts
+metric-proxy/scripts
 docker-build.sh
-build/
-test
+
 
 #IDEs
-.idea
-.vscode
 
 yarn.lock
+
+#boltdatabase
+gateway/testbolt.db
