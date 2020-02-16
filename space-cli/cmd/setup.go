@@ -48,8 +48,8 @@ func generateRandomString(length int) string {
 // CodeSetup initializes development environment
 func CodeSetup(id, username, key, secret string, dev bool) error {
 	// TODO: old keys always remain in accounts.yaml file
-	const ContainerGateway string = "space--cloud--gateway"
-	const ContainerRunner string = "space--cloud--runner"
+	const ContainerGateway string = "space-cloud-gateway"
+	const ContainerRunner string = "space-cloud-runner"
 
 	_ = createDirIfNotExist(getSpaceCloudDirectory())
 	_ = createDirIfNotExist(getSecretsDir())

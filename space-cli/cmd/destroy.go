@@ -20,8 +20,8 @@ func Destroy() error {
 		return err
 	}
 
-	// get all containers containing < space--cloud > in their name
-	args := filters.Arg("name", "space--cloud")
+	// get all containers containing < space-cloud > in their name
+	args := filters.Arg("name", "space-cloud")
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("Unable to list containers - %s", err.Error())
