@@ -235,7 +235,7 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 		}
 	}
 
-	containerName := fmt.Sprintf("%s--%s--%s--%s", service.ProjectID, service.ID, service.Version, task.ID)
+	containerName := fmt.Sprintf("space-cloud-%s--%s--%s--%s", service.ProjectID, service.ID, service.Version, task.ID)
 	resp, err := d.client.ContainerCreate(ctx, &container.Config{
 		Image:        task.Docker.Image,
 		Env:          envs,
@@ -264,7 +264,7 @@ func (d *docker) createContainer(ctx context.Context, task model.Task, service *
 
 // DeleteService removes every docker container related to specified service id
 func (d *docker) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
-	args := filters.Arg("name", fmt.Sprintf("%s--%s--%s", projectID, serviceID, version))
+	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s--%s--%s", projectID, serviceID, version))
 	if serviceID == "" || version == "" {
 		args = filters.Arg("name", fmt.Sprintf("%s", projectID))
 	}
@@ -300,7 +300,7 @@ func (d *docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 
 // GetServices gets the specified service info from docker container
 func (d *docker) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
-	args := filters.Arg("name", fmt.Sprintf("%s", projectID))
+	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s", projectID))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
