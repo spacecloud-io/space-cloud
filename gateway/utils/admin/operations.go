@@ -34,8 +34,8 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if m.admin.Operation.Mode == 0 && len(config) > 2 {
-		return errors.New("community edition can have a maximum of 2 dbs in a single project")
+	if m.admin.Operation.Mode == 0 && len(config) > 1 {
+		return errors.New("community edition can have a maximum of 1 dbs in a single project")
 	}
 
 	return nil
