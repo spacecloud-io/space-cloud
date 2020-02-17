@@ -36,7 +36,7 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 }
 
 // SetEventingConfig sets the eventing config
-func (s *Manager) SetEventingConfig(ctx context.Context, project, dbType, col string, enabled bool) error {
+func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias, col string, enabled bool) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -45,7 +45,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbType, col st
 	if err != nil {
 		return err
 	}
-	projectConfig.Modules.Eventing.DBType = dbType
+	projectConfig.Modules.Eventing.DBType = dbAlias
 	projectConfig.Modules.Eventing.Col = col
 	projectConfig.Modules.Eventing.Enabled = enabled
 

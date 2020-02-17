@@ -35,11 +35,11 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		defer cancel()
 
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 		provider := vars["provider"]
 
 		// Sync the config
-		if err := syncMan.SetUserManagement(ctx, project, provider, value); err != nil {
+		if err := syncMan.SetUserManagement(ctx, projectID, provider, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

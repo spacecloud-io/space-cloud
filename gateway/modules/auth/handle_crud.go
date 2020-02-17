@@ -11,11 +11,11 @@ import (
 )
 
 // IsCreateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.CreateRequest) (int, error) {
+func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.CreateRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbType, col, token, utils.Create)
+	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Create)
 	if err != nil {
 		return http.StatusUnauthorized, err
 	}
@@ -40,7 +40,7 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbType, col,
 		}
 	}
 
-	if err := m.schema.ValidateCreateOperation(dbType, col, req); err != nil {
+	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
 		return http.StatusBadRequest, err
 	}
 
@@ -48,11 +48,11 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbType, col,
 }
 
 // IsReadOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.ReadRequest) (*PostProcess, int, error) {
+func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*PostProcess, int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbType, col, token, utils.Read)
+	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Read)
 	if err != nil {
 		return &PostProcess{}, http.StatusUnauthorized, err
 	}
@@ -67,11 +67,11 @@ func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbType, col, t
 }
 
 // IsUpdateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.UpdateRequest) (int, error) {
+func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.UpdateRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbType, col, token, utils.Update)
+	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Update)
 	if err != nil {
 		return http.StatusUnauthorized, err
 	}
@@ -82,7 +82,7 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbType, col,
 		return http.StatusForbidden, err
 	}
 
-	if err := m.schema.ValidateUpdateOperation(dbType, col, req.Operation, req.Update, req.Find); err != nil {
+	if err := m.schema.ValidateUpdateOperation(dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
 		return http.StatusBadRequest, err
 	}
 
@@ -90,11 +90,11 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbType, col,
 }
 
 // IsDeleteOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.DeleteRequest) (int, error) {
+func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.DeleteRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbType, col, token, utils.Delete)
+	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Delete)
 	if err != nil {
 		return http.StatusUnauthorized, err
 	}
@@ -109,11 +109,11 @@ func (m *Module) IsDeleteOpAuthorised(ctx context.Context, project, dbType, col,
 }
 
 // IsAggregateOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *model.AggregateRequest) (int, error) {
+func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.AggregateRequest) (int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
-	rule, auth, err := m.authenticateCrudRequest(dbType, col, token, utils.Aggregation)
+	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Aggregation)
 	if err != nil {
 		return http.StatusUnauthorized, err
 	}
@@ -127,9 +127,9 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbType, c
 	return http.StatusOK, nil
 }
 
-func (m *Module) authenticateCrudRequest(dbType, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
+func (m *Module) authenticateCrudRequest(dbAlias, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
 	// Get rule
-	rule, err = m.getCrudRule(dbType, col, op)
+	rule, err = m.getCrudRule(dbAlias, col, op)
 	if err != nil {
 		return
 	}
@@ -144,8 +144,8 @@ func (m *Module) authenticateCrudRequest(dbType, col, token string, op utils.Ope
 	return
 }
 
-func (m *Module) getCrudRule(dbType, col string, query utils.OperationType) (*config.Rule, error) {
-	if dbRules, p1 := m.rules[dbType]; p1 {
+func (m *Module) getCrudRule(dbAlias, col string, query utils.OperationType) (*config.Rule, error) {
+	if dbRules, p1 := m.rules[dbAlias]; p1 {
 		if collection, p2 := dbRules.Collections[col]; p2 {
 			if rule, p3 := collection.Rules[string(query)]; p3 {
 				return rule, nil
@@ -157,5 +157,5 @@ func (m *Module) getCrudRule(dbType, col string, query utils.OperationType) (*co
 			}
 		}
 	}
-	return nil, fmt.Errorf("no rule found for collection %s in database %s", col, dbType)
+	return nil, fmt.Errorf("no rule found for collection %s in database %s", col, dbAlias)
 }
