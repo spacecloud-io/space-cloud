@@ -17,7 +17,7 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
-	github.com/google/go-cmp v0.3.0
+	github.com/google/go-cmp v0.3.1
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
@@ -28,6 +28,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.12.1 // indirect
 	github.com/hashicorp/consul/api v1.2.0
 	github.com/hashicorp/go-msgpack v0.5.5 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/memberlist v0.1.5 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
@@ -55,13 +56,17 @@ require (
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
+	golang.org/x/sys v0.0.0-20190924154521-2837fb4f24fe // indirect
 	golang.org/x/tools v0.0.0-20191217033636-bbbf87ae2631 // indirect
 	google.golang.org/api v0.14.0
-	gopkg.in/AlecAivazis/survey.v1 v1.8.2
+	google.golang.org/appengine v1.6.5 // indirect
+	gopkg.in/AlecAivazis/survey.v1 v1.8.5
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.2.7
-	k8s.io/api v0.0.0-20200113233642-3946df5ca773
-	k8s.io/apimachinery v0.0.0-20200113233504-44bd77c24ef9
-	k8s.io/client-go v0.0.0-20200114073902-7ec8a74ae980
+	k8s.io/api v0.17.2
+	k8s.io/apimachinery v0.17.2
+	k8s.io/client-go v0.17.2
+	k8s.io/utils v0.0.0-20191217005138-9e5e9d854fcc // indirect
 
 )
 

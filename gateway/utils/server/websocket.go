@@ -33,7 +33,7 @@ var upgrader = websocket.Upgrader{
 func (s *Server) handleWebsocket() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
 		socket, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -58,7 +58,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				_ = mapstructure.Decode(req.Data, data)
-				data.Project = project
+				data.Project = projectID
 
 				// Subscribe to realtime feed
 				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
@@ -78,7 +78,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
 				_ = mapstructure.Decode(req.Data, data)
-				data.Project = project
+				data.Project = projectID
 
 				s.realtime.Unsubscribe(clientID, data)
 
@@ -118,7 +118,7 @@ var graphqlIDMapper sync.Map
 
 func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		project := mux.Vars(r)["project"]
+		projectID := mux.Vars(r)["project"]
 
 		respHeader := make(http.Header)
 		respHeader.Add("Sec-WebSocket-Protocol", "graphql-ws")
@@ -218,14 +218,14 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					closeConnAliveRoutine <- true
 					return
 				}
-				dbType, err := s.graphql.GetDBAlias(v)
+				dbAlias, err := s.graphql.GetDBAlias(v)
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
 					return
 				}
 
-				data := &model.RealtimeRequest{Token: token, Where: whereData, DBType: dbType, Project: project, Group: v.Name.Value, Type: m.Type, ID: m.ID}
+				data := &model.RealtimeRequest{Token: token, Where: whereData, DBType: dbAlias, Project: projectID, Group: v.Name.Value, Type: m.Type, ID: m.ID}
 				for _, dirValue := range v.Arguments {
 					if dirValue.Name.Value == "skipInitial" {
 						if dirValue.Value.(*ast.BooleanValue).Value {

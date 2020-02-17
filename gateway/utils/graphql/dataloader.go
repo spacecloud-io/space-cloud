@@ -118,7 +118,7 @@ func (graph *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) 
 	ctx, cancel := context.WithCancel(c)
 	defer cancel()
 
-	var dbType, col string
+	var dbAlias, col string
 
 	// Return if there are no keys
 	if len(keys) == 0 {
@@ -133,7 +133,7 @@ func (graph *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) 
 	for index, key := range keys {
 		req := key.(model.ReadRequestKey)
 
-		dbType = req.DBType
+		dbAlias = req.DBType
 		col = req.Col
 
 		// Execute query immediately if it has options
@@ -173,7 +173,7 @@ func (graph *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) 
 	req := model.ReadRequest{Find: map[string]interface{}{"$or": holder.getWhereClauses()}, Operation: utils.All, Options: &model.ReadOptions{}}
 
 	// Fire the merged request
-	res, err := graph.crud.Read(ctx, dbType, graph.project, col, &req)
+	res, err := graph.crud.Read(ctx, dbAlias, graph.project, col, &req)
 	if err != nil {
 		holder.fillErrorMessage(err)
 	} else {

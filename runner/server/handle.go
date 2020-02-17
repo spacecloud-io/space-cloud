@@ -70,7 +70,7 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		projectID := vars["projectId"]
+		projectID := vars["project"]
 		// Apply the service config
 		if err := s.driver.DeleteProject(ctx, projectID); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
@@ -98,6 +98,9 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 			return
 		}
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
 		// Parse request body
 		service := new(model.Service)
 		if err := json.NewDecoder(r.Body).Decode(service); err != nil {
@@ -105,6 +108,8 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		service.ProjectID = projectID
 
 		// TODO: Override the project id present in the service object with the one present in the token if user not admin
 
@@ -136,7 +141,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		projectID := vars["projectId"]
+		projectID := vars["project"]
 		serviceID := vars["serviceId"]
 		version := vars["version"]
 
@@ -166,7 +171,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		}
 
 		vars := mux.Vars(r)
-		projectID := vars["projectId"]
+		projectID := vars["project"]
 
 		services, err := s.driver.GetServices(ctx, projectID)
 		if err != nil {
