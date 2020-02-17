@@ -23,6 +23,7 @@ func (d *Docker) DeleteProject(ctx context.Context, projectID string) error {
 	return nil
 }
 
+// CreateProject creates a new project
 func (d *Docker) CreateProject(ctx context.Context, project *model.Project) error {
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, project.ID)
 	if err := d.createDir(projectPath); err != nil {

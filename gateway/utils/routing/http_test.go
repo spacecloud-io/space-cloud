@@ -65,7 +65,7 @@ func Test_rewriteURL(t *testing.T) {
 			args: args{
 				url: "/abc/xyz",
 				route: &config.Route{
-					Id: "1234",
+					ID: "1234",
 					Source: config.RouteSource{
 						URL:        "/abc",
 						RewriteURL: "/v1/abc",

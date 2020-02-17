@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -12,7 +11,6 @@ import (
 
 func TestRouting_DeleteProjectRoutes(t *testing.T) {
 	type fields struct {
-		lock   sync.RWMutex
 		routes routeMapping
 	}
 	type args struct {
@@ -28,18 +26,17 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 		{
 			name: "deleteProject",
 			fields: fields{
-				lock: sync.RWMutex{},
 				routes: routeMapping{
 					"test1": config.Routes{
 						&config.Route{
-							Id:          "1234",
+							ID:          "1234",
 							Source:      config.RouteSource{},
 							Destination: config.RouteDestination{},
 						},
 					},
 					"test2": config.Routes{
 						&config.Route{
-							Id:          "12345",
+							ID:          "12345",
 							Source:      config.RouteSource{},
 							Destination: config.RouteDestination{},
 						},
@@ -52,7 +49,7 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 			want: routeMapping{
 				"test2": config.Routes{
 					&config.Route{
-						Id:          "12345",
+						ID:          "12345",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
@@ -63,7 +60,6 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Routing{
-				lock:   tt.fields.lock,
 				routes: tt.fields.routes,
 			}
 			r.DeleteProjectRoutes(tt.args.project)
@@ -82,7 +78,6 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 
 func TestRouting_SetProjectRoutes(t *testing.T) {
 	type fields struct {
-		lock   sync.RWMutex
 		routes routeMapping
 	}
 	type args struct {
@@ -95,18 +90,16 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 		args   args
 		want   routeMapping
 	}{
-		// TODO: Add test cases.
 		{
 			name: "set project rule",
 			fields: fields{
-				lock:   sync.RWMutex{},
 				routes: routeMapping{},
 			},
 			args: args{
 				project: "test1",
 				routes: config.Routes{
 					&config.Route{
-						Id:          "12345",
+						ID:          "12345",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
@@ -115,7 +108,7 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 			want: routeMapping{
 				"test1": config.Routes{
 					&config.Route{
-						Id:          "12345",
+						ID:          "12345",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
@@ -126,7 +119,6 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Routing{
-				lock:   tt.fields.lock,
 				routes: tt.fields.routes,
 			}
 			r.SetProjectRoutes(tt.args.project, tt.args.routes)

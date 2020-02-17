@@ -265,7 +265,7 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
 	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s--%s--%s", projectID, serviceID, version))
 	if serviceID == "" || version == "" {
-		args = filters.Arg("name", fmt.Sprintf("%s", projectID))
+		args = filters.Arg("name", projectID)
 	}
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {

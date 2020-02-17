@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -28,7 +27,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			r: routeMapping{
 				"test": config.Routes{
 					&config.Route{
-						Id: "1234",
+						ID: "1234",
 						Source: config.RouteSource{
 							Hosts: []string{"spaceuptech.com"},
 							URL:   "/abc",
@@ -46,7 +45,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:  "/abc/xyz",
 			},
 			want: &config.Route{
-				Id: "1234",
+				ID: "1234",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com"},
 					URL:   "/abc",
@@ -64,7 +63,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			r: routeMapping{
 				"test": config.Routes{
 					&config.Route{
-						Id: "1234",
+						ID: "1234",
 						Source: config.RouteSource{
 							Hosts: []string{"spaceuptech.com"},
 							URL:   "/abc/xyz",
@@ -76,7 +75,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 					},
 					&config.Route{
-						Id: "567",
+						ID: "567",
 						Source: config.RouteSource{
 							Hosts: []string{"spaceuptech.com"},
 							URL:   "/abc",
@@ -94,7 +93,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:  "/abc/xyz/123",
 			},
 			want: &config.Route{
-				Id: "567",
+				ID: "567",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com"},
 					URL:   "/abc",
@@ -112,7 +111,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			r: routeMapping{
 				"test": config.Routes{
 					&config.Route{
-						Id: "1234",
+						ID: "1234",
 						Source: config.RouteSource{
 							Hosts: []string{"spaceuptech.com"},
 							URL:   "/abc/xyz",
@@ -130,7 +129,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:  "/abc/xyz",
 			},
 			want: &config.Route{
-				Id: "1234",
+				ID: "1234",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com"},
 					URL:   "/abc/xyz",
@@ -149,7 +148,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			r: routeMapping{
 				"test": config.Routes{
 					&config.Route{
-						Id: "1234",
+						ID: "1234",
 						Source: config.RouteSource{
 							Hosts: []string{"spaceuptech.com"},
 							URL:   "/abc",
@@ -174,7 +173,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			r: routeMapping{
 				"test": config.Routes{
 					&config.Route{
-						Id: "1234",
+						ID: "1234",
 						Source: config.RouteSource{
 							Hosts: []string{"spaceuptech.com"},
 							URL:   "/abc",
@@ -200,7 +199,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			r: routeMapping{
 				"test": config.Routes{
 					&config.Route{
-						Id: "1234",
+						ID: "1234",
 						Source: config.RouteSource{
 							Hosts: []string{"spaceuptech.com", "*"},
 							URL:   "/abc",
@@ -218,7 +217,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				url:  "/abc",
 			},
 			want: &config.Route{
-				Id: "1234",
+				ID: "1234",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com", "*"},
 					URL:   "/abc",
@@ -237,7 +236,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			r: routeMapping{
 				"test": config.Routes{
 					&config.Route{
-						Id: "1234",
+						ID: "1234",
 						Source: config.RouteSource{
 							Hosts: []string{"spaceuptech.com"},
 							URL:   "/abc",
@@ -274,7 +273,6 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 
 func TestRouting_selectRoute(t *testing.T) {
 	type fields struct {
-		lock   sync.RWMutex
 		routes routeMapping
 	}
 	type args struct {
@@ -295,7 +293,7 @@ func TestRouting_selectRoute(t *testing.T) {
 				routes: routeMapping{
 					"test": config.Routes{
 						&config.Route{
-							Id: "1234",
+							ID: "1234",
 							Source: config.RouteSource{
 								Hosts: []string{"spaceuptech.com"},
 								URL:   "/abc",
@@ -314,7 +312,7 @@ func TestRouting_selectRoute(t *testing.T) {
 				url:  "/abc/xyz",
 			},
 			want: &config.Route{
-				Id: "1234",
+				ID: "1234",
 				Source: config.RouteSource{
 					Hosts: []string{"spaceuptech.com"},
 					URL:   "/abc",
@@ -331,7 +329,6 @@ func TestRouting_selectRoute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Routing{
-				lock:   tt.fields.lock,
 				routes: tt.fields.routes,
 			}
 			got, err := r.selectRoute(tt.args.host, tt.args.url)
@@ -362,14 +359,14 @@ func Test_routeMapping_deleteProjectRoutes(t *testing.T) {
 			r: routeMapping{
 				"test1": config.Routes{
 					&config.Route{
-						Id:          "1234",
+						ID:          "1234",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
 				},
 				"test2": config.Routes{
 					&config.Route{
-						Id:          "12345",
+						ID:          "12345",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
@@ -378,7 +375,7 @@ func Test_routeMapping_deleteProjectRoutes(t *testing.T) {
 			want: routeMapping{
 				"test2": config.Routes{
 					&config.Route{
-						Id:          "12345",
+						ID:          "12345",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
@@ -422,7 +419,7 @@ func Test_routeMapping_addProjectRoutes(t *testing.T) {
 			r: routeMapping{
 				"test1": config.Routes{
 					&config.Route{
-						Id:          "12345",
+						ID:          "12345",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
@@ -432,7 +429,7 @@ func Test_routeMapping_addProjectRoutes(t *testing.T) {
 				project: "test2",
 				routes: config.Routes{
 					&config.Route{
-						Id:          "1234",
+						ID:          "1234",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
@@ -441,14 +438,14 @@ func Test_routeMapping_addProjectRoutes(t *testing.T) {
 			want: routeMapping{
 				"test1": config.Routes{
 					&config.Route{
-						Id:          "12345",
+						ID:          "12345",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
 				},
 				"test2": config.Routes{
 					&config.Route{
-						Id:          "1234",
+						ID:          "1234",
 						Source:      config.RouteSource{},
 						Destination: config.RouteDestination{},
 					},
