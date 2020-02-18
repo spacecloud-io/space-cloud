@@ -7,6 +7,7 @@ import (
 
 	"go.etcd.io/bbolt"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -15,6 +16,9 @@ func (b *Bolt) GetCollections(ctx context.Context, project string) ([]utils.Data
 	keys := make(map[string]bool)
 	err := b.client.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(project))
+		if b == nil {
+			return nil
+		}
 
 		c := b.Cursor()
 
@@ -25,7 +29,8 @@ func (b *Bolt) GetCollections(ctx context.Context, project string) ([]utils.Data
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not get all collections for given project and database")
+		logrus.Errorf("could not get all collections for given project and database - %s", err.Error())
+		return nil, err
 	}
 	dbCols := make([]utils.DatabaseCollections, len(keys))
 	for col := range keys {
