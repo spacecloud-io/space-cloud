@@ -96,7 +96,7 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 func (d *Docker) createContainer(ctx context.Context, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
 	tempSecretPath := fmt.Sprintf("%s/temp-secrets/%s/%s", os.Getenv("SECRETS_PATH"), service.ProjectID, fmt.Sprintf("%s--%s", service.ID, service.Version))
 
-	if err := d.pullImageIfDoesntExists(ctx, service.ProjectID, task.Docker); err != nil {
+	if err := d.pullImageByPolicy(ctx, service.ProjectID, task.Docker); err != nil {
 		logrus.Error("error in docker unable to pull image ", err)
 		return "", "", err
 	}

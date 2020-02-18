@@ -19,13 +19,12 @@ func getServiceDomain(projectID, serviceID string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", serviceID, projectID)
 }
 
-func (d *Docker) pullImageIfDoesntExists(ctx context.Context, projectID string, taskDocker model.Docker) error {
+func (d *Docker) pullImageByPolicy(ctx context.Context, projectID string, taskDocker model.Docker) error {
 	if taskDocker.ImagePullPolicy == model.PullIfNotExists {
 		_, _, err := d.client.ImageInspectWithRaw(ctx, taskDocker.Image)
 		if err != nil {
 			err := d.pullImage(ctx, projectID, taskDocker)
 			if err != nil {
-				logrus.Errorf("error in docker unable to pull image - %v", err.Error())
 				return err
 			}
 		}
@@ -33,7 +32,6 @@ func (d *Docker) pullImageIfDoesntExists(ctx context.Context, projectID string, 
 	}
 	err := d.pullImage(ctx, projectID, taskDocker)
 	if err != nil {
-		logrus.Errorf("error in docker unable to pull image - %v", err.Error())
 		return err
 	}
 	return nil
