@@ -99,6 +99,11 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 
 		imagePull[task.Docker.Secret] = v1.LocalObjectReference{Name: task.Docker.Secret}
 
+		pullPolicy := v1.PullAlways
+		if task.Docker.ImagePullPolicy == model.PullIfNotExists {
+			pullPolicy = v1.PullIfNotPresent
+		}
+
 		containers[j] = v1.Container{
 			Name: task.ID,
 			Env:  envVars,
@@ -109,7 +114,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 			Image:           task.Docker.Image,
 			Command:         cmd,
 			Args:            args,
-			ImagePullPolicy: v1.PullAlways, // TODO: make this configurable
+			ImagePullPolicy: pullPolicy,
 			// Secrets Related
 			VolumeMounts: volumeMount,
 		}
