@@ -21,14 +21,9 @@ func getServiceDomain(projectID, serviceID string) string {
 
 func (d *Docker) pullImageByPolicy(ctx context.Context, projectID string, taskDocker model.Docker) error {
 	if taskDocker.ImagePullPolicy == model.PullIfNotExists {
-		_, _, err := d.client.ImageInspectWithRaw(ctx, taskDocker.Image)
-		if err != nil {
-			err := d.pullImage(ctx, projectID, taskDocker)
-			if err != nil {
-				return err
-			}
+		if _, _, err := d.client.ImageInspectWithRaw(ctx, taskDocker.Image); err == nil {
+			return nil
 		}
-		return nil
 	}
 	err := d.pullImage(ctx, projectID, taskDocker)
 	if err != nil {
