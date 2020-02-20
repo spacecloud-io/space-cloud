@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -48,9 +49,9 @@ func (m *Module) initBatchOperation(crud config.Crud) {
 	for dbAlias, dbInfo := range crud {
 		if dbInfo.Enabled {
 			for tableName := range dbInfo.Collections {
-				done := make(chan bool)                      // channel for closing go routine
-				addInsertToBatchCh := make(batchRequestChan) // channel for adding request to batch op
-				response := make(chan error)                 // channel for sending op response back to client
+				done := make(chan bool)                         // channel for closing go routine
+				addInsertToBatchCh := make(batchRequestChan, 3) // channel for adding request to batch op // TODO SIZE OF BUFFER
+				response := make(chan error)                    // channel for sending op response back to client
 				go m.insertBatchExecutor(done, response, addInsertToBatchCh, dbInfo.BatchTime, dbAlias, tableName)
 				if batch[dbAlias] == nil {
 					batch[dbAlias] = map[string]batchChannels{tableName: {request: addInsertToBatchCh, response: response, close: done}}
@@ -79,8 +80,8 @@ func (m *Module) insertBatchExecutor(done chan bool, response chan error, addIns
 			return
 		case v := <-addInsertToBatchCh:
 			project = v.project
-			batchRequests = append(batchRequests, v.document.([]interface{}))
-			// log.Println("added batch request", batchRequests)
+			batchRequests = append(batchRequests, v.document.([]interface{})...)
+			log.Println("added batch request", batchRequests)
 		case <-ticker.C:
 			if len(batchRequests) != 0 {
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) // TODO CHECK CONTEXT TIME

@@ -57,7 +57,7 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init(removeProjectScope bool) *Module {
-	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap, 0)}
+	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap)}
 }
 
 // SetHooks sets the internal hooks
