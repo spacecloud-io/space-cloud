@@ -20,7 +20,7 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 
 		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 		service := vars["service"]
 		function := vars["func"]
 
@@ -35,7 +35,7 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
 		defer cancel()
 
-		_, err := auth.IsFuncCallAuthorised(ctx, project, service, function, token, req.Params)
+		_, err := auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params)
 		if err != nil {
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

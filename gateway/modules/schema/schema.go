@@ -48,11 +48,11 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 }
 
 // GetSchema gets the schema for the given dbtype and collection
-func (s *Schema) GetSchema(dbType, col string) (Fields, bool) {
+func (s *Schema) GetSchema(dbAlias, col string) (Fields, bool) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	dbSchema, p := s.SchemaDoc[dbType]
+	dbSchema, p := s.SchemaDoc[dbAlias]
 	if !p {
 		return nil, false
 	}

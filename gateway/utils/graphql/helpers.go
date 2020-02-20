@@ -30,7 +30,7 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
-// GetDBAlias returns the dbType of the request
+// GetDBAlias returns the dbAlias of the request
 func (graph *Module) GetDBAlias(field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("database / service directive not provided")
@@ -61,7 +61,7 @@ func getCollection(field *ast.Field) (string, error) {
 
 func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.FieldType, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb callback) {
 	graph.execLinkedReadRequest(ctx, field, fieldStruct.LinkedTable.DBType, fieldStruct.LinkedTable.Table, token, req,
-		store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
+		store, loader, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 			if err != nil {
 				cb(nil, err)
 				return
@@ -75,7 +75,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 			}
 
 			// Check the linked table has a schema
-			s, isSchemaPresent := graph.schema.GetSchema(dbType, col)
+			s, isSchemaPresent := graph.schema.GetSchema(dbAlias, col)
 
 			length := len(array)
 			if !fieldStruct.IsList {

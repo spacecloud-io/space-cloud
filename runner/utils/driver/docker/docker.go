@@ -28,6 +28,7 @@ type Docker struct {
 	auth         *auth.Module
 	artifactAddr string
 	secretPath   string
+	hostFilePath string
 }
 
 // NewDockerDriver returns a new docker instance
@@ -43,7 +44,12 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*Docker, error) {
 		secretPath = "."
 	}
 
-	return &Docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath}, nil
+	hostFilePath := os.Getenv("HOSTS_FILE_PATH")
+	if hostFilePath == "" {
+		logrus.Fatal("Failed to create docker driver: HOSTS_FILE_PATH environment variable not provided")
+	}
+
+	return &Docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath, hostFilePath: hostFilePath}, nil
 }
 
 // ApplyService creates containers for specified service
@@ -162,7 +168,13 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 	}
 
 	// set secrets
-	mounts := []mount.Mount{}
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: d.hostFilePath,
+			Target: "/etc/hosts",
+		},
+	}
 	for _, secretName := range task.Secrets {
 
 		// check if file exists
@@ -207,12 +219,12 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 		// receiving memory in mega bytes converting into bytes
 		// convert received mill cpus to cpus by diving by 1000 then multiply with 100000 to get cpu quota
 		Resources: container.Resources{Memory: task.Resources.Memory * 1024 * 1024, NanoCPUs: task.Resources.CPU * 1000000},
+		Mounts:    mounts,
 	}
 
 	exposedPorts := map[nat.Port]struct{}{}
 	if cName != "" {
 		hostConfig.NetworkMode = container.NetworkMode("container:" + cName)
-		hostConfig.Mounts = mounts
 	} else {
 		// expose ports of docker container as specified for 1st task
 		task.Ports = overridePorts // override all ports while creating container for 1st task
@@ -220,10 +232,9 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 			portString := strconv.Itoa(int(port.Port))
 			exposedPorts[nat.Port(portString)] = struct{}{}
 		}
-		hostConfig.Mounts = mounts
 	}
 
-	containerName := fmt.Sprintf("%s--%s--%s--%s", service.ProjectID, service.ID, service.Version, task.ID)
+	containerName := fmt.Sprintf("space-cloud-%s--%s--%s--%s", service.ProjectID, service.ID, service.Version, task.ID)
 	resp, err := d.client.ContainerCreate(ctx, &container.Config{
 		Image:        task.Docker.Image,
 		Env:          envs,
@@ -252,7 +263,7 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 
 // DeleteService removes every docker container related to specified service id
 func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, version string) error {
-	args := filters.Arg("name", fmt.Sprintf("%s--%s--%s", projectID, serviceID, version))
+	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s--%s--%s", projectID, serviceID, version))
 	if serviceID == "" || version == "" {
 		args = filters.Arg("name", projectID)
 	}
@@ -288,7 +299,7 @@ func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 
 // GetServices gets the specified service info from docker container
 func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
-	args := filters.Arg("name", projectID)
+	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s", projectID))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
