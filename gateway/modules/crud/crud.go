@@ -27,6 +27,9 @@ type Module struct {
 	project            string
 	removeProjectScope bool
 
+	// batch operation
+	batchMapTableToChan batchMap // every table gets mapped to group of channels
+
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
@@ -54,7 +57,7 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init(removeProjectScope bool) *Module {
-	return &Module{removeProjectScope: removeProjectScope}
+	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap, 0)}
 }
 
 // SetHooks sets the internal hooks
@@ -120,6 +123,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 		logrus.Info("Successfully connected to " + k)
 	}
+	m.initBatchOperation(crud)
 	return nil
 }
 

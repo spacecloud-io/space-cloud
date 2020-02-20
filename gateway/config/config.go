@@ -83,6 +83,7 @@ type CrudStub struct {
 	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
 	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
 	Enabled     bool                  `json:"enabled" yaml:"enabled"`
+	BatchTime   int                   `json:"batchTime" yaml:"batchTime"` // time in milli seconds
 }
 
 // TableRule contains the config at the collection level

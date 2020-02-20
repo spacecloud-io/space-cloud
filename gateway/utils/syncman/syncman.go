@@ -3,6 +3,8 @@ package syncman
 import (
 	"sync"
 
+	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
@@ -17,6 +19,7 @@ type Manager struct {
 	configFile    string
 	cb            func(*config.Config) error
 
+	crud *crud.Module
 	// Configuration for cluster information
 	nodeID        string
 	clusterID     string
@@ -40,10 +43,10 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, adminMan *admin.Manager, crud *crud.Module) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, artifactAddr: artifactAddr}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, artifactAddr: artifactAddr, crud: crud}
 
 	// Initialise the consul client if enabled
 	switch storeType {

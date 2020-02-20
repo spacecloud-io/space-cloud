@@ -156,6 +156,7 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 }
 
 func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
+	s.crud.CloseBatchOperation()
 	if err := s.cb(&config.Config{Projects: []*config.Project{project}}); err != nil {
 		return err
 	}

@@ -4,6 +4,7 @@ package model
 type CreateRequest struct {
 	Document  interface{} `json:"doc"`
 	Operation string      `json:"op"`
+	IsBatch   bool        `json:"isBatch"`
 }
 
 // ReadRequest is the http body received for a read request

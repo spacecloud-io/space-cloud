@@ -2,6 +2,9 @@ package crud
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -19,6 +22,18 @@ func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *
 
 	if err := crud.IsClientSafe(); err != nil {
 		return err
+	}
+
+	// add the request for batch operation
+	if req.IsBatch {
+		ch, ok := m.batchMapTableToChan[dbAlias][col] // get channel for specified table
+		if !ok {
+			logrus.Errorf("error converting insert request to batch request unable to find channel for database %s & collection %s", dbAlias, col)
+			return fmt.Errorf("cannot find channel for database %s & collection %s", dbAlias, col)
+		}
+		// TODO VALIDATION OF PROJECT
+		ch.request <- batchRequest{document: req.Document, project: project}
+		return <-ch.response
 	}
 
 	// Invoke the create intent hook
