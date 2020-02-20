@@ -85,6 +85,7 @@ func TestBolt_DeleteCollection(t *testing.T) {
 		{
 			name: "invalid project",
 			args: args{ctx: context.Background(), project: "not-gateway", col: "project"},
+			want: []utils.DatabaseCollections{},
 		},
 		{
 			name: "delete collection doesn't take place",
@@ -106,6 +107,14 @@ func TestBolt_DeleteCollection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := b.DeleteCollection(tt.args.ctx, tt.args.project, tt.args.col); (err != nil) != tt.wantErr {
 				t.Errorf("Bolt.DeleteCollection() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			got, err := b.GetCollections(tt.args.ctx, tt.args.project)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Bolt.DeleteCollection() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Bolt.DeleteCollection() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
