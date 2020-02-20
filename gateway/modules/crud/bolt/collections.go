@@ -32,7 +32,7 @@ func (b *Bolt) GetCollections(ctx context.Context, project string) ([]utils.Data
 		logrus.Errorf("could not get all collections for given project and database - %s", err.Error())
 		return nil, err
 	}
-	dbCols := make([]utils.DatabaseCollections, len(keys))
+	dbCols := make([]utils.DatabaseCollections, 0)
 	for col := range keys {
 		dbCols = append(dbCols, utils.DatabaseCollections{TableName: col})
 	}

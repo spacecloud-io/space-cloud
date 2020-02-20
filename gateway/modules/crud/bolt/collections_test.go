@@ -38,7 +38,7 @@ func TestBolt_GetCollections(t *testing.T) {
 			name: "get collection occurs",
 			b:    b,
 			args: args{ctx: context.Background(), project: "gateway"},
-			want: []utils.DatabaseCollections{{}, {TableName: "project"}},
+			want: []utils.DatabaseCollections{{TableName: "project"}},
 		},
 	}
 
