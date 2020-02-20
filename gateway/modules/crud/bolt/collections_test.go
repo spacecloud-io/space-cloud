@@ -23,24 +23,23 @@ func TestBolt_DeleteCollection(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		b       *Bolt
 		args    args
 		wantErr bool
+		want    []utils.DatabaseCollections
 	}{
 		{
 			name: "invalid project",
-			b:    b,
 			args: args{ctx: context.Background(), project: "not-gateway", col: "project"},
 		},
 		{
 			name: "delete collection doesn't take place",
-			b:    b,
 			args: args{ctx: context.Background(), project: "gateway", col: "invalid"},
+			want: []utils.DatabaseCollections{{TableName: "project"}},
 		},
 		{
 			name: "delete collection takes place",
-			b:    b,
 			args: args{ctx: context.Background(), project: "gateway", col: "project"},
+			want: []utils.DatabaseCollections{},
 		},
 	}
 
@@ -50,7 +49,7 @@ func TestBolt_DeleteCollection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.b.DeleteCollection(tt.args.ctx, tt.args.project, tt.args.col); (err != nil) != tt.wantErr {
+			if err := b.DeleteCollection(tt.args.ctx, tt.args.project, tt.args.col); (err != nil) != tt.wantErr {
 				t.Errorf("Bolt.DeleteCollection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
