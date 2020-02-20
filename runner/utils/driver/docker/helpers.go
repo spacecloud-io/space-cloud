@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/sirupsen/logrus"
@@ -34,6 +33,7 @@ func (d *Docker) pullImageByPolicy(ctx context.Context, projectID string, taskDo
 
 func (d *Docker) pullImage(ctx context.Context, projectID string, taskDocker model.Docker) error {
 	// image doesn't exist locally
+	options := types.ImagePullOptions{}
 	if taskDocker.Secret != "" {
 		data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, taskDocker.Secret))
 		if err != nil {
@@ -54,21 +54,15 @@ func (d *Docker) pullImage(ctx context.Context, projectID string, taskDocker mod
 			return err
 		}
 
-		// pull image from private repository
-		out, err := d.client.ImagePull(ctx, taskDocker.Image, types.ImagePullOptions{RegistryAuth: base64.URLEncoding.EncodeToString(encodedJSON)})
-		if err != nil {
-			logrus.Errorf("error in docker unable to pull private image with id (%s) - %s", taskDocker.Image, err.Error())
-			return err
-		}
-		_, _ = io.Copy(os.Stdout, out)
-	} else {
-		// pull image from public repository
-		out, err := d.client.ImagePull(ctx, taskDocker.Image, types.ImagePullOptions{})
-		if err != nil {
-			logrus.Errorf("error in docker unable to pull public image with id (%s) - %s", taskDocker.Image, err.Error())
-			return err
-		}
-		_, _ = io.Copy(os.Stdout, out)
+		options.RegistryAuth = base64.URLEncoding.EncodeToString(encodedJSON)
 	}
+
+	// pull image from repository
+	out, err := d.client.ImagePull(ctx, taskDocker.Image, options)
+	if err != nil {
+		logrus.Errorf("error in docker unable to pull private image with id (%s) - %s", taskDocker.Image, err.Error())
+		return err
+	}
+	_, _ = io.Copy(ioutil.Discard, out)
 	return nil
 }
