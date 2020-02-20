@@ -54,9 +54,9 @@ require (
 	go.etcd.io/bbolt v1.3.3
 	go.mongodb.org/mongo-driver v1.1.1
 	go.uber.org/zap v1.13.0 // indirect
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
-	golang.org/x/sys v0.0.0-20190924154521-2837fb4f24fe // indirect
+	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
 	golang.org/x/tools v0.0.0-20191217033636-bbbf87ae2631 // indirect
 	google.golang.org/api v0.14.0
 	google.golang.org/appengine v1.6.5 // indirect
