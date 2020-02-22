@@ -91,6 +91,7 @@ type TableRule struct {
 	IsRealTimeEnabled bool             `json:"isRealtimeEnabled" yaml:"isRealtimeEnabled"`
 	Rules             map[string]*Rule `json:"rules" yaml:"rules"` // The key here is query, insert, update or delete
 	Schema            string           `json:"schema" yaml:"schema"`
+	BatchRecords      int              `json:"batchRecords" json:"batchRecords"` // indicates number of records per batch
 }
 
 // Rule is the authorisation object at the query level

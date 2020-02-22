@@ -2,7 +2,6 @@ package crud
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -45,14 +44,13 @@ func (m *Module) CloseBatchOperation() {
 // initBatchOperation creates go routines for executing batch operation associated with individual collection
 func (m *Module) initBatchOperation(crud config.Crud) {
 	batch := batchMap{}
-	// log.Println("go routines before creating executors -", runtime.NumGoroutine())
 	for dbAlias, dbInfo := range crud {
 		if dbInfo.Enabled {
-			for tableName := range dbInfo.Collections {
-				done := make(chan bool)                         // channel for closing go routine
-				addInsertToBatchCh := make(batchRequestChan, 3) // channel for adding request to batch op // TODO SIZE OF BUFFER
-				response := make(chan error)                    // channel for sending op response back to client
-				go m.insertBatchExecutor(done, response, addInsertToBatchCh, dbInfo.BatchTime, dbAlias, tableName)
+			for tableName, tableInfo := range dbInfo.Collections {
+				done := make(chan bool)                                              // channel for closing go routine
+				addInsertToBatchCh := make(batchRequestChan, tableInfo.BatchRecords) // channel for adding request to batch op
+				response := make(chan error)                                         // channel for sending op response back to client
+				go m.insertBatchExecutor(done, response, addInsertToBatchCh, dbInfo.BatchTime, dbAlias, tableName, tableInfo.BatchRecords)
 				if batch[dbAlias] == nil {
 					batch[dbAlias] = map[string]batchChannels{tableName: {request: addInsertToBatchCh, response: response, close: done}}
 					continue
@@ -62,14 +60,17 @@ func (m *Module) initBatchOperation(crud config.Crud) {
 		}
 	}
 	m.batchMapTableToChan = batch
-	// log.Println("go routines after creating executors -", runtime.NumGoroutine())
 }
 
-func (m *Module) insertBatchExecutor(done chan bool, response chan error, addInsertToBatchCh batchRequestChan, batchTime int, dbAlias, tableName string) {
+func (m *Module) insertBatchExecutor(done chan bool, response chan error, addInsertToBatchCh batchRequestChan, batchTime int, dbAlias, tableName string, batchRecordLimit int) {
+	noOfRequests := 0
 	project := ""
 	batchRequests := make([]interface{}, 0)
 	if batchTime <= 0 { // when new project is created set default time to 200 milli seconds
 		batchTime = 200
+	}
+	if batchRecordLimit <= 0 {
+		batchRecordLimit = 100 // when new project is created set default batch record limit to 100
 	}
 	ticker := time.NewTicker(time.Duration(batchTime) * time.Millisecond)
 	for {
@@ -79,20 +80,38 @@ func (m *Module) insertBatchExecutor(done chan bool, response chan error, addIns
 			logrus.Debugf("closing batcher for database %s table %s", dbAlias, tableName)
 			return
 		case v := <-addInsertToBatchCh:
+			noOfRequests++
 			project = v.project
 			batchRequests = append(batchRequests, v.document.([]interface{})...)
-			log.Println("added batch request", batchRequests)
+			if noOfRequests == batchRecordLimit {
+				m.executeBatch(noOfRequests, project, dbAlias, tableName, batchRequests, response)
+				batchRequests = make([]interface{}, 0) // clear the requests array
+				noOfRequests = 0
+				// reset ticker
+				ticker.Stop()
+				ticker = time.NewTicker(time.Duration(batchTime) * time.Millisecond)
+			}
 		case <-ticker.C:
 			if len(batchRequests) != 0 {
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second) // TODO CHECK CONTEXT TIME
-				if err := m.Create(ctx, dbAlias, project, tableName, &model.CreateRequest{Operation: utils.All, Document: batchRequests}); err != nil {
-					logrus.Errorf("error executing batch request for database %s table %s - %s", dbAlias, tableName, err)
-					response <- err
-				}
-				cancel()                               // close context
+				m.executeBatch(noOfRequests, project, dbAlias, tableName, batchRequests, response)
 				batchRequests = make([]interface{}, 0) // clear the requests array
-				response <- nil
+				noOfRequests = 0
 			}
 		}
 	}
+}
+
+func (m *Module) executeBatch(noOfRequests int, project, dbAlias, tableName string, batchRequests []interface{}, response chan error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	if err := m.Create(ctx, dbAlias, project, tableName, &model.CreateRequest{Operation: utils.All, Document: batchRequests}); err != nil {
+		logrus.Errorf("error executing batch request for database %s table %s - %s", dbAlias, tableName, err)
+		for i := 0; i < noOfRequests; i++ {
+			response <- err
+		}
+	}
+	// send response to all client request
+	for i := 0; i < noOfRequests; i++ {
+		response <- nil
+	}
+	cancel() // close context
 }
