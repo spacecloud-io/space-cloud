@@ -90,6 +90,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
+	m.CloseBatchOperation()
 
 	if len(crud) > 1 {
 		return errors.New("crud module cannot have more than 1 db")
@@ -123,7 +124,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 		logrus.Info("Successfully connected to " + k)
 	}
-	m.initBatchOperation(crud)
+	m.initBatchOperation(project, crud)
 	return nil
 }
 

@@ -26,14 +26,16 @@ func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *
 
 	// add the request for batch operation
 	if req.IsBatch {
-		ch, ok := m.batchMapTableToChan[dbAlias][col] // get channel for specified table
+		response := make(chan error, 1)
+		defer close(response)
+		ch, ok := m.batchMapTableToChan[project][dbAlias][col] // get channel for specified table
 		if !ok {
 			logrus.Errorf("error converting insert request to batch request unable to find channel for database %s & collection %s", dbAlias, col)
 			return fmt.Errorf("cannot find channel for database %s & collection %s", dbAlias, col)
 		}
 		// TODO VALIDATION OF PROJECT
-		ch.request <- batchRequest{document: req.Document, project: project}
-		return <-ch.response
+		ch.request <- batchRequest{document: req.Document, response: response}
+		return <-response
 	}
 
 	// Invoke the create intent hook
