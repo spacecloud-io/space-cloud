@@ -37,3 +37,7 @@ func getAuthorizationPolicyName(service *model.Service) string {
 func getSidecarName(serviceID string) string {
 	return serviceID
 }
+
+func getGeneratedByAnnotationName() string {
+	return fmt.Sprintf("space-cloud-runner-%s", model.Version)
+}
