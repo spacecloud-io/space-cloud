@@ -20,10 +20,8 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
-	// dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string)+".linked."+col, graph)
-
 	go func() {
-		req.Options.Prefix = fmt.Sprintf("%s.%s.linked.%s", getFieldName(field), store["path"].(string), col)
+		req.IsBatch = true
 		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbType, graph.project, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
@@ -57,10 +55,8 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		return
 	}
 
-	// dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string), graph)
-
 	go func() {
-		req.Options.Prefix = fmt.Sprintf("%s.%s", getFieldName(field), store["path"].(string))
+		req.IsBatch = true
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbType, graph.project, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)

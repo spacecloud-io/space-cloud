@@ -87,30 +87,19 @@ func (holder *resultsHolder) fillErrorMessage(err error) {
 	holder.Unlock()
 }
 
-type loaderMap struct {
-	lock sync.Mutex
-	m    map[string]*dataloader.Loader
+func (m *Module) getLoader(key string) (*dataloader.Loader, bool) {
+	loader, ok := m.dataLoader.loaderMap[key]
+	return loader, ok
 }
 
-func newLoaderMap() *loaderMap {
-	return &loaderMap{m: map[string]*dataloader.Loader{}}
-}
-
-func (l *loaderMap) get(key string, m *Module) *dataloader.Loader {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-
-	if _, ok := l.m[key]; !ok {
-		l.m[key] = m.createLoader()
-	}
-
-	return l.m[key]
-}
-
-func (m *Module) createLoader() *dataloader.Loader {
+func (m *Module) createLoader(key string) *dataloader.Loader {
+	m.dataLoader.dataLoaderLock.Lock()
+	defer m.dataLoader.dataLoaderLock.Unlock()
 	// DataLoaderBatchFn is the batch function of the data loader
 	cache := &dataloader.NoCache{}
-	return dataloader.NewBatchedLoader(m.dataLoaderBatchFn, dataloader.WithCache(cache))
+	loader := dataloader.NewBatchedLoader(m.dataLoaderBatchFn, dataloader.WithCache(cache))
+	m.dataLoader.loaderMap[key] = loader
+	return loader
 }
 
 func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*dataloader.Result {
@@ -144,8 +133,9 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 			go func(i int) {
 				defer wg.Done()
 
+				// make sures metric get collected for following read request
+				req.Req.IsBatch = false // NOTE: DO NOT REMOVE THIS
 				// Execute the query
-				req.Req.Options.Prefix = ""
 				res, err := m.Read(ctx, dbType, m.project, req.Col, &req.Req)
 				if err != nil {
 
@@ -175,7 +165,6 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 
 	// Fire the merged request
 
-	req.Options.Prefix = ""
 	res, err := m.Read(ctx, dbType, m.project, col, &req)
 	if err != nil {
 		holder.fillErrorMessage(err)
