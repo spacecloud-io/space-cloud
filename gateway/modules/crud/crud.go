@@ -111,7 +111,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 		if v.Enabled {
 			if err != nil {
-				logrus.Println("Error connecting to " + k + " : " + err.Error())
+				logrus.Errorf("Error connecting to " + k + " : " + err.Error())
 				return err
 			}
 			logrus.Info("Successfully connected to " + k)
