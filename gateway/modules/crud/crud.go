@@ -90,7 +90,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
-	m.CloseBatchOperation()
+	m.closeBatchOperation()
 
 	if len(crud) > 1 {
 		return errors.New("crud module cannot have more than 1 db")
