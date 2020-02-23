@@ -110,13 +110,13 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
 		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
 
-		m.dbType = v.Type
-		m.block = c
-		m.alias = strings.TrimPrefix(k, "sql-")
-
 		if v.Enabled {
+			m.dbType = v.Type
+		    m.block = c
+			m.alias = strings.TrimPrefix(k, "sql-")
+			
 			if err != nil {
-				log.Println("Error connecting to " + k + " : " + err.Error())
+				logrus.Println("Error connecting to " + k + " : " + err.Error())
 				return err
 			}
 			logrus.Info("Successfully connected to " + k)
