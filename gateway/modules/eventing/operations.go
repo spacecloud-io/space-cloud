@@ -2,6 +2,9 @@ package eventing
 
 import (
 	"context"
+	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/segmentio/ksuid"
 
@@ -23,16 +26,53 @@ func (m *Module) IsEnabled() bool {
 }
 
 // QueueEvent queues a new event
-func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) error {
+func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) (interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	err := m.validate(ctx, project, token, req)
 	if err != nil {
-		return err
+		logrus.Errorf("error queueing event in eventing unable to validate - %s", err.Error())
+		return nil, err
 	}
 
-	return m.batchRequests(ctx, []*model.QueueEventRequest{req})
+	batchID, err := m.batchRequests(ctx, []*model.QueueEventRequest{req})
+	if err != nil {
+		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
+		return nil, err
+	}
+
+	// if true then wait for event response
+	if req.IsSynchronous {
+		responseChan := make(chan interface{})
+		defer close(responseChan) // close channel
+		defer m.eventChanMap.Delete(batchID)
+		m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
+		for {
+			select {
+			case <-ctx.Done():
+				// clear channel
+				return nil, ctx.Err()
+			case result := <-responseChan:
+				return result, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
+// SendEventResponse sends response to client via channel
+func (m *Module) SendEventResponse(batchID string, payload interface{}) {
+	// get channel from map
+	value, ok := m.eventChanMap.Load(batchID)
+	if !ok {
+		logrus.Errorf("error sending synchronous event response to client unable to find channel in map for batch %s", batchID)
+		return
+	}
+	result := value.(eventResponse)
+
+	// send response to client
+	result.response <- payload
 }
 
 // AddInternalRules adds triggers which are used for space cloud internally

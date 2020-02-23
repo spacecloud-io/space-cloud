@@ -47,10 +47,14 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	}
 }
 
-func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest) error {
+func (m *Module) getBatchID() string {
+	return fmt.Sprintf("%s.%s", ksuid.New().String(), m.syncMan.GetNodeID())
+}
+
+func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest) (string, error) {
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := ksuid.New().String()
+	batchID := m.getBatchID()
 
 	// Create an eventDocs array
 	var eventDocs []*model.EventDocument
@@ -69,12 +73,12 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	// Persist the events
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
 	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
-		return errors.New("eventing module couldn't log the request -" + err.Error())
+		return "", errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
 	// Broadcast the event so the concerned worker can process it immediately
 	m.transmitEvents(token, eventDocs)
-	return nil
+	return batchID, nil
 }
 
 func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {

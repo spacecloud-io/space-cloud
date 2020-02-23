@@ -15,7 +15,11 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 	if err != nil {
 		return err
 	}
-	projectConfig.Modules.Eventing.Rules[ruleName] = value
+	if projectConfig.Modules.Eventing.Rules == nil {
+		projectConfig.Modules.Eventing.Rules = map[string]config.EventingRule{ruleName: value}
+	} else {
+		projectConfig.Modules.Eventing.Rules[ruleName] = value
+	}
 
 	return s.setProject(ctx, projectConfig)
 }

@@ -3,6 +3,7 @@ package eventing
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
@@ -35,21 +36,31 @@ type Module struct {
 	fileStore *filestore.Module
 
 	schemas map[string]schema.Fields
+
+	// stores mapping of batchID w.r.t channel for sending synchronous event response
+	eventChanMap sync.Map // key here is batchID
+}
+
+// synchronous event response
+type eventResponse struct {
+	time     time.Time
+	response chan interface{}
 }
 
 // New creates a new instance of the eventing module
 func New(auth *auth.Module, crud *crud.Module, schemaModule *schema.Schema, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
 
 	m := &Module{
-		auth:      auth,
-		crud:      crud,
-		schema:    schemaModule,
-		functions: functions,
-		adminMan:  adminMan,
-		syncMan:   syncMan,
-		schemas:   map[string]schema.Fields{},
-		fileStore: file,
-		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
+		auth:         auth,
+		crud:         crud,
+		schema:       schemaModule,
+		functions:    functions,
+		adminMan:     adminMan,
+		syncMan:      syncMan,
+		schemas:      map[string]schema.Fields{},
+		fileStore:    file,
+		eventChanMap: sync.Map{},
+		config:       &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
 
 	// Start the internal processes
