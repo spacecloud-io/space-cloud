@@ -60,7 +60,6 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 		if !ok {
 			dataLoader = m.createLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
 		}
-		defer dataLoader.Clear(ctx, key) // clear the key
 		return dataLoader.Load(ctx, key)()
 	}
 	n, result, err := crud.Read(ctx, project, col, req)

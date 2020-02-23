@@ -22,6 +22,9 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 
 	go func() {
 		req.IsBatch = true
+		if req.Options == nil {
+			req.Options = &model.ReadOptions{}
+		}
 		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbAlias, graph.project, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)

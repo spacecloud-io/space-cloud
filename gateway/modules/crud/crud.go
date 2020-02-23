@@ -107,6 +107,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		utils.CloseTheCloser(m.block)
 	}
 
+	// clear previous data loader
+	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
+
 	// Create a new crud blocks
 	for k, v := range crud {
 		var c Crud
