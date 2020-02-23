@@ -15,7 +15,6 @@ import (
 func (d *Docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	// create folder for project
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
-	
 
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s.json", projectPath, secretObj.Name)

@@ -12,7 +12,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbAlias, col, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb dbCallback) {
+func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbAlias, col, token string, req *model.ReadRequest, store utils.M, cb dbCallback) {
 	// Check if read op is authorised
 	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
 	if err != nil {
@@ -20,19 +20,20 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
-	dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string)+".linked."+col, graph)
-
 	go func() {
-		// Create dataloader key
-		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: false, Req: *req}
-		result, err := dataLoader.Load(ctx, key)()
+		req.IsBatch = true
+		if req.Options == nil {
+			req.Options = &model.ReadOptions{}
+		}
+		req.Options.HasOptions = false
+		result, err := graph.crud.Read(ctx, dbAlias, graph.project, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
 
 		cb(dbAlias, col, result, err)
 	}()
 }
 
-func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, loader *loaderMap, cb dbCallback) {
+func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
 	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
 		cb("", "", nil, err)
@@ -57,12 +58,10 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		return
 	}
 
-	dataLoader := loader.get(getFieldName(field)+"."+store["path"].(string), graph)
-
 	go func() {
-		// Create dataloader key
-		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: hasOptions, Req: *req}
-		result, err := dataLoader.Load(ctx, key)()
+		req.IsBatch = true
+		req.Options.HasOptions = hasOptions
+		result, err := graph.crud.Read(ctx, dbAlias, graph.project, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbAlias, col, result, err)
 	}()

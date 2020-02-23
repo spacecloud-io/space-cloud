@@ -2,6 +2,7 @@ package crud
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -53,7 +54,14 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	if err := crud.IsClientSafe(); err != nil {
 		return nil, err
 	}
-
+	if req.IsBatch {
+		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req}
+		dataLoader, ok := m.getLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
+		if !ok {
+			dataLoader = m.createLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
+		}
+		return dataLoader.Load(ctx, key)()
+	}
 	n, result, err := crud.Read(ctx, project, col, req)
 
 	// Invoke the metric hook if the operation was successful

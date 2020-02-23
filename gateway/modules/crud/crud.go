@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/graph-gophers/dataloader"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -26,9 +28,15 @@ type Module struct {
 	project            string
 	removeProjectScope bool
 
+	dataLoader loader
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
+}
+
+type loader struct {
+	loaderMap      map[string]*dataloader.Loader
+	dataLoaderLock sync.Mutex
 }
 
 // Crud abstracts the implementation crud operations of databases
@@ -53,7 +61,7 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init(removeProjectScope bool) *Module {
-	return &Module{removeProjectScope: removeProjectScope}
+	return &Module{removeProjectScope: removeProjectScope, dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 // SetHooks sets the internal hooks
@@ -97,6 +105,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	if m.block != nil {
 		utils.CloseTheCloser(m.block)
 	}
+
+	// clear previous data loader
+	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 
 	// Create a new crud blocks
 	for k, v := range crud {
