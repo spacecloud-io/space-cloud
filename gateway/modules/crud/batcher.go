@@ -51,8 +51,8 @@ func (m *Module) initBatchOperation(project string, crud config.Crud) {
 	for dbAlias, dbInfo := range crud {
 		if dbInfo.Enabled {
 			for tableName, tableInfo := range dbInfo.Collections {
-				closeC := make(chan struct{})                                        // channel for closing go routine
-				addInsertToBatchCh := make(batchRequestChan, tableInfo.BatchRecords) // channel for adding request to batch op
+				closeC := make(chan struct{})                    // channel for closing go routine
+				addInsertToBatchCh := make(batchRequestChan, 20) // channel for adding request to batch op
 				go m.insertBatchExecutor(closeC, addInsertToBatchCh, dbInfo.BatchTime, project, dbAlias, tableName, tableInfo.BatchRecords)
 				if batch[project] == nil {
 					batch[project] = map[string]map[string]batchChannels{dbAlias: {tableName: {request: addInsertToBatchCh, closeC: closeC}}}
