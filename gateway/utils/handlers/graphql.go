@@ -27,7 +27,7 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 
 		// Throw error if request was of incorrect type
 		if err != nil {
-			logrus.Errorf("Config was of invalid type - - %s", err.Error())
+			logrus.Errorf("Error handling graphql query execution unable to decode request body - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -37,7 +37,7 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 
 		projectConfig, err := syncMan.GetConfig(projectID)
 		if err != nil {
-			logrus.Errorf("Config was of invalid type - - %s", err.Error())
+			logrus.Errorf("Error handling graphql query execution unable to get project config of %s - %s", projectID, err.Error())
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
