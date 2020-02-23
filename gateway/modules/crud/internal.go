@@ -22,8 +22,13 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 		return err
 	}
 
+	var n int64
 	// Perform the create operation
-	n, err := crud.Create(ctx, project, col, req)
+	if req.IsBatch {
+		n, err = m.createBatch(project, dbAlias, col, req.Document)
+	} else {
+		n, err = crud.Create(ctx, project, col, req)
+	}
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {

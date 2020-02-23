@@ -21,11 +21,16 @@ type (
 		closeC  chan struct{}
 	}
 
-	batchRequestChan chan batchRequest
+	batchRequestChan  chan batchRequest
+	batchResponseChan chan batchResponse
 
 	batchRequest struct {
 		document interface{}
-		response chan error
+		response batchResponseChan
+	}
+	batchResponse struct {
+		err          error
+		docsInserted int64
 	}
 )
 
@@ -61,7 +66,7 @@ func (m *Module) initBatchOperation(project string, crud config.Crud) {
 }
 
 func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batchRequestChan, batchTime int, project, dbAlias, tableName string, batchRecordLimit int) {
-	responseChannels := make([]chan error, 0)
+	responseChannels := make([]batchResponseChan, 0)
 	batchRequests := make([]interface{}, 0)
 	if batchTime <= 0 { // when new project is created set default time to 100 milli seconds
 		batchTime = 100
@@ -89,8 +94,8 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 			}
 			if len(batchRequests) >= batchRecordLimit {
 				m.executeBatch(project, dbAlias, tableName, batchRequests, responseChannels)
-				batchRequests = make([]interface{}, 0)   // clear the requests array
-				responseChannels = make([]chan error, 0) // clear the response channels array
+				batchRequests = make([]interface{}, 0)          // clear the requests array
+				responseChannels = make([]batchResponseChan, 0) // clear the response channels array
 				// reset ticker
 				ticker.Stop()
 				ticker = time.NewTicker(time.Duration(batchTime) * time.Millisecond)
@@ -98,27 +103,27 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 		case <-ticker.C:
 			if len(batchRequests) > 0 {
 				m.executeBatch(project, dbAlias, tableName, batchRequests, responseChannels)
-				batchRequests = make([]interface{}, 0)   // clear the requests array
-				responseChannels = make([]chan error, 0) // clear the response channels array
+				batchRequests = make([]interface{}, 0)          // clear the requests array
+				responseChannels = make([]batchResponseChan, 0) // clear the response channels array
 			}
 		}
 	}
 }
 
-func (m *Module) executeBatch(project, dbAlias, tableName string, batchRequests []interface{}, responseChannels []chan error) {
+func (m *Module) executeBatch(project, dbAlias, tableName string, batchRequests []interface{}, responseChannels []batchResponseChan) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := m.Create(ctx, dbAlias, project, tableName, &model.CreateRequest{Operation: utils.All, Document: batchRequests}); err != nil {
+	if err := m.InternalCreate(ctx, dbAlias, project, tableName, &model.CreateRequest{Operation: utils.All, Document: batchRequests}); err != nil {
 		logrus.Errorf("error executing batch request for database %s table %s - %s", dbAlias, tableName, err)
-		m.sendResponses(responseChannels, err)
+		m.sendResponses(responseChannels, batchResponse{err: err, docsInserted: 0})
 		return
 	}
 	// send response to all client request
-	m.sendResponses(responseChannels, nil)
+	m.sendResponses(responseChannels, batchResponse{err: nil, docsInserted: int64(len(batchRequests))})
 }
 
-func (m *Module) sendResponses(responseChannels []chan error, err error) {
+func (m *Module) sendResponses(responseChannels []batchResponseChan, response batchResponse) {
 	for _, responseChan := range responseChannels {
-		responseChan <- err
+		responseChan <- response
 	}
 }
