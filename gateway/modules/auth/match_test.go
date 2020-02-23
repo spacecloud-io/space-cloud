@@ -147,32 +147,32 @@ func TestMatchForce_Rule(t *testing.T) {
 	var testCases = []struct {
 		name             string
 		isErrExpected    bool
-		CheckPostProcess bool
+		checkPostProcess bool
 		checkArgs        bool
 		result           *PostProcess
 		rule             *config.Rule
 		args             map[string]interface{}
 		wantedargs       map[string]interface{}
 	}{
-		{name: "res directly passing value", isErrExpected: false, CheckPostProcess: true, checkArgs: false,
+		{name: "res directly passing value", isErrExpected: false, checkPostProcess: true, checkArgs: false,
 			result: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "1234", Field: "res.age"},
 			args:   map[string]interface{}{"string1": "interface1", "string2": "interface2"},
 		},
-		{name: "Scope not present for given variable", isErrExpected: true, CheckPostProcess: false, checkArgs: false,
+		{name: "Scope not present for given variable", isErrExpected: true, checkPostProcess: false, checkArgs: false,
 			rule: &config.Rule{Rule: "force", Value: "1234", Field: "args.age"},
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
-		{name: "res indirectly passing value", isErrExpected: false, CheckPostProcess: true, checkArgs: false,
+		{name: "res indirectly passing value", isErrExpected: false, checkPostProcess: true, checkArgs: false,
 			result: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "args.string2", Field: "res.age"},
 			args:   map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "1234"}},
 		},
-		{name: "Incorrect Rule Field Test Case", isErrExpected: true, CheckPostProcess: false, checkArgs: false,
+		{name: "Incorrect Rule Field Test Case", isErrExpected: true, checkPostProcess: false, checkArgs: false,
 			rule: &config.Rule{Rule: "force", Value: "args.string2", Field: "arg.string1"},
 			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
 		},
-		{name: "Valid args", isErrExpected: false, CheckPostProcess: true, checkArgs: true, result: &PostProcess{},
+		{name: "Valid args", isErrExpected: false, checkPostProcess: false, checkArgs: true,
 			rule:       &config.Rule{Rule: "force", Value: "1234", Field: "args.string1"},
 			args:       map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "interface2"}},
 			wantedargs: map[string]interface{}{"args": map[string]interface{}{"string1": "1234", "string2": "interface2"}},
@@ -198,7 +198,7 @@ func TestMatchForce_Rule(t *testing.T) {
 				t.Error("| Got This ", err, "| Wanted Error |", test.isErrExpected)
 			}
 			//check return value if post process is appended
-			if test.CheckPostProcess {
+			if test.checkPostProcess {
 				if !reflect.DeepEqual(r, test.result) {
 					t.Error("| Got This ", r, "| Wanted Result |", test.result)
 				}
@@ -227,34 +227,33 @@ func TestMatchRemove_Rule(t *testing.T) {
 	}{
 		{name: "res", isErrExpected: false,
 			checkPostProcess: true, checkArgs: false,
-			rule:   &config.Rule{Rule: "remove", Value: "12", Fields: []string{"res.age"}},
+			rule:   &config.Rule{Rule: "remove", Fields: []string{"res.age"}},
 			args:   map[string]interface{}{"res": map[string]interface{}{"age": "12"}},
 			result: &PostProcess{[]PostProcessAction{PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
 		},
 		{name: "invalid field provided", isErrExpected: true, checkPostProcess: false, checkArgs: false,
-			rule: &config.Rule{Rule: "remove", Type: "string", Fields: []string{"args:age"}},
+			rule: &config.Rule{Rule: "remove", Fields: []string{"args:age"}},
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
 		{name: "scope not present", isErrExpected: true, checkPostProcess: false, checkArgs: false,
-			rule: &config.Rule{Rule: "remove", Type: "string", Fields: []string{"args.age"}},
+			rule: &config.Rule{Rule: "remove", Fields: []string{"args.age"}},
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
-		{name: "remove multiple args", isErrExpected: false, checkPostProcess: true, checkArgs: true,
-			result:     &PostProcess{},
-			rule:       &config.Rule{Rule: "remove", Type: "number", Fields: []string{"args.age", "args.exp"}},
+		{name: "remove multiple args", isErrExpected: false, checkPostProcess: false, checkArgs: true,
+			rule:       &config.Rule{Rule: "remove", Fields: []string{"args.age", "args.exp"}},
 			args:       map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 			wantedargs: map[string]interface{}{"args": map[string]interface{}{}},
 		},
 		{name: "invalid map value to another map", isErrExpected: true, checkPostProcess: false, checkArgs: false,
-			rule: &config.Rule{Rule: "remove", Type: "number", Fields: []string{"args.age.exp"}},
+			rule: &config.Rule{Rule: "remove", Fields: []string{"args.age.exp"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 		},
 		{name: "cannot find property of map", isErrExpected: true, checkPostProcess: false, checkArgs: false,
-			rule: &config.Rule{Rule: "remove", Type: "number", Fields: []string{"args.aged.exp"}},
+			rule: &config.Rule{Rule: "remove", Fields: []string{"args.aged.exp"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 		},
 		{name: "invalid prefix", isErrExpected: true, checkPostProcess: false, checkArgs: false,
-			rule: &config.Rule{Rule: "remove", Type: "number", Fields: []string{"arg.age.exp"}},
+			rule: &config.Rule{Rule: "remove", Fields: []string{"arg.age.exp"}},
 			args: map[string]interface{}{"args": map[string]interface{}{"age": 10, "exp": 10}},
 		},
 		{
