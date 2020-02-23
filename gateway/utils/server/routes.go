@@ -70,7 +70,7 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/{routeId}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.adminMan, s.syncMan))
 
 	// Initialize route for graphql
-	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql))
+	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.graphql, s.syncMan))
 
 	// Initialize the route for websocket
 	router.HandleFunc("/v1/api/{project}/socket/json", s.handleWebsocket())
