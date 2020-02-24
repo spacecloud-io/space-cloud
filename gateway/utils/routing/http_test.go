@@ -59,7 +59,6 @@ func Test_rewriteURL(t *testing.T) {
 		args args
 		want string
 	}{
-		// TODO: Add test cases.
 		{
 			name: "rewrite url",
 			args: args{
@@ -70,7 +69,6 @@ func Test_rewriteURL(t *testing.T) {
 						URL:        "/abc",
 						RewriteURL: "/v1/abc",
 					},
-					Destination: config.RouteDestination{},
 				},
 			},
 			want: "/v1/abc/xyz",
@@ -96,16 +94,16 @@ func Test_setRequest(t *testing.T) {
 		args args
 		want *http.Request
 	}{
-		// TODO: Add test cases.
 		{
 			name: "set request",
 			args: args{
 				url: "/abc",
 				route: &config.Route{
-					Destination: config.RouteDestination{
-						Host: "spacecloud.com",
-						Port: "8080",
-					},
+					Targets: []config.RouteTarget{{
+						Host:   "spacecloud.com",
+						Port:   "8080",
+						Weight: 1,
+					}},
 				},
 				request: &http.Request{
 					URL: &url.URL{},
@@ -123,9 +121,9 @@ func Test_setRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setRequest(tt.args.request, tt.args.route, tt.args.url)
+			_ = setRequest(tt.args.request, tt.args.route, tt.args.url)
 			if !reflect.DeepEqual(tt.args.request, tt.want) {
-				log.Println("Routing.addProjectRoutes()")
+				t.Errorf("Routing.addProjectRoutes(): wanted - %v; got - %v", tt.want, tt.args.request)
 
 				a, _ := json.MarshalIndent(tt.args.request, "", " ")
 				log.Printf("got= %s", string(a))

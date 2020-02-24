@@ -29,16 +29,14 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 				routes: routeMapping{
 					"test1": config.Routes{
 						&config.Route{
-							ID:          "1234",
-							Source:      config.RouteSource{},
-							Destination: config.RouteDestination{},
+							ID:     "1234",
+							Source: config.RouteSource{},
 						},
 					},
 					"test2": config.Routes{
 						&config.Route{
-							ID:          "12345",
-							Source:      config.RouteSource{},
-							Destination: config.RouteDestination{},
+							ID:     "12345",
+							Source: config.RouteSource{},
 						},
 					},
 				},
@@ -49,9 +47,8 @@ func TestRouting_DeleteProjectRoutes(t *testing.T) {
 			want: routeMapping{
 				"test2": config.Routes{
 					&config.Route{
-						ID:          "12345",
-						Source:      config.RouteSource{},
-						Destination: config.RouteDestination{},
+						ID:     "12345",
+						Source: config.RouteSource{},
 					},
 				},
 			},
@@ -99,18 +96,16 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 				project: "test1",
 				routes: config.Routes{
 					&config.Route{
-						ID:          "12345",
-						Source:      config.RouteSource{},
-						Destination: config.RouteDestination{},
+						ID:     "12345",
+						Source: config.RouteSource{},
 					},
 				},
 			},
 			want: routeMapping{
 				"test1": config.Routes{
 					&config.Route{
-						ID:          "12345",
-						Source:      config.RouteSource{},
-						Destination: config.RouteDestination{},
+						ID:     "12345",
+						Source: config.RouteSource{},
 					},
 				},
 			},
