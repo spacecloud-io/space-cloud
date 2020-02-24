@@ -15,8 +15,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
-// HandleProcessEventResponse gets response for event
-func HandleProcessEventResponse(adminMan *admin.Manager, eventing *eventing.Module) http.HandlerFunc {
+// HandleEventResponse gets response for event
+func HandleEventResponse(adminMan *admin.Manager, eventing *eventing.Module) http.HandlerFunc {
 	type request struct {
 		BatchID  string      `json:"batchID"`
 		Response interface{} `json:"response"`
@@ -121,7 +121,7 @@ func HandleQueueEvent(eventing *eventing.Module) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		if req.IsSynchronous {
+		if res != nil {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
 			return
 		}

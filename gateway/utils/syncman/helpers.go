@@ -78,8 +78,8 @@ func (s *Manager) GetNodeID() string {
 	return s.nodeID
 }
 
-// GetEventStagingSpaceCloudURL returns addr for corresponding nodeID
-func (s *Manager) GetEventStagingSpaceCloudURL(nodeID string) (string, error) {
+// GetSpaceCloudURLFromID returns addr for corresponding nodeID
+func (s *Manager) GetSpaceCloudURLFromID(nodeID string) (string, error) {
 	for _, service := range s.services {
 		if nodeID == service.id {
 			return service.addr, nil

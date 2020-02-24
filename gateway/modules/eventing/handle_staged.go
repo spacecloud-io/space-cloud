@@ -167,12 +167,12 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	}
 
 	if eventResponse.Response != nil {
-		url, err := m.syncMan.GetEventStagingSpaceCloudURL(strings.Split(eventDoc.BatchID, ".")[1])
+		url, err := m.syncMan.GetSpaceCloudURLFromID(strings.Split(eventDoc.BatchID, "--")[1])
 		if err != nil {
 			logrus.Errorf("error invoking web hook in eventing unable to get sc addr from batchID %s - %s", eventDoc.BatchID, err)
 			return err
 		}
-		url = fmt.Sprintf("http://%s/v1/api/eventing/process-event-response", url)
+		url = fmt.Sprintf("http://%s/v1/api/%s/eventing/process-event-response", url, m.project)
 		if err := m.syncMan.MakeHTTPRequest(ctxLocal, http.MethodPost, url, internalToken, scToken, map[string]interface{}{"batchID": eventDoc.BatchID, "response": eventResponse.Response}, &map[string]interface{}{}); err != nil {
 			logrus.Errorf("error invoking web hook in eventing unable to send http request for synchronous response to url %s - %s", url, err.Error())
 			return err
@@ -180,7 +180,7 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	}
 
 	if len(eventRequests) > 0 {
-		if _, err := m.batchRequests(ctx, eventRequests); err != nil {
+		if err := m.batchRequests(ctx, eventRequests, eventDoc.BatchID); err != nil {
 			logrus.Errorf("error invoking web hook in eventing unable to persist events off - %s", err.Error())
 		}
 	}

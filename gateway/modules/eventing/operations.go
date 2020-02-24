@@ -36,18 +36,19 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 		return nil, err
 	}
 
-	batchID, err := m.batchRequests(ctx, []*model.QueueEventRequest{req})
-	if err != nil {
+	batchID := m.generateBatchID()
+	responseChan := make(chan interface{}, 1)
+	defer close(responseChan) // close channel
+	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
+	defer m.eventChanMap.Delete(batchID)
+
+	if err = m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
 		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
 		return nil, err
 	}
 
 	// if true then wait for event response
 	if req.IsSynchronous {
-		responseChan := make(chan interface{})
-		defer close(responseChan) // close channel
-		defer m.eventChanMap.Delete(batchID)
-		m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
 		for {
 			select {
 			case <-ctx.Done():

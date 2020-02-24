@@ -51,16 +51,15 @@ type eventResponse struct {
 func New(auth *auth.Module, crud *crud.Module, schemaModule *schema.Schema, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
 
 	m := &Module{
-		auth:         auth,
-		crud:         crud,
-		schema:       schemaModule,
-		functions:    functions,
-		adminMan:     adminMan,
-		syncMan:      syncMan,
-		schemas:      map[string]schema.Fields{},
-		fileStore:    file,
-		eventChanMap: sync.Map{},
-		config:       &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
+		auth:      auth,
+		crud:      crud,
+		schema:    schemaModule,
+		functions: functions,
+		adminMan:  adminMan,
+		syncMan:   syncMan,
+		schemas:   map[string]schema.Fields{},
+		fileStore: file,
+		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
 
 	// Start the internal processes
