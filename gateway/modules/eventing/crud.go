@@ -40,7 +40,7 @@ func (m *Module) HookDBCreateIntent(ctx context.Context, dbAlias, col string, re
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest, false); err != nil {
 		return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 	}
 
@@ -95,7 +95,7 @@ func (m *Module) HookDBBatchIntent(ctx context.Context, dbAlias string, req *mod
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest, false); err != nil {
 		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
@@ -138,7 +138,7 @@ func (m *Module) hookDBUpdateDeleteIntent(ctx context.Context, eventType, dbAlia
 	if ok {
 		// Persist the event intent
 		createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-		if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+		if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest, false); err != nil {
 			return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 		}
 

@@ -111,7 +111,7 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 func (m *Module) executeBatch(project, dbAlias, tableName string, batchRequests []interface{}, responseChannels []batchResponseChan) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	if err := m.InternalCreate(ctx, dbAlias, project, tableName, &model.CreateRequest{Operation: utils.All, Document: batchRequests}); err != nil {
+	if err := m.InternalCreate(ctx, dbAlias, project, tableName, &model.CreateRequest{Operation: utils.All, Document: batchRequests}, true); err != nil {
 		logrus.Errorf("error executing batch request for database %s table %s - %s", dbAlias, tableName, err)
 		m.sendResponses(responseChannels, batchResponse{err: err})
 		return
