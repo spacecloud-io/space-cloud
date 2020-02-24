@@ -9,12 +9,13 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 )
 
-func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Router {
-	router := mux.NewRouter()
-	// TODO: Only limit the host of config and runner apis
-	if configDomain != "" {
-		router.Host(configDomain)
+func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []string) http.Handler {
+	// Add a '*' to the restricted hosts if length is zero
+	if len(restrictedHosts) == 0 {
+		restrictedHosts = append(restrictedHosts, "*")
 	}
+
+	router := mux.NewRouter()
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
@@ -27,10 +28,10 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	// Initialize the routes for remote services config
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleAddService(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleDeleteService(s.adminMan, s.syncMan))
- 
+
 	// Initialize route for user management config
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/{provider}").HandlerFunc(handlers.HandleUserManagement(s.adminMan, s.syncMan))
-	
+
 	// Initialize the routes for eventing config
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/triggers/{triggerName}").HandlerFunc(handlers.HandleAddEventingTriggerRule(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/triggers/{triggerName}").HandlerFunc(handlers.HandleDeleteEventingTriggerRule(s.adminMan, s.syncMan))
@@ -39,7 +40,7 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/schema/{type}").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/rules/{type}").HandlerFunc(handlers.HandleAddEventingSecurityRule(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/rules/{type}").HandlerFunc(handlers.HandleDeleteEventingSecurityRule(s.adminMan, s.syncMan))
-	
+
 	// Initialize the routes for file storage config
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan))
@@ -134,5 +135,5 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 
 	// Add handler for routing module
 	router.PathPrefix("/").HandlerFunc(s.routing.HandleRoutes())
-	return router
+	return s.restrictDomainMiddleware(restrictedHosts, router)
 }
