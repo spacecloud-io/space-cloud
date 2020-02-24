@@ -4,11 +4,11 @@ import "net/http"
 
 func (s *Server) routes() {
 	// project routes
-	s.router.Methods(http.MethodPost).Path("/v1/runner/project").HandlerFunc(s.handleCreateProject())
+	s.router.Methods(http.MethodPost).Path("/v1/runner/project/{project}").HandlerFunc(s.handleCreateProject())
 	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}").HandlerFunc(s.handleDeleteProject())
 
 	// service routes
-	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/services").HandlerFunc(s.handleApplyService())
+	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/services/{serviceId}/{version}").HandlerFunc(s.handleApplyService())
 	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/event-service").HandlerFunc(s.HandleApplyEventingService())
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/services").HandlerFunc(s.HandleGetServices())
 	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}/services/{serviceId}/{version}").HandlerFunc(s.HandleDeleteService())

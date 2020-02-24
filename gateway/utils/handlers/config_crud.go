@@ -304,40 +304,8 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 	}
 }
 
-// HandleCreateProject is an endpoint handler which adds a project configuration in config
-func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-		projectConfig := config.Project{}
-		_ = json.NewDecoder(r.Body).Decode(&projectConfig)
-		defer utils.CloseTheCloser(r.Body)
-
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
-		statusCode, err := syncman.CreateProjectConfig(ctx, &projectConfig)
-		if err != nil {
-			w.WriteHeader(statusCode)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
-	}
-}
-
-// HandleSchemaInspection gets the schema for particular collection & update the database collection schema in config
-func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
+// HandleInspectCollectionSchema gets the schema for particular collection & update the database collection schema in config
+func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
