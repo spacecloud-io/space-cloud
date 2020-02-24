@@ -33,11 +33,6 @@ func Apply() error {
 		logrus.Errorf("error while applying service unable to unmarshal file (%s) - %s", fileName, err.Error())
 		return err
 	}
-	projectId := fileContent.Meta["projectId"]
-	spec := fileContent.Spec.(map[string]interface{})
-	spec["id"] = fileContent.Meta["id"]
-	spec["projectId"] = projectId
-	spec["version"] = fileContent.Meta["version"]
 	requestBody, err := json.Marshal(fileContent.Spec)
 	if err != nil {
 		logrus.Errorf("error while applying service unable to marshal spec - %s", err.Error())

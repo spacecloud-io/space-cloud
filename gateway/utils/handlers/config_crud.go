@@ -313,6 +313,11 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 		_ = json.NewDecoder(r.Body).Decode(&projectConfig)
 		defer utils.CloseTheCloser(r.Body)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		projectConfig.ID = projectID
+
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -336,8 +341,8 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 	}
 }
 
-// HandleSchemaInspection gets the schema for particular collection & update the database collection schema in config
-func HandleSchemaInspection(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
+// HandleInspectCollectionSchema gets the schema for particular collection & update the database collection schema in config
+func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)

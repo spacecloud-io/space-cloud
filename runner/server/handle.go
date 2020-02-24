@@ -34,6 +34,9 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 			return
 		}
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
 		// Parse request body
 		project := new(model.Project)
 		if err := json.NewDecoder(r.Body).Decode(project); err != nil {
@@ -41,6 +44,8 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		project.ID = projectID
 
 		// Apply the service config
 		if err := s.driver.CreateProject(ctx, project); err != nil {
@@ -100,6 +105,8 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+		serviceID := vars["serviceId"]
+		version := vars["version"]
 
 		// Parse request body
 		service := new(model.Service)
@@ -110,6 +117,8 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		}
 
 		service.ProjectID = projectID
+		service.ID = serviceID
+		service.Version = version
 
 		// TODO: Override the project id present in the service object with the one present in the token if user not admin
 
