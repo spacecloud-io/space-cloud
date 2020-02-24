@@ -28,6 +28,9 @@ type Module struct {
 	project            string
 	removeProjectScope bool
 
+	// batch operation
+	batchMapTableToChan batchMap // every table gets mapped to group of channels
+
 	dataLoader loader
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
@@ -61,7 +64,7 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init(removeProjectScope bool) *Module {
-	return &Module{removeProjectScope: removeProjectScope, dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 // SetHooks sets the internal hooks
@@ -94,6 +97,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
+	m.closeBatchOperation()
 
 	if len(crud) > 1 {
 		return errors.New("crud module cannot have more than 1 db")
@@ -132,6 +136,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
 	}
+	m.initBatchOperation(project, crud)
 	return nil
 }
 
