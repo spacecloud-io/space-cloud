@@ -7,7 +7,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// InternalCreate inserts a document (or multiple when op is "all") into the database based on dbAlias.
+// InternalCreate inserts a documents (or multiple when op is "all") into the database based on dbAlias.
 // It does not invoke any hooks. This should only be used by the eventing module.
 func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest) error {
 	m.RLock()
@@ -38,7 +38,7 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 	return err
 }
 
-// InternalUpdate updates the document(s) which match a query from the database based on dbType.
+// InternalUpdate updates the documents(s) which match a query from the database based on dbType.
 // It does not invoke any hooks. This should only be used by the eventing module.
 func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
 	m.RLock()
@@ -64,7 +64,7 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 	return err
 }
 
-// InternalDelete removes the document(s) which match a query from the database based on dbType.
+// InternalDelete removes the documents(s) which match a query from the database based on dbType.
 // It does not invoke any hooks. This should only be used by the eventing module.
 func (m *Module) InternalDelete(ctx context.Context, dbAlias, project, col string, req *model.DeleteRequest) error {
 	m.RLock()

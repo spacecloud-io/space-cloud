@@ -25,8 +25,8 @@ type (
 	batchResponseChan chan batchResponse
 
 	batchRequest struct {
-		document []interface{}
-		response batchResponseChan
+		documents []interface{}
+		response  batchResponseChan
 	}
 	batchResponse struct {
 		err error
@@ -89,7 +89,7 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 			return
 		case v := <-addInsertToBatchCh:
 			responseChannels = append(responseChannels, v.response)
-			batchRequests = append(batchRequests, v.document...)
+			batchRequests = append(batchRequests, v.documents...)
 			if len(batchRequests) >= batchRecordLimit {
 				m.executeBatch(project, dbAlias, tableName, batchRequests, responseChannels)
 				batchRequests = make([]interface{}, 0)          // clear the requests array
