@@ -25,12 +25,11 @@ type (
 	batchResponseChan chan batchResponse
 
 	batchRequest struct {
-		document interface{}
+		document []interface{}
 		response batchResponseChan
 	}
 	batchResponse struct {
-		err          error
-		docsInserted int64
+		err error
 	}
 )
 
@@ -50,12 +49,16 @@ func (m *Module) initBatchOperation(project string, crud config.Crud) {
 	batch := batchMap{}
 	for dbAlias, dbInfo := range crud {
 		if dbInfo.Enabled {
-			for tableName, tableInfo := range dbInfo.Collections {
+			for tableName := range dbInfo.Collections {
 				closeC := make(chan struct{})                    // channel for closing go routine
 				addInsertToBatchCh := make(batchRequestChan, 20) // channel for adding request to batch op
-				go m.insertBatchExecutor(closeC, addInsertToBatchCh, dbInfo.BatchTime, project, dbAlias, tableName, tableInfo.BatchRecords)
+				go m.insertBatchExecutor(closeC, addInsertToBatchCh, dbInfo.BatchTime, project, dbAlias, tableName, dbInfo.BatchRecords)
 				if batch[project] == nil {
 					batch[project] = map[string]map[string]batchChannels{dbAlias: {tableName: {request: addInsertToBatchCh, closeC: closeC}}}
+					continue
+				}
+				if batch[project][dbAlias] == nil {
+					batch[project][dbAlias] = map[string]batchChannels{tableName: {request: addInsertToBatchCh, closeC: closeC}}
 					continue
 				}
 				batch[project][dbAlias][tableName] = batchChannels{request: addInsertToBatchCh, closeC: closeC}
@@ -86,12 +89,7 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 			return
 		case v := <-addInsertToBatchCh:
 			responseChannels = append(responseChannels, v.response)
-			switch docType := v.document.(type) {
-			case map[string]interface{}:
-				batchRequests = append(batchRequests, docType)
-			case []interface{}:
-				batchRequests = append(batchRequests, docType...)
-			}
+			batchRequests = append(batchRequests, v.document...)
 			if len(batchRequests) >= batchRecordLimit {
 				m.executeBatch(project, dbAlias, tableName, batchRequests, responseChannels)
 				batchRequests = make([]interface{}, 0)          // clear the requests array
@@ -115,11 +113,11 @@ func (m *Module) executeBatch(project, dbAlias, tableName string, batchRequests 
 	defer cancel()
 	if err := m.InternalCreate(ctx, dbAlias, project, tableName, &model.CreateRequest{Operation: utils.All, Document: batchRequests}); err != nil {
 		logrus.Errorf("error executing batch request for database %s table %s - %s", dbAlias, tableName, err)
-		m.sendResponses(responseChannels, batchResponse{err: err, docsInserted: 0})
+		m.sendResponses(responseChannels, batchResponse{err: err})
 		return
 	}
 	// send response to all client request
-	m.sendResponses(responseChannels, batchResponse{err: nil, docsInserted: int64(len(batchRequests))})
+	m.sendResponses(responseChannels, batchResponse{err: nil})
 }
 
 func (m *Module) sendResponses(responseChannels []batchResponseChan, response batchResponse) {

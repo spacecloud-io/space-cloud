@@ -28,8 +28,8 @@ func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *
 	}
 
 	var n int64
-	// add the request for batch operation
 	if req.IsBatch {
+		// add the request for batch operation
 		n, err = m.createBatch(project, dbAlias, col, req.Document)
 	} else {
 		// Perform the create operation

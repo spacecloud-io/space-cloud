@@ -78,12 +78,13 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Type        string                `json:"type" yaml:"type"` // database type
-	Conn        string                `json:"conn" yaml:"conn"`
-	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
-	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
-	Enabled     bool                  `json:"enabled" yaml:"enabled"`
-	BatchTime   int                   `json:"batchTime" yaml:"batchTime"` // time in milli seconds
+	Type         string                `json:"type" yaml:"type"` // database type
+	Conn         string                `json:"conn" yaml:"conn"`
+	Collections  map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
+	IsPrimary    bool                  `json:"isPrimary" yaml:"isPrimary"`
+	Enabled      bool                  `json:"enabled" yaml:"enabled"`
+	BatchTime    int                   `json:"batchTime" yaml:"batchTime"`       // time in milli seconds
+	BatchRecords int                   `json:"batchRecords" yaml:"batchRecords"` // indicates number of records per batch
 }
 
 // TableRule contains the config at the collection level
@@ -91,7 +92,6 @@ type TableRule struct {
 	IsRealTimeEnabled bool             `json:"isRealtimeEnabled" yaml:"isRealtimeEnabled"`
 	Rules             map[string]*Rule `json:"rules" yaml:"rules"` // The key here is query, insert, update or delete
 	Schema            string           `json:"schema" yaml:"schema"`
-	BatchRecords      int              `json:"batchRecords" yaml:"batchRecords"` // indicates number of records per batch
 }
 
 // Rule is the authorisation object at the query level
