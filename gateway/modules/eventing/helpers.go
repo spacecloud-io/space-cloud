@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/fatih/structs"
@@ -45,6 +46,10 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 		logrus.Errorln("Eventing module could not transmit event:", err)
 		log.Println(res)
 	}
+}
+
+func (m *Module) getSpaceCloudIDFromBatchID(batchID string) string {
+	return strings.Split(batchID, "--")[1]
 }
 
 func (m *Module) generateBatchID() string {

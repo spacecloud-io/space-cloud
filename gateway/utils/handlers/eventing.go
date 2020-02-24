@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
@@ -16,7 +18,7 @@ import (
 )
 
 // HandleEventResponse gets response for event
-func HandleEventResponse(adminMan *admin.Manager, eventing *eventing.Module) http.HandlerFunc {
+func HandleEventResponse(auth *auth.Module, eventing *eventing.Module) http.HandlerFunc {
 	type request struct {
 		BatchID  string      `json:"batchID"`
 		Response interface{} `json:"response"`
@@ -38,7 +40,7 @@ func HandleEventResponse(adminMan *admin.Manager, eventing *eventing.Module) htt
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := auth.IsTokenInternal(token); err != nil {
 			logrus.Errorf("error handling process event response token not valid - %s", err.Error())
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

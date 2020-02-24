@@ -167,7 +167,7 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	}
 
 	if eventResponse.Response != nil {
-		url, err := m.syncMan.GetSpaceCloudURLFromID(strings.Split(eventDoc.BatchID, "--")[1])
+		url, err := m.syncMan.GetSpaceCloudURLFromID(m.getSpaceCloudIDFromBatchID(eventDoc.BatchID))
 		if err != nil {
 			logrus.Errorf("error invoking web hook in eventing unable to get sc addr from batchID %s - %s", eventDoc.BatchID, err)
 			return err

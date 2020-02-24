@@ -88,7 +88,7 @@ func (s *Server) routes(profiler bool, staticPath, configDomain string) *mux.Rou
 	// Initialize the routes for eventing service
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/queue").HandlerFunc(handlers.HandleQueueEvent(s.eventing))
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/eventing/process").HandlerFunc(handlers.HandleProcessEvent(s.adminMan, s.eventing))
-	router.Methods(http.MethodPost).Path("/v1/api/{project}eventing/process-event-response").HandlerFunc(handlers.HandleEventResponse(s.adminMan, s.eventing))
+	router.Methods(http.MethodPost).Path("/v1/api/{project}eventing/process-event-response").HandlerFunc(handlers.HandleEventResponse(s.auth, s.eventing))
 
 	// Initialize the routes for the crud operations
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/batch").HandlerFunc(handlers.HandleCrudBatch(s.auth, s.crud, s.realtime))
