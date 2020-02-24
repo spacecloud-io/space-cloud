@@ -12,15 +12,17 @@ type ReadRequest struct {
 	Find      map[string]interface{} `json:"find"`
 	Operation string                 `json:"op"`
 	Options   *ReadOptions           `json:"options"`
+	IsBatch   bool                   `json:"isBatch"`
 }
 
 // ReadOptions is the options required for a read request
 type ReadOptions struct {
-	Select   map[string]int32 `json:"select"`
-	Sort     []string         `json:"sort"`
-	Skip     *int64           `json:"skip"`
-	Limit    *int64           `json:"limit"`
-	Distinct *string          `json:"distinct"`
+	Select     map[string]int32 `json:"select"`
+	Sort       []string         `json:"sort"`
+	Skip       *int64           `json:"skip"`
+	Limit      *int64           `json:"limit"`
+	Distinct   *string          `json:"distinct"`
+	HasOptions bool             `json:"hasOptions"` // used internally
 }
 
 // UpdateRequest is the http body received for an update request
