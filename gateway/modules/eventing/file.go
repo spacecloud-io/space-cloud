@@ -5,8 +5,6 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/segmentio/ksuid"
-
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -23,7 +21,7 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := ksuid.New().String()
+	batchID := m.generateBatchID()
 
 	rules := m.getMatchingRules(utils.EventFileCreate, map[string]string{})
 
@@ -65,7 +63,7 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	}
 
 	// Create a unique batch id and token
-	batchID := ksuid.New().String()
+	batchID := m.generateBatchID()
 	token := rand.Intn(utils.MaxEventTokens)
 
 	rules := m.getMatchingRules(utils.EventFileDelete, map[string]string{})

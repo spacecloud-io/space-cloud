@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/fatih/structs"
@@ -47,10 +48,17 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	}
 }
 
-func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest) error {
+func (m *Module) getSpaceCloudIDFromBatchID(batchID string) string {
+	return strings.Split(batchID, "--")[1]
+}
+
+func (m *Module) generateBatchID() string {
+	return fmt.Sprintf("%s--%s", ksuid.New().String(), m.syncMan.GetNodeID())
+}
+
+func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := ksuid.New().String()
 
 	// Create an eventDocs array
 	var eventDocs []*model.EventDocument

@@ -66,6 +66,7 @@ var essentialFlags = []cli.Flag{
 		Name:   "advertise-addr",
 		Usage:  "The address which will be broadcast to other space cloud instances",
 		EnvVar: "ADVERTISE_ADDR",
+		Value:  "localhost:4122",
 	},
 	cli.StringFlag{
 		Name:   "store-type",
@@ -224,7 +225,7 @@ func actionRun(c *cli.Context) error {
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
-	advertiseAddr := c.String("advice-addr")
+	advertiseAddr := c.String("advertise-addr")
 
 	// Load the flags for the metrics module
 	enableMetrics := c.Bool("enable-metrics")
