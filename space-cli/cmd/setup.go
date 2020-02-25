@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,7 +47,7 @@ func generateRandomString(length int) string {
 }
 
 // CodeSetup initializes development environment
-func CodeSetup(id, username, key, secret string, dev bool) error {
+func CodeSetup(id, username, key, secret string, dev, sslEnable bool, portHTTP, portHTTPS int64) error {
 	// TODO: old keys always remain in accounts.yaml file
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
@@ -87,6 +88,14 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 		devMode = "true" // todo: even the flag set true in dev of container sc didn't start in prod mode
 	}
 
+	sslMode := "false"
+	if sslEnable {
+		sslMode = "true"
+	}
+
+	portHTTPValue := strconv.FormatInt(portHTTP, 10)
+	portHTTPSValue := strconv.FormatInt(portHTTPS, 10)
+
 	containersToCreate := []struct {
 		dnsName        string
 		containerImage string
@@ -107,12 +116,15 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 				"ADMIN_PASS=" + key,
 				"ADMIN_SECRET=" + secret,
 				"DEV=" + devMode,
+				"SSL_ENABLE=" + sslMode,
 			},
 			exposedPorts: nat.PortSet{
 				"4122": struct{}{},
+				"4126": struct{}{},
 			},
 			portMapping: nat.PortMap{
-				"4122": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "4122"}},
+				"4122": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPValue}},
+				"4126": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPSValue}},
 			},
 			mount: []mount.Mount{
 				{
