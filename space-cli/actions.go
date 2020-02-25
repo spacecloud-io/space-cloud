@@ -73,5 +73,9 @@ func actionSetup(c *cli.Context) error {
 	key := c.String("key")
 	secret := c.String("secret")
 	local := c.Bool("dev")
-	return cmd.CodeSetup(id, userName, key, secret, local)
+	portHTTP := c.Int64("port-http")
+	portHTTPS := c.Int64("port-https")
+	sslEnable := c.Bool("ssl-enable")
+
+	return cmd.CodeSetup(id, userName, key, secret, local, sslEnable, portHTTP, portHTTPS)
 }
