@@ -18,13 +18,13 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 		"key":  selectedAccount.Key,
 	})
 	if err != nil {
-		logrus.Error("error in login unable to marshal data - %v", err)
+		logrus.Errorf("error in login unable to marshal data - %s", err.Error())
 		return nil, err
 	}
 
-	resp, err := http.Post(fmt.Sprintf("%s/v1/config/login?cli=true", selectedAccount.ServerUrl), "application/json", bytes.NewBuffer(requestBody))
+	resp, err := http.Post(fmt.Sprintf("%s/v1/config/login?cli=true", selectedAccount.ServerURL), "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
-		logrus.Error("error in login unable to send http request - %v", err)
+		logrus.Errorf("error in login unable to send http request - %s", err.Error())
 		return nil, err
 	}
 	defer CloseTheCloser(resp.Body)
@@ -56,7 +56,7 @@ func LoginStart(userName, key, url string) error {
 	account := model.Account{
 		UserName:  userName,
 		Key:       key,
-		ServerUrl: url,
+		ServerURL: url,
 	}
 	_, err := login(&account)
 	if err != nil {
@@ -67,7 +67,7 @@ func LoginStart(userName, key, url string) error {
 		ID:        userName,
 		UserName:  userName,
 		Key:       key,
-		ServerUrl: url,
+		ServerURL: url,
 	}
 	// write credentials into accounts.yaml file
 	if err := checkCred(&account); err != nil {

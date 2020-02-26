@@ -76,7 +76,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		ID:        id,
 		UserName:  username,
 		Key:       key,
-		ServerUrl: "http://localhost:4122",
+		ServerURL: "http://localhost:4122",
 	}
 
 	if err := checkCred(&selectedAccount); err != nil {
@@ -253,7 +253,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 
 	fmt.Println()
 	logrus.Infof("Space Cloud (id: \"%s\") has been successfully setup! 👍", selectedAccount.ID)
-	logrus.Infof("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerUrl)
+	logrus.Infof("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL)
 	logrus.Infof("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key)
 	return nil
 }
@@ -267,7 +267,7 @@ func pullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image
 			logrus.Errorf("Unable to pull public image with id (%s) - %s", image, err.Error())
 			return err
 		}
-		io.Copy(ioutil.Discard, out)
+		_, _ = io.Copy(ioutil.Discard, out)
 	}
 	return nil
 }

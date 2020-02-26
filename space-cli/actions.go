@@ -13,15 +13,15 @@ import (
 	"github.com/spaceuptech/space-cli/model"
 )
 
-func actionApply(c *cli.Context) error {
+func actionApply(_ *cli.Context) error {
 	return cmd.Apply()
 }
 
-func actionDestroy(c *cli.Context) error {
+func actionDestroy(_ *cli.Context) error {
 	return cmd.Destroy()
 }
 
-func actionGenerateService(c *cli.Context) error {
+func actionGenerateService(_ *cli.Context) error {
 	// get filename from args in which service config will be stored
 	argsArr := os.Args
 	if len(argsArr) != 4 {
@@ -33,8 +33,8 @@ func actionGenerateService(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	v := model.GitOp{
-		Api:  "/v1/runner/{projectId}/services",
+	v := model.SpecObject{
+		API:  "/v1/runner/{projectId}/services",
 		Type: "service",
 		Meta: map[string]string{
 			"id":        service.ID,
