@@ -50,7 +50,7 @@ func (r routeMapping) selectRoute(host, method, url string) (*config.Route, erro
 		}
 	}
 
-	return nil, fmt.Errorf("route not found for provided host (%s) and url (%s)", host, url)
+	return nil, fmt.Errorf("route not found for provided host (%s), method (%s) and url (%s)", host, method, url)
 }
 
 func (r *Routing) selectRoute(host, method, url string) (*config.Route, error) {
