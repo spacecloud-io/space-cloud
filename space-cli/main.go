@@ -107,10 +107,13 @@ func main() {
 					EnvVar: "PORT_HTTPS",
 					Value:  4126,
 				},
-				cli.BoolFlag{
-					Name:   "ssl-enable",
-					Usage:  "Enable https and lets encrypt support",
-					EnvVar: "SSL_ENABLE",
+				cli.StringSliceFlag{
+					Name:  "v",
+					Usage: "Volume to be attached to gateway",
+				},
+				cli.StringSliceFlag{
+					Name:  "e",
+					Usage: "Environment variable to provided to gateway",
 				},
 			},
 			Action: actionSetup,

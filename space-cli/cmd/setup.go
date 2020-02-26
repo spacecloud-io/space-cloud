@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -47,7 +48,7 @@ func generateRandomString(length int) string {
 }
 
 // CodeSetup initializes development environment
-func CodeSetup(id, username, key, secret string, dev, sslEnable bool, portHTTP, portHTTPS int64) error {
+func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
@@ -88,13 +89,37 @@ func CodeSetup(id, username, key, secret string, dev, sslEnable bool, portHTTP, 
 		devMode = "true" // todo: even the flag set true in dev of container sc didn't start in prod mode
 	}
 
-	sslMode := "false"
-	if sslEnable {
-		sslMode = "true"
-	}
-
 	portHTTPValue := strconv.FormatInt(portHTTP, 10)
 	portHTTPSValue := strconv.FormatInt(portHTTPS, 10)
+
+	envs := []string{
+		"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
+		"RUNNER_ADDR=runner.space-cloud.svc.cluster.local:4050",
+		"ADMIN_USER=" + username,
+		"ADMIN_PASS=" + key,
+		"ADMIN_SECRET=" + secret,
+		"DEV=" + devMode,
+	}
+
+	envs = append(envs, environmentVariables...)
+
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: getSpaceCloudHostsFilePath(),
+			Target: "/etc/hosts",
+		},
+	}
+
+	for _, volume := range volumes {
+		temp := strings.Split(volume, ":")
+		if len(temp) != 2 {
+			logrus.Errorf("error in setup volume flag of incorrect format")
+			return errors.New("error in setup volume flag of incorrect format")
+		}
+
+		mounts = append(mounts, mount.Mount{Type: mount.TypeBind, Source: temp[0], Target: temp[1]})
+	}
 
 	containersToCreate := []struct {
 		dnsName        string
@@ -109,15 +134,7 @@ func CodeSetup(id, username, key, secret string, dev, sslEnable bool, portHTTP, 
 			containerImage: "spaceuptech/gateway",
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
-			envs: []string{
-				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
-				"RUNNER_ADDR=runner.space-cloud.svc.cluster.local:4050",
-				"ADMIN_USER=" + username,
-				"ADMIN_PASS=" + key,
-				"ADMIN_SECRET=" + secret,
-				"DEV=" + devMode,
-				"SSL_ENABLE=" + sslMode,
-			},
+			envs:           envs,
 			exposedPorts: nat.PortSet{
 				"4122": struct{}{},
 				"4126": struct{}{},
@@ -126,13 +143,7 @@ func CodeSetup(id, username, key, secret string, dev, sslEnable bool, portHTTP, 
 				"4122": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPValue}},
 				"4126": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPSValue}},
 			},
-			mount: []mount.Mount{
-				{
-					Type:   mount.TypeBind,
-					Source: getSpaceCloudHostsFilePath(),
-					Target: "/etc/hosts",
-				},
-			},
+			mount: mounts,
 		},
 		{
 			// runner
