@@ -23,7 +23,7 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 		host, url := getHostAndURL(request)
 
 		// Select a route based on host and url
-		route, err := r.selectRoute(host, url)
+		route, err := r.selectRoute(host, request.Method, url)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
