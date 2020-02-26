@@ -66,6 +66,7 @@ func createDirIfNotExist(dir string) error {
 	return nil
 }
 
+// CloseTheCloser closes the closer
 func CloseTheCloser(c io.Closer) {
 	_ = c.Close()
 }
