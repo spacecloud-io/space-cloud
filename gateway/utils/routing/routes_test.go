@@ -3,6 +3,7 @@ package routing
 import (
 	"encoding/json"
 	"log"
+	"net/http"
 	"reflect"
 	"testing"
 
@@ -11,8 +12,9 @@ import (
 
 func Test_routeMapping_selectRoute(t *testing.T) {
 	type args struct {
-		host string
-		url  string
+		host   string
+		method string
+		url    string
 	}
 	tests := []struct {
 		name    string
@@ -230,7 +232,6 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			},
 			wantErr: false,
 		},
-
 		{
 			name: "url not match",
 			r: routeMapping{
@@ -256,88 +257,105 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.r.selectRoute(tt.args.host, tt.args.url)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("routeMapping.selectRoute() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("routeMapping.selectRoute() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestRouting_selectRoute(t *testing.T) {
-	type fields struct {
-		routes routeMapping
-	}
-	type args struct {
-		host string
-		url  string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *config.Route
-		wantErr bool
-	}{
-		// TODO: Add test cases.
 		{
-			name: "host match and url prefix match",
-			fields: fields{
-				routes: routeMapping{
-					"test": config.Routes{
-						&config.Route{
-							ID: "1234",
-							Source: config.RouteSource{
-								Hosts: []string{"spaceuptech.com"},
-								URL:   "/abc",
-								Type:  config.RoutePrefix,
-							},
-							Targets: []config.RouteTarget{{
-								Host: "git.com",
-								Port: "8080",
-							}},
+			name: "methods not match",
+			r: routeMapping{
+				"test": config.Routes{
+					&config.Route{
+						ID: "1234",
+						Source: config.RouteSource{
+							Hosts:   []string{"spaceuptech.com"},
+							Methods: []string{http.MethodGet, http.MethodDelete},
+							URL:     "/abc",
+							Type:    config.RoutePrefix,
+						},
+						Targets: []config.RouteTarget{{
+							Host: "git.com",
+							Port: "8080",
+						}},
+					},
+				},
+			},
+			args: args{
+				host:   "spaceuptech.com",
+				method: http.MethodPatch,
+				url:    "/abc/xyz",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "* method",
+			r: routeMapping{
+				"test": config.Routes{
+					&config.Route{
+						ID: "1234",
+						Source: config.RouteSource{
+							Hosts:   []string{"spaceuptech.com"},
+							Methods: []string{"*"},
+							URL:     "/abc",
+							Type:    config.RoutePrefix,
 						},
 					},
 				},
 			},
 			args: args{
-				host: "spaceuptech.com",
-				url:  "/abc/xyz",
+				host:   "spaceuptech.com",
+				method: http.MethodPatch,
+				url:    "/abc/xyz",
 			},
 			want: &config.Route{
 				ID: "1234",
 				Source: config.RouteSource{
-					Hosts: []string{"spaceuptech.com"},
-					URL:   "/abc",
-					Type:  config.RoutePrefix,
+					Hosts:   []string{"spaceuptech.com"},
+					Methods: []string{"*"},
+					URL:     "/abc",
+					Type:    config.RoutePrefix,
 				},
-				Targets: []config.RouteTarget{{
-					Host: "git.com",
-					Port: "8080",
-				}},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid method",
+			r: routeMapping{
+				"test": config.Routes{
+					&config.Route{
+						ID: "1234",
+						Source: config.RouteSource{
+							Hosts:   []string{"spaceuptech.com"},
+							Methods: []string{http.MethodPatch, http.MethodGet},
+							URL:     "/abc",
+							Type:    config.RoutePrefix,
+						},
+					},
+				},
+			},
+			args: args{
+				host:   "spaceuptech.com",
+				method: http.MethodPatch,
+				url:    "/abc/xyz",
+			},
+			want: &config.Route{
+				ID: "1234",
+				Source: config.RouteSource{
+					Hosts:   []string{"spaceuptech.com"},
+					Methods: []string{http.MethodPatch, http.MethodGet},
+					URL:     "/abc",
+					Type:    config.RoutePrefix,
+				},
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Routing{
-				routes: tt.fields.routes,
-			}
-			got, err := r.selectRoute(tt.args.host, tt.args.url)
+			got, err := tt.r.selectRoute(tt.args.host, tt.args.method, tt.args.url)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Routing.selectRoute() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("routeMapping.selectRoute() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Routing.selectRoute() = %v, want %v", got, tt.want)
+				t.Errorf("routeMapping.selectRoute() = %v, want %v", got, tt.want)
 			}
 		})
 	}
