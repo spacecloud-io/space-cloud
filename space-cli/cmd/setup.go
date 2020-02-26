@@ -114,8 +114,8 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	for _, volume := range volumes {
 		temp := strings.Split(volume, ":")
 		if len(temp) != 2 {
-			logrus.Errorf("error in setup volume flag of incorrect format")
-			return errors.New("error in setup volume flag of incorrect format")
+			logrus.Errorf("Error in volume flag (%s) - incorrect format", volume)
+			return errors.New("incorrect format for volume flag")
 		}
 
 		mounts = append(mounts, mount.Mount{Type: mount.TypeBind, Source: temp[0], Target: temp[1]})

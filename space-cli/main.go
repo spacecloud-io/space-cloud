@@ -109,11 +109,11 @@ func main() {
 				},
 				cli.StringSliceFlag{
 					Name:  "v",
-					Usage: "Volume to be attached to gateway",
+					Usage: "Volumes to be attached to gateway",
 				},
 				cli.StringSliceFlag{
 					Name:  "e",
-					Usage: "Environment variable to be provided to gateway",
+					Usage: "Environment variables to be provided to gateway",
 				},
 			},
 			Action: actionSetup,
