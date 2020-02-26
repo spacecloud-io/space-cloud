@@ -11,6 +11,7 @@ import (
 	"github.com/spaceuptech/space-cli/model"
 )
 
+// GenerateService creates a service struct
 func GenerateService() (*model.Service, error) {
 	account, err := getSelectedAccount()
 	if err != nil {
@@ -74,9 +75,7 @@ func generateServiceConfig(projects []*model.Projects) (*model.Service, error) {
 			return nil, err
 		}
 		if fileEnvSecret != "" {
-			for _, value := range strings.Split(fileEnvSecret, ",") {
-				secrets = append(secrets, value)
-			}
+			secrets = append(secrets, strings.Split(fileEnvSecret, ",")...)
 		}
 	}
 

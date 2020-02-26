@@ -14,7 +14,7 @@ import (
 	"github.com/spaceuptech/space-cli/model"
 )
 
-// Apply
+// Apply reads the config file(s) from the provided file / directory and applies it to the server
 func Apply() error {
 	args := os.Args
 	if len(args) != 3 {
@@ -28,7 +28,7 @@ func Apply() error {
 		logrus.Errorf("error while applying service unable to read file (%s) - %s", fileName, err.Error())
 		return err
 	}
-	fileContent := new(model.GitOp)
+	fileContent := new(model.SpecObject)
 	if err := yaml.Unmarshal(data, &fileContent); err != nil {
 		logrus.Errorf("error while applying service unable to unmarshal file (%s) - %s", fileName, err.Error())
 		return err
@@ -50,7 +50,7 @@ func Apply() error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", account.ServerUrl, fileContent.Api), bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s%s", account.ServerURL, fileContent.API), bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err
 	}
