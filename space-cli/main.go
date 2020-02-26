@@ -113,7 +113,7 @@ func main() {
 				},
 				cli.StringSliceFlag{
 					Name:  "e",
-					Usage: "Environment variable to provided to gateway",
+					Usage: "Environment variable to be provided to gateway",
 				},
 			},
 			Action: actionSetup,
