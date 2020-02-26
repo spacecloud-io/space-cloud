@@ -40,6 +40,7 @@ func (r *Route) SelectTarget(weight float64) (RouteTarget, error) {
 // RouteSource is the source of routing
 type RouteSource struct {
 	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
+	Methods    []string     `json:"methods,omitempty" yaml:"hosts,omitempty"`
 	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
 	RewriteURL string       `json:"rewrite,omitempty" yaml:"rewrite,omitempty"`
 	Type       RouteURLType `json:"type,omitempty" yaml:"type,omitempty"`
