@@ -52,23 +52,23 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 	return nil, nil, fmt.Errorf("target database not provided for field %s", getFieldName(field))
 }
 
-func (graph *Module) execAllReq(ctx context.Context, dbType, project string, req *model.BatchRequest) (map[string]interface{}, error) {
+func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, req *model.BatchRequest) (map[string]interface{}, error) {
 	if len(req.Requests) == 1 {
 		r := req.Requests[0]
 		switch r.Type {
 		case string(utils.Create):
 			t := model.CreateRequest{Operation: r.Operation, Document: r.Document}
-			return map[string]interface{}{"status": 200}, graph.crud.Create(ctx, dbType, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200}, graph.crud.Create(ctx, dbAlias, graph.project, r.Col, &t)
 
 		case string(utils.Delete):
 
 			t := model.DeleteRequest{Operation: r.Operation, Find: r.Find}
-			return map[string]interface{}{"status": 200}, graph.crud.Delete(ctx, dbType, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200}, graph.crud.Delete(ctx, dbAlias, graph.project, r.Col, &t)
 
 		case string(utils.Update):
 
 			t := model.UpdateRequest{Operation: r.Operation, Find: r.Find, Update: r.Update}
-			return map[string]interface{}{"status": 200}, graph.crud.Update(ctx, dbType, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200}, graph.crud.Update(ctx, dbAlias, graph.project, r.Col, &t)
 
 		default:
 			return map[string]interface{}{"error": "Wrong Operation"}, nil
@@ -76,7 +76,7 @@ func (graph *Module) execAllReq(ctx context.Context, dbType, project string, req
 		}
 
 	}
-	return map[string]interface{}{"status": 200}, graph.crud.Batch(ctx, dbType, graph.project, req)
+	return map[string]interface{}{"status": 200}, graph.crud.Batch(ctx, dbAlias, graph.project, req)
 }
 
 func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token string, store utils.M, cb callback) {
@@ -92,13 +92,13 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 
 		field := v.(*ast.Field)
 
-		dbType, err := graph.GetDBAlias(field)
+		dbAlias, err := graph.GetDBAlias(field)
 		if err != nil {
 			cb(nil, err)
 			return
 		}
 
-		r, ok := reqs[dbType]
+		r, ok := reqs[dbAlias]
 		if !ok {
 			r = []model.AllRequest{}
 		}
@@ -111,26 +111,26 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 		}
 
 		// Keep a record of which field maps to which db and which returning docs
-		fieldDBMapping[getFieldName(field)] = dbType
+		fieldDBMapping[getFieldName(field)] = dbAlias
 		fieldReturningDocsMapping[getFieldName(field)] = returningDocs
 
 		// Add the request to the number of requests available for that database
 		r = append(r, generatedRequests...)
-		reqs[dbType] = r
+		reqs[dbAlias] = r
 	}
 
-	for dbType, reqs := range reqs {
-		obj, err := graph.execAllReq(ctx, dbType, graph.project, &model.BatchRequest{Requests: reqs})
+	for dbAlias, reqs := range reqs {
+		obj, err := graph.execAllReq(ctx, dbAlias, graph.project, &model.BatchRequest{Requests: reqs})
 		if err != nil {
 			obj["error"] = err.Error()
 			obj["status"] = 500
 		}
 
-		queryResults[dbType] = obj
+		queryResults[dbAlias] = obj
 	}
 
-	for fieldName, dbType := range fieldDBMapping {
-		result := queryResults[dbType]
+	for fieldName, dbAlias := range fieldDBMapping {
+		result := queryResults[dbAlias]
 		result["returning"] = fieldReturningDocsMapping[fieldName]
 		results[fieldName] = result
 	}

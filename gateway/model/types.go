@@ -28,7 +28,7 @@ type SchemaEventingInterface interface {
 
 //CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
 type CrudEventingInterface interface {
-	InternalCreate(ctx context.Context, dbAlias, project, col string, req *CreateRequest) error
+	InternalCreate(ctx context.Context, dbAlias, project, col string, req *CreateRequest, isIgnoreMetrics bool) error
 	InternalUpdate(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
 	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
 }

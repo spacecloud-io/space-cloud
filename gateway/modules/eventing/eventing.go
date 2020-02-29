@@ -3,6 +3,7 @@ package eventing
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 
@@ -32,6 +33,15 @@ type Module struct {
 	fileStore model.FilestoreEventingInterface
 
 	schemas map[string]model.Fields
+
+	// stores mapping of batchID w.r.t channel for sending synchronous event response
+	eventChanMap sync.Map // key here is batchID
+}
+
+// synchronous event response
+type eventResponse struct {
+	time     time.Time
+	response chan interface{}
 }
 
 // New creates a new instance of the eventing module

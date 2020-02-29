@@ -8,22 +8,44 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
+	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleGraphQLRequest creates the graphql operation endpoint
-func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
+// HandleGraphQLRequest executes graphql queries
+func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
+		c := new(config.Project)
+		err := json.NewDecoder(r.Body).Decode(c)
+		defer utils.CloseTheCloser(r.Body)
+
+		// Throw error if request was of incorrect type
+		if err != nil {
+			logrus.Errorf("Error handling graphql query execution unable to decode request body - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			return
+		}
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+
+		projectConfig, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			logrus.Errorf("Error handling graphql query execution unable to get project config of %s - %s", projectID, err.Error())
+			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTime)*time.Second)
+		defer cancel()
+
 		pid := graphql.GetProjectID()
 
 		// Load the request from the body
@@ -61,7 +83,7 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 		select {
 		case <-ch:
 			return
-		case <-time.After(10 * time.Second):
+		case <-time.After(time.Duration(projectConfig.ContextTime) * time.Second):
 			log.Println("GraphQL Handler: Request timed out")
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})

@@ -31,7 +31,7 @@ const (
 func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
-		token, project, _ := getFileStoreMeta(r)
+		token, projectID, _ := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -81,7 +81,7 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 				fileName = tempName
 			}
 
-			status, err := fileStore.UploadFile(ctx, project, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
+			status, err := fileStore.UploadFile(ctx, projectID, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
 			w.WriteHeader(status)
 			if err != nil {
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -90,7 +90,7 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 			_ = json.NewEncoder(w).Encode(map[string]string{})
 		} else {
 			name := r.FormValue("name")
-			status, err := fileStore.CreateDir(ctx, project, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
+			status, err := fileStore.CreateDir(ctx, projectID, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
 			w.WriteHeader(status)
 			if err != nil {
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -105,7 +105,7 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
-		token, project, path := getFileStoreMeta(r)
+		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -116,7 +116,7 @@ func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 		// List the specified directory if op type is list
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
-			status, res, err := fileStore.ListFiles(ctx, project, token, &model.ListFilesRequest{Path: path, Type: mode})
+			status, res, err := fileStore.ListFiles(ctx, projectID, token, &model.ListFilesRequest{Path: path, Type: mode})
 			w.WriteHeader(status)
 			if err != nil {
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -125,7 +125,7 @@ func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
 			return
 		} else if op == "exist" {
-			if err := fileStore.DoesExists(ctx, project, token, path); err != nil {
+			if err := fileStore.DoesExists(ctx, projectID, token, path); err != nil {
 				w.WriteHeader(http.StatusNotFound)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
@@ -136,7 +136,7 @@ func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 		}
 
 		// Read the file from file storage
-		status, file, err := fileStore.DownloadFile(ctx, project, token, path)
+		status, file, err := fileStore.DownloadFile(ctx, projectID, token, path)
 		w.WriteHeader(status)
 		if err != nil {
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -151,8 +151,9 @@ func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 func HandleDelete(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the path from the url
-		token, project, path := getFileStoreMeta(r)
+		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
+
 		v := map[string]interface{}{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		log.Println("v", v)
@@ -160,7 +161,7 @@ func HandleDelete(fileStore *filestore.Module) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		status, err := fileStore.DeleteFile(ctx, project, token, path, v)
+		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
 
 		w.WriteHeader(status)
 		if err != nil {
@@ -171,10 +172,10 @@ func HandleDelete(fileStore *filestore.Module) http.HandlerFunc {
 	}
 }
 
-func getFileStoreMeta(r *http.Request) (token string, project string, path string) {
+func getFileStoreMeta(r *http.Request) (token string, projectID string, path string) {
 	// Load the path parameters
 	vars := mux.Vars(r)
-	project = vars["project"]
+	projectID = vars["project"]
 
 	// Get the JWT token from header
 	tokens, ok := r.Header["Authorization"]

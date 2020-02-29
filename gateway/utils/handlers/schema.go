@@ -12,8 +12,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
-// HandleGetCollectionSchemas is an endpoint handler which return schema for all the collection in the config.crud
-func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
+// HandleInspectTrackedCollectionsSchema is an endpoint handler which return schema for all tracked collections of a particular database
+func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -31,10 +31,10 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, schema *schema.Schema) 
 		defer cancel()
 
 		vars := mux.Vars(r)
-		dbType := vars["dbType"]
-		project := vars["project"]
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
 
-		schemas, err := schema.GetCollectionSchema(ctx, project, dbType)
+		schemas, err := schema.GetCollectionSchema(ctx, projectID, dbAlias)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

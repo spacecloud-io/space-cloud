@@ -96,7 +96,7 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 		return nil, err
 	}
 	args["result"] = data
-	return m.matchRule(ctx, project, rule, args, nil)
+	return m.matchRule(ctx, project, rule.Clause, args, nil)
 }
 
 func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {

@@ -95,6 +95,26 @@ func main() {
 					Name:  "dev",
 					Usage: "Run space cloud in development mode",
 				},
+				cli.Int64Flag{
+					Name:   "port-http",
+					Usage:  "The port to use for HTTP",
+					EnvVar: "PORT_HTTP",
+					Value:  4122,
+				},
+				cli.Int64Flag{
+					Name:   "port-https",
+					Usage:  "The port to use for HTTPS",
+					EnvVar: "PORT_HTTPS",
+					Value:  4126,
+				},
+				cli.StringSliceFlag{
+					Name:  "v",
+					Usage: "Volumes to be attached to gateway",
+				},
+				cli.StringSliceFlag{
+					Name:  "e",
+					Usage: "Environment variables to be provided to gateway",
+				},
 			},
 			Action: actionSetup,
 		},

@@ -111,7 +111,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 }
 
 // Start begins the server operations
-func (s *Server) Start(profiler, disableMetrics bool, staticPath, configDomain string, port int) error {
+func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port int, restrictedHosts []string) error {
 
 	// Start the sync manager
 	if err := s.syncMan.Start(s.configFilePath, s.LoadConfig, port); err != nil {
@@ -129,7 +129,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath, configDomain s
 	if s.ssl != nil && s.ssl.Enabled {
 
 		// Setup the handler
-		handler := corsObj.Handler(s.routes(profiler, staticPath, configDomain))
+		handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
 		handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 		handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
@@ -154,7 +154,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath, configDomain s
 
 	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
-	handler := corsObj.Handler(s.routes(profiler, staticPath, configDomain))
+	handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
 	handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 	handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
