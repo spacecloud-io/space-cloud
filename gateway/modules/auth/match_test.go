@@ -156,7 +156,7 @@ func TestMatchForce_Rule(t *testing.T) {
 		wantedargs       map[string]interface{}
 	}{
 		{name: "res directly passing value", isErrExpected: false, checkPostProcess: true, checkArgs: false,
-			result: &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "1234", Field: "res.age"},
 			args:   map[string]interface{}{"string1": "interface1", "string2": "interface2"},
 		},
@@ -165,7 +165,7 @@ func TestMatchForce_Rule(t *testing.T) {
 			args: map[string]interface{}{"string": "interface1", "string2": "interface2"},
 		},
 		{name: "res indirectly passing value", isErrExpected: false, checkPostProcess: true, checkArgs: false,
-			result: &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
+			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "force", Field: "res.age", Value: "1234"}}},
 			rule:   &config.Rule{Rule: "force", Value: "args.string2", Field: "res.age"},
 			args:   map[string]interface{}{"args": map[string]interface{}{"string1": "interface1", "string2": "1234"}},
 		},
@@ -230,7 +230,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 			checkPostProcess: true, checkArgs: false,
 			rule:   &config.Rule{Rule: "remove", Fields: []string{"res.age"}},
 			args:   map[string]interface{}{"res": map[string]interface{}{"age": "12"}},
-			result: &model.PostProcess{[]model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
+			result: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "remove", Field: "res.age", Value: nil}}},
 		},
 		{name: "invalid field provided", isErrExpected: true, checkPostProcess: false, checkArgs: false,
 			rule: &config.Rule{Rule: "remove", Fields: []string{"args:age"}},
