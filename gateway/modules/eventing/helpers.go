@@ -246,7 +246,7 @@ func (m *Module) validate(ctx context.Context, project, token string, event *mod
 	if !p {
 		return nil
 	}
-	log.Println("----------------------------------------------m.schema", m.schema, "schema", schema, "m", m)
+
 	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
 	return err
 }

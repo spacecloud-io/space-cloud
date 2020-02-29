@@ -18,25 +18,25 @@ import (
 
 func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	if project != m.project {
-		return &model.PostProcess{}, errors.New("invalid project details provided")
+		return nil, errors.New("invalid project details provided")
 	}
 
 	if rule.Rule == "allow" || rule.Rule == "authenticated" {
-		return &model.PostProcess{}, nil
+		return nil, nil
 	}
 
 	if idTemp, p := auth["id"]; p {
 		if id, ok := idTemp.(string); ok && id == utils.InternalUserID {
-			return &model.PostProcess{}, nil
+			return nil, nil
 		}
 	}
 
 	switch rule.Rule {
 	case "deny":
-		return &model.PostProcess{}, errors.New("the operation being performed is denied")
+		return nil, errors.New("the operation being performed is denied")
 
 	case "match":
-		return &model.PostProcess{}, match(rule, args)
+		return nil, match(rule, args)
 
 	case "and":
 		return m.matchAnd(ctx, project, rule, args, auth)
@@ -45,7 +45,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return m.matchOr(ctx, project, rule, args, auth)
 
 	case "webhook":
-		return &model.PostProcess{}, m.matchFunc(ctx, rule, m.makeHTTPRequest, args)
+		return nil, m.matchFunc(ctx, rule, m.makeHTTPRequest, args)
 
 	case "query":
 		return m.matchQuery(ctx, project, rule, m.crud, args)
@@ -66,7 +66,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return matchHash(rule, args)
 
 	default:
-		return &model.PostProcess{}, ErrIncorrectMatch
+		return nil, ErrIncorrectMatch
 	}
 }
 
@@ -122,7 +122,7 @@ func (m *Module) matchOr(ctx context.Context, projectID string, rule *config.Rul
 		}
 	}
 	//if condition is not satisfied -> return empty model.PostProcess and error
-	return &model.PostProcess{}, ErrIncorrectMatch
+	return nil, ErrIncorrectMatch
 }
 
 func match(rule *config.Rule, args map[string]interface{}) error {
@@ -161,7 +161,7 @@ func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.
 		return &model.PostProcess{PostProcessAction: []model.PostProcessAction{addToStruct}}, nil
 	} else if strings.HasPrefix(rule.Field, "args") {
 		err := utils.StoreValue(rule.Field, value, args)
-		return &model.PostProcess{}, err
+		return nil, err
 	} else {
 		return nil, ErrIncorrectRuleFieldType
 	}

@@ -8,8 +8,6 @@ type (
 	Collection map[string]Fields // key is collection name
 	// Fields is a data structure for storing the type of field
 	Fields map[string]*FieldType // key is field name
-	// directiveArgs    map[string]string           // key is Directive's argument name
-	// fieldType int
 
 	// FieldType stores information about a particular column in table
 	FieldType struct {

@@ -10,7 +10,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
-	//"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -37,18 +36,6 @@ type Module struct {
 	makeHTTPRequest utils.MakeHTTPRequest
 	aesKey          []byte
 }
-
-// // model.PostProcess is responsible for implementing force and remove rules
-// type model.PostProcess struct {
-// 	postProcessAction []model.PostProcessAction
-// }
-
-// // model.PostProcessAction has action ->  force/remove and field,value depending on the Action.
-// type model.PostProcessAction struct {
-// 	Action string
-// 	Field  string
-// 	Value  interface{}
-// }
 
 // Init creates a new instance of the auth object
 func Init(nodeID string, crud model.CrudAuthInterface, schema model.SchemaAuthInterface, removeProjectScope bool) *Module {

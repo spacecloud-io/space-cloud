@@ -19,19 +19,19 @@ func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path st
 	// Get the rules corresponding to the requested path
 	params, rules, err := m.getFileRule(path)
 	if err != nil {
-		return &model.PostProcess{}, err
+		return nil, err
 	}
 	rule := rules.Rule[string(op)]
 	if rule.Rule == "allow" {
 		if m.project == project {
 			return &model.PostProcess{}, nil
 		}
-		return &model.PostProcess{}, errors.New("invalid project details provided")
+		return nil, errors.New("invalid project details provided")
 	}
 
 	auth, err := m.parseToken(token)
 	if err != nil {
-		return &model.PostProcess{}, err
+		return nil, err
 	}
 
 	// Add the path params and auth object to the arguments list
