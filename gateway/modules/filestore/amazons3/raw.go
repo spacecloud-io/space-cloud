@@ -2,8 +2,8 @@ package amazons3
 
 import (
 	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
@@ -18,6 +18,19 @@ func (a *AmazonS3) DoesExists(path string) error {
 	_, err := svc.GetObject(input)
 	if err != nil {
 		return fmt.Errorf("error getting svc object: %s", err.Error())
+	}
+	return nil
+}
+
+// GetState checks if sc is able to query s3
+func (a *AmazonS3) GetState() error {
+	err := a.DoesExists("/")
+	if err != nil {
+		if v, ok := err.(awserr.Error); ok {
+			if v.Code() != s3.ErrCodeNoSuchKey {
+				return fmt.Errorf("cannot read state - %s", err.Error())
+			}
+		}
 	}
 	return nil
 }

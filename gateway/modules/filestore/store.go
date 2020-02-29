@@ -45,6 +45,7 @@ type FileStore interface {
 	DeleteFile(path string) error
 
 	DoesExists(path string) error
+	GetState() error
 
 	GetStoreType() utils.FileStoreType
 	Close() error
