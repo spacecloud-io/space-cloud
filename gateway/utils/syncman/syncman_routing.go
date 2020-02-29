@@ -52,7 +52,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 	for _, route := range projectConfig.Modules.Routes {
 		if route.ID == c.ID {
 			route.Source = c.Source
-			route.Destination = c.Destination
+			route.Targets = c.Targets
 			doesExist = true
 		}
 	}

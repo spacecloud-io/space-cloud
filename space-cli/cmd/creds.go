@@ -22,13 +22,13 @@ func getSelectedAccount() (*model.Account, error) {
 	filePath := getAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		logrus.Error("error getting credential unable to read accounts config file - %s", err.Error())
+		logrus.Errorf("error getting credential unable to read accounts config file - %s", err.Error())
 		return nil, err
 	}
 
 	credential := new(model.Credential)
 	if err := yaml.Unmarshal(yamlFile, credential); err != nil {
-		logrus.Error("error getting credential unable to unmarshal accounts config file - %s", err.Error())
+		logrus.Errorf("error getting credential unable to unmarshal accounts config file - %s", err.Error())
 		return nil, err
 	}
 
@@ -62,7 +62,7 @@ func checkCred(account *model.Account) error {
 	for _, val := range credential.Accounts {
 		// update account if already exists
 		if val.ID == account.ID {
-			val.ID, val.UserName, val.Key, val.ServerUrl = account.ID, account.UserName, account.Key, account.ServerUrl
+			val.ID, val.UserName, val.Key, val.ServerURL = account.ID, account.UserName, account.Key, account.ServerURL
 			credential.SelectedAccount = account.ID
 			if err := generateYamlFile(credential); err != nil {
 				logrus.Errorf("error in checking credentials unable to update accounts yaml file - %v", err)

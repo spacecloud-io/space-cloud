@@ -48,6 +48,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	// Initialise the consul client if enabled
 	switch storeType {
 	case "none":
+		m.services = []*service{{id: nodeID, addr: advertiseAddr}}
 		return m, nil
 	case "kube":
 		s, err := NewKubeStore(clusterID)

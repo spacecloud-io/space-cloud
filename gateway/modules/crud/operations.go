@@ -2,12 +2,13 @@ package crud
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// Create inserts a document (or multiple when op is "all") into the database based on dbType
+// Create inserts a documents (or multiple when op is "all") into the database based on dbType
 func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
@@ -27,8 +28,14 @@ func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *
 		return err
 	}
 
-	// Perform the create operation
-	n, err := crud.Create(ctx, project, col, req)
+	var n int64
+	if req.IsBatch {
+		// add the request for batch operation
+		n, err = m.createBatch(project, dbAlias, col, req.Document)
+	} else {
+		// Perform the create operation
+		n, err = crud.Create(ctx, project, col, req)
+	}
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
@@ -40,7 +47,7 @@ func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
-// Read returns the document(s) which match a query from the database based on dbType
+// Read returns the documents(s) which match a query from the database based on dbType
 func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *model.ReadRequest) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
@@ -53,7 +60,14 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	if err := crud.IsClientSafe(); err != nil {
 		return nil, err
 	}
-
+	if req.IsBatch {
+		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req}
+		dataLoader, ok := m.getLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
+		if !ok {
+			dataLoader = m.createLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
+		}
+		return dataLoader.Load(ctx, key)()
+	}
 	n, result, err := crud.Read(ctx, project, col, req)
 
 	// Invoke the metric hook if the operation was successful
@@ -64,7 +78,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	return result, err
 }
 
-// Update updates the document(s) which match a query from the database based on dbType
+// Update updates the documents(s) which match a query from the database based on dbType
 func (m *Module) Update(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
@@ -97,7 +111,7 @@ func (m *Module) Update(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
-// Delete removes the document(s) which match a query from the database based on dbType
+// Delete removes the documents(s) which match a query from the database based on dbType
 func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *model.DeleteRequest) error {
 	m.RLock()
 	defer m.RUnlock()

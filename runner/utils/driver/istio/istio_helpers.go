@@ -99,6 +99,11 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 
 		imagePull[task.Docker.Secret] = v1.LocalObjectReference{Name: task.Docker.Secret}
 
+		pullPolicy := v1.PullAlways
+		if task.Docker.ImagePullPolicy == model.PullIfNotExists {
+			pullPolicy = v1.PullIfNotPresent
+		}
+
 		containers[j] = v1.Container{
 			Name: task.ID,
 			Env:  envVars,
@@ -109,7 +114,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 			Image:           task.Docker.Image,
 			Command:         cmd,
 			Args:            args,
-			ImagePullPolicy: v1.PullAlways, // TODO: make this configurable
+			ImagePullPolicy: pullPolicy,
 			// Secrets Related
 			VolumeMounts: volumeMount,
 		}
@@ -439,7 +444,11 @@ func prepareUpstreamHosts(service *model.Service) []string {
 
 func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
 	saName := getServiceAccountName(service)
-	return &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{Name: saName, Labels: map[string]string{"account": service.ID}}}
+	return &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{
+		Name:        saName,
+		Labels:      map[string]string{"account": service.ID},
+		Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+	}}
 }
 
 func (i *Istio) generateDeployment(service *model.Service, token string, listOfSecrets map[string]*v1.Secret) *appsv1.Deployment {
@@ -462,6 +471,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 				"concurrency": strconv.Itoa(int(service.Scale.Concurrency)),
 				"minReplicas": strconv.Itoa(int(service.Scale.MinReplicas)),
 				"maxReplicas": strconv.Itoa(int(service.Scale.MaxReplicas)),
+				"generatedBy": getGeneratedByAnnotationName(),
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -487,8 +497,9 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 func generateService(service *model.Service) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   getServiceName(service.ID),
-			Labels: map[string]string{"app": service.ID, "service": service.ID},
+			Name:        getServiceName(service.ID),
+			Labels:      map[string]string{"app": service.ID, "service": service.ID},
+			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
 		},
 		Spec: v1.ServiceSpec{
 			Ports:    prepareServicePorts(service.Tasks),
@@ -501,7 +512,10 @@ func generateService(service *model.Service) *v1.Service {
 func (i *Istio) generateVirtualService(service *model.Service) *v1alpha3.VirtualService {
 	httpRoutes, tcpRoutes := prepareVirtualServiceRoutes(service, i.config.ProxyPort)
 	return &v1alpha3.VirtualService{
-		ObjectMeta: metav1.ObjectMeta{Name: getVirtualServiceName(service.ID)},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        getVirtualServiceName(service.ID),
+			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+		},
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: prepareVirtualServiceHosts(service),
 			// Gateways: prepareVirtualServiceGateways(service),
@@ -513,7 +527,10 @@ func (i *Istio) generateVirtualService(service *model.Service) *v1alpha3.Virtual
 
 func generateDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 	return &v1alpha3.DestinationRule{
-		ObjectMeta: metav1.ObjectMeta{Name: getDestRuleName(service.ID)},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        getDestRuleName(service.ID),
+			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+		},
 		Spec: networkingv1alpha3.DestinationRule{
 			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
 			TrafficPolicy: &networkingv1alpha3.TrafficPolicy{
@@ -525,7 +542,10 @@ func generateDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 
 func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 	return &v1beta1.AuthorizationPolicy{
-		ObjectMeta: metav1.ObjectMeta{Name: getAuthorizationPolicyName(service)},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        getAuthorizationPolicyName(service),
+			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+		},
 		Spec: securityv1beta1.AuthorizationPolicy{
 			Selector: &v1beta12.WorkloadSelector{MatchLabels: map[string]string{"app": service.ID}},
 			Rules:    prepareAuthPolicyRules(service),
@@ -535,7 +555,10 @@ func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 
 func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 	return &v1alpha3.Sidecar{
-		ObjectMeta: metav1.ObjectMeta{Name: getSidecarName(service.ID)},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        getSidecarName(service.ID),
+			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+		},
 		Spec: networkingv1alpha3.Sidecar{
 			WorkloadSelector:      &networkingv1alpha3.WorkloadSelector{Labels: map[string]string{"app": service.ID}},
 			Egress:                []*networkingv1alpha3.IstioEgressListener{{Hosts: prepareUpstreamHosts(service)}},

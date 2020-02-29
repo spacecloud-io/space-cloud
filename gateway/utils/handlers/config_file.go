@@ -33,9 +33,9 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		defer cancel()
 
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
-		if err := syncMan.SetFileStore(ctx, project, value); err != nil {
+		if err := syncMan.SetFileStore(ctx, projectID, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -63,9 +63,9 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		}
 
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
-		projectConfig, err := syncMan.GetConfig(project)
+		projectConfig, err := syncMan.GetConfig(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -104,11 +104,11 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		defer cancel()
 
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 		ruleName := vars["ruleName"]
 		value.Name = ruleName
 
-		if err := syncMan.SetFileRule(ctx, project, value); err != nil {
+		if err := syncMan.SetFileRule(ctx, projectID, value); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -141,10 +141,10 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		defer cancel()
 
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 		ruleName := vars["ruleName"]
 
-		if err := syncMan.SetDeleteFileRule(ctx, project, ruleName); err != nil {
+		if err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
