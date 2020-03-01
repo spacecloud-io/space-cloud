@@ -83,7 +83,7 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				cb(s.getProjects(onAddOrUpdateProjects(obj, projectMap)))
-				logrus.Infof("project added")
+				logrus.Debug("project added")
 			},
 			DeleteFunc: func(obj interface{}) {
 				configMap := obj.(*v1.ConfigMap)
@@ -94,18 +94,18 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 				}
 				delete(projectMap, projectID)
 				cb(s.getProjects(projectMap))
-				logrus.Infof("project deleted")
+				logrus.Debug("project deleted")
 
 			},
 			UpdateFunc: func(old, obj interface{}) {
 				cb(s.getProjects(onAddOrUpdateProjects(obj, projectMap)))
-				logrus.Infof("project updated")
+				logrus.Debug("project updated")
 			},
 		})
 
 		go informer.Run(stopper)
 		<-stopper
-		logrus.Infof("stopped watching over projects in kube store")
+		logrus.Debug("stopped watching over projects in kube store")
 	}()
 	return nil
 }
@@ -159,7 +159,7 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 				onAddOrUpdateServices(obj, services)
 				sort.Stable(services)
 				cb(services)
-				logrus.Infof("service added")
+				logrus.Debug("service added")
 			},
 			DeleteFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
@@ -178,13 +178,13 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 				}
 				sort.Stable(services)
 				cb(services)
-				logrus.Infof("service deleted")
+				logrus.Debug("service deleted")
 			},
 			UpdateFunc: func(old, obj interface{}) {
 				onAddOrUpdateServices(obj, services)
 				sort.Stable(services)
 				cb(services)
-				logrus.Infof("service updated")
+				logrus.Debug("service updated")
 			},
 		})
 
@@ -192,7 +192,7 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 		go informer.Run(stopper)
 		<-stopper
 		log.Println("watcher informer stopped")
-		logrus.Infof("stopped watching over services in kube store channel closed")
+		logrus.Debug("stopped watching over services in kube store channel closed")
 	}()
 
 	return nil

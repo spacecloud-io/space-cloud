@@ -225,7 +225,6 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 			}
 			syncMan.SetGlobalConfig(c)
 		}
-		syncMan.SetGlobalConfig(c)
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
