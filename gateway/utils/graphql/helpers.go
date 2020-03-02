@@ -9,7 +9,6 @@ import (
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -59,7 +58,7 @@ func getCollection(field *ast.Field) (string, error) {
 	return field.Name.Value, nil
 }
 
-func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.FieldType, token string, req *model.ReadRequest, store utils.M, cb callback) {
+func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct model.FieldType, token string, req *model.ReadRequest, store utils.M, cb callback) {
 	graph.execLinkedReadRequest(ctx, field, fieldStruct.LinkedTable.DBType, fieldStruct.LinkedTable.Table, token, req,
 		store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 			if err != nil {
@@ -141,7 +140,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 							return
 						}
 						req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: findVar}}
-						graph.processLinkedResult(ctx, field, linkedFieldSchema, token, req, store, newCB)
+						graph.processLinkedResult(ctx, field, *linkedFieldSchema, token, req, store, newCB)
 						return
 					}
 					newCB(obj, nil)
@@ -158,7 +157,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 		}))
 }
 
-func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, schema schema.Fields, cb callback) {
+func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, schema model.Fields, cb callback) {
 	addFieldPath(store, getFieldName(field))
 
 	switch val := result.(type) {
