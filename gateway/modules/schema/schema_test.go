@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 )
 
@@ -12,7 +13,7 @@ func TestParseSchema(t *testing.T) {
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
-		schema        Type
+		schema        model.Type
 		Data          config.Crud
 	}{
 		{
@@ -104,17 +105,17 @@ func TestParseSchema(t *testing.T) {
 		},
 		{
 			name: "valid schema",
-			schema: Type{
-				"mongo": Collection{
-					"tweet": Fields{
-						"ID": &FieldType{
+			schema: model.Type{
+				"mongo": model.Collection{
+					"tweet": model.Fields{
+						"ID": &model.FieldType{
 							FieldName: "ID",
-							Kind:      TypeID,
+							Kind:      model.TypeID,
 							IsPrimary: true,
 						},
-						"age": &FieldType{
+						"age": &model.FieldType{
 							FieldName: "age",
-							Kind:      typeFloat,
+							Kind:      model.TypeFloat,
 						},
 					},
 				},

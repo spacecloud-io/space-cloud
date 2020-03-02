@@ -5,10 +5,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
@@ -25,19 +21,18 @@ type Module struct {
 	project string
 
 	// The external module realtime depends on
-	eventing *eventing.Module
-	auth     *auth.Module
-	crud     *crud.Module
-	schema   *schema.Schema
+	eventing model.EventingRealtimeInterface
+	auth     model.AuthRealtimeInterface
+	crud     model.CrudRealtimeInterface
 	metrics  *metrics.Module
 	syncMan  *syncman.Manager
 }
 
 // Init creates a new instance of the realtime module
-func Init(nodeID string, eventing *eventing.Module, auth *auth.Module, crud *crud.Module, schema *schema.Schema, metrics *metrics.Module, syncMan *syncman.Manager) (*Module, error) {
+func Init(nodeID string, eventing model.EventingRealtimeInterface, auth model.AuthRealtimeInterface, crud model.CrudRealtimeInterface, metrics *metrics.Module, syncMan *syncman.Manager) (*Module, error) {
 
 	m := &Module{nodeID: nodeID, syncMan: syncMan,
-		eventing: eventing, auth: auth, crud: crud, schema: schema, metrics: metrics}
+		eventing: eventing, auth: auth, crud: crud, metrics: metrics}
 
 	return m, nil
 }
