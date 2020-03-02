@@ -13,135 +13,135 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
-// func TestMatch_Rule(t *testing.T) {
-// 	var testCases = []struct {
-// 		name          string
-// 		IsErrExpected bool
-// 		project       string
-// 		rule          *config.Rule
-// 		args          map[string]interface{}
-// 		auth          map[string]interface{}
-// 	}{
-// 		{
-// 			name: "internal sc user", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "deny", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc-user", "roll": "1234"},
-// 		}, {
-// 			name: "allow", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "allow", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc-user", "roll": "1234"},
-// 		}, {
-// 			name: "deny rule", IsErrExpected: true, project: "default",
-// 			rule: &config.Rule{Rule: "deny", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "Invalid matchand rule", IsErrExpected: true, project: "default",
-// 			rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "deny", Eval: "!="},
-// 				{Rule: "allow", Eval: "!="}}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "Valid matchand rule", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "allow", Eval: "!="},
-// 				{Rule: "allow", Eval: "!="}}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match rule-string", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match rule-invalid type", IsErrExpected: true, project: "default",
-// 			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "integer", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match rule-number", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "number", F1: 0, F2: "args.string1", DB: "mongo", Col: "default"},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"string1": 1}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match rule-number(indirectly passing arguments)", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "match", Eval: "==", Type: "number", F1: "args.string1", F2: "args.string1", DB: "mongo", Col: "default"},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"string1": 1}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match rule-invalid boolean fields", IsErrExpected: true, project: "default",
-// 			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1"}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match rule-valid boolean fields", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: true, F2: "args.k1"},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"k1": false}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "Invalid match or rule", IsErrExpected: true, project: "default",
-// 			rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "deny"}, {Rule: "deny"}}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match or rule", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "allow"}, {Rule: "deny"}}},
-// 			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "webhook rule", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "webhook", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default"},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "query rule", IsErrExpected: true, project: "default",
-// 			rule: &config.Rule{Rule: "query", Type: "string", DB: "mongo", Col: "default", Find: map[string]interface{}{"age": 12}},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"age": 12}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match-force rule", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "force", Eval: "!=", Type: "string", Field: "args.token", DB: "mongo", Col: "default"},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match-remove rule", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "remove", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default"},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match-encrypt rule", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "encrypt", Fields: []string{"args.username"}},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{name: "match-decrypt rule", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.username"}},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 		{
-// 			name: "match-hash rule", IsErrExpected: false, project: "default",
-// 			rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}},
-// 			args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}},
-// 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
-// 		},
-// 	}
-// 	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
-// 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"default": {Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}}}
-// 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
-// 		return nil
-// 	}
-// 	_ = auth.SetConfig("default", "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
-// 	for _, test := range testCases {
-// 		t.Run(test.name, func(t *testing.T) {
-// 			_, err := (auth).matchRule(context.Background(), test.project, test.rule, test.args, test.auth)
-// 			if (err != nil) != test.IsErrExpected {
-// 				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
-// 			}
-// 		})
-// 	}
-// }
+func TestMatch_Rule(t *testing.T) {
+	var testCases = []struct {
+		name          string
+		IsErrExpected bool
+		project       string
+		rule          *config.Rule
+		args          map[string]interface{}
+		auth          map[string]interface{}
+	}{
+		{
+			name: "internal sc user", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "deny", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc-user", "roll": "1234"},
+		}, {
+			name: "allow", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "allow", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc-user", "roll": "1234"},
+		}, {
+			name: "deny rule", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "deny", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Invalid matchand rule", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "deny", Eval: "!="},
+				{Rule: "allow", Eval: "!="}}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Valid matchand rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "and", Clauses: []*config.Rule{{Rule: "allow"},
+				{Rule: "allow"}}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match rule-string", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match rule-invalid type", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "integer", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match rule-number", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "number", F1: 0, F2: "args.string1", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": 1}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match rule-number(indirectly passing arguments)", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "==", Type: "number", F1: "args.string1", F2: "args.string1", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": 1}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match rule-invalid boolean fields", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"string1": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match rule-valid boolean fields", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "match", Eval: "!=", Type: "bool", F1: true, F2: "args.k1"},
+			args: map[string]interface{}{"args": map[string]interface{}{"k1": false}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "Invalid match or rule", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "deny"}, {Rule: "deny"}}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match or rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "or", Clauses: []*config.Rule{{Rule: "allow"}, {Rule: "deny"}}},
+			args: map[string]interface{}{"string1": "interface1", "string2": "interface2"},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "webhook rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "webhook", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "query rule", IsErrExpected: true, project: "default",
+			rule: &config.Rule{Rule: "query", Type: "string", DB: "mongo", Col: "default", Find: map[string]interface{}{"age": 12}},
+			args: map[string]interface{}{"args": map[string]interface{}{"age": 12}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match-force rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "force", Eval: "!=", Type: "string", Field: "args.token", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match-remove rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "remove", Eval: "!=", Type: "string", F1: "interfaceString1", F2: "interfaceString2", DB: "mongo", Col: "default"},
+			args: map[string]interface{}{"args": map[string]interface{}{"token": "interface1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match-encrypt rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "encrypt", Fields: []string{"args.username"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{name: "match-decrypt rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.username"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+		{
+			name: "match-hash rule", IsErrExpected: false, project: "default",
+			rule: &config.Rule{Rule: "hash", Fields: []string{"args.password"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"password": "password"}},
+			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
+		},
+	}
+	auth := Init("1", &crud.Module{}, &schema.Schema{}, false)
+	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"default": {Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}}}
+	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
+		return nil
+	}
+	_ = auth.SetConfig("default", "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := (auth).matchRule(context.Background(), test.project, test.rule, test.args, test.auth)
+			if (err != nil) != test.IsErrExpected {
+				t.Error("| Got This ", err, "| Wanted Error |", test.IsErrExpected)
+			}
+		})
+	}
+}
 func TestMatchForce_Rule(t *testing.T) {
 	m := Module{}
 	emptyAuth := make(map[string]interface{})

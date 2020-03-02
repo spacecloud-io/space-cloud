@@ -107,7 +107,9 @@ func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Ru
 		if err != nil {
 			return &model.PostProcess{}, err
 		}
-		completeAction.PostProcessAction = append(completeAction.PostProcessAction, postProcess.PostProcessAction...)
+		if postProcess != nil {
+			completeAction.PostProcessAction = append(completeAction.PostProcessAction, postProcess.PostProcessAction...)
+		}
 	}
 	return completeAction, nil
 }
