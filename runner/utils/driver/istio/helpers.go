@@ -230,6 +230,7 @@ func prepareVirtualServiceHTTPRoutes(projectID, serviceID string, services map[s
 						Host: destHost,
 						Port: &networkingv1alpha3.PortSelector{Number: destPort},
 					},
+					Weight: target.Weight,
 				})
 
 			case model.RouteTargetExternal:
@@ -238,6 +239,7 @@ func prepareVirtualServiceHTTPRoutes(projectID, serviceID string, services map[s
 						Host: target.Host,
 						Port: &networkingv1alpha3.PortSelector{Number: uint32(target.Port)},
 					},
+					Weight: target.Weight,
 				})
 			default:
 				return nil, fmt.Errorf("invalid target type (%s) provided", target.Type)

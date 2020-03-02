@@ -291,7 +291,6 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		r.Header.Del("x-og-service")
 		r.Header.Del("x-og-host")
 		r.Header.Del("x-og-port")
-		r.Header.Del("x-og-env")
 		r.Header.Del("x-og-version")
 
 		// Change the destination with the original host and port

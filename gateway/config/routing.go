@@ -16,14 +16,14 @@ type Route struct {
 }
 
 // SelectTarget returns a target based on the weights assigned
-func (r *Route) SelectTarget(weight float64) (RouteTarget, error) {
+func (r *Route) SelectTarget(weight int32) (RouteTarget, error) {
 
 	// Generate a random float in the range 0 to 1 if provided weight in lesser than zero
 	if weight < 0 {
-		weight = rand.Float64()
+		weight = rand.Int31n(100)
 	}
 
-	var cumulativeWeight float64
+	var cumulativeWeight int32
 
 	// Return the first target which matches the range
 	for _, target := range r.Targets {
@@ -52,7 +52,7 @@ type RouteTarget struct {
 	Host    string          `json:"host,omitempty" yaml:"host,omitempty"`
 	Port    int32           `json:"port,omitempty" yaml:"port,omitempty"`
 	Scheme  string          `json:"scheme,omitempty" yaml:"scheme,omitempty"`
-	Weight  float64         `json:"weight,omitempty" yaml:"weight,omitempty"`
+	Weight  int32           `json:"weight,omitempty" yaml:"weight,omitempty"`
 	Version string          `json:"version,omitempty" yaml:"version,omitempty"`
 	Type    RouteTargetType `json:"type,omitempty" yaml:"type,omitempty"`
 }
