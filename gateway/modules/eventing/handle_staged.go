@@ -3,7 +3,9 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -22,7 +24,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}
 	m.lock.RLock()
 	project := m.project
-	dbType, col := m.config.DBType, m.config.Col
+	dbAlias, col := m.config.DBType, m.config.Col
 	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
@@ -39,7 +41,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		},
 	}}
 
-	results, err := m.crud.Read(ctx, dbType, project, col, &readRequest)
+	results, err := m.crud.Read(ctx, dbAlias, project, col, &readRequest)
 	if err != nil {
 		log.Println("Eventing stage routine error:", err)
 		return
@@ -138,18 +140,19 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	defer cancel()
 	internalToken, err := m.auth.GetInternalAccessToken()
 	if err != nil {
-		log.Println("Eventing: Couldn't trigger functions -", err)
+		logrus.Errorf("error invoking web hook in eventing unable to get internal access token - %s", err.Error())
 		return err
 	}
 
 	scToken, err := m.auth.GetSCAccessToken()
 	if err != nil {
-		log.Println("Eventing: Couldn't trigger functions -", err)
+		logrus.Errorf("error invoking web hook in eventing unable to get sc access token - %s", err.Error())
 		return err
 	}
 
 	var eventResponse model.EventResponse
-	if err := m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.URL, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+	if err := m.syncMan.MakeHTTPRequest(ctxLocal, http.MethodPost, eventDoc.URL, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+		logrus.Errorf("error invoking web hook in eventing unable to send http request to url %s - %s", eventDoc.URL, err.Error())
 		return err
 	}
 
@@ -163,9 +166,22 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 		eventRequests = append(eventRequests, eventResponse.Events...)
 	}
 
+	if eventResponse.Response != nil {
+		url, err := m.syncMan.GetSpaceCloudURLFromID(m.getSpaceCloudIDFromBatchID(eventDoc.BatchID))
+		if err != nil {
+			logrus.Errorf("error invoking web hook in eventing unable to get sc addr from batchID %s - %s", eventDoc.BatchID, err)
+			return err
+		}
+		url = fmt.Sprintf("http://%s/v1/api/%s/eventing/process-event-response", url, m.project)
+		if err := m.syncMan.MakeHTTPRequest(ctxLocal, http.MethodPost, url, internalToken, scToken, map[string]interface{}{"batchID": eventDoc.BatchID, "response": eventResponse.Response}, &map[string]interface{}{}); err != nil {
+			logrus.Errorf("error invoking web hook in eventing unable to send http request for synchronous response to url %s - %s", url, err.Error())
+			return err
+		}
+	}
+
 	if len(eventRequests) > 0 {
-		if err := m.batchRequests(ctx, eventRequests); err != nil {
-			log.Println("Eventing: Couldn't persist events err -", err)
+		if err := m.batchRequests(ctx, eventRequests, eventDoc.BatchID); err != nil {
+			logrus.Errorf("error invoking web hook in eventing unable to persist events off - %s", err.Error())
 		}
 	}
 

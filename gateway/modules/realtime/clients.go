@@ -20,10 +20,10 @@ type clientsStub struct {
 }
 
 // AddLiveQuery tracks a client for a live query
-func (m *Module) AddLiveQuery(id, project, dbType, group, clientID string, whereObj map[string]interface{}, actions *auth.PostProcess, sendFeed SendFeed) {
+func (m *Module) AddLiveQuery(id, project, dbAlias, group, clientID string, whereObj map[string]interface{}, actions *auth.PostProcess, sendFeed SendFeed) {
 	// Load clients in a particular group
 	clients := new(clientsStub)
-	t, _ := m.groups.LoadOrStore(createGroupKey(dbType, group), clients)
+	t, _ := m.groups.LoadOrStore(createGroupKey(dbAlias, group), clients)
 	clients = t.(*clientsStub)
 
 	// Load the queries of a particular client
@@ -36,9 +36,9 @@ func (m *Module) AddLiveQuery(id, project, dbType, group, clientID string, where
 }
 
 // RemoveLiveQuery removes a particular live query
-func (m *Module) RemoveLiveQuery(dbType, group, clientID, queryID string) {
+func (m *Module) RemoveLiveQuery(dbAlias, group, clientID, queryID string) {
 	// Load clients in a particular group
-	clientsTemp, ok := m.groups.Load(createGroupKey(dbType, group))
+	clientsTemp, ok := m.groups.Load(createGroupKey(dbAlias, group))
 	if !ok {
 		return
 	}
@@ -61,7 +61,7 @@ func (m *Module) RemoveLiveQuery(dbType, group, clientID, queryID string) {
 
 	// Delete group if no clients present
 	if mapLen(&clients.clients) == 0 {
-		m.groups.Delete(createGroupKey(dbType, group))
+		m.groups.Delete(createGroupKey(dbAlias, group))
 	}
 }
 

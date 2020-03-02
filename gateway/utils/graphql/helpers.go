@@ -30,7 +30,7 @@ func getFieldName(field *ast.Field) string {
 	return field.Name.Value
 }
 
-// GetDBAlias returns the dbType of the request
+// GetDBAlias returns the dbAlias of the request
 func (graph *Module) GetDBAlias(field *ast.Field) (string, error) {
 	if len(field.Directives) == 0 {
 		return "", errors.New("database / service directive not provided")
@@ -59,9 +59,9 @@ func getCollection(field *ast.Field) (string, error) {
 	return field.Name.Value, nil
 }
 
-func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.FieldType, token string, req *model.ReadRequest, store utils.M, loader *loaderMap, cb callback) {
+func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, fieldStruct *schema.FieldType, token string, req *model.ReadRequest, store utils.M, cb callback) {
 	graph.execLinkedReadRequest(ctx, field, fieldStruct.LinkedTable.DBType, fieldStruct.LinkedTable.Table, token, req,
-		store, loader, createDBCallback(func(dbType, col string, result interface{}, err error) {
+		store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 			if err != nil {
 				cb(nil, err)
 				return
@@ -75,7 +75,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 			}
 
 			// Check the linked table has a schema
-			s, isSchemaPresent := graph.schema.GetSchema(dbType, col)
+			s, isSchemaPresent := graph.schema.GetSchema(dbAlias, col)
 
 			length := len(array)
 			if !fieldStruct.IsList {
@@ -141,7 +141,7 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 							return
 						}
 						req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: findVar}}
-						graph.processLinkedResult(ctx, field, linkedFieldSchema, token, req, store, loader, newCB)
+						graph.processLinkedResult(ctx, field, linkedFieldSchema, token, req, store, newCB)
 						return
 					}
 					newCB(obj, nil)
@@ -151,14 +151,14 @@ func (graph *Module) processLinkedResult(ctx context.Context, field *ast.Field, 
 			wgArray.Wait()
 			finalArray := newArray.GetAll()
 			if !fieldStruct.IsList {
-				graph.processQueryResult(ctx, field, token, store, finalArray[0], loader, s, cb)
+				graph.processQueryResult(ctx, field, token, store, finalArray[0], s, cb)
 				return
 			}
-			graph.processQueryResult(ctx, field, token, store, finalArray, loader, s, cb)
+			graph.processQueryResult(ctx, field, token, store, finalArray, s, cb)
 		}))
 }
 
-func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, loader *loaderMap, schema schema.Fields, cb callback) {
+func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, token string, store utils.M, result interface{}, schema schema.Fields, cb callback) {
 	addFieldPath(store, getFieldName(field))
 
 	switch val := result.(type) {
@@ -197,7 +197,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 						continue
 					}
 
-					graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(result interface{}, err error) {
+					graph.execGraphQLDocument(ctx, f, token, storeNew, schema, createCallback(func(result interface{}, err error) {
 						defer wg.Done()
 
 						if err != nil {
@@ -241,7 +241,7 @@ func (graph *Module) processQueryResult(ctx context.Context, field *ast.Field, t
 				wg.Done()
 				continue
 			}
-			graph.execGraphQLDocument(ctx, f, token, storeNew, loader, schema, createCallback(func(result interface{}, err error) {
+			graph.execGraphQLDocument(ctx, f, token, storeNew, schema, createCallback(func(result interface{}, err error) {
 				defer wg.Done()
 
 				if err != nil {

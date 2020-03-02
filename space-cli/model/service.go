@@ -126,14 +126,16 @@ type ExposeRuleURI struct {
 	Rewrite *string `json:"rewrite" yaml:"rewrite"`
 }
 
+// ActionCode describes the data structure sent to Space Cloud when deploy is called
 type ActionCode struct {
 	Service   *Service `json:"service" yaml:"service"`
 	IsDeploy  bool     `json:"isdeploy" yaml:"isdeploy"`
 	Condition string   `json:"condition" yaml:"condition"`
 }
 
-type GitOp struct {
-	Api  string            `yaml:"api"`
+// SpecObject describes the basic structure of config specifications
+type SpecObject struct {
+	API  string            `yaml:"api"`
 	Type string            `yaml:"type"`
 	Meta map[string]string `yaml:"meta"`
 	Spec interface{}       `yaml:"spec,omitempty"`

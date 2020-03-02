@@ -141,6 +141,7 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	projectConfig.Secret = project.Secret
 	projectConfig.AESkey = project.AESkey
 	projectConfig.Name = project.Name
+	projectConfig.ContextTime = project.ContextTime
 
 	return s.setProject(ctx, projectConfig)
 }

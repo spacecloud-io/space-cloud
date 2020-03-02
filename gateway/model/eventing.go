@@ -28,20 +28,22 @@ type CloudEventPayload struct {
 	Data        interface{} `json:"data"`
 }
 
-// EventResponse is struct reponse of events
+// EventResponse is struct response of events
 type EventResponse struct {
-	Event  *QueueEventRequest   `json:"event"`
-	Events []*QueueEventRequest `json:"events"`
-	Error  string               `json:"error"`
+	Event    *QueueEventRequest   `json:"even,omitempty"`
+	Events   []*QueueEventRequest `json:"events,omitempty"`
+	Response interface{}          `json:"response,omitempty"` // for getting response of synchronous events
+	Error    string               `json:"error,omitempty"`
 }
 
 // QueueEventRequest is the payload to add a new event to the task queue
 type QueueEventRequest struct {
-	Type      string            `json:"type"`                // The type of the event
-	Delay     int64             `json:"delay,omitempty"`     // Time in seconds
-	Timestamp int64             `json:"timestamp,omitempty"` // Milliseconds from unix epoch (UTC)
-	Payload   interface{}       `json:"payload,omitempty"`   // Payload contains necessary event dat
-	Options   map[string]string `json:"options"`
+	Type          string            `json:"type"`                // The type of the event
+	Delay         int64             `json:"delay,omitempty"`     // Time in seconds
+	Timestamp     int64             `json:"timestamp,omitempty"` // Milliseconds from unix epoch (UTC)
+	Payload       interface{}       `json:"payload,omitempty"`   // Payload contains necessary event dat
+	Options       map[string]string `json:"options"`
+	IsSynchronous bool              `json:"isSynchronous"` // if true then client will wait for response of event
 }
 
 // EventIntent describes an intent made in the eventing system

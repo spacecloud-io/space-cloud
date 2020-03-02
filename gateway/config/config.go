@@ -9,11 +9,12 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	Secret  string   `json:"secret" yaml:"secret"`
-	AESkey  string   `json:"aesKey" yaml:"aesKey"`
-	ID      string   `json:"id" yaml:"id"`
-	Name    string   `json:"name" yaml:"name"`
-	Modules *Modules `json:"modules" yaml:"modules"`
+	Secret      string   `json:"secret" yaml:"secret"`
+	AESkey      string   `json:"aesKey" yaml:"aesKey"`
+	ID          string   `json:"id" yaml:"id"`
+	Name        string   `json:"name" yaml:"name"`
+	Modules     *Modules `json:"modules" yaml:"modules"`
+	ContextTime int      `json:"contextTime" yaml:"contextTime"` //contextTime sets the timeout of query
 }
 
 // Admin stores the admin credentials
@@ -78,11 +79,13 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Type        string                `json:"type" yaml:"type"` // database type
-	Conn        string                `json:"conn" yaml:"conn"`
-	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
-	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
-	Enabled     bool                  `json:"enabled" yaml:"enabled"`
+	Type         string                `json:"type" yaml:"type"` // database type
+	Conn         string                `json:"conn" yaml:"conn"`
+	Collections  map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
+	IsPrimary    bool                  `json:"isPrimary" yaml:"isPrimary"`
+	Enabled      bool                  `json:"enabled" yaml:"enabled"`
+	BatchTime    int                   `json:"batchTime" yaml:"batchTime"`       // time in milli seconds
+	BatchRecords int                   `json:"batchRecords" yaml:"batchRecords"` // indicates number of records per batch
 }
 
 // TableRule contains the config at the collection level
@@ -205,38 +208,3 @@ type SchemaObject struct {
 type LetsEncrypt struct {
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
 }
-
-// Routes describes the configuration for the routing module
-type Routes []*Route
-
-// Route describes the parameters of a single route
-type Route struct {
-	ID          string           `json:"id" yaml:"id"`
-	Source      RouteSource      `json:"source" yaml:"source"`
-	Destination RouteDestination `json:"dest" yaml:"dest"`
-}
-
-// RouteSource is the source of routing
-type RouteSource struct {
-	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
-	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
-	RewriteURL string       `json:"rewrite,omitempty" yaml:"rewrite,omitempty"`
-	Type       RouteURLType `json:"type,omitempty" yaml:"type,omitempty"`
-}
-
-// RouteDestination is the destination of routing
-type RouteDestination struct {
-	Host string `json:"host,omitempty" yaml:"host,omitempty"`
-	Port string `json:"port,omitempty" yaml:"port,omitempty"`
-}
-
-// RouteURLType describes how the url should be evaluated / matched
-type RouteURLType string
-
-const (
-	// RoutePrefix is used for prefix matching
-	RoutePrefix RouteURLType = "prefix"
-
-	// RouteExact is used for matching the url exactly as it is
-	RouteExact RouteURLType = "exact"
-)

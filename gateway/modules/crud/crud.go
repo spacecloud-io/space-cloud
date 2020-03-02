@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
+
+	"github.com/graph-gophers/dataloader"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -27,9 +28,18 @@ type Module struct {
 	project            string
 	removeProjectScope bool
 
+	// batch operation
+	batchMapTableToChan batchMap // every table gets mapped to group of channels
+
+	dataLoader loader
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
+}
+
+type loader struct {
+	loaderMap      map[string]*dataloader.Loader
+	dataLoaderLock sync.Mutex
 }
 
 // Crud abstracts the implementation crud operations of databases
@@ -54,7 +64,7 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init(removeProjectScope bool) *Module {
-	return &Module{removeProjectScope: removeProjectScope}
+	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 // SetHooks sets the internal hooks
@@ -87,6 +97,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
+	m.closeBatchOperation()
 
 	if len(crud) > 1 {
 		return errors.New("crud module cannot have more than 1 db")
@@ -99,6 +110,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		utils.CloseTheCloser(m.block)
 	}
 
+	// clear previous data loader
+	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
+
 	// Create a new crud blocks
 	for k, v := range crud {
 		var c Crud
@@ -110,16 +124,19 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
 		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
 
+		if v.Enabled {
+			if err != nil {
+				logrus.Errorf("Error connecting to " + k + " : " + err.Error())
+				return err
+			}
+			logrus.Info("Successfully connected to " + k)
+		}
+
 		m.dbType = v.Type
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
-
-		if err != nil {
-			log.Println("Error connecting to " + k + " : " + err.Error())
-			return err
-		}
-		logrus.Info("Successfully connected to " + k)
 	}
+	m.initBatchOperation(project, crud)
 	return nil
 }
 

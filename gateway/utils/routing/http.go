@@ -9,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -19,11 +20,10 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 		defer utils.CloseTheCloser(request.Body)
 
 		// Extract the host and url to select route
-		host := strings.Split(request.Host, ":")[0]
-		url := request.URL.Path
+		host, url := getHostAndURL(request)
 
 		// Select a route based on host and url
-		route, err := r.selectRoute(host, url)
+		route, err := r.selectRoute(host, request.Method, url)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
@@ -34,42 +34,32 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 
 		// Apply the rewrite url if provided. It is the users responsibility to make sure both url
 		// and rewrite url starts with a '/'
-		if route.Source.RewriteURL != "" {
-			// First strip away the url provided
-			url = strings.TrimLeft(url, route.Source.URL)
-
-			// Apply the rewrite url at the prefix
-			url = route.Source.RewriteURL + url
-		}
+		url = rewriteURL(url, route)
 
 		// Proxy the request
 
-		// http: Request.RequestURI can't be set in client requests.
-		// http://golang.org/src/pkg/net/http/client.go
-		request.RequestURI = ""
-
-		// Change the request with the destination host, port and url
-		request.Host = route.Destination.Host
-		request.URL.Host = fmt.Sprintf("%s:%s", route.Destination.Host, route.Destination.Port)
-		request.URL.Path = url
-
-		// Set the url scheme to http
-		request.URL.Scheme = "http"
+		if err := setRequest(request, route, url); err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+			logrus.Errorf("Failed set request for route (%v) - %s", route, err.Error())
+			return
+		}
 
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := http.DefaultClient.Do(request)
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+			logrus.Errorf("Failed to make request for route (%v) - %s", route, err.Error())
 			return
 		}
 		defer utils.CloseTheCloser(response.Body)
 
 		// Copy headers and status code
-		writer.WriteHeader(response.StatusCode)
 		for k, v := range response.Header {
 			writer.Header().Set(k, v[0])
 		}
+		writer.WriteHeader(response.StatusCode)
 
 		// Copy the body
 		n, err := io.Copy(writer, response.Body)
@@ -79,4 +69,42 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 
 		logrus.Debugf("Successfully copied %d bytes from upstream server (%s)", n, request.URL.String())
 	}
+}
+
+func getHostAndURL(request *http.Request) (string, string) {
+	return strings.Split(request.Host, ":")[0], request.URL.Path
+}
+
+func rewriteURL(url string, route *config.Route) string {
+	if route.Source.RewriteURL != "" {
+		// First strip away the url provided
+		url = strings.TrimPrefix(url, route.Source.URL)
+
+		// Apply the rewrite url at the prefix
+		url = route.Source.RewriteURL + url
+	}
+	return url
+}
+
+func setRequest(request *http.Request, route *config.Route, url string) error {
+	// http: Request.RequestURI can't be set in client requests.
+	// http://golang.org/src/pkg/net/http/client.go
+	request.RequestURI = ""
+
+	// Change the request with the destination host, port and url
+	target, err := route.SelectTarget(-1) // pass a -ve weight to randomly generate
+	if err != nil {
+		return err
+	}
+
+	request.Host = target.Host
+	request.URL.Host = fmt.Sprintf("%s:%s", target.Host, target.Port)
+	request.URL.Path = url
+
+	// Set the url scheme to http
+	if target.Scheme == "" {
+		target.Scheme = "http"
+	}
+	request.URL.Scheme = target.Scheme
+	return nil
 }

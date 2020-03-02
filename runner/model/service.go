@@ -60,10 +60,22 @@ type Resources struct {
 
 // Docker describes the docker configurations
 type Docker struct {
-	Image  string   `json:"image" yaml:"image"`
-	Cmd    []string `json:"cmd" yaml:"cmd"`
-	Secret string   `json:"secret" yaml:"secret"`
+	Image           string          `json:"image" yaml:"image"`
+	Cmd             []string        `json:"cmd" yaml:"cmd"`
+	Secret          string          `json:"secret" yaml:"secret"`
+	ImagePullPolicy ImagePullPolicy `json:"imagePullPolicy" yaml:"imagePullPolicy"`
 }
+
+// ImagePullPolicy describes the image pull policy for docker config
+type ImagePullPolicy string
+
+const (
+	// PullAlways is used for always pull policy
+	PullAlways ImagePullPolicy = "always"
+
+	// PullIfNotExists is use for pull if not exist locally pull policy
+	PullIfNotExists ImagePullPolicy = "pull-if-not-exists"
+)
 
 // Affinity describes the affinity rules of a service
 type Affinity struct {

@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
-	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,16 +48,16 @@ func generateRandomString(length int) string {
 }
 
 // CodeSetup initializes development environment
-func CodeSetup(id, username, key, secret string, dev bool) error {
+func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
-	const ContainerGateway string = "space--cloud--gateway"
-	const ContainerRunner string = "space--cloud--runner"
+	const ContainerGateway string = "space-cloud-gateway"
+	const ContainerRunner string = "space-cloud-runner"
 
 	_ = createDirIfNotExist(getSpaceCloudDirectory())
 	_ = createDirIfNotExist(getSecretsDir())
 	_ = createDirIfNotExist(getTempSecretsDir())
 
-	logrus.Infoln("Setting up space cloud on docker")
+	logrus.Infoln("Setting up Space Cloud on docker on your command...")
 
 	if username == "" {
 		username = "local-admin"
@@ -74,7 +76,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 		ID:        id,
 		UserName:  username,
 		Key:       key,
-		ServerUrl: "http://localhost:4122",
+		ServerURL: "http://localhost:4122",
 	}
 
 	if err := checkCred(&selectedAccount); err != nil {
@@ -85,6 +87,38 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 	devMode := "false"
 	if dev {
 		devMode = "true" // todo: even the flag set true in dev of container sc didn't start in prod mode
+	}
+
+	portHTTPValue := strconv.FormatInt(portHTTP, 10)
+	portHTTPSValue := strconv.FormatInt(portHTTPS, 10)
+
+	envs := []string{
+		"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
+		"RUNNER_ADDR=runner.space-cloud.svc.cluster.local:4050",
+		"ADMIN_USER=" + username,
+		"ADMIN_PASS=" + key,
+		"ADMIN_SECRET=" + secret,
+		"DEV=" + devMode,
+	}
+
+	envs = append(envs, environmentVariables...)
+
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: getSpaceCloudHostsFilePath(),
+			Target: "/etc/hosts",
+		},
+	}
+
+	for _, volume := range volumes {
+		temp := strings.Split(volume, ":")
+		if len(temp) != 2 {
+			logrus.Errorf("Error in volume flag (%s) - incorrect format", volume)
+			return errors.New("incorrect format for volume flag")
+		}
+
+		mounts = append(mounts, mount.Mount{Type: mount.TypeBind, Source: temp[0], Target: temp[1]})
 	}
 
 	containersToCreate := []struct {
@@ -100,27 +134,16 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 			containerImage: "spaceuptech/gateway",
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
-			envs: []string{
-				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
-				"RUNNER_ADDR=runner.space-cloud.svc.cluster.local:4050",
-				"ADMIN_USER=" + username,
-				"ADMIN_PASS=" + key,
-				"ADMIN_SECRET=" + secret,
-				"DEV=" + devMode,
-			},
+			envs:           envs,
 			exposedPorts: nat.PortSet{
 				"4122": struct{}{},
+				"4126": struct{}{},
 			},
 			portMapping: nat.PortMap{
-				"4122": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "4122"}},
+				"4122": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPValue}},
+				"4126": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPSValue}},
 			},
-			mount: []mount.Mount{
-				{
-					Type:   mount.TypeBind,
-					Source: getSpaceCloudHostsFilePath(),
-					Target: "/etc/hosts",
-				},
-			},
+			mount: mounts,
 		},
 		{
 			// runner
@@ -135,6 +158,7 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
 				"SECRETS_PATH=/secrets",
 				"HOME_SECRETS_PATH=" + getTempSecretsDir(),
+				"HOSTS_FILE_PATH=" + getSpaceCloudHostsFilePath(),
 			},
 			mount: []mount.Mount{
 				{
@@ -159,20 +183,20 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		logrus.Errorf("error cli setup unable to initialize docker client got error message - %v", err)
+		logrus.Errorf("Unable to initialize docker client - %s", err)
 		return err
 	}
 
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
-		logrus.Errorf("error cli setup unable to load host file with suitable default got error message - %v", err)
+		logrus.Errorf("Unable to load host file with suitable default - %s", err)
 		return err
 	}
 	// change the default host file location for crud operation to our specified path
 	// default value /etc/hosts
 	hosts.WriteFilePath = getSpaceCloudHostsFilePath()
 	if err := hosts.SaveAs(getSpaceCloudHostsFilePath()); err != nil {
-		logrus.Errorf("error cli setup unable to save as host file to specified path (%s) got error message - %v", getSpaceCloudHostsFilePath(), err)
+		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", getSpaceCloudHostsFilePath(), err)
 		return err
 	}
 
@@ -180,19 +204,19 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 		logrus.Infof("Starting container %s...", c.containerName)
 		// check if image already exists
 		if err := pullImageIfNotExist(ctx, cli, c.containerImage); err == nil {
-			logrus.Infof("Image %s already exists", c.containerImage)
+			logrus.Infof("Image %s already exists. No need to pull it again", c.containerImage)
 		}
 
 		// check if container is already running
 		args := filters.Arg("name", c.containerName)
 		containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 		if err != nil {
-			logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
+			logrus.Errorf("error deleting service in docker unable to list containers - %s", err)
 			return err
 		}
 		if len(containers) != 0 {
-			logrus.Errorf("error in cli setup container already running with name %s", c.containerName)
-			return fmt.Errorf("container already running with name %s", c.containerName)
+			logrus.Errorf("Container (%s) already exists", c.containerName)
+			return fmt.Errorf("container (%s) already exists", c.containerName)
 		}
 
 		// create container with specified defaults
@@ -205,30 +229,32 @@ func CodeSetup(id, username, key, secret string, dev bool) error {
 			PortBindings: c.portMapping,
 		}, nil, c.containerName)
 		if err != nil {
-			logrus.Errorf("error cli setup unable to create container %s got error message  - %v", c.containerName, err)
+			logrus.Errorf("Unable to create container (%s) - %s", c.containerName, err)
 			return err
 		}
 
 		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-			logrus.Errorf("error cli setup unable to start container %s got error message - %v", c.containerName, err)
+			logrus.Errorf("Unable to start container (%s) - %s", c.containerName, err.Error())
 			return err
 		}
 
 		// get the ip address assigned to container
 		data, err := cli.ContainerInspect(ctx, c.containerName)
 		if err != nil {
-			logrus.Errorf("error cli setup unable to inspect container %s got error message - %v", c.containerName, err)
+			logrus.Errorf("Unable to inspect container (%s) - %s", c.containerName, err)
 		}
 		hosts.AddHost(data.NetworkSettings.IPAddress, c.dnsName)
 	}
 
 	if err := hosts.Save(); err != nil {
-		logrus.Errorf("error cli setup unable to save host file got error message - %v", err)
+		logrus.Errorf("Unable to save host file - %s", err.Error())
 		return err
 	}
-	logrus.Infof("Space Cloud (id: \"%s\") has been successfully setup! :D", selectedAccount.ID)
-	logrus.Infof("You can visit mission control at %s/mission-control", selectedAccount.ServerUrl)
-	logrus.Infof("Your login credentials: [username: \"%s\"; key: \"%s\"]", selectedAccount.UserName, selectedAccount.Key)
+
+	fmt.Println()
+	logrus.Infof("Space Cloud (id: \"%s\") has been successfully setup! 👍", selectedAccount.ID)
+	logrus.Infof("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL)
+	logrus.Infof("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key)
 	return nil
 }
 
@@ -238,11 +264,10 @@ func pullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image
 		// pull image from public repository
 		out, err := dockerClient.ImagePull(ctx, image, types.ImagePullOptions{})
 		if err != nil {
-			logrus.Errorf("error cli setup unable to pull public image with id (%s) - %s", image, err.Error())
+			logrus.Errorf("Unable to pull public image with id (%s) - %s", image, err.Error())
 			return err
 		}
-		io.Copy(os.Stdout, out)
-		logrus.Infof("Image %s already exists", image)
+		_, _ = io.Copy(ioutil.Discard, out)
 	}
 	return nil
 }

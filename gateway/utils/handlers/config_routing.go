@@ -182,7 +182,7 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		routeID := vars["routeID"]
+		routeID := vars["routeId"]
 		if err := syncMan.DeleteProjectRoute(ctx, projectID, routeID); err != nil {
 			logrus.Errorf("error handling delete project route in handlers unable to delete route in project config got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)

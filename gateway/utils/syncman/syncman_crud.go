@@ -9,7 +9,7 @@ import (
 )
 
 // SetDeleteCollection deletes a collection from the database
-func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbType, col string) error {
+func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -20,7 +20,7 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbType, col 
 	}
 
 	// remove collection from config
-	coll, ok := projectConfig.Modules.Crud[dbType]
+	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
@@ -30,7 +30,7 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbType, col 
 }
 
 // SetDatabaseConnection sets the database connection
-func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbType string, v config.CrudStub) error {
+func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias string, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -41,9 +41,9 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbType str
 	}
 
 	// update database config
-	coll, ok := projectConfig.Modules.Crud[dbType]
+	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		projectConfig.Modules.Crud[dbType] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type}
+		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type}
 	} else {
 		coll.Conn = v.Conn
 		coll.Enabled = v.Enabled
@@ -71,7 +71,7 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 }
 
 // SetModifySchema modifies the schema of table
-func (s *Manager) SetModifySchema(ctx context.Context, project, dbType, col, schema string) error {
+func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -82,7 +82,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbType, col, sch
 	}
 
 	// update schema in config
-	collection, ok := projectConfig.Modules.Crud[dbType]
+	collection, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
@@ -98,7 +98,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbType, col, sch
 }
 
 // SetCollectionRules sets the collection rules of the database
-func (s *Manager) SetCollectionRules(ctx context.Context, project, dbType, col string, v *config.TableRule) error {
+func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col string, v *config.TableRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -108,7 +108,7 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbType, col s
 		return err
 	}
 	// update collection rules & is realtime in config
-	databaseConfig, ok := projectConfig.Modules.Crud[dbType]
+	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
@@ -127,7 +127,7 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbType, col s
 }
 
 // SetReloadSchema reloads of the schema
-func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema) (map[string]interface{}, error) {
+func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, schemaArg *schema.Schema) (map[string]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -137,7 +137,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 		return nil, err
 	}
 
-	collectionConfig, ok := projectConfig.Modules.Crud[dbType]
+	collectionConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		return nil, errors.New("specified database not present in config")
 	}
@@ -146,7 +146,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 		if colName == "default" {
 			continue
 		}
-		result, err := schemaArg.SchemaInspection(ctx, dbType, project, colName)
+		result, err := schemaArg.SchemaInspection(ctx, dbAlias, project, colName)
 		if err != nil {
 			return nil, err
 		}
@@ -160,7 +160,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbType, project string, s
 }
 
 // SetSchemaInspection inspects the schema
-func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbType, col, schema string) error {
+func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col, schema string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -171,7 +171,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbType, col,
 	}
 
 	// update schema in config
-	collection, ok := projectConfig.Modules.Crud[dbType]
+	collection, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
@@ -188,7 +188,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbType, col,
 }
 
 // SetModifyAllSchema modifies schema of all tables
-func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string, schemaArg *schema.Schema, v config.CrudStub) error {
+func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, schemaArg *schema.Schema, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -199,12 +199,12 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbType, project string
 	}
 
 	// update schema in config
-	collection, ok := projectConfig.Modules.Crud[dbType]
+	collection, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
 
-	if err := schemaArg.SchemaModifyAll(ctx, dbType, project, v.Collections); err != nil {
+	if err := schemaArg.SchemaModifyAll(ctx, dbAlias, project, v.Collections); err != nil {
 		return err
 	}
 
