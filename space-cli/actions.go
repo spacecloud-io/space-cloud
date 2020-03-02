@@ -64,6 +64,7 @@ func actionLogin(c *cli.Context) error {
 	userName := c.String("username")
 	key := c.String("key")
 	url := c.String("url")
+
 	return cmd.LoginStart(userName, key, url)
 }
 

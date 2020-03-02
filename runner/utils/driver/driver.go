@@ -55,6 +55,10 @@ type Driver interface {
 	WaitForService(service *model.Service) error
 	Type() model.DriverType
 
+	// Apply routes
+
+	ApplyServiceRoutes(ctx context.Context, projectID, serviceID string, routes model.Routes) error
+
 	// Secret methods!
 
 	CreateSecret(projectID string, secretObj *model.Secret) error

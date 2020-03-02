@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -50,6 +51,11 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*Docker, error) {
 	}
 
 	return &Docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath, hostFilePath: hostFilePath}, nil
+}
+
+// ApplyServiceRoutes sets the traffic splitting logic of each service
+func (d *Docker) ApplyServiceRoutes(_ context.Context, projectID, serviceID string, routes model.Routes) error {
+	return errors.New("service routing is not implemented for docker driver")
 }
 
 // ApplyService creates containers for specified service

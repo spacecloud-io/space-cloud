@@ -43,8 +43,6 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		w.WriteHeader(http.StatusOK) //http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-
-		// return
 	}
 }
 
@@ -79,8 +77,6 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			w.WriteHeader(http.StatusOK) //http status code
 			_ = json.NewEncoder(w).Encode(map[string]bool{"status": false})
 		}
-
-		// return
 	}
 }
 
@@ -116,8 +112,6 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		w.WriteHeader(http.StatusOK) //http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-
-		// return
 	}
 }
 
@@ -152,6 +146,5 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		w.WriteHeader(http.StatusOK) //http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
 	}
 }

@@ -234,6 +234,42 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	}
 }
 
+// HandleServiceRoutingRequest handles request to apply service routing rules
+func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
+	type request struct {
+		Routes model.Routes `json:"routes"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		serviceID := vars["serviceId"]
+
+		req := new(request)
+		_ = json.NewDecoder(r.Body).Decode(req)
+
+		if err := s.driver.ApplyServiceRoutes(ctx, projectID, serviceID, req.Routes); err != nil {
+			logrus.Errorf("Failed to apply service routing rules - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		utils.SendEmptySuccessResponse(w, r)
+	}
+}
+
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
