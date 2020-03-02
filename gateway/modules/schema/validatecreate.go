@@ -1,8 +1,10 @@
 package schema
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/segmentio/ksuid"
@@ -151,6 +153,15 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *FieldType)
 		}
 
 	case map[string]interface{}:
+		if fieldValue.Kind == typeJsonb {
+			data, err := json.Marshal(value)
+			if err != nil {
+				logrus.Errorf("error checking type in schema module unable to marshal data for field having type json")
+				return nil, err
+			}
+			return string(data), nil
+		}
+
 		if fieldValue.Kind != typeObject {
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}

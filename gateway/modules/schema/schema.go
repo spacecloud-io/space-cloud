@@ -282,6 +282,8 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *FieldType, 
 			return typeInteger, nil
 		case typeBoolean:
 			return typeBoolean, nil
+		case typeJsonb:
+			return typeJsonb, nil
 		default:
 			if fieldTypeStuct.IsLinked {
 				// Since the field is actually a link. We'll store the type as is. This type must correspond to a table or a primitive type

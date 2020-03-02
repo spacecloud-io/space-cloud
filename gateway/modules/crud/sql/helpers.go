@@ -46,7 +46,10 @@ func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string)
 					array = append(array, goqu.I(k).Eq(v2))
 				case "$ne":
 					array = append(array, goqu.I(k).Neq(v2))
-
+				case "$contains":
+					// here we are using "=" (default) operator instead of "@>" for json field
+					// "=" operator works for top level json comparision
+					array = append(array, goqu.I(k).Eq(v2))
 				case "$gt":
 					array = append(array, goqu.I(k).Gt(v2))
 
@@ -86,7 +89,7 @@ func (s *SQL) generateWhereClause(q *goqu.SelectDataset, find map[string]interfa
 func generateRecord(temp interface{}) (goqu.Record, error) {
 	insertObj, ok := temp.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Incorrect insert object provided")
+		return nil, errors.New("incorrect insert object provided")
 	}
 
 	record := make(goqu.Record, len(insertObj))

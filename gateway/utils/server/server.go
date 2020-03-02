@@ -195,6 +195,8 @@ func (s *Server) LoadConfig(config *config.Config) error {
 			return err
 		}
 
+		s.crud.SetSchemaPostProcessHandler(s.schema.CrudPostProcess)
+
 		// Set the configuration for the auth module
 		if err := s.auth.SetConfig(p.ID, p.Secret, p.AESkey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 			logrus.Errorln("Error in auth module config: ", err)

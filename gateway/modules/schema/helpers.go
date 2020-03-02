@@ -34,11 +34,17 @@ func getSQLType(dbType, typename string) (string, error) {
 		return "float", nil
 	case typeInteger:
 		return "bigint", nil
+	case typeJsonb:
+		if dbType != string(utils.Postgres) {
+			return "", fmt.Errorf("jsonb not supported for database %s", dbType)
+		}
+		return "jsonb", nil
 	default:
 		return "", fmt.Errorf("%s type not allowed", typename)
 	}
 }
 
+// TODO ANY PARTICULAR DIRECTIVE THAT IS NOT SUPPORTED FOR JSONB
 func checkErrors(realFieldStruct *FieldType) error {
 	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
 		return fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName)
@@ -308,10 +314,6 @@ func (c *creationModule) addColumn(dbType string) []string {
 
 	return queries
 }
-
-// func (c *creationModule) removeField() string {
-// 	return c.removeColumn()
-// }
 
 func (c *creationModule) modifyColumn() []string {
 	var queries []string

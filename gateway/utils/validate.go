@@ -185,7 +185,8 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					default:
 						return false
 					}
-
+				case "$contains":
+					// TODO : I DON'T KNOW IF IT IS NECCESSARY
 				case "$regex":
 					regex := v2.(string)
 					vString := val.(string)

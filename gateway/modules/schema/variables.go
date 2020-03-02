@@ -17,7 +17,7 @@ type (
 		IsFieldTypeRequired bool
 		IsList              bool
 		Kind                string
-		//Directive           string
+		// Directive           string
 		nestedObject Fields
 
 		// For directives
@@ -51,6 +51,7 @@ const (
 	typeFloat    string = "Float"
 	typeBoolean  string = "Boolean"
 	typeDateTime string = "DateTime"
+	typeJsonb    string = "Jsonb"
 	// TypeID represents ID of schema
 	TypeID             string = "ID"
 	sqlTypeIDSize      string = "50"

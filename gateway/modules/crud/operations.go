@@ -3,6 +3,7 @@ package crud
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -52,6 +53,11 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	m.RLock()
 	defer m.RUnlock()
 
+	dbType, err := m.GetDBType(dbAlias)
+	if err != nil {
+		return nil, err
+	}
+
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return nil, err
@@ -69,7 +75,14 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 		return dataLoader.Load(ctx, key)()
 	}
 	n, result, err := crud.Read(ctx, project, col, req)
-
+	// NOTE : currently jsonb is supported for only postgres
+	// in future if jsonb is supported for multiple databases change below code
+	if dbType == string(utils.Postgres) {
+		if err := m.schemaPostProcess(ctx, dbAlias, col, result); err != nil {
+			logrus.Errorf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", project, col)
+			return nil, err
+		}
+	}
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		m.metricHook(m.project, dbAlias, col, n, utils.Read)

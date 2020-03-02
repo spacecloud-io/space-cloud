@@ -1,7 +1,10 @@
 package schema
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"strings"
 	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -23,8 +26,9 @@ func (s *Schema) ValidateUpdateOperation(dbAlias, col, op string, updateDoc, fin
 
 	for key, doc := range updateDoc {
 		switch key {
+		case "$unset":
 		case "$set":
-			newDoc, err := s.validateSetOperation(col, doc, SchemaDoc)
+			newDoc, err := s.validateSetOperation(col, doc, SchemaDoc, find, dbAlias)
 			if err != nil {
 				return err
 			}
@@ -163,7 +167,7 @@ func validateDateOperations(col string, doc interface{}, SchemaDoc Fields) error
 	return nil
 }
 
-func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc Fields) (interface{}, error) {
+func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc Fields, find map[string]interface{}, dbAlias string) (interface{}, error) {
 	v, ok := doc.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("document not of type object in collection %s", col)
@@ -171,8 +175,9 @@ func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc Fie
 
 	newMap := map[string]interface{}{}
 	for key, value := range v {
-		// check if key present in SchemaDoc
-		SchemaDocValue, ok := SchemaDoc[key]
+		// We could get a a key with value like `a.b`, where the user intends to set the field `b` inside object `a`. This holds true for working with json
+		// types in postgres. However, no such key would be present in the schema. Hence take the top level key to validate the schema
+		SchemaDocValue, ok := SchemaDoc[strings.Split(key, ".")[0]]
 		if !ok {
 			return nil, fmt.Errorf("field %s from collection %s is not defined in the schema", key, col)
 		}
@@ -187,6 +192,30 @@ func (s *Schema) validateSetOperation(col string, doc interface{}, SchemaDoc Fie
 	for fieldKey, fieldValue := range SchemaDoc {
 		if fieldValue.IsUpdatedAt {
 			newMap[fieldKey] = time.Now().UTC()
+		}
+	}
+
+	dbType, err := s.crud.GetDBType(dbAlias)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbType != string(utils.Postgres) {
+		for _, operator := range find {
+			operatorMap, ok := operator.(map[string]interface{})
+			if !ok {
+				logrus.Errorf("error validating set operation in schema module unable to type assert find object to map[string]interface")
+				return nil, fmt.Errorf("unable to type assert find object")
+			}
+			data, ok := operatorMap["$contains"]
+			if ok {
+				result, err := json.Marshal(data)
+				if err != nil {
+					logrus.Errorf("error validating set operation in schema module unable to marshal $contains data (%s)", err.Error())
+					return nil, err
+				}
+				operatorMap["$contains"] = string(result)
+			}
 		}
 	}
 

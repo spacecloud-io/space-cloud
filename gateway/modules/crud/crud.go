@@ -28,6 +28,11 @@ type Module struct {
 	project            string
 	removeProjectScope bool
 
+	// during a read request the result contains a column having type json for (postgres)
+	// then un marshall the json field in read request
+	// Note : reason for having field type func as we cannot directly import schema module in crud
+	schemaPostProcess func(ctx context.Context, dbAlias, col string, result interface{}) error
+
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
 
@@ -138,6 +143,13 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	}
 	m.initBatchOperation(project, crud)
 	return nil
+}
+
+// SetSchemaPostProcessHandler sets the schemaPostProcess field of crud module
+func (m *Module) SetSchemaPostProcessHandler(schemaPostProcess func(ctx context.Context, dbAlias, col string, result interface{}) error) {
+	m.Lock()
+	defer m.Unlock()
+	m.schemaPostProcess = schemaPostProcess
 }
 
 // GetDBType returns the type of the db for the alias provided

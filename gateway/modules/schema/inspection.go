@@ -171,7 +171,8 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *FieldType) 
 		fieldDetails.Kind = typeDateTime
 	case "boolean":
 		fieldDetails.Kind = typeBoolean
-
+	case "jsonb":
+		fieldDetails.Kind = typeJsonb
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])
 	}
