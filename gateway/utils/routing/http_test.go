@@ -101,7 +101,7 @@ func Test_setRequest(t *testing.T) {
 				route: &config.Route{
 					Targets: []config.RouteTarget{{
 						Host:   "spacecloud.com",
-						Port:   "8080",
+						Port:   8080,
 						Weight: 1,
 					}},
 				},
