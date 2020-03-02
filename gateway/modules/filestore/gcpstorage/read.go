@@ -17,9 +17,11 @@ import (
 
 // ListDir lists a directory in GCPStorage
 func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
-	// path should always start with a backslash
-	path := utils.SingleLeadingTrailing(req.Path, "/")
-	// path will always end in single backslash
+	// path should not start with a backslash
+	path := strings.Trim(req.Path, "/") + "/"
+	if path == "/" {
+		path = ""
+	}
 
 	it := g.client.Bucket(g.bucket).Objects(context.TODO(), &storage.Query{
 		Prefix:    path,
