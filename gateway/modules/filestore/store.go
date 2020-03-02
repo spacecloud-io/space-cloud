@@ -1,6 +1,7 @@
 package filestore
 
 import (
+	"context"
 	"io"
 	"sync"
 
@@ -45,7 +46,7 @@ type FileStore interface {
 	DeleteFile(path string) error
 
 	DoesExists(path string) error
-	GetState() error
+	GetState(ctx context.Context) error
 
 	GetStoreType() utils.FileStoreType
 	Close() error

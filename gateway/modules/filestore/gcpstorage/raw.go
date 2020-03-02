@@ -14,8 +14,8 @@ func (g *GCPStorage) DoesExists(path string) error {
 }
 
 // GetState checks if sc is able to query gcp storage
-func (g *GCPStorage) GetState() error {
-	if _, err := g.client.Bucket(g.bucket).Object("/").Attrs(context.TODO()); err != nil && err != storage.ErrObjectNotExist {
+func (g *GCPStorage) GetState(ctx context.Context) error {
+	if _, err := g.client.Bucket(g.bucket).Object("/").Attrs(ctx); err != nil && err != storage.ErrObjectNotExist {
 		return err
 	}
 	return nil

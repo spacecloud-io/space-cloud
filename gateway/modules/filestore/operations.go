@@ -177,9 +177,8 @@ func (m *Module) GetState(ctx context.Context) error {
 	if !m.IsEnabled() {
 		return errors.New("This feature isn't enabled")
 	}
-	// TODO BYPASSING SECURITY RULE CHECK
 	m.RLock()
 	defer m.RUnlock()
 	// Read the state from file storage
-	return m.store.GetState()
+	return m.store.GetState(ctx)
 }

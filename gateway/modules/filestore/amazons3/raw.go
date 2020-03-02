@@ -1,6 +1,7 @@
 package amazons3
 
 import (
+	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -23,7 +24,7 @@ func (a *AmazonS3) DoesExists(path string) error {
 }
 
 // GetState checks if sc is able to query s3
-func (a *AmazonS3) GetState() error {
+func (a *AmazonS3) GetState(ctx context.Context) error {
 	err := a.DoesExists("/")
 	if err != nil {
 		if v, ok := err.(awserr.Error); ok {
