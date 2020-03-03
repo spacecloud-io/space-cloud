@@ -54,7 +54,7 @@ func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string)
 						logrus.Errorf("error marshalling data $contains data (%s)", err.Error())
 						break
 					}
-					array = append(array, goqu.I(k).Eq(string(data)))
+					array = append(array, goqu.L(fmt.Sprintf("%s @> ?", k), string(data)))
 				case "$gt":
 					array = append(array, goqu.I(k).Gt(v2))
 
