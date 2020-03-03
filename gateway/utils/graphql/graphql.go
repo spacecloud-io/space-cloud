@@ -100,7 +100,7 @@ func createDBCallback(cb dbCallback) dbCallback {
 	}
 }
 
-func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, schema schema.Fields, cb callback) {
+func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, schema model.Fields, cb callback) {
 	switch node.GetKind() {
 
 	case kinds.Document:
@@ -201,7 +201,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 					return
 				}
 				req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}}
-				graph.processLinkedResult(ctx, field, fieldStruct, token, req, store, cb)
+				graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
 				return
 			}
 		}

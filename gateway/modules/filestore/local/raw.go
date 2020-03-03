@@ -1,7 +1,9 @@
 package local
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -16,5 +18,13 @@ func (l *Local) DoesExists(path string) error {
 		return errors.New("provided file / dir path not found")
 	}
 
+	return nil
+}
+
+// GetState check if root path is valid
+func (l *Local) GetState(ctx context.Context) error {
+	if _, err := os.Stat(l.rootPath); os.IsNotExist(err) {
+		return fmt.Errorf("root path does not exists")
+	}
 	return nil
 }
