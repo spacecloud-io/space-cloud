@@ -40,6 +40,10 @@ func (i *Istio) getServiceDeploymentsCount(ns, serviceID string) (int, error) {
 	return len(deployments.Items), nil
 }
 
+func (i *Istio) getVirtualServices(ns string) (*v1alpha3.VirtualServiceList, error) {
+	return i.istio.NetworkingV1alpha3().VirtualServices(ns).List(metav1.ListOptions{})
+}
+
 func (i *Istio) getAllVersionScaleConfig(ns, serviceID string) (map[string]model.ScaleConfig, error) {
 	// Get all deployments of the provided service
 	deployments, err := i.getServiceDeployments(ns, serviceID)

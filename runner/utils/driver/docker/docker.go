@@ -54,8 +54,13 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*Docker, error) {
 }
 
 // ApplyServiceRoutes sets the traffic splitting logic of each service
-func (d *Docker) ApplyServiceRoutes(_ context.Context, projectID, serviceID string, routes model.Routes) error {
+func (d *Docker) ApplyServiceRoutes(_ context.Context, _, _ string, _ model.Routes) error {
 	return errors.New("service routing is not implemented for docker driver")
+}
+
+// GetServiceRoutes gets the routing rules of each service
+func (d *Docker) GetServiceRoutes(_ context.Context, _ string) (map[string]model.Routes, error) {
+	return nil, errors.New("service routing is not implemented for docker driver")
 }
 
 // ApplyService creates containers for specified service

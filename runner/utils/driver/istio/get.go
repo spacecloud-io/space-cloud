@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
@@ -81,6 +82,12 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 				delete(envs, model.ArtifactVersion)
 			}
 
+			// Get the image pull policy
+			imagePullPolicy := model.PullAlways
+			if containerInfo.ImagePullPolicy == v1.PullIfNotPresent {
+				imagePullPolicy = model.PullIfNotExists
+			}
+
 			// set tasks
 			service.Tasks = append(service.Tasks, model.Task{
 				ID:    containerInfo.Name,
@@ -91,9 +98,10 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 					Memory: containerInfo.Resources.Requests.Memory().Value() / (1024 * 1024),
 				},
 				Docker: model.Docker{
-					Image:  containerInfo.Image,
-					Cmd:    containerInfo.Command,
-					Secret: dockerSecret,
+					Image:           containerInfo.Image,
+					Cmd:             containerInfo.Command,
+					Secret:          dockerSecret,
+					ImagePullPolicy: imagePullPolicy,
 				},
 				Env:     envs,
 				Runtime: runtime,
@@ -137,4 +145,54 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 	}
 
 	return services, nil
+}
+
+// GetServiceRoutes gets the routing rules of each service
+func (i *Istio) GetServiceRoutes(_ context.Context, projectID string) (map[string]model.Routes, error) {
+	ns := projectID
+
+	// Get all virtual services
+	services, err := i.getVirtualServices(ns)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceRoutes := make(map[string]model.Routes, len(services.Items))
+
+	for _, service := range services.Items {
+		routes := make(model.Routes, len(service.Spec.Http))
+
+		for i, route := range service.Spec.Http {
+
+			// Generate the targets
+			targets := make([]model.RouteTarget, len(route.Route))
+			for j, destination := range route.Route {
+				target := model.RouteTarget{Weight: destination.Weight, Port: int32(destination.Destination.Port.Number)}
+
+				// Figure out the route type
+				target.Type = model.RouteTargetExternal
+				if destination.Headers != nil {
+					target.Type = model.RouteTargetVersion
+				}
+				switch target.Type {
+				case model.RouteTargetVersion:
+					// Set the version field if target type was version
+					target.Version = destination.Headers.Request.Set["x-og-version"]
+				case model.RouteTargetExternal:
+					// Set the host field if target type was external
+					target.Host = destination.Destination.Host
+				}
+
+				targets[j] = target
+			}
+
+			// Set the route
+			routes[i] = &model.Route{Source: model.RouteSource{Port: int32(route.Match[0].Port)}, Targets: targets}
+		}
+
+		// Set the routes of a service
+		serviceRoutes[service.Labels["app"]] = routes
+	}
+
+	return serviceRoutes, nil
 }

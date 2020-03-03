@@ -214,14 +214,15 @@ func prepareVirtualServiceHTTPRoutes(projectID, serviceID string, services map[s
 				}
 
 				destinations = append(destinations, &networkingv1alpha3.HTTPRouteDestination{
-					// We will always set the headers since it helps us with the routing rules
+					// We will always set the headers since it helps us with the routing rules. Also, we check if the headers is present to determine
+					// if the destination is version or external.
 					Headers: &networkingv1alpha3.Headers{
 						Request: &networkingv1alpha3.Headers_HeaderOperations{
 							Set: map[string]string{
 								"x-og-project": projectID,
 								"x-og-service": serviceID,
-								"x-og-host":    destHost,
-								"x-og-port":    strconv.Itoa(int(destPort)),
+								"x-og-host":    getInternalServiceDomain(projectID, serviceID, target.Version),
+								"x-og-port":    strconv.Itoa(int(target.Port)),
 								"x-og-version": target.Version,
 							},
 						},
@@ -328,8 +329,8 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 									Set: map[string]string{
 										"x-og-project": service.ProjectID,
 										"x-og-service": service.ID,
-										"x-og-host":    destHost,
-										"x-og-port":    strconv.Itoa(int(destPort)),
+										"x-og-host":    getInternalServiceDomain(service.ProjectID, service.ID, service.Version),
+										"x-og-port":    strconv.Itoa(int(port.Port)),
 										"x-og-version": service.Version,
 									},
 								},
@@ -531,6 +532,7 @@ func (i *Istio) generateVirtualServiceBasedOnRoutes(projectID, serviceID string,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        getVirtualServiceName(serviceID),
 			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Labels:      map[string]string{"app": serviceID}, // We use the app label to retrieve service routing rules
 		},
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: []string{getServiceDomainName(projectID, serviceID)},
