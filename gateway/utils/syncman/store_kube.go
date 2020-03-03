@@ -82,7 +82,6 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				cb(s.getProjects(onAddOrUpdateProjects(obj, projectMap)))
-				logrus.Debug("project added")
 			},
 			DeleteFunc: func(obj interface{}) {
 				configMap := obj.(*v1.ConfigMap)
@@ -93,12 +92,10 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 				}
 				delete(projectMap, projectID)
 				cb(s.getProjects(projectMap))
-				logrus.Debug("project deleted")
 
 			},
 			UpdateFunc: func(old, obj interface{}) {
 				cb(s.getProjects(onAddOrUpdateProjects(obj, projectMap)))
-				logrus.Debug("project updated")
 			},
 		})
 
@@ -112,6 +109,20 @@ func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	pod := obj.(*v1.Pod)
 	id := pod.Name
+
+	// Ignore if pod isn't running
+	if pod.Status.Phase != v1.PodRunning || pod.Status.PodIP == "" {
+		logrus.Debugf("Pod (%s) isn't running yet. Current status - %s", id, pod.Status.Phase)
+		for index, service := range services {
+			if service.id == id {
+				services[index] = services[len(services)-1]
+				services = services[:len(services)-1]
+				break
+			}
+		}
+		return services
+	}
+
 	addr := pod.Status.PodIP + ":4122"
 
 	doesExist := false
@@ -147,7 +158,6 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 				newService := onAddOrUpdateServices(obj, services)
 				sort.Stable(newService)
 				cb(newService)
-				logrus.Debug("service added")
 			},
 			DeleteFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
@@ -162,13 +172,11 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 				}
 				sort.Stable(services)
 				cb(services)
-				logrus.Debug("service deleted")
 			},
 			UpdateFunc: func(old, obj interface{}) {
 				newService := onAddOrUpdateServices(obj, services)
 				sort.Stable(newService)
 				cb(newService)
-				logrus.Debug("service updated")
 			},
 		})
 
