@@ -23,7 +23,7 @@ func (s *Schema) ValidateUpdateOperation(dbAlias, col, op string, updateDoc, fin
 	}
 	SchemaDoc, ok := schemaDb[col]
 	if !ok {
-		logrus.Infoln("validating update operation in schema module collection (%s) not found in schemaDoc where dbAlias (%s)", col, dbAlias)
+		logrus.Infof("validating update operation in schema module collection (%s) not found in schemaDoc where dbAlias (%s)", col, dbAlias)
 		return nil
 	}
 

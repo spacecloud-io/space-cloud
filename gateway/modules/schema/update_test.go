@@ -567,7 +567,12 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		},
 	}
 
-	s := Init(&crud.Module{}, false)
+	c := crud.Init(false)
+	if err := c.SetConfig("", TestCases); err != nil {
+		t.Errorf("error in schmea update test file unable to set config of crud (%s)", err.Error())
+	}
+
+	s := Init(c, false)
 	if err := s.parseSchema(TestCases); err != nil {
 		t.Errorf("error parsing schema :: %v", err)
 	}
