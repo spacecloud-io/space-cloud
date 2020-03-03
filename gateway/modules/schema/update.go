@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -67,33 +66,6 @@ func (s *Schema) ValidateUpdateOperation(dbAlias, col, op string, updateDoc, fin
 				continue
 			}
 			return fmt.Errorf("required field (%s) not present during upsert", fieldName)
-		}
-	}
-
-	dbType, err := s.crud.GetDBType(dbAlias)
-	if err != nil {
-		logrus.Errorf("error validating update operation in schema module unable to get dbType from dbAlias (%s)", dbAlias)
-		return err
-	}
-
-	// NOTE: currently jsonb type is only supported for postgres
-	// if it is supported for multiple databases in future change below code
-	if dbType == string(utils.Postgres) {
-		for _, operator := range find {
-			operatorMap, ok := operator.(map[string]interface{})
-			if !ok {
-				logrus.Errorf("error validating update operation in schema module unable to type assert find object to map[string]interface")
-				return fmt.Errorf("unable to type assert find object")
-			}
-			data, ok := operatorMap["$contains"]
-			if ok {
-				result, err := json.Marshal(data)
-				if err != nil {
-					logrus.Errorf("error validating update operation in schema module unable to marshal $contains data (%s)", err.Error())
-					return err
-				}
-				operatorMap["$contains"] = string(result)
-			}
 		}
 	}
 
