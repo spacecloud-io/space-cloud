@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -31,7 +32,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 }
 
 // Inspector generates schema
-func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (Collection, error) {
+func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (model.Collection, error) {
 	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbType, project, col)
 
 	if err != nil {
@@ -40,12 +41,12 @@ func (s *Schema) Inspector(ctx context.Context, dbType, project, col string) (Co
 	return generateInspection(dbType, col, fields, foreignkeys, indexes)
 }
 
-func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType, indexes []utils.IndexType) (Collection, error) {
-	inspectionCollection := Collection{}
-	inspectionFields := Fields{}
+func generateInspection(dbType, col string, fields []utils.FieldType, foreignkeys []utils.ForeignKeysType, indexes []utils.IndexType) (model.Collection, error) {
+	inspectionCollection := model.Collection{}
+	inspectionFields := model.Fields{}
 
 	for _, field := range fields {
-		fieldDetails := FieldType{FieldName: field.FieldName}
+		fieldDetails := model.FieldType{FieldName: field.FieldName}
 
 		// check if field nullable (!)
 		if field.FieldNull == "NO" {
@@ -69,7 +70,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 			if utils.DBType(dbType) == utils.SQLServer {
 				// replace (( or )) with nothing e.g -> ((9.8)) -> 9.8
 				field.FieldDefault = strings.Replace(strings.Replace(field.FieldDefault, "(", "", -1), ")", "", -1)
-				if fieldDetails.Kind == typeBoolean {
+				if fieldDetails.Kind == model.TypeBoolean {
 					if field.FieldDefault == "1" {
 						field.FieldDefault = "true"
 					} else {
@@ -82,13 +83,13 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 				// split "'default-value'::text" to "default-value"
 				s := strings.Split(field.FieldDefault, "::")
 				field.FieldDefault = s[0]
-				if fieldDetails.Kind == typeString || fieldDetails.Kind == typeDateTime || fieldDetails.Kind == TypeID {
+				if fieldDetails.Kind == model.TypeString || fieldDetails.Kind == model.TypeDateTime || fieldDetails.Kind == model.TypeID {
 					field.FieldDefault = strings.Split(field.FieldDefault, "'")[1]
 				}
 			}
 
 			// add string between quotes
-			if fieldDetails.Kind == typeString || fieldDetails.Kind == TypeID || fieldDetails.Kind == typeDateTime {
+			if fieldDetails.Kind == model.TypeString || fieldDetails.Kind == model.TypeID || fieldDetails.Kind == model.TypeDateTime {
 				field.FieldDefault = fmt.Sprintf("\"%s\"", field.FieldDefault)
 			}
 			fieldDetails.Default = field.FieldDefault
@@ -103,14 +104,14 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == field.FieldName && foreignValue.RefTableName != "" && foreignValue.RefColumnName != "" {
 				fieldDetails.IsForeign = true
-				fieldDetails.JointTable = &TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName}
+				fieldDetails.JointTable = &model.TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName}
 			}
 		}
 		for _, indexValue := range indexes {
 			if indexValue.ColumnName == field.FieldName {
 				fieldDetails.IsIndex = true
 				fieldDetails.IsUnique = indexValue.IsUnique == "yes"
-				fieldDetails.IndexInfo = &TableProperties{Group: indexValue.IndexName, Order: indexValue.Order, Sort: indexValue.Sort}
+				fieldDetails.IndexInfo = &model.TableProperties{Group: indexValue.IndexName, Order: indexValue.Order, Sort: indexValue.Sort}
 			}
 		}
 
@@ -124,9 +125,9 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 	return inspectionCollection, nil
 }
 
-func inspectionMySQLCheckFieldType(typeName string, fieldDetails *FieldType) error {
-	if typeName == "varchar("+sqlTypeIDSize+")" {
-		fieldDetails.Kind = TypeID
+func inspectionMySQLCheckFieldType(typeName string, fieldDetails *model.FieldType) error {
+	if typeName == "varchar("+model.SQLTypeIDSize+")" {
+		fieldDetails.Kind = model.TypeID
 		return nil
 	}
 
@@ -134,26 +135,26 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *FieldType) err
 
 	switch result[0] {
 	case "varchar":
-		fieldDetails.Kind = typeString // for sql server
+		fieldDetails.Kind = model.TypeString // for sql server
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
-		fieldDetails.Kind = typeString
+		fieldDetails.Kind = model.TypeString
 	case "smallint", "mediumint", "int", "bigint":
-		fieldDetails.Kind = typeInteger
+		fieldDetails.Kind = model.TypeInteger
 	case "float", "double":
-		fieldDetails.Kind = typeFloat
+		fieldDetails.Kind = model.TypeFloat
 	case "date", "time", "datetime", "timestamp":
-		fieldDetails.Kind = typeDateTime
+		fieldDetails.Kind = model.TypeDateTime
 	case "tinyint", "boolean", "bit":
-		fieldDetails.Kind = typeBoolean
+		fieldDetails.Kind = model.TypeBoolean
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])
 	}
 	return nil
 }
 
-func inspectionPostgresCheckFieldType(typeName string, fieldDetails *FieldType) error {
+func inspectionPostgresCheckFieldType(typeName string, fieldDetails *model.FieldType) error {
 	if typeName == "character varying" {
-		fieldDetails.Kind = TypeID
+		fieldDetails.Kind = model.TypeID
 		return nil
 	}
 
@@ -162,17 +163,17 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *FieldType) 
 
 	switch result[0] {
 	case "character", "bit", "text":
-		fieldDetails.Kind = typeString
+		fieldDetails.Kind = model.TypeString
 	case "bigint", "bigserial", "integer", "numeric", "smallint", "smallserial", "serial":
-		fieldDetails.Kind = typeInteger
+		fieldDetails.Kind = model.TypeInteger
 	case "float", "double", "real":
-		fieldDetails.Kind = typeFloat
+		fieldDetails.Kind = model.TypeFloat
 	case "date", "time", "datetime", "timestamp", "interval":
-		fieldDetails.Kind = typeDateTime
+		fieldDetails.Kind = model.TypeDateTime
 	case "boolean":
-		fieldDetails.Kind = typeBoolean
+		fieldDetails.Kind = model.TypeBoolean
 	case "jsonb":
-		fieldDetails.Kind = typeJsonb
+		fieldDetails.Kind = model.TypeJsonb
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])
 	}

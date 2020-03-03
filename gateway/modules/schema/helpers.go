@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -13,28 +14,28 @@ import (
 func getSQLType(dbType, typename string) (string, error) {
 
 	switch typename {
-	case TypeID:
-		return "varchar(" + sqlTypeIDSize + ")", nil
-	case typeString:
+	case model.TypeID:
+		return "varchar(" + model.SQLTypeIDSize + ")", nil
+	case model.TypeString:
 		if dbType == string(utils.SQLServer) {
 			return "varchar(max)", nil
 		}
 		return "text", nil
-	case typeDateTime:
+	case model.TypeDateTime:
 		if dbType == string(utils.MySQL) {
 			return "datetime", nil
 		}
 		return "timestamp", nil
-	case typeBoolean:
+	case model.TypeBoolean:
 		if dbType == string(utils.SQLServer) {
 			return "bit", nil
 		}
 		return "boolean", nil
-	case typeFloat:
+	case model.TypeFloat:
 		return "float", nil
-	case typeInteger:
+	case model.TypeInteger:
 		return "bigint", nil
-	case typeJsonb:
+	case model.TypeJsonb:
 		if dbType != string(utils.Postgres) {
 			return "", fmt.Errorf("jsonb not supported for database %s", dbType)
 		}
@@ -45,11 +46,11 @@ func getSQLType(dbType, typename string) (string, error) {
 }
 
 // TODO ANY PARTICULAR DIRECTIVE THAT IS NOT SUPPORTED FOR JSONB
-func checkErrors(realFieldStruct *FieldType) error {
+func checkErrors(realFieldStruct *model.FieldType) error {
 	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
 		return fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName)
 	}
-	if realFieldStruct.Kind == typeObject {
+	if realFieldStruct.Kind == model.TypeObject {
 		return fmt.Errorf("invalid type for field %s - object type not supported in sql creation", realFieldStruct.FieldName)
 	}
 
@@ -57,7 +58,7 @@ func checkErrors(realFieldStruct *FieldType) error {
 		return errors.New("primary key must be required")
 	}
 
-	if realFieldStruct.IsPrimary && realFieldStruct.Kind != TypeID {
+	if realFieldStruct.IsPrimary && realFieldStruct.Kind != model.TypeID {
 		return errors.New("primary key should be of type ID")
 	}
 
@@ -241,7 +242,7 @@ func (c *creationModule) removeForeignKey() []string {
 	return nil
 }
 
-func addNewTable(project, dbType, realColName string, realColValue Fields, removeProjectScope bool) (string, error) {
+func addNewTable(project, dbType, realColName string, realColValue model.Fields, removeProjectScope bool) (string, error) {
 
 	var query string
 	for realFieldKey, realFieldStruct := range realColValue {
@@ -368,7 +369,7 @@ func (c *creationModule) modifyColumnType(dbType string) []string {
 	return queries
 }
 
-func addIndex(dbType, project, tableName, indexName string, isIndexUnique bool, removeProjectScope bool, mapArray []*FieldType) string {
+func addIndex(dbType, project, tableName, indexName string, isIndexUnique bool, removeProjectScope bool, mapArray []*model.FieldType) string {
 	s := " ("
 	for _, schemaFieldType := range mapArray {
 		s += schemaFieldType.FieldName + " " + schemaFieldType.IndexInfo.Sort + ", "
@@ -399,17 +400,17 @@ func removeIndex(dbType, project, tableName, indexName string, removeProjectScop
 
 type indexStruct struct {
 	IsIndexUnique bool
-	IndexMap      []*FieldType
+	IndexMap      []*model.FieldType
 }
 
-func getRealIndexMap(realTableInfo Fields) (map[string]*indexStruct, error) {
+func getRealIndexMap(realTableInfo model.Fields) (map[string]*indexStruct, error) {
 	realIndexMap := make(map[string]*indexStruct)
 	for _, realColumnInfo := range realTableInfo {
 		if realColumnInfo.IsIndex {
 			if value, ok := realIndexMap[realColumnInfo.IndexInfo.Group]; ok {
 				value.IndexMap = append(value.IndexMap, realColumnInfo)
 			} else {
-				realIndexMap[realColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*FieldType{realColumnInfo}}
+				realIndexMap[realColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*model.FieldType{realColumnInfo}}
 			}
 			if realColumnInfo.IsUnique {
 				realIndexMap[realColumnInfo.IndexInfo.Group].IsIndexUnique = true
@@ -433,14 +434,14 @@ func getRealIndexMap(realTableInfo Fields) (map[string]*indexStruct, error) {
 	return realIndexMap, nil
 }
 
-func getCurrentIndexMap(currentTableInfo Fields) (map[string]*indexStruct, error) {
+func getCurrentIndexMap(currentTableInfo model.Fields) (map[string]*indexStruct, error) {
 	currentIndexMap := make(map[string]*indexStruct)
 	for _, currentColumnInfo := range currentTableInfo {
 		if currentColumnInfo.IsIndex {
 			if value, ok := currentIndexMap[currentColumnInfo.IndexInfo.Group]; ok {
 				value.IndexMap = append(value.IndexMap, currentColumnInfo)
 			} else {
-				currentIndexMap[currentColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*FieldType{currentColumnInfo}}
+				currentIndexMap[currentColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*model.FieldType{currentColumnInfo}}
 			}
 			if currentColumnInfo.IsUnique {
 				currentIndexMap[currentColumnInfo.IndexInfo.Group].IsIndexUnique = true

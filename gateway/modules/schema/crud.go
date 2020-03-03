@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // CrudPostProcess unmarshal's the json field in read request
@@ -30,7 +31,7 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 		docs = []interface{}{v}
 	}
 	for columnName, columnValue := range tableInfo {
-		if columnValue.Kind == typeJsonb {
+		if columnValue.Kind == model.TypeJsonb {
 			for _, doc := range docs {
 				finalDoc := doc.(map[string]interface{})
 				data, ok := finalDoc[columnName].([]byte)

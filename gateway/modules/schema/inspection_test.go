@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -19,7 +20,7 @@ func Test_generateInspection(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    Collection
+		want    model.Collection
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -31,7 +32,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
 			wantErr: false,
 		},
 		{
@@ -42,7 +43,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "bigint", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer"}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer"}}},
 			wantErr: false,
 		},
 		{
@@ -53,7 +54,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String"}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String"}}},
 			wantErr: false,
 		},
 		{
@@ -64,7 +65,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean"}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean"}}},
 			wantErr: false,
 		},
 		{
@@ -75,7 +76,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "float", FieldNull: "NO", FieldKey: "MUL"}},
 				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsForeign: true, JointTable: &TableProperties{To: "col2", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -86,7 +87,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "datetime", FieldNull: "NO", FieldKey: "MUL"}},
 				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "DateTime", IsForeign: true, JointTable: &TableProperties{To: "col2", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "DateTime", IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -108,7 +109,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "float", FieldNull: "NO", FieldDefault: "9.8"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsDefault: true, Default: "9.8"}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsDefault: true, Default: "9.8"}}},
 			wantErr: false,
 		},
 		{
@@ -119,7 +120,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldDefault: "'string'::text"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"string\""}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"string\""}}},
 			wantErr: false,
 		},
 		{
@@ -130,7 +131,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO", FieldDefault: "true"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean", IsDefault: true, Default: "true"}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean", IsDefault: true, Default: "true"}}},
 			wantErr: false,
 		},
 		{
@@ -141,7 +142,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "character varying", FieldNull: "NO", FieldKey: "PRI"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
 			wantErr: false,
 		},
 		{
@@ -152,7 +153,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "bigint", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer"}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Integer"}}},
 			wantErr: false,
 		},
 		{
@@ -163,7 +164,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String"}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String"}}},
 			wantErr: false,
 		},
 		{
@@ -174,7 +175,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "boolean", FieldNull: "NO"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean"}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Boolean"}}},
 			wantErr: false,
 		},
 		{
@@ -185,7 +186,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "float", FieldNull: "NO", FieldKey: "MUL"}},
 				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsForeign: true, JointTable: &TableProperties{To: "col2", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "Float", IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -196,7 +197,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "datetime", FieldNull: "NO", FieldKey: "MUL"}},
 				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: "col1", RefTableName: "table2", RefColumnName: "col2"}},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "DateTime", IsForeign: true, JointTable: &TableProperties{To: "col2", Table: "table2"}}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "DateTime", IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2"}}}},
 			wantErr: false,
 		},
 		{
@@ -218,7 +219,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
 			wantErr: false,
 		},
 		{
@@ -229,7 +230,7 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{utils.FieldType{FieldName: "col1", FieldType: "text", FieldNull: "NO", FieldDefault: "((string))"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    Collection{"table1": Fields{"col1": &FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"string\""}}},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"string\""}}},
 			wantErr: false,
 		},
 	}
