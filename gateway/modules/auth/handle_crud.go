@@ -54,13 +54,13 @@ func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, 
 
 	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Read)
 	if err != nil {
-		return new(model.PostProcess), http.StatusUnauthorized, err
+		return nil, http.StatusUnauthorized, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
 	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return new(model.PostProcess), http.StatusForbidden, err
+		return nil, http.StatusForbidden, err
 	}
 
 	return actions, http.StatusOK, nil

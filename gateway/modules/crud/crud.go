@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
 
@@ -156,7 +155,6 @@ func (m *Module) SetSchemaPostProcessHandler(schemaPostProcess func(ctx context.
 // GetDBType returns the type of the db for the alias provided
 func (m *Module) GetDBType(dbAlias string) (string, error) {
 	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
-	log.Println("get dbtype", m.alias, "a", dbAlias, "b", m.dbType)
 	if dbAlias != m.alias {
 		return "", fmt.Errorf("db (%s) not found", dbAlias)
 	}

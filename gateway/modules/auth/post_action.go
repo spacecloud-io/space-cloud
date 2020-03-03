@@ -23,7 +23,7 @@ func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interf
 	var resultArr []interface{}
 	switch val := result.(type) {
 	case map[string]interface{}:
-		resultArr = []interface{}{val} //make an array of interface with val element
+		resultArr = []interface{}{val} // make an array of interface with val element
 	case []interface{}:
 		resultArr = val
 	default:
@@ -31,6 +31,9 @@ func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interf
 	}
 
 	for _, doc := range resultArr {
+		if postProcess == nil {
+			break
+		}
 		for _, field := range postProcess.PostProcessAction {
 			// apply Action on all elements
 			switch field.Action {
