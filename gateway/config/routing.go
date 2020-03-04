@@ -18,7 +18,7 @@ type Route struct {
 // SelectTarget returns a target based on the weights assigned
 func (r *Route) SelectTarget(weight int32) (RouteTarget, error) {
 
-	// Generate a random float in the range 0 to 1 if provided weight in lesser than zero
+	// Generate a random float in the range 0 to 100 if provided weight in lesser than zero
 	if weight < 0 {
 		weight = rand.Int31n(100)
 	}

@@ -248,7 +248,7 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
+			logrus.Errorf("Failed to set service routes - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -282,7 +282,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		// Verify token
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
-			logrus.Errorf("Failed to apply service - %s", err.Error())
+			logrus.Errorf("Failed to get service routes - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
