@@ -1,9 +1,9 @@
 package istio
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/segmentio/ksuid"
@@ -23,7 +23,6 @@ import (
 func (i *Istio) prepareContainers(service *model.Service, token string, listOfSecrets map[string]*v1.Secret) ([]v1.Container, []v1.Volume, []v1.LocalObjectReference) {
 	// There will be n + 1 containers in the pod. Each task will have it's own container. Along with that,
 	// there will be a metric collection container as well which pushes metric data to the autoscaler.
-	// TODO: Add support for private repos
 	tasks := service.Tasks
 	containers := make([]v1.Container, len(tasks))
 	volume := map[string]v1.Volume{}
@@ -179,51 +178,128 @@ func prepareServicePorts(tasks []model.Task) []v1.ServicePort {
 	return ports
 }
 
-func makeOriginalVirtualService(service *model.Service, virtualService *v1alpha3.VirtualService) {
-	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
+func prepareVirtualServiceHTTPRoutes(projectID, serviceID string, services map[string]model.ScaleConfig, routes model.Routes, proxyPort uint32) ([]*networkingv1alpha3.HTTPRoute, error) {
+	var httpRoutes []*networkingv1alpha3.HTTPRoute
 
-	// Redo the http routes. The tcp routes are lost anyways so we don't really care about them.
-	for _, httpRoute := range virtualService.Spec.Http {
-		for _, route := range httpRoute.Route {
-			// Revert the destination to original
-			port, _ := strconv.Atoi(strings.Split(httpRoute.Name, "-")[2])
-			route.Destination.Host = ogHost
-			route.Destination.Port.Number = uint32(port)
-
-			// Reset the headers
-			route.Headers = nil
+	for _, route := range routes {
+		// Check if the port provided is correct
+		if route.Source.Port == 0 {
+			return nil, errors.New("port cannot be zero")
 		}
-	}
-}
 
-func makeScaleZeroVirtualService(service *model.Service, virtualService *v1alpha3.VirtualService, proxyPort uint32) {
-	ogHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
+		// Check if at least one target is provided
+		if len(route.Targets) == 0 {
+			return nil, errors.New("at least one target needs to be provided")
+		}
 
-	// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
-	// to service incoming requests.
-	for _, httpRoute := range virtualService.Spec.Http {
-		for _, route := range httpRoute.Route {
-			// Set the destination to runner proxy
-			route.Destination.Host = "runner.space-cloud.svc.cluster.local"
-			route.Destination.Port.Number = proxyPort
+		// Prepare an array of targets / destinations
+		var destinations []*networkingv1alpha3.HTTPRouteDestination
+		for _, target := range route.Targets {
+			switch target.Type {
+			case model.RouteTargetVersion:
+				// Check if config for version exists
+				versionScaleConfig, p := services[target.Version]
+				if !p {
+					return nil, fmt.Errorf("version (%s) not found for service (%s)", target.Version, serviceID)
+				}
 
-			// Set the headers
-			route.Headers = &networkingv1alpha3.Headers{
-				Request: &networkingv1alpha3.Headers_HeaderOperations{
-					Add: map[string]string{
-						"x-og-project": service.ProjectID,
-						"x-og-service": service.ID,
-						"x-og-host":    ogHost,
-						"x-og-port":    strings.Split(httpRoute.Name, "-")[2],
-						"x-og-version": service.Version,
+				// Prepare variables
+				destHost := getInternalServiceDomain(projectID, serviceID, target.Version)
+				destPort := uint32(target.Port)
+
+				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service to service incoming requests.
+				if versionScaleConfig.MinReplicas == 0 {
+					destHost = "runner.space-cloud.svc.cluster.local"
+					destPort = proxyPort
+				}
+
+				destinations = append(destinations, &networkingv1alpha3.HTTPRouteDestination{
+					// We will always set the headers since it helps us with the routing rules. Also, we check if the headers is present to determine
+					// if the destination is version or external.
+					Headers: &networkingv1alpha3.Headers{
+						Request: &networkingv1alpha3.Headers_HeaderOperations{
+							Set: map[string]string{
+								"x-og-project": projectID,
+								"x-og-service": serviceID,
+								"x-og-host":    getInternalServiceDomain(projectID, serviceID, target.Version),
+								"x-og-port":    strconv.Itoa(int(target.Port)),
+								"x-og-version": target.Version,
+							},
+						},
 					},
-				},
+					Destination: &networkingv1alpha3.Destination{
+						Host: destHost,
+						Port: &networkingv1alpha3.PortSelector{Number: destPort},
+					},
+					Weight: target.Weight,
+				})
+
+			case model.RouteTargetExternal:
+				destinations = append(destinations, &networkingv1alpha3.HTTPRouteDestination{
+					Destination: &networkingv1alpha3.Destination{
+						Host: target.Host,
+						Port: &networkingv1alpha3.PortSelector{Number: uint32(target.Port)},
+					},
+					Weight: target.Weight,
+				})
+			default:
+				return nil, fmt.Errorf("invalid target type (%s) provided", target.Type)
 			}
 		}
+
+		// Add the http route
+		httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
+			Name:    fmt.Sprintf("http-%d", route.Source.Port),
+			Match:   []*networkingv1alpha3.HTTPMatchRequest{{Port: uint32(route.Source.Port), Gateways: []string{"mesh"}}},
+			Retries: &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 180}},
+			Route:   destinations,
+		})
 	}
+
+	return httpRoutes, nil
 }
 
-func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*networkingv1alpha3.HTTPRoute, []*networkingv1alpha3.TCPRoute) {
+func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32, prevVirtualService *v1alpha3.VirtualService) ([]*networkingv1alpha3.HTTPRoute, []*networkingv1alpha3.TCPRoute) {
+	// Update the existing destinations of this version if virtual service already exist. We only need to do this for http services.
+	if prevVirtualService != nil {
+		for _, httpRoute := range prevVirtualService.Spec.Http {
+			for _, dest := range httpRoute.Route {
+
+				// Check if the route was for a service with min scale 0. If the destination has the host of runner, it means it is communicating via the proxy.
+				if dest.Destination.Host == "runner.space-cloud.svc.cluster.local" {
+					// We are only interested in this case if the new min replica for this version is more than 0. If the min replica was zero there would be no change
+					if service.Scale.MinReplicas == 0 {
+						continue
+					}
+
+					// Update this particular destination if the version matches with ours. We need to make the communication `direct`
+					if service.Version == dest.Headers.Request.Set["x-og-version"] {
+						// Set the destination host
+						dest.Destination.Host = getInternalServiceDomain(service.ProjectID, service.ID, service.Version)
+
+						// Set the destination port
+						port, _ := strconv.Atoi(dest.Headers.Request.Set["x-og-port"])
+						dest.Destination.Port = &networkingv1alpha3.PortSelector{Number: uint32(port)}
+					}
+				}
+
+				// Since we are here it means the given destination communicated with the target directly. We don't really care if the min replica is greater
+				// than zero because this would mean there is no change.
+				if service.Scale.MinReplicas > 0 {
+					continue
+				}
+
+				// Update the destination to communicate via the proxy if its for our version
+				if dest.Destination.Host == getInternalServiceDomain(service.ProjectID, service.ID, service.Version) {
+					dest.Destination.Host = "runner.space-cloud.svc.cluster.local"
+					dest.Destination.Port = &networkingv1alpha3.PortSelector{Number: proxyPort}
+				}
+			}
+		}
+		return prevVirtualService.Spec.Http, prevVirtualService.Spec.Tcp
+	}
+
+	// Reaching here means we have to create new rules
 	var httpRoutes []*networkingv1alpha3.HTTPRoute
 	var tcpRoutes []*networkingv1alpha3.TCPRoute
 
@@ -232,26 +308,11 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 			switch port.Protocol {
 			case model.HTTP:
 				// Prepare variables
-				var headers *networkingv1alpha3.Headers
-				retries := &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 90}}
-				destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
+				destHost := getInternalServiceDomain(service.ProjectID, service.ID, service.Version)
 				destPort := uint32(port.Port)
 
-				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
-				// to service incoming requests.
-				if service.Scale.Replicas == 0 {
-					headers = &networkingv1alpha3.Headers{
-						Request: &networkingv1alpha3.Headers_HeaderOperations{
-							Add: map[string]string{
-								"x-og-project": service.ProjectID,
-								"x-og-service": service.ID,
-								"x-og-host":    destHost,
-								"x-og-port":    strconv.Itoa(int(destPort)),
-								"x-og-version": service.Version,
-							},
-						},
-					}
-					retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
+				// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service to service incoming requests.
+				if service.Scale.MinReplicas == 0 {
 					destHost = "runner.space-cloud.svc.cluster.local"
 					destPort = proxyPort
 				}
@@ -259,10 +320,21 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 				httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
 					Name:    fmt.Sprintf("http-%d%d-%d", j, i, port.Port),
 					Match:   []*networkingv1alpha3.HTTPMatchRequest{{Port: uint32(port.Port), Gateways: []string{"mesh"}}},
-					Retries: retries,
+					Retries: &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 180}},
 					Route: []*networkingv1alpha3.HTTPRouteDestination{
 						{
-							Headers: headers,
+							// We will always set the headers since it helps us with the routing rules
+							Headers: &networkingv1alpha3.Headers{
+								Request: &networkingv1alpha3.Headers_HeaderOperations{
+									Set: map[string]string{
+										"x-og-project": service.ProjectID,
+										"x-og-service": service.ID,
+										"x-og-host":    getInternalServiceDomain(service.ProjectID, service.ID, service.Version),
+										"x-og-port":    strconv.Itoa(int(port.Port)),
+										"x-og-version": service.Version,
+									},
+								},
+							},
 							Destination: &networkingv1alpha3.Destination{
 								Host: destHost,
 								Port: &networkingv1alpha3.PortSelector{Number: destPort},
@@ -272,17 +344,12 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 				})
 
 			case model.TCP:
-				// Ignore tcp routes if scale is zero
-				if service.Scale.Replicas == 0 {
-					continue
-				}
-
 				tcpRoutes = append(tcpRoutes, &networkingv1alpha3.TCPRoute{
 					Match: []*networkingv1alpha3.L4MatchAttributes{{Port: uint32(port.Port)}},
 					Route: []*networkingv1alpha3.RouteDestination{
 						{
 							Destination: &networkingv1alpha3.Destination{
-								Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
+								Host: getInternalServiceDomain(service.ProjectID, service.ID, service.Version),
 								Port: &networkingv1alpha3.PortSelector{Number: uint32(port.Port)},
 							},
 						},
@@ -292,103 +359,13 @@ func prepareVirtualServiceRoutes(service *model.Service, proxyPort uint32) ([]*n
 		}
 	}
 
-	// We dont need to expose services since space cloud will take care of it
-	// // Add http routes for the exposed http routes. Exposing a service is only supported for http services
-	// if service.Expose != nil && service.Expose.Rules != nil && len(service.Expose.Rules) > 0 {
-	// 	for i, rule := range service.Expose.Rules {
-	// 		// Prepare variables
-	// 		var headers *networkingv1alpha3.Headers
-	// 		retries := &networkingv1alpha3.HTTPRetry{Attempts: 3, PerTryTimeout: &types.Duration{Seconds: 90}}
-	// 		destHost := fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)
-	// 		destPort := uint32(rule.Port)
-	//
-	// 		// Redirect traffic to runner when no of replicas is equal to zero. The runner proxy will scale up the service
-	// 		// to service incoming requests.
-	// 		if service.Scale.Replicas == 0 {
-	// 			headers = &networkingv1alpha3.Headers{
-	// 				Request: &networkingv1alpha3.Headers_HeaderOperations{
-	// 					Set: map[string]string{
-	// 						"x-og-project": service.ProjectID,
-	// 						"x-og-service": service.ID,
-	// 						"x-og-host":    destHost,
-	// 						"x-og-port":    strconv.Itoa(int(destPort)),
-	// 						"x-og-env":     service.Environment,
-	// 						"x-og-version": service.Version,
-	// 					},
-	// 				},
-	// 			}
-	// 			retries = &networkingv1alpha3.HTTPRetry{Attempts: 1, PerTryTimeout: &types.Duration{Seconds: 180}}
-	// 			destHost = "runner.space-cloud.svc.cluster.local"
-	// 			destPort = proxyPort
-	// 		}
-	//
-	// 		match := prepareHTTPMatch(&rule)
-	// 		match[0].Gateways = []string{getGatewayName(service)}
-	// 		httpRoutes = append(httpRoutes, &networkingv1alpha3.HTTPRoute{
-	// 			Match:   match,
-	// 			Rewrite: prepareHTTPMatchRewrite(&rule),
-	// 			Name:    fmt.Sprintf("expose-%d-%d", i, rule.Port),
-	// 			Retries: retries,
-	// 			Route: []*networkingv1alpha3.HTTPRouteDestination{
-	// 				{
-	// 					Headers: headers,
-	// 					Destination: &networkingv1alpha3.Destination{
-	// 						Host: destHost,
-	// 						Port: &networkingv1alpha3.PortSelector{Number: destPort},
-	// 					},
-	// 				},
-	// 			},
-	// 		})
-	// 	}
-	// }
-
 	return httpRoutes, tcpRoutes
 }
 
-// func prepareHTTPMatch(rule *model.ExposeRule) []*networkingv1alpha3.HTTPMatchRequest {
-// 	// TODO: Add project level host
-// 	if rule.URI.Exact != nil {
-// 		return []*networkingv1alpha3.HTTPMatchRequest{
-// 			{Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Exact{Exact: *rule.URI.Exact}}},
-// 		}
-//
-// 	}
-// 	if rule.URI.Prefix != nil {
-// 		return []*networkingv1alpha3.HTTPMatchRequest{
-// 			{Uri: &networkingv1alpha3.StringMatch{MatchType: &networkingv1alpha3.StringMatch_Prefix{Prefix: *rule.URI.Prefix}}},
-// 		}
-// 	}
-//
-// 	return nil
-// }
-
-// func prepareHTTPMatchRewrite(rule *model.ExposeRule) *networkingv1alpha3.HTTPRewrite {
-// 	if rule.URI.Rewrite != nil {
-// 		return &networkingv1alpha3.HTTPRewrite{Uri: *rule.URI.Rewrite}
-// 	}
-// 	return nil
-// }
-
 func prepareVirtualServiceHosts(service *model.Service) []string {
 	hosts := []string{fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID)}
-
-	// if service.Expose != nil && service.Expose.Hosts != nil {
-	// 	hosts = append(hosts, service.Expose.Hosts...)
-	// }
-
 	return hosts
 }
-
-// func prepareVirtualServiceGateways(service *model.Service) []string {
-// 	gateways := []string{"mesh"}
-//
-// 	// Add gateway if the service is exposed
-// 	if service.Expose != nil {
-// 		gateways = append(gateways, getGatewayName(service))
-// 	}
-//
-// 	return gateways
-// }
 
 func prepareAuthPolicyRules(service *model.Service) []*securityv1beta1.Rule {
 	var froms []*securityv1beta1.Rule_From
@@ -443,7 +420,7 @@ func prepareUpstreamHosts(service *model.Service) []string {
 }
 
 func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
-	saName := getServiceAccountName(service)
+	saName := getServiceAccountName(service.ProjectID, service.ID)
 	return &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{
 		Name:        saName,
 		Labels:      map[string]string{"account": service.ID},
@@ -462,7 +439,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: getDeploymentName(service),
+			Name: getDeploymentName(service.ID, service.Version),
 			Labels: map[string]string{
 				"app":     service.ID,
 				"version": service.Version,
@@ -483,7 +460,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 					Labels:      map[string]string{"app": service.ID, "version": service.Version},
 				},
 				Spec: v1.PodSpec{
-					ServiceAccountName: getServiceAccountName(service),
+					ServiceAccountName: getServiceAccountName(service.ProjectID, service.ID),
 					Containers:         preparedContainer,
 					Volumes:            volumes,
 					ImagePullSecrets:   imagePull,
@@ -494,7 +471,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 	}
 }
 
-func generateService(service *model.Service) *v1.Service {
+func generateGeneralService(service *model.Service) *v1.Service {
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        getServiceName(service.ID),
@@ -509,8 +486,23 @@ func generateService(service *model.Service) *v1.Service {
 	}
 }
 
-func (i *Istio) generateVirtualService(service *model.Service) *v1alpha3.VirtualService {
-	httpRoutes, tcpRoutes := prepareVirtualServiceRoutes(service, i.config.ProxyPort)
+func generateInternalService(service *model.Service) *v1.Service {
+	return &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        getInternalServiceName(service.ID, service.Version),
+			Labels:      map[string]string{"app": service.ID, "service": service.ID, "version": service.Version},
+			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+		},
+		Spec: v1.ServiceSpec{
+			Ports:    prepareServicePorts(service.Tasks),
+			Selector: map[string]string{"app": service.ID, "version": service.Version},
+			Type:     v1.ServiceTypeClusterIP,
+		},
+	}
+}
+
+func (i *Istio) updateVirtualService(service *model.Service, prevVirtualService *v1alpha3.VirtualService) *v1alpha3.VirtualService {
+	httpRoutes, tcpRoutes := updateOrCreateVirtualServiceRoutes(service, i.config.ProxyPort, prevVirtualService)
 	return &v1alpha3.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        getVirtualServiceName(service.ID),
@@ -524,11 +516,36 @@ func (i *Istio) generateVirtualService(service *model.Service) *v1alpha3.Virtual
 		},
 	}
 }
+func (i *Istio) generateVirtualServiceBasedOnRoutes(projectID, serviceID string, scaleConfig map[string]model.ScaleConfig, routes model.Routes, prevVirtualService *v1alpha3.VirtualService) (*v1alpha3.VirtualService, error) {
+	// Generate the httpRoutes based on the routes provided
+	httpRoutes, err := prepareVirtualServiceHTTPRoutes(projectID, serviceID, scaleConfig, routes, i.config.ProxyPort)
+	if err != nil {
+		return nil, err
+	}
 
-func generateDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
+	// Create a prevVirtualService if its nil to prevent panic
+	if prevVirtualService == nil {
+		prevVirtualService = new(v1alpha3.VirtualService)
+	}
+
+	return &v1alpha3.VirtualService{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        getVirtualServiceName(serviceID),
+			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Labels:      map[string]string{"app": serviceID}, // We use the app label to retrieve service routing rules
+		},
+		Spec: networkingv1alpha3.VirtualService{
+			Hosts: []string{getServiceDomainName(projectID, serviceID)},
+			Http:  httpRoutes,
+			Tcp:   prevVirtualService.Spec.Tcp,
+		},
+	}, nil
+}
+
+func generateGeneralDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 	return &v1alpha3.DestinationRule{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getDestRuleName(service.ID),
+			Name:        getGeneralDestRuleName(service.ID),
 			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
 		},
 		Spec: networkingv1alpha3.DestinationRule{
@@ -540,14 +557,29 @@ func generateDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
 	}
 }
 
+func generateInternalDestinationRule(service *model.Service) *v1alpha3.DestinationRule {
+	return &v1alpha3.DestinationRule{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        getInternalDestRuleName(service.ID, service.Version),
+			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+		},
+		Spec: networkingv1alpha3.DestinationRule{
+			Host: getInternalServiceDomain(service.ProjectID, service.ID, service.Version),
+			TrafficPolicy: &networkingv1alpha3.TrafficPolicy{
+				Tls: &networkingv1alpha3.TLSSettings{Mode: networkingv1alpha3.TLSSettings_ISTIO_MUTUAL},
+			},
+		},
+	}
+}
+
 func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 	return &v1beta1.AuthorizationPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getAuthorizationPolicyName(service),
+			Name:        getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version),
 			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
 		},
 		Spec: securityv1beta1.AuthorizationPolicy{
-			Selector: &v1beta12.WorkloadSelector{MatchLabels: map[string]string{"app": service.ID}},
+			Selector: &v1beta12.WorkloadSelector{MatchLabels: map[string]string{"app": service.ID, "version": service.Version}},
 			Rules:    prepareAuthPolicyRules(service),
 		},
 	}
@@ -556,11 +588,11 @@ func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 	return &v1alpha3.Sidecar{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        getSidecarName(service.ID),
+			Name:        getSidecarName(service.ID, service.Version),
 			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
 		},
 		Spec: networkingv1alpha3.Sidecar{
-			WorkloadSelector:      &networkingv1alpha3.WorkloadSelector{Labels: map[string]string{"app": service.ID}},
+			WorkloadSelector:      &networkingv1alpha3.WorkloadSelector{Labels: map[string]string{"app": service.ID, "version": service.Version}},
 			Egress:                []*networkingv1alpha3.IstioEgressListener{{Hosts: prepareUpstreamHosts(service)}},
 			OutboundTrafficPolicy: &networkingv1alpha3.OutboundTrafficPolicy{Mode: networkingv1alpha3.OutboundTrafficPolicy_ALLOW_ANY},
 		},
@@ -616,4 +648,21 @@ func generateResourceRequirements(c *model.Resources) *v1.ResourceRequirements {
 	resources.Requests[v1.ResourceMemory] = *resource.NewQuantity(c.Memory*1024*1024, resource.BinarySI)
 
 	return &resources
+}
+
+func adjustMinScale(service *model.Service) {
+	// Simply return if min replicas is greater than zero
+	if service.Scale.MinReplicas > 0 {
+		return
+	}
+
+	for _, task := range service.Tasks {
+		for _, port := range task.Ports {
+			if port.Protocol == model.TCP {
+				service.Scale.MinReplicas = 1
+				break
+			}
+		}
+	}
+
 }

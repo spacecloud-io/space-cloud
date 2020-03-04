@@ -112,7 +112,7 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 	// Create a project in the runner as well
 	if s.runnerAddr != "" {
 		params := map[string]interface{}{"id": project.ID}
-		if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project", s.runnerAddr), token, "", params, &map[string]interface{}{}); err != nil {
+		if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project/%s", s.runnerAddr, project.ID), token, "", params, &map[string]interface{}{}); err != nil {
 			return http.StatusInternalServerError, err
 		}
 	}
