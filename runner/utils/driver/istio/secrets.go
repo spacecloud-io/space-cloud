@@ -222,3 +222,21 @@ func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) 
 		Data: encodedData,
 	}, nil
 }
+
+func (i *Istio) getSecrets(service *model.Service) (map[string]*v1.Secret, error) {
+	listOfSecrets := map[string]*v1.Secret{}
+	tasks := service.Tasks
+	for _, task := range tasks {
+		for _, secretName := range task.Secrets {
+			if _, p := listOfSecrets[secretName]; p {
+				continue
+			}
+			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			listOfSecrets[secretName] = secrets
+		}
+	}
+	return listOfSecrets, nil
+}

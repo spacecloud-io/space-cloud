@@ -37,7 +37,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 				},
@@ -55,7 +55,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				},
 				Targets: []config.RouteTarget{{
 					Host: "git.com",
-					Port: "8080",
+					Port: 8080,
 				}},
 			},
 			wantErr: false,
@@ -73,7 +73,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 					&config.Route{
@@ -85,7 +85,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 				},
@@ -103,7 +103,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				},
 				Targets: []config.RouteTarget{{
 					Host: "git.com",
-					Port: "8080",
+					Port: 8080,
 				}},
 			},
 			wantErr: false,
@@ -121,7 +121,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 				},
@@ -139,7 +139,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				},
 				Targets: []config.RouteTarget{{
 					Host: "git.com",
-					Port: "8080",
+					Port: 8080,
 				}},
 			},
 			wantErr: false,
@@ -157,7 +157,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 				},
@@ -183,7 +183,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 				},
@@ -209,7 +209,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 				},
@@ -227,7 +227,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 				},
 				Targets: []config.RouteTarget{{
 					Host: "git.com",
-					Port: "8080",
+					Port: 8080,
 				}},
 			},
 			wantErr: false,
@@ -245,7 +245,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 				},
@@ -271,7 +271,7 @@ func Test_routeMapping_selectRoute(t *testing.T) {
 						},
 						Targets: []config.RouteTarget{{
 							Host: "git.com",
-							Port: "8080",
+							Port: 8080,
 						}},
 					},
 				},
