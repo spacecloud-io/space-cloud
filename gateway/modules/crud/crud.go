@@ -28,9 +28,9 @@ type Module struct {
 	project            string
 	removeProjectScope bool
 
-	// during a read request the result contains a column having type json for (postgres)
-	// then un marshall the json field in read request
-	// Note : reason for having field type func as we cannot directly import schema module in crud
+	// During a read request if the result contains a column of type jsonb whose value is stored as []bytes
+	// Then un marshall that particular field of the result & override the value with un marshalling result
+	// Note : reason for having this field here is that we cannot directly import schema module in crud
 	schemaPostProcess func(ctx context.Context, dbAlias, col string, result interface{}) error
 
 	// batch operation

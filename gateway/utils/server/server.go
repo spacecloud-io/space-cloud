@@ -69,6 +69,8 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	a := auth.Init(nodeID, c, s, removeProjectScope)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
+	c.SetSchemaPostProcessHandler(s.CrudPostProcess)
+
 	fn := functions.Init(a, syncMan)
 
 	f := filestore.Init(a)
@@ -194,8 +196,6 @@ func (s *Server) LoadConfig(config *config.Config) error {
 			logrus.Errorln("Error in schema module config: ", err)
 			return err
 		}
-
-		s.crud.SetSchemaPostProcessHandler(s.schema.CrudPostProcess)
 
 		// Set the configuration for the auth module
 		if err := s.auth.SetConfig(p.ID, p.Secret, p.AESkey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {

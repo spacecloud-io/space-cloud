@@ -37,12 +37,12 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 				data, ok := finalDoc[columnName].([]byte)
 				if !ok {
 					logrus.Errorf("error crud post process in schema module unable to type assert interface to []byte for column (%s)", columnName)
-					return fmt.Errorf("unable to type assert interface to []byte")
+					return fmt.Errorf("unable to type assert interface to []byte for column (%s)", columnName)
 				}
 				var v interface{}
 				if err := json.Unmarshal(data, &v); err != nil {
 					logrus.Errorf("error crud post process in schema module unable unmarshal data (%s)", string(data))
-					return fmt.Errorf("unable to unmarshal json data")
+					return fmt.Errorf("unable to unmarshal json data for column (%s)", columnName)
 				}
 				finalDoc[columnName] = v
 			}
