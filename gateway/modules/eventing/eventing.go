@@ -1,15 +1,45 @@
 package eventing
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
+)
+
+const (
+	eventingLogs     string = "event_logs"
+	invocationLogs   string = "invocation_logs"
+	invocationSchema string = `type invocation_logs {
+		_id: ID! @primary
+		event_id: ID! @foreign(table: "event_logs", field: "_id")
+		invocation_time: DateTime!
+		request_payload: String
+		response_status_code: Integer
+		response_body: String
+		remark: String	
+	  }`
+	eventSchema string = `type event_logs {
+		_id: ID! @primary
+		batchid: String
+		type: String
+		token: Integer
+		timestamp: Integer
+		event_timestamp: Integer
+		payload: String
+		status: String
+		retries: Integer
+		url: String
+		remark: String
+		invocations: [invocation_logs]! @link(table: "invocation_logs", from: "_id", to: "event_id")
+	  }`
 )
 
 // Module is responsible for managing the eventing system
@@ -95,7 +125,15 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		return nil
 	}
 
-	if eventing.DBType == "" || eventing.Col == "" {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := m.schema.SchemaModifyAll(ctx, eventing.DBType, project, map[string]*config.TableRule{eventingLogs: &config.TableRule{Schema: eventSchema}, invocationLogs: &config.TableRule{Schema: invocationSchema}})
+	if err != nil {
+		logrus.Errorf("Could not create tables required for eventing module - %s", err.Error())
+		return err
+	}
+
+	if eventing.DBType == "" {
 		return errors.New("invalid eventing config provided")
 	}
 

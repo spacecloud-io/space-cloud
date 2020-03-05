@@ -24,7 +24,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}
 	m.lock.RLock()
 	project := m.project
-	dbAlias, col := m.config.DBType, m.config.Col
+	dbAlias, col := m.config.DBType, eventingLogs
 	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
@@ -130,7 +130,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		return
 	}
 
-	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, eventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		log.Println("Eventing staged event handler could not update event doc:", err)
 	}
 }
@@ -185,6 +185,6 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 		}
 	}
 
-	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, eventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
 	return nil
 }
