@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -73,8 +72,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	// Delete the event from the processing list without fail
 	defer m.processingEvents.Delete(eventDoc.ID)
 
-	typeAndName := strings.Split(eventDoc.Type, ":")
-	evType, name := typeAndName[0], typeAndName[1]
+	evType, name := eventDoc.Type, eventDoc.RuleName
 
 	rule, err := m.selectRule(name, evType)
 	if err != nil {

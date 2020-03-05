@@ -107,7 +107,8 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 	return &model.EventDocument{
 		ID:             ksuid.New().String(),
 		BatchID:        batchID,
-		Type:           fmt.Sprintf("%s:%s", event.Type, name),
+		Type:           event.Type,
+		RuleName:       name,
 		Token:          token,
 		Timestamp:      timestamp,
 		EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond),
