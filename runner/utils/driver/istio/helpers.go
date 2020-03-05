@@ -420,9 +420,8 @@ func prepareUpstreamHosts(service *model.Service) []string {
 }
 
 func generateServiceAccount(service *model.Service) *v1.ServiceAccount {
-	saName := getServiceAccountName(service.ProjectID, service.ID)
 	return &v1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{
-		Name:        saName,
+		Name:        getServiceAccountName(service.ID),
 		Labels:      map[string]string{"account": service.ID},
 		Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
 	}}
@@ -460,7 +459,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 					Labels:      map[string]string{"app": service.ID, "version": service.Version},
 				},
 				Spec: v1.PodSpec{
-					ServiceAccountName: getServiceAccountName(service.ProjectID, service.ID),
+					ServiceAccountName: getServiceAccountName(service.ID),
 					Containers:         preparedContainer,
 					Volumes:            volumes,
 					ImagePullSecrets:   imagePull,
