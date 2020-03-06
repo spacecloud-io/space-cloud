@@ -101,16 +101,14 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		return errors.New("invalid eventing config provided")
 	}
 
-	schemaModifyCrudStub := config.CrudStub{
-		Collections: map[string]*config.TableRule{
-			eventingLogs:   &config.TableRule{Schema: eventSchema},
-			invocationLogs: &config.TableRule{Schema: invocationSchema},
-		},
+	schemas := map[string]*config.TableRule{
+		eventingLogs:   &config.TableRule{Schema: eventSchema},
+		invocationLogs: &config.TableRule{Schema: invocationSchema},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := m.syncMan.SetModifyAllSchema(ctx, eventing.DBType, project, m.schema, schemaModifyCrudStub); err != nil {
+	if err := m.schema.SchemaModifyAll(ctx, eventing.DBType, project, schemas); err != nil {
 		logrus.Errorf("Could not create tables required for eventing module - %s", err.Error())
 		return err
 	}
