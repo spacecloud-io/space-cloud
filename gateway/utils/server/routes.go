@@ -27,10 +27,10 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	//gets
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/config").HandlerFunc(handlers.HandleGetGlobalConfig(s.adminMan, s.syncMan))
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/services/{service}").HandlerFunc(handlers.HandleGetService(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/services").HandlerFunc(handlers.HandleGetService(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/user-management").HandlerFunc(handlers.GetUserManagement(s.adminMan, s.syncMan))
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/event-triggers/rules").HandlerFunc(handlers.HandleGetEventingTriggers(s.adminMan, s.syncMan))
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/event-triggers/config").HandlerFunc(handlers.HandleGetEventingConfig(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/triggers").HandlerFunc(handlers.HandleGetEventingTriggers(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/config").HandlerFunc(handlers.HandleGetEventingConfig(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/schema").HandlerFunc(handlers.HandleGetEventingSchema(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/rules").HandlerFunc(handlers.HandleGetEventingSecurityRules(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleGetFileStore(s.adminMan, s.syncMan))

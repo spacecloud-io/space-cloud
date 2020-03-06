@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -246,6 +244,10 @@ func HandleGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		err := json.NewDecoder(r.Body).Decode(c)
 		defer utils.CloseTheCloser(r.Body)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		c.ID = projectID
+
 		// Throw error if request was of incorrect type
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -289,9 +291,6 @@ func HandleGetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]

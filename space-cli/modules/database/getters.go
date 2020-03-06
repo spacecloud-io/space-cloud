@@ -1,32 +1,20 @@
-package objects
+package database
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/spaceuptech/space-cli/cmd"
+	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
-	"github.com/urfave/cli"
 )
 
-func GetDbRule(c *cli.Context) error {
-	// Get the project and url parameters
-	project := c.GlobalString("project")
+func getDbRule(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/database/collections/rules", project)
-
-	params := map[string]string{}
-	switch len(c.Args()) {
-	case 1:
-		params["dbType"] = c.Args()[0]
-	case 2:
-		params["dbType"] = c.Args()[0]
-		params["col"] = c.Args()[1]
-	}
-
 	// Get the spec from the server
 	result := make(map[string]interface{})
 	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
-		return err
+		return nil, err
 	}
 
 	var array []interface{}
@@ -47,70 +35,53 @@ func GetDbRule(c *cli.Context) error {
 		}
 	}
 
+	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "id": spec["id"].(string), "dbType": c.Args()[0]}
+		meta := map[string]string{"projectId": project, "id": spec["id"].(string), "dbAlias": params["dbAlias"]}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
-		// Printing the object on the screen
-		s, err := utils.GetYamlObject("v1/config/projects/{projectId}/database/{dbType}/collections/{id}/rules", c.Command.Name, meta, spec)
+		// Generating the object
+		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/database/{dbAlias}/collections/{id}/rules", commandName, meta, spec)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		fmt.Print(s)
-		fmt.Println("---")
+		objs = append(objs, s)
 	}
-	return nil
+	return objs, nil
 }
 
-func GetDbConfig(c *cli.Context) error {
-	// Get the project and url parameters
-	project := c.GlobalString("project")
+func getDbConfig(project, commandName string, params map[string]string) (*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/database/config", project)
-
-	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["dbType"] = c.Args()[0]
-		//params["col"] = c.Args()[1]
-	}
-
 	// Get the spec from the server
 	result := new(interface{})
 	if err := cmd.Get(http.MethodGet, url, params, result); err != nil {
-		return err
+		return nil, err
 	}
 
-	// Printing the object on the screen
-	meta := map[string]string{"projectId": project, "dbType": c.Args()[0]}
-	s, err := utils.GetYamlObject("/v1/config/projects/{projectId}/database/{dbType}/config", c.Command.Name, meta, result)
+	// Generating the object
+	meta := map[string]string{"projectId": project, "dbAlias": params["dbAlias"]}
+	s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/database/{dbAlias}/config", commandName, meta, result)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Println(s)
-	return nil
+	return s, nil
 }
 
-func GetDbSchema(c *cli.Context) error {
-	// Get the project and url parameters
-	project := c.GlobalString("project")
+func getDbSchema(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/database/collections/modify-schema", project)
-
-	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["dbType"] = c.Args()[0]
-	}
 	// Get the spec from the server
 	result := make(map[string]interface{})
 	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
-		return err
+		return nil, err
 	}
 
 	var array []interface{}
 	if value, p := result["schema"]; p {
 		obj := value.(map[string]interface{})
-		obj["id"] = c.Args()[0]
+		obj["id"] = params["dbAlias"]
 		array = []interface{}{obj}
 	}
 	if value, p := result["schemas"]; p {
@@ -122,20 +93,21 @@ func GetDbSchema(c *cli.Context) error {
 		}
 	}
 
+	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "dbType": c.Args()[0]}
+		meta := map[string]string{"projectId": project, "dbAlias": params["dbAlias"], "col": spec["col"].(string)}
 
 		// Delete the unwanted keys from spec
+		delete(spec, "col")
 		delete(spec, "id")
 
-		// Printing the object on the screen
-		s, err := utils.GetYamlObject("/v1/config/projects/{projectId}/file-storage/rules/{dbType}", c.Command.Name, meta, spec)
+		// Generating the object
+		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/database/{dbAlias}/collections/{col}/modify-schema", commandName, meta, spec)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		fmt.Print(s)
-		fmt.Println("---")
+		objs = append(objs, s)
 	}
-	return nil
+	return objs, nil
 }

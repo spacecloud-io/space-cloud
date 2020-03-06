@@ -1,28 +1,21 @@
-package objects
+package remoteservices
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/spaceuptech/space-cli/cmd"
+	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
-	"github.com/urfave/cli"
 )
 
-func GetRemoteServices(c *cli.Context) error {
-	// Get the project and url parameters
-	project := c.GlobalString("project")
+func getRemoteServices(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/services", project)
-
-	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["service"] = c.Args()[0]
-	}
 
 	// Get the spec from the server
 	result := make(map[string]interface{})
 	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
-		return err
+		return nil, err
 	}
 
 	var array []interface{}
@@ -32,7 +25,7 @@ func GetRemoteServices(c *cli.Context) error {
 	if value, p := result["services"]; p {
 		array = value.([]interface{})
 	}
-
+	var services []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
 
@@ -44,13 +37,12 @@ func GetRemoteServices(c *cli.Context) error {
 		delete(spec, "version")
 
 		// Printing the object on the screen
-		s, err := utils.GetYamlObject("/v1/config/projects/{projectId}/services/{id}", c.Command.Name, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/services/{id}", commandName, meta, spec)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		fmt.Println(s)
-		fmt.Println("---")
+		services = append(services, s)
 	}
 
-	return nil
+	return services, nil
 }

@@ -5,6 +5,15 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/spaceuptech/space-cli/modules/auth"
+	"github.com/spaceuptech/space-cli/modules/database"
+	encrypt_domain "github.com/spaceuptech/space-cli/modules/encrypt-domain"
+	"github.com/spaceuptech/space-cli/modules/eventing"
+	"github.com/spaceuptech/space-cli/modules/filestore"
+	global_config "github.com/spaceuptech/space-cli/modules/global-config"
+	remote_services "github.com/spaceuptech/space-cli/modules/remote-services"
+	"github.com/spaceuptech/space-cli/modules/routes"
 )
 
 func main() {
@@ -41,59 +50,59 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:   "global-config",
-					Action: actionGetGlobalConfig,
+					Action: global_config.ActionGetGlobalConfig,
 				},
 				{
 					Name:   "remote-services",
-					Action: actionGetRemoteServices,
+					Action: remote_services.ActionGetRemoteServices,
 				},
 				{
 					Name:   "auth-providers",
-					Action: actionGetAuthProviders,
+					Action: auth.ActionGetAuthProviders,
 				},
 				{
 					Name:   "eventing-triggers",
-					Action: actionGetEventingTrigger,
+					Action: eventing.ActionGetEventingTrigger,
 				},
 				{
 					Name:   "eventing-config",
-					Action: actionGetEventingConfig,
+					Action: eventing.ActionGetEventingConfig,
 				},
 				{
 					Name:   "eventing-schema",
-					Action: actionGetEventingSchema,
+					Action: eventing.ActionGetEventingSchema,
 				},
 				{
 					Name:   "eventing-rule",
-					Action: actionGetEventingSecurityRule,
+					Action: eventing.ActionGetEventingSecurityRule,
 				},
 				{
 					Name:   "filestore-config",
-					Action: actionGetFileStoreConfig,
+					Action: filestore.ActionGetFileStoreConfig,
 				},
 				{
 					Name:   "filestore-rules",
-					Action: actionGetFileStoreRule,
+					Action: filestore.ActionGetFileStoreRule,
 				},
 				{
 					Name:   "db-rule",
-					Action: actionGetDbRule,
+					Action: database.ActionGetDbRule,
 				},
 				{
 					Name:   "db-config",
-					Action: actionGetDbConfig,
+					Action: database.ActionGetDbConfig,
 				},
 				{
 					Name:   "db-schema",
-					Action: actionGetDbSchema,
+					Action: database.ActionGetDbSchema,
 				},
 				{
 					Name:   "letsencrypt-domain",
-					Action: actionGetLetsEncryptDomain,
+					Action: encrypt_domain.ActionGetLetsEncryptDomain,
 				},
 				{
 					Name:   "routes",
-					Action: actionGetRoutes,
+					Action: routes.ActionGetRoutes,
 				},
 			},
 		},

@@ -157,7 +157,7 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		}
 		routes := make(map[string]*config.Route)
 		for _, val := range project.Modules.Routes {
-			routes[val.ID] = &config.Route{ID: val.ID, Source: val.Source, Destination: val.Destination}
+			routes[val.ID] = &config.Route{ID: val.ID, Source: val.Source, Targets: val.Targets}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"routes": routes})

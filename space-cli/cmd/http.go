@@ -17,7 +17,7 @@ func Get(method, url string, params map[string]string, vPtr interface{}) error {
 		return err
 	}
 
-	url = fmt.Sprintf("%s%s", account.ServerUrl, url)
+	url = fmt.Sprintf("%s%s", account.ServerURL, url)
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return err

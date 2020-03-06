@@ -1,33 +1,26 @@
-package objects
+package routes
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/spaceuptech/space-cli/cmd"
+	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
-	"github.com/urfave/cli"
 )
 
-func GetRoutes(c *cli.Context) error {
-	// Get the project and url parameters
-	project := c.GlobalString("project")
+func getRoutes(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/route", project)
-
-	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["routesID"] = c.Args()[0]
-	}
 	// Get the spec from the server
 	result := make(map[string]interface{})
 	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
-		return err
+		return nil, err
 	}
 
 	var array []interface{}
 	if value, p := result["route"]; p {
 		obj := value.(map[string]interface{})
-		obj["id"] = c.Args()[0]
+		obj["id"] = params["routeId"]
 		array = []interface{}{obj}
 	}
 	if value, p := result["routes"]; p {
@@ -39,20 +32,20 @@ func GetRoutes(c *cli.Context) error {
 		}
 	}
 
+	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "routeID": spec["id"].(string)}
+		meta := map[string]string{"projectId": project, "routeId": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
-		// Printing the object on the screen
-		s, err := utils.GetYamlObject("/v1/config/projects/{project}/routing/{routeID}", c.Command.Name, meta, spec)
+		// Generating the object
+		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/routing/{routeId}", commandName, meta, spec)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		fmt.Print(s)
-		fmt.Println("---")
+		objs = append(objs, s)
 	}
-	return nil
+	return objs, nil
 }

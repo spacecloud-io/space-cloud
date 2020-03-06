@@ -176,10 +176,10 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 		//get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbType, exists := r.URL.Query()["dbType"]
+		dbAlias, exists := r.URL.Query()["dbAlias"]
 		if !exists {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbType not provided in url")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbAlias not provided in url")})
 			return
 		}
 
@@ -192,14 +192,14 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 		}
 
 		//get collection
-		coll, ok := project.Modules.Crud[dbType[0]]
+		coll, ok := project.Modules.Crud[dbAlias[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found", r.URL)})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"conn": coll.Conn, "enabled": coll.Enabled, "collections": coll.Collections})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"conn": coll.Conn, "enabled": coll.Enabled, "type": coll.Type})
 	}
 }
 
@@ -281,6 +281,10 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 
 //HandleGetSchema returns handler to get schema
 func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type response struct {
+		Col    string `json:"col"`
+		Schema string `json:"schema"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -330,13 +334,14 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found")})
 				return
 			}
+			resp := response{Col: col[0], Schema: temp.Schema}
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": temp.Schema})
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": resp})
 			return
 		}
-		schemas := make(map[string]*config.TableRule)
+		schemas := make(map[string]response)
 		for p, val := range coll.Collections {
-			schemas[p] = &config.TableRule{Schema: val.Schema}
+			schemas[p] = response{Col: p, Schema: val.Schema}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": schemas})
@@ -380,6 +385,10 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 
 //HandleGetCollectionRules returns handler to get collection rule
 func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	type response struct {
+		IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
+		Rules             map[string]*config.Rule `json:"rules"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -395,11 +404,11 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 		//get project id and dbType
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbType, exists := r.URL.Query()["dbType"]
+		dbAlias, exists := r.URL.Query()["dbAlias"]
 
 		if !exists {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbType not provided in url")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbAlias not provided in url")})
 		}
 
 		//gel collection id
@@ -414,7 +423,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 		}
 
 		//get databaseConfig
-		databaseConfig, ok := project.Modules.Crud[dbType[0]]
+		databaseConfig, ok := project.Modules.Crud[dbAlias[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("specified database not present in config")})
@@ -430,16 +439,16 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("specified collection not present in config")})
 				return
 			}
-			collectionsRule := make(map[string]*config.TableRule)
-			collectionsRule[col[0]] = &config.TableRule{IsRealTimeEnabled: collection.IsRealTimeEnabled, Rules: collection.Rules}
+			collectionsRule := make(map[string]response)
+			collectionsRule[col[0]] = response{IsRealTimeEnabled: collection.IsRealTimeEnabled, Rules: collection.Rules}
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rule": collectionsRule})
 			return
 		}
 
-		collectionsRules := make(map[string]*config.TableRule)
+		collectionsRules := make(map[string]response)
 		for p, val := range databaseConfig.Collections {
-			collectionsRules[p] = &config.TableRule{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
+			collectionsRules[p] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionsRules})
