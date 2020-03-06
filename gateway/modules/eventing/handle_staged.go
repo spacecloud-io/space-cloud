@@ -113,7 +113,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 			// Increment the retries. Exit the loop if max retries reached.
 			retries++
-			if retries >= maxRetries {
+			if retries >= maxRetries+1 {
 				// Mark event as failed
 				break
 			}

@@ -10,6 +10,7 @@ const (
 		request_payload: String
 		response_status_code: Integer
 		response_body: String
+		error_msg: String
 		remark: String	
 	  }`
 	eventSchema string = `type event_logs {

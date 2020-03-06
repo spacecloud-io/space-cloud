@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -109,7 +110,10 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	m.syncMan.SetModifyAllSchema(ctx, eventing.DBType, project, m.schema, schemaModifyCrudStub)
+	if err := m.syncMan.SetModifyAllSchema(ctx, eventing.DBType, project, m.schema, schemaModifyCrudStub); err != nil {
+		logrus.Errorf("Could not create tables required for eventing module - %s", err.Error())
+		return err
+	}
 
 	m.project = project
 	m.config = eventing
