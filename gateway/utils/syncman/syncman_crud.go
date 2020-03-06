@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
@@ -188,7 +189,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 }
 
 // SetModifyAllSchema modifies schema of all tables
-func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, schemaArg *schema.Schema, v config.CrudStub) error {
+func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, schemaArg model.SchemaEventingInterface, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

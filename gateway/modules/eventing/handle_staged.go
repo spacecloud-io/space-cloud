@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -42,7 +41,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 
 	results, err := m.crud.Read(ctx, dbAlias, project, col, &readRequest)
 	if err != nil {
-		log.Println("Eventing stage routine error:", err)
+		logrus.Errorf("Eventing stage routine error - %s", err.Error())
 		return
 	}
 
@@ -110,7 +109,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 	for {
 		if err := m.invokeWebhook(ctx, rule.Timeout, eventDoc, &cloudEvent); err != nil {
-			log.Println("Eventing staged event handler could not get response from service:", err)
+			logrus.Errorf("Eventing staged event handler could not get response from service -%s", err.Error())
 
 			// Increment the retries. Exit the loop if max retries reached.
 			retries++
@@ -129,7 +128,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	}
 
 	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, eventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
-		log.Println("Eventing staged event handler could not update event doc:", err)
+		logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
 	}
 }
 

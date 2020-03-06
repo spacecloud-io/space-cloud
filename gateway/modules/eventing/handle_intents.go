@@ -3,10 +3,10 @@ package eventing
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -39,7 +39,7 @@ func (m *Module) processIntents(t *time.Time) {
 
 	results, err := m.crud.Read(ctx, dbAlias, project, col, &readRequest)
 	if err != nil {
-		log.Println("Eventing intent routine error:", err)
+		logrus.Errorf("Eventing intent routine error - %s", err.Error())
 		return
 	}
 
@@ -86,14 +86,14 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 			// Mark event as cancelled if it document doesn't exist
 			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, eventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
-				log.Println("Eventing: Couldn't cancel intent -", err)
+				logrus.Errorf("Eventing: Couldn't cancel intent - %s", err.Error())
 			}
 			return
 		}
 
 		// Mark event as staged if document does exist
 		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, eventingLogs, m.generateStageEventRequest(eventID)); err != nil {
-			log.Println("Eventing: Couldn't update intent to staged -", err)
+			logrus.Errorf("Eventing: Couldn't update intent to staged - %s", err.Error())
 			return
 		}
 
@@ -163,7 +163,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		token, err := m.auth.GetInternalAccessToken()
 		if err != nil {
-			log.Println("Eventing: Error generating token in intent staging -", err)
+			logrus.Errorf("Eventing: Error generating token in intent staging - %s", err.Error())
 			return
 		}
 
@@ -171,14 +171,14 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 			// Mark event as cancelled if it document doesn't exist
 			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, eventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
-				log.Println("Eventing: Couldn't cancel intent -", err)
+				logrus.Errorf("Eventing: Couldn't cancel intent - %s", err.Error())
 			}
 			return
 		}
 
 		// Mark event as staged if document does exist
 		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, eventingLogs, m.generateStageEventRequest(eventID)); err != nil {
-			log.Println("Eventing: Couldn't update intent to staged -", err)
+			logrus.Errorf("Eventing: Couldn't update intent to staged - %s", err.Error())
 			return
 		}
 
@@ -192,7 +192,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		token, err := m.auth.GetInternalAccessToken()
 		if err != nil {
-			log.Println("Eventing: Error generating token in intent staging -", err)
+			logrus.Errorf("Eventing: Error generating token in intent staging - %s", err.Error())
 			return
 		}
 
