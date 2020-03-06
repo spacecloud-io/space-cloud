@@ -8,7 +8,10 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
@@ -42,10 +45,8 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status code
+		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-
-		// return
 	}
 }
 
@@ -87,11 +88,14 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 }
 
 // HandleGetFileState gets file state
-func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
@@ -100,23 +104,15 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			return
 		}
 
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-
-		projectConfig, err := syncMan.GetConfig(projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		if err := file.GetState(ctx); err != nil {
+			w.WriteHeader(http.StatusOK) // http status code
+			logrus.Errorf("error handling file get state got error - %s", err.Error())
+			_ = json.NewEncoder(w).Encode(map[string]bool{"status": false})
 			return
 		}
 
-		if projectConfig.Modules.FileStore.Enabled && projectConfig.Modules.FileStore.Conn != "" {
-			w.WriteHeader(http.StatusOK) //http status code
-			_ = json.NewEncoder(w).Encode(map[string]bool{"status": true})
-		} else {
-			w.WriteHeader(http.StatusOK) //http status code
-			_ = json.NewEncoder(w).Encode(map[string]bool{"status": false})
-		}
+		w.WriteHeader(http.StatusOK) // http status code
+		_ = json.NewEncoder(w).Encode(map[string]bool{"status": true})
 	}
 }
 
@@ -150,10 +146,8 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status code
+		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-
-		// return
 	}
 }
 
@@ -235,8 +229,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status code
+		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
 	}
 }

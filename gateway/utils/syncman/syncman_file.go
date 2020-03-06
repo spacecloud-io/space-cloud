@@ -2,8 +2,6 @@ package syncman
 
 import (
 	"context"
-	"errors"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -36,9 +34,10 @@ func (s *Manager) SetFileRule(ctx context.Context, project string, value *config
 	if err != nil {
 		return err
 	}
-	for _, val := range projectConfig.Modules.FileStore.Rules {
+	for index, val := range projectConfig.Modules.FileStore.Rules {
 		if val.Name == value.Name {
-			return errors.New("rule with name " + value.Name + " already exists")
+			projectConfig.Modules.FileStore.Rules[index] = value
+			return s.setProject(ctx, projectConfig)
 		}
 	}
 	projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
