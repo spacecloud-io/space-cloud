@@ -5,6 +5,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/spaceuptech/space-cli/modules/database"
 )
 
 func main() {
@@ -25,6 +27,18 @@ func main() {
 				{
 					Name:   "service",
 					Action: actionGenerateService,
+				},
+				{
+					Name:   "db-rule",
+					Action: database.ActionGenerateDBRule,
+				},
+				{
+					Name:   "db-config",
+					Action: database.ActionGenerateDBConfig,
+				},
+				{
+					Name:   "db-schema",
+					Action: database.ActionGenerateDBSchema,
 				},
 			},
 		},
