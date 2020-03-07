@@ -11,19 +11,21 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/segmentio/ksuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func (s *Module) logInvocation(ctx context.Context, eventID string, payload []byte, responseStatusCode int, responseBody, errorMsg string) error {
-	invocationDoc := &model.InvocationDocument{
-		EventID:            eventID,
-		InvocationTime:     time.Now().Format(time.RFC3339),
-		RequestPayload:     string(payload),
-		ResponseStatusCode: responseStatusCode,
-		ResponseBody:       responseBody,
-		ErrorMessage:       errorMsg,
+	invocationDoc := map[string]interface{}{
+		"_id":                  ksuid.New().String(),
+		"event_id":             eventID,
+		"invocation_time":      time.Now().Format(time.RFC3339),
+		"request_payload":      string(payload),
+		"response_status_code": responseStatusCode,
+		"response_body":        responseBody,
+		"error_msg":            errorMsg,
 	}
 	createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.One, IsBatch: true}
 	if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, invocationLogs, createRequest, false); err != nil {
@@ -65,7 +67,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
 	if err != nil {
-		if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, "", err.Error()); err != nil {
+		if err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
