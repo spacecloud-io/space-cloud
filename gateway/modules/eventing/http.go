@@ -2,7 +2,6 @@ package eventing
 
 import (
 	"bytes"
-	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -12,19 +11,10 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
-
-func interfaceToByteArray(params interface{}) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(params)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
 
 func (s *Module) logInvocation(ctx context.Context, eventID string, payload []byte, responseStatusCode int, responseBody string, errorMsg error) error {
 	invocationDoc := &model.InvocationDocument{
@@ -50,7 +40,11 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	// Make a request object
 	req, err := http.NewRequestWithContext(ctx, method, eventDoc.URL, bytes.NewBuffer(data))
 	if err != nil {
-		s.logInvocation(ctx, eventDoc.ID, data, 0, "", err)
+		err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", err)
+		if err != nil {
+			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
+			return err
+		}
 		return err
 	}
 
@@ -74,21 +68,37 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	defer utils.CloseTheCloser(resp.Body)
 	responseBody, e := ioutil.ReadAll(resp.Body)
 	if e != nil {
-		s.logInvocation(ctx, eventDoc.ID, data, 0, "", e)
+		err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", e)
+		if err != nil {
+			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
+			return err
+		}
 		return e
 	}
 	if err != nil {
-		s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
+		err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
+		if err != nil {
+			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
+			return err
+		}
 		return err
 	}
 
 	if err := json.Unmarshal(responseBody, vPtr); err != nil {
-		s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
+		err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
+		if err != nil {
+			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
+			return err
+		}
 		return err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
+		err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
+		if err != nil {
+			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
+			return err
+		}
 		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
 	}
 
