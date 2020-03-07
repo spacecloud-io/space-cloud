@@ -18,6 +18,10 @@ func getServiceDomain(projectID, serviceID string) string {
 	return fmt.Sprintf("%s.%s.svc.cluster.local", serviceID, projectID)
 }
 
+func getInternalServiceDomain(projectID, serviceID, version string) string{
+	return fmt.Sprintf("%s.%s.%s.svc.cluster.local", serviceID, projectID,version)
+}
+
 func (d *Docker) pullImageByPolicy(ctx context.Context, projectID string, taskDocker model.Docker) error {
 	if taskDocker.ImagePullPolicy == model.PullIfNotExists {
 		if _, _, err := d.client.ImageInspectWithRaw(ctx, taskDocker.Image); err == nil {

@@ -65,8 +65,6 @@ func (d *Docker) GetServiceRoutes(_ context.Context, _ string) (map[string]model
 
 // ApplyService creates containers for specified service
 func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error {
-	service.Version = "v1"
-
 	// Get the hosts file
 	hostFile, err := txeh.NewHostsDefault()
 	if err != nil {
@@ -94,13 +92,16 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 			if err != nil {
 				return err
 			}
-			hostFile.AddHost(containerIP, getServiceDomain(service.ProjectID, service.ID))
+			hostfile.AddHost(containerIP, getInternalServiceDomain(service.ProjectID, service.ID,service.Version))
 			continue
 		}
 		_, _, err := d.createContainer(ctx, task, service, []model.Port{}, containerName)
 		return err
 	}
 
+	// Point runner to Proxy
+	_,proxyIP,_ := txeh.HostAddressLookup(os.Getenv("PROXY_API_PATH"))
+	hostfile.AddHost(proxyIP, getServiceDomain(service.ProjectID, service.ID))
 	return hostFile.Save()
 }
 

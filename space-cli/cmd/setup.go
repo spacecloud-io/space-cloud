@@ -27,6 +27,10 @@ func getSpaceCloudHostsFilePath() string {
 	return fmt.Sprintf("%s/hosts", getSpaceCloudDirectory())
 }
 
+func getSpaceCloudRoutingConfigPath() string{
+	return fmt.Sprintf("%s/routing-config.json", getSpaceCloudDirectory())
+}
+
 func getSecretsDir() string {
 	return fmt.Sprintf("%s/secrets", getSpaceCloudDirectory())
 }
@@ -52,6 +56,9 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	// TODO: old keys always remain in accounts.yaml file
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
+
+	// const
+	const proxyDNS = "api-proxy.space-cloud.svc.cluster.local"
 
 	_ = createDirIfNotExist(getSpaceCloudDirectory())
 	_ = createDirIfNotExist(getSecretsDir())
@@ -146,6 +153,19 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 			mount: mounts,
 		},
 		{
+			// proxy-api (for docker!!)
+			containerImage: "spaceuptech/api-proxy",
+			containerName:  "space-cloud-api-proxy",
+			dnsName:       proxyDNS,
+			mount: []mount.Mount{
+				{
+					Type:   mount.TypeBind, 
+					Source: getSpaceCloudRoutingConfigPath(),
+					Target: "/routing-config.json",
+				},
+			},
+		},
+		{
 			// runner
 			containerImage: "spaceuptech/runner",
 			containerName:  ContainerRunner,
@@ -159,6 +179,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 				"SECRETS_PATH=/secrets",
 				"HOME_SECRETS_PATH=" + getTempSecretsDir(),
 				"HOSTS_FILE_PATH=" + getSpaceCloudHostsFilePath(),
+				"PROXY_API_PATH=" + proxyDNS,
 			},
 			mount: []mount.Mount{
 				{
