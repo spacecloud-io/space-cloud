@@ -54,12 +54,12 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 		defer utils.CloseTheCloser(response.Body)
 
 		// Copy headers and status code
-		w.WriteHeader(response.StatusCode)
 		for k, v := range response.Header {
 			w.Header().Set(k, v[0])
 		}
 
 		// Copy the body
+		w.WriteHeader(response.StatusCode)
 		n, err := io.Copy(w, response.Body)
 		if err != nil {
 			logrus.Errorf("Failed to copy upstream (%s) response to downstream - %s", r.URL.String(), err.Error())

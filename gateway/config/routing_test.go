@@ -12,7 +12,7 @@ func TestRoute_SelectTarget(t *testing.T) {
 		Targets []RouteTarget
 	}
 	type args struct {
-		weight float64
+		weight int32
 	}
 	tests := []struct {
 		name    string
@@ -23,27 +23,27 @@ func TestRoute_SelectTarget(t *testing.T) {
 	}{
 		{
 			name:    "valid case",
-			fields:  fields{Targets: []RouteTarget{{Weight: 1}}},
-			args:    args{weight: 0.3},
-			want:    RouteTarget{Weight: 1},
+			fields:  fields{Targets: []RouteTarget{{Weight: 100}}},
+			args:    args{weight: 30},
+			want:    RouteTarget{Weight: 100},
 			wantErr: false,
 		}, {
 			name:    "valid case - select 1st",
-			fields:  fields{Targets: []RouteTarget{{Host: "1", Weight: 0.4}, {Host: "2", Weight: 0.3}, {Host: "3", Weight: 0.3}}},
-			args:    args{weight: 0.2},
-			want:    RouteTarget{Host: "1", Weight: 0.4},
+			fields:  fields{Targets: []RouteTarget{{Host: "1", Weight: 40}, {Host: "2", Weight: 30}, {Host: "3", Weight: 30}}},
+			args:    args{weight: 20},
+			want:    RouteTarget{Host: "1", Weight: 40},
 			wantErr: false,
 		}, {
 			name:    "valid case - select 2nd",
-			fields:  fields{Targets: []RouteTarget{{Host: "1", Weight: 0.4}, {Host: "2", Weight: 0.3}, {Host: "3", Weight: 0.3}}},
-			args:    args{weight: 0.7},
-			want:    RouteTarget{Host: "2", Weight: 0.3},
+			fields:  fields{Targets: []RouteTarget{{Host: "1", Weight: 40}, {Host: "2", Weight: 30}, {Host: "3", Weight: 30}}},
+			args:    args{weight: 70},
+			want:    RouteTarget{Host: "2", Weight: 30},
 			wantErr: false,
 		}, {
 			name:    "valid case - select 2nd",
-			fields:  fields{Targets: []RouteTarget{{Host: "1", Weight: 0.4}, {Host: "2", Weight: 0.2}, {Host: "3", Weight: 0.4}}},
-			args:    args{weight: 1},
-			want:    RouteTarget{Host: "3", Weight: 0.4},
+			fields:  fields{Targets: []RouteTarget{{Host: "1", Weight: 40}, {Host: "2", Weight: 20}, {Host: "3", Weight: 40}}},
+			args:    args{weight: 100},
+			want:    RouteTarget{Host: "3", Weight: 40},
 			wantErr: false,
 		}, {
 			name:    "no routes provided",
@@ -51,8 +51,8 @@ func TestRoute_SelectTarget(t *testing.T) {
 			wantErr: true,
 		}, {
 			name:    "weights don't add up to one",
-			args:    args{weight: 1},
-			fields:  fields{Targets: []RouteTarget{{Host: "1", Weight: 0.2}, {Host: "2", Weight: 0.1}, {Host: "3", Weight: 0.02}}},
+			args:    args{weight: 100},
+			fields:  fields{Targets: []RouteTarget{{Host: "1", Weight: 20}, {Host: "2", Weight: 10}, {Host: "3", Weight: 2}}},
 			wantErr: true,
 		},
 	}

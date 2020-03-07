@@ -76,7 +76,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 
 	// Persist the events
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest, false); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, eventingLogs, createRequest, false); err != nil {
 		return errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
@@ -107,7 +107,8 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 	return &model.EventDocument{
 		ID:             ksuid.New().String(),
 		BatchID:        batchID,
-		Type:           fmt.Sprintf("%s:%s", event.Type, name),
+		Type:           event.Type,
+		RuleName:       name,
 		Token:          token,
 		Timestamp:      timestamp,
 		EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond),
@@ -254,6 +255,7 @@ func (m *Module) validate(ctx context.Context, project, token string, event *mod
 	if !p {
 		return nil
 	}
+
 	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
 	return err
 }

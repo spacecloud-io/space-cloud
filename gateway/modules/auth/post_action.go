@@ -8,11 +8,12 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // PostProcessMethod to do processing on result
-func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{}) error {
+func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interface{}) error {
 	// Gracefully exits if the result is nil
 	if result == nil {
 		return nil
@@ -30,7 +31,7 @@ func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{})
 	}
 
 	for _, doc := range resultArr {
-		for _, field := range postProcess.postProcessAction {
+		for _, field := range postProcess.PostProcessAction {
 			// apply Action on all elements
 			switch field.Action {
 			case "force":

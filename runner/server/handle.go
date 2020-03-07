@@ -234,6 +234,74 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	}
 }
 
+// HandleServiceRoutingRequest handles request to apply service routing rules
+func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
+	type request struct {
+		Routes model.Routes `json:"routes"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to set service routes - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		serviceID := vars["serviceId"]
+
+		req := new(request)
+		_ = json.NewDecoder(r.Body).Decode(req)
+
+		if err := s.driver.ApplyServiceRoutes(ctx, projectID, serviceID, req.Routes); err != nil {
+			logrus.Errorf("Failed to apply service routing rules - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		utils.SendEmptySuccessResponse(w, r)
+	}
+}
+
+// HandleGetServiceRoutingRequest handles request to get all service routing rules
+func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to get service routes - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		serviceRoutes, err := s.driver.GetServiceRoutes(ctx, projectID)
+		if err != nil {
+			logrus.Errorf("Failed to get service routing rules - %s", err.Error())
+			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": serviceRoutes})
+	}
+}
+
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Close the body of the request
@@ -255,7 +323,6 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		r.Header.Del("x-og-service")
 		r.Header.Del("x-og-host")
 		r.Header.Del("x-og-port")
-		r.Header.Del("x-og-env")
 		r.Header.Del("x-og-version")
 
 		// Change the destination with the original host and port
@@ -264,6 +331,8 @@ func (s *Server) handleProxy() http.HandlerFunc {
 
 		// Set the url scheme to http
 		r.URL.Scheme = "http"
+
+		logrus.Debugf("Proxy is making request to host (%s) port (%s)", ogHost, ogPort)
 
 		// Add to active request count
 		// TODO: add support for multiple versions
@@ -302,11 +371,11 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		defer utils.CloseTheCloser(res.Body)
 
 		// Copy headers and status code
-		w.WriteHeader(res.StatusCode)
 		for k, v := range res.Header {
 			w.Header().Set(k, v[0])
 		}
 
+		w.WriteHeader(res.StatusCode)
 		_, _ = io.Copy(w, res.Body)
 	}
 }

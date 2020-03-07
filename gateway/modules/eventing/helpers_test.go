@@ -64,12 +64,29 @@ func TestModule_selectRule(t *testing.T) {
 	}
 }
 
+type a struct {
+}
+
+func (new *a) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
+	return nil, false
+}
+func (new *a) Parser(crud config.Crud) (model.Type, error) {
+	return nil, nil
+}
+func (new *a) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+	return nil, nil
+}
+func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error {
+	return nil
+}
+
 func TestModule_validate(t *testing.T) {
 	authModule := auth.Init("1", &crud.Module{}, &schema.Schema{}, false)
 	err := authModule.SetConfig("project", "mySecretkey", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())
 	}
+	newSchema := &a{}
 	type args struct {
 		ctx     context.Context
 		project string
@@ -101,12 +118,25 @@ func TestModule_validate(t *testing.T) {
 		},
 		{
 			name: "event type not in schemas",
-			m:    &Module{auth: authModule, config: &config.Eventing{SecurityRules: map[string]*config.Rule{"event": {Rule: "authenticated"}}, Schemas: map[string]config.SchemaObject{"event": config.SchemaObject{Schema: "some-schema"}}}},
+			m: &Module{
+				auth: authModule,
+				config: &config.Eventing{
+					SecurityRules: map[string]*config.Rule{"event": {Rule: "authenticated"}},
+					Schemas:       map[string]config.SchemaObject{"event": config.SchemaObject{Schema: "some-schema"}}}},
 			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: "some-schema", Options: make(map[string]string)}},
 		},
 		{
 			name: "no schema given",
-			m:    &Module{schemas: map[string]schema.Fields{"event": {}}, auth: authModule, config: &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}, Schemas: map[string]config.SchemaObject{"event": config.SchemaObject{Schema: "type event {id: ID! title: String}"}}}},
+			m: &Module{
+				schemas: map[string]model.Fields{"event": {}},
+				schema:  newSchema,
+				auth:    authModule,
+				config: &config.Eventing{
+					SecurityRules: map[string]*config.Rule{
+						"event": &config.Rule{
+							Rule: "authenticated",
+						}},
+					Schemas: map[string]config.SchemaObject{"event": config.SchemaObject{Schema: "type event {id: ID! title: String}"}}}},
 			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: make(map[string]interface{}), Options: make(map[string]string)}},
 		},
 	}
