@@ -26,37 +26,31 @@ func interfaceToByteArray(params interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+func (s *Module) logInvocation(ctx context.Context, eventID string, payload []byte, responseStatusCode int, responseBody string, errorMsg error) error {
+	invocationDoc := &model.InvocationDocument{
+		EventID:            eventID,
+		InvocationTime:     time.Now().Format(time.RFC3339),
+		RequestPayload:     string(payload),
+		ResponseStatusCode: responseStatusCode,
+		ResponseBody:       responseBody,
+		ErrorMessage:       errorMsg.Error(),
+	}
+	createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.One, IsBatch: true}
+	if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, invocationLogs, createRequest, false); err != nil {
+		return errors.New("eventing module couldn't log the request - " + err.Error())
+	}
+	return nil
+}
+
 // MakeInvocationHTTPRequest fires an http request and returns a response
-func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
+func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, eventDoc *model.EventDocument, token, scToken string, params, vPtr interface{}) error {
 	// Marshal json into byte array
 	data, _ := json.Marshal(params)
 
 	// Make a request object
-	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(data))
-	payload, er := interfaceToByteArray(params)
-	if er != nil {
-		invocationDoc := &model.InvocationDocument{
-			InvocationTime:     time.Now().String(),
-			ResponseStatusCode: 0,
-			ErrorMessage:       er.Error(),
-		}
-		createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.All, IsBatch: true}
-		if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, invocationLogs, createRequest, false); err != nil {
-			return errors.New("eventing module couldn't log the request - " + err.Error())
-		}
-		return er
-	}
+	req, err := http.NewRequestWithContext(ctx, method, eventDoc.URL, bytes.NewBuffer(data))
 	if err != nil {
-		invocationDoc := &model.InvocationDocument{
-			InvocationTime:     time.Now().String(),
-			RequestPayload:     string(payload),
-			ResponseStatusCode: 0,
-			ErrorMessage:       err.Error(),
-		}
-		createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.All, IsBatch: true}
-		if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, invocationLogs, createRequest, false); err != nil {
-			return errors.New("eventing module couldn't log the request - " + err.Error())
-		}
+		s.logInvocation(ctx, eventDoc.ID, data, 0, "", err)
 		return err
 	}
 
@@ -77,63 +71,24 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method, url, tok
 
 	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
+	defer utils.CloseTheCloser(resp.Body)
 	responseBody, e := ioutil.ReadAll(resp.Body)
 	if e != nil {
-		invocationDoc := &model.InvocationDocument{
-			InvocationTime:     time.Now().String(),
-			RequestPayload:     string(payload),
-			ResponseStatusCode: 0,
-			ErrorMessage:       e.Error(),
-		}
-		createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.All, IsBatch: true}
-		if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, invocationLogs, createRequest, false); err != nil {
-			return errors.New("eventing module couldn't log the request - " + err.Error())
-		}
+		s.logInvocation(ctx, eventDoc.ID, data, 0, "", e)
 		return e
 	}
 	if err != nil {
-		invocationDoc := &model.InvocationDocument{
-			InvocationTime:     time.Now().String(),
-			RequestPayload:     string(payload),
-			ResponseStatusCode: resp.StatusCode,
-			ResponseBody:       string(responseBody),
-			ErrorMessage:       err.Error(),
-		}
-		createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.All, IsBatch: true}
-		if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, invocationLogs, createRequest, false); err != nil {
-			return errors.New("eventing module couldn't log the request - " + err.Error())
-		}
+		s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
 		return err
 	}
-	defer utils.CloseTheCloser(resp.Body)
 
-	if err := json.NewDecoder(resp.Body).Decode(vPtr); err != nil {
-		invocationDoc := &model.InvocationDocument{
-			InvocationTime:     time.Now().String(),
-			RequestPayload:     string(payload),
-			ResponseStatusCode: resp.StatusCode,
-			ResponseBody:       string(responseBody),
-			ErrorMessage:       err.Error(),
-		}
-		createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.All, IsBatch: true}
-		if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, invocationLogs, createRequest, false); err != nil {
-			return errors.New("eventing module couldn't log the request - " + err.Error())
-		}
+	if err := json.Unmarshal(responseBody, vPtr); err != nil {
+		s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
 		return err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		invocationDoc := &model.InvocationDocument{
-			InvocationTime:     time.Now().String(),
-			RequestPayload:     string(payload),
-			ResponseStatusCode: resp.StatusCode,
-			ResponseBody:       string(responseBody),
-			ErrorMessage:       err.Error(),
-		}
-		createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.All, IsBatch: true}
-		if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, invocationLogs, createRequest, false); err != nil {
-			return errors.New("eventing module couldn't log the request - " + err.Error())
-		}
+		s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err)
 		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
 	}
 

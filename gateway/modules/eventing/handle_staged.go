@@ -148,7 +148,7 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	}
 
 	var eventResponse model.EventResponse
-	if err := m.MakeInvocationHTTPRequest(ctxLocal, http.MethodPost, eventDoc.URL, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+	if err := m.MakeInvocationHTTPRequest(ctxLocal, http.MethodPost, eventDoc, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
 		logrus.Errorf("error invoking web hook in eventing unable to send http request to url %s - %s", eventDoc.URL, err.Error())
 		return err
 	}
