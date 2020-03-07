@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+//ActionGenerateDBRule generates spec objects for database rule
 func ActionGenerateDBRule(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
@@ -22,6 +23,7 @@ func ActionGenerateDBRule(c *cli.Context) error {
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
+//ActionGenerateDBConfig generates spec objects for database Config
 func ActionGenerateDBConfig(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
@@ -36,6 +38,7 @@ func ActionGenerateDBConfig(c *cli.Context) error {
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
+//ActionGenerateDBSchema generates spec objects for database Schema
 func ActionGenerateDBSchema(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {

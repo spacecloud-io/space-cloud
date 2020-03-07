@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli"
 )
 
+// ActionGenerateFilestoreRule generates filestore rule spec object
 func ActionGenerateFilestoreRule(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
@@ -22,6 +23,7 @@ func ActionGenerateFilestoreRule(c *cli.Context) error {
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
+// ActionGenerateFilestoreConfig generates filestore config
 func ActionGenerateFilestoreConfig(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {

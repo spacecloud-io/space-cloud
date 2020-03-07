@@ -6,7 +6,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	eventing "github.com/spaceuptech/space-cli/modules/Eventing"
 	"github.com/spaceuptech/space-cli/modules/database"
+	"github.com/spaceuptech/space-cli/modules/filestore"
 )
 
 func main() {
@@ -39,6 +41,30 @@ func main() {
 				{
 					Name:   "db-schema",
 					Action: database.ActionGenerateDBSchema,
+				},
+				{
+					Name:   "filestore-rules",
+					Action: filestore.ActionGenerateFilestoreRule,
+				},
+				{
+					Name:   "filestore-config",
+					Action: filestore.ActionGenerateFilestoreConfig,
+				},
+				{
+					Name:   "eventing-rule",
+					Action: eventing.ActionGenerateEventingRule,
+				},
+				{
+					Name:   "eventing-schema",
+					Action: eventing.ActionGenerateEventingSchema,
+				},
+				{
+					Name:   "eventing-config",
+					Action: eventing.ActionGenerateEventingConfig,
+				},
+				{
+					Name:   "eventing-trigger",
+					Action: eventing.ActionGenerateEventingTrigger,
 				},
 			},
 		},

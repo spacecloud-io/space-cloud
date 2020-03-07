@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// AppendConfigToDisk creates a yml file or appends to existing
 func AppendConfigToDisk(specObj *model.SpecObject, filename string) error {
 	// Marshal spec object to yaml
 	data, err := yaml.Marshal(specObj)
@@ -22,7 +23,9 @@ func AppendConfigToDisk(specObj *model.SpecObject, filename string) error {
 			return err
 		}
 
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 
 		_, err = f.Write(append([]byte("---\n"), data...))
 		return err
