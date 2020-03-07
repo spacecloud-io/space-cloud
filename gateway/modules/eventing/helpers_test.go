@@ -76,6 +76,9 @@ func (new *a) Parser(crud config.Crud) (model.Type, error) {
 func (new *a) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	return nil, nil
 }
+func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error {
+	return nil
+}
 
 func TestModule_validate(t *testing.T) {
 	authModule := auth.Init("1", &crud.Module{}, &schema.Schema{}, false)
