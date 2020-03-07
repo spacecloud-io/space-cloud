@@ -40,8 +40,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	// Make a request object
 	req, err := http.NewRequestWithContext(ctx, method, eventDoc.URL, bytes.NewBuffer(data))
 	if err != nil {
-		err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", err.Error())
-		if err != nil {
+		if err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -65,19 +64,17 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 
 	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
-	defer utils.CloseTheCloser(resp.Body)
-	responseBody, e := ioutil.ReadAll(resp.Body)
-	if e != nil {
-		err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", e.Error())
-		if err != nil {
+	if err != nil {
+		if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
-		return e
+		return err
 	}
+	defer utils.CloseTheCloser(resp.Body)
+	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err.Error())
-		if err != nil {
+		if err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -102,10 +99,9 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
 	}
 
-	er := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), "")
-	if er != nil {
-		logrus.Errorf("eventing module couldn't log the invocation - %s", er.Error())
-		return er
+	if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), ""); err != nil {
+		logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
+		return err
 	}
 
 	return nil
