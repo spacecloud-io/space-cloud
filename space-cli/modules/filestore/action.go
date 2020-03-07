@@ -36,7 +36,7 @@ func ActionGetFileStoreRule(c *cli.Context) error {
 		params["ruleName"] = c.Args()[0]
 	}
 
-	objs, err := GetFileStoreRule(project, commandName, params)
+	objs, err := getFileStoreRule(project, commandName, params)
 	if err != nil {
 		return err
 	}
