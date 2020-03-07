@@ -9,6 +9,7 @@ import (
 	eventing "github.com/spaceuptech/space-cli/modules/Eventing"
 	"github.com/spaceuptech/space-cli/modules/database"
 	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/userman"
 )
 
 func main() {
@@ -65,6 +66,10 @@ func main() {
 				{
 					Name:   "eventing-trigger",
 					Action: eventing.ActionGenerateEventingTrigger,
+				},
+				{
+					Name:   "user-management",
+					Action: userman.ActionGenerateUserManagement,
 				},
 			},
 		},
