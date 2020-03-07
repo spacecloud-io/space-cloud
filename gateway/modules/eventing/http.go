@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -84,8 +85,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	}
 
 	if err := json.Unmarshal(responseBody, vPtr); err != nil {
-		err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err.Error())
-		if err != nil {
+		if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -93,12 +93,11 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err.Error())
-		if err != nil {
+		if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
-		return errors.New("service responded with status code " + strconv.Itoa(resp.StatusCode))
+		return fmt.Errorf("service responded with status code - %s", strconv.Itoa(resp.StatusCode))
 	}
 
 	if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), ""); err != nil {
