@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+//Get gets spec object
 func Get(method, url string, params map[string]string, vPtr interface{}) error {
 	account, err := getSelectedAccount()
 	if err != nil {
@@ -35,7 +36,7 @@ func Get(method, url string, params map[string]string, vPtr interface{}) error {
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer CloseTheCloser(resp.Body)
 
 	data, _ := ioutil.ReadAll(resp.Body)
 	if err := json.Unmarshal(data, vPtr); err != nil {

@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
+//ActionGetFileStoreConfig gets filestore config
 func ActionGetFileStoreConfig(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -24,6 +25,7 @@ func ActionGetFileStoreConfig(c *cli.Context) error {
 	return nil
 }
 
+//ActionGetFileStoreRule gets filestore rule
 func ActionGetFileStoreRule(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")

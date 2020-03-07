@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
+//ActionGetEventingTrigger gets eventing trigger
 func ActionGetEventingTrigger(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -26,6 +27,7 @@ func ActionGetEventingTrigger(c *cli.Context) error {
 	return nil
 }
 
+//ActionGetEventingConfig gets eventing config
 func ActionGetEventingConfig(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -43,6 +45,7 @@ func ActionGetEventingConfig(c *cli.Context) error {
 	return nil
 }
 
+//ActionGetEventingSchema gets eventing schema
 func ActionGetEventingSchema(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -62,6 +65,7 @@ func ActionGetEventingSchema(c *cli.Context) error {
 	return nil
 }
 
+//ActionGetEventingSecurityRule gets eventing security rule
 func ActionGetEventingSecurityRule(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")

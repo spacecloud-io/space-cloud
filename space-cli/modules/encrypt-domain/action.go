@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
+//ActionGetLetsEncryptDomain gets encrypt domain
 func ActionGetLetsEncryptDomain(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")

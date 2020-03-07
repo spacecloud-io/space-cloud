@@ -41,7 +41,7 @@ func getEventingTrigger(project, commandName string, params map[string]string) (
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
-		// Printing the object on the screen
+		// Generating the object
 		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/eventing/triggers/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
@@ -59,7 +59,7 @@ func getEventingConfig(project, commandName string, params map[string]string) (*
 		return nil, err
 	}
 
-	// Printing the object on the screen
+	// Generating the object
 	meta := map[string]string{"projectId": project}
 	s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/eventing/config", commandName, meta, vPtr)
 	if err != nil {
@@ -101,7 +101,7 @@ func getEventingSchema(project, commandName string, params map[string]string) ([
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
-		// Printing the object on the screen
+		// Generating the object
 		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/eventing/schema/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
@@ -143,7 +143,7 @@ func getEventingSecurityRule(project, commandName string, params map[string]stri
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
-		// Printing the object on the screen
+		// Generating the object
 		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/eventing/rules/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err

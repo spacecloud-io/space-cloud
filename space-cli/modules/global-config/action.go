@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
+//ActionGetGlobalConfig gets global config
 func ActionGetGlobalConfig(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")

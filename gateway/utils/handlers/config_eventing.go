@@ -187,7 +187,7 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"dbType": project.Modules.Eventing.DBType, "col": project.Modules.Eventing.Col, "enabled": project.Modules.Eventing.Enabled})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"dbType": project.Modules.Eventing.DBType, "enabled": project.Modules.Eventing.Enabled})
 	}
 }
 

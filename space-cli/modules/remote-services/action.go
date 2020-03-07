@@ -6,6 +6,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
+//ActionGetRemoteServices gets remote services
 func ActionGetRemoteServices(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
