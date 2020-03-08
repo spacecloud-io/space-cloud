@@ -8,6 +8,7 @@ type EventDocument struct {
 	ID             string      `structs:"_id" json:"_id" bson:"_id" mapstructure:"_id"`
 	BatchID        string      `structs:"batchid" json:"batchid" bson:"batchid" mapstructure:"batchid"`
 	Type           string      `structs:"type" json:"type" bson:"type" mapstructure:"type"`
+	RuleName       string      `structs:"rule_name" json:"rule_name" bson:"rule_name" mapstructure:"rule_name"`
 	Token          int         `structs:"token" json:"token" bson:"token" mapstructure:"token"`
 	Timestamp      int64       `structs:"timestamp" json:"timestamp" bson:"timestamp" mapstructure:"timestamp"`                         // The timestamp of when the event should get executed
 	EventTimestamp int64       `structs:"event_timestamp" json:"event_timestamp" bson:"event_timestamp" mapstructure:"event_timestamp"` // The time stamp of when the event was logged
@@ -16,6 +17,18 @@ type EventDocument struct {
 	Retries        int         `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
 	URL            string      `structs:"url" json:"url" bson:"url" mapstructure:"url"`
 	Remark         string      `structs:"remark" json:"remark" bson:"remark" mapstructure:"remark"`
+}
+
+// InvocationDocument is the format in which the invocation are persistent on disk
+type InvocationDocument struct {
+	ID                 string `struct:"_id" json:"_id" bson:"_id" mapstructure:"_id"`
+	EventID            string `struct:"event_id" json:"event_id" bson:"event_id" mapstructure:"event_id"`
+	InvocationTime     string `struct:"invocation_time" json:"invocation_time" bson:"invocation_time" mapstructure:"invocation_time"`
+	RequestPayload     string `struct:"request_payload" json:"request_payload" bson:"request_payload" mapstructure:"request_payload"`
+	ResponseStatusCode int    `struct:"response_status_code" json:"response_status_code" bson:"response_status_code" mapstructure:"response_status_code"`
+	ResponseBody       string `struct:"response_body" json:"response_body" bson:"response_body" mapstructure:"response_body"`
+	ErrorMessage       string `struct:"error_msg" json:"error_msg" bson:"error_msg" mapstructure:"error_msg"`
+	Remark             string `struct:"remark" json:"remark" bson:"remark" mapstructure:"remark"`
 }
 
 // CloudEventPayload is the the JSON event spec by Cloud Events Specification
