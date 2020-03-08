@@ -9,7 +9,8 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-func getEventingTrigger(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+//GetEventingTrigger gets eventing trigger
+func GetEventingTrigger(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/triggers", project)
 
 	// Get the spec from the server
@@ -51,7 +52,8 @@ func getEventingTrigger(project, commandName string, params map[string]string) (
 	return objs, nil
 }
 
-func getEventingConfig(project, commandName string, params map[string]string) (*model.SpecObject, error) {
+//GetEventingConfig gets eventing config
+func GetEventingConfig(project, commandName string, params map[string]string) (*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/config", project)
 	// Get the spec from the server
 	vPtr := new(interface{})
@@ -69,7 +71,8 @@ func getEventingConfig(project, commandName string, params map[string]string) (*
 	return s, nil
 }
 
-func getEventingSchema(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+//GetEventingSchema gets eventing schema
+func GetEventingSchema(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/schema", project)
 
 	// Get the spec from the server
@@ -111,7 +114,8 @@ func getEventingSchema(project, commandName string, params map[string]string) ([
 	return objs, nil
 }
 
-func getEventingSecurityRule(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+//GetEventingSecurityRule gets eventing security rules
+func GetEventingSecurityRule(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/rules", project)
 
 	// Get the spec from the server

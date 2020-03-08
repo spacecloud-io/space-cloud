@@ -289,6 +289,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+		serviceID, exists := r.URL.Query()["serviceId"]
 
 		serviceRoutes, err := s.driver.GetServiceRoutes(ctx, projectID)
 		if err != nil {
@@ -297,6 +298,15 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 			return
 		}
 
+		if exists {
+			for k, val := range serviceRoutes {
+				if k == serviceID[0] {
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": val})
+					return
+				}
+			}
+		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": serviceRoutes})
 	}

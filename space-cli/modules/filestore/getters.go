@@ -9,7 +9,8 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-func getFileStoreConfig(project, commandName string, params map[string]string) (*model.SpecObject, error) {
+//GetFileStoreConfig gets filestore config
+func GetFileStoreConfig(project, commandName string, params map[string]string) (*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/file-storage/config", project)
 	// Get the spec from the server
 	result := new(interface{})
@@ -27,7 +28,8 @@ func getFileStoreConfig(project, commandName string, params map[string]string) (
 	return s, nil
 }
 
-func getFileStoreRule(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+//GetFileStoreRule gets filestore rule
+func GetFileStoreRule(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/file-storage/rules", project)
 	// Get the spec from the server
 	result := make(map[string]interface{})

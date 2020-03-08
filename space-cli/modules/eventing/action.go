@@ -17,7 +17,7 @@ func ActionGetEventingTrigger(c *cli.Context) error {
 	if len(c.Args()) != 0 {
 		params["ruleName"] = c.Args()[0]
 	}
-	objs, err := getEventingTrigger(project, commandName, params)
+	objs, err := GetEventingTrigger(project, commandName, params)
 	if err != nil {
 		return err
 	}
@@ -34,7 +34,7 @@ func ActionGetEventingConfig(c *cli.Context) error {
 	commandName := c.Command.Name
 
 	params := map[string]string{}
-	obj, err := getEventingConfig(project, commandName, params)
+	obj, err := GetEventingConfig(project, commandName, params)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func ActionGetEventingSchema(c *cli.Context) error {
 	if len(c.Args()) != 0 {
 		params["type"] = c.Args()[0]
 	}
-	objs, err := getEventingSchema(project, commandName, params)
+	objs, err := GetEventingSchema(project, commandName, params)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func ActionGetEventingSecurityRule(c *cli.Context) error {
 	if len(c.Args()) != 0 {
 		params["type"] = c.Args()[0]
 	}
-	objs, err := getEventingSecurityRule(project, commandName, params)
+	objs, err := GetEventingSecurityRule(project, commandName, params)
 	if err != nil {
 		return err
 	}

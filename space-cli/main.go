@@ -6,14 +6,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	"github.com/spaceuptech/space-cli/modules"
 	"github.com/spaceuptech/space-cli/modules/auth"
 	"github.com/spaceuptech/space-cli/modules/database"
-	encrypt_domain "github.com/spaceuptech/space-cli/modules/encrypt-domain"
+	"github.com/spaceuptech/space-cli/modules/encrypt"
 	"github.com/spaceuptech/space-cli/modules/eventing"
 	"github.com/spaceuptech/space-cli/modules/filestore"
-	global_config "github.com/spaceuptech/space-cli/modules/global-config"
-	remote_services "github.com/spaceuptech/space-cli/modules/remote-services"
+	"github.com/spaceuptech/space-cli/modules/project"
+	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
 	"github.com/spaceuptech/space-cli/modules/routes"
+	"github.com/spaceuptech/space-cli/modules/services"
 )
 
 func main() {
@@ -49,12 +51,16 @@ func main() {
 			},
 			Subcommands: []cli.Command{
 				{
-					Name:   "global-config",
-					Action: global_config.ActionGetGlobalConfig,
+					Name:   "all",
+					Action: modules.GetAllProjects,
+				},
+				{
+					Name:   "project",
+					Action: project.ActionGetProjectConfig,
 				},
 				{
 					Name:   "remote-services",
-					Action: remote_services.ActionGetRemoteServices,
+					Action: remoteservices.ActionGetRemoteServices,
 				},
 				{
 					Name:   "auth-providers",
@@ -97,12 +103,16 @@ func main() {
 					Action: database.ActionGetDbSchema,
 				},
 				{
-					Name:   "letsencrypt-domain",
-					Action: encrypt_domain.ActionGetLetsEncryptDomain,
+					Name:   "letsencrypt",
+					Action: encrypt.ActionGetLetsEncrypt,
 				},
 				{
-					Name:   "routes",
-					Action: routes.ActionGetRoutes,
+					Name:   "ingress-routes",
+					Action: routes.ActionGetIngressRoutes,
+				},
+				{
+					Name:   "services-routes",
+					Action: services.ActionGetServicesRoutes,
 				},
 			},
 		},

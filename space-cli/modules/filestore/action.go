@@ -14,7 +14,7 @@ func ActionGetFileStoreConfig(c *cli.Context) error {
 	commandName := c.Command.Name
 
 	params := map[string]string{}
-	obj, err := getFileStoreConfig(project, commandName, params)
+	obj, err := GetFileStoreConfig(project, commandName, params)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func ActionGetFileStoreRule(c *cli.Context) error {
 		params["ruleName"] = c.Args()[0]
 	}
 
-	objs, err := getFileStoreRule(project, commandName, params)
+	objs, err := GetFileStoreRule(project, commandName, params)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@ func ActionGetRemoteServices(c *cli.Context) error {
 		params["service"] = c.Args()[0]
 	}
 
-	objs, err := getRemoteServices(project, commandName, params)
+	objs, err := GetRemoteServices(project, commandName, params)
 	if err != nil {
 		return err
 	}

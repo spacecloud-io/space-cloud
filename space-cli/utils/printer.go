@@ -27,7 +27,7 @@ func PrintYaml(objs []*model.SpecObject) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println(string(b))
+		fmt.Print(string(b))
 		fmt.Println("---")
 	}
 	return nil

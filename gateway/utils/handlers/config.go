@@ -232,54 +232,8 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 	}
 }
 
-// HandleGlobalConfig returns the handler to store the global config of a project via a REST endpoint
-func HandleGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
-		// Load the body of the request
-		c := new(config.Project)
-		err := json.NewDecoder(r.Body).Decode(c)
-		defer utils.CloseTheCloser(r.Body)
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		c.ID = projectID
-
-		// Throw error if request was of incorrect type
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
-			return
-		}
-
-		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token, c.ID)
-		if err != nil {
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-
-		// Sync the config
-		if err := syncMan.SetProjectGlobalConfig(ctx, c); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		// Give positive acknowledgement
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-	}
-}
-
-//HandleGetGlobalConfig returns handler to get config of the project
-func HandleGetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+//HandleGetProjectConfig returns handler to get config of the project
+func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -302,12 +256,12 @@ func HandleGetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"aesKey": "", "secret": project.Secret, "name": project.Name})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"aesKey": project.AESkey, "secret": project.Secret, "name": project.Name, "contextTime": project.ContextTime})
 	}
 }
 
-// HandleCreateProject is an endpoint handler which adds a project configuration in config
-func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+// HandleApplyProject is an endpoint handler which adds a project configuration in config
+func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -330,7 +284,7 @@ func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		statusCode, err := syncman.CreateProjectConfig(ctx, &projectConfig)
+		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig)
 		if err != nil {
 			w.WriteHeader(statusCode)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

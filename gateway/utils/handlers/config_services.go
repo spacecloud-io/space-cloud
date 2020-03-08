@@ -83,7 +83,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		}
 		services := project.Modules.Services.Services
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": services})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": services})
 	}
 }
 

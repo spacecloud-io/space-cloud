@@ -9,7 +9,8 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-func getAuthProviders(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+//GetAuthProviders gets auth providers
+func GetAuthProviders(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/user-management", project)
 
 	// Get the spec from the server

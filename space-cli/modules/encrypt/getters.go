@@ -1,4 +1,4 @@
-package globalconfig
+package encrypt
 
 import (
 	"fmt"
@@ -9,18 +9,18 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-func getGlobalConfig(project, commandName string, params map[string]string) (*model.SpecObject, error) {
-
-	url := fmt.Sprintf("/v1/config/projects/%s/config", project)
+//GetLetsEncrypt gets encrypt domain
+func GetLetsEncryptDomain(project, commandName string, params map[string]string) (*model.SpecObject, error) {
+	url := fmt.Sprintf("/v1/config/projects/%s/letsencrypt", project)
 	// Get the spec from the server
 	result := new(interface{})
 	if err := cmd.Get(http.MethodGet, url, map[string]string{}, result); err != nil {
 		return nil, err
 	}
 
-	// Generating the object
+	// Printing the object on the screen
 	meta := map[string]string{"projectId": project}
-	s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/config", commandName, meta, result)
+	s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/letsencrypt", commandName, meta, result)
 	if err != nil {
 		return nil, err
 	}

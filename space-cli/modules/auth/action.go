@@ -17,7 +17,7 @@ func ActionGetAuthProviders(c *cli.Context) error {
 		params["provider"] = c.Args()[0]
 	}
 
-	objs, err := getAuthProviders(project, commandName, params)
+	objs, err := GetAuthProviders(project, commandName, params)
 	if err != nil {
 		return err
 	}

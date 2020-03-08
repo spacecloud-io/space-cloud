@@ -9,7 +9,8 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-func getRoutes(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+//GetIngressRoutes gets ingress routes
+func GetIngressRoutes(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/route", project)
 	// Get the spec from the server
 	result := make(map[string]interface{})

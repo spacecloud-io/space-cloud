@@ -1,4 +1,4 @@
-package globalconfig
+package encrypt
 
 import (
 	"github.com/urfave/cli"
@@ -7,14 +7,14 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//ActionGetGlobalConfig gets global config
-func ActionGetGlobalConfig(c *cli.Context) error {
+//ActionGetLetsEncrypt gets encrypt domain
+func ActionGetLetsEncrypt(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
 	commandName := c.Command.Name
 
 	params := map[string]string{}
-	obj, err := getGlobalConfig(project, commandName, params)
+	obj, err := GetLetsEncryptDomain(project, commandName, params)
 	if err != nil {
 		return err
 	}

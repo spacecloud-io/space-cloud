@@ -1,4 +1,4 @@
-package remoteservices
+package services
 
 import (
 	"fmt"
@@ -9,9 +9,9 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//GetRemoteServices gets remote services
-func GetRemoteServices(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
-	url := fmt.Sprintf("/v1/config/projects/%s/services", project)
+//GetServicesRoutes gets services routes
+func GetServicesRoutes(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+	url := fmt.Sprintf("/v1/runner/%s/service-routes", project)
 
 	// Get the spec from the server
 	result := make(map[string]interface{})
@@ -43,7 +43,7 @@ func GetRemoteServices(project, commandName string, params map[string]string) ([
 		delete(spec, "version")
 
 		// Printing the object on the screen
-		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/services/{id}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/runner/{project}/service-routes/{serviceId}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}
