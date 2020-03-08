@@ -31,12 +31,12 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 		docs = []interface{}{v}
 	}
 	for columnName, columnValue := range tableInfo {
-		if columnValue.Kind == model.TypeJsonb {
+		if columnValue.Kind == model.TypeJSON {
 			for _, doc := range docs {
 				finalDoc := doc.(map[string]interface{})
 				data, ok := finalDoc[columnName].([]byte)
 				if !ok {
-					logrus.Errorf("error crud post process in schema module unable to type assert interface to []byte for column (%s)", columnName)
+					logrus.Errorf("error crud post process in schema module unable to type assert interface to []byte it is of type (%T) for column (%s)", columnName, finalDoc[columnName])
 					return fmt.Errorf("unable to type assert interface to []byte for column (%s)", columnName)
 				}
 				var v interface{}

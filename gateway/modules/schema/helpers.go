@@ -35,7 +35,7 @@ func getSQLType(dbType, typename string) (string, error) {
 		return "float", nil
 	case model.TypeInteger:
 		return "bigint", nil
-	case model.TypeJsonb:
+	case model.TypeJSON:
 		if dbType != string(utils.Postgres) {
 			return "", fmt.Errorf("jsonb not supported for database %s", dbType)
 		}
@@ -45,7 +45,6 @@ func getSQLType(dbType, typename string) (string, error) {
 	}
 }
 
-// TODO ANY PARTICULAR DIRECTIVE THAT IS NOT SUPPORTED FOR JSONB
 func checkErrors(realFieldStruct *model.FieldType) error {
 	if realFieldStruct.IsList && !realFieldStruct.IsLinked { // array without directive relation not allowed
 		return fmt.Errorf("invalid type for field %s - array type without link directive is not supported in sql creation", realFieldStruct.FieldName)
@@ -60,6 +59,10 @@ func checkErrors(realFieldStruct *model.FieldType) error {
 
 	if realFieldStruct.IsPrimary && realFieldStruct.Kind != model.TypeID {
 		return errors.New("primary key should be of type ID")
+	}
+
+	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
+		return fmt.Errorf("cannot set index with type json")
 	}
 
 	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {

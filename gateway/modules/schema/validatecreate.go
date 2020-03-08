@@ -153,7 +153,7 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *model.Fiel
 		}
 
 	case map[string]interface{}:
-		if fieldValue.Kind == model.TypeJsonb {
+		if fieldValue.Kind == model.TypeJSON {
 			data, err := json.Marshal(value)
 			if err != nil {
 				logrus.Errorf("error checking type in schema module unable to marshal data for field having type json")
