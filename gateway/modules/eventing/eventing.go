@@ -1,10 +1,12 @@
 package eventing
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -95,8 +97,20 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		return nil
 	}
 
-	if eventing.DBType == "" || eventing.Col == "" {
+	if eventing.DBType == "" {
 		return errors.New("invalid eventing config provided")
+	}
+
+	schemas := map[string]*config.TableRule{
+		eventingLogs:   &config.TableRule{Schema: eventSchema},
+		invocationLogs: &config.TableRule{Schema: invocationSchema},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := m.schema.SchemaModifyAll(ctx, eventing.DBType, project, schemas); err != nil {
+		logrus.Errorf("Could not create tables required for eventing module - %s", err.Error())
+		return err
 	}
 
 	m.project = project

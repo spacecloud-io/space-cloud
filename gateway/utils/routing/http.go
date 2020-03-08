@@ -98,7 +98,7 @@ func setRequest(request *http.Request, route *config.Route, url string) error {
 	}
 
 	request.Host = target.Host
-	request.URL.Host = fmt.Sprintf("%s:%s", target.Host, target.Port)
+	request.URL.Host = fmt.Sprintf("%s:%d", target.Host, target.Port)
 	request.URL.Path = url
 
 	// Set the url scheme to http
