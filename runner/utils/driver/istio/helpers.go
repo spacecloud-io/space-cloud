@@ -506,6 +506,7 @@ func (i *Istio) updateVirtualService(service *model.Service, prevVirtualService 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        getVirtualServiceName(service.ID),
 			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
+			Labels:      map[string]string{"app": service.ID}, // We use the app label to retrieve service routing rules
 		},
 		Spec: networkingv1alpha3.VirtualService{
 			Hosts: prepareVirtualServiceHosts(service),
