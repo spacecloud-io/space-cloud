@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -24,7 +22,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}
 	m.lock.RLock()
 	project := m.project
-	dbAlias, col := m.config.DBType, m.config.Col
+	dbAlias, col := m.config.DBType, eventingLogs
 	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
@@ -43,7 +41,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 
 	results, err := m.crud.Read(ctx, dbAlias, project, col, &readRequest)
 	if err != nil {
-		log.Println("Eventing stage routine error:", err)
+		logrus.Errorf("Eventing stage routine error - %s", err.Error())
 		return
 	}
 
@@ -73,8 +71,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	// Delete the event from the processing list without fail
 	defer m.processingEvents.Delete(eventDoc.ID)
 
-	typeAndName := strings.Split(eventDoc.Type, ":")
-	evType, name := typeAndName[0], typeAndName[1]
+	evType, name := eventDoc.Type, eventDoc.RuleName
 
 	rule, err := m.selectRule(name, evType)
 	if err != nil {
@@ -112,11 +109,11 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 	for {
 		if err := m.invokeWebhook(ctx, rule.Timeout, eventDoc, &cloudEvent); err != nil {
-			log.Println("Eventing staged event handler could not get response from service:", err)
+			logrus.Errorf("Eventing staged event handler could not get response from service -%s", err.Error())
 
 			// Increment the retries. Exit the loop if max retries reached.
 			retries++
-			if retries >= maxRetries {
+			if retries >= maxRetries+1 {
 				// Mark event as failed
 				break
 			}
@@ -130,8 +127,8 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		return
 	}
 
-	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
-		log.Println("Eventing staged event handler could not update event doc:", err)
+	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, eventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+		logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
 	}
 }
 
@@ -185,6 +182,6 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 		}
 	}
 
-	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, eventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
 	return nil
 }

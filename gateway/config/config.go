@@ -182,7 +182,6 @@ type StaticRoute struct {
 type Eventing struct {
 	Enabled       bool                    `json:"enabled" yaml:"enabled"`
 	DBType        string                  `json:"dbType" yaml:"dbType"`
-	Col           string                  `json:"col" yaml:"col"`
 	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
 	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`

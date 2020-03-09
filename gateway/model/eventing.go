@@ -8,6 +8,7 @@ type EventDocument struct {
 	ID             string      `structs:"_id" json:"_id" bson:"_id" mapstructure:"_id"`
 	BatchID        string      `structs:"batchid" json:"batchid" bson:"batchid" mapstructure:"batchid"`
 	Type           string      `structs:"type" json:"type" bson:"type" mapstructure:"type"`
+	RuleName       string      `structs:"rule_name" json:"rule_name" bson:"rule_name" mapstructure:"rule_name"`
 	Token          int         `structs:"token" json:"token" bson:"token" mapstructure:"token"`
 	Timestamp      int64       `structs:"timestamp" json:"timestamp" bson:"timestamp" mapstructure:"timestamp"`                         // The timestamp of when the event should get executed
 	EventTimestamp int64       `structs:"event_timestamp" json:"event_timestamp" bson:"event_timestamp" mapstructure:"event_timestamp"` // The time stamp of when the event was logged
