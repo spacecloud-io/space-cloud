@@ -82,6 +82,13 @@ func (m *Module) SetSecret(secret string) {
 	m.secret = secret
 }
 
+// SetAESKey sets the aeskey to be used for encryption
+func (m *Module) SetAESKey(aesKey string) {
+	m.Lock()
+	defer m.Unlock()
+	m.aesKey = []byte(aesKey)
+}
+
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud
 func (m *Module) GetInternalAccessToken() (string, error) {
 	return m.CreateToken(map[string]interface{}{
