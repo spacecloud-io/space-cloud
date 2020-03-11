@@ -1,0 +1,10 @@
+api: /v1/config/projects/{project}/letsencrypt
+type: eventing-rule
+meta:
+  project: pro1
+spec:
+  white listed domain:
+    "0": a
+    "1": b
+    "2": c
+    "3": d

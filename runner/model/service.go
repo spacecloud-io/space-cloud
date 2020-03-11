@@ -137,3 +137,11 @@ type ExposeRuleURI struct {
 	Exact   *string `json:"exact" yaml:"exact"`
 	Rewrite *string `json:"rewrite" yaml:"rewrite"`
 }
+
+// SpecObject describes the basic structure of config specifications
+type SpecObject struct {
+	API  string            `yaml:"api"`
+	Type string            `yaml:"type"`
+	Meta map[string]string `yaml:"meta"`
+	Spec interface{}       `yaml:"spec,omitempty"`
+}

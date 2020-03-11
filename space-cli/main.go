@@ -9,6 +9,9 @@ import (
 	eventing "github.com/spaceuptech/space-cli/modules/Eventing"
 	"github.com/spaceuptech/space-cli/modules/database"
 	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/letsencrypt"
+	"github.com/spaceuptech/space-cli/modules/servicerouting"
+	"github.com/spaceuptech/space-cli/modules/services"
 	"github.com/spaceuptech/space-cli/modules/userman"
 )
 
@@ -68,8 +71,20 @@ func main() {
 					Action: eventing.ActionGenerateEventingTrigger,
 				},
 				{
-					Name:   "user-management",
+					Name:   "auth-providers",
 					Action: userman.ActionGenerateUserManagement,
+				},
+				{
+					Name:   "remote-services",
+					Action: services.ActionGenerateService,
+				},
+				{
+					Name:   "letsencrypt-domain",
+					Action: letsencrypt.ActionGenerateLetsEncryptDomain,
+				},
+				{
+					Name:   "service-routing",
+					Action: servicerouting.ActionGenerateServiceRouting,
 				},
 			},
 		},

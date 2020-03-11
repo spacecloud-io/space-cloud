@@ -4,9 +4,9 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
-
 	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/modules/routing"
+	"github.com/urfave/cli"
 )
 
 const (
@@ -26,6 +26,16 @@ func main() {
 	app.Version = model.Version
 
 	app.Commands = []cli.Command{
+		{
+			Name:  "generate",
+			Usage: "generates service config",
+			Subcommands: []cli.Command{
+				{
+					Name:   "service-routing",
+					Action: routing.ActionGenerateServiceRouting,
+				},
+			},
+		},
 		{
 			Name:  "start",
 			Usage: "Starts a runner instance",

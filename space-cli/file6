@@ -1,0 +1,23 @@
+api: /v1/config/projects/{project}/routing
+type: service-routing
+meta:
+  project: u1
+spec:
+  host:
+    "0": a
+    "1": s
+    "2": d
+    "3": d
+    "4": f
+    "5": g
+    "6": g
+  method: {}
+  port: "8080"
+  rewriteURL: scknasklcnb
+  scheme: HTTPS
+  target:
+    "0": dcnbkdjbcj
+    "1": sksjdbcksdjc
+  type: exact
+  url: /
+  weight: "100"
