@@ -128,6 +128,10 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 
 		for _, field := range v.(*ast.ObjectDefinition).Fields {
 
+			if field.Type == nil {
+				return nil, fmt.Errorf("type not provided for the field (%s)", field.Name.Value)
+			}
+
 			fieldTypeStuct := model.FieldType{
 				FieldName: field.Name.Value,
 			}
@@ -185,9 +189,6 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 					case model.DirectiveLink:
 						fieldTypeStuct.IsLinked = true
 						fieldTypeStuct.LinkedTable = &model.TableProperties{DBType: dbName}
-						if field.Type == nil {
-							return nil, fmt.Errorf("type not provided for the field (%s)", field.Name.Value)
-						}
 						kind, err := getFieldType(dbName, field.Type, &fieldTypeStuct, doc)
 						if err != nil {
 							return nil, err
@@ -239,9 +240,6 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 				}
 			}
 
-			if field.Type == nil {
-				return nil, fmt.Errorf("type not provided for the field (%s)", field.Name.Value)
-			}
 			kind, err := getFieldType(dbName, field.Type, &fieldTypeStuct, doc)
 			if err != nil {
 				return nil, err
