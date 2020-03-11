@@ -3,11 +3,10 @@ package modules
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 )
 
 // SetGlobalConfig sets the auth secret and AESkey
-func (m *Modules) SetGlobalConfig(projectID, secret, aesKey string, auth *auth.Module) {
+func (m *Modules) SetGlobalConfig(projectID, secret, aesKey string) {
 	m.auth.SetSecret(secret)
 	m.auth.SetAESKey(aesKey)
 }
