@@ -5,6 +5,50 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// SetProjectConfig sets the config all modules
+func (m *Modules) SetProjectConfig(config *config.Config) error {
+	if config.Projects != nil {
+		p := config.Projects[0]
+
+		if err := m.crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
+			logrus.Errorf("error setting crud module config - %s", err.Error())
+			return err
+		}
+
+		if err := m.schema.SetConfig(p.Modules.Crud, p.ID); err != nil {
+			logrus.Errorf("error setting schema module config - %s", err.Error())
+			return err
+		}
+
+		if err := m.auth.SetConfig(p.ID, p.Secret, p.AESkey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
+			logrus.Errorf("error setting auth module config - %s", err.Error())
+			return err
+		}
+
+		m.functions.SetConfig(p.ID, p.Modules.Services)
+
+		m.user.SetConfig(p.Modules.Auth)
+
+		if err := m.file.SetConfig(p.Modules.FileStore); err != nil {
+			logrus.Errorf("error setting filestore module config - %s", err.Error())
+			return err
+		}
+
+		if err := m.eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
+			logrus.Errorf("error setting eventing module config - %s", err.Error())
+			return err
+		}
+
+		if err := m.realtime.SetConfig(p.ID, p.Modules.Crud); err != nil {
+			logrus.Errorf("error setting realtime module config - %s", err.Error())
+			return err
+		}
+
+		m.graphql.SetConfig(p.ID)
+	}
+	return nil
+}
+
 // SetGlobalConfig sets the auth secret and AESkey
 func (m *Modules) SetGlobalConfig(projectID, secret, aesKey string) {
 	m.auth.SetSecret(secret)
