@@ -370,7 +370,7 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, schemaArg, v); err != nil {
+		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

@@ -19,7 +19,7 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	}
 	projectConfig.Modules.Services.Services[service] = value
 
-	if err := s.modules.SetServicesConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
 		logrus.Errorf("error setting services config - %s", err.Error())
 		return err
 	}
@@ -39,7 +39,7 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string) er
 	}
 	delete(projectConfig.Modules.Services.Services, service)
 
-	if err := s.modules.SetServicesConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
 		logrus.Errorf("error setting services config - %s", err.Error())
 		return err
 	}

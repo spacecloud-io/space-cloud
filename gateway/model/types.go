@@ -106,15 +106,19 @@ type ModulesInterface interface {
 	// SetGlobalConfig sets the auth secret and AESkey
 	SetGlobalConfig(projectID, secret, aesKey string)
 	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
-	SetCrudConfig(projectID, secret, aesKey string, crudConfig config.Crud, fileStore *config.FileStore, services *config.ServicesModule, eventing *config.Eventing) error
+	SetCrudConfig(projectID string, crudConfig config.Crud) error
 	// SetServicesConfig sets the config of auth and functions modules
-	SetServicesConfig(projectID, secret, aesKey string, crudConfig config.Crud, fileStore *config.FileStore, services *config.ServicesModule, eventing *config.Eventing) error
+	SetServicesConfig(projectID string, services *config.ServicesModule) error
 	// SetFileStoreConfig sets the config of auth and filestore modules
-	SetFileStoreConfig(projectID, secret, aesKey string, crudConfig config.Crud, fileStore *config.FileStore, services *config.ServicesModule, eventing *config.Eventing) error
+	SetFileStoreConfig(projectID string, fileStore *config.FileStore) error
 	// SetEventingConfig sets the config of eventing module
 	SetEventingConfig(projectID string, eventingConfig *config.Eventing) error
 	// SetUsermanConfig set the config of the userman module
 	SetUsermanConfig(projectID string, auth config.Auth)
+
+	// Getters
+
+	GetSchemaModule() SchemaEventingInterface
 }
 
 //PostProcess filters the schema

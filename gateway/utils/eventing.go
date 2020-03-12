@@ -1,9 +1,9 @@
-package eventing
+package utils
 
 const (
-	eventingLogs     string = "event_logs"
-	invocationLogs   string = "invocation_logs"
-	invocationSchema string = `type invocation_logs {
+	TableEventingLogs    string = "event_logs"
+	TableInvocationLogs  string = "invocation_logs"
+	SchemaInvocationLogs string = `type invocation_logs {
 		_id: ID! @primary
 		event_id: ID! @foreign(table: "event_logs", field: "_id")
 		invocation_time: DateTime!
@@ -13,7 +13,7 @@ const (
 		error_msg: String
 		remark: String	
 	  }`
-	eventSchema string = `type event_logs {
+	SchemaEventLogs string = `type event_logs {
 		_id: ID! @primary
 		batchid: String
 		type: String

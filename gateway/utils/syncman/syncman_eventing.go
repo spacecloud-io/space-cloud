@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // SetEventingRule sets the eventing rules
@@ -65,6 +67,15 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
 		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
+
+	if err := s.applySchemas(ctx, project, dbAlias, projectConfig, config.CrudStub{
+		Collections: map[string]*config.TableRule{
+			utils.TableEventingLogs:   &config.TableRule{Schema: utils.SchemaEventLogs},
+			utils.TableInvocationLogs: &config.TableRule{Schema: utils.SchemaInvocationLogs},
+		},
+	}); err != nil {
 		return err
 	}
 

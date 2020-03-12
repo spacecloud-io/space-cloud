@@ -6,7 +6,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
@@ -28,7 +27,7 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 	}
 	delete(coll.Collections, col)
 
-	if err := s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return err
 	}
@@ -57,7 +56,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 		coll.Type = v.Type
 	}
 
-	if err := s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return err
 	}
@@ -79,7 +78,7 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 	// update database config
 	delete(projectConfig.Modules.Crud, dbAlias)
 
-	if err := s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return err
 	}
@@ -111,7 +110,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, sc
 		temp.Schema = schema
 	}
 
-	if err := s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return err
 	}
@@ -146,7 +145,7 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col 
 		collection.Rules = v.Rules
 	}
 
-	if err := s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return err
 	}
@@ -184,7 +183,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 		colResult[colName] = result
 	}
 
-	if err := s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return nil, err
 	}
@@ -217,7 +216,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 		temp.Schema = schema
 	}
 
-	if err := s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return err
 	}
@@ -226,7 +225,7 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 }
 
 // SetModifyAllSchema modifies schema of all tables
-func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, schemaArg model.SchemaEventingInterface, v config.CrudStub) error {
+func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -236,13 +235,22 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project strin
 		return err
 	}
 
+	if err := s.applySchemas(ctx, project, dbAlias, projectConfig, v); err != nil {
+		return err
+	}
+
+	return s.setProject(ctx, projectConfig)
+}
+
+func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, projectConfig *config.Project, v config.CrudStub) error {
+
 	// update schema in config
 	collection, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
 
-	if err := schemaArg.SchemaModifyAll(ctx, dbAlias, project, v.Collections); err != nil {
+	if err := s.modules.GetSchemaModule().SchemaModifyAll(ctx, dbAlias, project, v.Collections); err != nil {
 		return err
 	}
 
@@ -256,10 +264,10 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project strin
 		}
 	}
 
-	if err := s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing); err != nil {
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return err
 	}
 
-	return s.setProject(ctx, projectConfig)
+	return nil
 }
