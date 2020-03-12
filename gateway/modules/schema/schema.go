@@ -11,6 +11,7 @@ import (
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -46,7 +47,7 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	return nil
 }
 
-//GetSchema function gets schema
+// GetSchema function gets the schema
 func (s *Schema) GetSchema(dbAlias, col string) (model.Fields, bool) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -89,11 +90,11 @@ func (s *Schema) Parser(crud config.Crud) (model.Type, error) {
 			if v.Schema == "" {
 				continue
 			}
-			source := source.NewSource(&source.Source{
+			s := source.NewSource(&source.Source{
 				Body: []byte(v.Schema),
 			})
 			// parse the source
-			doc, err := parser.Parse(parser.ParseParams{Source: source})
+			doc, err := parser.Parse(parser.ParseParams{Source: s})
 			if err != nil {
 				return nil, err
 			}
