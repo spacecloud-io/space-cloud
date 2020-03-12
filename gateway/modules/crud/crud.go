@@ -67,6 +67,7 @@ func Init(removeProjectScope bool) *Module {
 	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
+// SetSchema sets the schema for the crud operation
 func (m *Module) SetSchema(s model.SchemaAuthInterface) {
 	m.schema = s
 }
