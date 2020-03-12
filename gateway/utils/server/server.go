@@ -9,17 +9,8 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
-	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
-	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
-	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
-	"github.com/spaceuptech/space-cloud/gateway/modules/userman"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
@@ -30,13 +21,6 @@ import (
 // Server is the object which sets up the server and handles all server operations
 type Server struct {
 	nodeID         string
-	auth           *auth.Module
-	crud           *crud.Module
-	user           *userman.Module
-	file           *filestore.Module
-	functions      *functions.Module
-	realtime       *realtime.Module
-	eventing       *eventing.Module
 	configFilePath string
 	adminMan       *admin.Manager
 	syncMan        *syncman.Manager
@@ -44,8 +28,6 @@ type Server struct {
 	routing        *routing.Routing
 	metrics        *metrics.Module
 	ssl            *config.SSL
-	graphql        *graphql.Module
-	schema         *schema.Schema
 	modules        *modules.Modules
 }
 
@@ -160,47 +142,47 @@ func (s *Server) LoadConfig(config *config.Config) error {
 
 		// Always set the config of the crud module first
 		// Set the configuration for the crud module
-		if err := s.crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
+		if err := s.modules.Crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			logrus.Errorln("Error in crud module config: ", err)
 			return err
 		}
 
-		if err := s.schema.SetConfig(p.Modules.Crud, p.ID); err != nil {
+		if err := s.modules.Schema.SetConfig(p.Modules.Crud, p.ID); err != nil {
 			logrus.Errorln("Error in schema module config: ", err)
 			return err
 		}
 
 		// Set the configuration for the auth module
-		if err := s.auth.SetConfig(p.ID, p.Secret, p.AESkey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
+		if err := s.modules.Auth.SetConfig(p.ID, p.Secret, p.AESkey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 			logrus.Errorln("Error in auth module config: ", err)
 			return err
 		}
 
 		// Set the configuration for the functions module
-		s.functions.SetConfig(p.ID, p.Modules.Services)
+		s.modules.Functions.SetConfig(p.ID, p.Modules.Services)
 
 		// Set the configuration for the user management module
-		s.user.SetConfig(p.Modules.Auth)
+		s.modules.User.SetConfig(p.Modules.Auth)
 
 		// Set the configuration for the file storage module
-		if err := s.file.SetConfig(p.Modules.FileStore); err != nil {
+		if err := s.modules.File.SetConfig(p.Modules.FileStore); err != nil {
 			logrus.Errorln("Error in files module config: ", err)
 			return err
 		}
 
-		if err := s.eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
+		if err := s.modules.Eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
 			logrus.Errorln("Error in eventing module config: ", err)
 			return err
 		}
 
 		// Set the configuration for the realtime module
-		if err := s.realtime.SetConfig(p.ID, p.Modules.Crud); err != nil {
+		if err := s.modules.Realtime.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			logrus.Errorln("Error in realtime module config: ", err)
 			return err
 		}
 
 		// Set the configuration for the graphql module
-		s.graphql.SetConfig(p.ID)
+		s.modules.Graphql.SetConfig(p.ID)
 
 		// Set the configuration for the letsencrypt module
 		if err := s.letsencrypt.SetProjectDomains(p.ID, p.Modules.LetsEncrypt); err != nil {
