@@ -17,13 +17,15 @@ func generateUserManagement() (*model.SpecObject, error) {
 
 	v := &model.SpecObject{
 		API:  "/v1/config/projects/{project}/user-management/{provider}",
-		Type: "user-management",
+		Type: "auth-providers",
 		Meta: map[string]string{
 			"project":  project,
 			"provider": provider,
 		},
 		Spec: map[string]interface{}{
 			"enabled": true,
+			"id":      "",
+			"secret":  "",
 		},
 	}
 

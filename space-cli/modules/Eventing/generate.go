@@ -18,27 +18,14 @@ func generateEventingRule() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/eventing/rules/{type}",
+		API:  "/v1/config/projects/{project}/eventing/rules/{id}",
 		Type: "eventing-rule",
 		Meta: map[string]string{
-			"type":    ruleType,
+			"id":      ruleType,
 			"project": project,
 		},
 		Spec: map[string]interface{}{
-			"rules": map[string]interface{}{
-				"create": map[string]interface{}{
-					"rule": "allow",
-				},
-				"delete": map[string]interface{}{
-					"rule": "allow",
-				},
-				"read": map[string]interface{}{
-					"rule": "allow",
-				},
-				"update": map[string]interface{}{
-					"rule": "allow",
-				},
-			},
+			"rule": "allow",
 		},
 	}
 
@@ -60,10 +47,10 @@ func generateEventingSchema() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/eventing/schema/{type}",
+		API:  "/v1/config/projects/{project}/eventing/schema/{id}",
 		Type: "eventing-schema",
 		Meta: map[string]string{
-			"type":    ruleType,
+			"id":      ruleType,
 			"project": project,
 		},
 		Spec: map[string]interface{}{
@@ -83,10 +70,6 @@ func generateEventingConfig() (*model.SpecObject, error) {
 	if err := survey.AskOne(&survey.Input{Message: "Enter DB Alias"}, &dbAlias); err != nil {
 		return nil, err
 	}
-	collection := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter colection"}, &collection); err != nil {
-		return nil, err
-	}
 
 	v := &model.SpecObject{
 		API:  "/v1/config/projects/{project}/eventing/config",
@@ -96,7 +79,6 @@ func generateEventingConfig() (*model.SpecObject, error) {
 		},
 		Spec: map[string]interface{}{
 			"dbAlias": dbAlias,
-			"col":     collection,
 			"enabled": true,
 		},
 	}
@@ -170,11 +152,11 @@ func generateEventingTrigger() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/eventing/triggers/{triggerName}",
-		Type: "eventing-trigger",
+		API:  "/v1/config/projects/{project}/eventing/triggers/{id}",
+		Type: "eventing-triggers",
 		Meta: map[string]string{
-			"project":     project,
-			"triggerName": triggerName,
+			"project": project,
+			"id":      triggerName,
 		},
 		Spec: map[string]interface{}{
 			"type":    operationType,

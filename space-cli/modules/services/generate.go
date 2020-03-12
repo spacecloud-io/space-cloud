@@ -20,15 +20,15 @@ func generateService() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/eventing/rules/{type}",
-		Type: "eventing-rule",
+		API:  "/v1/config/projects/{project}/services/{id}",
+		Type: "remote-services",
 		Meta: map[string]string{
-			"service": service,
+			"id":      service,
 			"project": project,
 		},
 		Spec: map[string]interface{}{
 			"URL":       url,
-			"Endpoints": "",
+			"Endpoints": "{}",
 		},
 	}
 

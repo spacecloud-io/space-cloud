@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/modules/routing"
+	"github.com/spaceuptech/space-cloud/runner/modules/secrets"
 	"github.com/urfave/cli"
 )
 
@@ -33,6 +34,10 @@ func main() {
 				{
 					Name:   "service-routing",
 					Action: routing.ActionGenerateServiceRouting,
+				},
+				{
+					Name:   "apply-secrets",
+					Action: secrets.ActionGenerateSecret,
 				},
 			},
 		},

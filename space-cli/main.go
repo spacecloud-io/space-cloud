@@ -9,8 +9,8 @@ import (
 	eventing "github.com/spaceuptech/space-cli/modules/Eventing"
 	"github.com/spaceuptech/space-cli/modules/database"
 	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/ingress"
 	"github.com/spaceuptech/space-cli/modules/letsencrypt"
-	"github.com/spaceuptech/space-cli/modules/servicerouting"
 	"github.com/spaceuptech/space-cli/modules/services"
 	"github.com/spaceuptech/space-cli/modules/userman"
 )
@@ -35,7 +35,7 @@ func main() {
 					Action: actionGenerateService,
 				},
 				{
-					Name:   "db-rule",
+					Name:   "db-rules",
 					Action: database.ActionGenerateDBRule,
 				},
 				{
@@ -67,7 +67,7 @@ func main() {
 					Action: eventing.ActionGenerateEventingConfig,
 				},
 				{
-					Name:   "eventing-trigger",
+					Name:   "eventing-triggers",
 					Action: eventing.ActionGenerateEventingTrigger,
 				},
 				{
@@ -79,12 +79,12 @@ func main() {
 					Action: services.ActionGenerateService,
 				},
 				{
-					Name:   "letsencrypt-domain",
+					Name:   "letsencrypt",
 					Action: letsencrypt.ActionGenerateLetsEncryptDomain,
 				},
 				{
-					Name:   "service-routing",
-					Action: servicerouting.ActionGenerateServiceRouting,
+					Name:   "ingress-routes",
+					Action: ingress.ActionGenerateIngressRouting,
 				},
 			},
 		},

@@ -32,12 +32,12 @@ func generateDBRule() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{projectId}/database/{dbAlias}/collections/{col}/rules",
-		Type: "db-rule",
+		API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules",
+		Type: "db-rules",
 		Meta: map[string]string{
-			"dbAlias":   dbAlias,
-			"col":       ID,
-			"projectId": projectID,
+			"dbAlias": dbAlias,
+			"col":     ID,
+			"project": projectID,
 		},
 		Spec: map[string]interface{}{
 			"isRealtimeEnabled": isRealTimeEnabled,
@@ -101,11 +101,11 @@ func generateDBConfig() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{projectId}/database/{dbAlias}/config",
+		API:  "/v1/config/projects/{project}/database/{dbAlias}/config",
 		Type: "db-config",
 		Meta: map[string]string{
-			"dbAlias":   dbAlias,
-			"projectId": projectID,
+			"dbAlias": dbAlias,
+			"project": projectID,
 		},
 		Spec: map[string]interface{}{
 			"conn":    conn,
@@ -139,9 +139,9 @@ func generateDBSchema() (*model.SpecObject, error) {
 		API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/modify-schema",
 		Type: "db-schema",
 		Meta: map[string]string{
-			"dbAlias":    dbAlias,
-			"project":    project,
-			"collection": col,
+			"dbAlias": dbAlias,
+			"project": project,
+			"col":     col,
 		},
 		Spec: map[string]interface{}{
 			"schema": schema,

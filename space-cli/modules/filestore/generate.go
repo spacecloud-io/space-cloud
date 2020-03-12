@@ -22,12 +22,12 @@ func generateFilestoreRule() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{projectId}/file-storage/rules/{id}",
+		API:  "/v1/config/projects/{project}/file-storage/rules/{id}",
 		Type: "filestore-rule",
 		Meta: map[string]string{
 
-			"id":        ID,
-			"projectId": projectID,
+			"id":      ID,
+			"project": projectID,
 		},
 		Spec: map[string]interface{}{
 			"prefix": prefix,
@@ -84,10 +84,10 @@ func generateFilestoreConfig() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{projectId}/file-storage/config",
+		API:  "/v1/config/projects/{project}/file-storage/config",
 		Type: "filestore-config",
 		Meta: map[string]string{
-			"projectId": projectID,
+			"project": projectID,
 		},
 		Spec: map[string]interface{}{
 			"bucket":    bucket,

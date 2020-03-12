@@ -1,4 +1,4 @@
-package servicerouting
+package ingress
 
 import (
 	"fmt"
@@ -8,13 +8,13 @@ import (
 )
 
 // ActionGenerateServiceRouting creates spec object for service routing
-func ActionGenerateServiceRouting(c *cli.Context) error {
+func ActionGenerateIngressRouting(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := argsArr[0]
-	dbrule, err := generateServiceRouting()
+	dbrule, err := generateIngressRouting()
 	if err != nil {
 		return err
 	}
