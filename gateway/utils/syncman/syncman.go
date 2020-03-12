@@ -7,6 +7,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
+	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // Manager syncs the project config between folders
@@ -36,8 +38,8 @@ type Manager struct {
 
 	// Modules
 	modules     model.ModulesInterface
-	letsencrypt *config.LetsEncrypt
-	routing     *config.Routes
+	letsencrypt *letsencrypt.LetsEncrypt
+	routing     *routing.Routing
 }
 
 type service struct {
@@ -166,7 +168,7 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 }
 
 // SetModules sets all the modules
-func (s *Manager) SetModules(projectID string, modulesInterface model.ModulesInterface, letsEncrypt *config.LetsEncrypt, routing *config.Routes) {
+func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
 	s.modules = modulesInterface
 	s.letsencrypt = letsEncrypt
 	s.routing = routing

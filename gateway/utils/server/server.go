@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
@@ -46,14 +46,13 @@ type Server struct {
 	ssl            *config.SSL
 	graphql        *graphql.Module
 	schema         *schema.Schema
+	modules        *modules.Modules
 }
 
 // New creates a new server instance
 func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 
 	// Create the fundamental modules
-	c := crud.Init(removeProjectScope)
-
 	m, err := metrics.New(nodeID, metricsConfig)
 	if err != nil {
 		return nil, err
@@ -65,34 +64,6 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 		return nil, err
 	}
 
-	s := schema.Init(c, removeProjectScope)
-	a := auth.Init(nodeID, c, s, removeProjectScope)
-	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
-
-	fn := functions.Init(a, syncMan)
-
-	f := filestore.Init(a)
-
-	// Initialise the eventing module and set the crud module hooks
-	e := eventing.New(a, c, s, adminMan, syncMan, f)
-	f.SetEventingModule(e)
-
-	c.SetHooks(&model.CrudHooks{
-		Create: e.HookDBCreateIntent,
-		Update: e.HookDBUpdateIntent,
-		Delete: e.HookDBDeleteIntent,
-		Batch:  e.HookDBBatchIntent,
-		Stage:  e.HookStage,
-	}, m.AddDBOperation)
-
-	rt, err := realtime.Init(nodeID, e, a, c, m, syncMan)
-	if err != nil {
-		return nil, err
-	}
-
-	u := userman.Init(c, a)
-	graphqlMan := graphql.New(a, c, fn, s)
-
 	// Initialise a lets encrypt client
 	le, err := letsencrypt.New()
 	if err != nil {
@@ -102,12 +73,16 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	// Initialise the routing module
 	r := routing.New()
 
+	modules, err := modules.New(nodeID, removeProjectScope, syncMan, adminMan, m)
+	if err != nil {
+		return nil, err
+	}
+
+	syncMan.SetModules(modules, le, r)
+
 	logrus.Infoln("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, auth: a, crud: c,
-		user: u, file: f, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m,
-		functions: fn, realtime: rt, configFilePath: utils.DefaultConfigFilePath,
-		eventing: e, graphql: graphqlMan, schema: s}, nil
+	return &Server{nodeID: nodeID, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m, configFilePath: utils.DefaultConfigFilePath, modules: modules}, nil
 }
 
 // Start begins the server operations

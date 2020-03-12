@@ -20,7 +20,7 @@ func (s *Manager) SetProjectRoutes(ctx context.Context, project string, c config
 	// Update the project's routes
 	projectConfig.Modules.Routes = c
 
-	s.SetModules(project, s.modules, &projectConfig.Modules.LetsEncrypt, &projectConfig.Modules.Routes)
+	s.SetModules(s.modules, s.letsencrypt, s.routing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -62,7 +62,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 		projectConfig.Modules.Routes = append(projectConfig.Modules.Routes, c)
 	}
 
-	s.SetModules(project, s.modules, &projectConfig.Modules.LetsEncrypt, &projectConfig.Modules.Routes)
+	s.SetModules(s.modules, s.letsencrypt, s.routing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -86,7 +86,7 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 			projectConfig.Modules.Routes = routes[:len(routes)-1]
 			// update the config
 
-			s.SetModules(project, s.modules, &projectConfig.Modules.LetsEncrypt, &projectConfig.Modules.Routes)
+			s.SetModules(s.modules, s.letsencrypt, s.routing)
 
 			return s.setProject(ctx, projectConfig)
 		}

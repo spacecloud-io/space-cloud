@@ -20,7 +20,7 @@ func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project stri
 	// Update the projects domains
 	projectConfig.Modules.LetsEncrypt = c
 
-	s.SetModules(project, s.modules, &projectConfig.Modules.LetsEncrypt, &projectConfig.Modules.Routes)
+	s.SetModules(s.modules, s.letsencrypt, s.routing)
 
 	return s.setProject(ctx, projectConfig)
 }
