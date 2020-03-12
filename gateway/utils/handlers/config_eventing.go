@@ -264,6 +264,5 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 
 		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
 	}
 }
