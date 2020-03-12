@@ -41,13 +41,18 @@ func (s *Manager) SetFileRule(ctx context.Context, project string, value *config
 	if err != nil {
 		return err
 	}
+
+	var doesExist bool
 	for index, val := range projectConfig.Modules.FileStore.Rules {
 		if val.Name == value.Name {
 			projectConfig.Modules.FileStore.Rules[index] = value
-			return s.setProject(ctx, projectConfig)
+			doesExist = true
 		}
 	}
-	projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
+
+	if !doesExist {
+		projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
+	}
 
 	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
 		logrus.Errorf("error setting file store config - %s", err.Error())

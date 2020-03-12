@@ -19,9 +19,7 @@ func (s *Manager) SetProjectRoutes(ctx context.Context, project string, c config
 
 	// Update the project's routes
 	projectConfig.Modules.Routes = c
-
-	s.SetModules(s.modules, s.letsencrypt, s.routing)
-
+	s.routing.SetProjectRoutes(project, c)
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -62,8 +60,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 		projectConfig.Modules.Routes = append(projectConfig.Modules.Routes, c)
 	}
 
-	s.SetModules(s.modules, s.letsencrypt, s.routing)
-
+	s.routing.SetProjectRoutes(project, projectConfig.Modules.Routes)
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -78,16 +75,14 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 		return err
 	}
 
-	routes := projectConfig.Modules.Routes
-	for index, route := range routes {
+	for index, route := range projectConfig.Modules.Routes {
 		if route.ID == routeID {
 			// delete the route at specified index
-			routes[index] = routes[len(routes)-1]
-			projectConfig.Modules.Routes = routes[:len(routes)-1]
+			projectConfig.Modules.Routes[index] = projectConfig.Modules.Routes[len(projectConfig.Modules.Routes)-1]
+			projectConfig.Modules.Routes = projectConfig.Modules.Routes[:len(projectConfig.Modules.Routes)-1]
+
 			// update the config
-
-			s.SetModules(s.modules, s.letsencrypt, s.routing)
-
+			s.routing.SetProjectRoutes(project, projectConfig.Modules.Routes)
 			return s.setProject(ctx, projectConfig)
 		}
 	}
