@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sirupsen/logrus"
 )
 
 func attemptConvertBoolToInt64(val interface{}) interface{} {
@@ -91,8 +92,11 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 			// match condition
 			for k2, v2 := range cond {
 				v2, val = adjustValTypes(v2, val)
-				if reflect.TypeOf(val) != reflect.TypeOf(v2) {
-					return false
+				if k2 != "$in" && k2 != "$nin" {
+					// In case of in and not in, the value of v2 will be an array
+					if reflect.TypeOf(val) != reflect.TypeOf(v2) {
+						return false
+					}
 				}
 				switch k2 {
 				case "$eq":
@@ -186,12 +190,28 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 						return false
 					}
 
+				case "$in":
+					array, ok := v2.([]interface{})
+					if !ok {
+						logrus.Errorf("Invalid value provided for $in clause (%v)", v2)
+						return false
+					}
+					return ArrayContains(array, val)
+
+				case "$nin":
+					array, ok := v2.([]interface{})
+					if !ok {
+						logrus.Errorf("Invalid value provided for $nin clause (%v)", v2)
+						return false
+					}
+					return !ArrayContains(array, val)
+
 				case "$regex":
 					regex := v2.(string)
 					vString := val.(string)
 					r, err := regexp.Compile(regex)
 					if err != nil {
-						log.Println("Couldn't compile regex")
+						logrus.Errorf("Couldn't compile regex (%s)", regex)
 						return false
 					}
 					return r.MatchString(vString)
