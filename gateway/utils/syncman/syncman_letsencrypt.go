@@ -3,6 +3,7 @@ package syncman
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -19,7 +20,10 @@ func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project stri
 
 	// Update the projects domains
 	projectConfig.Modules.LetsEncrypt = c
-	s.letsencrypt.SetProjectDomains(project, c)
+	if err := s.letsencrypt.SetProjectDomains(project, c); err != nil {
+		logrus.Errorf("error setting letsencrypt project domains - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
