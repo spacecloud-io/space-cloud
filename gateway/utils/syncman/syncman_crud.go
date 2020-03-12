@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
@@ -25,6 +26,8 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 		return errors.New("specified database not present in config")
 	}
 	delete(coll.Collections, col)
+
+	s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -50,6 +53,8 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 		coll.Type = v.Type
 	}
 
+	s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -66,6 +71,8 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 
 	// update database config
 	delete(projectConfig.Modules.Crud, dbAlias)
+
+	s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -93,6 +100,8 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, sc
 	} else {
 		temp.Schema = schema
 	}
+
+	s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -123,6 +132,9 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col 
 		collection.IsRealTimeEnabled = v.IsRealTimeEnabled
 		collection.Rules = v.Rules
 	}
+
+	s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -156,6 +168,8 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 		colResult[colName] = result
 	}
 
+	s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
+
 	return colResult, s.setProject(ctx, projectConfig)
 }
 
@@ -184,11 +198,13 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 		temp.Schema = schema
 	}
 
+	s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
+
 	return s.setProject(ctx, projectConfig)
 }
 
 // SetModifyAllSchema modifies schema of all tables
-func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, schemaArg *schema.Schema, v config.CrudStub) error {
+func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, schemaArg model.SchemaEventingInterface, v config.CrudStub) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -217,6 +233,8 @@ func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project strin
 			temp.Schema = colValue.Schema
 		}
 	}
+
+	s.modules.SetCrudConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }

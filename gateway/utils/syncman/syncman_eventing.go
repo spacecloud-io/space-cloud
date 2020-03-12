@@ -21,6 +21,8 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 		projectConfig.Modules.Eventing.Rules[ruleName] = value
 	}
 
+	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -35,6 +37,8 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 		return err
 	}
 	delete(projectConfig.Modules.Eventing.Rules, ruleName)
+
+	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -51,6 +55,8 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	}
 	projectConfig.Modules.Eventing.DBType = dbAlias
 	projectConfig.Modules.Eventing.Enabled = enabled
+
+	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -73,6 +79,8 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 		}
 	}
 
+	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -87,6 +95,8 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 		return err
 	}
 	delete(projectConfig.Modules.Eventing.Schemas, evType)
+
+	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -109,6 +119,8 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 		}
 	}
 
+	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -123,6 +135,8 @@ func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, e
 		return err
 	}
 	delete(projectConfig.Modules.Eventing.SecurityRules, evType)
+
+	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }

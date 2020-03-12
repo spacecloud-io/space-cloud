@@ -18,6 +18,8 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	}
 	projectConfig.Modules.Services.Services[service] = value
 
+	s.modules.SetServicesConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -32,6 +34,8 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string) er
 		return err
 	}
 	delete(projectConfig.Modules.Services.Services, service)
+
+	s.modules.SetServicesConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }

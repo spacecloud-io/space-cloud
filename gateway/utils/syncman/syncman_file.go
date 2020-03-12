@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"context"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -20,6 +21,8 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 	projectConfig.Modules.FileStore.Conn = value.Conn
 	projectConfig.Modules.FileStore.Endpoint = value.Endpoint
 	projectConfig.Modules.FileStore.Bucket = value.Bucket
+
+	s.modules.SetFileStoreConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -41,6 +44,8 @@ func (s *Manager) SetFileRule(ctx context.Context, project string, value *config
 		}
 	}
 	projectConfig.Modules.FileStore.Rules = append(projectConfig.Modules.FileStore.Rules, value)
+
+	s.modules.SetFileStoreConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -64,5 +69,8 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 		}
 	}
 	projectConfig.Modules.FileStore.Rules = temp
+
+	s.modules.SetFileStoreConfig(project, projectConfig.Secret, projectConfig.AESkey, projectConfig.Modules.Crud, projectConfig.Modules.FileStore, projectConfig.Modules.Services, &projectConfig.Modules.Eventing)
+
 	return s.setProject(ctx, projectConfig)
 }

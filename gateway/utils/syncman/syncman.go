@@ -5,6 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
@@ -32,6 +33,11 @@ type Manager struct {
 
 	// For authentication
 	adminMan *admin.Manager
+
+	// Modules
+	modules     model.ModulesInterface
+	letsencrypt *config.LetsEncrypt
+	routing     *config.Routes
 }
 
 type service struct {
@@ -157,4 +163,11 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.projectConfig
+}
+
+// SetModules sets all the modules
+func (s *Manager) SetModules(projectID string, modulesInterface model.ModulesInterface, letsEncrypt *config.LetsEncrypt, routing *config.Routes) {
+	s.modules = modulesInterface
+	s.letsencrypt = letsEncrypt
+	s.routing = routing
 }

@@ -143,6 +143,8 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
+	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -152,15 +154,12 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	_ = s.cb(s.projectConfig)
+	s.modules.SetProjectConfig(s.projectConfig)
+
 	return s.setProject(ctx, project)
 }
 
 func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
-	if err := s.cb(&config.Config{Projects: []*config.Project{project}}); err != nil {
-		return err
-	}
-
 	s.setProjectConfig(project)
 
 	if s.storeType == "none" {
