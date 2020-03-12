@@ -196,6 +196,11 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 			for k, coll := range project.Modules.Crud {
 				connections[k] = response{Conn: coll.Conn, Enabled: coll.Enabled, Type: coll.Type}
 			}
+			if len(connections) == 0 {
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbConnections not present in state")})
+				return
+			}
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"connections": connections})
 			return
@@ -205,7 +210,7 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 		coll, ok := project.Modules.Crud[dbAlias[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found", r.URL)})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present on state", dbAlias[0])})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -328,6 +333,11 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 					collectionsSchemas[s] = response{val.Schema}
 				}
 			}
+			if len(collectionsSchemas) == 0 {
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("schemas not present in state")})
+				return
+			}
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": collectionsSchemas})
 			return
@@ -340,7 +350,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 		coll, ok := project.Modules.Crud[dbAlias[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present in state", dbAlias[0])})
 			return
 		}
 
@@ -349,7 +359,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			temp, ok := coll.Collections[col[0]]
 			if !ok {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("collection not found")})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("col(%s) not found", col[0])})
 				return
 			}
 			collectionSchema := make(map[string]response)
@@ -363,6 +373,12 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 		for p, val := range coll.Collections {
 			s := fmt.Sprintf("%s-%s", dbAlias[0], p)
 			schemas[s] = response{Schema: val.Schema}
+		}
+
+		if len(schemas) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("schemas not present in state")})
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": schemas})
@@ -443,6 +459,11 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 					collectionsRules[s] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
 				}
 			}
+			if len(collectionsRules) == 0 {
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbRules not present in state")})
+				return
+			}
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionsRules})
 			return
@@ -455,7 +476,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 		databaseConfig, ok := project.Modules.Crud[dbAlias[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("specified database not present in config")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present in config", dbAlias[0])})
 			return
 		}
 
@@ -465,7 +486,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			collection, ok := databaseConfig.Collections[col[0]]
 			if !ok {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("specified collection not present in config")})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("col(%s) not present in config", col[0])})
 				return
 			}
 			collectionsRule := make(map[string]response)
@@ -480,6 +501,11 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 		for p, val := range databaseConfig.Collections {
 			s := fmt.Sprintf("%s-%s", dbAlias[0], p)
 			collectionRules[s] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
+		}
+		if len(collectionRules) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbRules not present in state")})
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionRules})

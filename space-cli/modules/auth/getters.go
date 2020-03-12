@@ -36,13 +36,13 @@ func GetAuthProviders(project, commandName string, params map[string]string) ([]
 	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "provider": spec["provider"].(string)}
+		meta := map[string]string{"project": project, "provider": spec["provider"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "provider")
 
 		// Printing the object on the screen
-		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/user-management/{provider}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/user-management/{provider}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

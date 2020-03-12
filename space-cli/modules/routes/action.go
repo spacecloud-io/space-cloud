@@ -14,7 +14,7 @@ func ActionGetIngressRoutes(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["routesId"] = c.Args()[0]
+		params["routesID"] = c.Args()[0]
 	}
 
 	objs, err := GetIngressRoutes(project, commandName, params)

@@ -37,13 +37,14 @@ func GetEventingTrigger(project, commandName string, params map[string]string) (
 	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "id": spec["id"].(string)}
+		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
+		delete(spec, "name")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/eventing/triggers/{id}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/eventing/triggers/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}
@@ -62,8 +63,8 @@ func GetEventingConfig(project, commandName string, params map[string]string) (*
 	}
 
 	// Generating the object
-	meta := map[string]string{"projectId": project}
-	s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/eventing/config", commandName, meta, vPtr)
+	meta := map[string]string{"project": project}
+	s, err := utils.CreateSpecObject("/v1/config/projects/{project}/eventing/config", commandName, meta, vPtr)
 	if err != nil {
 		return nil, err
 	}
@@ -99,13 +100,13 @@ func GetEventingSchema(project, commandName string, params map[string]string) ([
 	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "id": spec["id"].(string)}
+		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/eventing/schema/{id}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/eventing/schema/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}
@@ -142,13 +143,13 @@ func GetEventingSecurityRule(project, commandName string, params map[string]stri
 	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "id": spec["id"].(string)}
+		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/eventing/rules/{id}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/eventing/rules/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

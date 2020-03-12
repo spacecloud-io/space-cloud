@@ -19,8 +19,8 @@ func GetFileStoreConfig(project, commandName string, params map[string]string) (
 	}
 
 	// Generating the object
-	meta := map[string]string{"projectId": project}
-	s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/file-storage/config", commandName, meta, result)
+	meta := map[string]string{"project": project}
+	s, err := utils.CreateSpecObject("/v1/config/projects/{project}/file-storage/config", commandName, meta, result)
 	if err != nil {
 		return nil, err
 	}
@@ -55,14 +55,14 @@ func GetFileStoreRule(project, commandName string, params map[string]string) ([]
 	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "id": spec["id"].(string)}
+		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "name")
 		delete(spec, "id")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/file-storage/rules/{id}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/file-storage/rules/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

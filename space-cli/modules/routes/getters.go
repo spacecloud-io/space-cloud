@@ -36,13 +36,13 @@ func GetIngressRoutes(project, commandName string, params map[string]string) ([]
 	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"projectId": project, "routeId": spec["id"].(string)}
+		meta := map[string]string{"project": project, "routeId": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/routing/{routeId}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/routing/{routeId}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

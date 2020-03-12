@@ -1,4 +1,4 @@
-package encrypt
+package letsencrypt
 
 import (
 	"github.com/urfave/cli"

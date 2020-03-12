@@ -188,12 +188,18 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 				}
 			}
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Filerule not found")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("ruleName(%s) not found", ruleName[0])})
 			return
 		}
 		fileRules := make(map[string]*config.FileRule)
 		for _, val := range project.Modules.FileStore.Rules {
 			fileRules[val.Name] = val
+		}
+
+		if len(fileRules) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("fileRules not present in state")})
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": fileRules})

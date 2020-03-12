@@ -14,14 +14,14 @@ func GetProjectConfig(project, commandName string, params map[string]string) (*m
 
 	url := fmt.Sprintf("/v1/config/projects/%s", project)
 	// Get the spec from the server
-	result := new(interface{})
+	result := new(map[string]interface{})
 	if err := cmd.Get(http.MethodGet, url, map[string]string{}, result); err != nil {
 		return nil, err
 	}
 
 	// Generating the object
-	meta := map[string]string{"projectId": project}
-	s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}", commandName, meta, result)
+	meta := map[string]string{"project": project}
+	s, err := utils.CreateSpecObject("/v1/config/projects/{project}", commandName, meta, result)
 	if err != nil {
 		return nil, err
 	}

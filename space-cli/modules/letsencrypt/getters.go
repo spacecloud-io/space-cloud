@@ -1,4 +1,4 @@
-package encrypt
+package letsencrypt
 
 import (
 	"fmt"
@@ -13,14 +13,14 @@ import (
 func GetLetsEncryptDomain(project, commandName string, params map[string]string) (*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/letsencrypt", project)
 	// Get the spec from the server
-	result := new(interface{})
-	if err := cmd.Get(http.MethodGet, url, map[string]string{}, result); err != nil {
+	result := make(map[string]interface{})
+	if err := cmd.Get(http.MethodGet, url, map[string]string{}, &result); err != nil {
 		return nil, err
 	}
 
 	// Printing the object on the screen
-	meta := map[string]string{"projectId": project}
-	s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/letsencrypt", commandName, meta, result)
+	meta := map[string]string{"project": project}
+	s, err := utils.CreateSpecObject("/v1/config/projects/{project}/letsencrypt", commandName, meta, result["letsEncrypt"])
 	if err != nil {
 		return nil, err
 	}

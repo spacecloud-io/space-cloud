@@ -6,8 +6,8 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//ActionGetDbRule gets database rule
-func ActionGetDbRule(c *cli.Context) error {
+//ActionGetDbRules gets database rule
+func ActionGetDbRules(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
 	commandName := c.Command.Name

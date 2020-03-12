@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -77,12 +78,21 @@ func GetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		}
 
 		if exists {
-			provider := project.Modules.Auth[providerID[0]]
+			provider, ok := project.Modules.Auth[providerID[0]]
+			if !ok {
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("providerID(%s) not present in state", providerID[0])})
+				return
+			}
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"provider": provider})
 			return
 		}
-
+		if len(project.Modules.Auth) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("auth providers not present in state")})
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"providers": project.Modules.Auth})
 	}

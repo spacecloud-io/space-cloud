@@ -36,11 +36,11 @@ func GetAllProjects(c *cli.Context) error {
 		return err
 	}
 
-	objs, err = database.GetDbRule(projectName, "db-rule", map[string]string{})
+	objs, err = database.GetDbRule(projectName, "db-rules", map[string]string{})
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("3", "db-rule", objs); err != nil {
+	if err := createConfigFile("3", "db-rules", objs); err != nil {
 		return err
 	}
 

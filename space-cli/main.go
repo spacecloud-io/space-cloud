@@ -9,9 +9,9 @@ import (
 	"github.com/spaceuptech/space-cli/modules"
 	"github.com/spaceuptech/space-cli/modules/auth"
 	"github.com/spaceuptech/space-cli/modules/database"
-	"github.com/spaceuptech/space-cli/modules/encrypt"
 	"github.com/spaceuptech/space-cli/modules/eventing"
 	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/letsencrypt"
 	"github.com/spaceuptech/space-cli/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
 	"github.com/spaceuptech/space-cli/modules/routes"
@@ -91,8 +91,8 @@ func main() {
 					Action: filestore.ActionGetFileStoreRule,
 				},
 				{
-					Name:   "db-rule",
-					Action: database.ActionGetDbRule,
+					Name:   "db-rules",
+					Action: database.ActionGetDbRules,
 				},
 				{
 					Name:   "db-config",
@@ -104,7 +104,7 @@ func main() {
 				},
 				{
 					Name:   "letsencrypt",
-					Action: encrypt.ActionGetLetsEncrypt,
+					Action: letsencrypt.ActionGetLetsEncrypt,
 				},
 				{
 					Name:   "ingress-routes",
@@ -113,6 +113,14 @@ func main() {
 				{
 					Name:   "services-routes",
 					Action: services.ActionGetServicesRoutes,
+				},
+				{
+					Name:   "services-secrets",
+					Action: services.ActionGetServicesSecrets,
+				},
+				{
+					Name:   "services",
+					Action: services.ActionGetServices,
 				},
 			},
 		},

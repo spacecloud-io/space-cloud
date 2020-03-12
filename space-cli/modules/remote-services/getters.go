@@ -21,6 +21,8 @@ func GetRemoteServices(project, commandName string, params map[string]string) ([
 
 	var array []interface{}
 	if value, p := result["service"]; p {
+		obj := value.(map[string]interface{})
+		obj["id"] = params["service"]
 		array = []interface{}{value}
 	}
 	if value, p := result["services"]; p {
@@ -35,7 +37,7 @@ func GetRemoteServices(project, commandName string, params map[string]string) ([
 	for _, item := range array {
 		spec := item.(map[string]interface{})
 
-		meta := map[string]string{"projectId": project, "id": spec["id"].(string)}
+		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
@@ -43,7 +45,7 @@ func GetRemoteServices(project, commandName string, params map[string]string) ([
 		delete(spec, "version")
 
 		// Printing the object on the screen
-		s, err := utils.CreateSpecObject("/v1/config/projects/{projectId}/services/{id}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/services/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}
