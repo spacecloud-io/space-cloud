@@ -3,6 +3,7 @@ package syncman
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -21,7 +22,10 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 		projectConfig.Modules.Eventing.Rules[ruleName] = value
 	}
 
-	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -38,7 +42,10 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 	}
 	delete(projectConfig.Modules.Eventing.Rules, ruleName)
 
-	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -56,7 +63,10 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	projectConfig.Modules.Eventing.DBType = dbAlias
 	projectConfig.Modules.Eventing.Enabled = enabled
 
-	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -79,7 +89,10 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 		}
 	}
 
-	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -96,7 +109,10 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 	}
 	delete(projectConfig.Modules.Eventing.Schemas, evType)
 
-	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -119,7 +135,10 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 		}
 	}
 
-	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -136,7 +155,10 @@ func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, e
 	}
 	delete(projectConfig.Modules.Eventing.SecurityRules, evType)
 
-	s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing)
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }

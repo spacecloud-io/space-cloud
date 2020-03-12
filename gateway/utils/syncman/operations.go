@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -154,7 +155,10 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.modules.SetProjectConfig(s.projectConfig)
+	if err := s.modules.SetProjectConfig(s.projectConfig); err != nil {
+		logrus.Errorf("error setting project config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, project)
 }
