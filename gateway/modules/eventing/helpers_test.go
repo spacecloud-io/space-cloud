@@ -9,7 +9,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
 func TestModule_selectRule(t *testing.T) {
@@ -81,7 +80,7 @@ func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, project string, tabl
 }
 
 func TestModule_validate(t *testing.T) {
-	authModule := auth.Init("1", &crud.Module{}, &schema.Schema{}, false)
+	authModule := auth.Init("1", &crud.Module{}, false)
 	err := authModule.SetConfig("project", "mySecretkey", "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())

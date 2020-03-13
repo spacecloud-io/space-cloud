@@ -32,14 +32,13 @@ type Module struct {
 	eventingRules   map[string]*config.Rule
 	project         string
 	fileStoreType   string
-	schema          model.SchemaAuthInterface
 	makeHTTPRequest utils.MakeHTTPRequest
 	aesKey          []byte
 }
 
 // Init creates a new instance of the auth object
-func Init(nodeID string, crud model.CrudAuthInterface, schema model.SchemaAuthInterface, removeProjectScope bool) *Module {
-	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, schema: schema}
+func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) *Module {
+	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud}
 }
 
 // SetConfig set the rules and secret key required by the auth block
