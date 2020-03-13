@@ -9,7 +9,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//ActionGetProjectConfig gets global config
+//GetProjectConfig gets global config
 func GetProjectConfig(project, commandName string, params map[string]string) (*model.SpecObject, error) {
 
 	url := fmt.Sprintf("/v1/config/projects/%s", project)

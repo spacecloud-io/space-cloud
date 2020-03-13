@@ -181,7 +181,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		serviceID, serviceIdExists := r.URL.Query()["serviceId"]
+		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
 		version, versionExists := r.URL.Query()["version"]
 
 		services, err := s.driver.GetServices(ctx, projectID)
@@ -192,7 +192,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		}
 
 		respServices := make(map[string]*model.Service)
-		if serviceIdExists && versionExists {
+		if serviceIDExists && versionExists {
 			for _, val := range services {
 				if val.ProjectID == projectID && val.ID == serviceID[0] && val.Version == version[0] {
 					s := fmt.Sprintf("%s-%s", serviceID, version)
@@ -207,7 +207,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			return
 		}
 
-		if serviceIdExists && !versionExists {
+		if serviceIDExists && !versionExists {
 			for _, val := range services {
 				if val.ID == serviceID[0] {
 					s := fmt.Sprintf("%s-%s", val.ID, val.Version)
@@ -235,7 +235,6 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
-		return
 	}
 }
 

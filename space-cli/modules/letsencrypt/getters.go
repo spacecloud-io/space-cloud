@@ -9,7 +9,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//GetLetsEncrypt gets encrypt domain
+//GetLetsEncryptDomain gets encrypt domain
 func GetLetsEncryptDomain(project, commandName string, params map[string]string) (*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/letsencrypt", project)
 	// Get the spec from the server

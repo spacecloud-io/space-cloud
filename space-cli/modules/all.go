@@ -12,11 +12,14 @@ import (
 	"github.com/spaceuptech/space-cli/modules/database"
 	"github.com/spaceuptech/space-cli/modules/eventing"
 	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/letsencrypt"
 	"github.com/spaceuptech/space-cli/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
 	"github.com/spaceuptech/space-cli/modules/routes"
+	"github.com/spaceuptech/space-cli/modules/services"
 )
 
+//GetAllProjects gets project config
 func GetAllProjects(c *cli.Context) error {
 	projectName := c.GlobalString("project")
 
@@ -104,7 +107,31 @@ func GetAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("12", "remote-services", objs); err != nil {
+	if err := createConfigFile("11", "remote-services", objs); err != nil {
+		return err
+	}
+
+	objs, err = services.GetServices(projectName, "services", map[string]string{})
+	if err != nil {
+		return err
+	}
+	if err := createConfigFile("12", "services", objs); err != nil {
+		return err
+	}
+
+	objs, err = services.GetServicesRoutes(projectName, "services-routes", map[string]string{})
+	if err != nil {
+		return err
+	}
+	if err := createConfigFile("13", "services-routes", objs); err != nil {
+		return err
+	}
+
+	objs, err = services.GetServicesSecrets(projectName, "services-secrets", map[string]string{})
+	if err != nil {
+		return err
+	}
+	if err := createConfigFile("14", "services-secrets", objs); err != nil {
 		return err
 	}
 
@@ -112,7 +139,7 @@ func GetAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("13", "-ingress-routes", objs); err != nil {
+	if err := createConfigFile("15", "-ingress-routes", objs); err != nil {
 		return err
 	}
 
@@ -120,7 +147,15 @@ func GetAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("14", "auth-providers", objs); err != nil {
+	if err := createConfigFile("16", "auth-providers", objs); err != nil {
+		return err
+	}
+
+	obj, err = letsencrypt.GetLetsEncryptDomain(projectName, "letsencrypt", map[string]string{})
+	if err != nil {
+		return err
+	}
+	if err := createConfigFile("17", "letsencrypt", []*model.SpecObject{obj}); err != nil {
 		return err
 	}
 

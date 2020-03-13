@@ -48,6 +48,7 @@ func ActionGetServicesSecrets(c *cli.Context) error {
 	return nil
 }
 
+//ActionGetServices gets runner services
 func ActionGetServices(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
