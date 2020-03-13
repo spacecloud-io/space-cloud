@@ -27,7 +27,7 @@ type Module struct {
 	alias              string
 	project            string
 	removeProjectScope bool
-	schema             model.SchemaAuthInterface
+	schema             model.SchemaCrudInterface
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
 
@@ -67,8 +67,8 @@ func Init(removeProjectScope bool) *Module {
 	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
-// SetSchema sets the schema for the crud operation
-func (m *Module) SetSchema(s model.SchemaAuthInterface) {
+// SetSchema sets the schema module
+func (m *Module) SetSchema(s model.SchemaCrudInterface) {
 	m.schema = s
 }
 
