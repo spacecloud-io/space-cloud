@@ -33,3 +33,13 @@ func GetIDVariable(dbAlias string) string {
 
 	return idVar
 }
+
+// ArrayContains checks if the array contains the value provided
+func ArrayContains(array []interface{}, value interface{}) bool {
+	for _, v := range array {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}

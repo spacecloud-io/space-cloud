@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
@@ -20,18 +19,6 @@ import (
 // HandleGraphQLRequest executes graphql queries
 func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		c := new(config.Project)
-		err := json.NewDecoder(r.Body).Decode(c)
-		defer utils.CloseTheCloser(r.Body)
-
-		// Throw error if request was of incorrect type
-		if err != nil {
-			logrus.Errorf("Error handling graphql query execution unable to decode request body - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
-			return
-		}
-
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 

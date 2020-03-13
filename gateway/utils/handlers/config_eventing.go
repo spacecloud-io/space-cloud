@@ -108,7 +108,7 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBType, c.Col, c.Enabled); err != nil {
+		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBType, c.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -264,6 +264,5 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 
 		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
 	}
 }

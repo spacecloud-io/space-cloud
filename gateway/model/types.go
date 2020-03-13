@@ -7,8 +7,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-//SchemaAuthInterface is an interface consisting of functions of schema module used by Auth module
-type SchemaAuthInterface interface {
+// SchemaCrudInterface is an interface consisting of functions of schema module used by Auth module
+type SchemaCrudInterface interface {
 	SetConfig(conf config.Crud, project string) error
 	ValidateCreateOperation(dbType, col string, req *CreateRequest) error
 	ValidateUpdateOperation(dbType, col, op string, updateDoc, find map[string]interface{}) error
@@ -24,6 +24,7 @@ type SchemaEventingInterface interface {
 	CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool)
 	Parser(crud config.Crud) (Type, error)
 	SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
+	SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error
 }
 
 //CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
