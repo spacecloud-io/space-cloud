@@ -6,7 +6,7 @@ import (
 )
 
 func (i *Istio) deleteServiceAccountIfExist(projectID, serviceID string) error {
-	err := i.kube.CoreV1().ServiceAccounts(projectID).Delete(getServiceAccountName(projectID, serviceID), &metav1.DeleteOptions{})
+	err := i.kube.CoreV1().ServiceAccounts(projectID).Delete(getServiceAccountName(serviceID), &metav1.DeleteOptions{})
 	return ignoreErrorIfNotFound(err)
 }
 
