@@ -325,7 +325,7 @@ func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 	hostFile.RemoveHost(utils.GetInternalServiceDomain(projectID, serviceID, version))
 
 	// Get if current version was the last remaining service
-	isLastContainer, err := d.checkIfLastService(projectID, serviceID)
+	isLastContainer, err := d.checkIfLastService(ctx, projectID, serviceID)
 	if err != nil {
 		return err
 	}
@@ -339,7 +339,7 @@ func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 	return hostFile.Save()
 }
 
-func (d *Docker) checkIfLastService(projectID, serviceID string) (bool, error) {
+func (d *Docker) checkIfLastService(ctx context.Context, projectID, serviceID string) (bool, error) {
 	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s--%s", projectID, serviceID))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
