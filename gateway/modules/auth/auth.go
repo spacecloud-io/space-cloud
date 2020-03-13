@@ -41,7 +41,7 @@ func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) 
 	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud}
 }
 
-// SetConfig set the rules and secret key required by the auth block
+// SetServiceRoutes set the rules and secret key required by the auth block
 func (m *Module) SetConfig(project string, secret, aesKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()

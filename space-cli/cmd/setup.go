@@ -152,19 +152,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 			},
 			mount: mounts,
 		},
-		{
-			// proxy-api (for docker!!)
-			containerImage: "spaceuptech/api-proxy",
-			containerName:  "space-cloud-api-proxy",
-			dnsName:       proxyDNS,
-			mount: []mount.Mount{
-				{
-					Type:   mount.TypeBind, 
-					Source: getSpaceCloudRoutingConfigPath(),
-					Target: "/routing-config.json",
-				},
-			},
-		},
+
 		{
 			// runner
 			containerImage: "spaceuptech/runner",
@@ -179,7 +167,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 				"SECRETS_PATH=/secrets",
 				"HOME_SECRETS_PATH=" + getTempSecretsDir(),
 				"HOSTS_FILE_PATH=" + getSpaceCloudHostsFilePath(),
-				"PROXY_API_PATH=" + proxyDNS,
+				"ROUTING_FILE_PATH="+getSpaceCloudRoutingConfigPath(),
 			},
 			mount: []mount.Mount{
 				{
@@ -196,6 +184,11 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 					Type:   mount.TypeBind,
 					Source: "/var/run/docker.sock",
 					Target: "/var/run/docker.sock",
+				},
+				{
+					Type:   mount.TypeBind,
+					Source: getSpaceCloudRoutingConfigPath(),
+					Target: "/routing-config.json",
 				},
 			},
 		},

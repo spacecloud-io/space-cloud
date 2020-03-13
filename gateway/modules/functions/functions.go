@@ -27,7 +27,7 @@ func Init(auth model.AuthFunctionInterface, manager *syncman.Manager) *Module {
 	return &Module{auth: auth, manager: manager}
 }
 
-// SetConfig sets the configuration of the functions module
+// SetServiceRoutes sets the configuration of the functions module
 func (m *Module) SetConfig(project string, c *config.ServicesModule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()

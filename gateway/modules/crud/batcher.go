@@ -82,7 +82,7 @@ func (m *Module) insertBatchExecutor(done chan struct{}, addInsertToBatchCh batc
 		select {
 		case <-done:
 			ticker.Stop()
-			// safe operation since SetConfig will hold a lock preventing others from writing into this channel after its closed
+			// safe operation since SetServiceRoutes will hold a lock preventing others from writing into this channel after its closed
 			close(addInsertToBatchCh)
 			close(done)
 			logrus.Debugf("closing batcher for database %s table %s", dbAlias, tableName)

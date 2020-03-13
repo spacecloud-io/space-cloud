@@ -20,7 +20,9 @@ import (
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/utils"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
+	proxy_manager "github.com/spaceuptech/space-cloud/runner/utils/driver/docker/proxy-manager"
 )
 
 // Docker defines the type for docker instance
@@ -30,6 +32,7 @@ type Docker struct {
 	artifactAddr string
 	secretPath   string
 	hostFilePath string
+	manager      *proxy_manager.Manager
 }
 
 // NewDockerDriver returns a new docker instance
@@ -50,17 +53,22 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*Docker, error) {
 		logrus.Fatal("Failed to create docker driver: HOSTS_FILE_PATH environment variable not provided")
 	}
 
-	return &Docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath, hostFilePath: hostFilePath}, nil
+	manager, err := proxy_manager.New(os.Getenv("ROUTING_CONFIG_PATH"))
+	if err != nil {
+		return nil, err
+	}
+
+	return &Docker{client: cli, auth: auth, artifactAddr: artifactAddr, secretPath: secretPath, hostFilePath: hostFilePath, manager: manager}, nil
 }
 
 // ApplyServiceRoutes sets the traffic splitting logic of each service
-func (d *Docker) ApplyServiceRoutes(_ context.Context, _, _ string, _ model.Routes) error {
-	return errors.New("service routing is not implemented for docker driver")
+func (d *Docker) ApplyServiceRoutes(_ context.Context, projectID, serviceID string, routes model.Routes) error {
+	return d.manager.SetServiceRoutes(projectID, serviceID, routes)
 }
 
 // GetServiceRoutes gets the routing rules of each service
-func (d *Docker) GetServiceRoutes(_ context.Context, _ string) (map[string]model.Routes, error) {
-	return nil, errors.New("service routing is not implemented for docker driver")
+func (d *Docker) GetServiceRoutes(_ context.Context, projectID string) (map[string]model.Routes, error) {
+	return d.manager.GetServiceRoutes(projectID)
 }
 
 // ApplyService creates containers for specified service
@@ -92,16 +100,23 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 			if err != nil {
 				return err
 			}
-			hostfile.AddHost(containerIP, getInternalServiceDomain(service.ProjectID, service.ID,service.Version))
+			hostFile.AddHost(containerIP, utils.GetInternalServiceDomain(service.ProjectID, service.ID, service.Version))
 			continue
 		}
 		_, _, err := d.createContainer(ctx, task, service, []model.Port{}, containerName)
 		return err
 	}
 
-	// Point runner to Proxy
-	_,proxyIP,_ := txeh.HostAddressLookup(os.Getenv("PROXY_API_PATH"))
-	hostfile.AddHost(proxyIP, getServiceDomain(service.ProjectID, service.ID))
+	// Don't forget to set the service routing initially
+	d.manager.SetServiceRouteIfNotExists(service.ProjectID, service.ID, service.Version, ports)
+
+	// Point runner to Proxy (it's own IP address!)
+	p, proxyIP, _ := hostFile.HostAddressLookup("runner.space-cloud.svc.cluster.local")
+	if !p {
+		return errors.New("no hosts entry found for runner domain")
+	}
+
+	hostFile.AddHost(proxyIP, utils.GetServiceDomain(service.ProjectID, service.ID))
 	return hostFile.Save()
 }
 
@@ -279,6 +294,7 @@ func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 	if serviceID == "" || version == "" {
 		args = filters.Arg("name", projectID)
 	}
+
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error deleting service in docker unable to list containers got error message - %v", err)
@@ -305,8 +321,33 @@ func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 		logrus.Errorf("Could not load host file with suitable default - %v", err)
 		return err
 	}
-	hostFile.RemoveHost(getServiceDomain(projectID, serviceID))
+
+	hostFile.RemoveHost(utils.GetInternalServiceDomain(projectID, serviceID, version))
+
+	// Get if current version was the last remaining service
+	isLastContainer, err := d.checkIfLastService(projectID, serviceID)
+	if err != nil {
+		return err
+	}
+
+	// Remove the general service along with the service routes if this was the last version of the service
+	if isLastContainer {
+		hostFile.RemoveHost(utils.GetServiceDomain(projectID, serviceID))
+		d.manager.DeleteServiceRoutes(projectID, serviceID)
+	}
+
 	return hostFile.Save()
+}
+
+func (d *Docker) checkIfLastService(projectID, serviceID string) (bool, error) {
+	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s--%s", projectID, serviceID))
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+	if err != nil {
+		logrus.Errorf("Could not list remaining containers got error message - %v", err)
+		return false, err
+	}
+
+	return len(containers) == 0, nil
 }
 
 // GetServices gets the specified service info from docker container

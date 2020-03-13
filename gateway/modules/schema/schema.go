@@ -32,7 +32,7 @@ func Init(crud model.CrudSchemaInterface, removeProjectScope bool) *Schema {
 	return &Schema{SchemaDoc: model.Type{}, crud: crud, removeProjectScope: removeProjectScope}
 }
 
-// SetConfig modifies the tables according to the schema on save
+// SetServiceRoutes modifies the tables according to the schema on save
 func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()

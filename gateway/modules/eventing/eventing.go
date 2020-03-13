@@ -67,7 +67,7 @@ func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, sch
 	return m
 }
 
-// SetConfig sets the module config
+// SetServiceRoutes sets the module config
 func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()

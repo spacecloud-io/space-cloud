@@ -21,7 +21,7 @@ func Init(crud model.CrudUserInterface, auth model.AuthUserInterface) *Module {
 	return &Module{crud: crud, auth: auth}
 }
 
-// SetConfig sets the config required by the user management module
+// SetServiceRoutes sets the config required by the user management module
 func (m *Module) SetConfig(auth config.Auth) {
 	m.Lock()
 	defer m.Unlock()

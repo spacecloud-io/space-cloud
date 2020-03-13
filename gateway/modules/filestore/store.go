@@ -51,7 +51,7 @@ type FileStore interface {
 	Close() error
 }
 
-// SetConfig set the rules and secret key required by the filestore block
+// SetServiceRoutes set the rules and secret key required by the filestore block
 func (m *Module) SetConfig(conf *config.FileStore) error {
 	m.Lock()
 	defer m.Unlock()

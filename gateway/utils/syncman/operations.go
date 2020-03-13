@@ -199,7 +199,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 	return s.store.DeleteProject(ctx, projectID)
 }
 
-// GetConfig returns the config present in the state
+// GetServiceRoutes returns the config present in the state
 func (s *Manager) GetConfig(projectID string) (*config.Project, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()

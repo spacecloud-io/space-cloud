@@ -33,7 +33,7 @@ func New(a *auth.Module, c *crud.Module, f *functions.Module, s *schema.Schema) 
 	return &Module{auth: a, crud: c, functions: f, schema: s}
 }
 
-// SetConfig sets the project configuration
+// SetServiceRoutes sets the project configuration
 func (graph *Module) SetConfig(project string) {
 	graph.project = project
 }
