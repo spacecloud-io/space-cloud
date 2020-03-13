@@ -20,7 +20,7 @@ func (i *Istio) createServiceAccountIfNotExist(ns string, obj *v1.ServiceAccount
 }
 
 func (i *Istio) applyDeployment(ns string, deployment *appsv1.Deployment) error {
-	_, err := i.kube.AppsV1().Deployments(ns).Get(deployment.Name, metav1.GetOptions{})
+	prevDeployment, err := i.kube.AppsV1().Deployments(ns).Get(deployment.Name, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a deployment if it doesn't already exist
 		if _, err := i.kube.AppsV1().Deployments(ns).Create(deployment); err != nil {
@@ -33,11 +33,14 @@ func (i *Istio) applyDeployment(ns string, deployment *appsv1.Deployment) error 
 	}
 
 	// Update the deployment config
-	if _, err := i.kube.AppsV1().Deployments(ns).Update(deployment); err != nil {
+	prevDeployment.Labels = deployment.Labels
+	prevDeployment.Annotations = deployment.Annotations
+	prevDeployment.Spec = deployment.Spec
+	if _, err := i.kube.AppsV1().Deployments(ns).Update(prevDeployment); err != nil {
 		return err
 	}
 	// Update the deployment cache
-	if err := i.cache.setDeployment(ns, deployment.Name, deployment); err != nil {
+	if err := i.cache.setDeployment(ns, deployment.Name, prevDeployment); err != nil {
 		return err
 	}
 

@@ -1,7 +1,7 @@
 <p align="center"><a href="https://www.spaceuptech.com"><img src="https://spaceuptech.com/icons/space-cloud-block-diagram1.png" alt="Space Cloud"></a></p>
 
 <h3 align="center">
-  Instant Realtime APIs on any database
+  Google Firebase + Heroku to Develop, Scale and Secure Serverless Apps on Kubernetes.
 </h3>
 
 <p align="center">
@@ -25,16 +25,15 @@
     <a href="https://twitter.com/intent/follow?screen_name=spaceuptech"><img src="https://img.shields.io/badge/                 Follow-spaceuptech-blue.svg?style=flat&logo=twitter"></a>
 </p>
 
-Space Cloud is a cloud-native backend server that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.spaceuptech.com/advanced/event-triggers) and unified APIs for your [custom business logic](https://docs.spaceuptech.com/essentials/remote-services).
+Space Cloud is a Kubernetes based serverless platform that provides **instant, realtime APIs on any database**, with [event triggers](https://docs.spaceuptech.com/microservices/eventing) and unified APIs for your [custom business logic](https://docs.spaceuptech.com/microservices/graphql).
 
 Space Cloud helps you build modern applications without having to write any backend code in most cases.
 
-It provides **GraphQL** and **REST** APIs which can be consumed directly by your frontend in a [secure manner](https://docs.spaceuptech.com/auth).
-
+It provides **GraphQL** and **REST** APIs which can be consumed directly by your frontend in a [secure manner](https://docs.spaceuptech.com/storage/database/securing-apis).
 
 ## Features 
 
-View complete feature set [here](https://docs.spaceuptech.com/getting-started/introduction/features).
+View complete feature set [here](https://docs.spaceuptech.com/introduction/features).
 
 - **Powerful CRUD**: Flexible queries, transactions and cross-database joins
 - **Realtime**: Make live queries to your database
@@ -43,8 +42,10 @@ View complete feature set [here](https://docs.spaceuptech.com/getting-started/in
 - **Event-driven**: Trigger webhooks or serverless functions on database or file storage events
 - **Fine-grained access control**: Dynamic access control that integrates with your auth system (e.g., auth0, firebase-auth)
 - **Scalable**: Written in Golang, it follows cloud-native practices and scales horizontally
+- **Service Mesh**: Get all the capabilities of a service mesh without having to learn any of that!
+- **Scale down to zero**: Auto scale your http workloads including scaling down to zero.
 
-Supported databases:heart::
+Supported databases :heart::
 
 - **MongoDB**
 - **PostgreSQL** and PostgreSQL compatible databases (For eg. CockroachDB, Yugabyte, etc.)
@@ -62,43 +63,14 @@ Supported databases:heart::
 
 ## Quick start
 
-### Using Docker Compose
-
-Docker Compose is the easiest way to get started with Space Cloud. Let's see how to quickly get started with Postgres and Space Cloud using Docker Compose.
-
-> **Note:** Postgres is not a dependency of Space Cloud. Space Cloud can run with any of it's supported databases.
-
-**Prerequisites:**
-
-- [Docker](https://docs.docker.com/install/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-
-1. Get the docker-compose file.
-
-```bash
-wget https://raw.githubusercontent.com/spaceuptech/space-cloud/master/install-manifests/quick-start/docker-compose/postgres/docker-compose.yaml
-```
-
-2. Run Space Cloud & Postgres.
-
-```bash
-docker-compose up -d
-```
-
-3. Head over to http://localhost:4122/mission-control to open Mission Control and configure Space Cloud.
-
-4. Create a project.
-
-5. Then add Postgres to your project with the following connection string: `postgres://postgres:mysecretpassword@postgres:5432/postgres?sslmode=disable` and hit `Save`.
-
-6. Head over to the `Explorer` section and follow this guide to [insert and read data via Space Cloud using GraphQL](https://docs.spaceuptech.com/getting-started/quick-start/explore-graphql).
+> **If you are new to Space Cloud, we strongly recommend following our [step-by-step guide](https://learn.spaceuptech.com/space-cloud/basics/setup/) to get started**
 
 ### Other guides
 
-To get started with Space Cloud without Docker compose, check out the [manual](https://docs.spaceuptech.com/getting-started/quick-start/manual) guide. For production settings, check out the [deployments](https://docs.spaceuptech.com/getting-started/deployment) guide.
+View the installation guides for [Docker](https://docs.spaceuptech.com/install/docker) and [Kubernetes](https://docs.spaceuptech.com/install/kubernetes).
 
 ## Client-side tooling
-Space Cloud exposes GraphQL and REST APIs. See [setting up project](https://docs.spaceuptech.com/getting-started/setting-up-project) guide to choose a client and set it up. 
+Space Cloud exposes GraphQL and REST APIs. See [setting up project](https://docs.spaceuptech.com/introduction/setting-up-project) guide to choose a client and set it up. 
 
 ### GraphQL APIs
 GraphQL is the recommended way to use Space cloud, and it works with any GraphQL client. However, we recommend using [Apollo Client](https://github.com/apollographql/apollo-client). See [awesome-graphql](https://github.com/chentsulin/awesome-graphql) for a list of clients.
@@ -107,7 +79,7 @@ GraphQL is the recommended way to use Space cloud, and it works with any GraphQL
 
 You can use the [REST APIs of Space Cloud](https://app.swaggerhub.com/apis/YourTechBud/space-cloud/0.15.0) if you are more comfortable with REST. 
 
-To make it easy to consume the REST APIs in web projects, we have created a [**Javascript SDK**](https://docs.spaceuptech.com/getting-started/setting-up-project/javascript) for you.
+To make it easy to consume the REST APIs in web projects, we have created a [**Javascript SDK**](https://docs.spaceuptech.com/introduction/setting-up-project/javascript) for you.
 
 ## How it works
 
@@ -115,13 +87,15 @@ Space Cloud is meant to replace any backend php, nodejs, java code you may write
 
 However, it's important to note that **the client does not send database (SQL) queries** to Space Cloud. Instead, it sends an object describing the query to be executed. This object is first **validated** by Space Cloud (using security rules). Once the client is authorized to make the request, **a database query is dynamically generated and executed**. The results are sent directly to the concerned client.
 
-We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud allows you to access your **custom HTTP servers** via the same consistent APIs of Space Cloud.  In this scenario, Space Cloud acts merely as an API gateway between your `remote-services` and the client. However, the cool part is that you can even perform **joins on your remote services and database** via the GraphQL API of Space Cloud
+We understand that not every app can be built using only CRUD operations. Sometimes it's necessary to write business logic. For such cases, Space Cloud allows you to access your **custom HTTP servers** via the same consistent APIs of Space Cloud.  In this scenario, Space Cloud acts merely as an API gateway between your `services` and the client. However, the cool part is that you can even perform **joins on your microservices and database** via the GraphQL API of Space Cloud
 
 <div style="text-align: center">
 <img src="https://spaceuptech.com/icons/space-cloud-detailed.png"  style="max-width: 80%" alt="Detailed Space Cloud architecture" />
 </div>
 
-Apart from these, Space Cloud also integrates with tons of cloud technologies to give you several other features like `realtime database` (changes in the database are synced with all concerned clients in realtime), `file storage`, etc.
+Space Cloud integrates with [Kubernetes](https://kubernetes.io) and [Istio](https://istio.io) natively to bring to you a highly scalable Serverless Platform. It encrypts all traffic by default and lets you describe communication policies to protect your microservices.
+
+With that, it also provides **autoscaling functionality** out of the box including **scaling down to zero**
 
 ## Support & Troubleshooting
 

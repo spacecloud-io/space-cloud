@@ -15,11 +15,10 @@ type queryStub struct {
 type clientsStub struct {
 	sync.Mutex
 	clients sync.Map
-	// subscription *nats.Subscription
 }
 
 // AddLiveQuery tracks a client for a live query
-func (m *Module) AddLiveQuery(id, project, dbAlias, group, clientID string, whereObj map[string]interface{}, actions *model.PostProcess, sendFeed SendFeed) {
+func (m *Module) AddLiveQuery(id, _, dbAlias, group, clientID string, whereObj map[string]interface{}, actions *model.PostProcess, sendFeed SendFeed) {
 	// Load clients in a particular group
 	clients := new(clientsStub)
 	t, _ := m.groups.LoadOrStore(createGroupKey(dbAlias, group), clients)
