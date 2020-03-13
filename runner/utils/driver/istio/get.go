@@ -2,6 +2,7 @@ package istio
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -137,7 +138,11 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 		}
 
 		// Set upstreams
-		sideCar, _ := i.istio.NetworkingV1alpha3().Sidecars(projectID).Get(service.ID, metav1.GetOptions{})
+		sideCar, err := i.istio.NetworkingV1alpha3().Sidecars(projectID).Get(getSidecarName(service.ID, service.Version), metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
 		for _, value := range sideCar.Spec.Egress[0].Hosts {
 			a := strings.Split(value, "/")
 			if a[0] == "space-cloud" || a[0] == "istio-system" {
@@ -173,7 +178,7 @@ func (i *Istio) GetServiceRoutes(_ context.Context, projectID string) (map[strin
 			// Generate the targets
 			targets := make([]model.RouteTarget, len(route.Route))
 			for j, destination := range route.Route {
-				target := model.RouteTarget{Weight: destination.Weight, Port: int32(destination.Destination.Port.Number)}
+				target := model.RouteTarget{Weight: destination.Weight}
 
 				// Figure out the route type
 				target.Type = model.RouteTargetExternal
@@ -184,9 +189,20 @@ func (i *Istio) GetServiceRoutes(_ context.Context, projectID string) (map[strin
 				case model.RouteTargetVersion:
 					// Set the version field if target type was version
 					target.Version = destination.Headers.Request.Set["x-og-version"]
+
+					// Set the port
+					port, err := strconv.Atoi(destination.Headers.Request.Set["x-og-port"])
+					if err != nil {
+						return nil, err
+					}
+					target.Port = int32(port)
+
 				case model.RouteTargetExternal:
 					// Set the host field if target type was external
 					target.Host = destination.Destination.Host
+
+					// Set the port
+					target.Port = int32(destination.Destination.Port.Number)
 				}
 
 				targets[j] = target
