@@ -1,4 +1,4 @@
-package proxy_manager
+package manager
 
 import (
 	"strings"

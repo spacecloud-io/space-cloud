@@ -1,4 +1,4 @@
-package proxy_manager
+package manager
 
 import (
 	"fmt"
@@ -9,7 +9,6 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-// projectID-serviceID for key in config map
 func getConfigKey(string1, string2 string) string {
 	return (string1 + "-" + string2)
 }
