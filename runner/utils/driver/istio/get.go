@@ -45,13 +45,13 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 			}
 
 			var dockerSecret string
-			var secrets []string
+			secretsMap := make(map[string]struct{})
 
 			// get environment variables
 			envs := map[string]string{}
 			for _, env := range containerInfo.Env {
 				if env.ValueFrom != nil && env.ValueFrom.SecretKeyRef != nil {
-					secrets = append(secrets, env.ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+					secretsMap[env.ValueFrom.SecretKeyRef.LocalObjectReference.Name] = struct{}{}
 					continue
 				}
 				envs[env.Name] = env.Value
@@ -60,7 +60,7 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 			// Range over the file mounts for secrets
 			for _, volume := range containerInfo.VolumeMounts {
 				if checkIfVolumeIsSecret(volume.Name, deployment.Spec.Template.Spec.Volumes) {
-					secrets = append(secrets, volume.Name)
+					secretsMap[volume.Name] = struct{}{}
 				}
 			}
 
@@ -87,6 +87,12 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 			imagePullPolicy := model.PullAlways
 			if containerInfo.ImagePullPolicy == v1.PullIfNotPresent {
 				imagePullPolicy = model.PullIfNotExists
+			}
+
+			// Move all secrets from map to array
+			var secrets []string
+			for k := range secretsMap {
+				secrets = append(secrets, k)
 			}
 
 			// set tasks
