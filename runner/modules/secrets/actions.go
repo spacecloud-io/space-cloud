@@ -7,7 +7,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-// ActionGenerateServiceRouting creates spec object for service routing
+// ActionGenerateSecret creates spec object for service routing
 func ActionGenerateSecret(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
