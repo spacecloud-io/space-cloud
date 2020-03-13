@@ -18,7 +18,6 @@ type Manager struct {
 	// Config related to cluster config
 	projectConfig *config.Config
 	configFile    string
-	cb            func(*config.Config) error
 
 	// Configuration for cluster information
 	nodeID        string
