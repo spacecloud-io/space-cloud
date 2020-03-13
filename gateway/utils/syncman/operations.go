@@ -119,7 +119,7 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 	}
 
 	// We will ignore the error for the create project request
-	_ = s.cb(s.projectConfig)
+	_ = s.modules.SetProjectConfig(s.projectConfig)
 
 	if s.storeType == "none" {
 		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -191,7 +191,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 			return err
 		}
 	}
-	if err := s.cb(s.projectConfig); err != nil {
+	if err := s.modules.SetProjectConfig(s.projectConfig); err != nil {
 		return err
 	}
 

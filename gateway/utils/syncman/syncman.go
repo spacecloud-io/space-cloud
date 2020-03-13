@@ -84,13 +84,13 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, port int) error {
+func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	// Set the callback
-	s.cb = cb
+	_ = s.modules.SetProjectConfig(projectConfig)
 	s.port = port
 
 	s.configFile = configFilePath
@@ -99,7 +99,7 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 	if len(s.projectConfig.Projects) > 0 {
-		_ = cb(s.projectConfig)
+		_ = s.modules.SetProjectConfig(s.projectConfig)
 	}
 
 	if s.storeType != "none" {
@@ -113,7 +113,7 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
-				_ = s.cb(s.projectConfig)
+				_ = s.modules.SetProjectConfig(s.projectConfig)
 			}
 		}); err != nil {
 			return err

@@ -71,7 +71,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port int, restrictedHosts []string) error {
 
 	// Start the sync manager
-	if err := s.syncMan.Start(s.configFilePath, s.LoadConfig, port); err != nil {
+	if err := s.syncMan.Start(s.configFilePath, s.syncMan.GetGlobalConfig(), port); err != nil {
 		return err
 	}
 
