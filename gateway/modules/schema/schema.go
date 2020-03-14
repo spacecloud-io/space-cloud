@@ -171,20 +171,21 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.IndexInfo.Group, ok = val.(string)
 								if !ok {
-									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, arg.Name.Value)
+									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, fieldTypeStuct.FieldName)
 								}
 							case "order":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.IndexInfo.Order, ok = val.(int)
 								if !ok {
-									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, arg.Name.Value)
+									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, fieldTypeStuct.FieldName)
 								}
 							case "sort":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
-								fieldTypeStuct.IndexInfo.Sort, ok = val.(string)
-								if !ok {
-									return nil, fmt.Errorf("invalid variable type (%s) provided for %s in %s", reflect.TypeOf(val), arg.Name.Value, arg.Name.Value)
+								sort, ok := val.(string)
+								if !ok || (sort != "asc" && sort != "desc") {
+									return nil, fmt.Errorf("invalid value (%v) provided for argument (sort) in field (%s)", val, fieldTypeStuct.FieldName)
 								}
+								fieldTypeStuct.IndexInfo.Sort = sort
 							}
 						}
 					case model.DirectiveLink:

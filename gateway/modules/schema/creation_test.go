@@ -752,18 +752,6 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			fields:  fields{crud: crudMySQL, project: "test"},
 			wantErr: true,
 		},
-		{
-			name: "adding invalid sort key",
-			args: args{
-				dbAlias:       "mysql",
-				tableName:     "table1",
-				project:       "test",
-				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 1, Sort: "descc"}}}}},
-				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
-			},
-			fields:  fields{crud: crudMySQL, project: "test"},
-			wantErr: true,
-		},
 
 		// //sql-server
 		{
@@ -1527,18 +1515,6 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			fields:  fields{crud: crudSQLServer, project: "test"},
 			wantErr: true,
 		},
-		{
-			name: "adding invalid sort key",
-			args: args{
-				dbAlias:       "sqlserver",
-				tableName:     "table1",
-				project:       "test",
-				parsedSchema:  model.Type{"sqlserver": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 1, Sort: "descc"}}}}},
-				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
-			},
-			fields:  fields{crud: crudSQLServer, project: "test"},
-			wantErr: true,
-		},
 
 		// // //postgres
 		{
@@ -2179,18 +2155,6 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				tableName:     "table1",
 				project:       "test",
 				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 2}}}}},
-				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
-			},
-			fields:  fields{crud: crudPostgres, project: "test"},
-			wantErr: true,
-		},
-		{
-			name: "adding invalid sort key",
-			args: args{
-				dbAlias:       "postgres",
-				tableName:     "table1",
-				project:       "test",
-				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 1, Sort: "descc"}}}}},
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},

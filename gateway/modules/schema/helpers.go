@@ -69,7 +69,7 @@ func (c *creationModule) addNotNull() string {
 		return ""
 	}
 
-	c.currentColumnInfo.IsFieldTypeRequired = true
+	c.currentColumnInfo.IsFieldTypeRequired = true // Mark the field as processed
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType + " NOT NULL"
@@ -130,7 +130,7 @@ func (c *creationModule) addPrimaryKey() string {
 		return ""
 	}
 
-	c.currentColumnInfo.IsPrimary = true
+	c.currentColumnInfo.IsPrimary = true // Mark the field as processed
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD PRIMARY KEY (" + c.ColumnName + ")"
@@ -161,7 +161,7 @@ func (c *creationModule) removePrimaryKey() string {
 }
 
 func (c *creationModule) addForeignKey() string {
-	c.currentColumnInfo.IsForeign = true
+	c.currentColumnInfo.IsForeign = true // Mark the field as processed
 	return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " FOREIGN KEY (" + c.ColumnName + ") REFERENCES " + getTableName(c.project, c.realColumnInfo.JointTable.Table, c.removeProjectScope) + " (" + c.realColumnInfo.JointTable.To + ")"
 }
 
@@ -193,7 +193,7 @@ func (c *creationModule) addDefaultKey() string {
 		return ""
 	}
 
-	c.currentColumnInfo.IsDefault = true
+	c.currentColumnInfo.IsDefault = true // Mark the field as processed
 	c.currentColumnInfo.Default = c.realColumnInfo.Default
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
@@ -460,16 +460,6 @@ func getIndexMap(tableInfo model.Fields) (map[string]*indexStruct, error) {
 			// Mark the index group as unique if even on column had the unique tag
 			if columnInfo.IsUnique {
 				indexMap[columnInfo.IndexInfo.Group].IsIndexUnique = true
-			}
-
-			// Set the default sorting scheme if not present
-			if columnInfo.IndexInfo.Sort == "" {
-				columnInfo.IndexInfo.Sort = "asc"
-			}
-
-			// Make sure the sort type is either ascending or descending
-			if !(columnInfo.IndexInfo.Sort == "asc" || columnInfo.IndexInfo.Sort == "desc") {
-				return nil, fmt.Errorf("invalid sort type (%s) provided for field (%s)", columnInfo.IndexInfo.Sort, columnInfo.FieldName)
 			}
 		}
 	}
