@@ -70,8 +70,6 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	a := auth.Init(nodeID, c, removeProjectScope)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
-	c.SetSchemaPostProcessHandler(s.CrudPostProcess)
-
 	fn := functions.Init(a, syncMan)
 
 	f := filestore.Init(a)

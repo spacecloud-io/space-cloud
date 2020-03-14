@@ -77,7 +77,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	// NOTE : currently jsonb is supported for only postgres
 	// in future if jsonb is supported for multiple databases change below code
 	if crud.GetDBType() == utils.Postgres {
-		if err := m.schemaPostProcess(ctx, dbAlias, col, result); err != nil {
+		if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
 			logrus.Errorf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", project, col)
 			return nil, err
 		}

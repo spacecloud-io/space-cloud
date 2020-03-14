@@ -29,6 +29,7 @@ func (s *Schema) ValidateUpdateOperation(dbAlias, col, op string, updateDoc, fin
 	for key, doc := range updateDoc {
 		switch key {
 		case "$unset":
+			return s.validateUnsetOperation(dbAlias, col, doc, SchemaDoc)
 		case "$set":
 			newDoc, err := s.validateSetOperation(col, doc, SchemaDoc)
 			if err != nil {
@@ -172,6 +173,43 @@ func validateDateOperations(col string, doc interface{}, SchemaDoc model.Fields)
 		}
 	}
 
+	return nil
+}
+
+func (s *Schema) validateUnsetOperation(dbAlias, col string, doc interface{}, schemaDoc model.Fields) error {
+	v, ok := doc.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("document not of type object in collection %s", col)
+	}
+	dbType, err := s.crud.GetDBType(dbAlias)
+	if err != nil {
+		return err
+	}
+	if dbType == string(utils.Mongo) {
+		for fieldName, _ := range v {
+			columnInfo, ok := schemaDoc[fieldName]
+			if ok {
+				if columnInfo.IsFieldTypeRequired {
+					return fmt.Errorf("cannot use $unset on field which is required")
+				}
+			}
+			// TODO CAN SPECIFIED FIELD NAME DOESN'T EXIST IN SCHEMA IN CASE OF MONGO
+		}
+		return nil
+	}
+
+	if dbType == string(utils.Postgres) || dbType == string(utils.MySQL) || dbType == string(utils.SQLServer) {
+		for fieldName, _ := range v {
+			columnInfo, ok := schemaDoc[fieldName]
+			if ok {
+				if columnInfo.Kind == model.TypeJSON {
+					return fmt.Errorf("cannot use $unset on field which has type (%s)", model.TypeJSON)
+				}
+			} else {
+				return fmt.Errorf("specified column (%s) doesn't exists in schema of (%s)", fieldName, col)
+			}
+		}
+	}
 	return nil
 }
 

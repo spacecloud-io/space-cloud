@@ -389,34 +389,100 @@ func TestValidate(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "valid contains",
+			name: "valid contains single field match",
 			args: args{
-				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"a": 1, "b": "one", "c": true,}}},
-				obj:   map[string]interface{}{"op2": map[string]interface{}{"a": 1, "b": "one", "c": true,}},
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo1": "bar1"}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": "bar2"}},
 			},
 			want: true,
 		},
 		{
-			name: "invalid contains",
+			name: "valid contains all fields match",
 			args: args{
-				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"z": 1, "y": "one", "x": true,}}},
-				obj:   map[string]interface{}{"op2": map[string]interface{}{"a": 1, "b": "one", "c": true,}},
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo1": "bar1", "foo2": "bar2"}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": "bar2"}},
+			},
+			want: true,
+		},
+		{
+			name: "valid contains where is empty",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": "bar2"}},
+			},
+			want: true,
+		},
+		{
+			name: "valid contains nested single field should match",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner1": "value1"}}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": map[string]interface{}{"inner1": "value1", "inner2": true, "inner3": 1.4, "inner4": 4}}},
+			},
+			want: true,
+		},
+		{
+			name: "valid contains nested all fields should match",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner1": "value1", "inner2": true, "inner3": 1.4, "inner4": 4}}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": map[string]interface{}{"inner1": "value1", "inner2": true, "inner3": 1.4, "inner4": 4}}},
+			},
+			want: true,
+		},
+		{
+			name: "valid contains nested empty array",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner5": []interface{}{}}}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": map[string]interface{}{"inner1": "value1", "inner2": true, "inner3": 1.4, "inner4": 4, "inner5": []interface{}{1, 2, 3}}}},
+			},
+			want: true,
+		},
+		{
+			name: "valid contains nested array contains value",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner5": []interface{}{1, 3}}}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": map[string]interface{}{"inner1": "value1", "inner2": true, "inner3": 1.4, "inner4": 4, "inner5": []interface{}{1, 2, 3}}}},
+			},
+			want: true,
+		},
+		{
+			name: "valid contains nested array contains mixed type integer and array",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner5": []interface{}{1, []interface{}{22, 33, []interface{}{101}}}}}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": map[string]interface{}{"inner3": 1.4, "inner4": 4, "inner5": []interface{}{1, 2, []interface{}{11, 22, 33, []interface{}{101, 102}}}}}},
+			},
+			want: true,
+		},
+		{
+			name: "valid contains array of objects",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner3": 1.4, "inner5": []interface{}{1, map[string]interface{}{"innerObj2": []interface{}{1, 2}}}}}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": map[string]interface{}{"inner3": 1.4, "inner4": 4, "inner5": []interface{}{1, 2, map[string]interface{}{"innerObj1": 1, "innerObj2": []interface{}{1, 2}}, []interface{}{11, 22, 33, []interface{}{101, 102}}}}}},
+			},
+			want: true,
+		},
+		{
+			name: "invalid contains array of objects",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner3": 1.4, "inner5": []interface{}{1, map[string]interface{}{"innerObj1": []interface{}{1, 2}}}}}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": map[string]interface{}{"inner3": 1.4, "inner4": 4, "inner5": []interface{}{1, 2, map[string]interface{}{"innerObj1": 1, "innerObj2": []interface{}{1, 2}}, []interface{}{11, 22, 33, []interface{}{101, 102}}}}}},
 			},
 			want: false,
 		},
 		{
-			name: "invalid contains result doesn't contain specified contains field",
+			name:
+			"Invalid contains field key same but value of different type",
 			args: args{
-				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"z": 1, "y": "one", "x": true,}}},
-				obj:   map[string]interface{}{"op1": map[string]interface{}{"a": 1, "b": "one", "c": true,}},
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo1": 1}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": "bar2"}},
 			},
 			want: false,
 		},
 		{
-			name: "invalid contains result is not of type obj",
+			name:
+			"invalid contains no field match",
 			args: args{
-				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"z": 1, "y": "one", "x": true,}}},
-				obj:   map[string]interface{}{"op2": "string"},
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo11": "bar11"}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": "bar2"}},
 			},
 			want: false,
 		},
