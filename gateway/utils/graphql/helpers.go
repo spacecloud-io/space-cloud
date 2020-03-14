@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/graphql-go/graphql/language/ast"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )

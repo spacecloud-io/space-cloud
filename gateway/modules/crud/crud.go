@@ -27,6 +27,7 @@ type Module struct {
 	alias              string
 	project            string
 	removeProjectScope bool
+	schema             model.SchemaCrudInterface
 
 	// During a read request if the result contains a column of type jsonb whose value is stored as []bytes
 	// Then un marshall that particular field of the result & override the value with un marshalling result
@@ -70,6 +71,11 @@ type Crud interface {
 // Init create a new instance of the Module object
 func Init(removeProjectScope bool) *Module {
 	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+}
+
+// SetSchema sets the schema module
+func (m *Module) SetSchema(s model.SchemaCrudInterface) {
+	m.schema = s
 }
 
 // SetHooks sets the internal hooks

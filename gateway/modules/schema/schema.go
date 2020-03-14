@@ -11,6 +11,7 @@ import (
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -88,11 +89,11 @@ func (s *Schema) Parser(crud config.Crud) (model.Type, error) {
 			if v.Schema == "" {
 				continue
 			}
-			source := source.NewSource(&source.Source{
+			s := source.NewSource(&source.Source{
 				Body: []byte(v.Schema),
 			})
 			// parse the source
-			doc, err := parser.Parse(parser.ParseParams{Source: source})
+			doc, err := parser.Parse(parser.ParseParams{Source: s})
 			if err != nil {
 				return nil, err
 			}
@@ -125,6 +126,10 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 		isCollectionFound = true
 
 		for _, field := range v.(*ast.ObjectDefinition).Fields {
+
+			if field.Type == nil {
+				return nil, fmt.Errorf("type not provided for the field (%s)", field.Name.Value)
+			}
 
 			fieldTypeStuct := model.FieldType{
 				FieldName: field.Name.Value,

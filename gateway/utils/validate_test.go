@@ -333,6 +333,38 @@ func TestValidate(t *testing.T) {
 			want: true,
 		},
 		{
+			name: "valid $in",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{"abc", "xyz"}}},
+				obj:   map[string]interface{}{"op": "abc"},
+			},
+			want: true,
+		},
+		{
+			name: "invalid $in",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$in": []interface{}{"abc", "xyz"}}},
+				obj:   map[string]interface{}{"op": "abcd"},
+			},
+			want: false,
+		},
+		{
+			name: "invalid $nin",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{"abc", "xyz"}}},
+				obj:   map[string]interface{}{"op": "abc"},
+			},
+			want: false,
+		},
+		{
+			name: "valid $nin",
+			args: args{
+				where: map[string]interface{}{"op": map[string]interface{}{"$nin": []interface{}{"abc", "xyz"}}},
+				obj:   map[string]interface{}{"op": "abcd"},
+			},
+			want: true,
+		},
+		{
 			name: "valid regex(prefix)",
 			args: args{
 				where: map[string]interface{}{"op2": map[string]interface{}{"$regex": "^sharad/"}},
