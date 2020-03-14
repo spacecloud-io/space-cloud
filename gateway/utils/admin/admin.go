@@ -20,7 +20,7 @@ func New() *Manager {
 	return &Manager{}
 }
 
-// SetServiceRoutes sets the admin config
+// SetConfig sets the admin config
 func (m *Manager) SetConfig(admin *config.Admin) {
 	m.lock.Lock()
 	m.admin = admin

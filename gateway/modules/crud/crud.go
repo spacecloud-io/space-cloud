@@ -98,7 +98,7 @@ func (m *Module) getCrudBlock(dbType string) (Crud, error) {
 	return nil, fmt.Errorf("crud module not initialized yet for %q", dbType)
 }
 
-// SetServiceRoutes set the rules and secret key required by the crud block
+// SetConfig set the rules and secret key required by the crud block
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()

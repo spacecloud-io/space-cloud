@@ -169,7 +169,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 	return http.ListenAndServe(":"+strconv.Itoa(port), handler)
 }
 
-// SetServiceRoutes sets the config
+// SetConfig sets the config
 func (s *Server) SetConfig(c *config.Config, isProd bool) {
 	s.ssl = c.SSL
 	s.syncMan.SetGlobalConfig(c)

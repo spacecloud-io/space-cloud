@@ -13,7 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// handleHTTPRequest handles incoming http requests and routes them according to the configured rules.
+// HandleRoutes handles incoming http requests and routes them according to the configured rules.
 func (r *Routing) HandleRoutes() http.HandlerFunc {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		// Close the body of the request
