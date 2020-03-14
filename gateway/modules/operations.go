@@ -7,7 +7,7 @@ import (
 
 // SetProjectConfig sets the config all modules
 func (m *Modules) SetProjectConfig(config *config.Config) error {
-	if config.Projects != nil {
+	if config.Projects != nil && len(config.Projects) > 0 {
 		p := config.Projects[0]
 
 		logrus.Debugln("Setting config of crud module")
