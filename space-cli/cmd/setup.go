@@ -27,6 +27,10 @@ func getSpaceCloudHostsFilePath() string {
 	return fmt.Sprintf("%s/hosts", getSpaceCloudDirectory())
 }
 
+func getSpaceCloudRoutingConfigPath() string {
+	return fmt.Sprintf("%s/routing-config.json", getSpaceCloudDirectory())
+}
+
 func getSecretsDir() string {
 	return fmt.Sprintf("%s/secrets", getSpaceCloudDirectory())
 }
@@ -56,6 +60,8 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	_ = createDirIfNotExist(getSpaceCloudDirectory())
 	_ = createDirIfNotExist(getSecretsDir())
 	_ = createDirIfNotExist(getTempSecretsDir())
+
+	_ = createFileIfNotExist(getSpaceCloudRoutingConfigPath(), "{}")
 
 	logrus.Infoln("Setting up Space Cloud on docker on your command...")
 
@@ -145,6 +151,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 			},
 			mount: mounts,
 		},
+
 		{
 			// runner
 			containerImage: "spaceuptech/runner",
@@ -159,6 +166,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 				"SECRETS_PATH=/secrets",
 				"HOME_SECRETS_PATH=" + getTempSecretsDir(),
 				"HOSTS_FILE_PATH=" + getSpaceCloudHostsFilePath(),
+				"ROUTING_FILE_PATH=" + "/routing-config.json",
 			},
 			mount: []mount.Mount{
 				{
@@ -175,6 +183,11 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 					Type:   mount.TypeBind,
 					Source: "/var/run/docker.sock",
 					Target: "/var/run/docker.sock",
+				},
+				{
+					Type:   mount.TypeBind,
+					Source: getSpaceCloudRoutingConfigPath(),
+					Target: "/routing-config.json",
 				},
 			},
 		},
@@ -203,8 +216,9 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	for _, c := range containersToCreate {
 		logrus.Infof("Starting container %s...", c.containerName)
 		// check if image already exists
-		if err := pullImageIfNotExist(ctx, cli, c.containerImage); err == nil {
-			logrus.Infof("Image %s already exists. No need to pull it again", c.containerImage)
+		if err := pullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
+			logrus.Errorf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage)
+			return err
 		}
 
 		// check if container is already running
@@ -262,6 +276,7 @@ func pullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image
 	_, _, err := dockerClient.ImageInspectWithRaw(ctx, image)
 	if err != nil {
 		// pull image from public repository
+		logrus.Infof("Image %s does not exist. Need to pull it from Docker Hub. This may take some time.", image)
 		out, err := dockerClient.ImagePull(ctx, image, types.ImagePullOptions{})
 		if err != nil {
 			logrus.Errorf("Unable to pull public image with id (%s) - %s", image, err.Error())
@@ -269,5 +284,6 @@ func pullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image
 		}
 		_, _ = io.Copy(ioutil.Discard, out)
 	}
+	logrus.Infof("Image %s already exists. No need to pull it again", image)
 	return nil
 }
