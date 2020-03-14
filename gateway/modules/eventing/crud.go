@@ -38,7 +38,7 @@ func (m *Module) HookDBCreateIntent(ctx context.Context, dbAlias, col string, re
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, eventingLogs, createRequest, false); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 	}
 
@@ -93,7 +93,7 @@ func (m *Module) HookDBBatchIntent(ctx context.Context, dbAlias string, req *mod
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, eventingLogs, createRequest, false); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
@@ -136,7 +136,7 @@ func (m *Module) hookDBUpdateDeleteIntent(ctx context.Context, eventType, dbAlia
 	if ok {
 		// Persist the event intent
 		createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-		if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, eventingLogs, createRequest, false); err != nil {
+		if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 			return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 		}
 
@@ -172,7 +172,7 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 	update := map[string]interface{}{"$set": set}
 
 	updateRequest := model.UpdateRequest{Find: find, Operation: utils.All, Update: update}
-	if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, eventingLogs, &updateRequest); err != nil {
+	if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
 		log.Println("Eventing Error: event could not be updated", err)
 		return
 	}
@@ -216,7 +216,7 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 				Operation: utils.All,
 				Update:    map[string]interface{}{"$set": map[string]interface{}{"payload": doc.Payload}},
 			}
-			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, eventingLogs, &updateRequest); err != nil {
+			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
 				log.Println("Eventing Error: event could not be updated", err)
 				return
 			}

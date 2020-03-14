@@ -3,7 +3,10 @@ package syncman
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // SetEventingRule sets the eventing rules
@@ -21,6 +24,11 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 		projectConfig.Modules.Eventing.Rules[ruleName] = value
 	}
 
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -35,6 +43,11 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 		return err
 	}
 	delete(projectConfig.Modules.Eventing.Rules, ruleName)
+
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -51,6 +64,20 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	}
 	projectConfig.Modules.Eventing.DBType = dbAlias
 	projectConfig.Modules.Eventing.Enabled = enabled
+
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
+
+	if err := s.applySchemas(ctx, project, dbAlias, projectConfig, config.CrudStub{
+		Collections: map[string]*config.TableRule{
+			utils.TableEventingLogs:   &config.TableRule{Schema: utils.SchemaEventLogs},
+			utils.TableInvocationLogs: &config.TableRule{Schema: utils.SchemaInvocationLogs},
+		},
+	}); err != nil {
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -73,6 +100,11 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 		}
 	}
 
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -87,6 +119,11 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 		return err
 	}
 	delete(projectConfig.Modules.Eventing.Schemas, evType)
+
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -109,6 +146,11 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 		}
 	}
 
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -123,6 +165,11 @@ func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, e
 		return err
 	}
 	delete(projectConfig.Modules.Eventing.SecurityRules, evType)
+
+	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
+		logrus.Errorf("error setting eventing config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }
