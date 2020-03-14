@@ -437,14 +437,6 @@ func TestValidate(t *testing.T) {
 			want: true,
 		},
 		{
-			name: "valid contains nested array contains value",
-			args: args{
-				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner5": []interface{}{1, 3}}}}},
-				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": map[string]interface{}{"inner1": "value1", "inner2": true, "inner3": 1.4, "inner4": 4, "inner5": []interface{}{1, 2, 3}}}},
-			},
-			want: true,
-		},
-		{
 			name: "valid contains nested array contains mixed type integer and array",
 			args: args{
 				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo2": map[string]interface{}{"inner5": []interface{}{1, []interface{}{22, 33, []interface{}{101}}}}}}},
@@ -469,8 +461,7 @@ func TestValidate(t *testing.T) {
 			want: false,
 		},
 		{
-			name:
-			"Invalid contains field key same but value of different type",
+			name: "Invalid contains field key same but value of different type",
 			args: args{
 				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo1": 1}}},
 				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": "bar2"}},
@@ -478,8 +469,7 @@ func TestValidate(t *testing.T) {
 			want: false,
 		},
 		{
-			name:
-			"invalid contains no field match",
+			name: "invalid contains no field match",
 			args: args{
 				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"foo11": "bar11"}}},
 				obj:   map[string]interface{}{"op2": map[string]interface{}{"foo1": "bar1", "foo2": "bar2"}},

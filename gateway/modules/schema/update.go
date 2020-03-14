@@ -187,20 +187,19 @@ func (s *Schema) validateUnsetOperation(dbAlias, col string, doc interface{}, sc
 	}
 	if dbType == string(utils.Mongo) {
 		for fieldName := range v {
-			columnInfo, ok := schemaDoc[fieldName]
+			columnInfo, ok := schemaDoc[strings.Split(fieldName, ".")[0]]
 			if ok {
 				if columnInfo.IsFieldTypeRequired {
 					return fmt.Errorf("cannot use $unset on field which is required")
 				}
 			}
-			// TODO CAN SPECIFIED FIELD NAME DOESN'T EXIST IN SCHEMA IN CASE OF MONGO
 		}
 		return nil
 	}
 
 	if dbType == string(utils.Postgres) || dbType == string(utils.MySQL) || dbType == string(utils.SQLServer) {
 		for fieldName := range v {
-			columnInfo, ok := schemaDoc[fieldName]
+			columnInfo, ok := schemaDoc[strings.Split(fieldName, ".")[0]]
 			if ok {
 				if columnInfo.Kind == model.TypeJSON {
 					return fmt.Errorf("cannot use $unset on field which has type (%s)", model.TypeJSON)
