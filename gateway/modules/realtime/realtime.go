@@ -49,7 +49,7 @@ type SendFeed func(*model.FeedData)
 // 	Ack bool
 // }
 
-// SetServiceRoutes set the rules and secret key required by the realtime block
+// SetConfig set the rules and secret key required by the realtime block
 func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
