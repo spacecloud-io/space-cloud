@@ -8,7 +8,12 @@ import (
 func generateServiceRouting() (*model.SpecObject, error) {
 
 	project := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter target"}, &project); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter project"}, &project); err != nil {
+		return nil, err
+	}
+
+	id := ""
+	if err := survey.AskOne(&survey.Input{Message: "Enter id"}, &id); err != nil {
 		return nil, err
 	}
 
@@ -47,10 +52,11 @@ func generateServiceRouting() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/routing",
+		API:  "/v1/config/projects/{project}/routing/ingress{routeId}",
 		Type: "service-routing",
 		Meta: map[string]string{
 			"project": project,
+			"id":      id,
 		},
 		Spec: map[string]interface{}{
 			"source":  source,

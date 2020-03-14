@@ -66,6 +66,12 @@ func generateDBConfig() (*model.SpecObject, error) {
 	if err := survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
 		return nil, err
 	}
+
+	id := ""
+	if err := survey.AskOne(&survey.Input{Message: "Enter  id"}, &id); err != nil {
+		return nil, err
+	}
+
 	var dbType string
 	if err := survey.AskOne(&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &dbType); err != nil {
 		return nil, err
@@ -101,11 +107,12 @@ func generateDBConfig() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/database/{dbAlias}/config",
+		API:  "/v1/config/projects/{project}/database/{dbAlias}/config/{id}",
 		Type: "db-config",
 		Meta: map[string]string{
 			"dbAlias": dbAlias,
 			"project": projectID,
+			"id":      id,
 		},
 		Spec: map[string]interface{}{
 			"conn":    conn,
@@ -136,7 +143,7 @@ func generateDBSchema() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/modify-schema",
+		API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate",
 		Type: "db-schema",
 		Meta: map[string]string{
 			"dbAlias": dbAlias,

@@ -66,16 +66,23 @@ func generateEventingConfig() (*model.SpecObject, error) {
 	if err := survey.AskOne(&survey.Input{Message: "Enter project"}, &project); err != nil {
 		return nil, err
 	}
+
+	id := ""
+	if err := survey.AskOne(&survey.Input{Message: "Enter id"}, &id); err != nil {
+		return nil, err
+	}
+
 	dbAlias := ""
 	if err := survey.AskOne(&survey.Input{Message: "Enter DB Alias"}, &dbAlias); err != nil {
 		return nil, err
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/eventing/config",
+		API:  "/v1/config/projects/{project}/eventing/config/{id}",
 		Type: "eventing-config",
 		Meta: map[string]string{
 			"project": project,
+			"id":      id,
 		},
 		Spec: map[string]interface{}{
 			"dbAlias": dbAlias,

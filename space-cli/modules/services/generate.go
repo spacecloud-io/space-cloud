@@ -18,9 +18,9 @@ func generateService() (*model.SpecObject, error) {
 	if err := survey.AskOne(&survey.Input{Message: "Enter url: "}, &url); err != nil {
 		return nil, err
 	}
-
+	var endpoint interface{}
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/services/{id}",
+		API:  "/v1/config/projects/{project}/remote-service/service/{id}",
 		Type: "remote-services",
 		Meta: map[string]string{
 			"id":      service,
@@ -28,7 +28,7 @@ func generateService() (*model.SpecObject, error) {
 		},
 		Spec: map[string]interface{}{
 			"URL":       url,
-			"Endpoints": "{}",
+			"Endpoints": endpoint,
 		},
 	}
 

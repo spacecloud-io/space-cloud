@@ -16,7 +16,7 @@ func generateUserManagement() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/user-management/{provider}",
+		API:  "/v1/config/projects/{project}/user-management/provider{provider}",
 		Type: "auth-providers",
 		Meta: map[string]string{
 			"project":  project,
