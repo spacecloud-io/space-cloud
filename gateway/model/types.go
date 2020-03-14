@@ -100,6 +100,29 @@ type AuthUserInterface interface {
 	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (int, error)
 }
 
+// ModulesInterface is an interface consisting of functions of the modules module used by syncman
+type ModulesInterface interface {
+	// SetProjectConfig sets the config all modules
+	SetProjectConfig(config *config.Config) error
+	// SetGlobalConfig sets the auth secret and AESkey
+	SetGlobalConfig(projectID, secret, aesKey string)
+	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
+	SetCrudConfig(projectID string, crudConfig config.Crud) error
+	// SetServicesConfig sets the config of auth and functions modules
+	SetServicesConfig(projectID string, services *config.ServicesModule) error
+	// SetFileStoreConfig sets the config of auth and filestore modules
+	SetFileStoreConfig(projectID string, fileStore *config.FileStore) error
+	// SetEventingConfig sets the config of eventing module
+	SetEventingConfig(projectID string, eventingConfig *config.Eventing) error
+	// SetUsermanConfig set the config of the userman module
+	SetUsermanConfig(projectID string, auth config.Auth)
+
+	// Getters
+
+	GetSchemaModule() SchemaEventingInterface
+}
+
+
 // PostProcess filters the schema
 type PostProcess struct {
 	PostProcessAction []PostProcessAction
