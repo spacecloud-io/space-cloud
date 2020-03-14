@@ -19,8 +19,8 @@ func GetFileStoreConfig(project, commandName string, params map[string]string) (
 	}
 
 	// Generating the object
-	meta := map[string]string{"project": project}
-	s, err := utils.CreateSpecObject("/v1/config/projects/{project}/file-storage/config", commandName, meta, result)
+	meta := map[string]string{"project": project, "id": commandName}
+	s, err := utils.CreateSpecObject("/v1/config/projects/{project}/file-storage/config/{id}", commandName, meta, result)
 	if err != nil {
 		return nil, err
 	}

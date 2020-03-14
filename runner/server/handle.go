@@ -202,6 +202,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 					return
 				}
 			}
+
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) or version(%s) not present in state", serviceID[0], version[0])})
 			return
@@ -214,11 +215,13 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 					respServices[s] = val
 				}
 			}
+
 			if len(respServices) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
 				return
 			}
+
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
 			return
@@ -228,11 +231,13 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			s := fmt.Sprintf("%s-%s", val.ID, val.Version)
 			respServices[s] = val
 		}
+
 		if len(respServices) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("services not set")})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
 	}
@@ -350,15 +355,18 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 					return
 				}
 			}
+
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
 			return
 		}
+
 		if len(serviceRoutes) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("no routes not present in state")})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": serviceRoutes})
 	}

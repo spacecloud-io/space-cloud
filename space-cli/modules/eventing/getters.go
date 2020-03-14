@@ -63,8 +63,8 @@ func GetEventingConfig(project, commandName string, params map[string]string) (*
 	}
 
 	// Generating the object
-	meta := map[string]string{"project": project}
-	s, err := utils.CreateSpecObject("/v1/config/projects/{project}/eventing/config", commandName, meta, vPtr)
+	meta := map[string]string{"project": project, "id": commandName}
+	s, err := utils.CreateSpecObject("/v1/config/projects/{project}/eventing/config/{id}", commandName, meta, vPtr)
 	if err != nil {
 		return nil, err
 	}

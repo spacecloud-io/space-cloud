@@ -42,7 +42,6 @@ func Get(method, url string, params map[string]string, vPtr interface{}) error {
 	defer CloseTheCloser(resp.Body)
 
 	data, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println("data:", string(data))
 
 	if resp.StatusCode != 200 {
 		respBody := map[string]interface{}{}

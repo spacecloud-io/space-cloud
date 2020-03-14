@@ -11,7 +11,7 @@ import (
 
 //GetIngressRoutes gets ingress routes
 func GetIngressRoutes(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
-	url := fmt.Sprintf("/v1/config/projects/%s/routing/route", project)
+	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress", project)
 	// Get the spec from the server
 	result := make(map[string]interface{})
 	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
@@ -42,7 +42,7 @@ func GetIngressRoutes(project, commandName string, params map[string]string) ([]
 		delete(spec, "id")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/routing/{routeId}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/routing/ingress/{routeId}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

@@ -196,11 +196,13 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 			for k, coll := range project.Modules.Crud {
 				connections[k] = response{Conn: coll.Conn, Enabled: coll.Enabled, Type: coll.Type}
 			}
+
 			if len(connections) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbConnections not present in state")})
 				return
 			}
+
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"connections": connections})
 			return
@@ -213,6 +215,7 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present on state", dbAlias[0])})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		connection := response{Conn: coll.Conn, Enabled: coll.Enabled, Type: coll.Type}
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"connection": connection})
@@ -333,11 +336,13 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 					collectionsSchemas[s] = response{val.Schema}
 				}
 			}
+
 			if len(collectionsSchemas) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("schemas not present in state")})
 				return
 			}
+
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": collectionsSchemas})
 			return
@@ -362,6 +367,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("col(%s) not found", col[0])})
 				return
 			}
+
 			collectionSchema := make(map[string]response)
 			s := fmt.Sprintf("%s-%s", dbAlias[0], col[0])
 			collectionSchema[s] = response{Schema: temp.Schema}
@@ -369,6 +375,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": collectionSchema})
 			return
 		}
+
 		schemas := make(map[string]response)
 		for p, val := range coll.Collections {
 			s := fmt.Sprintf("%s-%s", dbAlias[0], p)
@@ -380,6 +387,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("schemas not present in state")})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": schemas})
 	}
@@ -459,11 +467,13 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 					collectionsRules[s] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
 				}
 			}
+
 			if len(collectionsRules) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbRules not present in state")})
 				return
 			}
+
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionsRules})
 			return
@@ -489,6 +499,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("col(%s) not present in config", col[0])})
 				return
 			}
+
 			collectionsRule := make(map[string]response)
 			s := fmt.Sprintf("%s-%s", dbAlias[0], col[0])
 			collectionsRule[s] = response{IsRealTimeEnabled: collection.IsRealTimeEnabled, Rules: collection.Rules}
@@ -502,11 +513,13 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			s := fmt.Sprintf("%s-%s", dbAlias[0], p)
 			collectionRules[s] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
 		}
+
 		if len(collectionRules) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbRules not present in state")})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionRules})
 	}

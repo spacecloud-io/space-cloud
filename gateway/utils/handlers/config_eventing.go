@@ -87,6 +87,7 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("ruleName(%s) not present in state", ruleName[0])})
 				return
 			}
+
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rule": rule})
 			return
@@ -97,6 +98,7 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing rules not present in state")})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": project.Modules.Eventing.Rules})
 	}
@@ -197,6 +199,7 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"dbAlias": project.Modules.Eventing.DBType, "enabled": project.Modules.Eventing.Enabled})
 	}
@@ -276,6 +279,7 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("type(%s) not present in state", typ[0])})
 				return
 			}
+
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
 			return
@@ -286,6 +290,7 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing schema not present in state")})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": project.Modules.Eventing.Schemas})
 	}
@@ -398,10 +403,12 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("type(%s) not present in state", typ[0])})
 				return
 			}
+
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"securityRule": rule})
 			return
 		}
+
 		if len(project.Modules.Eventing.SecurityRules) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing rules not present in state")})

@@ -83,13 +83,14 @@ func GetDbConfig(project, commandName string, params map[string]string) ([]*mode
 	var objs []*model.SpecObject
 	for _, item := range array {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"project": project, "dbAlias": spec["id"].(string)}
+		configID := fmt.Sprintf("%s-config", spec["id"].(string))
+		meta := map[string]string{"project": project, "dbAlias": spec["id"].(string), "id": configID}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/config", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/config/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +102,7 @@ func GetDbConfig(project, commandName string, params map[string]string) ([]*mode
 
 //GetDbSchema gets database schema
 func GetDbSchema(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
-	url := fmt.Sprintf("/v1/config/projects/%s/database/collections/modify-schema", project)
+	url := fmt.Sprintf("/v1/config/projects/%s/database/collections/schema/mutate", project)
 	// Get the spec from the server
 	result := make(map[string]interface{})
 	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
@@ -137,7 +138,7 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 		delete(spec, "id")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/modify-schema", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

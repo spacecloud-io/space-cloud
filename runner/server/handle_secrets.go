@@ -122,19 +122,23 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 					return
 				}
 			}
+
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("secret(%s) not present in state", name[0])})
 			return
 		}
+
 		secretsMap := make(map[string]*model.Secret)
 		for _, val := range secrets {
 			secretsMap[val.Name] = val
 		}
+
 		if len(secretsMap) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("secrets not present in state")})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"secrets": secretsMap})
 

@@ -151,6 +151,7 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 					return
 				}
 			}
+
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Route(%s) not found", routesID[0])})
 			return
@@ -159,11 +160,13 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		for _, val := range project.Modules.Routes {
 			routes[val.ID] = &config.Route{ID: val.ID, Source: val.Source, Targets: val.Targets}
 		}
+
 		if len(routes) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("routes not present in state")})
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"routes": routes})
 	}

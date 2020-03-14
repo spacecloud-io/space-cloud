@@ -11,7 +11,7 @@ import (
 
 //GetAuthProviders gets auth providers
 func GetAuthProviders(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
-	url := fmt.Sprintf("/v1/config/projects/%s/user-management", project)
+	url := fmt.Sprintf("/v1/config/projects/%s/user-management/provider", project)
 
 	// Get the spec from the server
 	result := make(map[string]interface{})
@@ -42,7 +42,7 @@ func GetAuthProviders(project, commandName string, params map[string]string) ([]
 		delete(spec, "provider")
 
 		// Printing the object on the screen
-		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/user-management/{provider}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/user-management/provider/{provider}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}
