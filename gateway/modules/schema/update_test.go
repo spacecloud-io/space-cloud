@@ -11,7 +11,7 @@ import (
 func TestSchema_ValidateUpdateOperation(t *testing.T) {
 
 	var Query = `type tweet {
-		id: ID! @id
+		id: ID! @primary
 		createdAt: DateTime! @createdAt
 		text: String
 		owner: String!
@@ -19,7 +19,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		cpi: Float!
 		diplomastudent: Boolean! @foreign(table:"shreyas",field:"diploma")
 		friends:[String!]!
-		update:DateTime@updatedAt
+		update:DateTime @updatedAt
 		mentor: shreyas
 	}
 	type shreyas {
@@ -31,7 +31,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 	var TestCases = config.Crud{
 		"mongo": &config.CrudStub{
 			Collections: map[string]*config.TableRule{
-				"tweet": &config.TableRule{
+				"tweet": {
 					Schema: Query,
 				},
 			},

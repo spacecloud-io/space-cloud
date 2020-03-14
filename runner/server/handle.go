@@ -309,12 +309,12 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 		req := new(request)
 		_ = json.NewDecoder(r.Body).Decode(req)
 
-		if err := s.driver.ApplyServiceRoutes(ctx, projectID, serviceID, req.Routes); err != nil {
+		err = s.driver.ApplyServiceRoutes(ctx, projectID, serviceID, req.Routes)
+		if err != nil {
 			logrus.Errorf("Failed to apply service routing rules - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
