@@ -44,7 +44,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 		c := client.CreateWebsocketClient(socket)
 		defer c.Close()
 
-		defer s.realtime.RemoveClient(c.ClientID())
+		defer s.modules.Realtime.RemoveClient(c.ClientID())
 
 		go c.RoutineWrite()
 
@@ -61,7 +61,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				data.Project = projectID
 
 				// Subscribe to realtime feed
-				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
+				feedData, err := s.modules.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					c.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
 				if err != nil {
@@ -80,7 +80,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 				_ = mapstructure.Decode(req.Data, data)
 				data.Project = projectID
 
-				s.realtime.Unsubscribe(clientID, data)
+				s.modules.Realtime.Unsubscribe(clientID, data)
 
 				// Send response to c
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
@@ -130,7 +130,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 		defer utils.CloseTheCloser(socket)
 
 		clientID := ksuid.New().String()
-		defer s.realtime.RemoveClient(clientID)
+		defer s.modules.Realtime.RemoveClient(clientID)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -218,7 +218,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					closeConnAliveRoutine <- true
 					return
 				}
-				dbAlias, err := s.graphql.GetDBAlias(v)
+				dbAlias, err := s.modules.Graphql.GetDBAlias(v)
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
@@ -237,7 +237,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				graphqlIDMapper.Store(m.ID, data.Group)
 
 				// Subscribe to realtime feed
-				feedData, err := s.realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
+				feedData, err := s.modules.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					feed.TypeName = "subscribe_" + feed.Group
 
 					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GqlData, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed), "find": feed.Find}}}
@@ -266,7 +266,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				data.ID = m.ID
 				data.Group = group.(string)
 
-				s.realtime.Unsubscribe(clientID, data)
+				s.modules.Realtime.Unsubscribe(clientID, data)
 				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GqlStop, Payload: payloadObject{}})
 				graphqlIDMapper.Delete(m.ID)
 			}

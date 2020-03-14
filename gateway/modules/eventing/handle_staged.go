@@ -22,7 +22,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}
 	m.lock.RLock()
 	project := m.project
-	dbAlias, col := m.config.DBType, eventingLogs
+	dbAlias, col := m.config.DBType, utils.TableEventingLogs
 	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
@@ -127,7 +127,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		return
 	}
 
-	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, eventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
 	}
 }
@@ -148,7 +148,7 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	}
 
 	var eventResponse model.EventResponse
-	if err := m.syncMan.MakeHTTPRequest(ctxLocal, http.MethodPost, eventDoc.URL, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+	if err := m.MakeInvocationHTTPRequest(ctxLocal, http.MethodPost, eventDoc, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
 		logrus.Errorf("error invoking web hook in eventing unable to send http request to url %s - %s", eventDoc.URL, err.Error())
 		return err
 	}
@@ -182,6 +182,6 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 		}
 	}
 
-	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, eventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
+	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, utils.TableEventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
 	return nil
 }

@@ -15,7 +15,7 @@ import (
 // PostProcessMethod to do processing on result
 func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interface{}) error {
 	// Gracefully exits if the result is nil
-	if result == nil {
+	if result == nil || postProcess == nil {
 		return nil
 	}
 

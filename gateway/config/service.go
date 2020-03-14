@@ -60,10 +60,22 @@ type Resources struct {
 
 // Docker describes the docker configurations
 type Docker struct {
-	Image  string   `json:"image" yaml:"image"`
-	Cmd    []string `json:"cmd" yaml:"cmd"`
-	Secret string   `json:"secret" yaml:"secret"`
+	Image           string          `json:"image" yaml:"image"`
+	Cmd             []string        `json:"cmd" yaml:"cmd"`
+	Secret          string          `json:"secret" yaml:"secret"`
+	ImagePullPolicy ImagePullPolicy `json:"imagePullPolicy" yaml:"imagePullPolicy"`
 }
+
+// ImagePullPolicy describes the image pull policy for docker config
+type ImagePullPolicy string
+
+const (
+	// PullAlways is used for always pull policy
+	PullAlways ImagePullPolicy = "always"
+
+	// PullIfNotExists is use for pull if not exist locally pull policy
+	PullIfNotExists ImagePullPolicy = "pull-if-not-exists"
+)
 
 // Affinity describes the affinity rules of a service
 type Affinity struct {
@@ -106,22 +118,3 @@ const (
 	// Code indicates that the user's code isn't containerized. We need to use a custom runtime for this
 	Code Runtime = "code"
 )
-
-// Expose describes how an http service needs to be exposed
-type Expose struct {
-	Hosts []string     `json:"hosts" yaml:"hosts"`
-	Rules []ExposeRule `json:"rules" yaml:"rules"`
-}
-
-// ExposeRule describes the rules for exposing an http service
-type ExposeRule struct {
-	URI  ExposeRuleURI `json:"uri" yaml:"uri"`
-	Port int32         `json:"port" yaml:"port"`
-}
-
-// ExposeRuleURI describes the the http routes which need to be exposed
-type ExposeRuleURI struct {
-	Prefix  *string `json:"prefix" yaml:"prefix"`
-	Exact   *string `json:"exact" yaml:"exact"`
-	Rewrite *string `json:"rewrite" yaml:"rewrite"`
-}

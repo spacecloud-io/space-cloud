@@ -13,8 +13,8 @@ func getServiceUniqueName(project, service, version string) string {
 	return fmt.Sprintf("%s-%s-%s", project, service, version)
 }
 
-func getServiceAccountName(projectID, serviceID string) string {
-	return fmt.Sprintf("%s-%s", projectID, serviceID)
+func getServiceAccountName(serviceID string) string {
+	return serviceID
 }
 
 func getDeploymentName(serviceID, version string) string {
