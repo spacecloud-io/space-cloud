@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -134,7 +135,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	}
 
 	// We will ignore the error for the create project request
-	_ = s.cb(s.projectConfig)
+	_ = s.modules.SetProjectConfig(s.projectConfig)
 
 	if s.storeType == "none" {
 		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -159,6 +160,8 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
+	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -168,15 +171,15 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	_ = s.cb(s.projectConfig)
+	if err := s.modules.SetProjectConfig(s.projectConfig); err != nil {
+		logrus.Errorf("error setting project config - %s", err.Error())
+		return err
+	}
+
 	return s.setProject(ctx, project)
 }
 
 func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
-	if err := s.cb(&config.Config{Projects: []*config.Project{project}}); err != nil {
-		return err
-	}
-
 	s.setProjectConfig(project)
 
 	if s.storeType == "none" {
@@ -204,7 +207,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 			return err
 		}
 	}
-	if err := s.cb(s.projectConfig); err != nil {
+	if err := s.modules.SetProjectConfig(s.projectConfig); err != nil {
 		return err
 	}
 

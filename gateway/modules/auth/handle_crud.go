@@ -40,10 +40,6 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 		}
 	}
 
-	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
-		return http.StatusBadRequest, err
-	}
-
 	return http.StatusOK, nil
 }
 
@@ -80,10 +76,6 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col
 	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
-	}
-
-	if err := m.schema.ValidateUpdateOperation(dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
-		return http.StatusBadRequest, err
 	}
 
 	return http.StatusOK, nil

@@ -3,6 +3,7 @@ package syncman
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -22,6 +23,11 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	}
 	projectConfig.Modules.Services.Services[service] = value
 
+	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
+		logrus.Errorf("error setting services config - %s", err.Error())
+		return err
+	}
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -36,6 +42,11 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string) er
 		return err
 	}
 	delete(projectConfig.Modules.Services.Services, service)
+
+	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {
+		logrus.Errorf("error setting services config - %s", err.Error())
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }

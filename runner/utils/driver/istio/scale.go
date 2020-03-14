@@ -60,12 +60,8 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 
 	// Update the replica count
 	deployment.Spec.Replicas = &replicaCount
-	if _, err := i.kube.AppsV1().Deployments(ns).Update(deployment); err != nil {
+	if err := i.applyDeployment(ns, deployment); err != nil {
 		logrus.Errorf("Could not adjust scale: %s", err.Error())
-		return err
-	}
-	if err := i.cache.setDeployment(ns, deployment.Name, deployment); err != nil {
-		logrus.Errorf("Could not update cache in adjust scale: %s", err.Error())
 		return err
 	}
 
