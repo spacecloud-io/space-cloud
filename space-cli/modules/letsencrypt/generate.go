@@ -14,11 +14,6 @@ func generateLetsEncryptDomain() (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	id := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter  id"}, &id); err != nil {
-		return nil, err
-	}
-
 	whiteListedDomain := strings.Split(whiteListedDomains, ",")
 	wld := make(map[string]interface{})
 	for k, v := range whiteListedDomain {
@@ -34,7 +29,7 @@ func generateLetsEncryptDomain() (*model.SpecObject, error) {
 		Type: "eventing-rule",
 		Meta: map[string]string{
 			"project": project,
-			"id":      id,
+			"id":      "letsencrypt-config",
 		},
 		Spec: map[string]interface{}{
 			"white listed domain": wld,
