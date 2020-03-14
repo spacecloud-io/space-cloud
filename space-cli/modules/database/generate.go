@@ -67,11 +67,6 @@ func generateDBConfig() (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	id := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter  id"}, &id); err != nil {
-		return nil, err
-	}
-
 	var dbType string
 	if err := survey.AskOne(&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &dbType); err != nil {
 		return nil, err
@@ -112,7 +107,7 @@ func generateDBConfig() (*model.SpecObject, error) {
 		Meta: map[string]string{
 			"dbAlias": dbAlias,
 			"project": projectID,
-			"id":      id,
+			"id":      dbType + "-config",
 		},
 		Spec: map[string]interface{}{
 			"conn":    conn,

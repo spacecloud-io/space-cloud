@@ -12,11 +12,11 @@ import (
 
 var testQueries = `
  type tweet {
- 	id: ID @id
- 	createdAt: DateTime@createdAt
+ 	id: ID @primary
+ 	createdAt: DateTime @createdAt
  	text: String
  	owner: [String]
- 	location: location@foreign
+ 	location: location @foreign
 	age : Float!
 	isMale:Boolean
 	exp:Integer
@@ -25,12 +25,12 @@ var testQueries = `
    }
 
    type test {
-	id : ID @id
+	id : ID @primary
 	person : sharad @link(table:sharad, from:Name, to:isMale)
    }
 
    type location {
- 	id: ID! @id
+ 	id: ID! @primary
  	latitude: Float
  	longitude: Float
    }
@@ -39,7 +39,7 @@ var testQueries = `
  	  Surname : String!
  	  age : Integer!
  	  isMale : Boolean!
- 	  dob : DateTime@createdAt
+ 	  dob : DateTime @createdAt
    }
    type event_logs {
  	name: String
@@ -48,13 +48,13 @@ var testQueries = `
 var Parsedata = config.Crud{
 	"mongo": &config.CrudStub{
 		Collections: map[string]*config.TableRule{
-			"tweet": &config.TableRule{
+			"tweet": {
 				Schema: testQueries,
 			},
-			"test": &config.TableRule{
+			"test": {
 				Schema: testQueries,
 			},
-			"location": &config.TableRule{
+			"location": {
 				Schema: testQueries,
 			},
 		},

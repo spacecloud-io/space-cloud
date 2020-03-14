@@ -6,11 +6,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	eventing "github.com/spaceuptech/space-cli/modules/Eventing"
+	"github.com/spaceuptech/space-cli/modules"
+	"github.com/spaceuptech/space-cli/modules/auth"
 	"github.com/spaceuptech/space-cli/modules/database"
+	"github.com/spaceuptech/space-cli/modules/eventing"
 	"github.com/spaceuptech/space-cli/modules/filestore"
 	"github.com/spaceuptech/space-cli/modules/ingress"
 	"github.com/spaceuptech/space-cli/modules/letsencrypt"
+	"github.com/spaceuptech/space-cli/modules/project"
+	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
+	"github.com/spaceuptech/space-cli/modules/routes"
 	"github.com/spaceuptech/space-cli/modules/services"
 	"github.com/spaceuptech/space-cli/modules/userman"
 )
@@ -85,6 +90,91 @@ func main() {
 				{
 					Name:   "ingress-routes",
 					Action: ingress.ActionGenerateIngressRouting,
+				},
+			},
+		},
+		{
+			Name:  "get",
+			Usage: "gets different services",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "project",
+					Usage:  "The id of the project",
+					EnvVar: "PROJECT_ID",
+				},
+			},
+			Subcommands: []cli.Command{
+				{
+					Name:   "all",
+					Action: modules.GetAllProjects,
+				},
+				{
+					Name:   "project",
+					Action: project.ActionGetProjectConfig,
+				},
+				{
+					Name:   "remote-services",
+					Action: remoteservices.ActionGetRemoteServices,
+				},
+				{
+					Name:   "auth-providers",
+					Action: auth.ActionGetAuthProviders,
+				},
+				{
+					Name:   "eventing-triggers",
+					Action: eventing.ActionGetEventingTrigger,
+				},
+				{
+					Name:   "eventing-config",
+					Action: eventing.ActionGetEventingConfig,
+				},
+				{
+					Name:   "eventing-schema",
+					Action: eventing.ActionGetEventingSchema,
+				},
+				{
+					Name:   "eventing-rule",
+					Action: eventing.ActionGetEventingSecurityRule,
+				},
+				{
+					Name:   "filestore-config",
+					Action: filestore.ActionGetFileStoreConfig,
+				},
+				{
+					Name:   "filestore-rules",
+					Action: filestore.ActionGetFileStoreRule,
+				},
+				{
+					Name:   "db-rules",
+					Action: database.ActionGetDbRules,
+				},
+				{
+					Name:   "db-config",
+					Action: database.ActionGetDbConfig,
+				},
+				{
+					Name:   "db-schema",
+					Action: database.ActionGetDbSchema,
+				},
+				{
+					Name:   "letsencrypt",
+					Action: letsencrypt.ActionGetLetsEncrypt,
+				},
+				{
+					Name:   "ingress-routes",
+					Action: routes.ActionGetIngressRoutes,
+				},
+				{
+					Name:   "services-routes",
+					Action: services.ActionGetServicesRoutes,
+				},
+				{
+					Name:   "services-secrets",
+					Action: services.ActionGetServicesSecrets,
+				},
+				{
+					Name:   "services",
+					Action: services.ActionGetServices,
 				},
 			},
 		},
@@ -182,6 +272,6 @@ func main() {
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatalln("Failed to start space cli:", err)
+		logrus.Fatalln("Failed to run execute command:", err)
 	}
 }

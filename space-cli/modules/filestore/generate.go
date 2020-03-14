@@ -54,11 +54,6 @@ func generateFilestoreConfig() (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	id := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter  id"}, &id); err != nil {
-		return nil, err
-	}
-
 	storeType := ""
 	if err := survey.AskOne(&survey.Select{Message: "Enter Storetype", Options: []string{"Local", "AmazonS3", "GCPStorage"}}, &storeType); err != nil {
 		return nil, err
@@ -94,7 +89,7 @@ func generateFilestoreConfig() (*model.SpecObject, error) {
 		Type: "filestore-config",
 		Meta: map[string]string{
 			"project": projectID,
-			"id":      id,
+			"id":      "filestore-config",
 		},
 		Spec: map[string]interface{}{
 			"bucket":    bucket,

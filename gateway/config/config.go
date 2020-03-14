@@ -90,9 +90,9 @@ type CrudStub struct {
 
 // TableRule contains the config at the collection level
 type TableRule struct {
-	IsRealTimeEnabled bool             `json:"isRealtimeEnabled" yaml:"isRealtimeEnabled"`
-	Rules             map[string]*Rule `json:"rules" yaml:"rules"` // The key here is query, insert, update or delete
-	Schema            string           `json:"schema" yaml:"schema"`
+	IsRealTimeEnabled bool             `json:"isRealtimeEnabled,omitempty" yaml:"isRealtimeEnabled,omitempty"`
+	Rules             map[string]*Rule `json:"rules,omitempty" yaml:"rules,omitempty"` // The key here is query, insert, update or delete
+	Schema            string           `json:"schema,omitempty" yaml:"schema,omitempty"`
 }
 
 // Rule is the authorisation object at the query level
@@ -185,7 +185,7 @@ type Eventing struct {
 	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
 	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
-	Schemas       map[string]SchemaObject `json:"schemas" yaml:"schemas"`
+	Schemas       map[string]SchemaObject `json:"schemas,omitempty" yaml:"schemas,omitempty"`
 }
 
 // EventingRule holds an eventing rule
