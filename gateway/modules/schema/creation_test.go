@@ -176,6 +176,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "changing type of column with primary key",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col3": &model.FieldType{FieldName: "col3", Kind: model.TypeID, IsFieldTypeRequired: true, IsPrimary: true}}}},
+				currentSchema: model.Collection{"table1": model.Fields{"col3": &model.FieldType{FieldName: "col3", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsPrimary: true}}},
+			},
+			fields:  fields{crud: crudMySQL, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP PRIMARY KEY", "ALTER TABLE test.table1 DROP COLUMN col3", "ALTER TABLE test.table1 ADD col3 varchar(50)", "ALTER TABLE test.table1 MODIFY col3 varchar(50) NOT NULL", "ALTER TABLE test.table1 ADD PRIMARY KEY (col3)"},
+			wantErr: false,
+		},
+		{
 			name: "removing one column",
 			args: args{
 				dbAlias:       "mysql",
@@ -734,18 +747,6 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				tableName:     "table1",
 				project:       "test",
 				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 2}}}}},
-				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
-			},
-			fields:  fields{crud: crudMySQL, project: "test"},
-			wantErr: true,
-		},
-		{
-			name: "adding invalid sort key",
-			args: args{
-				dbAlias:       "mysql",
-				tableName:     "table1",
-				project:       "test",
-				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 1, Sort: "descc"}}}}},
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
@@ -1514,18 +1515,6 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			fields:  fields{crud: crudSQLServer, project: "test"},
 			wantErr: true,
 		},
-		{
-			name: "adding invalid sort key",
-			args: args{
-				dbAlias:       "sqlserver",
-				tableName:     "table1",
-				project:       "test",
-				parsedSchema:  model.Type{"sqlserver": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 1, Sort: "descc"}}}}},
-				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
-			},
-			fields:  fields{crud: crudSQLServer, project: "test"},
-			wantErr: true,
-		},
 
 		// // //postgres
 		{
@@ -2134,7 +2123,20 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "changing sort of index key ",
+			name: "changing column type of single field unique index",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &model.FieldType{FieldName: "col2", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 2, Sort: "desc"}}}}},
+				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeString, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "desc"}}, "col2": &model.FieldType{FieldName: "col2", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"DROP INDEX test.index__table1__i1", "ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 bigint", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 desc)"},
+			wantErr: false,
+		},
+		{
+			name: "changing sort of index key",
 			args: args{
 				dbAlias:       "postgres",
 				tableName:     "table1",
@@ -2153,18 +2155,6 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				tableName:     "table1",
 				project:       "test",
 				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 2}}}}},
-				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
-			},
-			fields:  fields{crud: crudPostgres, project: "test"},
-			wantErr: true,
-		},
-		{
-			name: "adding invalid sort key",
-			args: args{
-				dbAlias:       "postgres",
-				tableName:     "table1",
-				project:       "test",
-				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsIndex: true, IndexInfo: &model.TableProperties{Order: 1, Sort: "descc"}}}}},
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
@@ -2189,7 +2179,8 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 
 			if !tt.wantErr {
 				if len(got) != len(tt.want) {
-					t.Errorf("name = %v, Schema.generateCreationQueries() length error = %v, want %v", tt.name, got, tt.want)
+					t.Errorf("Schema.generateCreationQueries() length error: got = %v, want = %v", got, tt.want)
+					return
 				}
 				if tt.isSort {
 					got = sortArray(got)
@@ -2198,7 +2189,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				for i, v := range got {
 					if tt.want[i] != v {
 						log.Println("sort:", tt.isSort)
-						t.Errorf("name = %v, Schema.generateCreationQueries() = %v, want %v", tt.name, got, tt.want)
+						t.Errorf("Schema.generateCreationQueries() = %v, want %v", got, tt.want)
 						return
 					}
 				}
