@@ -90,8 +90,8 @@ func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
 	return len(s.services), nil
 }
 
-// CreateProjectConfig creates the config for the project
-func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Project) (int, error) {
+// ApplyProjectConfig creates the config for the project
+func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Project) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -102,19 +102,35 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 		return http.StatusInternalServerError, err
 	}
 
+	var doesProjectExists bool
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
-			return http.StatusConflict, errors.New("project already exists in config")
+			p.Name = project.Name
+			p.AESkey = project.AESkey
+			p.Secret = project.Secret
+			p.ContextTime = project.ContextTime
+
+			// Mark project as existing
+			doesProjectExists = true
 		}
 	}
 
-	s.projectConfig.Projects = append(s.projectConfig.Projects, project)
+	if !doesProjectExists {
+		// Append project with default modules to projects array
+		project.Modules = &config.Modules{
+			FileStore: &config.FileStore{},
+			Services:  &config.ServicesModule{},
+			Auth:      map[string]*config.AuthStub{},
+			Crud:      map[string]*config.CrudStub{},
+		}
+		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
-	// Create a project in the runner as well
-	if s.runnerAddr != "" {
-		params := map[string]interface{}{"id": project.ID}
-		if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project/%s", s.runnerAddr, project.ID), token, "", params, &map[string]interface{}{}); err != nil {
-			return http.StatusInternalServerError, err
+		// Create a project in the runner as well
+		if s.runnerAddr != "" {
+			params := map[string]interface{}{"id": project.ID}
+			if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project/%s", s.runnerAddr, project.ID), token, "", params, &map[string]interface{}{}); err != nil {
+				return http.StatusInternalServerError, err
+			}
 		}
 	}
 

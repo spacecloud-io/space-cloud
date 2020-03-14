@@ -29,6 +29,10 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 			return
 		}
 
+		if projectConfig.ContextTime == 0 {
+			projectConfig.ContextTime = 10
+		}
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTime)*time.Second)
 		defer cancel()
