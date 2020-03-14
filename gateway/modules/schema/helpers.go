@@ -69,6 +69,7 @@ func (c *creationModule) addNotNull() string {
 		return ""
 	}
 
+	c.currentColumnInfo.IsFieldTypeRequired = true // Mark the field as processed
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " MODIFY " + c.ColumnName + " " + c.columnType + " NOT NULL"
@@ -118,8 +119,9 @@ func (c *creationModule) addNewColumn() string {
 	return ""
 }
 
-func (c *creationModule) removeColumn() string {
-	return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP COLUMN " + c.ColumnName + ""
+func (c *creationModule) removeColumn() []string {
+	queries := c.removeDirectives()
+	return append(queries, "ALTER TABLE "+getTableName(c.project, c.TableName, c.removeProjectScope)+" DROP COLUMN "+c.ColumnName+"")
 }
 
 func (c *creationModule) addPrimaryKey() string {
@@ -128,6 +130,7 @@ func (c *creationModule) addPrimaryKey() string {
 		return ""
 	}
 
+	c.currentColumnInfo.IsPrimary = true // Mark the field as processed
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD PRIMARY KEY (" + c.ColumnName + ")"
@@ -158,6 +161,7 @@ func (c *creationModule) removePrimaryKey() string {
 }
 
 func (c *creationModule) addForeignKey() string {
+	c.currentColumnInfo.IsForeign = true // Mark the field as processed
 	return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " FOREIGN KEY (" + c.ColumnName + ") REFERENCES " + getTableName(c.project, c.realColumnInfo.JointTable.Table, c.removeProjectScope) + " (" + c.realColumnInfo.JointTable.To + ")"
 }
 
@@ -188,6 +192,9 @@ func (c *creationModule) addDefaultKey() string {
 	if err != nil {
 		return ""
 	}
+
+	c.currentColumnInfo.IsDefault = true // Mark the field as processed
+	c.currentColumnInfo.Default = c.realColumnInfo.Default
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ALTER " + c.ColumnName + " SET DEFAULT " + c.typeSwitch()
@@ -225,6 +232,7 @@ func (c *creationModule) removeForeignKey() []string {
 		return nil
 	}
 
+	c.currentColumnInfo.IsForeign = false
 	switch utils.DBType(dbType) {
 	case utils.MySQL:
 		return []string{"ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP FOREIGN KEY c_" + c.TableName + "_" + c.ColumnName, "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " DROP INDEX c_" + c.TableName + "_" + c.ColumnName}
@@ -281,6 +289,11 @@ func getTableName(project, table string, removeProjectScope bool) string {
 
 func (c *creationModule) addColumn(dbType string) []string {
 	var queries []string
+
+	c.currentColumnInfo = &model.FieldType{
+		FieldName: c.realColumnInfo.FieldName,
+		Kind:      c.realColumnInfo.Kind,
+	}
 
 	if c.columnType != "" {
 		// add a new column with data type as columntype
@@ -352,17 +365,43 @@ func (c *creationModule) modifyColumn() []string {
 	return queries
 }
 
+func (c *creationModule) removeDirectives() []string {
+	var queries []string
+
+	if c.currentColumnInfo.IsForeign {
+		queries = append(queries, c.removeForeignKey()...)
+		c.currentColumnInfo.IsForeign = false
+	}
+
+	if c.currentColumnInfo.IsDefault {
+		queries = append(queries, c.removeDefaultKey())
+		c.currentColumnInfo.IsDefault = false
+	}
+
+	if c.currentColumnInfo.IsPrimary {
+		queries = append(queries, c.removePrimaryKey())
+		c.currentColumnInfo.IsPrimary = false
+	}
+
+	if c.currentColumnInfo.IsIndex {
+		if _, p := c.currentIndexMap[c.currentColumnInfo.IndexInfo.Group]; p {
+			queries = append(queries, removeIndex(c.dbAlias, c.project, c.TableName, c.currentColumnInfo.IndexInfo.Group, c.removeProjectScope))
+			delete(c.currentIndexMap, c.currentColumnInfo.IndexInfo.Group)
+		}
+	}
+
+	return queries
+}
+
 // modifyColumnType drop the column then creates a new column with provided type
 func (c *creationModule) modifyColumnType(dbType string) []string {
 	queries := []string{}
 
-	if c.currentColumnInfo.IsForeign {
-		queries = append(queries, c.removeForeignKey()...)
-	}
-	queries = append(queries, c.removeColumn())
+	// Remove the column
+	queries = append(queries, c.removeColumn()...)
 
-	q := c.addColumn(dbType)
-	queries = append(queries, q...)
+	// Add the column back again
+	queries = append(queries, c.addColumn(dbType)...)
 
 	return queries
 }
@@ -401,62 +440,39 @@ type indexStruct struct {
 	IndexMap      []*model.FieldType
 }
 
-func getRealIndexMap(realTableInfo model.Fields) (map[string]*indexStruct, error) {
-	realIndexMap := make(map[string]*indexStruct)
-	for _, realColumnInfo := range realTableInfo {
-		if realColumnInfo.IsIndex {
-			if value, ok := realIndexMap[realColumnInfo.IndexInfo.Group]; ok {
-				value.IndexMap = append(value.IndexMap, realColumnInfo)
-			} else {
-				realIndexMap[realColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*model.FieldType{realColumnInfo}}
+func getIndexMap(tableInfo model.Fields) (map[string]*indexStruct, error) {
+	indexMap := make(map[string]*indexStruct)
+
+	// Iterate over each column of table
+	for _, columnInfo := range tableInfo {
+
+		// We are only interested in the columns which have an index on them
+		if columnInfo.IsIndex {
+
+			// Append the column to te index map. Make sure we create an empty array if no index by the provided name exists
+			value, ok := indexMap[columnInfo.IndexInfo.Group]
+			if !ok {
+				value = &indexStruct{IndexMap: []*model.FieldType{}}
+				indexMap[columnInfo.IndexInfo.Group] = value
 			}
-			if realColumnInfo.IsUnique {
-				realIndexMap[realColumnInfo.IndexInfo.Group].IsIndexUnique = true
-			}
-			if !(realColumnInfo.IndexInfo.Sort == "asc" || realColumnInfo.IndexInfo.Sort == "desc") {
-				return nil, errors.New("Invalid Sort")
+			value.IndexMap = append(value.IndexMap, columnInfo)
+
+			// Mark the index group as unique if even on column had the unique tag
+			if columnInfo.IsUnique {
+				indexMap[columnInfo.IndexInfo.Group].IsIndexUnique = true
 			}
 		}
 	}
 
-	for _, indexValue := range realIndexMap {
+	for indexName, indexValue := range indexMap {
 		var v indexStore = indexValue.IndexMap
 		sort.Stable(v)
 		indexValue.IndexMap = v
 		for i, column := range indexValue.IndexMap {
 			if i+1 != column.IndexInfo.Order {
-				return nil, errors.New("Index Order Invalid")
+				return nil, fmt.Errorf("invalid order sequence proveded for index (%s)", indexName)
 			}
 		}
 	}
-	return realIndexMap, nil
-}
-
-func getCurrentIndexMap(currentTableInfo model.Fields) (map[string]*indexStruct, error) {
-	currentIndexMap := make(map[string]*indexStruct)
-	for _, currentColumnInfo := range currentTableInfo {
-		if currentColumnInfo.IsIndex {
-			if value, ok := currentIndexMap[currentColumnInfo.IndexInfo.Group]; ok {
-				value.IndexMap = append(value.IndexMap, currentColumnInfo)
-			} else {
-				currentIndexMap[currentColumnInfo.IndexInfo.Group] = &indexStruct{IndexMap: []*model.FieldType{currentColumnInfo}}
-			}
-			if currentColumnInfo.IsUnique {
-				currentIndexMap[currentColumnInfo.IndexInfo.Group].IsIndexUnique = true
-			}
-		}
-	}
-
-	for _, indexValue := range currentIndexMap {
-		var v indexStore = indexValue.IndexMap
-		sort.Stable(v)
-		indexValue.IndexMap = v
-		for i, column := range indexValue.IndexMap {
-			if i+1 != column.IndexInfo.Order {
-				return nil, errors.New("Index Order Invalid")
-			}
-		}
-	}
-
-	return currentIndexMap, nil
+	return indexMap, nil
 }
