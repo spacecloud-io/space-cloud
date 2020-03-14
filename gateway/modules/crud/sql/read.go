@@ -8,6 +8,7 @@ import (
 
 	"github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
+	"github.com/sirupsen/logrus"
 
 	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
@@ -119,6 +120,8 @@ func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequ
 	if err != nil {
 		return 0, nil, err
 	}
+
+	logrus.Debugf("Executing sql read query: %s - %v", sqlString, args)
 
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {

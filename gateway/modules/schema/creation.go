@@ -13,6 +13,7 @@ import (
 
 type creationModule struct {
 	dbAlias, project, TableName, ColumnName, columnType string
+	currentIndexMap                                     map[string]*indexStruct
 	currentColumnInfo, realColumnInfo                   *model.FieldType
 	schemaModule                                        *Schema
 	removeProjectScope                                  bool
@@ -90,8 +91,44 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		}
 	}
 
+	// Get index maps for each table
+	realIndexMap, err := getIndexMap(realTableInfo)
+	if err != nil {
+		return nil, err
+	}
+	currentIndexMap, err := getIndexMap(currentTableInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove the unwanted columns first
+	for currentColName, currentColValue := range currentSchema {
+		realColValue, ok := realSchema[currentColName]
+		// if table doesn't exist handle it grace fully
+		if !ok {
+			continue
+		}
+		for currentFieldKey, currentFieldStruct := range currentColValue {
+			realField, ok := realColValue[currentFieldKey]
+			if !ok || realField.IsLinked {
+				// remove field from current table
+				c := creationModule{
+					dbAlias:            dbAlias,
+					project:            project,
+					TableName:          currentColName,
+					ColumnName:         currentFieldKey,
+					currentColumnInfo:  currentFieldStruct,
+					currentIndexMap:    currentIndexMap,
+					removeProjectScope: s.removeProjectScope,
+					schemaModule:       s,
+				}
+				batchedQueries = append(batchedQueries, c.removeColumn()...)
+			}
+		}
+	}
+
 	for realColumnName, realColumnInfo := range realTableInfo {
-		// Ignore the field if its linked
+		// Ignore the field if its linked. We will be removing the column if it exists later on.
 		if realColumnInfo.IsLinked {
 			continue
 		}
@@ -107,6 +144,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 				}
 			}
 		}
+
 		currentColumnInfo, ok := currentTableInfo[realColumnName]
 		columnType, err := getSQLType(dbType, realColumnInfo.Kind)
 		if err != nil {
@@ -120,6 +158,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			columnType:         columnType,
 			currentColumnInfo:  currentColumnInfo,
 			realColumnInfo:     realColumnInfo,
+			currentIndexMap:    currentIndexMap,
 			schemaModule:       s,
 			removeProjectScope: s.removeProjectScope,
 		}
@@ -137,52 +176,15 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind {
 					// for changing the type of column, drop the column then add new column
 					queries := c.modifyColumnType(dbType)
-
-					batchedQueries = append(batchedQueries, queries...)
-				} else {
-					// make changes according to the changes in directives
-					queries := c.modifyColumn()
-
 					batchedQueries = append(batchedQueries, queries...)
 				}
+				// make changes according to the changes in directives
+				queries := c.modifyColumn()
+				batchedQueries = append(batchedQueries, queries...)
 			}
 		}
 	}
 
-	for currentColName, currentColValue := range currentSchema {
-		realColValue, ok := realSchema[currentColName]
-		// if table doesn't exist handle it grace fully
-		if !ok {
-			continue
-		}
-		for currentFieldKey, currentFieldStruct := range currentColValue {
-			realField, ok := realColValue[currentFieldKey]
-			if !ok || realField.IsLinked {
-				// remove field from current tabel
-				c := creationModule{
-					dbAlias:            dbAlias,
-					project:            project,
-					TableName:          currentColName,
-					ColumnName:         currentFieldKey,
-					currentColumnInfo:  currentFieldStruct,
-					removeProjectScope: s.removeProjectScope,
-				}
-				if c.currentColumnInfo.IsForeign {
-					batchedQueries = append(batchedQueries, c.removeForeignKey()...)
-				}
-				batchedQueries = append(batchedQueries, c.removeColumn())
-			}
-		}
-	}
-
-	realIndexMap, err := getRealIndexMap(realTableInfo)
-	if err != nil {
-		return nil, err
-	}
-	currentIndexMap, err := getCurrentIndexMap(currentTableInfo)
-	if err != nil {
-		return nil, err
-	}
 	for indexName, fields := range realIndexMap {
 		if _, ok := currentIndexMap[indexName]; !ok {
 			batchedQueries = append(batchedQueries, addIndex(dbType, project, tableName, indexName, fields.IsIndexUnique, s.removeProjectScope, fields.IndexMap))
