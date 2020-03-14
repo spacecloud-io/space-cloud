@@ -26,7 +26,7 @@ func generateLetsEncryptDomain() (*model.SpecObject, error) {
 
 	v := &model.SpecObject{
 		API:  "/v1/config/projects/{project}/letsencrypt/config/{id}",
-		Type: "eventing-rule",
+		Type: "letsencrypt",
 		Meta: map[string]string{
 			"project": project,
 			"id":      "letsencrypt-config",
