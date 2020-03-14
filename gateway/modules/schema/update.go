@@ -186,7 +186,7 @@ func (s *Schema) validateUnsetOperation(dbAlias, col string, doc interface{}, sc
 		return err
 	}
 	if dbType == string(utils.Mongo) {
-		for fieldName, _ := range v {
+		for fieldName := range v {
 			columnInfo, ok := schemaDoc[fieldName]
 			if ok {
 				if columnInfo.IsFieldTypeRequired {
@@ -199,7 +199,7 @@ func (s *Schema) validateUnsetOperation(dbAlias, col string, doc interface{}, sc
 	}
 
 	if dbType == string(utils.Postgres) || dbType == string(utils.MySQL) || dbType == string(utils.SQLServer) {
-		for fieldName, _ := range v {
+		for fieldName := range v {
 			columnInfo, ok := schemaDoc[fieldName]
 			if ok {
 				if columnInfo.Kind == model.TypeJSON {
