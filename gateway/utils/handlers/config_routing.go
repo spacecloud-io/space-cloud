@@ -75,18 +75,15 @@ func HandleGetRoutingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"routes": routes})
+		_ = json.NewEncoder(w).Encode(routes)
 	}
 }
 
 // HandleSetProjectRoute adds a route in specified project config
 func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type request struct {
-		Route config.Route `json:"route"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		value := request{}
-		_ = json.NewDecoder(r.Body).Decode(&value)
+		value := new(config.Route)
+		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
@@ -102,7 +99,7 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		if err := syncMan.SetProjectRoute(ctx, projectID, &value.Route); err != nil {
+		if err := syncMan.SetProjectRoute(ctx, projectID, value); err != nil {
 			logrus.Errorf("error handling set project route in handlers unable to add route in project config got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
