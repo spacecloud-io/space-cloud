@@ -17,6 +17,10 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	if err != nil {
 		return err
 	}
+
+	if projectConfig.Modules.Services.Services == nil {
+		projectConfig.Modules.Services.Services = config.Services{}
+	}
 	projectConfig.Modules.Services.Services[service] = value
 
 	if err := s.modules.SetServicesConfig(project, projectConfig.Modules.Services); err != nil {

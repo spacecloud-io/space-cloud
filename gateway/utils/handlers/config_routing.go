@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -111,6 +112,63 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
+	}
+}
+
+//HandleGetProjectRoute returns handler to get project route
+func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//get project id and routes id from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		routesID, exists := r.URL.Query()["routesID"]
+
+		//get project config
+		project, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		//check if routes present in url
+		if exists {
+			for _, val := range project.Modules.Routes {
+				if val.ID == routesID[0] {
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(map[string]interface{}{"route": val})
+					return
+				}
+			}
+
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Route(%s) not found", routesID[0])})
+			return
+		}
+		routes := make(map[string]*config.Route)
+		for _, val := range project.Modules.Routes {
+			routes[val.ID] = &config.Route{ID: val.ID, Source: val.Source, Targets: val.Targets}
+		}
+
+		if len(routes) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("routes not present in state")})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"routes": routes})
 	}
 }
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -65,6 +66,7 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		// get nameSpace from requestUrl!
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+		name := vars["name"]
 
 		// Parse request body
 		secretObj := new(model.Secret)
@@ -73,6 +75,8 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
+
+		secretObj.Name = name
 
 		// create/update secret
 		if err := s.driver.CreateSecret(projectID, secretObj); err != nil {
@@ -100,6 +104,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+		name, exists := r.URL.Query()["name"]
 
 		// list all secrets
 		secrets, err := s.driver.ListSecrets(projectID)
@@ -109,7 +114,34 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 			return
 		}
 
-		utils.SendSuccessResponse(w, r, map[string]interface{}{"secrets": secrets})
+		if exists {
+			for _, val := range secrets {
+				if val.Name == name[0] {
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(map[string]interface{}{"secret": val})
+					return
+				}
+			}
+
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("secret(%s) not present in state", name[0])})
+			return
+		}
+
+		secretsMap := make(map[string]*model.Secret)
+		for _, val := range secrets {
+			secretsMap[val.Name] = val
+		}
+
+		if len(secretsMap) == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("secrets not present in state")})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"secrets": secretsMap})
+
 	}
 }
 
