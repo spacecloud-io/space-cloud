@@ -186,9 +186,28 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 						return false
 					}
 				case "$contains":
-					switch val.(type) {
+					switch v := v2.(type) {
 					case map[string]interface{}:
-						return true
+						// check if result contains specified contains field
+						result, ok := res[k]
+						if !ok {
+							return false
+						}
+						resultObj, ok := result.(map[string]interface{})
+						if !ok {
+							return false
+						}
+						// check if the top level key values are same
+						for key, value := range v {
+							objValue, ok := resultObj[key]
+							if ok {
+								if objValue == value {
+									return true
+								}
+							}
+						}
+						// no top level match found
+						return false
 					default:
 						return false
 					}

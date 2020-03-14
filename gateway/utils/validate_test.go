@@ -356,6 +356,38 @@ func TestValidate(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name: "valid contains",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"a": 1, "b": "one", "c": true,}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"a": 1, "b": "one", "c": true,}},
+			},
+			want: true,
+		},
+		{
+			name: "invalid contains",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"z": 1, "y": "one", "x": true,}}},
+				obj:   map[string]interface{}{"op2": map[string]interface{}{"a": 1, "b": "one", "c": true,}},
+			},
+			want: false,
+		},
+		{
+			name: "invalid contains result doesn't contain specified contains field",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"z": 1, "y": "one", "x": true,}}},
+				obj:   map[string]interface{}{"op1": map[string]interface{}{"a": 1, "b": "one", "c": true,}},
+			},
+			want: false,
+		},
+		{
+			name: "invalid contains result is not of type obj",
+			args: args{
+				where: map[string]interface{}{"op2": map[string]interface{}{"$contains": map[string]interface{}{"z": 1, "y": "one", "x": true,}}},
+				obj:   map[string]interface{}{"op2": "string"},
+			},
+			want: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
