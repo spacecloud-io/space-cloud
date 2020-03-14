@@ -64,7 +64,7 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, s, false)
+	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -134,7 +134,7 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, s, false)
+	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -195,7 +195,7 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, s, false)
+	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -256,7 +256,7 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, s, false)
+	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -317,7 +317,7 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, s, false)
+	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}

@@ -1,9 +1,12 @@
-package eventing
+package utils
 
 const (
-	eventingLogs     string = "event_logs"
-	invocationLogs   string = "invocation_logs"
-	invocationSchema string = `type invocation_logs {
+	// TableEventingLogs is a variable for "event_logs"
+	TableEventingLogs string = "event_logs"
+	// TableInvocationLogs is a variable for "invocation_logs"
+	TableInvocationLogs string = "invocation_logs"
+	// SchemaInvocationLogs is a variable for invocaton schema
+	SchemaInvocationLogs string = `type invocation_logs {
 		_id: ID! @primary
 		event_id: ID! @foreign(table: "event_logs", field: "_id")
 		invocation_time: DateTime!
@@ -13,7 +16,8 @@ const (
 		error_msg: String
 		remark: String	
 	  }`
-	eventSchema string = `type event_logs {
+	// SchemaEventLogs is a variable for event schema
+	SchemaEventLogs string = `type event_logs {
 		_id: ID! @primary
 		batchid: String
 		type: String
