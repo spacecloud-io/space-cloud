@@ -81,6 +81,37 @@ func (m *Module) SetSecret(secret string) {
 	m.secret = secret
 }
 
+// SetAESKey sets the aeskey to be used for encryption
+func (m *Module) SetAESKey(aesKey string) {
+	m.Lock()
+	defer m.Unlock()
+	m.aesKey = []byte(aesKey)
+}
+
+// SetServicesConfig sets the service module config
+func (m *Module) SetServicesConfig(projectID string, services *config.ServicesModule) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+	m.funcRules = services
+}
+
+// SetFileStoreConfig sets the file store module config
+func (m *Module) SetFileStoreConfig(projectID string, fileStore *config.FileStore) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+	m.fileRules = fileStore.Rules
+}
+
+// SetCrudConfig sets the crud module config
+func (m *Module) SetCrudConfig(projectID string, crud config.Crud) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+	m.rules = crud
+}
+
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud
 func (m *Module) GetInternalAccessToken() (string, error) {
 	return m.CreateToken(map[string]interface{}{
