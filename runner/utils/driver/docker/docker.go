@@ -53,7 +53,7 @@ func NewDockerDriver(auth *auth.Module, artifactAddr string) (*Docker, error) {
 		logrus.Fatal("Failed to create docker driver: HOSTS_FILE_PATH environment variable not provided")
 	}
 
-	manager, err := proxy_manager.New(os.Getenv("ROUTING_CONFIG_PATH"))
+	manager, err := proxy_manager.New(os.Getenv("ROUTING_FILE_PATH"))
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,10 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 	}
 
 	// Don't forget to set the service routing initially
-	d.manager.SetServiceRouteIfNotExists(service.ProjectID, service.ID, service.Version, ports)
+	if err := d.manager.SetServiceRouteIfNotExists(service.ProjectID, service.ID, service.Version, ports); err != nil {
+		logrus.Errorf("Could not create initial service routing for service (%s:%s)", service.ProjectID, service.ID)
+		return err
+	}
 
 	// Point runner to Proxy (it's own IP address!)
 	p, proxyIP, _ := hostFile.HostAddressLookup("runner.space-cloud.svc.cluster.local")
@@ -333,7 +336,9 @@ func (d *Docker) DeleteService(ctx context.Context, projectID, serviceID, versio
 	// Remove the general service along with the service routes if this was the last version of the service
 	if isLastContainer {
 		hostFile.RemoveHost(utils.GetServiceDomain(projectID, serviceID))
-		d.manager.DeleteServiceRoutes(projectID, serviceID)
+		if err := d.manager.DeleteServiceRoutes(projectID, serviceID); err != nil {
+			logrus.Errorf("Could not remove service routing for service (%s:%s)", projectID, serviceID)
+		}
 	}
 
 	return hostFile.Save()

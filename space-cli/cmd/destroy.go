@@ -28,7 +28,7 @@ func Destroy() error {
 		return err
 	}
 
-	// remove all container
+	// Remove all container
 	for _, containerInfo := range containers {
 		// remove the container from host machine
 		if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
@@ -37,15 +37,21 @@ func Destroy() error {
 		}
 	}
 
-	// remove secrets directory
+	// Remove secrets directory
 	if err := os.RemoveAll(getSecretsDir()); err != nil {
 		logrus.Errorf("Unable to remove secrets directory - %s", err.Error())
 		return err
 	}
 
-	// remove host file
+	// Remove host file
 	if err := os.RemoveAll(getSpaceCloudHostsFilePath()); err != nil {
 		logrus.Errorf("Unable to remove host file - %s", err.Error())
+		return err
+	}
+
+	// Remove the service routing file
+	if err := os.RemoveAll(getSpaceCloudRoutingConfigPath()); err != nil {
+		logrus.Errorf("Unable to remove service routing file file - %s", err.Error())
 		return err
 	}
 

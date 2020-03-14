@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"sync"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
@@ -24,7 +25,7 @@ func New(path string) (*Manager, error) {
 	manager := &Manager{
 		servers:       map[int32]*http.Server{},
 		serviceRoutes: model.Config{},
-		path:          os.Getenv("ROUTING_FILE_PATH"),
+		path:          path,
 	}
 
 	// Load the config from the file
@@ -39,7 +40,9 @@ func New(path string) (*Manager, error) {
 func (m *Manager) loadConfigFromFile() error {
 	content, err := ioutil.ReadFile(m.path)
 	if err != nil {
-		return err
+		logrus.Info("Could not load service routing file. Resetting to default")
+		m.serviceRoutes = model.Config{}
+		return nil
 	}
 
 	return json.Unmarshal(content, &m.serviceRoutes)

@@ -37,7 +37,7 @@ func (m *Manager) handleHTTPRequest(port int32) http.HandlerFunc {
 		logrus.Debugf("selected route (%v) for projectID (%s), serviceID (%s) and port (%d)", route, projectID, serviceID, port)
 
 		// Proxy the request
-		if err := setRequest(request, route, request.URL.Path); err != nil {
+		if err := setRequest(request, route, projectID, serviceID); err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
 			logrus.Errorf("Failed set request for route (%v) - %s", route, err.Error())

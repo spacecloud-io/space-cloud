@@ -7,18 +7,24 @@ import (
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/utils"
 )
 
-func getConfigKey(string1, string2 string) string {
-	return (string1 + "-" + string2)
+func getConfigKey(projectID, serviceID string) string {
+	return projectID + "-" + serviceID
 }
 
+func getProjectAndServiceIDFromKey(key string) (projectID, serviceID string) {
+	array := strings.Split(key, "-")
+	return array[0], array[1]
+}
 func getHost(req *http.Request) string {
 	return strings.Split(req.Host, ":")[0]
 }
 
-func getProjectAndServiceID(string1 string) (string, string) {
-	return strings.Split(string1, ".")[0], strings.Split(string1, ".")[1]
+func getProjectAndServiceID(host string) (projectID, serviceID string) {
+	array := strings.Split(host, ".")
+	return array[1], array[0]
 }
 
 func getServiceAndProject(req *http.Request) (string, string) {
@@ -43,7 +49,7 @@ func (m *Manager) getRoute(projectID, serviceID string, port int32) (*model.Rout
 	return nil, fmt.Errorf("no routes found for port (%d) for service (%s) in project (%s)", port, serviceID, projectID)
 }
 
-func setRequest(request *http.Request, route *model.Route, url string) error {
+func setRequest(request *http.Request, route *model.Route, projectID, serviceID string) error {
 	// http: Request.RequestURI can't be set in client requests.
 	// http://golang.org/src/pkg/net/http/client.go
 	request.RequestURI = ""
@@ -54,9 +60,13 @@ func setRequest(request *http.Request, route *model.Route, url string) error {
 		return err
 	}
 
-	request.Host = target.Host
-	request.URL.Host = fmt.Sprintf("%s:%d", target.Host, target.Port)
-	request.URL.Path = url
+	host := target.Host
+	if target.Type == model.RouteTargetVersion {
+		host = utils.GetInternalServiceDomain(projectID, serviceID, target.Version)
+	}
+
+	request.Host = host
+	request.URL.Host = fmt.Sprintf("%s:%d", host, target.Port)
 
 	// Set the url scheme to http
 	if target.Scheme == "" {
