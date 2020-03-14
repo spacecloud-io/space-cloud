@@ -1229,6 +1229,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "adding a table and column of type JSON",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON, IsFieldTypeRequired: true}}}},
+				currentSchema: model.Collection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 jsonb NOT NULL );"},
+			wantErr: false,
+		},
+		{
 			name: "adding a table and column of type integer with default key",
 			args: args{
 				dbAlias:       "postgres",

@@ -14,6 +14,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		id: ID! @id
 		createdAt: DateTime! @createdAt
 		text: String
+		spec: JSON
 		owner: String!
 		age : Integer!
 		cpi: Float!
@@ -58,6 +59,10 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 						"id":        "1234",
 						"createdAt": 986413662654,
 						"text":      "heelo",
+						"spec": map[string]interface{}{
+							"name": "goku",
+							"sage": "boo",
+						},
 					},
 					"$inc": map[string]interface{}{
 						"age": 1999,
@@ -76,6 +81,19 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 					},
 					"$currentDate": map[string]interface{}{
 						"createdAt": 16641894861,
+					},
+				},
+			},
+		},
+		{
+			name:          "Invalid Test case got integer wanted object for json type",
+			IsErrExpected: true,
+			args: args{
+				dbType: "mongo",
+				col:    "tweet",
+				updateDoc: map[string]interface{}{
+					"$set": map[string]interface{}{
+						"spec": 123,
 					},
 				},
 			},
