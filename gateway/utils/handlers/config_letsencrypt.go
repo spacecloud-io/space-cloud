@@ -18,6 +18,8 @@ import (
 func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -56,6 +58,8 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 //HandleGetEncryptWhitelistedDomain returns handler to get Encrypt White listed Domain
 func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)

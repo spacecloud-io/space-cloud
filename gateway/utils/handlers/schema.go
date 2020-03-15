@@ -15,6 +15,9 @@ import (
 // HandleInspectTrackedCollectionsSchema is an endpoint handler which return schema for all tracked collections of a particular database
 func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)

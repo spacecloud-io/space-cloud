@@ -24,6 +24,8 @@ type requestMetaData struct {
 func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -63,6 +65,8 @@ func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 // HandleCrudRead creates the read operation endpoint
 func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -110,6 +114,8 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -149,6 +155,8 @@ func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -186,6 +194,8 @@ func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 // HandleCrudAggregate creates the aggregate operation endpoint
 func HandleCrudAggregate(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -241,6 +251,9 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 // HandleCrudBatch creates the batch operation endpoint
 func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()

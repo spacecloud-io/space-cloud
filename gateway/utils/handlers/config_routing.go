@@ -22,6 +22,7 @@ func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manage
 		Routes config.Routes `json:"routes"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		value := request{}
 		_ = json.NewDecoder(r.Body).Decode(&value)
 		defer utils.CloseTheCloser(r.Body)
@@ -52,6 +53,9 @@ func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manage
 // HandleGetRoutingConfig return all the routing config for specified project
 func HandleGetRoutingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
@@ -86,6 +90,7 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		Route config.Route `json:"route"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		value := request{}
 		_ = json.NewDecoder(r.Body).Decode(&value)
 		defer utils.CloseTheCloser(r.Body)
@@ -118,6 +123,8 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 //HandleGetProjectRoute returns handler to get project route
 func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -175,6 +182,9 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 // HandleDeleteProjectRoute deletes the specified route from project config
 func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised

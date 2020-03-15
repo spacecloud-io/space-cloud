@@ -20,6 +20,9 @@ import (
 
 func (s *Server) handleCreateProject() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -60,6 +63,9 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 
 func (s *Server) handleDeleteProject() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -89,6 +95,9 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 
 func (s *Server) handleApplyService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -136,6 +145,9 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 // HandleDeleteService handles the request to delete a service
 func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -166,6 +178,9 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 // HandleGetServices handles the request to get all services
 func (s *Server) HandleGetServices() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -246,6 +261,9 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 // HandleApplyEventingService handles request to apply eventing service
 func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -289,6 +307,9 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 		Routes model.Routes `json:"routes"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -323,6 +344,9 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -374,6 +398,9 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 

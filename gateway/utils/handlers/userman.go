@@ -15,6 +15,9 @@ import (
 // HandleProfile returns the handler for fetching single user profile
 func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -43,6 +46,9 @@ func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
 // HandleProfiles returns the handler for fetching all user profiles
 func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -70,6 +76,9 @@ func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
 // HandleEmailSignIn returns the handler for email sign in
 func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -98,6 +107,9 @@ func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
 // HandleEmailSignUp returns the handler for email sign up
 func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -126,6 +138,9 @@ func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
 // HandleEmailEditProfile returns the handler for edit profile
 func HandleEmailEditProfile(userManagement *userman.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()

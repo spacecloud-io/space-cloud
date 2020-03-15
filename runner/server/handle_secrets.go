@@ -16,6 +16,9 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		RootPath string `json:"rootPath"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 		// Verify token
@@ -52,6 +55,9 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 
 func (s *Server) handleApplySecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -91,6 +97,9 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 
 func (s *Server) handleListSecrets() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -147,6 +156,9 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 
 func (s *Server) handleDeleteSecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -175,6 +187,9 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 
 func (s *Server) handleSetSecretKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -211,6 +226,9 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 
 func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 

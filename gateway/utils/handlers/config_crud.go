@@ -20,6 +20,9 @@ import (
 // HandleGetCollections is an endpoint handler which return all the collection(table) names for specified data base
 func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -59,6 +62,9 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 // HandleGetConnectionState gives the status of connection state of client
 func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -88,6 +94,9 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 // HandleDeleteCollection is an endpoint handler which deletes a table in specified database & removes it from config
 func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -128,6 +137,9 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 // HandleDatabaseConnection is an endpoint handler which updates database config & connects to database
 func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -167,6 +179,8 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 		Type    string `json:"type"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -225,6 +239,9 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 // HandleRemoveDatabaseConfig is an endpoint handler which removes database config
 func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Get the JWT token from header
@@ -258,6 +275,9 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, sync
 // HandleModifySchema is an endpoint handler which updates the existing schema & updates the config
 func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -304,6 +324,8 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 		Schema string `json:"schema"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -396,6 +418,9 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 // HandleCollectionRules is an endpoint handler which update database collection rules in config & creates collection if it doesn't exist
 func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -435,6 +460,8 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 		Rules             map[string]*config.Rule `json:"rules"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -528,6 +555,9 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 // HandleReloadSchema is an endpoint handler which return & sets the schemas of all collection in config
 func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -563,6 +593,9 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 // HandleInspectCollectionSchema gets the schema for particular collection & update the database collection schema in config
 func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -605,6 +638,9 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Sc
 // HandleModifyAllSchema is an endpoint handler which updates the existing schema & updates the config
 func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 

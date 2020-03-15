@@ -14,6 +14,8 @@ import (
 func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		// Load the params from the body
 		eventDoc := model.CloudEventPayload{}
 		_ = json.NewDecoder(r.Body).Decode(&eventDoc)
@@ -44,6 +46,9 @@ func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.Hand
 // instance in the cluster to propagate realtime changes
 func HandleRealtimeProcessRequest(auth *auth.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Load the params from the body
 		eventDoc := model.CloudEventPayload{}
 		_ = json.NewDecoder(r.Body).Decode(&eventDoc)

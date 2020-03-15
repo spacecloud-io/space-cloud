@@ -20,6 +20,9 @@ import (
 // HandleSetFileStore set the file storage config
 func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -53,6 +56,8 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 //HandleGetFileStore returns handler to get file store
 func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -90,6 +95,9 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 // HandleGetFileState gets file state
 func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -119,6 +127,9 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file 
 // HandleSetFileRule sets file rule
 func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -154,6 +165,8 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 //HandleGetFileRule returns handler to get file rule
 func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -212,6 +225,9 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 // HandleDeleteFileRule deletes file rule
 func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 

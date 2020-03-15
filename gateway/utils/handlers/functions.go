@@ -18,6 +18,8 @@ import (
 func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]

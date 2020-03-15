@@ -30,6 +30,9 @@ const (
 // HandleCreateFile creates the create file or directory endpoint
 func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Extract the path from the url
 		token, projectID, _ := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -104,6 +107,9 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 // HandleRead creates read file and list directory endpoint
 func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -150,6 +156,9 @@ func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 // HandleDelete creates read file and list directory endpoint
 func HandleDelete(fileStore *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)

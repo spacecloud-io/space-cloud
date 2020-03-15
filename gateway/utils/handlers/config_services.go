@@ -18,6 +18,8 @@ import (
 func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -54,6 +56,8 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 //HandleGetService returns handler to get services of the project
 func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -104,6 +108,8 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 // HandleDeleteService is an endpoint handler which deletes a table in specified database
 func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)

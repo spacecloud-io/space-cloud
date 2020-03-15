@@ -25,6 +25,8 @@ func HandleEventResponse(auth *auth.Module, eventing *eventing.Module) http.Hand
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		req := new(request)
 		_ = json.NewDecoder(r.Body).Decode(req)
 		defer utils.CloseTheCloser(r.Body)
@@ -59,6 +61,8 @@ func HandleEventResponse(auth *auth.Module, eventing *eventing.Module) http.Hand
 func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		w.Header().Set("Content-Type", "application/json")
+
 		eventDocs := []*model.EventDocument{}
 		_ = json.NewDecoder(r.Body).Decode(&eventDocs)
 		defer utils.CloseTheCloser(r.Body)
@@ -92,6 +96,9 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 // HandleQueueEvent creates a queue event endpoint
 func HandleQueueEvent(eventing *eventing.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		w.Header().Set("Content-Type", "application/json")
+
 		// Load the params from the body
 		req := model.QueueEventRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
