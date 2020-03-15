@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/briandowns/spinner"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -282,7 +283,13 @@ func pullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image
 			logrus.Errorf("Unable to pull public image with id (%s) - %s", image, err.Error())
 			return err
 		}
+		s := spinner.New(spinner.CharSets[11], 100*time.Millisecond) // Build our new spinner
+		s.Suffix = "    Downloading image..."
+		s.Color("green")
+		s.Start()
+		time.Sleep(4 * time.Second) // Run for some time to simulate work// Start the spinner
 		_, _ = io.Copy(ioutil.Discard, out)
+		s.Stop()
 	}
 	logrus.Infof("Image %s already exists. No need to pull it again", image)
 	return nil
