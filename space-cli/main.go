@@ -11,11 +11,13 @@ import (
 	"github.com/spaceuptech/space-cli/modules/database"
 	"github.com/spaceuptech/space-cli/modules/eventing"
 	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/ingress"
 	"github.com/spaceuptech/space-cli/modules/letsencrypt"
 	"github.com/spaceuptech/space-cli/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
 	"github.com/spaceuptech/space-cli/modules/routes"
 	"github.com/spaceuptech/space-cli/modules/services"
+	"github.com/spaceuptech/space-cli/modules/userman"
 )
 
 func main() {
@@ -36,6 +38,58 @@ func main() {
 				{
 					Name:   "service",
 					Action: actionGenerateService,
+				},
+				{
+					Name:   "db-rules",
+					Action: database.ActionGenerateDBRule,
+				},
+				{
+					Name:   "db-config",
+					Action: database.ActionGenerateDBConfig,
+				},
+				{
+					Name:   "db-schema",
+					Action: database.ActionGenerateDBSchema,
+				},
+				{
+					Name:   "filestore-rules",
+					Action: filestore.ActionGenerateFilestoreRule,
+				},
+				{
+					Name:   "filestore-config",
+					Action: filestore.ActionGenerateFilestoreConfig,
+				},
+				{
+					Name:   "eventing-rule",
+					Action: eventing.ActionGenerateEventingRule,
+				},
+				{
+					Name:   "eventing-schema",
+					Action: eventing.ActionGenerateEventingSchema,
+				},
+				{
+					Name:   "eventing-config",
+					Action: eventing.ActionGenerateEventingConfig,
+				},
+				{
+					Name:   "eventing-triggers",
+					Action: eventing.ActionGenerateEventingTrigger,
+				},
+				{
+					Name:   "auth-providers",
+					Action: userman.ActionGenerateUserManagement,
+				},
+				{
+					Name:   "remote-services",
+					Action: services.ActionGenerateService,
+				},
+				{
+					Name:   "letsencrypt",
+					Action: letsencrypt.ActionGenerateLetsEncryptDomain,
+				},
+				{
+					Name:   "ingress-routes",
+					Action: ingress.ActionGenerateIngressRouting,
 				},
 			},
 		},
