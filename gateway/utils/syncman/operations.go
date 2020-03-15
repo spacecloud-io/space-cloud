@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -89,8 +90,8 @@ func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
 	return len(s.services), nil
 }
 
-// CreateProjectConfig creates the config for the project
-func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Project) (int, error) {
+// ApplyProjectConfig creates the config for the project
+func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Project) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -101,24 +102,40 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 		return http.StatusInternalServerError, err
 	}
 
+	var doesProjectExists bool
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
-			return http.StatusConflict, errors.New("project already exists in config")
+			p.Name = project.Name
+			p.AESkey = project.AESkey
+			p.Secret = project.Secret
+			p.ContextTime = project.ContextTime
+
+			// Mark project as existing
+			doesProjectExists = true
 		}
 	}
 
-	s.projectConfig.Projects = append(s.projectConfig.Projects, project)
+	if !doesProjectExists {
+		// Append project with default modules to projects array
+		project.Modules = &config.Modules{
+			FileStore: &config.FileStore{},
+			Services:  &config.ServicesModule{},
+			Auth:      map[string]*config.AuthStub{},
+			Crud:      map[string]*config.CrudStub{},
+		}
+		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
-	// Create a project in the runner as well
-	if s.runnerAddr != "" {
-		params := map[string]interface{}{"id": project.ID}
-		if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project/%s", s.runnerAddr, project.ID), token, "", params, &map[string]interface{}{}); err != nil {
-			return http.StatusInternalServerError, err
+		// Create a project in the runner as well
+		if s.runnerAddr != "" {
+			params := map[string]interface{}{"id": project.ID}
+			if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project/%s", s.runnerAddr, project.ID), token, "", params, &map[string]interface{}{}); err != nil {
+				return http.StatusInternalServerError, err
+			}
 		}
 	}
 
 	// We will ignore the error for the create project request
-	_ = s.cb(s.projectConfig)
+	_ = s.modules.SetProjectConfig(s.projectConfig)
 
 	if s.storeType == "none" {
 		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -143,6 +160,8 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
+	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -152,15 +171,15 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	_ = s.cb(s.projectConfig)
+	if err := s.modules.SetProjectConfig(s.projectConfig); err != nil {
+		logrus.Errorf("error setting project config - %s", err.Error())
+		return err
+	}
+
 	return s.setProject(ctx, project)
 }
 
 func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
-	if err := s.cb(&config.Config{Projects: []*config.Project{project}}); err != nil {
-		return err
-	}
-
 	s.setProjectConfig(project)
 
 	if s.storeType == "none" {
@@ -188,7 +207,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 			return err
 		}
 	}
-	if err := s.cb(s.projectConfig); err != nil {
+	if err := s.modules.SetProjectConfig(s.projectConfig); err != nil {
 		return err
 	}
 

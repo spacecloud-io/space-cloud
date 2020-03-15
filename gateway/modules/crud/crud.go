@@ -27,11 +27,7 @@ type Module struct {
 	alias              string
 	project            string
 	removeProjectScope bool
-
-	// During a read request if the result contains a column of type jsonb whose value is stored as []bytes
-	// Then un marshall that particular field of the result & override the value with un marshalling result
-	// Note : reason for having this field here is that we cannot directly import schema module in crud
-	schemaPostProcess func(ctx context.Context, dbAlias, col string, result interface{}) error
+	schema             model.SchemaCrudInterface
 
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
@@ -70,6 +66,11 @@ type Crud interface {
 // Init create a new instance of the Module object
 func Init(removeProjectScope bool) *Module {
 	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+}
+
+// SetSchema sets the schema module
+func (m *Module) SetSchema(s model.SchemaCrudInterface) {
+	m.schema = s
 }
 
 // SetHooks sets the internal hooks
@@ -143,13 +144,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	}
 	m.initBatchOperation(project, crud)
 	return nil
-}
-
-// SetSchemaPostProcessHandler sets the schemaPostProcess field of crud module
-func (m *Module) SetSchemaPostProcessHandler(schemaPostProcess func(ctx context.Context, dbAlias, col string, result interface{}) error) {
-	m.Lock()
-	defer m.Unlock()
-	m.schemaPostProcess = schemaPostProcess
 }
 
 // GetDBType returns the type of the db for the alias provided

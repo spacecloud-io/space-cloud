@@ -11,15 +11,16 @@ import (
 func TestSchema_ValidateUpdateOperation(t *testing.T) {
 
 	var Query = `type tweet {
-		id: ID! @id
+		id: ID! @primary
 		createdAt: DateTime! @createdAt
 		text: String
+		spec: JSON
 		owner: String!
 		age : Integer!
 		cpi: Float!
 		diplomastudent: Boolean! @foreign(table:"shreyas",field:"diploma")
 		friends:[String!]!
-		update:DateTime@updatedAt
+		update:DateTime @updatedAt
 		mentor: shreyas
 	}
 	type shreyas {
@@ -31,7 +32,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 	var TestCases = config.Crud{
 		"mongo": &config.CrudStub{
 			Collections: map[string]*config.TableRule{
-				"tweet": &config.TableRule{
+				"tweet": {
 					Schema: Query,
 				},
 			},
@@ -58,6 +59,10 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 						"id":        "1234",
 						"createdAt": 986413662654,
 						"text":      "heelo",
+						"spec": map[string]interface{}{
+							"name": "goku",
+							"sage": "boo",
+						},
 					},
 					"$inc": map[string]interface{}{
 						"age": 1999,
@@ -76,6 +81,19 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 					},
 					"$currentDate": map[string]interface{}{
 						"createdAt": 16641894861,
+					},
+				},
+			},
+		},
+		{
+			name:          "Invalid Test case got integer wanted object for json type",
+			IsErrExpected: true,
+			args: args{
+				dbType: "mongo",
+				col:    "tweet",
+				updateDoc: map[string]interface{}{
+					"$set": map[string]interface{}{
+						"spec": 123,
 					},
 				},
 			},

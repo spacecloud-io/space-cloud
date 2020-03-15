@@ -12,25 +12,26 @@ import (
 
 var testQueries = `
  type tweet {
- 	id: ID @id
- 	createdAt: DateTime@createdAt
+ 	id: ID @primary
+ 	createdAt: DateTime @createdAt
  	text: String
  	owner: [String]
- 	location: location@foreign
+ 	location: location @foreign
 	age : Float!
 	isMale:Boolean
 	exp:Integer
+	spec: JSON
 	event: event_logs
 	person : sharad @link(table:sharad, from:Name, to:isMale)
    }
 
    type test {
-	id : ID @id
+	id : ID @primary
 	person : sharad @link(table:sharad, from:Name, to:isMale)
    }
 
    type location {
- 	id: ID! @id
+ 	id: ID! @primary
  	latitude: Float
  	longitude: Float
    }
@@ -39,7 +40,7 @@ var testQueries = `
  	  Surname : String!
  	  age : Integer!
  	  isMale : Boolean!
- 	  dob : DateTime@createdAt
+ 	  dob : DateTime @createdAt
    }
    type event_logs {
  	name: String
@@ -48,13 +49,13 @@ var testQueries = `
 var Parsedata = config.Crud{
 	"mongo": &config.CrudStub{
 		Collections: map[string]*config.TableRule{
-			"tweet": &config.TableRule{
+			"tweet": {
 				Schema: testQueries,
 			},
-			"test": &config.TableRule{
+			"test": {
 				Schema: testQueries,
 			},
-			"location": &config.TableRule{
+			"location": {
 				Schema: testQueries,
 			},
 		},
@@ -414,6 +415,25 @@ func TestSchema_CheckType(t *testing.T) {
 			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"age": int32(6),
+			},
+		},
+		{
+			coll:          "tweet",
+			name:          "valid JSON TYPE",
+			IsErrExpected: false,
+			result:        "{\"name\":\"goku\",\"sage\":\"cell\"}",
+			Document: map[string]interface{}{
+				"spec": map[string]interface{}{"name": "goku", "sage": "cell"},
+			},
+		},
+		{
+			coll:          "tweet",
+			name:          "in valid JSON TYPE",
+			IsErrExpected: true,
+			IsSkipable:    true,
+			result:        "{\"name\":\"goku\",\"sage\":\"cell\"}",
+			Document: map[string]interface{}{
+				"spec": 1,
 			},
 		},
 	}

@@ -66,6 +66,13 @@ func createDirIfNotExist(dir string) error {
 	return nil
 }
 
+func createFileIfNotExist(path, content string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return ioutil.WriteFile(path, []byte(content), 0755)
+	}
+	return nil
+}
+
 // CloseTheCloser closes the closer
 func CloseTheCloser(c io.Closer) {
 	_ = c.Close()

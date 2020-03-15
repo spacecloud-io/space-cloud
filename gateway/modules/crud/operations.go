@@ -14,6 +14,10 @@ func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *
 	m.RLock()
 	defer m.RUnlock()
 
+	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
+		return err
+	}
+
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err
@@ -73,7 +77,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	// NOTE : currently jsonb is supported for only postgres
 	// in future if jsonb is supported for multiple databases change below code
 	if crud.GetDBType() == utils.Postgres {
-		if err := m.schemaPostProcess(ctx, dbAlias, col, result); err != nil {
+		if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
 			logrus.Errorf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", project, col)
 			return nil, err
 		}
@@ -90,6 +94,10 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 func (m *Module) Update(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
+
+	if err := m.schema.ValidateUpdateOperation(dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
+		return err
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
@@ -173,6 +181,19 @@ func (m *Module) Aggregate(ctx context.Context, dbAlias, project, col string, re
 func (m *Module) Batch(ctx context.Context, dbAlias, project string, req *model.BatchRequest) error {
 	m.RLock()
 	defer m.RUnlock()
+
+	for _, r := range req.Requests {
+		switch r.Type {
+		case string(utils.Create):
+			if err := m.schema.ValidateCreateOperation(dbAlias, r.Col, &model.CreateRequest{Document: r.Document, Operation: r.Operation}); err != nil {
+				return err
+			}
+		case string(utils.Update):
+			if err := m.schema.ValidateUpdateOperation(dbAlias, r.Col, r.Operation, r.Update, r.Find); err != nil {
+				return err
+			}
+		}
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {

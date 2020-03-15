@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -15,6 +17,8 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 	if len(queries) == 0 {
 		return nil
 	}
+
+	logrus.Debugf("Executing sql raw query - %v", queries)
 
 	tx, err := s.client.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {

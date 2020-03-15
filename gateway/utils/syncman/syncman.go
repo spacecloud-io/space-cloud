@@ -5,7 +5,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
+	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // Manager syncs the project config between folders
@@ -15,7 +18,6 @@ type Manager struct {
 	// Config related to cluster config
 	projectConfig *config.Config
 	configFile    string
-	cb            func(*config.Config) error
 
 	// Configuration for cluster information
 	nodeID        string
@@ -32,6 +34,11 @@ type Manager struct {
 
 	// For authentication
 	adminMan *admin.Manager
+
+	// Modules
+	modules     model.ModulesInterface
+	letsencrypt *letsencrypt.LetsEncrypt
+	routing     *routing.Routing
 }
 
 type service struct {
@@ -77,13 +84,13 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, port int) error {
+func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	// Set the callback
-	s.cb = cb
+	_ = s.modules.SetProjectConfig(projectConfig)
 	s.port = port
 
 	s.configFile = configFilePath
@@ -92,7 +99,7 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 	if len(s.projectConfig.Projects) > 0 {
-		_ = cb(s.projectConfig)
+		_ = s.modules.SetProjectConfig(s.projectConfig)
 	}
 
 	if s.storeType != "none" {
@@ -106,7 +113,7 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
-				_ = s.cb(s.projectConfig)
+				_ = s.modules.SetProjectConfig(s.projectConfig)
 			}
 		}); err != nil {
 			return err
@@ -157,4 +164,11 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.projectConfig
+}
+
+// SetModules sets all the modules
+func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+	s.modules = modulesInterface
+	s.letsencrypt = letsEncrypt
+	s.routing = routing
 }

@@ -124,3 +124,29 @@ func TestGetIDVariable(t *testing.T) {
 		})
 	}
 }
+
+func TestArrayContains(t *testing.T) {
+	type args struct {
+		array []interface{}
+		value interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "valid string test case - found", args: args{value: "val2", array: []interface{}{"val1", "val2", "val3"}}, want: true},
+		{name: "valid string test case - not found", args: args{value: "val", array: []interface{}{"val1", "val2", "val3"}}, want: false},
+		{name: "valid string int case - fount", args: args{value: 2, array: []interface{}{1, 2, 3}}, want: true},
+		{name: "valid string int case - not found", args: args{value: 20, array: []interface{}{1, 2, 3}}, want: false},
+		{name: "passing array with multiple types - found", args: args{value: "2", array: []interface{}{1, "2", 3}}, want: true},
+		{name: "passing array with multiple types - not found", args: args{value: 20, array: []interface{}{1, "2", 3}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ArrayContains(tt.args.array, tt.args.value); got != tt.want {
+				t.Errorf("ArrayContains() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

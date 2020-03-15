@@ -76,7 +76,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 
 	// Persist the events
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, eventingLogs, createRequest, false); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
