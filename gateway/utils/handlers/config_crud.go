@@ -199,7 +199,7 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 
 			if len(connections) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbConnections not present in state")})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "dbConnections not present in state"})
 				return
 			}
 
@@ -339,7 +339,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 
 			if len(collectionsSchemas) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("schemas not present in state")})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "schemas not present in state"})
 				return
 			}
 
@@ -384,7 +384,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 
 		if len(schemas) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("schemas not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "schemas not present in state"})
 			return
 		}
 
@@ -470,7 +470,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 			if len(collectionsRules) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbRules not present in state")})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "dbRules not present in state"})
 				return
 			}
 

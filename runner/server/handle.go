@@ -234,7 +234,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 
 		if len(respServices) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("services not set")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "services not set"})
 			return
 		}
 
@@ -363,7 +363,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 		if len(serviceRoutes) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("no routes not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "no routes not present in state"})
 			return
 		}
 
