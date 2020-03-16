@@ -2,9 +2,10 @@ package schema
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -181,10 +182,14 @@ func (s *Schema) validateUnsetOperation(dbAlias, col string, doc interface{}, sc
 	if !ok {
 		return fmt.Errorf("document not of type object in collection %s", col)
 	}
+
+	// Get the db type
 	dbType, err := s.crud.GetDBType(dbAlias)
 	if err != nil {
 		return err
 	}
+
+	// For mongo we need to check if the field to be removed is required
 	if dbType == string(utils.Mongo) {
 		for fieldName := range v {
 			columnInfo, ok := schemaDoc[strings.Split(fieldName, ".")[0]]
