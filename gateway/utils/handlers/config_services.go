@@ -92,7 +92,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		services := project.Modules.Services.Services
 		if len(services) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("remote services not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "remote services not present in state"})
 			return
 		}
 
