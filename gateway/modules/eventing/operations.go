@@ -7,8 +7,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/segmentio/ksuid"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
@@ -82,14 +80,14 @@ func (m *Module) SetRealtimeTriggers(eventingRules []config.EventingRule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	for key, storedRule := range m.config.InternalRules {
+	for key := range m.config.InternalRules {
 		if strings.HasPrefix(key, "realtime") {
-			delete(m.config.InternalRules, storedRule.Name)
+			delete(m.config.InternalRules, key)
 		}
 	}
 
 	for _, incomingRule := range eventingRules {
-		key := strings.Join([]string{"realtime", ksuid.New().String()}, "-")
+		key := strings.Join([]string{"realtime", incomingRule.Options["db"], incomingRule.Options["col"], incomingRule.Type}, "-")
 		m.config.InternalRules[key] = incomingRule
 	}
 }
