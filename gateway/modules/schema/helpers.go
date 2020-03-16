@@ -177,9 +177,9 @@ func (c *creationModule) typeSwitch() string {
 	case bool:
 		if utils.DBType(dbType) == utils.SQLServer {
 			if v {
-				return fmt.Sprintf("1")
+				return "1"
 			}
-			return fmt.Sprintf("0")
+			return "0"
 		}
 		return fmt.Sprintf("%v", v)
 	default:
