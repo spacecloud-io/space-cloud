@@ -106,8 +106,5 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		m.config.Rules = map[string]config.EventingRule{}
 	}
 
-	// Reset the internal rules
-	m.config.InternalRules = map[string]config.EventingRule{}
-
 	return nil
 }

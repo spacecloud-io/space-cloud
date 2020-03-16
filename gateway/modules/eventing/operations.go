@@ -2,6 +2,7 @@ package eventing
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -81,20 +82,10 @@ func (m *Module) AddInternalRules(eventingRules []config.EventingRule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	m.config.InternalRules = map[string]config.EventingRule{}
+
 	for _, incomingRule := range eventingRules {
-		isPresent := false
-		for _, storedRule := range m.config.InternalRules {
-
-			// Add the rule for the only if it doesn't already exist
-			if isRulesMatching(&storedRule, &incomingRule) {
-				isPresent = true
-				break
-			}
-		}
-
-		if !isPresent {
-			key := ksuid.New().String()
-			m.config.InternalRules[key] = incomingRule
-		}
+		key := strings.Join([]string{"realtime", ksuid.New().String()}, "/")
+		m.config.InternalRules[key] = incomingRule
 	}
 }
