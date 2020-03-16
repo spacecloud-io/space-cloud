@@ -516,7 +516,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 		if len(collectionRules) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbRules not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "dbRules not present in state"})
 			return
 		}
 
