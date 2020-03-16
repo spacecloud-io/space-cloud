@@ -8,6 +8,8 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
+
+	"github.com/spaceuptech/space-cli/utils"
 )
 
 // Destroy cleans the environment which has been setup. It removes the containers, secrets & host file
@@ -35,6 +37,15 @@ func Destroy() error {
 			logrus.Errorf("Unable to remove container %s - %s", containerInfo.ID, err.Error())
 			return err
 		}
+	}
+
+	// Remove the space-cloud network
+	nws, err := cli.NetworkList(ctx, types.NetworkListOptions{Filters: filters.NewArgs(args)})
+	if err != nil {
+		return utils.LogError("Unable to list networks", "operation", "destroy", err)
+	}
+	for _, nw := range nws {
+		_ = cli.NetworkRemove(ctx, nw.ID)
 	}
 
 	// Remove secrets directory
