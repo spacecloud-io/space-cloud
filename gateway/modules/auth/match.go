@@ -115,15 +115,15 @@ func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Ru
 }
 
 func (m *Module) matchOr(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
-	//append all parameters returned by all clauses! and then return mainStruct
+	// append all parameters returned by all clauses! and then return mainStruct
 	for _, r := range rule.Clauses {
 		postProcess, err := m.matchRule(ctx, projectID, r, args, auth)
 		if err == nil {
-			//if condition is satisfied -> exit the function
+			// if condition is satisfied -> exit the function
 			return postProcess, nil
 		}
 	}
-	//if condition is not satisfied -> return empty model.PostProcess and error
+	// if condition is not satisfied -> return empty model.PostProcess and error
 	return nil, ErrIncorrectMatch
 }
 
@@ -157,7 +157,7 @@ func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.
 			value = loadedValue
 		}
 	}
-	//"res" - add to structure for post processing || "args" - store in args
+	// "res" - add to structure for post processing || "args" - store in args
 	if strings.HasPrefix(rule.Field, "res") {
 		addToStruct := model.PostProcessAction{Action: "force", Field: rule.Field, Value: value}
 		return &model.PostProcess{PostProcessAction: []model.PostProcessAction{addToStruct}}, nil
@@ -179,7 +179,7 @@ func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config
 	}
 	actions := &model.PostProcess{}
 	for _, field := range rule.Fields {
-		//"res" - add field to structure for post processing || "args" - delete field from args
+		// "res" - add field to structure for post processing || "args" - delete field from args
 		if strings.HasPrefix(field, "res") {
 			addToStruct := model.PostProcessAction{Action: "remove", Field: field, Value: nil}
 			actions.PostProcessAction = append(actions.PostProcessAction, addToStruct)

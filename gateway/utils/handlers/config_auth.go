@@ -92,7 +92,7 @@ func GetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		if len(project.Modules.Auth) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("auth providers not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "auth providers not found"})
 			return
 		}
 

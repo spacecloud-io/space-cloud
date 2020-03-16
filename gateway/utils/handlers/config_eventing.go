@@ -95,7 +95,7 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 
 		if len(project.Modules.Eventing.Rules) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing rules not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "eventing rules not found"})
 			return
 		}
 
@@ -287,7 +287,7 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		if len(project.Modules.Eventing.Schemas) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing schema not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "eventing schema not found"})
 			return
 		}
 
@@ -411,7 +411,7 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 
 		if len(project.Modules.Eventing.SecurityRules) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing rules not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "eventing rules not found"})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
