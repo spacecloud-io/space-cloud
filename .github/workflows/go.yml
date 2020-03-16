@@ -28,7 +28,7 @@ jobs:
         run: cd gateway && go test ./...
       - name: Lint
         run: |
-          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s latest
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.23.8
           sudo cp ./bin/golangci-lint $GOPATH/bin/
           cd gateway && golangci-lint run -E golint --exclude-use-default=false --timeout 600s ./...
 
@@ -59,7 +59,7 @@ jobs:
         run: cd runner && go test ./...
       - name: Lint
         run: |
-          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s latest
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.23.8
           sudo cp ./bin/golangci-lint $GOPATH/bin/
           cd runner && golangci-lint run -E golint --exclude-use-default=false --timeout 180s ./...
 
@@ -89,7 +89,7 @@ jobs:
         run: cd metric-proxy && go test ./...
       - name: Lint
         run: |
-          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s latest
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.23.8
           sudo cp ./bin/golangci-lint $GOPATH/bin/
           cd metric-proxy && golangci-lint run -E golint --exclude-use-default=false --timeout 180s ./...
 
@@ -118,6 +118,6 @@ jobs:
         run: cd space-cli && go test ./...
       - name: Lint
         run: |
-          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s latest
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.23.8
           sudo cp ./bin/golangci-lint $GOPATH/bin/
           cd space-cli && golangci-lint run -E golint --exclude-use-default=false --timeout 180s ./...
