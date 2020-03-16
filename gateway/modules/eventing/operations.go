@@ -82,10 +82,19 @@ func (m *Module) AddInternalRules(eventingRules []config.EventingRule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	m.config.InternalRules = map[string]config.EventingRule{}
+	m.SetRealtimeTriggers(eventingRules)
+}
+
+// SetRealtimeTriggers sets the internal rules for realtime module
+func (m *Module) SetRealtimeTriggers(eventingRules []config.EventingRule) {
+	for _, storedRule := range m.config.InternalRules {
+		if strings.HasPrefix(storedRule.Name, "realtime") {
+			delete(m.config.InternalRules, storedRule.Name)
+		}
+	}
 
 	for _, incomingRule := range eventingRules {
-		key := strings.Join([]string{"realtime", ksuid.New().String()}, "/")
+		key := strings.Join([]string{"realtime", ksuid.New().String()}, "-")
 		m.config.InternalRules[key] = incomingRule
 	}
 }
