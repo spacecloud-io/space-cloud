@@ -59,7 +59,7 @@ type AuthFunctionInterface interface {
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module
 type EventingRealtimeInterface interface {
-	AddInternalRules(eventingRules []config.EventingRule)
+	SetRealtimeTriggers(eventingRules []config.EventingRule)
 }
 
 // AuthRealtimeInterface is an interface consisting of functions of Auth module used by RealTime module
@@ -121,7 +121,6 @@ type ModulesInterface interface {
 
 	GetSchemaModule() SchemaEventingInterface
 }
-
 
 // PostProcess filters the schema
 type PostProcess struct {

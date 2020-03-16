@@ -77,18 +77,13 @@ func (m *Module) SendEventResponse(batchID string, payload interface{}) {
 	result.response <- payload
 }
 
-// AddInternalRules adds triggers which are used for space cloud internally
-func (m *Module) AddInternalRules(eventingRules []config.EventingRule) {
+// SetRealtimeTriggers adds triggers which are used for space cloud internally
+func (m *Module) SetRealtimeTriggers(eventingRules []config.EventingRule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	m.SetRealtimeTriggers(eventingRules)
-}
-
-// SetRealtimeTriggers sets the internal rules for realtime module
-func (m *Module) SetRealtimeTriggers(eventingRules []config.EventingRule) {
-	for _, storedRule := range m.config.InternalRules {
-		if strings.HasPrefix(storedRule.Name, "realtime") {
+	for key, storedRule := range m.config.InternalRules {
+		if strings.HasPrefix(key, "realtime") {
 			delete(m.config.InternalRules, storedRule.Name)
 		}
 	}
