@@ -111,7 +111,7 @@ func (s *Schema) mongoInvalidEntry(dbAlias, col string, req *model.CreateRequest
 	return nil
 }
 
-// ValidateCreateOperation validates schema on create operation
+// ValidateCreateOperation validates  schema on create operation
 func (s *Schema) ValidateCreateOperation(dbAlias, col string, req *model.CreateRequest) error {
 
 	if err := s.mongoInvalidEntry(dbAlias, col, req); err != nil {
