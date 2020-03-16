@@ -81,3 +81,7 @@ func actionSetup(c *cli.Context) error {
 
 	return cmd.CodeSetup(id, userName, key, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
 }
+
+func actionUpgrade(_ *cli.Context) error {
+	return cmd.Upgrade()
+}

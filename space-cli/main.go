@@ -268,6 +268,11 @@ func main() {
 			},
 			Action: actionSetup,
 		},
+		{
+			Name:   "upgrade",
+			Usage:  "upgrade development environment",
+			Action: actionUpgrade,
+		},
 	}
 
 	// Start the app
