@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	_ "github.com/denisenkom/go-mssqldb" //Import for MsSQL
+	_ "github.com/denisenkom/go-mssqldb" // Import for MsSQL
 	_ "github.com/go-sql-driver/mysql"   // Import for MySQL
 	_ "github.com/lib/pq"                // Import for postgres
 

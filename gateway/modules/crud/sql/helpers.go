@@ -2,8 +2,10 @@ package sql
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"strconv"
 	"strings"
@@ -46,7 +48,13 @@ func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string)
 					array = append(array, goqu.I(k).Eq(v2))
 				case "$ne":
 					array = append(array, goqu.I(k).Neq(v2))
-
+				case "$contains":
+					data, err := json.Marshal(v2)
+					if err != nil {
+						logrus.Errorf("error marshalling data $contains data (%s)", err.Error())
+						break
+					}
+					array = append(array, goqu.L(fmt.Sprintf("%s @> ?", k), string(data)))
 				case "$gt":
 					array = append(array, goqu.I(k).Gt(v2))
 
@@ -86,7 +94,7 @@ func (s *SQL) generateWhereClause(q *goqu.SelectDataset, find map[string]interfa
 func generateRecord(temp interface{}) (goqu.Record, error) {
 	insertObj, ok := temp.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Incorrect insert object provided")
+		return nil, errors.New("incorrect insert object provided")
 	}
 
 	record := make(goqu.Record, len(insertObj))

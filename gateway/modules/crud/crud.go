@@ -28,6 +28,7 @@ type Module struct {
 	project            string
 	removeProjectScope bool
 	schema             model.SchemaCrudInterface
+
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
 

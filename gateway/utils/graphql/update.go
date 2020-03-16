@@ -76,7 +76,7 @@ func extractUpdateArgs(args []*ast.Argument, store utils.M) (utils.M, error) {
 	t := map[string]interface{}{}
 	for _, v := range args {
 		switch v.Name.Value {
-		case "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "remove":
+		case "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "unset":
 			temp, err := utils.ParseGraphqlValue(v.Value, store)
 			if err != nil {
 				return nil, err

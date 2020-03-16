@@ -135,7 +135,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 
 		if len(secretsMap) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("secrets not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "secrets not found"})
 			return
 		}
 
