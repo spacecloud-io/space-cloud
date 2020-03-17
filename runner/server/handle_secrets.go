@@ -133,12 +133,6 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 			secretsMap[val.Name] = val
 		}
 
-		if len(secretsMap) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "secrets not present in state"})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"secrets": secretsMap})
 

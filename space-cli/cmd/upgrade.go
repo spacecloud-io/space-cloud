@@ -82,7 +82,6 @@ func Upgrade() error {
 			if err != nil {
 				return err
 			}
-
 			if currentVersion == latestVersion {
 				return fmt.Errorf("current verion (%s) is up to date", currentVersion)
 			}

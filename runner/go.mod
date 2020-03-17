@@ -22,7 +22,6 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spaceuptech/space-cli v0.0.0-20190721153730-40ccd297f6de
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2
 	go.etcd.io/bbolt v1.3.3

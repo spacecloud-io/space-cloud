@@ -2,12 +2,11 @@ package utils
 
 import (
 	"fmt"
+	"github.com/google/go-cmp/cmp"
+	"github.com/sirupsen/logrus"
 	"log"
 	"reflect"
 	"regexp"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/sirupsen/logrus"
 )
 
 func attemptConvertBoolToInt64(val interface{}) interface{} {
@@ -189,7 +188,6 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					default:
 						return false
 					}
-
 				case "$in":
 					array, ok := v2.([]interface{})
 					if !ok {
@@ -206,6 +204,18 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 					}
 					return !ArrayContains(array, val)
 
+				case "$contains":
+					switch v := v2.(type) {
+					case map[string]interface{}:
+						// check if result contains specified contains field
+						result, ok := res[k]
+						if !ok {
+							return false
+						}
+						return checkIfObjContainsWhereObj(result, v, false)
+					default:
+						return false
+					}
 				case "$regex":
 					regex := v2.(string)
 					vString := val.(string)
@@ -236,4 +246,109 @@ func Validate(where map[string]interface{}, obj interface{}) bool {
 		return true
 	}
 	return false
+}
+
+func checkIfObjContainsWhereObj(obj interface{}, where interface{}, isIterate bool) bool {
+	switch whereObj := where.(type) {
+	case map[string]interface{}:
+		if len(whereObj) == 0 {
+			return true
+		}
+		// iterate over array of objects
+		if isIterate {
+			singleRowObj, ok := obj.([]interface{})
+			// this will always be true as we set isIterate to true when we get array obj
+			if ok {
+				whereMatchCount := 0
+				whereObjLen := len(whereObj)
+				for _, value := range singleRowObj {
+					_, ok := value.(map[string]interface{})
+					if ok {
+						// comparision can performed only be performed when both are map
+						if checkIfObjContainsWhereObj(value, whereObj, false) {
+							whereMatchCount++
+						}
+					}
+				}
+				return whereMatchCount == whereObjLen
+			}
+		}
+
+		// main comparision operation
+		// comparision can only be performed if both where & obj are [] maps
+		singleRowObj, ok := obj.(map[string]interface{})
+		if ok {
+			whereMatchCount := 0
+			whereObjLen := len(whereObj)
+			for key, whereValue := range whereObj {
+				rowValue, ok := singleRowObj[key]
+				if ok {
+					if checkIfObjContainsWhereObj(rowValue, whereValue, false) {
+						// match found
+						whereMatchCount++
+					}
+				}
+			}
+			// if where clause matches obj returns true
+			// else no match found in the result
+			return whereMatchCount == whereObjLen
+		}
+		// where & result obj are of not same type they should be of type obj
+		return false
+
+	case []interface{}:
+		if len(whereObj) == 0 {
+			return true
+		}
+
+		if isIterate {
+			whereMatchCount := 0
+			whereObjLen := len(whereObj)
+			singleRowObj, ok := obj.([]interface{})
+			if ok {
+				for _, rowObj := range singleRowObj {
+					for _, whereArrValue := range whereObj {
+						log.Println("wherearr value", whereArrValue, "row obj", rowObj)
+						if reflect.TypeOf(whereObj) == reflect.TypeOf(rowObj) {
+							if checkIfObjContainsWhereObj(rowObj, whereArrValue, true) {
+								whereMatchCount++
+							}
+						}
+					}
+				}
+				return whereMatchCount == whereObjLen
+			}
+		}
+
+		// main operation
+		// comparision can only be performed if both where & obj are [] slice
+		singleRowObj, ok := obj.([]interface{})
+		if ok {
+			whereMatchCount := 0
+			whereObjLen := len(whereObj)
+			for _, whereArrValue := range whereObj {
+				if checkIfObjContainsWhereObj(singleRowObj, whereArrValue, true) {
+					whereMatchCount++
+				}
+			}
+			return whereMatchCount == whereObjLen
+		}
+		// where & result obj are of not same type they should be of type [] array
+		return false
+	default:
+		if isIterate {
+			singRowObj, ok := obj.([]interface{})
+			if ok {
+				status := false
+				for _, value := range singRowObj {
+					if reflect.DeepEqual(value, whereObj) {
+						status = true
+					}
+				}
+				return status
+			}
+		}
+		return reflect.DeepEqual(obj, whereObj)
+	}
+
 }

@@ -20,6 +20,7 @@ var testQueries = `
 	age : Float!
 	isMale:Boolean
 	exp:Integer
+	spec: JSON
 	event: event_logs
 	person : sharad @link(table:sharad, from:Name, to:isMale)
    }
@@ -414,6 +415,25 @@ func TestSchema_CheckType(t *testing.T) {
 			IsErrExpected: true,
 			Document: map[string]interface{}{
 				"age": int32(6),
+			},
+		},
+		{
+			coll:          "tweet",
+			name:          "valid JSON TYPE",
+			IsErrExpected: false,
+			result:        "{\"name\":\"goku\",\"sage\":\"cell\"}",
+			Document: map[string]interface{}{
+				"spec": map[string]interface{}{"name": "goku", "sage": "cell"},
+			},
+		},
+		{
+			coll:          "tweet",
+			name:          "in valid JSON TYPE",
+			IsErrExpected: true,
+			IsSkipable:    true,
+			result:        "{\"name\":\"goku\",\"sage\":\"cell\"}",
+			Document: map[string]interface{}{
+				"spec": 1,
 			},
 		},
 	}

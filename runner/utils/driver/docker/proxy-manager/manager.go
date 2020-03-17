@@ -33,6 +33,9 @@ func New(path string) (*Manager, error) {
 		return nil, err
 	}
 
+	// Start all servers
+	manager.adjustProxyServers()
+
 	return manager, nil
 }
 

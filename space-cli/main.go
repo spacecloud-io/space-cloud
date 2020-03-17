@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/modules"
 	"github.com/spaceuptech/space-cli/modules/auth"
 	"github.com/spaceuptech/space-cli/modules/database"
@@ -30,6 +31,9 @@ func main() {
 	app.EnableBashCompletion = true
 	app.Name = "space-cli"
 	app.Version = "0.16.0"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{Name: "log-level", Value: "info", Usage: "Sets the log level of the command", EnvVar: "LOG_LEVEL"},
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:  "generate",
@@ -278,6 +282,11 @@ func main() {
 			Name:   "upgrade",
 			Usage:  "upgrade development environment",
 			Action: actionUpgrade,
+		},
+		{
+			Name:   "start",
+			Usage:  "Resumes the space-cloud docker environment",
+			Action: cmd.ActionStart,
 		},
 	}
 

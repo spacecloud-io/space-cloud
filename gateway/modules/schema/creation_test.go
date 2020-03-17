@@ -45,6 +45,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "adding a table and column of type JSON",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON, IsFieldTypeRequired: true}}}},
+				currentSchema: model.Collection{},
+			},
+			fields:  fields{crud: crudMySQL, project: "test"},
+			want:    []string{},
+			wantErr: true,
+		},
+		{
 			name: "adding a table and column of type integer with default key",
 			args: args{
 				dbAlias:       "mysql",
@@ -755,6 +768,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 
 		// //sql-server
 		{
+			name: "adding a table and column of type JSON",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"sqlserver": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON, IsFieldTypeRequired: true}}}},
+				currentSchema: model.Collection{},
+			},
+			fields:  fields{crud: crudSQLServer, project: "test"},
+			want:    []string{},
+			wantErr: true,
+		},
+		{
 			name: "adding a table and column of type integer with default key",
 			args: args{
 				dbAlias:       "sqlserver",
@@ -1230,6 +1256,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "adding a table and column of type JSON",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON, IsFieldTypeRequired: true}}}},
+				currentSchema: model.Collection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col1 jsonb NOT NULL );"},
+			wantErr: false,
+		},
+		{
 			name: "adding a table and column of type integer with default key",
 			args: args{
 				dbAlias:       "postgres",
@@ -1623,6 +1662,45 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "integer to JSON",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON}}}},
+				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 jsonb"},
+			wantErr: false,
+		},
+		{
+			name: "JSON to integer",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}}},
+				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 bigint"},
+			wantErr: false,
+		},
+		{
+			name: "JSON to string",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeString}}}},
+				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD COLUMN col1 text"},
+			wantErr: false,
+		},
+		{
 			name: "integer to string",
 			args: args{
 				dbAlias:       "postgres",
@@ -1727,6 +1805,45 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "adding primary directive to type Json",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON, IsPrimary: true, IsFieldTypeRequired: true}}}},
+				currentSchema: model.Collection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{},
+			wantErr: true,
+		},
+		{
+			name: "adding unique directive to type Json",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON, IsFieldTypeRequired: true, IsUnique: true}}}},
+				currentSchema: model.Collection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{},
+			wantErr: true,
+		},
+		{
+			name: "adding index directive to type Json",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON, IsFieldTypeRequired: true, IsIndex: true}}}},
+				currentSchema: model.Collection{},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{},
+			wantErr: true,
+		},
+		{
 			name: "adding primary key",
 			args: args{
 				dbAlias:       "postgres",
@@ -1739,6 +1856,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			want:    []string{"ALTER TABLE test.table1 ALTER COLUMN col1 SET NOT NULL", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 PRIMARY KEY (col1)"},
 			wantErr: false,
 		},
+
 		{
 			name: "removing primary key",
 			args: args{

@@ -159,7 +159,7 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 	}
 }
 
-//HandleGetDatabaseConnection returns handler to get Database Collection
+// HandleGetDatabaseConnection returns handler to get Database Collection
 func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type response struct {
 		Conn    string `json:"conn"`
@@ -178,12 +178,12 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 			return
 		}
 
-		//get project id and dbType from url
+		// get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		dbAlias, exists := r.URL.Query()["dbAlias"]
 
-		//get project config
+		// get project config
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -199,7 +199,7 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 
 			if len(connections) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "dbConnections not present in state"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "db connections not found"})
 				return
 			}
 
@@ -208,7 +208,7 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 			return
 		}
 
-		//get collection
+		// get collection
 		coll, ok := project.Modules.Crud[dbAlias[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -294,11 +294,10 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 
 		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
 	}
 }
 
-//HandleGetSchema returns handler to get schema
+// HandleGetSchema returns handler to get schema
 func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type response struct {
 		Schema string `json:"schema"`
@@ -315,12 +314,12 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			return
 		}
 
-		//get project id and dbType from url
+		// get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		dbAlias, exists := r.URL.Query()["dbAlias"]
 
-		//get project config
+		// get project config
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -339,7 +338,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 
 			if len(collectionsSchemas) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "schemas not present in state"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "schemas not found"})
 				return
 			}
 
@@ -348,10 +347,10 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			return
 		}
 
-		//gel col from url
+		// gel col from url
 		col, exists := r.URL.Query()["col"]
 
-		//get collection
+		// get collection
 		coll, ok := project.Modules.Crud[dbAlias[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -359,7 +358,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			return
 		}
 
-		//check if col exists in url
+		// check if col exists in url
 		if exists {
 			temp, ok := coll.Collections[col[0]]
 			if !ok {
@@ -384,7 +383,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 
 		if len(schemas) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "schemas not present in state"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "schema not found"})
 			return
 		}
 
@@ -428,7 +427,7 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 	}
 }
 
-//HandleGetCollectionRules returns handler to get collection rule
+// HandleGetCollectionRules returns handler to get collection rule
 func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	type response struct {
 		IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
@@ -446,12 +445,12 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			return
 		}
 
-		//get project id and dbAlias
+		// get project id and dbAlias
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		dbAlias, exists := r.URL.Query()["dbAlias"]
 
-		//get project config
+		// get project config
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -470,7 +469,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 			if len(collectionsRules) == 0 {
 				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "dbRules not present in state"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "db rules not found"})
 				return
 			}
 
@@ -479,10 +478,10 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			return
 		}
 
-		//gel collection id
+		// gel collection id
 		col, exists := r.URL.Query()["col"]
 
-		//get databaseConfig
+		// get databaseConfig
 		databaseConfig, ok := project.Modules.Crud[dbAlias[0]]
 		if !ok {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -490,9 +489,9 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			return
 		}
 
-		//check col present in url
+		// check col present in url
 		if exists {
-			//get collection
+			// get collection
 			collection, ok := databaseConfig.Collections[col[0]]
 			if !ok {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -516,7 +515,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 		if len(collectionRules) == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "dbRules not present in state"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "db rules not found"})
 			return
 		}
 

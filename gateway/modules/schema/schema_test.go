@@ -117,6 +117,10 @@ func TestParseSchema(t *testing.T) {
 							FieldName: "age",
 							Kind:      model.TypeFloat,
 						},
+						"spec": &model.FieldType{
+							FieldName: "spec",
+							Kind:      model.TypeJSON,
+						},
 					},
 				},
 			},
@@ -128,6 +132,7 @@ func TestParseSchema(t *testing.T) {
 							Schema: `type tweet {
 						 ID : ID @primary
 						 age: Float
+ 						 spec: JSON
 						}`,
 						},
 					},

@@ -36,7 +36,6 @@ func Init(crud model.CrudSchemaInterface, removeProjectScope bool) *Schema {
 func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-
 	s.config = conf
 	s.project = project
 
@@ -47,7 +46,7 @@ func (s *Schema) SetConfig(conf config.Crud, project string) error {
 	return nil
 }
 
-// GetSchema function gets the schema
+// GetSchema function gets schema
 func (s *Schema) GetSchema(dbAlias, col string) (model.Fields, bool) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -119,7 +118,6 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 	fieldMap := model.Fields{}
 	for _, v := range doc.Definitions {
 		colName := v.(*ast.ObjectDefinition).Name.Value
-
 		if colName != collectionName {
 			continue
 		}
@@ -290,6 +288,8 @@ func getFieldType(dbName string, fieldType ast.Type, fieldTypeStuct *model.Field
 			return model.TypeInteger, nil
 		case model.TypeBoolean:
 			return model.TypeBoolean, nil
+		case model.TypeJSON:
+			return model.TypeJSON, nil
 		default:
 			if fieldTypeStuct.IsLinked {
 				// Since the field is actually a link. We'll store the type as is. This type must correspond to a table or a primitive type

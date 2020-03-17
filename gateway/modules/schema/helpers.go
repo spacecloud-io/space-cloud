@@ -35,6 +35,11 @@ func getSQLType(dbType, typename string) (string, error) {
 		return "float", nil
 	case model.TypeInteger:
 		return "bigint", nil
+	case model.TypeJSON:
+		if dbType != string(utils.Postgres) {
+			return "", fmt.Errorf("jsonb not supported for database %s", dbType)
+		}
+		return "jsonb", nil
 	default:
 		return "", fmt.Errorf("%s type not allowed", typename)
 	}
@@ -54,6 +59,10 @@ func checkErrors(realFieldStruct *model.FieldType) error {
 
 	if realFieldStruct.IsPrimary && realFieldStruct.Kind != model.TypeID {
 		return errors.New("primary key should be of type ID")
+	}
+
+	if realFieldStruct.Kind == model.TypeJSON && (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked || realFieldStruct.IsIndex) {
+		return fmt.Errorf("cannot set index with type json")
 	}
 
 	if (realFieldStruct.IsUnique || realFieldStruct.IsPrimary || realFieldStruct.IsLinked) && realFieldStruct.IsDefault {
@@ -322,10 +331,6 @@ func (c *creationModule) addColumn(dbType string) []string {
 
 	return queries
 }
-
-// func (c *creationModule) removeField() string {
-// 	return c.removeColumn()
-// }
 
 func (c *creationModule) modifyColumn() []string {
 	var queries []string

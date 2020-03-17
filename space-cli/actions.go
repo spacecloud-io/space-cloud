@@ -80,9 +80,26 @@ func actionSetup(c *cli.Context) error {
 	volumes := c.StringSlice("v")
 	environmentVariables := c.StringSlice("e")
 
+	setLogLevel(c.GlobalString("log-level"))
+
 	return cmd.CodeSetup(id, userName, key, config, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
 }
 
 func actionUpgrade(_ *cli.Context) error {
 	return cmd.Upgrade()
+}
+
+func setLogLevel(loglevel string) {
+	switch loglevel {
+	case "debug":
+		logrus.SetLevel(logrus.DebugLevel)
+	case "info":
+		logrus.SetLevel(logrus.InfoLevel)
+	case "error":
+		logrus.SetLevel(logrus.ErrorLevel)
+	default:
+		logrus.Errorf("Invalid log level (%s) provided", loglevel)
+		logrus.Infoln("Defaulting to `info` level")
+		logrus.SetLevel(logrus.InfoLevel)
+	}
 }
