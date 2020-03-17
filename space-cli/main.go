@@ -236,6 +236,12 @@ func main() {
 					Value:  "",
 				},
 				cli.StringFlag{
+					Name:   "config",
+					Usage:  "The config used to bind config file",
+					EnvVar: "CONFIG",
+					Value:  "",
+				},
+				cli.StringFlag{
 					Name:   "secret",
 					Usage:  "The jwt secret to start space-cloud with",
 					EnvVar: "JWT_SECRET",

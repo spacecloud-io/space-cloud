@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -14,8 +13,20 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/sirupsen/logrus"
+	scClient "github.com/spaceuptech/space-api-go"
+	spaceApiTypes "github.com/spaceuptech/space-api-go/types"
 	"github.com/txn2/txeh"
 )
+
+type resultData struct {
+	Docs []*doc `mapstructure:"result"`
+}
+
+type doc struct {
+	ID                string `mapstructure:"_id" json:"id"`
+	VersionNo         string `mapstructure:"version_no" json:"versionNo"`
+	CompatibleVersion string `mapstructure:"compatible_version" json:"compatibleVersion"`
+}
 
 // Upgrade upgrades the environment which has been setup
 func Upgrade() error {
@@ -39,14 +50,13 @@ func Upgrade() error {
 	}
 
 	//parameters for gateway
-	gatewayMounts := []mount.Mount{}
-	gatewayPorts := nat.PortMap{}
-	gatewayEnvs := []string{}
-	gatewayVersion := ""
+	var gatewayMounts []mount.Mount
+	var gatewayPorts nat.PortMap
+	var gatewayEnvs []string
+	var latestVersion string
 
 	//parameters for runner
-	runnerEnvs := []string{}
-	runnerVersion := ""
+	var runnerEnvs []string
 
 	// Remove all container
 	for _, containerInfo := range containers {
@@ -57,17 +67,8 @@ func Upgrade() error {
 		}
 
 		imageName := strings.Split(containerInfo.Image, ":")
-		if imageName[0] == "spaceuptech/gateway" {
-			b, _ := json.MarshalIndent(containerInspect.NetworkSettings.Ports, "", " ")
-			fmt.Println("container: ", string(b))
-		}
 		switch imageName[0] {
 		case "spaceuptech/gateway":
-
-			if err := json.Unmarshal([]byte(containerInspect.Config.Labels["internalPorts"]), &gatewayPorts); err != nil {
-				logrus.Errorf("error getting service in docker unable to unmarshal ports - %v", err)
-				return err
-			}
 
 			gatewayEnvs = containerInspect.Config.Env
 
@@ -75,17 +76,20 @@ func Upgrade() error {
 			if err := Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
 				return err
 			}
-			gatewayVersion = gatewayVersion + result["version"].(string)
 
-			gatewayMounts = []mount.Mount{
-				{
-					Type:   mount.TypeBind,
-					Source: getSpaceCloudHostsFilePath(),
-					Target: "/etc/hosts",
-				},
+			currentVersion := result["version"].(string)
+			latestVersion, err = getLatestVersion(currentVersion)
+			if err != nil {
+				return err
 			}
 
-			gatewayPorts = containerInspect.NetworkSettings.Ports
+			if currentVersion == latestVersion {
+				return fmt.Errorf("current verion (%s) is up to date", currentVersion)
+			}
+
+			gatewayMounts = containerInspect.HostConfig.Mounts
+
+			gatewayPorts = containerInspect.HostConfig.PortBindings
 
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				logrus.Errorf("Unable to remove container %s - %s", containerInfo.ID, err.Error())
@@ -95,19 +99,13 @@ func Upgrade() error {
 		case "spaceuptech/runner":
 			runnerEnvs = containerInspect.Config.Env
 
-			result := make(map[string]interface{})
-			if err := Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
-				return err
-			}
-			runnerVersion = runnerVersion + result["version"].(string)
-
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				logrus.Errorf("Unable to remove container %s - %s", containerInfo.ID, err.Error())
 				return err
 			}
 		}
-
 	}
+
 	containersToCreate := []struct {
 		dnsName        string
 		containerImage string
@@ -118,7 +116,7 @@ func Upgrade() error {
 		portMapping    nat.PortMap
 	}{
 		{
-			containerImage: "spaceuptech/gateway",
+			containerImage: fmt.Sprintf("%s:v%s", "spaceuptech/gateway", latestVersion),
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           gatewayEnvs,
@@ -132,7 +130,7 @@ func Upgrade() error {
 
 		{
 			// runner
-			containerImage: "spaceuptech/runner",
+			containerImage: fmt.Sprintf("%s:v%s", "spaceuptech/runner", latestVersion),
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs:           runnerEnvs,
@@ -168,14 +166,14 @@ func Upgrade() error {
 		return err
 	}
 
-	hosts, err := txeh.NewHostsDefault()
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: getSpaceCloudHostsFilePath(), WriteFilePath: getSpaceCloudHostsFilePath()})
 	if err != nil {
 		logrus.Errorf("Unable to load host file with suitable default - %s", err)
 		return err
 	}
+
 	// change the default host file location for crud operation to our specified path
 	// default value /etc/hosts
-	hosts.WriteFilePath = getSpaceCloudHostsFilePath()
 	if err := hosts.SaveAs(getSpaceCloudHostsFilePath()); err != nil {
 		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", getSpaceCloudHostsFilePath(), err)
 		return err
@@ -201,7 +199,6 @@ func Upgrade() error {
 			return fmt.Errorf("container (%s) already exists", c.containerName)
 		}
 
-		// create container with specified defaults
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
@@ -232,5 +229,29 @@ func Upgrade() error {
 		logrus.Errorf("Unable to save host file - %s", err.Error())
 		return err
 	}
+
 	return nil
+}
+
+func getLatestVersion(version string) (string, error) {
+	mongoConn := scClient.New("test", "localhost:4122", false).DB("mongo")
+	if mongoConn == nil {
+		return "", fmt.Errorf("cannot connect to mongo")
+	}
+	ctx := context.Background()
+
+	result, _ := mongoConn.Get("table").Where(spaceApiTypes.Cond("compatible_version", "==", version)).Apply(ctx)
+
+	r := new(resultData)
+	if err := result.Unmarshal(&r); err != nil {
+		return "", err
+	}
+	newVersion := version
+	for _, val := range r.Docs {
+		if val.VersionNo > newVersion {
+			newVersion = val.VersionNo
+			fmt.Println("new version: ", newVersion)
+		}
+	}
+	return newVersion, nil
 }

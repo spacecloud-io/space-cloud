@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +26,10 @@ import (
 
 func getSpaceCloudHostsFilePath() string {
 	return fmt.Sprintf("%s/hosts", getSpaceCloudDirectory())
+}
+
+func getSpaceCloudConfigFilePath() string {
+	return fmt.Sprintf("%s/config", getSpaceCloudDirectory())
 }
 
 func getSpaceCloudRoutingConfigPath() string {
@@ -52,7 +57,7 @@ func generateRandomString(length int) string {
 }
 
 // CodeSetup initializes development environment
-func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
+func CodeSetup(id, username, key, config, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
@@ -73,6 +78,13 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	}
 	if key == "" {
 		key = generateRandomString(12)
+	}
+	if config == "" {
+		config = getSpaceCloudConfigFilePath() + "/config.yaml"
+	} else {
+		if !strings.Contains(config, ".yaml") || !strings.Contains(config, ".json") {
+			return fmt.Errorf("full path not provided for config file")
+		}
 	}
 	if secret == "" {
 		secret = generateRandomString(24)
@@ -105,6 +117,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		"ADMIN_PASS=" + key,
 		"ADMIN_SECRET=" + secret,
 		"DEV=" + devMode,
+		"CONFIG=" + "/etc/config/" + path.Base(config),
 	}
 
 	envs = append(envs, environmentVariables...)
@@ -114,6 +127,11 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 			Type:   mount.TypeBind,
 			Source: getSpaceCloudHostsFilePath(),
 			Target: "/etc/hosts",
+		},
+		{
+			Type:   mount.TypeBind,
+			Source: path.Dir(config),
+			Target: "/etc/config",
 		},
 	}
 

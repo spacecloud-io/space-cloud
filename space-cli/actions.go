@@ -72,6 +72,7 @@ func actionSetup(c *cli.Context) error {
 	id := c.String("id")
 	userName := c.String("username")
 	key := c.String("key")
+	config := c.String("config")
 	secret := c.String("secret")
 	local := c.Bool("dev")
 	portHTTP := c.Int64("port-http")
@@ -79,7 +80,7 @@ func actionSetup(c *cli.Context) error {
 	volumes := c.StringSlice("v")
 	environmentVariables := c.StringSlice("e")
 
-	return cmd.CodeSetup(id, userName, key, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
+	return cmd.CodeSetup(id, userName, key, config, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
 }
 
 func actionUpgrade(_ *cli.Context) error {
