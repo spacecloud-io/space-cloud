@@ -84,7 +84,7 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 			dbName:        "mongo",
 			coll:          "twee",
 			name:          "Collection which does not exist",
-			IsErrExpected: true,
+			IsErrExpected: false,
 			value: model.CreateRequest{
 				Document: map[string]interface{}{
 					"male": true,
