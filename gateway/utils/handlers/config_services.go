@@ -43,7 +43,7 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 
@@ -112,7 +112,7 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 

@@ -22,6 +22,7 @@ import (
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cli/model"
+	"github.com/spaceuptech/space-cli/utils"
 )
 
 func getSpaceCloudHostsFilePath() string {
@@ -132,12 +133,14 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		dnsName        string
 		containerImage string
 		containerName  string
+		name           string
 		envs           []string
 		mount          []mount.Mount
 		exposedPorts   nat.PortSet
 		portMapping    nat.PortMap
 	}{
 		{
+			name:           "gateway",
 			containerImage: "spaceuptech/gateway",
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
@@ -155,6 +158,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 
 		{
 			// runner
+			name:           "runner",
 			containerImage: "spaceuptech/runner",
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
@@ -171,7 +175,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 			},
 			mount: []mount.Mount{
 				{
-					Type:   mount.TypeBind, // TODO CHECK THIS
+					Type:   mount.TypeBind,
 					Source: getSecretsDir(),
 					Target: "/secrets",
 				},
@@ -214,6 +218,11 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		return err
 	}
 
+	// First we create a network for space cloud
+	if _, err := cli.NetworkCreate(ctx, "space-cloud", types.NetworkCreate{Driver: "bridge"}); err != nil {
+		return utils.LogError("Unable to create a network named space-cloud", "operations", "setup", err)
+	}
+
 	for _, c := range containersToCreate {
 		logrus.Infof("Starting container %s...", c.containerName)
 		// check if image already exists
@@ -236,12 +245,14 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 
 		// create container with specified defaults
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
+			Labels:       map[string]string{"app": "space-cloud", "service": c.name},
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
 			Env:          c.envs,
 		}, &container.HostConfig{
 			Mounts:       c.mount,
 			PortBindings: c.portMapping,
+			NetworkMode:  "space-cloud",
 		}, nil, c.containerName)
 		if err != nil {
 			logrus.Errorf("Unable to create container (%s) - %s", c.containerName, err)
@@ -258,7 +269,10 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		if err != nil {
 			logrus.Errorf("Unable to inspect container (%s) - %s", c.containerName, err)
 		}
-		hosts.AddHost(data.NetworkSettings.IPAddress, c.dnsName)
+
+		ip := data.NetworkSettings.Networks["space-cloud"].IPAddress
+		utils.LogDebug(fmt.Sprintf("Adding entry (%s - %s) to hosts file", c.dnsName, ip), "operations", "setup", nil)
+		hosts.AddHost(ip, c.dnsName)
 	}
 
 	if err := hosts.Save(); err != nil {

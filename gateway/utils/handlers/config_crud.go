@@ -266,7 +266,6 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 
 		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
 	}
 }
 
@@ -302,7 +301,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return]
+			return
 		}
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(schemas)
