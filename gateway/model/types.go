@@ -5,6 +5,8 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // SchemaCrudInterface is an interface consisting of functions of schema module used by Auth module
@@ -103,7 +105,7 @@ type AuthUserInterface interface {
 // ModulesInterface is an interface consisting of functions of the modules module used by syncman
 type ModulesInterface interface {
 	// SetProjectConfig sets the config all modules
-	SetProjectConfig(config *config.Config) error
+	SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing)
 	// SetGlobalConfig sets the auth secret and AESkey
 	SetGlobalConfig(projectID, secret, aesKey string)
 	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
@@ -121,7 +123,6 @@ type ModulesInterface interface {
 
 	GetSchemaModule() SchemaEventingInterface
 }
-
 
 // PostProcess filters the schema
 type PostProcess struct {

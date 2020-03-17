@@ -100,9 +100,13 @@ func (m *Manager) adjustProxyServers() {
 	// Check for the ports to be started
 	for port := range newPorts {
 		if _, p := m.servers[port]; !p {
-			obj := &http.Server{Addr: ":" + strconv.Itoa(int(port)), Handler: m.routes(port)}
-			go func() { _ = obj.ListenAndServe() }()
-			m.servers[port] = obj
+			m.startServer(port)
 		}
 	}
+}
+
+func (m *Manager) startServer(port int32) {
+	obj := &http.Server{Addr: ":" + strconv.Itoa(int(port)), Handler: m.routes(port)}
+	go func() { _ = obj.ListenAndServe() }()
+	m.servers[port] = obj
 }

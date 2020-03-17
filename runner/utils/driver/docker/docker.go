@@ -96,14 +96,14 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 	for index, task := range service.Tasks {
 		if index == 0 {
 			var err error
-			containerName, containerIP, err = d.createContainer(ctx, task, service, ports, "")
+			containerName, containerIP, err = d.createContainer(ctx, index, task, service, ports, "")
 			if err != nil {
 				return err
 			}
 			hostFile.AddHost(containerIP, utils.GetInternalServiceDomain(service.ProjectID, service.ID, service.Version))
 			continue
 		}
-		_, _, err := d.createContainer(ctx, task, service, []model.Port{}, containerName)
+		_, _, err := d.createContainer(ctx, index, task, service, []model.Port{}, containerName)
 		return err
 	}
 
@@ -123,7 +123,7 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 	return hostFile.Save()
 }
 
-func (d *Docker) createContainer(ctx context.Context, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
+func (d *Docker) createContainer(ctx context.Context, index int, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
 	tempSecretPath := fmt.Sprintf("%s/temp-secrets/%s/%s", os.Getenv("SECRETS_PATH"), service.ProjectID, fmt.Sprintf("%s--%s", service.ID, service.Version))
 
 	if err := d.pullImageByPolicy(ctx, service.ProjectID, task.Docker); err != nil {
@@ -135,6 +135,14 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 	if service.Labels == nil {
 		service.Labels = map[string]string{}
 	}
+
+	// Overwrite important labels
+	service.Labels["app"] = "service"
+	service.Labels["project"] = service.ProjectID
+	service.Labels["service"] = service.ID
+	service.Labels["version"] = service.Version
+	service.Labels["task"] = task.ID
+
 	service.Labels["internalRuntime"] = string(task.Runtime)
 	portsJSONString, err := json.Marshal(&task.Ports)
 	if err != nil {
@@ -256,6 +264,7 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 	if cName != "" {
 		hostConfig.NetworkMode = container.NetworkMode("container:" + cName)
 	} else {
+		hostConfig.NetworkMode = "space-cloud"
 		// expose ports of docker container as specified for 1st task
 		task.Ports = overridePorts // override all ports while creating container for 1st task
 		for _, port := range task.Ports {
@@ -264,7 +273,7 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 		}
 	}
 
-	containerName := fmt.Sprintf("space-cloud-%s--%s--%s--%s", service.ProjectID, service.ID, service.Version, task.ID)
+	containerName := fmt.Sprintf("space-cloud-%s--%s--%s--%d--%s", service.ProjectID, service.ID, service.Version, index, task.ID)
 	resp, err := d.client.ContainerCreate(ctx, &container.Config{
 		Image:        task.Docker.Image,
 		Env:          envs,
@@ -288,7 +297,7 @@ func (d *Docker) createContainer(ctx context.Context, task model.Task, service *
 		logrus.Errorf("error applying service in docker unable to inspect container %s got error message  -%v", containerName, err)
 		return "", "", err
 	}
-	return containerName, data.NetworkSettings.IPAddress, nil
+	return containerName, data.NetworkSettings.Networks["space-cloud"].IPAddress, nil
 }
 
 // DeleteService removes every docker container related to specified service id
@@ -374,7 +383,7 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 			return nil, err
 		}
 		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
-		taskID := containerName[3]
+		taskID := containerName[4]
 		service.Version = containerName[2]
 		service.ID = containerName[1]
 		service.Name = service.ID
