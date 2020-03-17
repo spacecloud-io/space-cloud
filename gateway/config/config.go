@@ -50,20 +50,20 @@ type SSL struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud        Crud            `json:"crud" yaml:"crud"`
-	Auth        Auth            `json:"auth" yaml:"auth"`
-	Services    *ServicesModule `json:"services" yaml:"services"`
-	FileStore   *FileStore      `json:"fileStore" yaml:"fileStore"`
-	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
-	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
-	Routes      Routes          `json:"routes" yaml:"routes"`
-	Deployments Deployments     `json:"deployments" yaml:"deployments"`
-	Secrets     []*Secret       `json:"secrets" yaml:"secrets"`
+	Crud        Crud               `json:"crud" yaml:"crud"`
+	Auth        Auth               `json:"auth" yaml:"auth"`
+	Services    *ServicesModule    `json:"services" yaml:"services"`
+	FileStore   *FileStore         `json:"fileStore" yaml:"fileStore"`
+	Eventing    Eventing           `json:"eventing,omitempty" yaml:"eventing,omitempty"`
+	LetsEncrypt LetsEncrypt        `json:"letsencrypt" yaml:"letsencrypt"`
+	Routes      Routes             `json:"routes" yaml:"routes"`
+	Deployments Deployments        `json:"deployments" yaml:"deployments"`
+	Secrets     map[string]*Secret `json:"secrets" yaml:"secrets"`
 }
 
 // Deployments store all services information for particular project
 type Deployments struct {
-	Services []*RunnerService `json:"services" yaml:"services"`
+	Services map[string]*RunnerService `json:"services" yaml:"services"`
 }
 
 // Secret stores secrets information
