@@ -16,6 +16,20 @@ import (
 // SchemaValidator function validates the schema which it gets from module
 func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 
+	for schemaKey := range doc {
+		i := 1
+		for fieldKey := range collectionFields {
+			if i == len(collectionFields) && fieldKey != schemaKey {
+				wrongMongoFieldName := schemaKey
+				return nil, errors.New("The field " + wrongMongoFieldName + " is not present in schema of " + col)
+			}
+			if fieldKey == schemaKey {
+				break
+			}
+			i = i + 1
+		}
+	}
+
 	mutatedDoc := map[string]interface{}{}
 	for fieldKey, fieldValue := range collectionFields {
 		// check if key is required
@@ -60,63 +74,8 @@ func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc 
 	return mutatedDoc, nil
 }
 
-// mongoInvalidEntry checks if there is a field specified which is not there in schema and throws error accordingly
-func (s *Schema) mongoInvalidEntry(dbAlias, col string, req *model.CreateRequest) error {
-
-	dbType, err := s.crud.GetDBType(dbAlias)
-	if err != nil {
-		return err
-	}
-
-	if dbType == string(utils.Mongo) {
-		v := make([]interface{}, 0)
-		switch t := req.Document.(type) {
-		case []interface{}:
-			v = t
-		case map[string]interface{}:
-			v = append(v, t)
-		}
-
-		collection, ok := s.SchemaDoc[dbAlias]
-		if !ok {
-			return errors.New("No db was found named " + dbAlias)
-		}
-		collectionFields, ok := collection[col]
-		if !ok {
-			return nil
-		}
-
-		for _, docTemp := range v {
-			doc, ok := docTemp.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("invalid document provided for collection (%s:%s)", dbAlias, col)
-			}
-
-			for schemaKey := range doc {
-				i := 1
-				for fieldKey := range collectionFields {
-					if i == len(collectionFields) && fieldKey != schemaKey {
-						wrongMongoFieldName := schemaKey
-						return errors.New("The field " + wrongMongoFieldName + " is not present in schema of " + col)
-					}
-					if fieldKey == schemaKey {
-						break
-					}
-					i = i + 1
-				}
-			}
-		}
-
-	}
-	return nil
-}
-
 // ValidateCreateOperation validates  schema on create operation
 func (s *Schema) ValidateCreateOperation(dbAlias, col string, req *model.CreateRequest) error {
-
-	if err := s.mongoInvalidEntry(dbAlias, col, req); err != nil {
-		return err
-	}
 
 	if s.SchemaDoc == nil {
 		return errors.New("schema not initialized")
