@@ -34,12 +34,12 @@ func actionGenerateService(_ *cli.Context) error {
 		return err
 	}
 	v := model.SpecObject{
-		API:  "/v1/runner/{projectId}/services",
+		API:  "/v1/runner/{projectId}/services/{serviceId}/{version}",
 		Type: "service",
 		Meta: map[string]string{
-			"id":        service.ID,
+			"serviceId": service.ID,
 			"projectId": service.ProjectID,
-			"version":   "v1",
+			"version":   service.Version,
 		},
 	}
 	service.ID = ""

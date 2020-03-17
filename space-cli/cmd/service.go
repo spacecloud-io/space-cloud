@@ -34,6 +34,11 @@ func generateServiceConfig(projects []*model.Projects) (*model.Service, error) {
 	if err := survey.AskOne(&survey.Input{Message: "Enter Service ID"}, &serviceID); err != nil {
 		return nil, err
 	}
+
+	serviceVersion := ""
+	if err := survey.AskOne(&survey.Input{Message: "Enter Service Version"}, &serviceVersion); err != nil {
+		return nil, err
+	}
 	var port int32
 	if err := survey.AskOne(&survey.Input{Message: "Enter Service Port"}, &port); err != nil {
 		return nil, err
@@ -104,7 +109,7 @@ func generateServiceConfig(projects []*model.Projects) (*model.Service, error) {
 	c := &model.Service{
 		ID:        serviceID,
 		ProjectID: projectID,
-		Version:   "v1",
+		Version:   serviceVersion,
 		Labels:    map[string]string{},
 		Scale:     model.ScaleConfig{Replicas: 0, MinReplicas: int32(replicaMin), MaxReplicas: int32(replicaMax), Concurrency: 50},
 		Tasks: []model.Task{
