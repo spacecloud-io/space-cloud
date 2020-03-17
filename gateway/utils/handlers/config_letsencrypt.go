@@ -53,7 +53,7 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 	}
 }
 
-//HandleGetEncryptWhitelistedDomain returns handler to get Encrypt White listed Domain
+// HandleGetEncryptWhitelistedDomain returns handler to get Encrypt White listed Domain
 func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -67,11 +67,11 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 			return
 		}
 
-		//get project id from url
+		// get project id from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		//get project config
+		// get project config
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -80,6 +80,6 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"letsEncrypt": project.Modules.LetsEncrypt})
+		_ = json.NewEncoder(w).Encode([]interface{}{project.Modules.LetsEncrypt})
 	}
 }

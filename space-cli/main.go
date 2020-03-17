@@ -104,12 +104,13 @@ func main() {
 				},
 			},
 			Subcommands: []cli.Command{
+				// TODO SET ERROR GETTING GLOBAL PROJECT COMMAND
 				{
 					Name:   "all",
 					Action: modules.GetAllProjects,
 				},
 				{
-					Name:   "project",
+					Name:   "project-config",
 					Action: project.ActionGetProjectConfig,
 				},
 				{

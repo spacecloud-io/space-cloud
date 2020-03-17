@@ -9,32 +9,18 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//GetRemoteServices gets remote services
+// GetRemoteServices gets remote services
 func GetRemoteServices(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/remote-service/service", project)
 
 	// Get the spec from the server
-	result := make(map[string]interface{})
+	result := make([]interface{}, 0)
 	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 
-	var array []interface{}
-	if value, p := result["service"]; p {
-		obj := value.(map[string]interface{})
-		obj["id"] = params["service"]
-		array = []interface{}{value}
-	}
-	if value, p := result["services"]; p {
-		obj := value.(map[string]interface{})
-		for rule, value := range obj {
-			o := value.(map[string]interface{})
-			o["id"] = rule
-			array = append(array, o)
-		}
-	}
 	var services []*model.SpecObject
-	for _, item := range array {
+	for _, item := range result {
 		spec := item.(map[string]interface{})
 
 		meta := map[string]string{"project": project, "id": spec["id"].(string)}

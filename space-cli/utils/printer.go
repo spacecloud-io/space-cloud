@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-
 	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/model"
@@ -20,7 +19,7 @@ func CreateSpecObject(api, objType string, meta map[string]string, spec interfac
 	return &v, nil
 }
 
-//PrintYaml prints array of yaml object
+// PrintYaml prints array of yaml object
 func PrintYaml(objs []*model.SpecObject) error {
 	for _, val := range objs {
 		b, err := yaml.Marshal(val)

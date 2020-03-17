@@ -2,7 +2,7 @@ package syncman
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -38,7 +38,7 @@ func (s *Manager) GetProjectRoutes(ctx context.Context, project string) (config.
 }
 
 // SetProjectRoute adds a route in specified project config
-func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config.Route) error {
+func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *config.Route) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -50,7 +50,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 
 	doesExist := false
 	for _, route := range projectConfig.Modules.Routes {
-		if route.ID == c.ID {
+		if id == route.ID {
 			route.Source = c.Source
 			route.Targets = c.Targets
 			doesExist = true
@@ -87,4 +87,30 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 		}
 	}
 	return nil
+}
+
+// GetIngressRouting gets ingress routing from config
+func (s *Manager) GetIngressRouting(ctx context.Context, project, routeId string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if routeId != "" {
+		for _, value := range projectConfig.Modules.Routes {
+			if routeId == value.ID {
+				return []interface{}{value}, nil
+			}
+		}
+		return nil, fmt.Errorf("route id (%s) not present in config", routeId)
+	}
+
+	routes := []interface{}{}
+	for _, value := range projectConfig.Modules.Routes {
+		routes = append(routes, value)
+	}
+	return routes, nil
 }

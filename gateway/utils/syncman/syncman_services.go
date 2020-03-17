@@ -2,7 +2,7 @@ package syncman
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -49,4 +49,29 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string) er
 	}
 
 	return s.setProject(ctx, projectConfig)
+}
+
+// GetServices gets a remotes service
+func (s *Manager) GetServices(ctx context.Context, project, serviceID string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if serviceID != "" {
+		service, ok := projectConfig.Modules.Services.Services[serviceID]
+		if !ok {
+			return nil, fmt.Errorf("serviceID (%s) not present in config", serviceID)
+		}
+		return []interface{}{service}, nil
+	}
+
+	services := []interface{}{}
+	for _, value := range projectConfig.Modules.Services.Services {
+		services = append(services, value)
+	}
+	return services, nil
 }

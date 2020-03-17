@@ -18,85 +18,61 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router := mux.NewRouter()
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
-
 	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/refresh-token").HandlerFunc(handlers.HandleRefreshToken(s.adminMan, s.syncMan))
-
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleGetProjectConfig(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleApplyProject(s.adminMan, s.syncMan))
-	router.Methods(http.MethodGet).Path("/v1/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan, s.configFilePath))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
+	router.Methods(http.MethodGet).Path("/v1/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan, s.configFilePath))
 
-	// ------------------------------------------------------------
-	// Initialize the routes for remote services config
-	// same for get services pass query param
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/remote-service/service/{service}").HandlerFunc(handlers.HandleAddService(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/remote-service/service/{service}").HandlerFunc(handlers.HandleDeleteService(s.adminMan, s.syncMan))
-	// ------------------------------------------------------------
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/remote-service/service").HandlerFunc(handlers.HandleGetService(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/remote-service/service/{id}").HandlerFunc(handlers.HandleAddService(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/remote-service/service/{id}").HandlerFunc(handlers.HandleDeleteService(s.adminMan, s.syncMan))
 
-	// ------------------------------------------------------------
-	// Initialize route for user management config
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/provider{provider}").HandlerFunc(handlers.HandleUserManagement(s.adminMan, s.syncMan))
-	// ------------------------------------------------------------
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/user-management/provider").HandlerFunc(handlers.HandleGetUserManagement(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/user-management/provider/{id}").HandlerFunc(handlers.HandleSetUserManagement(s.adminMan, s.syncMan))
 
-	// ------------------------------------------------------------
-	// Initialize the routes for eventing config
-	// the {id} param here is just to make the endpoints consistent with enterprise server we don't use it internally
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/config").HandlerFunc(handlers.HandleGetEventingConfig(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/config/{id}").HandlerFunc(handlers.HandleSetEventingConfig(s.adminMan, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/triggers/{triggerName}").HandlerFunc(handlers.HandleAddEventingTriggerRule(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/triggers/{triggerName}").HandlerFunc(handlers.HandleDeleteEventingTriggerRule(s.adminMan, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/schema/{type}").HandlerFunc(handlers.HandleSetEventingSchema(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/schema/{type}").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/rules/{type}").HandlerFunc(handlers.HandleAddEventingSecurityRule(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/rules/{type}").HandlerFunc(handlers.HandleDeleteEventingSecurityRule(s.adminMan, s.syncMan))
-	// ------------------------------------------------------------
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/triggers").HandlerFunc(handlers.HandleGetEventingTriggers(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/triggers/{id}").HandlerFunc(handlers.HandleAddEventingTriggerRule(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/triggers/{id}").HandlerFunc(handlers.HandleDeleteEventingTriggerRule(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/schema").HandlerFunc(handlers.HandleGetEventingSchema(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/schema/{id}").HandlerFunc(handlers.HandleSetEventingSchema(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/schema/{id}").HandlerFunc(handlers.HandleDeleteEventingSchema(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/eventing/rules").HandlerFunc(handlers.HandleGetEventingSecurityRules(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/eventing/rules/{id}").HandlerFunc(handlers.HandleAddEventingSecurityRule(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/eventing/rules/{id}").HandlerFunc(handlers.HandleDeleteEventingSecurityRule(s.adminMan, s.syncMan))
 
-	// --------------------------------------------------------------------------------------
-	// Initialize the routes for file storage config
-	// this endpoints performs some operation & the result of operation is given back to client. No stated is taken from config file
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan, s.modules.File))
+	router.Methods(http.MethodGet).Path("/v1/external/projects/{project}/file-storage/connection-state").HandlerFunc(handlers.HandleGetFileState(s.adminMan, s.syncMan, s.modules.File))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/config").HandlerFunc(handlers.HandleGetFileStore(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/file-storage/config/{id}").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/file-storage/rules").HandlerFunc(handlers.HandleGetFileRule(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/file-storage/rules/{id}").HandlerFunc(handlers.HandleSetFileRule(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/file-storage/rules/{id}").HandlerFunc(handlers.HandleDeleteFileRule(s.adminMan, s.syncMan))
 
-	// same for get config set the id in url param
-	// the {id} param here is just to make the endpoints consistent with enterprise server we don't use it internally
-	router.Methods(http.MethodPost).Path("/v1/external/projects/{project}/file-storage/config/{id}").HandlerFunc(handlers.HandleSetFileStore(s.adminMan, s.syncMan))
-
-	// same for get file rule it will depend on query params
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/file-storage/rules/{ruleName}").HandlerFunc(handlers.HandleSetFileRule(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/file-storage/rules/{ruleName}").HandlerFunc(handlers.HandleDeleteFileRule(s.adminMan, s.syncMan))
-	// ------------------------------------------------------------------------------------------
-
-	// ------------------------------------------------------------------------------------------
-	// Initialize the routes for database config
 	router.Methods(http.MethodGet).Path("/v1/external/projects/{project}/database/{dbAlias}/connection-state").HandlerFunc(handlers.HandleGetConnectionState(s.adminMan, s.modules.Crud))
 	router.Methods(http.MethodGet).Path("/v1/external/projects/{project}/database/{dbAlias}/list-collections").HandlerFunc(handlers.HandleGetCollections(s.adminMan, s.modules.Crud, s.syncMan)) // TODO: Check response type
-
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/collections/rules").HandlerFunc(handlers.HandleGetCollectionRules(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/config").HandlerFunc(handlers.HandleGetDatabaseConnection(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/collections/schema/mutate").HandlerFunc(handlers.HandleGetSchema(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules").HandlerFunc(handlers.HandleCollectionRules(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/config/{id}").HandlerFunc(handlers.HandleDatabaseConnection(s.adminMan, s.modules.Crud, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/config/{id}").HandlerFunc(handlers.HandleRemoveDatabaseConfig(s.adminMan, s.modules.Crud, s.syncMan))
-
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}").HandlerFunc(handlers.HandleDeleteCollection(s.adminMan, s.modules.Crud, s.syncMan))
-
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/schema/mutate").HandlerFunc(handlers.HandleModifyAllSchema(s.adminMan, s.modules.Schema, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate").HandlerFunc(handlers.HandleModifySchema(s.adminMan, s.modules.Schema, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/schema/inspect").HandlerFunc(handlers.HandleReloadSchema(s.adminMan, s.modules.Schema, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/inspect").HandlerFunc(handlers.HandleInspectCollectionSchema(s.adminMan, s.modules.Schema, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/external/projects/{project}/database/{dbAlias}/schema/inspect").HandlerFunc(handlers.HandleInspectTrackedCollectionsSchema(s.adminMan, s.modules.Schema))
-	// ------------------------------------------------------------------------------------------
 
-	// --------------------------------------------------------------------------
-	// Initialize the routes for the global modules
-	// the {id} param here is just to make the endpoints consistent with enterprise server we don't use it internally
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/letsencrypt/config").HandlerFunc(handlers.HandleGetEncryptWhitelistedDomain(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/letsencrypt/config/{id}").HandlerFunc(handlers.HandleLetsEncryptWhitelistedDomain(s.adminMan, s.syncMan))
-	// --------------------------------------------------------------------------
 
-	// --------------------------------------------------------------------------
-	// Initialize the routes for the routing module config
-	// removed set config here which set all routes at once
-	// get endpoints returns result according to the query params provided
-	// if query parameter is all result will
-	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing/ingress").HandlerFunc(handlers.HandleGetRoutingConfig(s.adminMan, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress{routeId}").HandlerFunc(handlers.HandleSetProjectRoute(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress{routeId}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.adminMan, s.syncMan))
-	// --------------------------------------------------------------------------
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/routing/ingress").HandlerFunc(handlers.HandleGetProjectRoute(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleSetProjectRoute(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.adminMan, s.syncMan))
+
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.modules.Graphql, s.syncMan))
 

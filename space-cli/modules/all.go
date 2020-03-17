@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"github.com/spaceuptech/space-cli/modules/letsencrypt"
 	"io/ioutil"
 
 	"github.com/urfave/cli"
@@ -12,14 +13,13 @@ import (
 	"github.com/spaceuptech/space-cli/modules/database"
 	"github.com/spaceuptech/space-cli/modules/eventing"
 	"github.com/spaceuptech/space-cli/modules/filestore"
-	"github.com/spaceuptech/space-cli/modules/letsencrypt"
 	"github.com/spaceuptech/space-cli/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
 	"github.com/spaceuptech/space-cli/modules/routes"
 	"github.com/spaceuptech/space-cli/modules/services"
 )
 
-//GetAllProjects gets project config
+// GetAllProjects gets project config
 func GetAllProjects(c *cli.Context) error {
 	projectName := c.GlobalString("project")
 
@@ -27,7 +27,7 @@ func GetAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("1", "project", []*model.SpecObject{obj}); err != nil {
+	if err := createConfigFile("1", "project", obj); err != nil {
 		return err
 	}
 
@@ -59,7 +59,7 @@ func GetAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("5", "filestore-config", []*model.SpecObject{obj}); err != nil {
+	if err := createConfigFile("5", "filestore-config", obj); err != nil {
 		return err
 	}
 
@@ -75,7 +75,7 @@ func GetAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("7", "eventing-config", []*model.SpecObject{obj}); err != nil {
+	if err := createConfigFile("7", "eventing-config", obj); err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func GetAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("17", "letsencrypt", []*model.SpecObject{obj}); err != nil {
+	if err := createConfigFile("17", "letsencrypt", obj); err != nil {
 		return err
 	}
 

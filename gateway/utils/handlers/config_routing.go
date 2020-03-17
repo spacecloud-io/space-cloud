@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -100,7 +99,8 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		if err := syncMan.SetProjectRoute(ctx, projectID, value); err != nil {
+		id := vars["id"]
+		if err := syncMan.SetProjectRoute(ctx, projectID, id, value); err != nil {
 			logrus.Errorf("error handling set project route in handlers unable to add route in project config got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -112,7 +112,7 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 	}
 }
 
-//HandleGetProjectRoute returns handler to get project route
+// HandleGetProjectRoute returns handler to get project route
 func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -125,47 +125,27 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-		//get project id and routes id from url
+		// get project id and routes id from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		routesID, exists := r.URL.Query()["routesID"]
+		routeID := ""
+		routesQuery, exists := r.URL.Query()["id"]
+		if exists {
+			routeID = routesQuery[0]
+		}
 
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		routes, err := syncMan.GetIngressRouting(ctx, projectID, routeID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		//check if routes present in url
-		if exists {
-			for _, val := range project.Modules.Routes {
-				if val.ID == routesID[0] {
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(map[string]interface{}{"route": val})
-					return
-				}
-			}
-
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Route(%s) not found", routesID[0])})
-			return
-		}
-		routes := make(map[string]*config.Route)
-		for _, val := range project.Modules.Routes {
-			routes[val.ID] = &config.Route{ID: val.ID, Source: val.Source, Targets: val.Targets}
-		}
-
-		if len(routes) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("routes not present in state")})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"routes": routes})
+		_ = json.NewEncoder(w).Encode(routes)
 	}
 }
 
@@ -187,7 +167,7 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		routeID := vars["routeId"]
+		routeID := vars["id"]
 		if err := syncMan.DeleteProjectRoute(ctx, projectID, routeID); err != nil {
 			logrus.Errorf("error handling delete project route in handlers unable to delete route in project config got error message - %v", err)
 			w.WriteHeader(http.StatusBadRequest)

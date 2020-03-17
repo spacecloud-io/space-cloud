@@ -191,14 +191,14 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			return
 		}
 
-		respServices := make(map[string]*model.Service)
+		respServices := make(map[string]*model.Service, 0)
 		if serviceIDExists && versionExists {
 			for _, val := range services {
 				if val.ProjectID == projectID && val.ID == serviceID[0] && val.Version == version[0] {
 					s := fmt.Sprintf("%s-%s", serviceID, version)
 					respServices[s] = val
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": respServices})
+					_ = json.NewEncoder(w).Encode([]interface{}{respServices})
 					return
 				}
 			}
@@ -216,14 +216,8 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 				}
 			}
 
-			if len(respServices) == 0 {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
-				return
-			}
-
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
+			_ = json.NewEncoder(w).Encode([]interface{}{respServices})
 			return
 		}
 
@@ -232,14 +226,8 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			respServices[s] = val
 		}
 
-		if len(respServices) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("services not set")})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
+		_ = json.NewEncoder(w).Encode([]interface{}{respServices})
 	}
 }
 
@@ -338,7 +326,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		serviceID, exists := r.URL.Query()["serviceId"]
+		serviceID, exists := r.URL.Query()["id"]
 
 		serviceRoutes, err := s.driver.GetServiceRoutes(ctx, projectID)
 		if err != nil {
@@ -351,7 +339,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 			for k, val := range serviceRoutes {
 				if k == serviceID[0] {
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": val})
+					_ = json.NewEncoder(w).Encode([]interface{}{val})
 					return
 				}
 			}
@@ -361,14 +349,13 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 			return
 		}
 
-		if len(serviceRoutes) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("no routes not present in state")})
-			return
+		result := make([]interface{}, 0)
+		for _, value := range serviceRoutes {
+			result = append(result, value)
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": serviceRoutes})
+		_ = json.NewEncoder(w).Encode(result)
 	}
 }
 

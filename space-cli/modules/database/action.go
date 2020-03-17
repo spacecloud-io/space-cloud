@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//ActionGetDbRules gets database rule
+// ActionGetDbRules gets database rule
 func ActionGetDbRules(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -30,7 +30,7 @@ func ActionGetDbRules(c *cli.Context) error {
 	return nil
 }
 
-//ActionGetDbConfig gets database config
+// ActionGetDbConfig gets database config
 func ActionGetDbConfig(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -51,7 +51,7 @@ func ActionGetDbConfig(c *cli.Context) error {
 	return nil
 }
 
-//ActionGetDbSchema gets database schema
+// ActionGetDbSchema gets database schema
 func ActionGetDbSchema(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")

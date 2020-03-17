@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -88,4 +89,49 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 	}
 
 	return s.setProject(ctx, projectConfig)
+}
+
+// GetFileStoreConfig gets file store config
+func (s *Manager) GetFileStoreConfig(ctx context.Context, project string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	return []interface{}{config.FileStore{
+		Enabled:   projectConfig.Modules.FileStore.Enabled,
+		StoreType: projectConfig.Modules.FileStore.StoreType,
+		Conn:      projectConfig.Modules.FileStore.Conn,
+		Endpoint:  projectConfig.Modules.FileStore.Endpoint,
+		Bucket:    projectConfig.Modules.FileStore.Bucket,
+	}}, nil
+}
+
+// GetFileStoreRules gets file store rules from config
+func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if ruleID != "" {
+		for _, value := range projectConfig.Modules.FileStore.Rules {
+			if ruleID == value.Name {
+				return []interface{}{value}, nil
+			}
+		}
+		return nil, fmt.Errorf("file rule (%s) not present in config", ruleID)
+	}
+
+	fileRules := []interface{}{}
+	for _, value := range projectConfig.Modules.FileStore.Rules {
+		fileRules = append(fileRules, value)
+	}
+	return fileRules, nil
 }

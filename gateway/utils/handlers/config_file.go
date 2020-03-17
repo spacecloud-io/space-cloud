@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -50,9 +49,11 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 	}
 }
 
-//HandleGetFileStore returns handler to get file store
+// HandleGetFileStore returns handler to get file store
 func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -64,12 +65,12 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 			return
 		}
 
-		//get project id from url
+		// get project id from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		// get project config
+		fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -77,13 +78,7 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"enabled":   project.Modules.FileStore.Enabled,
-			"storeType": project.Modules.FileStore.StoreType,
-			"conn":      project.Modules.FileStore.Conn,
-			"endpoint":  project.Modules.FileStore.Endpoint,
-			"bucket":    project.Modules.FileStore.Bucket,
-		})
+		_ = json.NewEncoder(w).Encode(fileConfig)
 	}
 }
 
@@ -137,7 +132,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		ruleName := vars["ruleName"]
+		ruleName := vars["id"]
 		value.Name = ruleName
 
 		if err := syncMan.SetFileRule(ctx, projectID, value); err != nil {
@@ -151,7 +146,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 	}
 }
 
-//HandleGetFileRule returns handler to get file rule
+// HandleGetFileRule returns handler to get file rule
 func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -164,48 +159,27 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
-		//get project id and ruleName
+		// get project id and ruleName
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		ruleName, exists := r.URL.Query()["ruleName"]
-
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		ruleId := ""
+		ruleName, exists := r.URL.Query()["id"]
+		if exists {
+			ruleId = ruleName[0]
+		}
+		// get project config
+		fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleId)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		//check if ruleName exists in url
-		if exists {
-			for _, val := range project.Modules.FileStore.Rules {
-				if val.Name == ruleName[0] {
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(map[string]interface{}{"rule": val})
-					return
-				}
-			}
-
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("ruleName(%s) not found", ruleName[0])})
-			return
-		}
-
-		fileRules := make(map[string]*config.FileRule)
-		for _, val := range project.Modules.FileStore.Rules {
-			fileRules[val.Name] = val
-		}
-
-		if len(fileRules) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("fileRules not present in state")})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": fileRules})
+		_ = json.NewEncoder(w).Encode(fileRules)
 	}
 }
 
@@ -230,7 +204,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		ruleName := vars["ruleName"]
+		ruleName := vars["id"]
 
 		if err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

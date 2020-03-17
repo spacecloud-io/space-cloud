@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -36,7 +35,7 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		defer cancel()
 
 		vars := mux.Vars(r)
-		ruleName := vars["triggerName"]
+		ruleName := vars["id"]
 		projectID := vars["project"]
 
 		if err := syncMan.SetEventingRule(ctx, projectID, ruleName, value); err != nil {
@@ -45,14 +44,13 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
 
 	}
 }
 
-//HandleGetEventingTriggers returns handler to get event trigger
+// HandleGetEventingTriggers returns handler to get event trigger
 func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -65,42 +63,25 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
-		//get projectId and ruleName from url
+		// get projectId and ruleName from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		ruleName, exists := r.URL.Query()["ruleName"]
-
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		id := ""
+		ruleNameQuery, exists := r.URL.Query()["id"]
+		if exists {
+			id = ruleNameQuery[0]
+		}
+		rules, err := syncMan.GetEventingTriggerRules(ctx, projectID, id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		//check if ruleName exists
-		if exists {
-			rule, ok := project.Modules.Eventing.Rules[ruleName[0]]
-			if !ok {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("ruleName(%s) not present in state", ruleName[0])})
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rule": rule})
-			return
-		}
-
-		if len(project.Modules.Eventing.Rules) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing rules not present in state")})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": project.Modules.Eventing.Rules})
+		_ = json.NewEncoder(w).Encode(rules)
 	}
 }
 
@@ -122,7 +103,7 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 		defer cancel()
 
 		vars := mux.Vars(r)
-		ruleName := vars["triggerName"]
+		ruleName := vars["id"]
 		projectID := vars["project"]
 
 		if err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName); err != nil {
@@ -131,7 +112,7 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 
@@ -155,26 +136,25 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		c := config.Eventing{}
-		_ = json.NewDecoder(r.Body).Decode(&c)
+		c := new(config.Eventing)
+		_ = json.NewDecoder(r.Body).Decode(c)
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-
 		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBType, c.Enabled); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 
 	}
 }
 
-//HandleGetEventingConfig returns handler to get event config
+// HandleGetEventingConfig returns handler to get event config
 func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -188,11 +168,11 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
-		//get project id from url
+		// get project id from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		//get project config
+		// get project config
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -201,7 +181,7 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"dbAlias": project.Modules.Eventing.DBType, "enabled": project.Modules.Eventing.Enabled})
+		_ = json.NewEncoder(w).Encode([]interface{}{config.Eventing{DBType: project.Modules.Eventing.DBType, Enabled: project.Modules.Eventing.Enabled}})
 	}
 }
 
@@ -230,7 +210,7 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		evType := vars["type"]
+		evType := vars["id"]
 
 		if err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema); err != nil {
 			logrus.Errorf("Failed to set eventing schema - %s", err.Error())
@@ -239,12 +219,12 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
-//HandleGetEventingSchema returns handler to get event schema
+// HandleGetEventingSchema returns handler to get event schema
 func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -257,42 +237,25 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
-		//get project id and type from url
+		// get project id and type from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		typ, exists := r.URL.Query()["type"]
-
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		id := ""
+		typ, exists := r.URL.Query()["id"]
+		if exists {
+			id = typ[0]
+		}
+		schemas, err := syncMan.GetEventingSchema(ctx, projectID, id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		//check id typ is present in url
-		if exists {
-			schema, ok := project.Modules.Eventing.Schemas[typ[0]]
-			if !ok {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("type(%s) not present in state", typ[0])})
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
-			return
-		}
-
-		if len(project.Modules.Eventing.Schemas) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing schema not present in state")})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": project.Modules.Eventing.Schemas})
+		_ = json.NewEncoder(w).Encode(schemas)
 	}
 }
 
@@ -315,7 +278,7 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		evType := vars["type"]
+		evType := vars["id"]
 
 		if err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType); err != nil {
 			logrus.Errorf("Failed to delete eventing schema - %s", err.Error())
@@ -324,16 +287,13 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
 // HandleAddEventingSecurityRule is an endpoint handler which adds a security rule in eventing
 func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type setSecurityRules struct {
-		Rule *config.Rule `json:"rule"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -349,26 +309,26 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		c := setSecurityRules{}
+		c := new(config.Rule)
 		_ = json.NewDecoder(r.Body).Decode(&c)
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		evType := vars["type"]
+		evType := vars["id"]
 
-		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c.Rule); err != nil {
+		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c); err != nil {
 			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
-//HandleGetEventingSecurityRules returns handler to get event security rules
+// HandleGetEventingSecurityRules returns handler to get event security rules
 func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -381,41 +341,25 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
-		//get project id and type from url
+		// get project id and type from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		typ, exists := r.URL.Query()["type"]
-
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		id := ""
+		typ, exists := r.URL.Query()["id"]
+		if exists {
+			id = typ[0]
+		}
+		securityRules, err := syncMan.GetEventingSecurityRules(ctx, projectID, id)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		//check if typ present in url
-		if exists {
-			rule, ok := project.Modules.Eventing.SecurityRules[typ[0]]
-			if !ok {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("type(%s) not present in state", typ[0])})
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"securityRule": rule})
-			return
-		}
-
-		if len(project.Modules.Eventing.SecurityRules) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("eventing rules not present in state")})
-			return
-		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"securityRules": project.Modules.Eventing.SecurityRules})
+		_ = json.NewEncoder(w).Encode(securityRules)
 	}
 }
 
@@ -438,7 +382,7 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		evType := vars["type"]
+		evType := vars["id"]
 
 		if err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType); err != nil {
 			logrus.Errorf("Failed to delete eventing rules - %s", err.Error())
@@ -447,7 +391,7 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }

@@ -1,6 +1,7 @@
 package syncman
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -96,6 +97,17 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	decodedAESKey, err := base64.StdEncoding.DecodeString(project.AESkey)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	project.AESkey = string(decodedAESKey)
+
+	// set default context time
+	if project.ContextTime == 0 {
+		project.ContextTime = 10
+	}
+
 	// Generate internal access token
 	token, err := s.adminMan.GetInternalAccessToken()
 	if err != nil {
@@ -105,6 +117,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	var doesProjectExists bool
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
+			// override the existing config
 			p.Name = project.Name
 			p.AESkey = project.AESkey
 			p.Secret = project.Secret
@@ -216,6 +229,21 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 	}
 
 	return s.store.DeleteProject(ctx, projectID)
+}
+
+// GetConfig returns the config present in the state
+func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Iterate over all projects stored
+	for _, p := range s.projectConfig.Projects {
+		if projectID == p.ID {
+			return []interface{}{config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
+		}
+	}
+
+	return []interface{}{}, errors.New("given project is not present in state")
 }
 
 // GetConfig returns the config present in the state

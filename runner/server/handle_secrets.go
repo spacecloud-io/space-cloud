@@ -104,7 +104,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		name, exists := r.URL.Query()["name"]
+		name, exists := r.URL.Query()["id"]
 
 		// list all secrets
 		secrets, err := s.driver.ListSecrets(projectID)
@@ -118,7 +118,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 			for _, val := range secrets {
 				if val.Name == name[0] {
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(map[string]interface{}{"secret": val})
+					_ = json.NewEncoder(w).Encode([]interface{}{val})
 					return
 				}
 			}
@@ -128,19 +128,8 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 			return
 		}
 
-		secretsMap := make(map[string]*model.Secret)
-		for _, val := range secrets {
-			secretsMap[val.Name] = val
-		}
-
-		if len(secretsMap) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("secrets not present in state")})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"secrets": secretsMap})
+		_ = json.NewEncoder(w).Encode(secrets)
 
 	}
 }
@@ -189,8 +178,8 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 		// get nameSpace and secretKey from requestUrl!
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		name := vars["name"] //secret-name
-		key := vars["key"]   //secret-key
+		name := vars["name"] // secret-name
+		key := vars["key"]   // secret-key
 
 		// body will only contain "value": secretValue (not-encoded!)
 		secretVal := new(model.SecretValue)
@@ -224,8 +213,8 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		name := vars["name"] //secret-name
-		key := vars["key"]   //secret-key
+		name := vars["name"] // secret-name
+		key := vars["key"]   // secret-key
 		// setSecretKey
 		if err := s.driver.DeleteKey(projectID, name, key); err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())

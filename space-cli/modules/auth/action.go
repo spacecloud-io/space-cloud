@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//ActionGetAuthProviders gets auth providers
+// ActionGetAuthProviders gets auth providers
 func ActionGetAuthProviders(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -14,7 +14,7 @@ func ActionGetAuthProviders(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["provider"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 
 	objs, err := GetAuthProviders(project, commandName, params)

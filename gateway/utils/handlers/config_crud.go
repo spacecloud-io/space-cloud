@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -159,13 +158,8 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 	}
 }
 
-//HandleGetDatabaseConnection returns handler to get Database Collection
+// HandleGetDatabaseConnection returns handler to get Database Collection
 func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type response struct {
-		Conn    string `json:"conn"`
-		Enabled bool   `json:"enabled"`
-		Type    string `json:"type"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -177,48 +171,26 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
-		//get project id and dbType from url
+		// get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbAlias, exists := r.URL.Query()["dbAlias"]
-
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		if !exists {
-			connections := make(map[string]response)
-			for k, coll := range project.Modules.Crud {
-				connections[k] = response{Conn: coll.Conn, Enabled: coll.Enabled, Type: coll.Type}
-			}
-
-			if len(connections) == 0 {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbConnections not present in state")})
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"connections": connections})
-			return
-		}
-
-		//get collection
-		coll, ok := project.Modules.Crud[dbAlias[0]]
-		if !ok {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present on state", dbAlias[0])})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		connection := response{Conn: coll.Conn, Enabled: coll.Enabled, Type: coll.Type}
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"connection": connection})
+		_ = json.NewEncoder(w).Encode(dbConfig)
 	}
 }
 
@@ -298,11 +270,8 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 	}
 }
 
-//HandleGetSchema returns handler to get schema
+// HandleGetSchema returns handler to get schema
 func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type response struct {
-		Schema string `json:"schema"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -314,82 +283,29 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		//get project id and dbType from url
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		// get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbAlias, exists := r.URL.Query()["dbAlias"]
-
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		colQuery, exists := r.URL.Query()["col"]
+		col := ""
+		if exists {
+			col = colQuery[0]
+		}
+		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
+			return]
 		}
-
-		if !exists {
-			collectionsSchemas := make(map[string]response)
-			for i, dbConfig := range project.Modules.Crud {
-				for p, val := range dbConfig.Collections {
-					s := fmt.Sprintf("%s-%s", i, p)
-					collectionsSchemas[s] = response{val.Schema}
-				}
-			}
-
-			if len(collectionsSchemas) == 0 {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("schemas not present in state")})
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": collectionsSchemas})
-			return
-		}
-
-		//gel col from url
-		col, exists := r.URL.Query()["col"]
-
-		//get collection
-		coll, ok := project.Modules.Crud[dbAlias[0]]
-		if !ok {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present in state", dbAlias[0])})
-			return
-		}
-
-		//check if col exists in url
-		if exists {
-			temp, ok := coll.Collections[col[0]]
-			if !ok {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("col(%s) not found", col[0])})
-				return
-			}
-
-			collectionSchema := make(map[string]response)
-			s := fmt.Sprintf("%s-%s", dbAlias[0], col[0])
-			collectionSchema[s] = response{Schema: temp.Schema}
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": collectionSchema})
-			return
-		}
-
-		schemas := make(map[string]response)
-		for p, val := range coll.Collections {
-			s := fmt.Sprintf("%s-%s", dbAlias[0], p)
-			schemas[s] = response{Schema: val.Schema}
-		}
-
-		if len(schemas) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("schemas not present in state")})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": schemas})
+		_ = json.NewEncoder(w).Encode(schemas)
 	}
 }
 
@@ -428,12 +344,8 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 	}
 }
 
-//HandleGetCollectionRules returns handler to get collection rule
+// HandleGetCollectionRules returns handler to get collection rule
 func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type response struct {
-		IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
-		Rules             map[string]*config.Rule `json:"rules"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -445,83 +357,30 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		//get project id and dbAlias
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		// get project id and dbAlias
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbAlias, exists := r.URL.Query()["dbAlias"]
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		col := ""
+		colQuery, exists := r.URL.Query()["col"]
+		if exists {
+			col = colQuery[0]
+		}
 
-		//get project config
-		project, err := syncMan.GetConfig(projectID)
+		dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		if !exists {
-			collectionsRules := make(map[string]response)
-			for i, dbConfig := range project.Modules.Crud {
-				for p, val := range dbConfig.Collections {
-					s := fmt.Sprintf("%s-%s", i, p)
-					collectionsRules[s] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
-				}
-			}
-
-			if len(collectionsRules) == 0 {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbRules not present in state")})
-				return
-			}
-
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionsRules})
-			return
-		}
-
-		//gel collection id
-		col, exists := r.URL.Query()["col"]
-
-		//get databaseConfig
-		databaseConfig, ok := project.Modules.Crud[dbAlias[0]]
-		if !ok {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present in config", dbAlias[0])})
-			return
-		}
-
-		//check col present in url
-		if exists {
-			//get collection
-			collection, ok := databaseConfig.Collections[col[0]]
-			if !ok {
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("col(%s) not present in config", col[0])})
-				return
-			}
-
-			collectionsRule := make(map[string]response)
-			s := fmt.Sprintf("%s-%s", dbAlias[0], col[0])
-			collectionsRule[s] = response{IsRealTimeEnabled: collection.IsRealTimeEnabled, Rules: collection.Rules}
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rule": collectionsRule})
-			return
-		}
-
-		collectionRules := make(map[string]response)
-		for p, val := range databaseConfig.Collections {
-			s := fmt.Sprintf("%s-%s", dbAlias[0], p)
-			collectionRules[s] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
-		}
-
-		if len(collectionRules) == 0 {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("dbRules not present in state")})
-			return
-		}
-
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionRules})
+		_ = json.NewEncoder(w).Encode(dbConfig)
 	}
 }
 

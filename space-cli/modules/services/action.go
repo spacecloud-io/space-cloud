@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//ActionGetServicesRoutes gets services routes
+// ActionGetServicesRoutes gets services routes
 func ActionGetServicesRoutes(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -27,7 +27,7 @@ func ActionGetServicesRoutes(c *cli.Context) error {
 	return nil
 }
 
-//ActionGetServicesSecrets gets services routes
+// ActionGetServicesSecrets gets services routes
 func ActionGetServicesSecrets(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -48,7 +48,7 @@ func ActionGetServicesSecrets(c *cli.Context) error {
 	return nil
 }
 
-//ActionGetServices gets runner services
+// ActionGetServices gets runner services
 func ActionGetServices(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")

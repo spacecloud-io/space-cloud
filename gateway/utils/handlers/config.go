@@ -228,11 +228,11 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 
 		// Give positive acknowledgement
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects})
+		_ = json.NewEncoder(w).Encode(c.Projects)
 	}
 }
 
-//HandleGetProjectConfig returns handler to get config of the project
+// HandleGetProjectConfig returns handler to get config of the project
 func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -249,14 +249,14 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		project, err := syncMan.GetConfig(projectID)
+		project, err := syncMan.GetProjectConfig(projectID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"aesKey": project.AESkey, "secret": project.Secret, "name": project.Name, "contextTime": project.ContextTime})
+		_ = json.NewEncoder(w).Encode(project)
 	}
 }
 

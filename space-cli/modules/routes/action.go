@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//ActionGetIngressRoutes gets routes
+// ActionGetIngressRoutes gets routes
 func ActionGetIngressRoutes(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
@@ -14,7 +14,7 @@ func ActionGetIngressRoutes(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["routesID"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 
 	objs, err := GetIngressRoutes(project, commandName, params)
