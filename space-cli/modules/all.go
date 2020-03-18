@@ -3,6 +3,8 @@ package modules
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
@@ -22,6 +24,11 @@ import (
 //GetAllProjects gets project config
 func GetAllProjects(c *cli.Context) error {
 	projectName := c.GlobalString("project")
+
+	err := os.MkdirAll("config", 0755)
+	if err != nil {
+		return err
+	}
 
 	obj, err := project.GetProjectConfig(projectName, "project", map[string]string{})
 	if err != nil {
@@ -163,6 +170,17 @@ func GetAllProjects(c *cli.Context) error {
 }
 
 func createConfigFile(pos, commandName string, objs []*model.SpecObject) error {
+
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+
+	exPath := filepath.Dir(ex)
+	if err := os.Chdir(exPath + "/config"); err != nil {
+		return err
+	}
+
 	message := ""
 	for _, val := range objs {
 		data, err := yaml.Marshal(val)
