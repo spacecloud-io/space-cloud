@@ -178,7 +178,7 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		if len(routes) == 0 {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("routes not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "routes not found"})
 			return
 		}
 

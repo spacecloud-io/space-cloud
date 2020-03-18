@@ -220,7 +220,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		if len(fileRules) == 0 {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("fileRules not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "file rules not found"})
 			return
 		}
 

@@ -101,7 +101,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 	}
 }
 
-func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.RunnerService, error) {
+func getServices(syncMan *syncman.Manager, projectID, token string) (map[string]*config.RunnerService, error) {
 	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/%s/services", syncMan.GetRunnerAddr(), projectID), nil)
 	if err != nil {
 		logrus.Errorf("error while getting services in handler unable to create http request - %v", err)
@@ -116,8 +116,8 @@ func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.R
 	}
 
 	type resp struct {
-		Services []*config.RunnerService `json:"services"`
-		Error    string                  `json:"error"`
+		Services map[string]*config.RunnerService `json:"services"`
+		Error    string                           `json:"error"`
 	}
 	data := resp{}
 	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
@@ -133,7 +133,7 @@ func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.R
 	return data.Services, err
 }
 
-func getSecrets(syncMan *syncman.Manager, projectID, token string) ([]*config.Secret, error) {
+func getSecrets(syncMan *syncman.Manager, projectID, token string) (map[string]*config.Secret, error) {
 	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/%s/secrets", syncMan.GetRunnerAddr(), projectID), nil)
 	if err != nil {
 		logrus.Errorf("error while getting secrets in handler unable to create http request - %v", err)
@@ -148,8 +148,8 @@ func getSecrets(syncMan *syncman.Manager, projectID, token string) ([]*config.Se
 	}
 
 	type resp struct {
-		Secrets []*config.Secret `json:"secrets"`
-		Error   string           `json:"error"`
+		Secrets map[string]*config.Secret `json:"secrets"`
+		Error   string                    `json:"error"`
 	}
 	data := resp{}
 	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
@@ -249,7 +249,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 	}
 }
 
-//HandleGetProjectConfig returns handler to get config of the project
+// HandleGetProjectConfig returns handler to get config of the project
 func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

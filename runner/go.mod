@@ -22,7 +22,10 @@ require (
 	github.com/rs/cors v1.7.0
 	github.com/segmentio/ksuid v1.0.2
 	github.com/sirupsen/logrus v1.4.2
+<<<<<<< HEAD
 	github.com/spaceuptech/space-cloud/gateway v0.0.0-20200220130157-1246a52c7148 // indirect
+=======
+>>>>>>> f17f72d631716100664ce8d6c827c6b4e014b473
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2
 	go.etcd.io/bbolt v1.3.3

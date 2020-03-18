@@ -47,14 +47,14 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) //http status codee
+		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 
 	}
 }
 
-//HandleGetService returns handler to get services of the project
+// HandleGetService returns handler to get services of the project
 func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -100,7 +100,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		if len(services) == 0 {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("remote services not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "remote services not found"})
 			return
 		}
 
