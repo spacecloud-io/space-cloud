@@ -35,11 +35,11 @@ type (
 
 	// TableProperties are properties of the table
 	TableProperties struct {
-		From, To     string
-		Table, Field string
-		DBType       string
-		Group, Sort  string
-		Order        int
+		From, To                string
+		Table, Field, OnCascade string
+		DBType                  string
+		Group, Sort             string
+		Order                   int
 	}
 )
 

@@ -225,6 +225,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 						fieldTypeStuct.JointTable = &model.TableProperties{}
 						fieldTypeStuct.JointTable.Table = strings.Split(field.Name.Value, "_")[0]
 						fieldTypeStuct.JointTable.To = "id"
+						fieldTypeStuct.JointTable.OnCascade = "NO ACTION"
 
 						// Load the joint table name and field
 						for _, arg := range directive.Arguments {
@@ -236,6 +237,13 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							case "field", "to":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.JointTable.To = val.(string)
+
+							case "oncascade":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.JointTable.OnCascade = val.(string)
+								if fieldTypeStuct.JointTable.OnCascade != "CASCADE" {
+									fieldTypeStuct.JointTable.OnCascade = "NO ACTION"
+								}
 							}
 						}
 

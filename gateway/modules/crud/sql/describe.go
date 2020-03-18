@@ -111,6 +111,7 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		tc.table_name AS "TABLE_NAME", 
 		kcu.column_name AS "COLUMN_NAME", 
 		tc.constraint_name AS "CONSTRAINT_NAME", 
+		rc.delete_rule AS "DELETE_RULE",
 		ccu.table_name AS "REFERENCED_TABLE_NAME",
 		ccu.column_name AS "REFERENCED_COLUMN_NAME"
 	FROM 
@@ -121,6 +122,9 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		JOIN information_schema.constraint_column_usage AS ccu
 		  ON ccu.constraint_name = tc.constraint_name
 		  AND ccu.table_schema = tc.table_schema
+		JOIN information_schema.referential_constraints AS rc
+		  ON tc.constraint_name = rc.constraint_name
+		  AND rc.unique_constraint_schema= $1
 	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
 	`
 	case utils.SQLServer:
