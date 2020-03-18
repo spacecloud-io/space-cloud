@@ -17,16 +17,8 @@ import (
 func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 
 	for schemaKey := range doc {
-		i := 1
-		for fieldKey := range collectionFields {
-			if i == len(collectionFields) && fieldKey != schemaKey {
-				wrongMongoFieldName := schemaKey
-				return nil, errors.New("The field " + wrongMongoFieldName + " is not present in schema of " + col)
-			}
-			if fieldKey == schemaKey {
-				break
-			}
-			i = i + 1
+		if _, p := collectionFields[schemaKey]; !p {
+			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)
 		}
 	}
 
@@ -74,7 +66,7 @@ func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc 
 	return mutatedDoc, nil
 }
 
-// ValidateCreateOperation validates  schema on create operation
+// ValidateCreateOperation validates schema on create operation
 func (s *Schema) ValidateCreateOperation(dbAlias, col string, req *model.CreateRequest) error {
 
 	if s.SchemaDoc == nil {
