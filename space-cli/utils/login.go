@@ -1,4 +1,4 @@
-package cmd
+package utils
 
 import (
 	"bytes"
@@ -12,7 +12,8 @@ import (
 	"github.com/spaceuptech/space-cli/model"
 )
 
-func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
+// Login logs the user in
+func Login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 	requestBody, err := json.Marshal(map[string]string{
 		"user": selectedAccount.UserName,
 		"key":  selectedAccount.Key,
@@ -58,7 +59,7 @@ func LoginStart(userName, key, url string) error {
 		Key:       key,
 		ServerURL: url,
 	}
-	_, err := login(&account)
+	_, err := Login(&account)
 	if err != nil {
 		logrus.Errorf("error in login start unable to login - %v", err)
 		return err
@@ -70,7 +71,7 @@ func LoginStart(userName, key, url string) error {
 		ServerURL: url,
 	}
 	// write credentials into accounts.yaml file
-	if err := checkCred(&account); err != nil {
+	if err := StoreCredentials(&account); err != nil {
 		logrus.Errorf("error in login start unable to check credentials - %v", err)
 		return err
 	}
