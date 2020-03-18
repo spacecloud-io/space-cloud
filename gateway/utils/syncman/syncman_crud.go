@@ -208,13 +208,12 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 		return errors.New("specified database not present in config")
 	}
 
-	temp, ok := collection.Collections[col]
+	_, ok = collection.Collections[col]
 	// if collection doesn't exist then add to config
 	if !ok {
-		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}} // TODO: rule field here is null
-	} else {
-		temp.Schema = schema
+		collection.Collections = map[string]*config.TableRule{}
 	}
+	collection.Collections[col] = &config.TableRule{Schema: schema}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
