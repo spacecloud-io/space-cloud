@@ -127,8 +127,8 @@ func TestSchema_ValidateCreateOperation(t *testing.T) {
 		{
 			dbName:        "mongo",
 			coll:          "location",
-			IsErrExpected: false,
-			name:          "Valid Test Case",
+			IsErrExpected: true,
+			name:          "Invalid Test Case-document gives extra params",
 			value: model.CreateRequest{
 				Document: map[string]interface{}{
 					"location": 21.5,
