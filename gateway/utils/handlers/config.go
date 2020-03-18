@@ -123,7 +123,7 @@ func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.R
 	return data, err
 }
 
-func getSecrets(syncMan *syncman.Manager, projectID, token string) (map[string]*config.Secret, error) {
+func getSecrets(syncMan *syncman.Manager, projectID, token string) ([]*config.Secret, error) {
 	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/%s/secrets", syncMan.GetRunnerAddr(), projectID), nil)
 	if err != nil {
 		logrus.Errorf("error while getting secrets in handler unable to create http request - %v", err)
@@ -137,22 +137,20 @@ func getSecrets(syncMan *syncman.Manager, projectID, token string) (map[string]*
 		return nil, err
 	}
 
-	type resp struct {
-		Secrets map[string]*config.Secret `json:"secrets"`
-		Error   string                    `json:"error"`
+	if httpRes.StatusCode != http.StatusOK {
+		v := map[string]interface{}{}
+		_ = json.NewDecoder(httpRes.Body).Decode(&v)
+		logrus.Errorf("error while getting secrets in handler got http status code -%v", httpRes.StatusCode)
+		return nil, fmt.Errorf("http status %v message -%v", httpRes.StatusCode, v["error"])
 	}
-	data := resp{}
+
+	data := []*config.Secret{}
 	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
 		logrus.Errorf("error while getting secrets in handler unable to decode response body -%v", err)
 		return nil, err
 	}
 
-	if httpRes.StatusCode != http.StatusOK {
-		logrus.Errorf("error while getting secrets in handler got http status code -%v", httpRes.StatusCode)
-		return nil, fmt.Errorf("http status %v message -%v", httpRes.StatusCode, data.Error)
-	}
-
-	return data.Secrets, err
+	return data, err
 }
 
 // HandleRefreshToken creates the refresh-token endpoint
