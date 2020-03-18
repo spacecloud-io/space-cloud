@@ -60,7 +60,7 @@ func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 	url := m.syncMan.GetRealtimeURL(m.project)
 
 	// add the rules to the eventing module
-	m.eventing.AddInternalRules(generateEventRules(crudConfig, project, url))
+	m.eventing.SetRealtimeTriggers(generateEventRules(crudConfig, project, url))
 
 	return nil
 }
