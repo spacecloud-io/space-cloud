@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/utils"
 )
@@ -47,12 +49,15 @@ func deployService(dockerFilePath, serviceFilePath string) error {
 	}
 
 	// Execute the docker build command
-	if err := exec.Command("docker", "build", "--file", dockerFilePath, "--no-cache", "-t", dockerImage).Run(); err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to build docker image (%s)", dockerImage), "deploy", "deploy", err)
+	utils.LogInfo(fmt.Sprintf("Building docker image (%s)", dockerImage), "deploy", "deploy")
+	if output, err := exec.Command("docker", "build", "--file", dockerFilePath, "--no-cache", "-t", dockerImage, ".").CombinedOutput(); err != nil {
+		return utils.LogError(fmt.Sprintf("Unable to build docker image (%s) - %s", dockerImage, string(output)), "deploy", "deploy", err)
 	}
 
 	// Execute the docker push command
-	if err := exec.Command("docker", "push", dockerImage).Run(); err != nil {
+	utils.LogInfo(fmt.Sprintf("Pushing docker image (%s)", dockerImage), "deploy", "deploy")
+	if output, err := exec.Command("docker", "push", dockerImage).CombinedOutput(); err != nil {
+		logrus.Errorln(string(output))
 		return utils.LogError(fmt.Sprintf("Unable to push docker image (%s). Have you logged into your registry?", dockerImage), "deploy", "deploy", err)
 	}
 

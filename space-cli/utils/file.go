@@ -1,13 +1,15 @@
 package utils
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spaceuptech/space-cli/model"
 	"gopkg.in/yaml.v2"
+
+	"github.com/spaceuptech/space-cli/model"
 )
 
 // AppendConfigToDisk creates a yml file or appends to existing
@@ -58,7 +60,7 @@ func ReadSpecObjectsFromFile(fileName string) ([]*model.SpecObject, error) {
 
 		// Unmarshal spec object
 		spec := new(model.SpecObject)
-		if err := yaml.Unmarshal([]byte(dataString), &spec); err != nil {
+		if err := UnmarshalYAML([]byte(dataString), spec); err != nil {
 			return nil, err
 		}
 
@@ -115,4 +117,40 @@ func FileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+// UnmarshalYAML converts to map[string]interface{} instead of map[interface{}]interface{}.
+func UnmarshalYAML(in []byte, out *model.SpecObject) error {
+	if err := yaml.Unmarshal(in, out); err != nil {
+		return err
+	}
+	out.Spec = cleanupMapValue(out.Spec)
+	return nil
+}
+
+func cleanupInterfaceArray(in []interface{}) []interface{} {
+	res := make([]interface{}, len(in))
+	for i, v := range in {
+		res[i] = cleanupMapValue(v)
+	}
+	return res
+}
+
+func cleanupInterfaceMap(in map[interface{}]interface{}) map[string]interface{} {
+	res := make(map[string]interface{})
+	for k, v := range in {
+		res[fmt.Sprintf("%v", k)] = cleanupMapValue(v)
+	}
+	return res
+}
+
+func cleanupMapValue(v interface{}) interface{} {
+	switch v := v.(type) {
+	case []interface{}:
+		return cleanupInterfaceArray(v)
+	case map[interface{}]interface{}:
+		return cleanupInterfaceMap(v)
+	default:
+		return v
+	}
 }

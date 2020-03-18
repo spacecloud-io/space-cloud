@@ -13,8 +13,8 @@ func GetProjectConfig(project, commandName string, params map[string]string) (*m
 
 	url := fmt.Sprintf("/v1/config/projects/%s", project)
 	// Get the spec from the server
-	result := new(map[string]interface{})
-	if err := utils.Get(http.MethodGet, url, map[string]string{}, result); err != nil {
+	result := make(map[string]interface{})
+	if err := utils.Get(http.MethodGet, url, map[string]string{}, &result); err != nil {
 		return nil, err
 	}
 

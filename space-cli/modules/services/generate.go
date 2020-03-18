@@ -31,7 +31,7 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	}
 
 	var port int32
-	if err := survey.AskOne(&survey.Input{Message: "Enter Service Port"}, &port); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port); err != nil {
 		return nil, err
 	}
 
@@ -46,12 +46,12 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 		if err != nil {
 			return nil, err
 		}
-		registry := p.Spec.(map[string]interface{})["dockerImage"]
-		if registry == "" {
+		registry, present := p.Spec.(map[string]interface{})["dockerRegistry"]
+		if registry == "" || !present {
 			return nil, fmt.Errorf("no docker registry provided for project (%s)", projectID)
 		}
 
-		dockerImage = fmt.Sprintf("%s/%s-%s-%s", registry, projectID, serviceID, serviceVersion)
+		dockerImage = fmt.Sprintf("%s/%s-%s:%s", registry, projectID, serviceID, serviceVersion)
 	}
 
 	want := ""
@@ -80,10 +80,10 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	}
 
 	replicaRange := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Replica Range", Default: "0-100"}, &replicaRange); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &replicaRange); err != nil {
 		return nil, err
 	}
-	replicaMin, replicaMax := 0, 100
+	replicaMin, replicaMax := 1, 100
 	arr := strings.Split(replicaRange, "-")
 	if len(arr) != 0 {
 		min, err := strconv.Atoi(arr[0])

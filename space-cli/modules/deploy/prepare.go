@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ghodss/yaml"
+	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/modules/services"
 	"github.com/spaceuptech/space-cli/utils"
@@ -62,7 +62,7 @@ func prepareService(projectID, dockerFilePath, serviceFilePath string) error {
 		fmt.Println()
 		fmt.Println(string(data))
 		fmt.Println()
-		if err := utils.CreateFileIfNotExist(serviceFilePath, string(data)); err != nil {
+		if err := utils.AppendConfigToDisk(svc, serviceFilePath); err != nil {
 			return utils.LogError(fmt.Sprintf("Could not create service config file (%s)", dockerFilePath), "deploy", "prepare", err)
 		}
 	}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -66,7 +65,6 @@ func ApplySpec(token string, account *model.Account, specObj *model.SpecObject) 
 		return err
 	}
 
-	log.Println("URL:", url)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err

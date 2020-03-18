@@ -2,10 +2,10 @@ package model
 
 // Service describes a service's configurations
 type Service struct {
-	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
-	ProjectID string            `json:"projectId" yaml:"projectId"`
-	Version   string            `json:"version" yaml:"version"`
+	ID        string            `json:"id,omitempty" yaml:"id,omitempty"`
+	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
+	ProjectID string            `json:"projectId,omitempty" yaml:"projectId,omitempty"`
+	Version   string            `json:"version,omitempty" yaml:"version,omitempty"`
 	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
 	Labels    map[string]string `json:"labels" yaml:"labels"`
 	Tasks     []Task            `json:"tasks" yaml:"tasks"`
@@ -25,7 +25,7 @@ type ScaleConfig struct {
 // Task describes the configuration of a task
 type Task struct {
 	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
+	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Ports     []Port            `json:"ports" yaml:"ports"`
 	Resources Resources         `json:"resources" yaml:"resources"`
 	Docker    Docker            `json:"docker" yaml:"docker"`
@@ -118,25 +118,6 @@ const (
 	// Code indicates that the user's code isn't containerized. We need to use a custom runtime for this
 	Code Runtime = "code"
 )
-
-// Expose describes how an http service needs to be exposed
-type Expose struct {
-	Hosts []string     `json:"hosts" yaml:"hosts"`
-	Rules []ExposeRule `json:"rules" yaml:"rules"`
-}
-
-// ExposeRule describes the rules for exposing an http service
-type ExposeRule struct {
-	URI  ExposeRuleURI `json:"uri" yaml:"uri"`
-	Port int32         `json:"port" yaml:"port"`
-}
-
-// ExposeRuleURI describes the the http routes which need to be exposed
-type ExposeRuleURI struct {
-	Prefix  *string `json:"prefix" yaml:"prefix"`
-	Exact   *string `json:"exact" yaml:"exact"`
-	Rewrite *string `json:"rewrite" yaml:"rewrite"`
-}
 
 // SpecObject describes the basic structure of config specifications
 type SpecObject struct {
