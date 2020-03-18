@@ -491,7 +491,7 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 	}
 }
