@@ -84,7 +84,12 @@ func GetServices(project, commandName string, params map[string]string) ([]*mode
 	var objs []*model.SpecObject
 	for _, item := range result {
 		spec := item.(map[string]interface{})
-		str := strings.Split(spec["id"].(string), "-")
+		id, ok := spec["id"]
+		if !ok {
+			// array may have an empty object
+			continue
+		}
+		str := strings.Split(id.(string), "-")
 		meta := map[string]string{"project": project, "version": str[1], "serviceId": str[0]}
 
 		// Delete the unwanted keys from spec

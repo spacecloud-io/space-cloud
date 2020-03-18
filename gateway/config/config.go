@@ -150,11 +150,11 @@ type Endpoint struct {
 
 // FileStore holds the config for the file store module
 type FileStore struct {
-	Enabled   bool        `json:"enabled,omitempty" yaml:"enabled"`
-	StoreType string      `json:"storeType,omitempty" yaml:"storeType"`
-	Conn      string      `json:"conn,omitempty" yaml:"conn"`
-	Endpoint  string      `json:"endpoint,omitempty" yaml:"endpoint"`
-	Bucket    string      `json:"bucket,omitempty" yaml:"bucket"`
+	Enabled   bool        `json:"enabled" yaml:"enabled"`
+	StoreType string      `json:"storeType" yaml:"storeType"`
+	Conn      string      `json:"conn" yaml:"conn"`
+	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
+	Bucket    string      `json:"bucket" yaml:"bucket"`
 	Rules     []*FileRule `json:"rules,omitempty" yaml:"rules"`
 }
 

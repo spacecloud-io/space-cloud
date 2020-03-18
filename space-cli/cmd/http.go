@@ -48,7 +48,7 @@ func Get(method, url string, params map[string]string, vPtr interface{}) error {
 		if err := json.Unmarshal(data, &respBody); err != nil {
 			return err
 		}
-		logrus.Errorf("error while getting service got http status code (%s) got error message (%s)", resp.Status, respBody["error"])
+		logrus.Errorf("error while getting service got http status code (%s) got error message (%s) url (%s)", resp.Status, respBody["error"], url)
 		return fmt.Errorf("received invalid status code (%d)", resp.StatusCode)
 	}
 
