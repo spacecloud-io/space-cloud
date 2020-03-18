@@ -27,6 +27,7 @@ func PullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image
 	return nil
 }
 
+// DockerfileGolang is the docker file to use for golang projects
 const DockerfileGolang string = `
 FROM golang:1.13.5-alpine3.10
 WORKDIR /build
@@ -40,6 +41,7 @@ COPY --from=0 /build/app .
 CMD ["./app"]
 `
 
+// DockerfileNodejs is the docker file to use for node js projects
 const DockerfileNodejs string = `
 FROM node:10-alpine
 
@@ -55,6 +57,7 @@ COPY . .
 
 CMD [ "node", "index.js" ]`
 
+// DockerfilePython is the docker file to use for python projects
 const DockerfilePython string = `
 FROM python:3.6
 

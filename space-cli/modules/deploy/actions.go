@@ -7,7 +7,7 @@ var CommandDeploy = cli.Command{
 	Name: "deploy",
 	Flags: []cli.Flag{
 		cli.StringFlag{Name: "project", Usage: "The project to deploy the service to."},
-		cli.StringFlag{Name: "dockerfile", Usage: "The path of the docker file", Value: "Dockerfile"},
+		cli.StringFlag{Name: "docker-file", Usage: "The path of the docker file", Value: "Dockerfile"},
 		cli.StringFlag{Name: "service-file", Usage: "The path of the service config file", Value: "service.yaml"},
 		cli.BoolFlag{Name: "prepare", Usage: "Prepare the configuration used for deploying service"},
 	},
@@ -16,7 +16,7 @@ var CommandDeploy = cli.Command{
 
 func actionDeploy(c *cli.Context) error {
 	projectID := c.String("project")
-	dockerFilePath := c.String("dockerfile")
+	dockerFilePath := c.String("docker-file")
 	serviceFilePath := c.String("service-file")
 	prepare := c.Bool("prepare")
 

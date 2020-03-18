@@ -54,6 +54,7 @@ func Apply(fileName string) error {
 	return nil
 }
 
+// ApplySpec takes a spec object and applies it
 func ApplySpec(token string, account *model.Account, specObj *model.SpecObject) error {
 	requestBody, err := json.Marshal(specObj.Spec)
 	if err != nil {

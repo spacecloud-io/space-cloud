@@ -21,6 +21,7 @@ var Commands = []cli.Command{
 	},
 }
 
+// ActionAddRegistry adds a registry add on
 func ActionAddRegistry(c *cli.Context) error {
 	project := c.GlobalString("project")
 	return addRegistry(project)
