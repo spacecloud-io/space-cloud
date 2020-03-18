@@ -81,9 +81,9 @@ func CodeSetup(id, username, key, config, secret string, dev bool, portHTTP, por
 		key = generateRandomString(12)
 	}
 	if config == "" {
-		config = getSpaceCloudConfigFilePath() + "/config.yaml"
+		config = getSpaceCloudConfigFilePath()
 	} else {
-		if !strings.Contains(config, ".yaml") || !strings.Contains(config, ".json") {
+		if !strings.Contains(config, ".yaml") && !strings.Contains(config, ".json") {
 			return fmt.Errorf("full path not provided for config file")
 		}
 	}
@@ -131,8 +131,8 @@ func CodeSetup(id, username, key, config, secret string, dev bool, portHTTP, por
 		},
 		{
 			Type:   mount.TypeBind,
-			Source: path.Dir(config),
-			Target: "/etc/config",
+			Source: config,
+			Target: "/etc/config" + path.Base(config),
 		},
 	}
 

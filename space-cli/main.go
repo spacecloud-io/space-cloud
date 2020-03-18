@@ -280,7 +280,7 @@ func main() {
 		},
 		{
 			Name:   "upgrade",
-			Usage:  "upgrade development environment",
+			Usage:  "Upgrade development environment",
 			Action: actionUpgrade,
 		},
 		{

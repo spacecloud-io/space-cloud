@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -30,9 +29,22 @@ type doc struct {
 
 // Upgrade upgrades the environment which has been setup
 func Upgrade() error {
-	// TODO: old keys always remain in accounts.yaml file
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
+
+	result := make(map[string]interface{})
+	if err := Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
+		return err
+	}
+
+	currentVersion := result["version"].(string)
+	latestVersion, err := getLatestVersion(currentVersion)
+	if err != nil {
+		return err
+	}
+	if currentVersion == latestVersion {
+		return fmt.Errorf("current verion (%s) is up to date", currentVersion)
+	}
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -42,7 +54,7 @@ func Upgrade() error {
 	}
 
 	// get all containers containing < space-cloud > in their name
-	args := filters.Arg("name", "space-cloud")
+	args := filters.Arg("label", "app=space-cloud")
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("Unable to list containers - %s", err.Error())
@@ -53,10 +65,10 @@ func Upgrade() error {
 	var gatewayMounts []mount.Mount
 	var gatewayPorts nat.PortMap
 	var gatewayEnvs []string
-	var latestVersion string
 
 	//parameters for runner
 	var runnerEnvs []string
+	var runnerMounts []mount.Mount
 
 	// Remove all container
 	for _, containerInfo := range containers {
@@ -66,25 +78,10 @@ func Upgrade() error {
 			return err
 		}
 
-		imageName := strings.Split(containerInfo.Image, ":")
-		switch imageName[0] {
-		case "spaceuptech/gateway":
+		switch containerInspect.Config.Labels["service"] {
+		case "gateway":
 
 			gatewayEnvs = containerInspect.Config.Env
-
-			result := make(map[string]interface{})
-			if err := Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
-				return err
-			}
-
-			currentVersion := result["version"].(string)
-			latestVersion, err = getLatestVersion(currentVersion)
-			if err != nil {
-				return err
-			}
-			if currentVersion == latestVersion {
-				return fmt.Errorf("current verion (%s) is up to date", currentVersion)
-			}
 
 			gatewayMounts = containerInspect.HostConfig.Mounts
 
@@ -95,8 +92,10 @@ func Upgrade() error {
 				return err
 			}
 
-		case "spaceuptech/runner":
+		case "runner":
 			runnerEnvs = containerInspect.Config.Env
+
+			runnerMounts = containerInspect.HostConfig.Mounts
 
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				logrus.Errorf("Unable to remove container %s - %s", containerInfo.ID, err.Error())
@@ -133,28 +132,7 @@ func Upgrade() error {
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs:           runnerEnvs,
-			mount: []mount.Mount{
-				{
-					Type:   mount.TypeBind, // TODO CHECK THIS
-					Source: getSecretsDir(),
-					Target: "/secrets",
-				},
-				{
-					Type:   mount.TypeBind,
-					Source: getSpaceCloudHostsFilePath(),
-					Target: "/etc/hosts",
-				},
-				{
-					Type:   mount.TypeBind,
-					Source: "/var/run/docker.sock",
-					Target: "/var/run/docker.sock",
-				},
-				{
-					Type:   mount.TypeBind,
-					Source: getSpaceCloudRoutingConfigPath(),
-					Target: "/routing-config.json",
-				},
-			},
+			mount:          runnerMounts,
 		},
 	}
 
@@ -221,7 +199,10 @@ func Upgrade() error {
 		if err != nil {
 			logrus.Errorf("Unable to inspect container (%s) - %s", c.containerName, err)
 		}
-		hosts.AddHost(data.NetworkSettings.IPAddress, c.dnsName)
+		// Remove the domain from the hosts file
+		hosts.RemoveHost(c.dnsName)
+		// Add it back with the new ip address
+		hosts.AddHost(data.NetworkSettings.Networks["space-cloud"].IPAddress, c.dnsName)
 	}
 
 	if err := hosts.Save(); err != nil {
