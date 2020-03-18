@@ -41,6 +41,10 @@ func Apply() error {
 		logrus.Errorf("error while applying service unable to login - %s", err.Error())
 		return err
 	}
+	if len(data) == 0 {
+		logrus.Infoln("empty file provided")
+		return nil
+	}
 
 	dataStrings := strings.Split(string(data[:len(data)-4]), "---")
 	for _, dataString := range dataStrings {
