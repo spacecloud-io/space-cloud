@@ -63,7 +63,7 @@ type Modules struct {
 
 // Deployments store all services information for particular project
 type Deployments struct {
-	Services map[string]*RunnerService `json:"services" yaml:"services"`
+	Services []*RunnerService `json:"services" yaml:"services"`
 }
 
 // Secret stores secrets information

@@ -93,7 +93,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 	}
 }
 
-func getServices(syncMan *syncman.Manager, projectID, token string) (map[string]*config.RunnerService, error) {
+func getServices(syncMan *syncman.Manager, projectID, token string) ([]*config.RunnerService, error) {
 	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/%s/services", syncMan.GetRunnerAddr(), projectID), nil)
 	if err != nil {
 		logrus.Errorf("error while getting services in handler unable to create http request - %v", err)
@@ -107,22 +107,20 @@ func getServices(syncMan *syncman.Manager, projectID, token string) (map[string]
 		return nil, err
 	}
 
-	type resp struct {
-		Services map[string]*config.RunnerService `json:"services"`
-		Error    string                           `json:"error"`
+	if httpRes.StatusCode != http.StatusOK {
+		v := map[string]interface{}{}
+		_ = json.NewDecoder(httpRes.Body).Decode(&v)
+		logrus.Errorf("error while getting services in handler got http request -%v", httpRes.StatusCode)
+		return nil, fmt.Errorf("error while getting services in handler got http request -%v -%v", httpRes.StatusCode, v["error"])
 	}
-	data := resp{}
+
+	data := []*config.RunnerService{}
 	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
 		logrus.Errorf("error while getting services in handler unable to decode response body -%v", err)
 		return nil, err
 	}
 
-	if httpRes.StatusCode != http.StatusOK {
-		logrus.Errorf("error while getting services in handler got http request -%v", httpRes.StatusCode)
-		return nil, fmt.Errorf("error while getting services in handler got http request -%v -%v", httpRes.StatusCode, data.Error)
-	}
-
-	return data.Services, err
+	return data, err
 }
 
 func getSecrets(syncMan *syncman.Manager, projectID, token string) (map[string]*config.Secret, error) {

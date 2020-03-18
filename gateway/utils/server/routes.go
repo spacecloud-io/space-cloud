@@ -73,6 +73,12 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleSetProjectRoute(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/routing/ingress/{id}").HandlerFunc(handlers.HandleDeleteProjectRoute(s.adminMan, s.syncMan))
 
+	// Endpoints for cluster
+	router.Methods(http.MethodGet).Path("/v1/config/clusters").HandlerFunc(handlers.HandleCluster())
+	router.Methods(http.MethodPost).Path("/v1/config/clusters/{clusterId}").HandlerFunc(handlers.HandleCluster())
+	router.Methods(http.MethodGet).Path("/v1/config/clusters/{projectId}/projects").HandlerFunc(handlers.HandleCluster())
+	router.Methods(http.MethodDelete).Path("/v1/config/clusters/{projectId}/projects").HandlerFunc(handlers.HandleCluster())
+
 	// Initialize route for graphql
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.modules.Graphql, s.syncMan))
 
