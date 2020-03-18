@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
@@ -171,16 +170,6 @@ func GetAllProjects(c *cli.Context) error {
 
 func createConfigFile(pos, commandName string, objs []*model.SpecObject) error {
 
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-
-	exPath := filepath.Dir(ex)
-	if err := os.Chdir(exPath + "/config"); err != nil {
-		return err
-	}
-
 	message := ""
 	for _, val := range objs {
 		data, err := yaml.Marshal(val)
@@ -189,7 +178,7 @@ func createConfigFile(pos, commandName string, objs []*model.SpecObject) error {
 		}
 		message = message + string(data) + "---" + "\n"
 	}
-	fileName := fmt.Sprintf("%s-%s.yaml", pos, commandName)
+	fileName := fmt.Sprintf("config/%s-%s.yaml", pos, commandName)
 	if err := ioutil.WriteFile(fileName, []byte(message), 0755); err != nil {
 		return err
 	}
