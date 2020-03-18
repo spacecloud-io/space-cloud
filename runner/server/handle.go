@@ -21,8 +21,6 @@ import (
 func (s *Server) handleCreateProject() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		w.Header().Set("Content-Type", "application/json")
-
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -33,6 +31,7 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -44,6 +43,7 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		project := new(model.Project)
 		if err := json.NewDecoder(r.Body).Decode(project); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -53,18 +53,18 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		// Apply the service config
 		if err := s.driver.CreateProject(ctx, project); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
 
 func (s *Server) handleDeleteProject() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "application/json")
 
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
@@ -76,6 +76,7 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -85,18 +86,18 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 		// Apply the service config
 		if err := s.driver.DeleteProject(ctx, projectID); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
 
 func (s *Server) handleApplyService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "application/json")
 
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
@@ -108,6 +109,7 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -121,6 +123,7 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		service := new(model.Service)
 		if err := json.NewDecoder(r.Body).Decode(service); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
 			return
 		}
@@ -134,10 +137,12 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		// Apply the service config
 		if err := s.driver.ApplyService(ctx, service); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -145,8 +150,6 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 // HandleDeleteService handles the request to delete a service
 func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "application/json")
 
 		defer utils.CloseTheCloser(r.Body)
 
@@ -157,6 +160,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -168,9 +172,12 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 
 		if err := s.driver.DeleteService(ctx, projectID, serviceID, version); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -178,8 +185,6 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 // HandleGetServices handles the request to get all services
 func (s *Server) HandleGetServices() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "application/json")
 
 		defer utils.CloseTheCloser(r.Body)
 
@@ -190,6 +195,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -202,6 +208,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		services, err := s.driver.GetServices(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
@@ -212,12 +219,14 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 				if val.ProjectID == projectID && val.ID == serviceID[0] && val.Version == version[0] {
 					s := fmt.Sprintf("%s-%s", serviceID, version)
 					respServices[s] = val
+					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": respServices})
 					return
 				}
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) or version(%s) not present in state", serviceID[0], version[0])})
 			return
@@ -232,11 +241,13 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			}
 
 			if len(respServices) == 0 {
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
 				return
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
 			return
@@ -248,11 +259,13 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		}
 
 		if len(respServices) == 0 {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("services not set")})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
 	}
@@ -261,8 +274,6 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 // HandleApplyEventingService handles request to apply eventing service
 func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "application/json")
 
 		defer utils.CloseTheCloser(r.Body)
 
@@ -273,6 +284,7 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -286,17 +298,20 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 			// 7 will ensure that there will not be any index out of range error
 			if len(arr) != 7 || arr[3] != req.Data.Meta.Service.ProjectID || arr[4] != req.Data.Meta.Service.Version {
 				logrus.Errorf("error applying service path verification failed")
+				w.Header().Set("Content-Type", "application/json")
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, errors.New("error applying service path verification failed"))
 				return
 			}
 			// Apply the service config
 			if err := s.driver.ApplyService(ctx, req.Data.Meta.Service); err != nil {
 				logrus.Errorf("Failed to apply service - %s", err.Error())
+				w.Header().Set("Content-Type", "application/json")
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 				return
 			}
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -308,8 +323,6 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		w.Header().Set("Content-Type", "application/json")
-
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -319,6 +332,7 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to set service routes - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -332,10 +346,12 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 
 		err = s.driver.ApplyServiceRoutes(ctx, projectID, serviceID, req.Routes)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			logrus.Errorf("Failed to apply service routing rules - %s", err.Error())
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -344,8 +360,6 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "application/json")
 
 		defer utils.CloseTheCloser(r.Body)
 
@@ -356,6 +370,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to get service routes - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
@@ -367,6 +382,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		serviceRoutes, err := s.driver.GetServiceRoutes(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("Failed to get service routing rules - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
@@ -374,23 +390,27 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		if exists {
 			for k, val := range serviceRoutes {
 				if k == serviceID[0] {
+					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": val})
 					return
 				}
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
 			return
 		}
 
 		if len(serviceRoutes) == 0 {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("no routes not present in state")})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": serviceRoutes})
 	}
@@ -398,8 +418,6 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		w.Header().Set("Content-Type", "application/json")
 
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
@@ -439,6 +457,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s", project, service), func() error {
 			return s.driver.WaitForService(&model.Service{ProjectID: project, ID: service, Version: ogVersion})
 		}); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusServiceUnavailable, err)
 			return
 		}
@@ -449,6 +468,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 			var err error
 			res, err = http.DefaultClient.Do(r)
 			if err != nil {
+				w.Header().Set("Content-Type", "application/json")
 				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 				return
 			}

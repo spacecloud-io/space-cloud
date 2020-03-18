@@ -16,7 +16,6 @@ import (
 // HandleArtifactRequests stores artifacts in filestore
 func (s *Manager) HandleArtifactRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
 		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling forwarding artifact request failed to validate token -%v", err)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -45,6 +44,7 @@ func (s *Manager) HandleArtifactRequests(admin *admin.Manager) http.HandlerFunc 
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := http.DefaultClient.Do(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return

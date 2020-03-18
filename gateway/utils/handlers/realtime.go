@@ -14,8 +14,6 @@ import (
 func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		w.Header().Set("Content-Type", "application/json")
-
 		// Load the params from the body
 		eventDoc := model.CloudEventPayload{}
 		_ = json.NewDecoder(r.Body).Decode(&eventDoc)
@@ -26,17 +24,20 @@ func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.Hand
 
 		// Check if the token is valid
 		if err := auth.IsTokenInternal(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if err := realtime.HandleRealtimeEvent(r.Context(), &eventDoc); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
@@ -47,8 +48,6 @@ func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.Hand
 func HandleRealtimeProcessRequest(auth *auth.Module, realtime *realtime.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		w.Header().Set("Content-Type", "application/json")
-
 		// Load the params from the body
 		eventDoc := model.CloudEventPayload{}
 		_ = json.NewDecoder(r.Body).Decode(&eventDoc)
@@ -59,17 +58,20 @@ func HandleRealtimeProcessRequest(auth *auth.Module, realtime *realtime.Module) 
 
 		// Check if the token is valid
 		if err := auth.IsTokenInternal(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if err := realtime.ProcessRealtimeRequests(&eventDoc); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
