@@ -102,13 +102,13 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, sc
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
-	temp, ok := collection.Collections[col]
+	_, ok = collection.Collections[col]
 	// if collection doesn't exist then add to config
 	if !ok {
-		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}} // TODO: rule field here is null
-	} else {
-		temp.Schema = schema
+		collection.Collections = map[string]*config.TableRule{}
+		logrus.Println("collection 3", collection.Collections)
 	}
+	collection.Collections[col] = &config.TableRule{Schema: schema}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())

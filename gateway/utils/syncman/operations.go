@@ -233,7 +233,7 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {
 		if projectID == p.ID {
-			return []interface{}{config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
+			return []interface{}{config.Project{AESkey: base64.StdEncoding.EncodeToString([]byte(p.AESkey)), ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
 

@@ -127,13 +127,13 @@ func GetAllProjects(c *cli.Context) error {
 		return err
 	}
 
-	objs, err = services.GetServicesSecrets(projectName, "services-secrets", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("14", "services-secrets", objs); err != nil {
-		return err
-	}
+	// objs, err = services.GetServicesSecrets(projectName, "services-secrets", map[string]string{})
+	// if err != nil {
+	// 	return err
+	// }
+	// if err := createConfigFile("14", "services-secrets", objs); err != nil {
+	// 	return err
+	// }
 
 	objs, err = routes.GetIngressRoutes(projectName, "ingress-routes", map[string]string{})
 	if err != nil {
