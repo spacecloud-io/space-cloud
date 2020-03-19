@@ -42,6 +42,7 @@ func GetToken(r *http.Request) (token string) {
 
 // SendErrorResponse sends an error http response
 func SendErrorResponse(w http.ResponseWriter, r *http.Request, status int, err error) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	if err := json.NewEncoder(w).Encode(map[string]interface{}{"error": err.Error()}); err != nil {
 		logrus.Errorf("Error while sending error response for %s %s - %s", r.Method, r.URL.String(), err.Error())
@@ -50,6 +51,7 @@ func SendErrorResponse(w http.ResponseWriter, r *http.Request, status int, err e
 
 // SendEmptySuccessResponse sends an empty http ok response
 func SendEmptySuccessResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(map[string]string{}); err != nil {
 		logrus.Errorf("Error while sending error response for %s %s - %s", r.Method, r.URL.String(), err.Error())

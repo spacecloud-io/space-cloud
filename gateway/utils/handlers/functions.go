@@ -37,6 +37,7 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 
 		_, err := auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -44,10 +45,13 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 
 		result, err := functions.CallWithContext(ctx, service, function, token, req.Params)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
