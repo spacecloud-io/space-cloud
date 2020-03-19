@@ -191,6 +191,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			return
 		}
 
+		result := []interface{}{}
 		respServices := make(map[string]*model.Service)
 		if serviceIDExists && versionExists {
 			for _, val := range services {
@@ -198,7 +199,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 					s := fmt.Sprintf("%s-%s", serviceID, version)
 					respServices[s] = val
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode([]interface{}{respServices})
+					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{respServices}})
 					return
 				}
 			}
@@ -213,21 +214,23 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 				if val.ID == serviceID[0] {
 					s := fmt.Sprintf("%s-%s", val.ID, val.Version)
 					respServices[s] = val
+					result = append(result, respServices)
 				}
 			}
 
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode([]interface{}{respServices})
+			_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{respServices}})
 			return
 		}
 
 		for _, val := range services {
 			s := fmt.Sprintf("%s-%s", val.ID, val.Version)
 			respServices[s] = val
+			result = append(result, respServices)
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode([]interface{}{respServices})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 	}
 }
 
@@ -336,10 +339,10 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		}
 
 		if exists {
-			for k, val := range serviceRoutes {
+			for k, result := range serviceRoutes {
 				if k == serviceID[0] {
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode([]interface{}{val})
+					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{result}})
 					return
 				}
 			}
@@ -355,7 +358,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(result)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 	}
 }
 

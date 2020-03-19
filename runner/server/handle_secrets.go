@@ -118,7 +118,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 			for _, val := range secrets {
 				if val.Name == name[0] {
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode([]interface{}{val})
+					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{val}})
 					return
 				}
 			}
@@ -129,7 +129,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(secrets)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: secrets})
 
 	}
 }
