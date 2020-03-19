@@ -2,11 +2,10 @@ package eventing
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
-
-	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -76,25 +75,19 @@ func (m *Module) SendEventResponse(batchID string, payload interface{}) {
 	result.response <- payload
 }
 
-// AddInternalRules adds triggers which are used for space cloud internally
-func (m *Module) AddInternalRules(eventingRules []config.EventingRule) {
+// SetRealtimeTriggers adds triggers which are used for space cloud internally
+func (m *Module) SetRealtimeTriggers(eventingRules []config.EventingRule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	for key := range m.config.InternalRules {
+		if strings.HasPrefix(key, "realtime") {
+			delete(m.config.InternalRules, key)
+		}
+	}
+
 	for _, incomingRule := range eventingRules {
-		isPresent := false
-		for _, storedRule := range m.config.InternalRules {
-
-			// Add the rule for the only if it doesn't already exist
-			if isRulesMatching(&storedRule, &incomingRule) {
-				isPresent = true
-				break
-			}
-		}
-
-		if !isPresent {
-			key := ksuid.New().String()
-			m.config.InternalRules[key] = incomingRule
-		}
+		key := strings.Join([]string{"realtime", incomingRule.Options["db"], incomingRule.Options["col"], incomingRule.Type}, "-")
+		m.config.InternalRules[key] = incomingRule
 	}
 }

@@ -61,7 +61,7 @@ type AuthFunctionInterface interface {
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module
 type EventingRealtimeInterface interface {
-	AddInternalRules(eventingRules []config.EventingRule)
+	SetRealtimeTriggers(eventingRules []config.EventingRule)
 }
 
 // AuthRealtimeInterface is an interface consisting of functions of Auth module used by RealTime module
@@ -106,7 +106,7 @@ type AuthUserInterface interface {
 type ModulesInterface interface {
 	// SetProjectConfig sets the config all modules
 	SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing)
-	// SetGlobalConfig sets the auth secret and AESkey
+	// SetGlobalConfig sets the auth secret and AESKey
 	SetGlobalConfig(projectID, secret, aesKey string)
 	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
 	SetCrudConfig(projectID string, crudConfig config.Crud) error

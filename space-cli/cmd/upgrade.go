@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 	scClient "github.com/spaceuptech/space-api-go"
 	spaceApiTypes "github.com/spaceuptech/space-api-go/types"
+	"github.com/spaceuptech/space-cli/utils"
 	"github.com/txn2/txeh"
 )
 
@@ -33,7 +34,7 @@ func Upgrade() error {
 	const ContainerRunner string = "space-cloud-runner"
 
 	result := make(map[string]interface{})
-	if err := Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
+	if err := utils.Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
 		return err
 	}
 
@@ -42,6 +43,7 @@ func Upgrade() error {
 	if err != nil {
 		return err
 	}
+
 	if currentVersion == latestVersion {
 		return fmt.Errorf("current verion (%s) is up to date", currentVersion)
 	}
@@ -143,7 +145,7 @@ func Upgrade() error {
 		return err
 	}
 
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: getSpaceCloudHostsFilePath(), WriteFilePath: getSpaceCloudHostsFilePath()})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(), WriteFilePath: utils.GetSpaceCloudHostsFilePath()})
 	if err != nil {
 		logrus.Errorf("Unable to load host file with suitable default - %s", err)
 		return err
@@ -151,15 +153,15 @@ func Upgrade() error {
 
 	// change the default host file location for crud operation to our specified path
 	// default value /etc/hosts
-	if err := hosts.SaveAs(getSpaceCloudHostsFilePath()); err != nil {
-		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", getSpaceCloudHostsFilePath(), err)
+	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath()); err != nil {
+		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", utils.GetSpaceCloudHostsFilePath(), err)
 		return err
 	}
 
 	for _, c := range containersToCreate {
 		logrus.Infof("Starting container %s...", c.containerName)
 		// check if image already exists
-		if err := pullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
+		if err := utils.PullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
 			logrus.Errorf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage)
 			return err
 		}
@@ -202,7 +204,9 @@ func Upgrade() error {
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(c.dnsName)
 		// Add it back with the new ip address
-		hosts.AddHost(data.NetworkSettings.Networks["space-cloud"].IPAddress, c.dnsName)
+		ip := data.NetworkSettings.Networks["bridge"].IPAddress
+
+		hosts.AddHost(ip, c.dnsName)
 	}
 
 	if err := hosts.Save(); err != nil {
