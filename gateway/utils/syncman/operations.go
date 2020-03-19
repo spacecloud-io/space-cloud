@@ -118,7 +118,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 		if p.ID == project.ID {
 			// override the existing config
 			p.Name = project.Name
-			p.AESKey = project.AESKey
+			p.AESkey = project.AESkey
 			p.Secret = project.Secret
 			p.DockerRegistry = project.DockerRegistry
 			p.ContextTime = project.ContextTime
@@ -169,11 +169,11 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	}
 
 	projectConfig.Secret = project.Secret
-	projectConfig.AESKey = project.AESKey
+	projectConfig.AESkey = project.AESkey
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
-	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESKey)
+	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
 
 	return s.setProject(ctx, projectConfig)
 }
