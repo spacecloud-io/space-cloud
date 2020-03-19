@@ -16,10 +16,11 @@ type RunnerService struct {
 
 // ScaleConfig describes the config used to scale a service
 type ScaleConfig struct {
-	Replicas    int32 `json:"replicas" yaml:"replicas"`
-	MinReplicas int32 `json:"minReplicas" yaml:"minReplicas"`
-	MaxReplicas int32 `json:"maxReplicas" yaml:"maxReplicas"`
-	Concurrency int32 `json:"concurrency" yaml:"concurrency"`
+	Replicas    int32  `json:"replicas" yaml:"replicas"`
+	MinReplicas int32  `json:"minReplicas" yaml:"minReplicas"`
+	MaxReplicas int32  `json:"maxReplicas" yaml:"maxReplicas"`
+	Concurrency int32  `json:"concurrency" yaml:"concurrency"`
+	Mode        string `json:"mode" yaml:"mode"`
 }
 
 // Task describes the configuration of a task

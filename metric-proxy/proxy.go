@@ -12,7 +12,7 @@ import (
 
 // Proxy is the module which collects metrics from envoy and pushes it to the autoscaler
 type Proxy struct {
-	addr, token string
+	addr, token, filter string
 
 	// For communication
 	c  *websocket.Conn
@@ -20,8 +20,12 @@ type Proxy struct {
 }
 
 // New creates a new proxy instance
-func New(addr, token string) *Proxy {
-	return &Proxy{addr: addr, token: token, ch: make(chan *ProxyMessage, 1)}
+func New(addr, token, mode string) *Proxy {
+	filter := "downstream_rq_total"
+	if mode == "parallel" {
+		filter = "downstream_rq_active"
+	}
+	return &Proxy{addr: addr, token: token, filter: filter, ch: make(chan *ProxyMessage, 1)}
 }
 
 // Start begins the metric collection operation
