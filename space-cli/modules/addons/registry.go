@@ -146,8 +146,7 @@ func removeRegistry(projectID string) error {
 	for _, containerInfo := range containers {
 		// remove the container from host machine
 		if err := docker.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-			utils.LogError(fmt.Sprintf("Unable to remove container %s", containerInfo.ID), "remove", "registry", err)
-			return err
+			return utils.LogError(fmt.Sprintf("Unable to remove container %s", containerInfo.ID), "remove", "registry", err)
 		}
 	}
 
