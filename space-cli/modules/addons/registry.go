@@ -32,7 +32,7 @@ func addRegistry(projectID string) error {
 		return utils.LogError("Unable to check if registry already exists", "add", "registry", err)
 	}
 	if len(containers) != 0 {
-		utils.LogInfo("Registry already exists. Did you want to remove it?", "add", "registry")
+		utils.LogInfo("Registry already exists. Do you want to remove it?", "add", "registry")
 		return nil
 	}
 
@@ -43,7 +43,7 @@ func addRegistry(projectID string) error {
 
 	// Check if projectID id is valid. If no projectID was provided
 	if projectID == "" {
-		utils.LogInfo("Project id not provided. Fetching projectID list from Space Cloud...", "add", "registry")
+		utils.LogInfo("Project id not provided. Fetching projects from Space Cloud...", "add", "registry")
 
 		// Get projectID list from space cloud
 		projects, err := utils.GetProjectsFromSC()
@@ -53,7 +53,7 @@ func addRegistry(projectID string) error {
 
 		// Throw error if no project has been created
 		if len(projects) == 0 {
-			return utils.LogError("No projects found. Run this command after creating a projectID", "add", "registry", err)
+			return utils.LogError("No projects found. Run this command after creating a project", "add", "registry", err)
 		}
 
 		// TODO: Ask the user to select a projectID
