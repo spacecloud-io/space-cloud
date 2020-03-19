@@ -18,6 +18,7 @@ func (s *Manager) HandleArtifactRequests(admin *admin.Manager) http.HandlerFunc 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling forwarding artifact request failed to validate token -%v", err)
+			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -36,6 +37,7 @@ func (s *Manager) HandleArtifactRequests(admin *admin.Manager) http.HandlerFunc 
 		token, err := admin.GetInternalAccessToken()
 		if err != nil {
 			logrus.Errorf("error handling forwarding artifact request failed to generate internal access token -%v", err)
+			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
