@@ -104,7 +104,7 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == field.FieldName && foreignValue.RefTableName != "" && foreignValue.RefColumnName != "" {
 				fieldDetails.IsForeign = true
-				fieldDetails.JointTable = &model.TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName, OnCascade: foreignValue.DeleteRule}
+				fieldDetails.JointTable = &model.TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName, OnDelete: foreignValue.DeleteRule}
 			}
 		}
 		for _, indexValue := range indexes {

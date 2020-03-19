@@ -9,7 +9,7 @@ import (
 
 func generateSDL(schemaCol model.Collection) (string, error) {
 	schema := `type {{range $k,$v := .}} {{$k}} { {{range $fieldName, $fieldValue := $v}}
-	{{$fieldName}}: {{if eq $fieldValue.Kind "Object"}}{{$fieldValue.JointTable.Table}}{{else}}{{$fieldValue.Kind}}{{end}}{{if $fieldValue.IsFieldTypeRequired}}!{{end}} {{if $fieldValue.IsPrimary}}@primary{{end}} {{if $fieldValue.IsUnique}}@unique(group: "{{$fieldValue.IndexInfo.Group}}", order: {{$fieldValue.IndexInfo.Order}})  {{else}} {{if $fieldValue.IsIndex}}@index(group: "{{$fieldValue.IndexInfo.Group}}", sort: "{{$fieldValue.IndexInfo.Sort}}", order: {{$fieldValue.IndexInfo.Order}}){{end}}{{end}} {{if $fieldValue.IsDefault}}@default(value: {{$fieldValue.Default}}){{end}} {{if $fieldValue.IsForeign}}@foreign(table: {{$fieldValue.JointTable.Table}}, field: {{$fieldValue.JointTable.To}}){{end}}{{end}}{{end}}
+	{{$fieldName}}: {{if eq $fieldValue.Kind "Object"}}{{$fieldValue.JointTable.Table}}{{else}}{{$fieldValue.Kind}}{{end}}{{if $fieldValue.IsFieldTypeRequired}}!{{end}} {{if $fieldValue.IsPrimary}}@primary{{end}} {{if $fieldValue.IsUnique}}@unique(group: "{{$fieldValue.IndexInfo.Group}}", order: {{$fieldValue.IndexInfo.Order}})  {{else}} {{if $fieldValue.IsIndex}}@index(group: "{{$fieldValue.IndexInfo.Group}}", sort: "{{$fieldValue.IndexInfo.Sort}}", order: {{$fieldValue.IndexInfo.Order}}){{end}}{{end}} {{if $fieldValue.IsDefault}}@default(value: {{$fieldValue.Default}}){{end}} {{if $fieldValue.IsForeign}}@foreign(table: {{$fieldValue.JointTable.Table}}, field: {{$fieldValue.JointTable.To}},{{if $fieldValue.JointTable.OnDelete=="CASCADE"}}OnDelete:{{$fieldValue.JointTable.OnDelete}}){{end}}{{end}}{{end}}
 }`
 
 	buf := &bytes.Buffer{}
