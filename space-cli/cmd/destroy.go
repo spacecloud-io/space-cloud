@@ -49,19 +49,19 @@ func Destroy() error {
 	}
 
 	// Remove secrets directory
-	if err := os.RemoveAll(getSecretsDir()); err != nil {
+	if err := os.RemoveAll(utils.GetSecretsDir()); err != nil {
 		logrus.Errorf("Unable to remove secrets directory - %s", err.Error())
 		return err
 	}
 
 	// Remove host file
-	if err := os.RemoveAll(getSpaceCloudHostsFilePath()); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudHostsFilePath()); err != nil {
 		logrus.Errorf("Unable to remove host file - %s", err.Error())
 		return err
 	}
 
 	// Remove the service routing file
-	if err := os.RemoveAll(getSpaceCloudRoutingConfigPath()); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudRoutingConfigPath()); err != nil {
 		logrus.Errorf("Unable to remove service routing file file - %s", err.Error())
 		return err
 	}

@@ -4,18 +4,17 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//GetRemoteServices gets remote services
+// GetRemoteServices gets remote services
 func GetRemoteServices(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/remote-service/service", project)
 
 	// Get the spec from the server
 	result := make(map[string]interface{})
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 

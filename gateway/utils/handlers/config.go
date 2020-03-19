@@ -256,7 +256,7 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"aesKey": project.AESkey, "secret": project.Secret, "name": project.Name, "contextTime": project.ContextTime})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"aesKey": project.AESKey, "secret": project.Secret, "name": project.Name, "dockerRegistry": project.DockerRegistry, "contextTime": project.ContextTime})
 	}
 }
 

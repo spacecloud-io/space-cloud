@@ -105,8 +105,9 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
 			p.Name = project.Name
-			p.AESkey = project.AESkey
+			p.AESKey = project.AESKey
 			p.Secret = project.Secret
+			p.DockerRegistry = project.DockerRegistry
 			p.ContextTime = project.ContextTime
 
 			// Mark project as existing
@@ -155,11 +156,11 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	}
 
 	projectConfig.Secret = project.Secret
-	projectConfig.AESkey = project.AESkey
+	projectConfig.AESKey = project.AESKey
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
-	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
+	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESKey)
 
 	return s.setProject(ctx, projectConfig)
 }

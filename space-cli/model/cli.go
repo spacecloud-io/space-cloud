@@ -23,9 +23,8 @@ type Account struct {
 
 // Projects describes the configuration of a single project
 type Projects struct {
-	Name         string         `json:"name" yaml:"name"`
-	ID           string         `json:"id" yaml:"id"`
-	Environments []*Environment `json:"environment,omitempty" yaml:"environment"`
+	Name string `json:"name" yaml:"name"`
+	ID   string `json:"id" yaml:"id"`
 }
 
 // Environment describes the configuration of a single environment
