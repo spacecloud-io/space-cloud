@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/spaceuptech/space-cli/utils"
+	"github.com/txn2/txeh"
 )
 
 func addDatabase(dbtype, username, password, alias, version string) error {
@@ -52,6 +53,38 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	// Start the database
 	if err := docker.ContainerStart(ctx, containerRes.ID, types.ContainerStartOptions{}); err != nil {
 		return utils.LogError("Unable to start local docker database", "add", "database", err)
+	}
+
+	// Get the hosts file
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(), WriteFilePath: utils.GetSpaceCloudHostsFilePath()})
+	if err != nil {
+		return utils.LogError("Unable to open hosts file", "add", "database", err)
+	}
+
+	for _, container := range containers {
+		// First start the container
+		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), "add", "database", err)
+		}
+
+		// Get the container's info
+		info, err := docker.ContainerInspect(ctx, container.ID)
+		if err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), "add", "database", err)
+		}
+
+		hostName := utils.GetServiceDomain(info.Config.Labels["service"], info.Config.Labels["name"])
+
+		// Remove the domain from the hosts file
+		hosts.RemoveHost(hostName)
+
+		// Add it back with the new ip address
+		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
+	}
+
+	// Save the hosts file before continuing
+	if err := hosts.Save(); err != nil {
+		return utils.LogError("Could not save hosts file after updating add on containers", "add", "database", err)
 	}
 
 	return nil
