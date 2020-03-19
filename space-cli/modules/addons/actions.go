@@ -5,7 +5,6 @@ import (
 )
 
 // Commands is the list of commands the addon module exposes
-// TODO: Add a remove command too
 var Commands = []cli.Command{
 	{
 		Name:  "add",
