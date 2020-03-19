@@ -11,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/sirupsen/logrus"
 	scClient "github.com/spaceuptech/space-api-go"
 	spaceApiTypes "github.com/spaceuptech/space-api-go/types"
 	"github.com/spaceuptech/space-cli/utils"
@@ -33,12 +32,14 @@ func Upgrade() error {
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
 
+	//getting current version
 	result := make(map[string]interface{})
 	if err := utils.Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
 		return err
 	}
-
 	currentVersion := result["version"].(string)
+
+	//getting latest version
 	latestVersion, err := getLatestVersion(currentVersion)
 	if err != nil {
 		return err
@@ -48,18 +49,18 @@ func Upgrade() error {
 		return fmt.Errorf("current verion (%s) is up to date", currentVersion)
 	}
 
+	//creating docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		logrus.Errorf("Unable to initialize docker client - %s", err.Error())
-		return err
+		return utils.LogError("Unable to initialize docker client", "operations", "upgrade", err)
 	}
 
 	// get all containers containing < space-cloud > in their name
 	args := filters.Arg("label", "app=space-cloud")
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
-		logrus.Errorf("Unable to list containers - %s", err.Error())
+		utils.LogInfo("space cloud is not setup. Consider running space-cli setup first.", "operation", "upgrade")
 		return err
 	}
 
@@ -76,32 +77,23 @@ func Upgrade() error {
 	for _, containerInfo := range containers {
 		containerInspect, err := cli.ContainerInspect(ctx, containerInfo.ID)
 		if err != nil {
-			logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
-			return err
+			return utils.LogError("error getting service in docker unable to inspect container", "operations", "upgrade", err)
 		}
 
 		switch containerInspect.Config.Labels["service"] {
 		case "gateway":
-
 			gatewayEnvs = containerInspect.Config.Env
-
 			gatewayMounts = containerInspect.HostConfig.Mounts
-
 			gatewayPorts = containerInspect.HostConfig.PortBindings
-
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-				logrus.Errorf("Unable to remove container %s - %s", containerInfo.ID, err.Error())
-				return err
+				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), "operations", "upgrade", err)
 			}
 
 		case "runner":
 			runnerEnvs = containerInspect.Config.Env
-
 			runnerMounts = containerInspect.HostConfig.Mounts
-
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-				logrus.Errorf("Unable to remove container %s - %s", containerInfo.ID, err.Error())
-				return err
+				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), "operations", "upgrade", err)
 			}
 		}
 	}
@@ -116,7 +108,7 @@ func Upgrade() error {
 		portMapping    nat.PortMap
 	}{
 		{
-			containerImage: fmt.Sprintf("%s:v%s", "spaceuptech/gateway", latestVersion),
+			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", latestVersion),
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           gatewayEnvs,
@@ -141,41 +133,19 @@ func Upgrade() error {
 	ctx = context.Background()
 	cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		logrus.Errorf("Unable to initialize docker client - %s", err)
-		return err
+		return utils.LogError("Unable to initialize docker client", "operations", "upgrade", err)
 	}
 
 	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(), WriteFilePath: utils.GetSpaceCloudHostsFilePath()})
 	if err != nil {
-		logrus.Errorf("Unable to load host file with suitable default - %s", err)
-		return err
-	}
-
-	// change the default host file location for crud operation to our specified path
-	// default value /etc/hosts
-	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath()); err != nil {
-		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", utils.GetSpaceCloudHostsFilePath(), err)
-		return err
+		return utils.LogError("Unable to load host file with suitable default", "operations", "upgrade", err)
 	}
 
 	for _, c := range containersToCreate {
-		logrus.Infof("Starting container %s...", c.containerName)
+		utils.LogInfo(fmt.Sprintf("Starting container %s...", c.containerName), "operations", "upgrade")
 		// check if image already exists
 		if err := utils.PullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
-			logrus.Errorf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage)
-			return err
-		}
-
-		// check if container is already running
-		args := filters.Arg("name", c.containerName)
-		containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
-		if err != nil {
-			logrus.Errorf("error deleting service in docker unable to list containers - %s", err)
-			return err
-		}
-		if len(containers) != 0 {
-			logrus.Errorf("Container (%s) already exists", c.containerName)
-			return fmt.Errorf("container (%s) already exists", c.containerName)
+			return utils.LogError(fmt.Sprintf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage), "operations", "upgrade", err)
 		}
 
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
@@ -185,50 +155,55 @@ func Upgrade() error {
 		}, &container.HostConfig{
 			Mounts:       c.mount,
 			PortBindings: c.portMapping,
+			NetworkMode:  "space-cloud",
 		}, nil, c.containerName)
 		if err != nil {
-			logrus.Errorf("Unable to create container (%s) - %s", c.containerName, err)
-			return err
+			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), "operations", "upgrade", err)
 		}
 
 		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-			logrus.Errorf("Unable to start container (%s) - %s", c.containerName, err.Error())
-			return err
+			return utils.LogError(fmt.Sprintf("Unable to start container (%v)", c.containerName), "operations", "upgrade", err)
 		}
 
 		// get the ip address assigned to container
 		data, err := cli.ContainerInspect(ctx, c.containerName)
 		if err != nil {
-			logrus.Errorf("Unable to inspect container (%s) - %s", c.containerName, err)
+			return utils.LogError(fmt.Sprintf("Unable to inpect container (%v)", c.containerName), "operations", "upgrade", err)
 		}
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(c.dnsName)
 		// Add it back with the new ip address
-		ip := data.NetworkSettings.Networks["bridge"].IPAddress
+		ip := data.NetworkSettings.Networks["space-cloud"].IPAddress
 
 		hosts.AddHost(ip, c.dnsName)
 	}
 
 	if err := hosts.Save(); err != nil {
-		logrus.Errorf("Unable to save host file - %s", err.Error())
-		return err
+		return utils.LogError("Unable to save host file", "operations", "upgrade", err)
 	}
 
 	return nil
 }
 
 func getLatestVersion(version string) (string, error) {
-	mongoConn := scClient.New("test", "localhost:4122", false).DB("mongo")
-	if mongoConn == nil {
-		return "", fmt.Errorf("cannot connect to mongo")
+	db := scClient.New("space_cloud", "localhost:4122", false).DB("db")
+	if db == nil {
+		return "", fmt.Errorf("cannot connect to db")
 	}
 	ctx := context.Background()
 
 	var result *spaceApiTypes.Response
+	var err error
 	if version == "" {
-		result, _ = mongoConn.Get("table").Select(map[string]int32{"version_no": 2}).Apply(ctx)
+		result, err = db.GetOne("space_cloud_version").Sort("-version_no").Limit(1).Apply(ctx)
+		if err != nil {
+			return "", err
+		}
 	} else {
-		result, _ = mongoConn.Get("table").Where(spaceApiTypes.Cond("compatible_version", "==", version)).Apply(ctx)
+		result, _ = db.Get("space_cloud_version").Where(spaceApiTypes.Cond("compatible_version", "==", version)).Apply(ctx)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	r := new(resultData)

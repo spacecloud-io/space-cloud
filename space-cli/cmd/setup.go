@@ -15,7 +15,6 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/sirupsen/logrus"
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cli/model"
@@ -47,7 +46,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	_ = utils.CreateFileIfNotExist(utils.GetSpaceCloudRoutingConfigPath(), "{}")
 	_ = utils.CreateConfigFile(utils.GetSpaceCloudConfigFilePath())
 
-	logrus.Infoln("Setting up Space Cloud on docker on your command...")
+	utils.LogInfo("Setting up Space Cloud on docker on your command...", "operations", "setup")
 
 	if username == "" {
 		username = "local-admin"
@@ -60,10 +59,10 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	}
 	if config == "" {
 		config = utils.GetSpaceCloudConfigFilePath()
-	} else {
-		if !strings.Contains(config, ".yaml") && !strings.Contains(config, ".json") {
-			return fmt.Errorf("full path not provided for config file")
-		}
+	}
+	if !strings.Contains(config, ".yaml") && !strings.Contains(config, ".json") {
+		return fmt.Errorf("full path not provided for config file")
+
 	}
 	if version == "" {
 		var err error
@@ -84,8 +83,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	}
 
 	if err := utils.StoreCredentials(&selectedAccount); err != nil {
-		logrus.Errorf("error in setup unable to check credentials - %v", err)
-		return err
+		return utils.LogError("error in setup unable to check credentials", "operations", "setup", err)
 	}
 
 	devMode := "false"
@@ -103,7 +101,6 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 		"ADMIN_PASS=" + key,
 		"ADMIN_SECRET=" + secret,
 		"DEV=" + devMode,
-		//"CONFIG=" + "/app/config.yaml",
 	}
 
 	envs = append(envs, environmentVariables...)
@@ -124,8 +121,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	for _, volume := range volumes {
 		temp := strings.Split(volume, ":")
 		if len(temp) != 2 {
-			logrus.Errorf("Error in volume flag (%s) - incorrect format", volume)
-			return errors.New("incorrect format for volume flag")
+			return utils.LogError(fmt.Sprintf("Error in volume flag (%s) - incorrect format", volume), "operations", "setup", errors.New(""))
 		}
 
 		mounts = append(mounts, mount.Mount{Type: mount.TypeBind, Source: temp[0], Target: temp[1]})
@@ -143,7 +139,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	}{
 		{
 			name:           "gateway",
-			containerImage: fmt.Sprintf("%s:v%s", "spaceuptech/gateway", version),
+			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", version),
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           envs,
@@ -161,7 +157,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 		{
 			// runner
 			name:           "runner",
-			containerImage: fmt.Sprintf("%s:v%s", "spaceuptech/runner", version),
+			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
@@ -203,21 +199,18 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		logrus.Errorf("Unable to initialize docker client - %s", err)
-		return err
+		return utils.LogError("Unable to initialize docker client ", "operations", "setup", err)
 	}
 
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
-		logrus.Errorf("Unable to load host file with suitable default - %s", err)
-		return err
+		return utils.LogError("Unable to load host file with suitable default", "operations", "setup", err)
 	}
 	// change the default host file location for crud operation to our specified path
 	// default value /etc/hosts
 	hosts.WriteFilePath = utils.GetSpaceCloudHostsFilePath()
 	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath()); err != nil {
-		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", utils.GetSpaceCloudHostsFilePath(), err)
-		return err
+		return utils.LogError(fmt.Sprintf("Unable to save as host file to specified path (%s)", utils.GetSpaceCloudHostsFilePath()), "operations", "setup", errors.New(""))
 	}
 
 	// First we create a network for space cloud
@@ -226,23 +219,20 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	}
 
 	for _, c := range containersToCreate {
-		logrus.Infof("Starting container %s...", c.containerName)
+		utils.LogInfo(fmt.Sprintf("Starting container %s...", c.containerName), "operations", "setup")
 		// check if image already exists
 		if err := utils.PullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
-			logrus.Errorf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage)
-			return err
+			return utils.LogError(fmt.Sprintf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage), "operations", "setup", errors.New(""))
 		}
 
 		// check if container is already running
 		args := filters.Arg("name", c.containerName)
 		containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 		if err != nil {
-			logrus.Errorf("error deleting service in docker unable to list containers - %s", err)
-			return err
+			return utils.LogError("error deleting service in docker unable to list containers", "operations", "setup", err)
 		}
 		if len(containers) != 0 {
-			logrus.Errorf("Container (%s) already exists", c.containerName)
-			return fmt.Errorf("container (%s) already exists", c.containerName)
+			return utils.LogError(fmt.Sprintf("Container (%s) already exists", c.containerName), "operations", "setup", errors.New(""))
 		}
 
 		// create container with specified defaults
@@ -257,19 +247,17 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 			NetworkMode:  "space-cloud",
 		}, nil, c.containerName)
 		if err != nil {
-			logrus.Errorf("Unable to create container (%s) - %s", c.containerName, err)
-			return err
+			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), "operations", "setup", err)
 		}
 
 		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-			logrus.Errorf("Unable to start container (%s) - %s", c.containerName, err.Error())
-			return err
+			return utils.LogError(fmt.Sprintf("Unable to start container (%v)", c.containerName), "operations", "setup", err)
 		}
 
 		// get the ip address assigned to container
 		data, err := cli.ContainerInspect(ctx, c.containerName)
 		if err != nil {
-			logrus.Errorf("Unable to inspect container (%s) - %s", c.containerName, err)
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%v)", c.containerName), "operations", "setup", err)
 		}
 
 		ip := data.NetworkSettings.Networks["space-cloud"].IPAddress
@@ -278,13 +266,13 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	}
 
 	if err := hosts.Save(); err != nil {
-		logrus.Errorf("Unable to save host file - %s", err.Error())
-		return err
+		return utils.LogError("Unable to save host file - %s", "operations", "setup", err)
 	}
 
 	fmt.Println()
-	logrus.Infof("Space Cloud (id: \"%s\") has been successfully setup! 👍", selectedAccount.ID)
-	logrus.Infof("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL)
-	logrus.Infof("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key)
+	utils.LogInfo(fmt.Sprintf("Space Cloud (id: \"%s\") has been successfully setup! 👍", selectedAccount.ID), "operations", "setup")
+	utils.LogInfo(fmt.Sprintf("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL), "operations", "setup")
+	utils.LogInfo(fmt.Sprintf("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key), "operations", "setup")
+
 	return nil
 }
