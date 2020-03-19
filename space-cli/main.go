@@ -247,6 +247,12 @@ func main() {
 					Value:  "",
 				},
 				cli.StringFlag{
+					Name:   "verion",
+					Usage:  "The version is used to set SC verion",
+					EnvVar: "VERSION",
+					Value:  "",
+				},
+				cli.StringFlag{
 					Name:   "secret",
 					Usage:  "The jwt secret to start space-cloud with",
 					EnvVar: "JWT_SECRET",

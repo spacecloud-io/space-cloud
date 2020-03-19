@@ -25,6 +25,7 @@ func actionSetup(c *cli.Context) error {
 	userName := c.String("username")
 	key := c.String("key")
 	config := c.String("config")
+	version := c.String("version")
 	secret := c.String("secret")
 	local := c.Bool("dev")
 	portHTTP := c.Int64("port-http")
@@ -34,7 +35,7 @@ func actionSetup(c *cli.Context) error {
 
 	setLogLevel(c.GlobalString("log-level"))
 
-	return cmd.CodeSetup(id, userName, key, config, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
+	return cmd.CodeSetup(id, userName, key, config, version, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
 }
 
 func actionUpgrade(_ *cli.Context) error {

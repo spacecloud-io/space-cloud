@@ -224,7 +224,12 @@ func getLatestVersion(version string) (string, error) {
 	}
 	ctx := context.Background()
 
-	result, _ := mongoConn.Get("table").Where(spaceApiTypes.Cond("compatible_version", "==", version)).Apply(ctx)
+	var result *spaceApiTypes.Response
+	if version == "" {
+		result, _ = mongoConn.Get("table").Select(map[string]int32{"version_no": 2}).Apply(ctx)
+	} else {
+		result, _ = mongoConn.Get("table").Where(spaceApiTypes.Cond("compatible_version", "==", version)).Apply(ctx)
+	}
 
 	r := new(resultData)
 	if err := result.Unmarshal(&r); err != nil {

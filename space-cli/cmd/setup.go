@@ -35,7 +35,7 @@ func generateRandomString(length int) string {
 }
 
 // CodeSetup initializes development environment
-func CodeSetup(id, username, key, config, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
+func CodeSetup(id, username, key, config, version, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
@@ -63,6 +63,13 @@ func CodeSetup(id, username, key, config, secret string, dev bool, portHTTP, por
 	} else {
 		if !strings.Contains(config, ".yaml") && !strings.Contains(config, ".json") {
 			return fmt.Errorf("full path not provided for config file")
+		}
+	}
+	if version == "" {
+		var err error
+		version, err = getLatestVersion("")
+		if err != nil {
+			return err
 		}
 	}
 	if secret == "" {
@@ -136,7 +143,7 @@ func CodeSetup(id, username, key, config, secret string, dev bool, portHTTP, por
 	}{
 		{
 			name:           "gateway",
-			containerImage: "spaceuptech/gateway",
+			containerImage: fmt.Sprintf("%s:v%s", "spaceuptech/gateway", version),
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           envs,
@@ -154,7 +161,7 @@ func CodeSetup(id, username, key, config, secret string, dev bool, portHTTP, por
 		{
 			// runner
 			name:           "runner",
-			containerImage: "spaceuptech/runner",
+			containerImage: fmt.Sprintf("%s:v%s", "spaceuptech/runner", version),
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
