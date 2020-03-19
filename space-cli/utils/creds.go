@@ -1,7 +1,6 @@
-package cmd
+package utils
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"github.com/sirupsen/logrus"
@@ -10,15 +9,8 @@ import (
 	"github.com/spaceuptech/space-cli/model"
 )
 
-func getSpaceCloudDirectory() string {
-	return fmt.Sprintf("%s/.space-cloud", getHomeDirectory())
-}
-
-func getAccountConfigPath() string {
-	return fmt.Sprintf("%s/accounts.yaml", getSpaceCloudDirectory())
-}
-
-func getSelectedAccount() (*model.Account, error) {
+// GetSelectedAccount gets the account information of the selected account
+func GetSelectedAccount() (*model.Account, error) {
 	filePath := getAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -41,7 +33,8 @@ func getSelectedAccount() (*model.Account, error) {
 	return account, nil
 }
 
-func checkCred(account *model.Account) error {
+// StoreCredentials stores the credential in the accounts config file
+func StoreCredentials(account *model.Account) error {
 	yamlFile, err := ioutil.ReadFile(getAccountConfigPath())
 	if err != nil {
 		// accounts.yaml file doesn't exist create new one
