@@ -27,6 +27,7 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -39,11 +40,13 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		projectID := vars["project"]
 
 		if err := syncMan.SetService(ctx, projectID, service, &v); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
@@ -60,6 +63,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -71,6 +75,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -79,11 +84,13 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		if exists {
 			service, ok := project.Modules.Services.Services[serviceID[0]]
 			if !ok {
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
 				return
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": service})
 			return
@@ -91,11 +98,13 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		services := project.Modules.Services.Services
 		if len(services) == 0 {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "remote services not found"})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": services})
 	}
@@ -111,6 +120,7 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -123,11 +133,13 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		projectID := vars["project"]
 
 		if err := syncMan.DeleteService(ctx, projectID, service); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
