@@ -132,6 +132,11 @@ func removeDatabase(alias string) error {
 
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(hostName)
+
+		// remove the container from host machine
+		if err := docker.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to remove container %s", container.ID), "remove", "registry", err)
+		}
 	}
 
 	// Save the hosts file
