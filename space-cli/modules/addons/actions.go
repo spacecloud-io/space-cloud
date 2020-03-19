@@ -16,6 +16,17 @@ var Commands = []cli.Command{
 				Usage:  "Add a docker registry",
 				Action: ActionAddRegistry,
 			},
+			{
+				Name:  "database",
+				Usage: "Add a database",
+				Flags: []cli.Flag{
+					cli.StringFlag{Name: "username, U", Usage: "provide the username"},
+					cli.StringFlag{Name: "password, P", Usage: "provide the password"},
+					cli.StringFlag{Name: "alias, A", Usage: "provide the alias for the database"},
+					cli.StringFlag{Name: "version, V", Usage: "provide the version of the database"},
+				},
+				Action: ActionAddDatabase,
+			},
 		},
 	},
 	{
@@ -42,4 +53,14 @@ func ActionAddRegistry(c *cli.Context) error {
 func ActionRemoveRegistry(c *cli.Context) error {
 	project := c.GlobalString("project")
 	return removeRegistry(project)
+}
+
+// ActionAddDatabase adds a database add on
+func ActionAddDatabase(c *cli.Context) error {
+	dbtype := c.Args().Get(0)
+	username := c.GlobalString("username")
+	password := c.GlobalString("password")
+	alias := c.GlobalString("alias")
+	version := c.GlobalString("version")
+	return addDatabase(dbtype, username, password, alias, version)
 }
