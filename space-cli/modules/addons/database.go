@@ -23,7 +23,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 		return utils.LogError("Unable to initialize docker client", "add", "database", err)
 	}
 
-	// Check if a registry container already exist
+	// Check if a database container already exist
 	filterArgs := filters.Arg("label", "app=space-cloud")
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
 	if err != nil {
@@ -82,7 +82,59 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
 	}
 
-	// Save the hosts file before continuing
+	// Save the hosts file
+	if err := hosts.Save(); err != nil {
+		return utils.LogError("Could not save hosts file after updating add on containers", "add", "database", err)
+	}
+
+	return nil
+}
+
+func removeDatabase(alias string) error {
+	ctx := context.Background()
+
+	// Create a docker client
+	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return utils.LogError("Unable to initialize docker client", "remove", "database", err)
+	}
+
+	// Check if a database container already exist
+	filterArgs := filters.Arg("label", "app=space-cloud")
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
+	if err != nil {
+		return utils.LogError("Unable to check if database already exists", "remove", "database", err)
+	}
+	if len(containers) == 0 {
+		utils.LogInfo("No space-cloud instance found. Run 'space-cli setup' first", "remove", "database")
+		return nil
+	}
+
+	// Get the hosts file
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(), WriteFilePath: utils.GetSpaceCloudHostsFilePath()})
+	if err != nil {
+		return utils.LogError("Unable to open hosts file", "remove", "database", err)
+	}
+
+	for _, container := range containers {
+		// First start the container
+		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), "remove", "database", err)
+		}
+
+		// Get the container's info
+		info, err := docker.ContainerInspect(ctx, container.ID)
+		if err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), "remove", "database", err)
+		}
+
+		hostName := utils.GetServiceDomain(info.Config.Labels["service"], alias)
+
+		// Remove the domain from the hosts file
+		hosts.RemoveHost(hostName)
+	}
+
+	// Save the hosts file
 	if err := hosts.Save(); err != nil {
 		return utils.LogError("Could not save hosts file after updating add on containers", "add", "database", err)
 	}

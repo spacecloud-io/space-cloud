@@ -39,6 +39,14 @@ var Commands = []cli.Command{
 				Usage:  "Remove a docker registry",
 				Action: ActionRemoveRegistry,
 			},
+			{
+				Name:  "database",
+				Usage: "Remove a database",
+				Flags: []cli.Flag{
+					cli.StringFlag{Name: "alias, A", Usage: "provide the alias for the database"},
+				},
+				Action: ActionRemoveDatabase,
+			},
 		},
 	},
 }
@@ -63,4 +71,10 @@ func ActionAddDatabase(c *cli.Context) error {
 	alias := c.GlobalString("alias")
 	version := c.GlobalString("version")
 	return addDatabase(dbtype, username, password, alias, version)
+}
+
+// ActionRemoveDatabase removes a database add on
+func ActionRemoveDatabase(c *cli.Context) error {
+	alias := c.GlobalString("alias")
+	return removeDatabase(alias)
 }
