@@ -54,8 +54,15 @@ const (
 
 // Resources describes the resources to be used by a task
 type Resources struct {
-	CPU    int64 `json:"cpu" yaml:"cpu"`
-	Memory int64 `json:"memory" yaml:"memory"`
+	CPU    int64        `json:"cpu" yaml:"cpu"`
+	Memory int64        `json:"memory" yaml:"memory"`
+	GPU    *GPUResource `json:"gpu,omitempty" yaml:"gpu,omitempty"`
+}
+
+// GPUResource describes the GPUs required by a task
+type GPUResource struct {
+	Type  string `json:"type" yaml:"type"`
+	Value int64  `json:"value" yaml:"value"`
 }
 
 // Docker describes the docker configurations
@@ -118,25 +125,6 @@ const (
 	// Code indicates that the user's code isn't containerized. We need to use a custom runtime for this
 	Code Runtime = "code"
 )
-
-// Expose describes how an http service needs to be exposed
-type Expose struct {
-	Hosts []string     `json:"hosts" yaml:"hosts"`
-	Rules []ExposeRule `json:"rules" yaml:"rules"`
-}
-
-// ExposeRule describes the rules for exposing an http service
-type ExposeRule struct {
-	URI  ExposeRuleURI `json:"uri" yaml:"uri"`
-	Port int32         `json:"port" yaml:"port"`
-}
-
-// ExposeRuleURI describes the the http routes which need to be exposed
-type ExposeRuleURI struct {
-	Prefix  *string `json:"prefix" yaml:"prefix"`
-	Exact   *string `json:"exact" yaml:"exact"`
-	Rewrite *string `json:"rewrite" yaml:"rewrite"`
-}
 
 // SpecObject describes the basic structure of config specifications
 type SpecObject struct {

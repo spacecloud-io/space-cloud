@@ -54,8 +54,15 @@ const (
 
 // Resources describes the resources to be used by a task
 type Resources struct {
-	CPU    int64 `json:"cpu" yaml:"cpu"`
-	Memory int64 `json:"memory" yaml:"memory"`
+	CPU    int64        `json:"cpu" yaml:"cpu"`
+	Memory int64        `json:"memory" yaml:"memory"`
+	GPU    *GPUResource `json:"gpu,omitempty" yaml:"gpu,omitempty"`
+}
+
+// GPUResource describes the GPUs required by a task
+type GPUResource struct {
+	Type  string `json:"type" yaml:"type"`
+	Value int64  `json:"value" yaml:"value"`
 }
 
 // Docker describes the docker configurations

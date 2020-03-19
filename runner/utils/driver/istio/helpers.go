@@ -647,6 +647,10 @@ func generateResourceRequirements(c *model.Resources) *v1.ResourceRequirements {
 	// resources.Limits[v1.ResourceMemory] = *resource.NewQuantity(c.Memory*1024*1024, resource.BinarySI)
 	resources.Requests[v1.ResourceMemory] = *resource.NewQuantity(c.Memory*1024*1024, resource.BinarySI)
 
+	// Set the GPU limits
+	if c.GPU != nil && c.GPU.Value > 0 && c.GPU.Type != "" {
+		resources.Limits[v1.ResourceName(fmt.Sprintf("%s.com/gpu", c.GPU.Type))] = *resource.NewQuantity(c.GPU.Value, resource.DecimalSI)
+	}
 	return &resources
 }
 
