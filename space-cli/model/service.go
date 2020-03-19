@@ -2,16 +2,16 @@ package model
 
 // Service describes a service's configurations
 type Service struct {
-	ID        string            `json:"id" yaml:"id,omitempty" `
-	Name      string            `json:"name" yaml:"name,omitempty" `
-	ProjectID string            `json:"projectId" yaml:"projectId,omitempty" `
-	Version   string            `json:"version" yaml:"version,omitempty" `
-	Scale     ScaleConfig       `json:"scale" yaml:"scale" `
-	Labels    map[string]string `json:"labels" yaml:"labels" `
-	Tasks     []Task            `json:"tasks" yaml:"tasks" `
-	Affinity  []Affinity        `json:"affinity" yaml:"affinity" `
-	Whitelist []Whitelist       `json:"whitelists" yaml:"whitelists" `
-	Upstreams []Upstream        `json:"upstreams" yaml:"upstreams" `
+	ID        string            `json:"id,omitempty" yaml:"id,omitempty"`
+	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
+	ProjectID string            `json:"projectId,omitempty" yaml:"projectId,omitempty"`
+	Version   string            `json:"version,omitempty" yaml:"version,omitempty"`
+	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
+	Labels    map[string]string `json:"labels" yaml:"labels"`
+	Tasks     []Task            `json:"tasks" yaml:"tasks"`
+	Affinity  []Affinity        `json:"affinity" yaml:"affinity"`
+	Whitelist []Whitelist       `json:"whitelists" yaml:"whitelists"`
+	Upstreams []Upstream        `json:"upstreams" yaml:"upstreams"`
 }
 
 // ScaleConfig describes the config used to scale a service
@@ -26,7 +26,7 @@ type ScaleConfig struct {
 // Task describes the configuration of a task
 type Task struct {
 	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
+	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Ports     []Port            `json:"ports" yaml:"ports"`
 	Resources Resources         `json:"resources" yaml:"resources"`
 	Docker    Docker            `json:"docker" yaml:"docker"`
@@ -68,10 +68,22 @@ type GPUResource struct {
 
 // Docker describes the docker configurations
 type Docker struct {
-	Image  string   `json:"image" yaml:"image"`
-	Cmd    []string `json:"cmd" yaml:"cmd"`
-	Secret string   `json:"secret" yaml:"secret"`
+	Image           string          `json:"image" yaml:"image"`
+	Cmd             []string        `json:"cmd" yaml:"cmd"`
+	Secret          string          `json:"secret" yaml:"secret"`
+	ImagePullPolicy ImagePullPolicy `json:"imagePullPolicy" yaml:"imagePullPolicy"`
 }
+
+// ImagePullPolicy describes the image pull policy for docker config
+type ImagePullPolicy string
+
+const (
+	// PullAlways is used for always pull policy
+	PullAlways ImagePullPolicy = "always"
+
+	// PullIfNotExists is use for pull if not exist locally pull policy
+	PullIfNotExists ImagePullPolicy = "pull-if-not-exists"
+)
 
 // Affinity describes the affinity rules of a service
 type Affinity struct {
@@ -115,25 +127,6 @@ const (
 	Code Runtime = "code"
 )
 
-// Expose describes how an http service needs to be exposed
-type Expose struct {
-	Hosts []string     `json:"hosts" yaml:"hosts"`
-	Rules []ExposeRule `json:"rules" yaml:"rules"`
-}
-
-// ExposeRule describes the rules for exposing an http service
-type ExposeRule struct {
-	URI  ExposeRuleURI `json:"uri" yaml:"uri"`
-	Port int32         `json:"port" yaml:"port"`
-}
-
-// ExposeRuleURI describes the the http routes which need to be exposed
-type ExposeRuleURI struct {
-	Prefix  *string `json:"prefix" yaml:"prefix"`
-	Exact   *string `json:"exact" yaml:"exact"`
-	Rewrite *string `json:"rewrite" yaml:"rewrite"`
-}
-
 // ActionCode describes the data structure sent to Space Cloud when deploy is called
 type ActionCode struct {
 	Service   *Service `json:"service" yaml:"service"`
@@ -143,8 +136,8 @@ type ActionCode struct {
 
 // SpecObject describes the basic structure of config specifications
 type SpecObject struct {
-	API  string            `yaml:"api"`
-	Type string            `yaml:"type"`
-	Meta map[string]string `yaml:"meta"`
-	Spec interface{}       `yaml:"spec,omitempty"`
+	API  string            `json:"api" yaml:"api"`
+	Type string            `json:"type" yaml:"type"`
+	Meta map[string]string `json:"meta" yaml:"meta"`
+	Spec interface{}       `json:"spec" yaml:"spec,omitempty"`
 }

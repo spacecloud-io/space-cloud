@@ -2,10 +2,10 @@ package config
 
 // RunnerService describes a service's configurations
 type RunnerService struct {
-	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
-	ProjectID string            `json:"projectId" yaml:"projectId"`
-	Version   string            `json:"version" yaml:"version"`
+	ID        string            `json:"id,omitempty" yaml:"id,omitempty"`
+	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
+	ProjectID string            `json:"projectId,omitempty" yaml:"projectId,omitempty"`
+	Version   string            `json:"version,omitempty" yaml:"version,omitempty"`
 	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
 	Labels    map[string]string `json:"labels" yaml:"labels"`
 	Tasks     []Task            `json:"tasks" yaml:"tasks"`
@@ -26,7 +26,7 @@ type ScaleConfig struct {
 // Task describes the configuration of a task
 type Task struct {
 	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
+	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Ports     []Port            `json:"ports" yaml:"ports"`
 	Resources Resources         `json:"resources" yaml:"resources"`
 	Docker    Docker            `json:"docker" yaml:"docker"`
