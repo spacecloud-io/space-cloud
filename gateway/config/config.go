@@ -92,8 +92,8 @@ type CrudStub struct {
 // TableRule contains the config at the collection level
 type TableRule struct {
 	IsRealTimeEnabled bool             `json:"isRealtimeEnabled" yaml:"isRealtimeEnabled"`
-	Rules             map[string]*Rule `json:"rules,omitempty" yaml:"rules"` // The key here is query, insert, update or delete
-	Schema            string           `json:"schema,omitempty" yaml:"schema"`
+	Rules             map[string]*Rule `json:"rules" yaml:"rules"` // The key here is query, insert, update or delete
+	Schema            string           `json:"schema" yaml:"schema"`
 }
 
 // Rule is the authorisation object at the query level

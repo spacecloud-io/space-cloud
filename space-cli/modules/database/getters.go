@@ -25,6 +25,8 @@ func GetDbRule(project, commandName string, params map[string]string) ([]*model.
 			str := strings.Split(key, "-")
 			meta := map[string]string{"project": project, "col": str[1], "dbAlias": str[0]}
 
+			delete(obj, "schema")
+
 			// Generating the object
 			s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules", commandName, meta, value)
 			if err != nil {
@@ -83,6 +85,9 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 		for key, value := range obj {
 			str := strings.Split(key, "-")
 			meta := map[string]string{"project": project, "col": str[1], "dbAlias": str[0]}
+
+			delete(obj, "isRealtimeEnabled")
+			delete(obj, "rules")
 
 			// Generating the object
 			s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate", commandName, meta, value)
