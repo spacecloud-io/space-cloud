@@ -1,63 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/cmd"
-	"github.com/spaceuptech/space-cli/model"
+	"github.com/spaceuptech/space-cli/utils"
 )
-
-func actionApply(_ *cli.Context) error {
-	return cmd.Apply()
-}
 
 func actionDestroy(_ *cli.Context) error {
 	return cmd.Destroy()
-}
-
-func actionGenerateService(_ *cli.Context) error {
-	// get filename from args in which service config will be stored
-	argsArr := os.Args
-	if len(argsArr) != 4 {
-		return fmt.Errorf("incorrect number of arguments")
-	}
-	serviceConfigFile := argsArr[3]
-
-	service, err := cmd.GenerateService()
-	if err != nil {
-		return err
-	}
-	v := model.SpecObject{
-		API:  "/v1/runner/{projectId}/services/{serviceId}/{version}",
-		Type: "service",
-		Meta: map[string]string{
-			"serviceId": service.ID,
-			"projectId": service.ProjectID,
-			"version":   service.Version,
-		},
-	}
-	service.ID = ""
-	service.ProjectID = ""
-	service.Version = ""
-	v.Spec = service
-
-	data, err := yaml.Marshal(v)
-	if err != nil {
-		logrus.Errorf("error pretty printing service struct - %s", err.Error())
-		return err
-	}
-
-	if err := ioutil.WriteFile(serviceConfigFile, data, 0755); err != nil {
-		return err
-	}
-	fmt.Printf("%s", string(data))
-	return nil
 }
 
 func actionLogin(c *cli.Context) error {
@@ -65,7 +17,7 @@ func actionLogin(c *cli.Context) error {
 	key := c.String("key")
 	url := c.String("url")
 
-	return cmd.LoginStart(userName, key, url)
+	return utils.LoginStart(userName, key, url)
 }
 
 func actionSetup(c *cli.Context) error {

@@ -9,12 +9,13 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	Secret      string   `json:"secret,omitempty" yaml:"secret,omitempty"`
-	AESkey      string   `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
-	ID          string   `json:"id,omitempty" yaml:"id,omitempty"`
-	Name        string   `json:"name,omitempty" yaml:"name,omitempty"`
-	Modules     *Modules `json:"modules,omitempty" yaml:"modules,omitempty"`
-	ContextTime int      `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
+	Secret         string   `json:"secret,omitempty" yaml:"secret,omitempty"`
+	AESkey         string   `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
+	ID             string   `json:"id,omitempty" yaml:"id,omitempty"`
+	Name           string   `json:"name,omitempty" yaml:"name,omitempty"`
+	DockerRegistry string   `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
+	Modules        *Modules `json:"modules,omitempty" yaml:"modules,omitempty"`
+	ContextTime    int      `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
 }
 
 // Admin stores the admin credentials

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
@@ -15,7 +14,7 @@ func GetEventingTrigger(project, commandName string, params map[string]string) (
 
 	// Get the spec from the server
 	result := make([]interface{}, 0)
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 
@@ -43,7 +42,7 @@ func GetEventingConfig(project, commandName string, params map[string]string) ([
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/config", project)
 	// Get the spec from the server
 	vPtr := make([]interface{}, 0)
-	if err := cmd.Get(http.MethodGet, url, map[string]string{}, &vPtr); err != nil {
+	if err := utils.Get(http.MethodGet, url, map[string]string{}, &vPtr); err != nil {
 		return nil, err
 	}
 
@@ -67,7 +66,7 @@ func GetEventingSchema(project, commandName string, params map[string]string) ([
 
 	// Get the spec from the server
 	result := make([]interface{}, 0)
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 
@@ -95,7 +94,7 @@ func GetEventingSecurityRule(project, commandName string, params map[string]stri
 
 	// Get the spec from the server
 	result := make([]interface{}, 0)
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 

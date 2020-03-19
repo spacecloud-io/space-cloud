@@ -16,6 +16,12 @@ import (
 // SchemaValidator function validates the schema which it gets from module
 func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 
+	for schemaKey := range doc {
+		if _, p := collectionFields[schemaKey]; !p {
+			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)
+		}
+	}
+
 	mutatedDoc := map[string]interface{}{}
 	for fieldKey, fieldValue := range collectionFields {
 		// check if key is required

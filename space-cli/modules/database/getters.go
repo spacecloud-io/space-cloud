@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
@@ -15,7 +14,7 @@ func GetDbRule(project, commandName string, params map[string]string) ([]*model.
 	url := fmt.Sprintf("/v1/config/projects/%s/database/collections/rules", project)
 	// Get the spec from the server
 	result := make([]interface{}, 0)
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +41,7 @@ func GetDbConfig(project, commandName string, params map[string]string) ([]*mode
 	url := fmt.Sprintf("/v1/config/projects/%s/database/config", project)
 	// Get the spec from the server
 	result := make([]interface{}, 0)
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 
@@ -74,7 +73,7 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 
 	// Get the spec from the server
 	result := make([]interface{}, 0)
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 

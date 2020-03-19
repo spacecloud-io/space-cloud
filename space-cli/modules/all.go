@@ -2,7 +2,6 @@ package modules
 
 import (
 	"fmt"
-	"github.com/spaceuptech/space-cli/modules/letsencrypt"
 	"io/ioutil"
 
 	"github.com/urfave/cli"
@@ -13,9 +12,10 @@ import (
 	"github.com/spaceuptech/space-cli/modules/database"
 	"github.com/spaceuptech/space-cli/modules/eventing"
 	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/ingress"
+	"github.com/spaceuptech/space-cli/modules/letsencrypt"
 	"github.com/spaceuptech/space-cli/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
-	"github.com/spaceuptech/space-cli/modules/routes"
 	"github.com/spaceuptech/space-cli/modules/services"
 )
 
@@ -135,7 +135,7 @@ func GetAllProjects(c *cli.Context) error {
 	// 	return err
 	// }
 
-	objs, err = routes.GetIngressRoutes(projectName, "ingress-routes", map[string]string{})
+	objs, err = ingress.GetIngressRoutes(projectName, "ingress-routes", map[string]string{})
 	if err != nil {
 		return err
 	}

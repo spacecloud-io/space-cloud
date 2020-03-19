@@ -1,6 +1,8 @@
 package remoteservices
 
 import (
+	"fmt"
+
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cli/utils"
@@ -25,4 +27,19 @@ func ActionGetRemoteServices(c *cli.Context) error {
 		return err
 	}
 	return nil
+}
+
+// ActionGenerateService generates remote service spec object
+func ActionGenerateService(c *cli.Context) error {
+	argsArr := c.Args()
+	if len(argsArr) != 1 {
+		return fmt.Errorf("incorrect number of arguments")
+	}
+	dbruleConfigFile := argsArr[0]
+	dbrule, err := generateService()
+	if err != nil {
+		return err
+	}
+
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }

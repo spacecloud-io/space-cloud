@@ -1,8 +1,9 @@
-package cmd
+package utils
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -11,11 +12,11 @@ import (
 
 // Get gets spec object
 func Get(method, url string, params map[string]string, vPtr interface{}) error {
-	account, err := getSelectedAccount()
+	account, err := GetSelectedAccount()
 	if err != nil {
 		return err
 	}
-	login, err := login(account)
+	login, err := Login(account)
 	if err != nil {
 		return err
 	}
@@ -57,4 +58,9 @@ func Get(method, url string, params map[string]string, vPtr interface{}) error {
 	}
 
 	return nil
+}
+
+// CloseTheCloser closes the closer
+func CloseTheCloser(c io.Closer) {
+	_ = c.Close()
 }
