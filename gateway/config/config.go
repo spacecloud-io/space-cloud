@@ -59,12 +59,12 @@ type Modules struct {
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
 	Routes      Routes          `json:"routes" yaml:"routes"`
 	Deployments Deployments     `json:"deployments" yaml:"deployments"`
-	Secrets     []*Secret       `json:"secrets" yaml:"secrets"`
+	Secrets     interface{}     `json:"secrets" yaml:"secrets"`
 }
 
 // Deployments store all services information for particular project
 type Deployments struct {
-	Services []*RunnerService `json:"services" yaml:"services"`
+	Services interface{} `json:"services" yaml:"services"`
 }
 
 // Secret stores secrets information

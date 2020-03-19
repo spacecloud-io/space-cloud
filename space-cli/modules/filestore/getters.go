@@ -12,16 +12,15 @@ import (
 func GetFileStoreConfig(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/file-storage/config", project)
 	// Get the spec from the server
-	result := make([]interface{}, 0)
-	if err := utils.Get(http.MethodGet, url, map[string]string{}, result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	// Generating the object
-	objs := []*model.SpecObject{}
-	for _, value := range result {
+	var objs []*model.SpecObject
+	for _, item := range payload.Result {
 		meta := map[string]string{"project": project, "id": commandName}
-		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/file-storage/config/{id}", commandName, meta, value)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/file-storage/config/{id}", commandName, meta, item)
 		if err != nil {
 			return nil, err
 		}
@@ -36,13 +35,13 @@ func GetFileStoreConfig(project, commandName string, params map[string]string) (
 func GetFileStoreRule(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/file-storage/rules", project)
 	// Get the spec from the server
-	result := make([]interface{}, 0)
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
 	var objs []*model.SpecObject
-	for _, item := range result {
+	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
 		meta := map[string]string{"project": project, "id": spec["name"].(string)}
 

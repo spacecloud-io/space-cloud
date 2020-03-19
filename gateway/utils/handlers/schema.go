@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
 
@@ -41,8 +42,8 @@ func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, schema *sche
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) //http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"collections": schemas})
+		w.WriteHeader(http.StatusOK) // http status codee
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
 		// return
 	}
 }

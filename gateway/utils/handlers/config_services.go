@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
 
@@ -81,7 +82,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(services)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: services})
 	}
 }
 

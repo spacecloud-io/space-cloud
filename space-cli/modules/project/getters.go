@@ -13,21 +13,20 @@ func GetProjectConfig(project, commandName string, params map[string]string) ([]
 
 	url := fmt.Sprintf("/v1/config/projects/%s", project)
 	// Get the spec from the server
-	result := make([]interface{}, 0)
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	// Generating the object
-	specObjArr := make([]*model.SpecObject, len(result))
-	for index, value := range result {
-		projectObj := value.(map[string]interface{})
+	var objs []*model.SpecObject
+	for _, item := range payload.Result {
+		projectObj := item.(map[string]interface{})
 		meta := map[string]string{"project": projectObj["id"].(string)}
 		s, err := utils.CreateSpecObject("/v1/config/projects/{project}", commandName, meta, projectObj)
 		if err != nil {
 			return nil, err
 		}
-		specObjArr[index] = s
+		objs = append(objs, s)
 	}
-	return specObjArr, nil
+	return objs, nil
 }

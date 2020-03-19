@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
 
@@ -51,7 +52,7 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"collections": cols})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: cols})
 	}
 }
 
@@ -80,7 +81,7 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 		connState := crud.GetConnectionState(ctx, dbAlias)
 
 		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(map[string]bool{"status": connState})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: connState})
 	}
 }
 
@@ -190,7 +191,7 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(dbConfig)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: dbConfig})
 	}
 }
 
@@ -304,7 +305,7 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(schemas)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
 	}
 }
 
@@ -379,7 +380,7 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(dbConfig)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: dbConfig})
 	}
 }
 
@@ -413,7 +414,7 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"collections": colResult})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: colResult})
 		// return
 	}
 }
@@ -455,7 +456,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Sc
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schema})
 		// return
 	}
 }

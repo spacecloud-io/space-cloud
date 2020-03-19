@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
 
@@ -78,7 +79,7 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(fileConfig)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: fileConfig})
 	}
 }
 
@@ -102,12 +103,12 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file 
 		if err := file.GetState(ctx); err != nil {
 			w.WriteHeader(http.StatusOK) // http status code
 			logrus.Errorf("error handling file get state got error - %s", err.Error())
-			_ = json.NewEncoder(w).Encode(map[string]bool{"status": false})
+			_ = json.NewEncoder(w).Encode(model.Response{Result: false, Error: err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(map[string]bool{"status": true})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: false})
 	}
 }
 
@@ -179,7 +180,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(fileRules)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: fileRules})
 	}
 }
 

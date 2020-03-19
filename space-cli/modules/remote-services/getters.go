@@ -13,13 +13,13 @@ func GetRemoteServices(project, commandName string, params map[string]string) ([
 	url := fmt.Sprintf("/v1/config/projects/%s/remote-service/service", project)
 
 	// Get the spec from the server
-	result := make([]interface{}, 0)
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	var services []*model.SpecObject
-	for _, item := range result {
+	var objs []*model.SpecObject
+	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
 
 		meta := map[string]string{"project": project, "id": spec["id"].(string)}
@@ -34,8 +34,8 @@ func GetRemoteServices(project, commandName string, params map[string]string) ([
 		if err != nil {
 			return nil, err
 		}
-		services = append(services, s)
+		objs = append(objs, s)
 	}
 
-	return services, nil
+	return objs, nil
 }

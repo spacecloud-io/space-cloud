@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
 
@@ -81,7 +82,7 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(rules)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: rules})
 	}
 }
 
@@ -181,7 +182,7 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode([]interface{}{config.Eventing{DBType: project.Modules.Eventing.DBType, Enabled: project.Modules.Eventing.Enabled}})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: config.Eventing{DBType: project.Modules.Eventing.DBType, Enabled: project.Modules.Eventing.Enabled}})
 	}
 }
 
@@ -255,7 +256,7 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(schemas)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
 	}
 }
 
@@ -359,7 +360,7 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(securityRules)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: securityRules})
 	}
 }
 

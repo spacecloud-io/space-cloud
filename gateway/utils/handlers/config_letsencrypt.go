@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
 
@@ -80,6 +81,6 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 		}
 
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode([]interface{}{project.Modules.LetsEncrypt})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{project.Modules.LetsEncrypt}})
 	}
 }

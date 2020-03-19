@@ -14,13 +14,13 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 	url := fmt.Sprintf("/v1/runner/%s/service-routes", project)
 
 	// Get the spec from the server
-	result := make([]interface{}, 0)
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	var services []*model.SpecObject
-	for _, item := range result {
+	var objs []*model.SpecObject
+	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
 		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
@@ -34,10 +34,10 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 		if err != nil {
 			return nil, err
 		}
-		services = append(services, s)
+		objs = append(objs, s)
 	}
 
-	return services, nil
+	return objs, nil
 }
 
 // GetServicesSecrets gets services secrets
@@ -45,13 +45,13 @@ func GetServicesSecrets(project, commandName string, params map[string]string) (
 	url := fmt.Sprintf("/v1/runner/%s/secrets", project)
 
 	// Get the spec from the server
-	result := make([]interface{}, 0)
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	result := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, result); err != nil {
 		return nil, err
 	}
 
 	var services []*model.SpecObject
-	for _, item := range result {
+	for _, item := range result.Result {
 		spec := item.(map[string]interface{})
 
 		meta := map[string]string{"project": project, "id": spec["id"].(string)}
@@ -75,13 +75,13 @@ func GetServicesSecrets(project, commandName string, params map[string]string) (
 func GetServices(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/runner/%s/services", project)
 	// Get the spec from the server
-	result := make([]interface{}, 0)
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
 	var objs []*model.SpecObject
-	for _, item := range result {
+	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
 		id, ok := spec["id"]
 		if !ok {
