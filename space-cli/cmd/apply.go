@@ -25,6 +25,52 @@ func Apply() error {
 	}
 
 	fileName := args[2]
+	if strings.HasSuffix(fileName, ".yaml") {
+		err := ApplyWithFileName(fileName)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := actionApplyAll(fileName)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func actionApplyAll(fileName string) error {
+	files, err := ioutil.ReadDir("./" + fileName)
+	if err != nil {
+		return err
+	}
+	allYamlFiles := []string{}
+	for _, f := range files {
+		if strings.HasSuffix(f.Name(), ".yaml") {
+			allYamlFiles = append(allYamlFiles, f.Name())
+
+		}
+	}
+
+	orderList := []string{"1-project.yaml", "2-db-config.yaml", "3-db-rules.yaml", "4-db-schema.yaml", "5-filestore-config.yaml", "6-filestore-rule.yaml", "7-eventing-config.yaml", "8-eventing-triggers.yaml", "9-eventing-rule.yaml", "10-eventing-schema.yaml", "11-remote-services.yaml", "12-services.yaml", "13-services-routes.yaml", "14-services-secrets", "15--ingress-routes.yaml", "16-auth-providers.yaml", "17-letsencrypt.yaml"}
+	for _, file := range orderList {
+		for _, presentfile := range allYamlFiles {
+			if strings.HasSuffix(presentfile, file) {
+				log.Println("filename", presentfile, "file", file)
+				err := ApplyWithFileName(fileName + "/" + presentfile)
+				if err != nil {
+					return err
+				}
+				break
+			}
+		}
+	}
+	return nil
+}
+
+// ApplyWithFileName does apply function by taking input as the name of file
+func ApplyWithFileName(fileName string) error {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		logrus.Errorf("error while applying service unable to read file (%s) - %s", fileName, err.Error())
