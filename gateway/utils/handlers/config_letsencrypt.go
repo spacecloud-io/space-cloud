@@ -24,6 +24,7 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		value := config.LetsEncrypt{}
 		defer utils.CloseTheCloser(r.Body)
 		if err := json.NewDecoder(r.Body).Decode(&value); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -31,6 +32,7 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -43,11 +45,13 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		defer cancel()
 
 		if err := syncMan.SetProjectLetsEncryptDomains(ctx, projectID, value); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
@@ -62,6 +66,7 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -74,11 +79,13 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 		//get project config
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"letsEncrypt": project.Modules.LetsEncrypt})
 	}
