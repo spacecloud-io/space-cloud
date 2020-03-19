@@ -90,7 +90,7 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 }
 
 // GetIngressRouting gets ingress routing from config
-func (s *Manager) GetIngressRouting(ctx context.Context, project, routeId string) ([]interface{}, error) {
+func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -99,13 +99,13 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeId string
 	if err != nil {
 		return nil, err
 	}
-	if routeId != "" {
+	if routeID != "" {
 		for _, value := range projectConfig.Modules.Routes {
-			if routeId == value.ID {
+			if routeID == value.ID {
 				return []interface{}{value}, nil
 			}
 		}
-		return nil, fmt.Errorf("route id (%s) not present in config", routeId)
+		return nil, fmt.Errorf("route id (%s) not present in config", routeID)
 	}
 
 	routes := []interface{}{}

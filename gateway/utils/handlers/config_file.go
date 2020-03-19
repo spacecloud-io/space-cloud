@@ -165,13 +165,13 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		// get project id and ruleName
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		ruleId := ""
+		ruleID := ""
 		ruleName, exists := r.URL.Query()["id"]
 		if exists {
-			ruleId = ruleName[0]
+			ruleID = ruleName[0]
 		}
 		// get project config
-		fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleId)
+		fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

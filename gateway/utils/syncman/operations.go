@@ -225,7 +225,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 	return s.store.DeleteProject(ctx, projectID)
 }
 
-// GetConfig returns the config present in the state
+// GetProjectConfig returns the config of specified project
 func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()

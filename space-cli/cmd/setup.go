@@ -299,7 +299,7 @@ func pullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image
 		}
 		s := spinner.New(spinner.CharSets[11], 100*time.Millisecond) // Build our new spinner
 		s.Suffix = "    Downloading image..."
-		s.Color("green")
+		_ = s.Color("green")
 		s.Start()
 		time.Sleep(4 * time.Second) // Run for some time to simulate work// Start the spinner
 		_, _ = io.Copy(ioutil.Discard, out)

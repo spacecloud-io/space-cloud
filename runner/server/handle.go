@@ -191,7 +191,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			return
 		}
 
-		respServices := make(map[string]*model.Service, 0)
+		respServices := make(map[string]*model.Service)
 		if serviceIDExists && versionExists {
 			for _, val := range services {
 				if val.ProjectID == projectID && val.ID == serviceID[0] && val.Version == version[0] {
