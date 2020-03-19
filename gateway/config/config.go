@@ -82,8 +82,8 @@ type CrudStub struct {
 	Type         string                `json:"type,omitempty" yaml:"type"` // database type
 	Conn         string                `json:"conn,omitempty" yaml:"conn"`
 	Collections  map[string]*TableRule `json:"collections,omitempty" yaml:"collections"` // The key here is table name
-	IsPrimary    bool                  `json:"isPrimary,omitempty" yaml:"isPrimary"`
-	Enabled      bool                  `json:"enabled,false" yaml:"enabled"`
+	IsPrimary    bool                  `json:"isPrimary" yaml:"isPrimary"`
+	Enabled      bool                  `json:"enabled" yaml:"enabled"`
 	BatchTime    int                   `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
 	BatchRecords int                   `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
 }
