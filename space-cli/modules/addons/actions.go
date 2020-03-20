@@ -67,7 +67,27 @@ func ActionRemoveRegistry(c *cli.Context) error {
 func ActionAddDatabase(c *cli.Context) error {
 	dbtype := c.Args().Get(0)
 	username := c.GlobalString("username")
+	if username == "" {
+		switch dbtype {
+		case "mongo":
+			username = "mongodb"
+		case "postgres":
+			username = "postgres"
+		case "mysql":
+			username = "root"
+		}
+	}
 	password := c.GlobalString("password")
+	if password == "" {
+		switch dbtype {
+		case "mongo":
+			password = ""
+		case "postgres":
+			password = "mysecretpassword"
+		case "mysql":
+			password = "my-secret-pw"
+		}
+	}
 	alias := c.GlobalString("alias")
 	version := c.GlobalString("version")
 	return addDatabase(dbtype, username, password, alias, version)
