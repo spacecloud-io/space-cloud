@@ -134,6 +134,7 @@ type SpecObject struct {
 	Spec interface{}       `json:"spec" yaml:"spec,omitempty"`
 }
 
+// Response is the object returned by every handler to client
 type Response struct {
 	Error  string        `json:"error,omitempty"`
 	Result []interface{} `json:"result,omitempty"`

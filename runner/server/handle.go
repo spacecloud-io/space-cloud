@@ -227,7 +227,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			}
 
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{respServices}})
+			_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{result}})
 			return
 		}
 

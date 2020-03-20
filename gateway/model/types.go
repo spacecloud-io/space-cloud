@@ -139,6 +139,7 @@ type PostProcessAction struct {
 // TokenClaims specifies the tokens and its claims
 type TokenClaims map[string]interface{}
 
+// Response is the object returned by every handler to client
 type Response struct {
 	Error  string      `json:"error,omitempty"`
 	Result interface{} `json:"result,omitempty"`
