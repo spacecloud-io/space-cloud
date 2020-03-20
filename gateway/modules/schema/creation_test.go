@@ -1596,19 +1596,19 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			want:    []string{"CREATE TABLE test.table1 (col2 timestamp );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
 			wantErr: false,
 		},
-		// {
-		// 	name: "current Schema with NO ACTION and parsedSchema with ON CASCADE DELETE abcd",
-		// 	args: args{
-		// 		dbAlias:       "postgres",
-		// 		tableName:     "table1",
-		// 		project:       "test",
-		// 		parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}}},
-		// 		currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}},
-		// 	},
-		// 	fields:  fields{crud: crudPostgres, project: "test"},
-		// 	want:    []string{},
-		// 	wantErr: false,
-		// },
+		{
+			name: "current Schema with NO ACTION and parsedSchema with ON CASCADE DELETE abcd",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}}},
+				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{},
+			wantErr: false,
+		},
 		{
 			name: "adding a table and column of type boolean",
 			args: args{
