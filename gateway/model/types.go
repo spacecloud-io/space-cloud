@@ -72,6 +72,12 @@ type AuthRealtimeInterface interface {
 	GetSCAccessToken() (string, error)
 }
 
+type RealtimeInterface interface {
+	RemoveClient(clientID string)
+	Subscribe(ctx context.Context, clientID string, data *RealtimeRequest, sendFeed SendFeed) ([]*FeedData, error)
+	Unsubscribe(clientID string, data *RealtimeRequest)
+}
+
 // CrudRealtimeInterface is an interface consisting of functions of Crud module used by RealTime module
 type CrudRealtimeInterface interface {
 	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)

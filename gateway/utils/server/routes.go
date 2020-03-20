@@ -88,10 +88,10 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Path("/v1/api/{project}/graphql").HandlerFunc(handlers.HandleGraphQLRequest(s.modules.Graphql, s.syncMan))
 
 	// Initialize the route for websocket
-	router.HandleFunc("/v1/api/{project}/socket/json", s.handleWebsocket())
+	router.HandleFunc("/v1/api/{project}/socket/json", handlers.HandleWebsocket(s.modules.Realtime))
 
 	// Initialize the route for graphql websocket
-	router.HandleFunc("/v1/api/{project}/graphql/socket", s.handleGraphqlSocket(s.adminMan))
+	router.HandleFunc("/v1/api/{project}/graphql/socket", handlers.HandleGraphqlSocket(s.adminMan, s.modules.Realtime, s.modules.Graphql))
 
 	// Initialize the routes for services module
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/services/{service}/{func}").HandlerFunc(handlers.HandleFunctionCall(s.modules.Functions, s.modules.Auth))

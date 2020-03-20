@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"context"
@@ -16,8 +16,10 @@ import (
 	"github.com/graphql-go/graphql/language/source"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/client"
@@ -30,7 +32,8 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func (s *Server) handleWebsocket() http.HandlerFunc {
+// HandleWebsocket handles all websocket communications
+func HandleWebsocket(realtime model.RealtimeInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -44,7 +47,7 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 		c := client.CreateWebsocketClient(socket)
 		defer c.Close()
 
-		defer s.modules.Realtime.RemoveClient(c.ClientID())
+		defer realtime.RemoveClient(c.ClientID())
 
 		go c.RoutineWrite()
 
@@ -57,17 +60,23 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 			case utils.TypeRealtimeSubscribe:
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
-				_ = mapstructure.Decode(req.Data, data)
+				if err := mapstructure.Decode(req.Data, data); err != nil {
+					logrus.Errorf("Unable to decode incoming subscription request - %v", err)
+					res := model.RealtimeResponse{Ack: false, Error: err.Error()}
+					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+					return true
+				}
 				data.Project = projectID
 
 				// Subscribe to realtime feed
-				feedData, err := s.modules.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
+				feedData, err := realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					c.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
 				if err != nil {
+					logrus.Errorf("Unable to process incoming subscription request - %v", err)
 					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false, Error: err.Error()}
 					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
-					return false
+					return true
 				}
 
 				// Send response to c
@@ -77,10 +86,16 @@ func (s *Server) handleWebsocket() http.HandlerFunc {
 			case utils.TypeRealtimeUnsubscribe:
 				// For realtime subscribe event
 				data := new(model.RealtimeRequest)
-				_ = mapstructure.Decode(req.Data, data)
+				if err := mapstructure.Decode(req.Data, data); err != nil {
+					logrus.Errorf("Unable to decode incoming subscription request - %v", err)
+					res := model.RealtimeResponse{Ack: false, Error: err.Error()}
+					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+					return true
+				}
+
 				data.Project = projectID
 
-				s.modules.Realtime.Unsubscribe(clientID, data)
+				realtime.Unsubscribe(clientID, data)
 
 				// Send response to c
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
@@ -116,7 +131,8 @@ type gqlError struct {
 
 var graphqlIDMapper sync.Map
 
-func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
+// HandleGraphqlSocket handles graphql subscriptions
+func HandleGraphqlSocket(adminMan *admin.Manager, realtime *realtime.Module, graph *graphql.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projectID := mux.Vars(r)["project"]
 
@@ -130,7 +146,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 		defer utils.CloseTheCloser(socket)
 
 		clientID := ksuid.New().String()
-		defer s.modules.Realtime.RemoveClient(clientID)
+		defer realtime.RemoveClient(clientID)
 
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
@@ -218,7 +234,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 					closeConnAliveRoutine <- true
 					return
 				}
-				dbAlias, err := s.modules.Graphql.GetDBAlias(v)
+				dbAlias, err := graph.GetDBAlias(v)
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					closeConnAliveRoutine <- true
@@ -237,7 +253,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				graphqlIDMapper.Store(m.ID, data.Group)
 
 				// Subscribe to realtime feed
-				feedData, err := s.modules.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
+				feedData, err := realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
 					feed.TypeName = "subscribe_" + feed.Group
 
 					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GqlData, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed), "find": feed.Find}}}
@@ -266,7 +282,7 @@ func (s *Server) handleGraphqlSocket(adminMan *admin.Manager) http.HandlerFunc {
 				data.ID = m.ID
 				data.Group = group.(string)
 
-				s.modules.Realtime.Unsubscribe(clientID, data)
+				realtime.Unsubscribe(clientID, data)
 				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GqlStop, Payload: payloadObject{}})
 				graphqlIDMapper.Delete(m.ID)
 			}
