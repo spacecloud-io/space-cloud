@@ -91,7 +91,7 @@ func CreateFileIfNotExist(path, content string) error {
 	return nil
 }
 
-//CreateConfigFile create empty config file
+// CreateConfigFile create empty config file
 func CreateConfigFile(path string) error {
 	val := &config.Config{
 		Projects: []*config.Project{},

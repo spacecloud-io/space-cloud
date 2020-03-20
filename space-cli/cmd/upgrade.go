@@ -32,14 +32,14 @@ func Upgrade() error {
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
 
-	//getting current version
+	// getting current version
 	result := make(map[string]interface{})
 	if err := utils.Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
 		return err
 	}
 	currentVersion := result["version"].(string)
 
-	//getting latest version
+	// getting latest version
 	latestVersion, err := getLatestVersion(currentVersion)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func Upgrade() error {
 		return fmt.Errorf("current verion (%s) is up to date", currentVersion)
 	}
 
-	//creating docker client
+	// creating docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -64,12 +64,12 @@ func Upgrade() error {
 		return err
 	}
 
-	//parameters for gateway
+	// parameters for gateway
 	var gatewayMounts []mount.Mount
 	var gatewayPorts nat.PortMap
 	var gatewayEnvs []string
 
-	//parameters for runner
+	// parameters for runner
 	var runnerEnvs []string
 	var runnerMounts []mount.Mount
 
