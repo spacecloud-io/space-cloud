@@ -20,7 +20,6 @@ func (s *SQL) DescribeTable(ctx context.Context, project, col string) ([]utils.F
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
 	index, err := s.getIndexDetails(ctx, project, col)
 	if err != nil {
 		return nil, nil, nil, err
@@ -102,10 +101,12 @@ WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 
 func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]utils.ForeignKeysType, error) {
 	queryString := ""
+	args := []interface{}{}
 	switch utils.DBType(s.dbType) {
 
 	case utils.MySQL:
-		queryString = "select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, DELETE_RULE, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE JOIN information_schema.referential_constraints WHERE REFERENCED_TABLE_SCHEMA = ? and TABLE_NAME = ?"
+		queryString = "select KCU.TABLE_NAME, KCU.COLUMN_NAME, KCU.CONSTRAINT_NAME, RC.DELETE_RULE, KCU.REFERENCED_TABLE_NAME, KCU.REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC ON RC.CONSTRAINT_NAME=KCU.CONSTRAINT_NAME WHERE KCU.REFERENCED_TABLE_SCHEMA = ? and KCU.TABLE_NAME = ?"
+		args = append(args, project, col)
 	case utils.Postgres:
 		queryString = `SELECT
 		tc.table_name AS "TABLE_NAME", 
@@ -125,8 +126,9 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		JOIN information_schema.referential_constraints AS rc
 		  ON tc.constraint_name = rc.constraint_name
 		  AND rc.unique_constraint_schema= $1
-	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
+	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $2  AND tc.table_name= $3
 	`
+		args = append(args, project, project, col)
 	case utils.SQLServer:
 		queryString = `SELECT 
 		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME, RC.DELETE_RULE,
@@ -136,9 +138,10 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 			ON CCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
 		FULL JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU 
 			ON KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  
-	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2 AND KCU.TABLE_NAME= @p2`
+	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2 AND KCU.TABLE_NAME= @p3`
+		args = append(args, project, col, col)
 	}
-	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
+	rows, err := s.client.QueryxContext(ctx, queryString, args...)
 	if err != nil {
 		return nil, err
 	}

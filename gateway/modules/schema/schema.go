@@ -241,7 +241,9 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							case "ondelete":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.JointTable.OnDelete = val.(string)
-								if fieldTypeStuct.JointTable.OnDelete != "CASCADE" {
+								if fieldTypeStuct.JointTable.OnDelete == "cascade" {
+									fieldTypeStuct.JointTable.OnDelete = "CASCADE"
+								} else {
 									fieldTypeStuct.JointTable.OnDelete = "NO ACTION"
 								}
 							}
