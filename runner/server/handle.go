@@ -20,6 +20,7 @@ import (
 
 func (s *Server) handleCreateProject() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -60,6 +61,7 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 
 func (s *Server) handleDeleteProject() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -89,6 +91,7 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 
 func (s *Server) handleApplyService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -136,6 +139,7 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 // HandleDeleteService handles the request to delete a service
 func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -159,6 +163,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -166,6 +171,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 // HandleGetServices handles the request to get all services
 func (s *Server) HandleGetServices() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -198,12 +204,14 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 				if val.ProjectID == projectID && val.ID == serviceID[0] && val.Version == version[0] {
 					s := fmt.Sprintf("%s-%s", serviceID, version)
 					respServices[s] = val
+					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{respServices}})
 					return
 				}
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) or version(%s) not present in state", serviceID[0], version[0])})
 			return
@@ -229,6 +237,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			result = append(result, respServices)
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 	}
@@ -237,6 +246,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 // HandleApplyEventingService handles request to apply eventing service
 func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -280,6 +290,7 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 		Routes model.Routes `json:"routes"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -306,6 +317,7 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
@@ -314,6 +326,7 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -341,12 +354,14 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		if exists {
 			for k, result := range serviceRoutes {
 				if k == serviceID[0] {
+					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{result}})
 					return
 				}
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
 			return
@@ -357,6 +372,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 			result = append(result, value)
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 	}
@@ -364,6 +380,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 func (s *Server) handleProxy() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 

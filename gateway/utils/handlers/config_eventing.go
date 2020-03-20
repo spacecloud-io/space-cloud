@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
 
@@ -28,6 +27,7 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -40,12 +40,14 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		projectID := vars["project"]
 
 		if err := syncMan.SetEventingRule(ctx, projectID, ruleName, value); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 
 	}
@@ -60,6 +62,7 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -77,6 +80,7 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 		}
 		rules, err := syncMan.GetEventingTriggerRules(ctx, projectID, id)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -96,6 +100,7 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -108,12 +113,14 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 		projectID := vars["project"]
 
 		if err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		w.WriteHeader(http.StatusOK) // http status codee
+		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 
@@ -130,6 +137,7 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -143,12 +151,14 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBType, c.Enabled); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 
@@ -164,6 +174,7 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -176,11 +187,13 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// get project config
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: config.Eventing{DBType: project.Modules.Eventing.DBType, Enabled: project.Modules.Eventing.Enabled}})
 	}
@@ -199,6 +212,7 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -215,12 +229,14 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		if err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema); err != nil {
 			logrus.Errorf("Failed to set eventing schema - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
@@ -234,6 +250,7 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -251,6 +268,7 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 		schemas, err := syncMan.GetEventingSchema(ctx, projectID, id)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -263,6 +281,7 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 // HandleDeleteEventingSchema is an endpoint handler which deletes a schema in eventing
 func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -270,6 +289,7 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			logrus.Errorf("Failed to validate token for delete eventing schema - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -283,12 +303,14 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 
 		if err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType); err != nil {
 			logrus.Errorf("Failed to delete eventing schema - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
@@ -296,6 +318,7 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 // HandleAddEventingSecurityRule is an endpoint handler which adds a security rule in eventing
 func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -303,6 +326,7 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			logrus.Errorf("Failed to validate token for set eventing rules - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -319,12 +343,14 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 
 		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c); err != nil {
 			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
@@ -338,6 +364,7 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -355,6 +382,7 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 		}
 		securityRules, err := syncMan.GetEventingSecurityRules(ctx, projectID, id)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -367,6 +395,7 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 // HandleDeleteEventingSecurityRule is an endpoint handler which deletes a security rule in eventing
 func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -374,6 +403,7 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			logrus.Errorf("Failed to validate token for delete eventing rules - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -387,12 +417,14 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 
 		if err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType); err != nil {
 			logrus.Errorf("Failed to delete eventing rules - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) //http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }

@@ -16,6 +16,7 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		RootPath string `json:"rootPath"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 		// Verify token
@@ -52,6 +53,7 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 
 func (s *Server) handleApplySecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -91,6 +93,7 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 
 func (s *Server) handleListSecrets() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -117,17 +120,20 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		if exists {
 			for _, val := range secrets {
 				if val.Name == name[0] {
+					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{val}})
 					return
 				}
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("secret(%s) not present in state", name[0])})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: secrets})
 
@@ -136,6 +142,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 
 func (s *Server) handleDeleteSecret() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -158,12 +165,14 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
 
 func (s *Server) handleSetSecretKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -194,12 +203,14 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }
 
 func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Close the body of the request
 		defer utils.CloseTheCloser(r.Body)
 
@@ -221,6 +232,7 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
+
 		utils.SendEmptySuccessResponse(w, r)
 	}
 }

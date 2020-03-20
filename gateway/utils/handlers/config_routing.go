@@ -3,9 +3,10 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -28,6 +29,7 @@ func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manage
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -39,11 +41,13 @@ func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manage
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		if err := syncMan.SetProjectRoutes(ctx, projectID, value.Routes); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
@@ -52,11 +56,13 @@ func HandleRoutingConfigRequest(adminMan *admin.Manager, syncMan *syncman.Manage
 // HandleGetRoutingConfig return all the routing config for specified project
 func HandleGetRoutingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling get routing config in handlers unable to validate token got error message - %v", err)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -70,11 +76,13 @@ func HandleGetRoutingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		routes, err := syncMan.GetProjectRoutes(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("error handling get routing config in handlers unable to get project routes got error message - %v", err)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(routes)
 	}
@@ -90,6 +98,7 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling set project route in handlers unable to validate token got error message - %v", err)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -103,11 +112,13 @@ func HandleSetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		id := vars["id"]
 		if err := syncMan.SetProjectRoute(ctx, projectID, id, value); err != nil {
 			logrus.Errorf("error handling set project route in handlers unable to add route in project config got error message - %v", err)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
@@ -122,6 +133,7 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -145,6 +157,7 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: routes})
 	}
@@ -153,11 +166,13 @@ func HandleGetProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 // HandleDeleteProjectRoute deletes the specified route from project config
 func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling delete project route in handlers unable to validate token got error message - %v", err)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -171,11 +186,13 @@ func HandleDeleteProjectRoute(adminMan *admin.Manager, syncMan *syncman.Manager)
 		routeID := vars["id"]
 		if err := syncMan.DeleteProjectRoute(ctx, projectID, routeID); err != nil {
 			logrus.Errorf("error handling delete project route in handlers unable to delete route in project config got error message - %v", err)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}

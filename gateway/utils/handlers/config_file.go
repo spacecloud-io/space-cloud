@@ -3,9 +3,10 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -20,6 +21,7 @@ import (
 // HandleSetFileStore set the file storage config
 func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -29,6 +31,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -40,11 +43,13 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		projectID := vars["project"]
 
 		if err := syncMan.SetFileStore(ctx, projectID, value); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
@@ -61,6 +66,7 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -73,11 +79,13 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// get project config
 		fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: fileConfig})
 	}
@@ -86,6 +94,7 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 // HandleGetFileState gets file state
 func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
@@ -95,18 +104,21 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file 
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if err := file.GetState(ctx); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK) // http status code
 			logrus.Errorf("error handling file get state got error - %s", err.Error())
 			_ = json.NewEncoder(w).Encode(model.Response{Result: false, Error: err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(model.Response{Result: false})
 	}
@@ -115,6 +127,7 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file 
 // HandleSetFileRule sets file rule
 func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -124,6 +137,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -137,11 +151,13 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		value.Name = ruleName
 
 		if err := syncMan.SetFileRule(ctx, projectID, value); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
@@ -156,6 +172,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -179,6 +196,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: fileRules})
 	}
@@ -187,6 +205,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 // HandleDeleteFileRule deletes file rule
 func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -196,6 +215,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -208,11 +228,13 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		ruleName := vars["id"]
 
 		if err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
