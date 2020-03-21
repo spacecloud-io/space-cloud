@@ -196,6 +196,7 @@ type ForeignKeysType struct {
 	TableName      string `db:"TABLE_NAME"`
 	ColumnName     string `db:"COLUMN_NAME"`
 	ConstraintName string `db:"CONSTRAINT_NAME"`
+	DeleteRule     string `db:"DELETE_RULE"`
 	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }

@@ -171,6 +171,14 @@ func (c *creationModule) removePrimaryKey() string {
 
 func (c *creationModule) addForeignKey() string {
 	c.currentColumnInfo.IsForeign = true // Mark the field as processed
+	if c.currentColumnInfo.JointTable == nil {
+		c.currentColumnInfo.JointTable = &model.TableProperties{}
+	}
+	c.currentColumnInfo.JointTable.OnDelete = c.realColumnInfo.JointTable.OnDelete
+
+	if c.realColumnInfo.JointTable.OnDelete == "CASCADE" {
+		return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " FOREIGN KEY (" + c.ColumnName + ") REFERENCES " + getTableName(c.project, c.realColumnInfo.JointTable.Table, c.removeProjectScope) + " (" + c.realColumnInfo.JointTable.To + ") " + "ON DELETE CASCADE"
+	}
 	return "ALTER TABLE " + getTableName(c.project, c.TableName, c.removeProjectScope) + " ADD CONSTRAINT c_" + c.TableName + "_" + c.ColumnName + " FOREIGN KEY (" + c.ColumnName + ") REFERENCES " + getTableName(c.project, c.realColumnInfo.JointTable.Table, c.removeProjectScope) + " (" + c.realColumnInfo.JointTable.To + ")"
 }
 
@@ -361,6 +369,11 @@ func (c *creationModule) modifyColumn() []string {
 
 	if c.realColumnInfo.IsForeign && !c.currentColumnInfo.IsForeign {
 		queries = append(queries, c.addForeignKey())
+	} else if c.realColumnInfo.IsForeign && c.currentColumnInfo.IsForeign {
+		if c.currentColumnInfo.JointTable.OnDelete != c.realColumnInfo.JointTable.OnDelete {
+			queries = append(queries, c.removeForeignKey()...)
+			queries = append(queries, c.addForeignKey())
+		}
 	}
 
 	if c.realColumnInfo.IsDefault && !c.currentColumnInfo.IsDefault {
