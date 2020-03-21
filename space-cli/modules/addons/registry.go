@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -56,9 +57,19 @@ func addRegistry(projectID string) error {
 			return utils.LogError("No projects found. Run this command after creating a project", err)
 		}
 
-		// TODO: Ask the user to select a projectID
 		projectID = projects[0].ID
-		utils.LogInfo(fmt.Sprintf("Adding registry to project - %s", projects[0].Name))
+		if len(projects) > 1 {
+			var projectIDOptions []string
+			for _, projectInfo := range projects {
+				projectIDOptions = append(projectIDOptions, projectInfo.ID)
+			}
+
+			if err := survey.AskOne(&survey.Select{Message: "Select project ID", Options: projectIDOptions}, &projectID); err != nil {
+				return err
+			}
+		}
+
+		utils.LogInfo(fmt.Sprintf("Adding registry to project - %s with ID - %s", projects[0].Name, projectID))
 	}
 
 	// Set registry config in SpaceCloud. We will first get the projectID config, then apply the registry url to it
@@ -89,7 +100,7 @@ func addRegistry(projectID string) error {
 	}, &container.HostConfig{
 		PortBindings: nat.PortMap{"5000": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "5000"}}},
 		NetworkMode:  "space-cloud",
-	}, nil, "space-cloud--addon-registry")
+	}, nil, "space-cloud--addon--registry")
 	if err != nil {
 		return utils.LogError("Unable to create local docker registry", err)
 	}
@@ -97,6 +108,57 @@ func addRegistry(projectID string) error {
 	// Start the registry
 	if err := docker.ContainerStart(ctx, containerRes.ID, types.ContainerStartOptions{}); err != nil {
 		return utils.LogError("Unable to start local docker registry", err)
+	}
+
+	return nil
+}
+
+func removeRegistry(projectID string) error {
+	ctx := context.Background()
+
+	// Create a docker client
+	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return utils.LogError("Unable to initialize docker client", err)
+	}
+
+	// Check if a registry container already exist
+	filterArgs := filters.Arg("label", "service=registry")
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
+	if err != nil {
+		return utils.LogError("Unable to check if registry already exists", err)
+	}
+	if len(containers) == 0 {
+		utils.LogInfo("No registry exists. Do you want to add one?")
+		return nil
+	}
+
+	// Remove registry config in SpaceCloud. We will first get the projectID config, then apply the registry url to it
+	specObj, err := project.GetProjectConfig(projectID, "project", nil)
+	if err != nil {
+		return utils.LogError(fmt.Sprintf("Unable to fetch project config of project (%s)", projectID), err)
+	}
+	specObj.Spec.(map[string]interface{})["dockerRegistry"] = ""
+
+	account, err := utils.GetSelectedAccount()
+	if err != nil {
+		return err
+	}
+	login, err := utils.Login(account)
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.ApplySpec(login.Token, account, specObj); err != nil {
+		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url", projectID), err)
+	}
+
+	// Remove all container
+	for _, containerInfo := range containers {
+		// remove the container from host machine
+		if err := docker.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to remove container %s", containerInfo.ID), err)
+		}
 	}
 
 	return nil
