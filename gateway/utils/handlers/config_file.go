@@ -148,9 +148,8 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		ruleName := vars["id"]
-		value.ID = ruleName
 
-		if err := syncMan.SetFileRule(ctx, projectID, value); err != nil {
+		if err := syncMan.SetFileRule(ctx, projectID, ruleName, value); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

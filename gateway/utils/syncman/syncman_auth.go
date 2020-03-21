@@ -13,6 +13,7 @@ func (s *Manager) SetUserManagement(ctx context.Context, project, provider strin
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	value.ID = provider
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return err

@@ -98,6 +98,7 @@ type TableRule struct {
 
 // Rule is the authorisation object at the query level
 type Rule struct {
+	ID      string                 `json:"id,omitempty" yaml:"id,omitempty"`
 	Rule    string                 `json:"rule" yaml:"rule"`
 	Eval    string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
 	Type    string                 `json:"type,omitempty" yaml:"type,omitempty"`
@@ -209,5 +210,6 @@ type SchemaObject struct {
 
 // LetsEncrypt describes the configuration for let's encrypt
 type LetsEncrypt struct {
+	ID                 string   `json:"id,omitempty" yaml:"id,omitempty"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
 }

@@ -33,11 +33,12 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 }
 
 // SetFileRule sets the rule for file store
-func (s *Manager) SetFileRule(ctx context.Context, project string, value *config.FileRule) error {
+func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *config.FileRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	value.ID = id
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return err

@@ -15,6 +15,8 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	value.ID = ruleName
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return err
@@ -134,6 +136,7 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	rule.ID = evType
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return err

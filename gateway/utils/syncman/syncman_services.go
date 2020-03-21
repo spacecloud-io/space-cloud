@@ -13,6 +13,7 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	value.ID = service
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return err

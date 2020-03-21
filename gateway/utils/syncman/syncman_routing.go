@@ -43,6 +43,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	c.ID = id
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return err
