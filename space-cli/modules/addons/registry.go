@@ -23,55 +23,59 @@ func addRegistry(projectID string) error {
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return utils.LogError("Unable to initialize docker client", "add", "registry", err)
+		return utils.LogError("Unable to initialize docker client", err)
 	}
 
 	// Check if a registry container already exist
 	filterArgs := filters.Arg("label", "service=registry")
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
 	if err != nil {
-		return utils.LogError("Unable to check if registry already exists", "add", "registry", err)
+		return utils.LogError("Unable to check if registry already exists", err)
 	}
 	if len(containers) != 0 {
-		utils.LogInfo("Registry already exists. Do you want to remove it?", "add", "registry")
+		utils.LogInfo("Registry already exists. Do you want to remove it?")
 		return nil
 	}
 
 	// Pull image if it doesn't already exist
 	if err := utils.PullImageIfNotExist(ctx, docker, dockerImage); err != nil {
-		return utils.LogError(fmt.Sprintf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", dockerImage), "add", "registry", err)
+		return utils.LogError(fmt.Sprintf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", dockerImage), err)
 	}
 
 	// Check if projectID id is valid. If no projectID was provided
 	if projectID == "" {
-		utils.LogInfo("Project id not provided. Fetching projects from Space Cloud...", "add", "registry")
+		utils.LogInfo("Project id not provided. Fetching projects from Space Cloud...")
 
 		// Get projectID list from space cloud
 		projects, err := utils.GetProjectsFromSC()
 		if err != nil {
-			return utils.LogError("Could not fetch list of projects from Space Cloud. Did you run `space-cli setup` once?", "add", "registry", err)
+			return utils.LogError("Could not fetch list of projects from Space Cloud. Did you run `space-cli setup` once?", err)
 		}
 
 		// Throw error if no project has been created
 		if len(projects) == 0 {
-			return utils.LogError("No projects found. Run this command after creating a project", "add", "registry", err)
+			return utils.LogError("No projects found. Run this command after creating a project", err)
 		}
 
-		var projectIDOptions []string
-		for _, projectInfo := range projects {
-			projectIDOptions = append(projectIDOptions, projectInfo.ID)
+		projectID = projects[0].ID
+		if len(projects) > 1 {
+			var projectIDOptions []string
+			for _, projectInfo := range projects {
+				projectIDOptions = append(projectIDOptions, projectInfo.ID)
+			}
+
+			if err := survey.AskOne(&survey.Select{Message: "Select project ID", Options: projectIDOptions}, &projectID); err != nil {
+				return err
+			}
 		}
 
-		if err := survey.AskOne(&survey.Select{Message: "Select project ID", Options: projectIDOptions}, &projectID); err != nil {
-			return err
-		}
-		utils.LogInfo(fmt.Sprintf("Adding registry to project - %s with ID - %s", projects[0].Name, projectID), "add", "registry")
+		utils.LogInfo(fmt.Sprintf("Adding registry to project - %s with ID - %s", projects[0].Name, projectID))
 	}
 
 	// Set registry config in SpaceCloud. We will first get the projectID config, then apply the registry url to it
 	specObj, err := project.GetProjectConfig(projectID, "project", nil)
 	if err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to fetch project config of project (%s)", projectID), "add", "registry", err)
+		return utils.LogError(fmt.Sprintf("Unable to fetch project config of project (%s)", projectID), err)
 	}
 	specObj.Spec.(map[string]interface{})["dockerRegistry"] = "localhost:5000"
 
@@ -85,7 +89,7 @@ func addRegistry(projectID string) error {
 	}
 
 	if err := cmd.ApplySpec(login.Token, account, specObj); err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to update project (%s) with docker registry url", projectID), "add", "registry", err)
+		return utils.LogError(fmt.Sprintf("Unable to update project (%s) with docker registry url", projectID), err)
 	}
 
 	// Create the registry
@@ -98,12 +102,12 @@ func addRegistry(projectID string) error {
 		NetworkMode:  "space-cloud",
 	}, nil, "space-cloud--addon--registry")
 	if err != nil {
-		return utils.LogError("Unable to create local docker registry", "add", "registry", err)
+		return utils.LogError("Unable to create local docker registry", err)
 	}
 
 	// Start the registry
 	if err := docker.ContainerStart(ctx, containerRes.ID, types.ContainerStartOptions{}); err != nil {
-		return utils.LogError("Unable to start local docker registry", "add", "registry", err)
+		return utils.LogError("Unable to start local docker registry", err)
 	}
 
 	return nil
@@ -115,24 +119,24 @@ func removeRegistry(projectID string) error {
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return utils.LogError("Unable to initialize docker client", "remove", "registry", err)
+		return utils.LogError("Unable to initialize docker client", err)
 	}
 
 	// Check if a registry container already exist
 	filterArgs := filters.Arg("label", "service=registry")
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
 	if err != nil {
-		return utils.LogError("Unable to check if registry already exists", "remove", "registry", err)
+		return utils.LogError("Unable to check if registry already exists", err)
 	}
 	if len(containers) == 0 {
-		utils.LogInfo("No registry exists. Do you want to add one?", "remove", "registry")
+		utils.LogInfo("No registry exists. Do you want to add one?")
 		return nil
 	}
 
 	// Remove registry config in SpaceCloud. We will first get the projectID config, then apply the registry url to it
 	specObj, err := project.GetProjectConfig(projectID, "project", nil)
 	if err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to fetch project config of project (%s)", projectID), "remove", "registry", err)
+		return utils.LogError(fmt.Sprintf("Unable to fetch project config of project (%s)", projectID), err)
 	}
 	specObj.Spec.(map[string]interface{})["dockerRegistry"] = ""
 
@@ -146,14 +150,14 @@ func removeRegistry(projectID string) error {
 	}
 
 	if err := cmd.ApplySpec(login.Token, account, specObj); err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url", projectID), "remove", "registry", err)
+		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url", projectID), err)
 	}
 
 	// Remove all container
 	for _, containerInfo := range containers {
 		// remove the container from host machine
 		if err := docker.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to remove container %s", containerInfo.ID), "remove", "registry", err)
+			return utils.LogError(fmt.Sprintf("Unable to remove container %s", containerInfo.ID), err)
 		}
 	}
 

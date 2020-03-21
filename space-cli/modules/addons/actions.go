@@ -1,6 +1,8 @@
 package addons
 
 import (
+	"fmt"
+
 	"github.com/urfave/cli"
 )
 
@@ -22,8 +24,8 @@ var Commands = []cli.Command{
 				Flags: []cli.Flag{
 					cli.StringFlag{Name: "username, U", Usage: "provide the username"},
 					cli.StringFlag{Name: "password, P", Usage: "provide the password"},
-					cli.StringFlag{Name: "alias, A", Usage: "provide the alias for the database"},
-					cli.StringFlag{Name: "version, V", Usage: "provide the version of the database"},
+					cli.StringFlag{Name: "alias", Usage: "provide the alias for the database"},
+					cli.StringFlag{Name: "version", Usage: "provide the version of the database"},
 				},
 				Action: ActionAddDatabase,
 			},
@@ -40,11 +42,8 @@ var Commands = []cli.Command{
 				Action: ActionRemoveRegistry,
 			},
 			{
-				Name:  "database",
-				Usage: "Remove a database",
-				Flags: []cli.Flag{
-					cli.StringFlag{Name: "alias, A", Usage: "provide the alias for the database"},
-				},
+				Name:   "database",
+				Usage:  "Remove a database",
 				Action: ActionRemoveDatabase,
 			},
 		},
@@ -66,6 +65,9 @@ func ActionRemoveRegistry(c *cli.Context) error {
 // ActionAddDatabase adds a database add on
 func ActionAddDatabase(c *cli.Context) error {
 	dbtype := c.Args().Get(0)
+	if len(dbtype) == 0 {
+		return fmt.Errorf("Database type not provided as an arguement")
+	}
 	username := c.GlobalString("username")
 	if username == "" {
 		switch dbtype {
@@ -95,6 +97,9 @@ func ActionAddDatabase(c *cli.Context) error {
 
 // ActionRemoveDatabase removes a database add on
 func ActionRemoveDatabase(c *cli.Context) error {
-	alias := c.GlobalString("alias")
+	alias := c.Args().Get(0)
+	if len(alias) == 0 {
+		return fmt.Errorf("Database Alias not provided as an arguement")
+	}
 	return removeDatabase(alias)
 }
