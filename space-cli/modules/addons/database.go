@@ -3,7 +3,6 @@ package addons
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -15,7 +14,7 @@ import (
 
 func addDatabase(dbtype, username, password, alias, version string) error {
 	ctx := context.Background()
-	dockerImage := strings.Join([]string{dbtype, version}, ":")
+	dockerImage := fmt.Sprintf("%s:%s", dbtype, version)
 
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -45,7 +44,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 		Image:  dockerImage,
 	}, &container.HostConfig{
 		NetworkMode: "space-cloud",
-	}, nil, strings.Join([]string{"space-cloud--addon", alias}, "--"))
+	}, nil, fmt.Sprintf("space-cloud--addon--db--%s", alias))
 	if err != nil {
 		return utils.LogError("Unable to create local docker database", "add", "database", err)
 	}
@@ -100,13 +99,13 @@ func removeDatabase(alias string) error {
 	}
 
 	// Check if a database container already exist
-	filterArgs := filters.Arg("label", "app=space-cloud")
+	filterArgs := filters.Arg("label", fmt.Sprintf("space-cloud--addon--db--%s", alias))
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
 	if err != nil {
 		return utils.LogError("Unable to check if database already exists", "remove", "database", err)
 	}
 	if len(containers) == 0 {
-		utils.LogInfo("No space-cloud instance found. Run 'space-cli setup' first", "remove", "database")
+		utils.LogInfo(fmt.Sprintf("Database (%s) not found.", alias), "remove", "database")
 		return nil
 	}
 
@@ -117,18 +116,7 @@ func removeDatabase(alias string) error {
 	}
 
 	for _, container := range containers {
-		// First start the container
-		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), "remove", "database", err)
-		}
-
-		// Get the container's info
-		info, err := docker.ContainerInspect(ctx, container.ID)
-		if err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), "remove", "database", err)
-		}
-
-		hostName := utils.GetServiceDomain(info.Config.Labels["service"], alias)
+		hostName := utils.GetServiceDomain("db", alias)
 
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(hostName)

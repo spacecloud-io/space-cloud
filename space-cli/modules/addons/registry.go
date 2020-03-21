@@ -57,14 +57,18 @@ func addRegistry(projectID string) error {
 			return utils.LogError("No projects found. Run this command after creating a project", "add", "registry", err)
 		}
 
-		var projectIDOptions []string
-		for _, projectInfo := range projects {
-			projectIDOptions = append(projectIDOptions, projectInfo.ID)
+		projectID = projects[0].ID
+		if len(projects) > 1 {
+			var projectIDOptions []string
+			for _, projectInfo := range projects {
+				projectIDOptions = append(projectIDOptions, projectInfo.ID)
+			}
+
+			if err := survey.AskOne(&survey.Select{Message: "Select project ID", Options: projectIDOptions}, &projectID); err != nil {
+				return err
+			}
 		}
 
-		if err := survey.AskOne(&survey.Select{Message: "Select project ID", Options: projectIDOptions}, &projectID); err != nil {
-			return err
-		}
 		utils.LogInfo(fmt.Sprintf("Adding registry to project - %s with ID - %s", projects[0].Name, projectID), "add", "registry")
 	}
 
