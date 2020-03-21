@@ -8,6 +8,8 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
+
+	"github.com/spaceuptech/space-cli/utils"
 )
 
 // Destroy cleans the environment which has been setup. It removes the containers, secrets & host file
@@ -37,20 +39,29 @@ func Destroy() error {
 		}
 	}
 
+	// Remove the space-cloud network
+	nws, err := cli.NetworkList(ctx, types.NetworkListOptions{Filters: filters.NewArgs(args)})
+	if err != nil {
+		return utils.LogError("Unable to list networks", "operation", "destroy", err)
+	}
+	for _, nw := range nws {
+		_ = cli.NetworkRemove(ctx, nw.ID)
+	}
+
 	// Remove secrets directory
-	if err := os.RemoveAll(getSecretsDir()); err != nil {
+	if err := os.RemoveAll(utils.GetSecretsDir()); err != nil {
 		logrus.Errorf("Unable to remove secrets directory - %s", err.Error())
 		return err
 	}
 
 	// Remove host file
-	if err := os.RemoveAll(getSpaceCloudHostsFilePath()); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudHostsFilePath()); err != nil {
 		logrus.Errorf("Unable to remove host file - %s", err.Error())
 		return err
 	}
 
 	// Remove the service routing file
-	if err := os.RemoveAll(getSpaceCloudRoutingConfigPath()); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudRoutingConfigPath()); err != nil {
 		logrus.Errorf("Unable to remove service routing file file - %s", err.Error())
 		return err
 	}

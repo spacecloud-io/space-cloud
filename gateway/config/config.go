@@ -9,12 +9,13 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	Secret      string   `json:"secret" yaml:"secret"`
-	AESkey      string   `json:"aesKey" yaml:"aesKey"`
-	ID          string   `json:"id" yaml:"id"`
-	Name        string   `json:"name" yaml:"name"`
-	Modules     *Modules `json:"modules" yaml:"modules"`
-	ContextTime int      `json:"contextTime" yaml:"contextTime"` //contextTime sets the timeout of query
+	Secret         string   `json:"secret" yaml:"secret"`
+	AESKey         string   `json:"aesKey" yaml:"aesKey"`
+	ID             string   `json:"id" yaml:"id"`
+	Name           string   `json:"name" yaml:"name"`
+	DockerRegistry string   `json:"dockerRegistry" yaml:"dockerRegistry"`
+	Modules        *Modules `json:"modules" yaml:"modules"`
+	ContextTime    int      `json:"contextTime" yaml:"contextTime"` // contextTime sets the timeout of graphql query
 }
 
 // Admin stores the admin credentials
@@ -50,20 +51,20 @@ type SSL struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud        Crud            `json:"crud" yaml:"crud"`
-	Auth        Auth            `json:"auth" yaml:"auth"`
-	Services    *ServicesModule `json:"services" yaml:"services"`
-	FileStore   *FileStore      `json:"fileStore" yaml:"fileStore"`
-	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
-	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
-	Routes      Routes          `json:"routes" yaml:"routes"`
-	Deployments Deployments     `json:"deployments" yaml:"deployments"`
-	Secrets     []*Secret       `json:"secrets" yaml:"secrets"`
+	Crud        Crud               `json:"crud" yaml:"crud"`
+	Auth        Auth               `json:"auth" yaml:"auth"`
+	Services    *ServicesModule    `json:"services" yaml:"services"`
+	FileStore   *FileStore         `json:"fileStore" yaml:"fileStore"`
+	Eventing    Eventing           `json:"eventing,omitempty" yaml:"eventing,omitempty"`
+	LetsEncrypt LetsEncrypt        `json:"letsencrypt" yaml:"letsencrypt"`
+	Routes      Routes             `json:"routes" yaml:"routes"`
+	Deployments Deployments        `json:"deployments" yaml:"deployments"`
+	Secrets     map[string]*Secret `json:"secrets" yaml:"secrets"`
 }
 
 // Deployments store all services information for particular project
 type Deployments struct {
-	Services []*RunnerService `json:"services" yaml:"services"`
+	Services map[string]*RunnerService `json:"services" yaml:"services"`
 }
 
 // Secret stores secrets information

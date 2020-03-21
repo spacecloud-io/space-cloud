@@ -6,18 +6,17 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//GetServicesRoutes gets services routes
+// GetServicesRoutes gets services routes
 func GetServicesRoutes(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/runner/%s/service-routes", project)
 
 	// Get the spec from the server
 	result := make(map[string]interface{})
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 
@@ -58,13 +57,13 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 	return services, nil
 }
 
-//GetServicesSecrets gets services secrets
+// GetServicesSecrets gets services secrets
 func GetServicesSecrets(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/runner/%s/secrets", project)
 
 	// Get the spec from the server
 	result := make(map[string]interface{})
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 
@@ -101,12 +100,12 @@ func GetServicesSecrets(project, commandName string, params map[string]string) (
 	return services, nil
 }
 
-//GetServices gets services
+// GetServices gets services
 func GetServices(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/runner/%s/services", project)
 	// Get the spec from the server
 	result := make(map[string]interface{})
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 
@@ -132,7 +131,7 @@ func GetServices(project, commandName string, params map[string]string) ([]*mode
 	for _, item := range array {
 		spec := item.(map[string]interface{})
 		str := strings.Split(spec["id"].(string), "-")
-		meta := map[string]string{"projectId": project, "version": str[1], "serviceId": str[0]}
+		meta := map[string]string{"projectId": project, "version": str[1], "id": str[0]}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
@@ -141,7 +140,7 @@ func GetServices(project, commandName string, params map[string]string) ([]*mode
 		delete(spec, "projectId")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/runner/{project}/services/{serviceId}/{version}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/runner/{project}/services/{id}/{version}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

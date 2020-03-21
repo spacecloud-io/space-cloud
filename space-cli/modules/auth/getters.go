@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
@@ -15,7 +14,7 @@ func GetAuthProviders(project, commandName string, params map[string]string) ([]
 
 	// Get the spec from the server
 	result := make(map[string]interface{})
-	if err := cmd.Get(http.MethodGet, url, params, &result); err != nil {
+	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
 		return nil, err
 	}
 

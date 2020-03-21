@@ -3,29 +3,28 @@ package modules
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // SetProjectConfig sets the config all modules
-func (m *Modules) SetProjectConfig(config *config.Config) error {
+func (m *Modules) SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
 	if config.Projects != nil && len(config.Projects) > 0 {
 		p := config.Projects[0]
 
 		logrus.Debugln("Setting config of crud module")
 		if err := m.Crud.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			logrus.Errorf("error setting crud module config - %s", err.Error())
-			return err
 		}
 
 		logrus.Debugln("Setting config of schema module")
 		if err := m.Schema.SetConfig(p.Modules.Crud, p.ID); err != nil {
 			logrus.Errorf("error setting schema module config - %s", err.Error())
-			return err
 		}
 
 		logrus.Debugln("Setting config of auth module")
-		if err := m.Auth.SetConfig(p.ID, p.Secret, p.AESkey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
+		if err := m.Auth.SetConfig(p.ID, p.Secret, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 			logrus.Errorf("error setting auth module config - %s", err.Error())
-			return err
 		}
 
 		logrus.Debugln("Setting config of functions module")
@@ -37,28 +36,32 @@ func (m *Modules) SetProjectConfig(config *config.Config) error {
 		logrus.Debugln("Setting config of file storage module")
 		if err := m.File.SetConfig(p.Modules.FileStore); err != nil {
 			logrus.Errorf("error setting filestore module config - %s", err.Error())
-			return err
 		}
 
 		logrus.Debugln("Setting config of eventing module")
 		if err := m.Eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
 			logrus.Errorf("error setting eventing module config - %s", err.Error())
-			return err
 		}
 
 		logrus.Debugln("Setting config of realtime module")
 		if err := m.Realtime.SetConfig(p.ID, p.Modules.Crud); err != nil {
 			logrus.Errorf("error setting realtime module config - %s", err.Error())
-			return err
 		}
 
 		logrus.Debugln("Setting config of graphql module")
 		m.Graphql.SetConfig(p.ID)
+
+		logrus.Debugln("Setting config of lets encrypt module")
+		if err := le.SetProjectDomains(p.ID, p.Modules.LetsEncrypt); err != nil {
+			logrus.Errorf("error setting letsencypt module config - %s", err.Error())
+		}
+
+		logrus.Debugln("Setting config of ingress routing module")
+		ingressRouting.SetProjectRoutes(p.ID, p.Modules.Routes)
 	}
-	return nil
 }
 
-// SetGlobalConfig sets the auth secret and AESkey
+// SetGlobalConfig sets the auth secret and AESKey
 func (m *Modules) SetGlobalConfig(projectID, secret, aesKey string) {
 	m.Auth.SetSecret(secret)
 	m.Auth.SetAESKey(aesKey)

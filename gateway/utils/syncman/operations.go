@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -106,8 +105,9 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
 			p.Name = project.Name
-			p.AESkey = project.AESkey
+			p.AESKey = project.AESKey
 			p.Secret = project.Secret
+			p.DockerRegistry = project.DockerRegistry
 			p.ContextTime = project.ContextTime
 
 			// Mark project as existing
@@ -135,7 +135,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	}
 
 	// We will ignore the error for the create project request
-	_ = s.modules.SetProjectConfig(s.projectConfig)
+	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 
 	if s.storeType == "none" {
 		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -156,11 +156,11 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	}
 
 	projectConfig.Secret = project.Secret
-	projectConfig.AESkey = project.AESkey
+	projectConfig.AESKey = project.AESKey
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
-	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
+	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESKey)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -171,10 +171,7 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if err := s.modules.SetProjectConfig(s.projectConfig); err != nil {
-		logrus.Errorf("error setting project config - %s", err.Error())
-		return err
-	}
+	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 
 	return s.setProject(ctx, project)
 }
@@ -207,9 +204,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 			return err
 		}
 	}
-	if err := s.modules.SetProjectConfig(s.projectConfig); err != nil {
-		return err
-	}
+	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 
 	if s.storeType == "none" {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)

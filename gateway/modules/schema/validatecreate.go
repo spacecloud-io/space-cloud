@@ -1,18 +1,26 @@
 package schema
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-//SchemaValidator function validates the schema which it gets from module
+// SchemaValidator function validates the schema which it gets from module
 func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+
+	for schemaKey := range doc {
+		if _, p := collectionFields[schemaKey]; !p {
+			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)
+		}
+	}
 
 	mutatedDoc := map[string]interface{}{}
 	for fieldKey, fieldValue := range collectionFields {
@@ -151,6 +159,14 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *model.Fiel
 		}
 
 	case map[string]interface{}:
+		if fieldValue.Kind == model.TypeJSON {
+			data, err := json.Marshal(value)
+			if err != nil {
+				logrus.Errorf("error checking type in schema module unable to marshal data for field having type json")
+				return nil, err
+			}
+			return string(data), nil
+		}
 		if fieldValue.Kind != model.TypeObject {
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}

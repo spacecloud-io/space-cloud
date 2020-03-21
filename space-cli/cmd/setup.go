@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -21,23 +19,8 @@ import (
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cli/model"
+	"github.com/spaceuptech/space-cli/utils"
 )
-
-func getSpaceCloudHostsFilePath() string {
-	return fmt.Sprintf("%s/hosts", getSpaceCloudDirectory())
-}
-
-func getSpaceCloudRoutingConfigPath() string {
-	return fmt.Sprintf("%s/routing-config.json", getSpaceCloudDirectory())
-}
-
-func getSecretsDir() string {
-	return fmt.Sprintf("%s/secrets", getSpaceCloudDirectory())
-}
-
-func getTempSecretsDir() string {
-	return fmt.Sprintf("%s/secrets/temp-secrets", getSpaceCloudDirectory())
-}
 
 func generateRandomString(length int) string {
 	rand.Seed(time.Now().UnixNano())
@@ -57,11 +40,11 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
 
-	_ = createDirIfNotExist(getSpaceCloudDirectory())
-	_ = createDirIfNotExist(getSecretsDir())
-	_ = createDirIfNotExist(getTempSecretsDir())
+	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
+	_ = utils.CreateDirIfNotExist(utils.GetSecretsDir())
+	_ = utils.CreateDirIfNotExist(utils.GetTempSecretsDir())
 
-	_ = createFileIfNotExist(getSpaceCloudRoutingConfigPath(), "{}")
+	_ = utils.CreateFileIfNotExist(utils.GetSpaceCloudRoutingConfigPath(), "{}")
 
 	logrus.Infoln("Setting up Space Cloud on docker on your command...")
 
@@ -85,7 +68,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		ServerURL: "http://localhost:4122",
 	}
 
-	if err := checkCred(&selectedAccount); err != nil {
+	if err := utils.StoreCredentials(&selectedAccount); err != nil {
 		logrus.Errorf("error in setup unable to check credentials - %v", err)
 		return err
 	}
@@ -112,7 +95,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
-			Source: getSpaceCloudHostsFilePath(),
+			Source: utils.GetSpaceCloudHostsFilePath(),
 			Target: "/etc/hosts",
 		},
 	}
@@ -131,12 +114,14 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		dnsName        string
 		containerImage string
 		containerName  string
+		name           string
 		envs           []string
 		mount          []mount.Mount
 		exposedPorts   nat.PortSet
 		portMapping    nat.PortMap
 	}{
 		{
+			name:           "gateway",
 			containerImage: "spaceuptech/gateway",
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
@@ -154,6 +139,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 
 		{
 			// runner
+			name:           "runner",
 			containerImage: "spaceuptech/runner",
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
@@ -164,19 +150,19 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
 				"SECRETS_PATH=/secrets",
-				"HOME_SECRETS_PATH=" + getTempSecretsDir(),
-				"HOSTS_FILE_PATH=" + getSpaceCloudHostsFilePath(),
+				"HOME_SECRETS_PATH=" + utils.GetTempSecretsDir(),
+				"HOSTS_FILE_PATH=" + utils.GetSpaceCloudHostsFilePath(),
 				"ROUTING_FILE_PATH=" + "/routing-config.json",
 			},
 			mount: []mount.Mount{
 				{
-					Type:   mount.TypeBind, // TODO CHECK THIS
-					Source: getSecretsDir(),
+					Type:   mount.TypeBind,
+					Source: utils.GetSecretsDir(),
 					Target: "/secrets",
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: getSpaceCloudHostsFilePath(),
+					Source: utils.GetSpaceCloudHostsFilePath(),
 					Target: "/etc/hosts",
 				},
 				{
@@ -186,7 +172,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: getSpaceCloudRoutingConfigPath(),
+					Source: utils.GetSpaceCloudRoutingConfigPath(),
 					Target: "/routing-config.json",
 				},
 			},
@@ -207,16 +193,21 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	}
 	// change the default host file location for crud operation to our specified path
 	// default value /etc/hosts
-	hosts.WriteFilePath = getSpaceCloudHostsFilePath()
-	if err := hosts.SaveAs(getSpaceCloudHostsFilePath()); err != nil {
-		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", getSpaceCloudHostsFilePath(), err)
+	hosts.WriteFilePath = utils.GetSpaceCloudHostsFilePath()
+	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath()); err != nil {
+		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", utils.GetSpaceCloudHostsFilePath(), err)
 		return err
+	}
+
+	// First we create a network for space cloud
+	if _, err := cli.NetworkCreate(ctx, "space-cloud", types.NetworkCreate{Driver: "bridge"}); err != nil {
+		return utils.LogError("Unable to create a network named space-cloud", "operations", "setup", err)
 	}
 
 	for _, c := range containersToCreate {
 		logrus.Infof("Starting container %s...", c.containerName)
 		// check if image already exists
-		if err := pullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
+		if err := utils.PullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
 			logrus.Errorf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage)
 			return err
 		}
@@ -235,12 +226,14 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 
 		// create container with specified defaults
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
+			Labels:       map[string]string{"app": "space-cloud", "service": c.name},
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
 			Env:          c.envs,
 		}, &container.HostConfig{
 			Mounts:       c.mount,
 			PortBindings: c.portMapping,
+			NetworkMode:  "space-cloud",
 		}, nil, c.containerName)
 		if err != nil {
 			logrus.Errorf("Unable to create container (%s) - %s", c.containerName, err)
@@ -257,7 +250,10 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		if err != nil {
 			logrus.Errorf("Unable to inspect container (%s) - %s", c.containerName, err)
 		}
-		hosts.AddHost(data.NetworkSettings.IPAddress, c.dnsName)
+
+		ip := data.NetworkSettings.Networks["space-cloud"].IPAddress
+		utils.LogDebug(fmt.Sprintf("Adding entry (%s - %s) to hosts file", c.dnsName, ip), "operations", "setup", nil)
+		hosts.AddHost(ip, c.dnsName)
 	}
 
 	if err := hosts.Save(); err != nil {
@@ -269,21 +265,5 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	logrus.Infof("Space Cloud (id: \"%s\") has been successfully setup! 👍", selectedAccount.ID)
 	logrus.Infof("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL)
 	logrus.Infof("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key)
-	return nil
-}
-
-func pullImageIfNotExist(ctx context.Context, dockerClient *client.Client, image string) error {
-	_, _, err := dockerClient.ImageInspectWithRaw(ctx, image)
-	if err != nil {
-		// pull image from public repository
-		logrus.Infof("Image %s does not exist. Need to pull it from Docker Hub. This may take some time.", image)
-		out, err := dockerClient.ImagePull(ctx, image, types.ImagePullOptions{})
-		if err != nil {
-			logrus.Errorf("Unable to pull public image with id (%s) - %s", image, err.Error())
-			return err
-		}
-		_, _ = io.Copy(ioutil.Discard, out)
-	}
-	logrus.Infof("Image %s already exists. No need to pull it again", image)
 	return nil
 }

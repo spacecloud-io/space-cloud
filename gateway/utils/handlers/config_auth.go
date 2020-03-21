@@ -27,6 +27,7 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		defer utils.CloseTheCloser(r.Body)
 
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -41,12 +42,14 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		// Sync the config
 		if err := syncMan.SetUserManagement(ctx, projectID, provider, value); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Give a positive acknowledgement
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
@@ -61,6 +64,7 @@ func GetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -72,6 +76,7 @@ func GetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		project, err := syncMan.GetConfig(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -80,22 +85,24 @@ func GetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		if exists {
 			provider, ok := project.Modules.Auth[providerID[0]]
 			if !ok {
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("providerID(%s) not present in state", providerID[0])})
 				return
 			}
-
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"provider": provider})
 			return
 		}
 
 		if len(project.Modules.Auth) == 0 {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("auth providers not present in state")})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "auth providers not found"})
 			return
 		}
-
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{"providers": project.Modules.Auth})
 	}

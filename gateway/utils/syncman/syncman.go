@@ -90,7 +90,7 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 	defer s.lock.Unlock()
 
 	// Set the callback
-	_ = s.modules.SetProjectConfig(projectConfig)
+	s.modules.SetProjectConfig(projectConfig, s.letsencrypt, s.routing)
 	s.port = port
 
 	s.configFile = configFilePath
@@ -99,7 +99,7 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 	if len(s.projectConfig.Projects) > 0 {
-		_ = s.modules.SetProjectConfig(s.projectConfig)
+		s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 	}
 
 	if s.storeType != "none" {
@@ -113,7 +113,7 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
-				_ = s.modules.SetProjectConfig(s.projectConfig)
+				s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 			}
 		}); err != nil {
 			return err

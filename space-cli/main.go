@@ -6,16 +6,18 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	"github.com/spaceuptech/space-cli/cmd"
 	"github.com/spaceuptech/space-cli/modules"
+	"github.com/spaceuptech/space-cli/modules/addons"
 	"github.com/spaceuptech/space-cli/modules/auth"
 	"github.com/spaceuptech/space-cli/modules/database"
+	"github.com/spaceuptech/space-cli/modules/deploy"
 	"github.com/spaceuptech/space-cli/modules/eventing"
 	"github.com/spaceuptech/space-cli/modules/filestore"
 	"github.com/spaceuptech/space-cli/modules/ingress"
 	"github.com/spaceuptech/space-cli/modules/letsencrypt"
 	"github.com/spaceuptech/space-cli/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
-	"github.com/spaceuptech/space-cli/modules/routes"
 	"github.com/spaceuptech/space-cli/modules/services"
 	"github.com/spaceuptech/space-cli/modules/userman"
 )
@@ -30,6 +32,9 @@ func main() {
 	app.EnableBashCompletion = true
 	app.Name = "space-cli"
 	app.Version = "0.16.0"
+	app.Flags = []cli.Flag{
+		cli.StringFlag{Name: "log-level", Value: "info", Usage: "Sets the log level of the command", EnvVar: "LOG_LEVEL"},
+	}
 	app.Commands = []cli.Command{
 		{
 			Name:  "generate",
@@ -37,7 +42,7 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:   "service",
-					Action: actionGenerateService,
+					Action: services.ActionGenerateService,
 				},
 				{
 					Name:   "db-rules",
@@ -81,7 +86,7 @@ func main() {
 				},
 				{
 					Name:   "remote-services",
-					Action: services.ActionGenerateService,
+					Action: remoteservices.ActionGenerateService,
 				},
 				{
 					Name:   "letsencrypt",
@@ -162,7 +167,7 @@ func main() {
 				},
 				{
 					Name:   "ingress-routes",
-					Action: routes.ActionGetIngressRoutes,
+					Action: ingress.ActionGetIngressRoutes,
 				},
 				{
 					Name:   "services-routes",
@@ -181,7 +186,7 @@ func main() {
 		{
 			Name:   "apply",
 			Usage:  "deploys service",
-			Action: actionApply,
+			Action: cmd.ActionApply,
 		},
 		{
 			Name:   "destroy",
@@ -268,7 +273,14 @@ func main() {
 			},
 			Action: actionSetup,
 		},
+		{
+			Name:   "start",
+			Usage:  "Resumes the space-cloud docker environment",
+			Action: cmd.ActionStart,
+		},
 	}
+	app.Commands = append(app.Commands, addons.Commands...)
+	app.Commands = append(app.Commands, deploy.CommandDeploy)
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
