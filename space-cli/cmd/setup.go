@@ -15,7 +15,6 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/sirupsen/logrus"
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cli/model"
@@ -35,7 +34,7 @@ func generateRandomString(length int) string {
 }
 
 // CodeSetup initializes development environment
-func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
+func CodeSetup(id, username, key, config, version, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
@@ -45,8 +44,9 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	_ = utils.CreateDirIfNotExist(utils.GetTempSecretsDir())
 
 	_ = utils.CreateFileIfNotExist(utils.GetSpaceCloudRoutingConfigPath(), "{}")
+	_ = utils.CreateConfigFile(utils.GetSpaceCloudConfigFilePath())
 
-	logrus.Infoln("Setting up Space Cloud on docker on your command...")
+	utils.LogInfo("Setting up Space Cloud on docker.")
 
 	if username == "" {
 		username = "local-admin"
@@ -57,6 +57,24 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	if key == "" {
 		key = generateRandomString(12)
 	}
+	if config == "" {
+		config = utils.GetSpaceCloudConfigFilePath()
+	}
+	if !strings.Contains(config, ".yaml") {
+		return fmt.Errorf("full path not provided for config file")
+
+	}
+	if version == "" {
+		utils.LogInfo("Fetching latest Space Cloud Version")
+
+		var err error
+		version, err = utils.GetLatestVersion("")
+		if err != nil {
+			_ = utils.LogError("Unable to fetch the latest Space Cloud version. Sticking to tag latest", err)
+			version = "latest"
+		}
+	}
+
 	if secret == "" {
 		secret = generateRandomString(24)
 	}
@@ -69,8 +87,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	}
 
 	if err := utils.StoreCredentials(&selectedAccount); err != nil {
-		logrus.Errorf("error in setup unable to check credentials - %v", err)
-		return err
+		return utils.LogError("Unable to store credentials", err)
 	}
 
 	devMode := "false"
@@ -98,13 +115,17 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 			Source: utils.GetSpaceCloudHostsFilePath(),
 			Target: "/etc/hosts",
 		},
+		{
+			Type:   mount.TypeBind,
+			Source: config,
+			Target: "/app/config.yaml",
+		},
 	}
 
 	for _, volume := range volumes {
 		temp := strings.Split(volume, ":")
 		if len(temp) != 2 {
-			logrus.Errorf("Error in volume flag (%s) - incorrect format", volume)
-			return errors.New("incorrect format for volume flag")
+			return utils.LogError(fmt.Sprintf("Error in volume flag (%s) - incorrect format", volume), errors.New(""))
 		}
 
 		mounts = append(mounts, mount.Mount{Type: mount.TypeBind, Source: temp[0], Target: temp[1]})
@@ -122,7 +143,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	}{
 		{
 			name:           "gateway",
-			containerImage: "spaceuptech/gateway",
+			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", version),
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           envs,
@@ -140,7 +161,7 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 		{
 			// runner
 			name:           "runner",
-			containerImage: "spaceuptech/runner",
+			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
@@ -182,46 +203,40 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		logrus.Errorf("Unable to initialize docker client - %s", err)
-		return err
+		return utils.LogError("Unable to initialize docker client ", err)
 	}
 
 	hosts, err := txeh.NewHostsDefault()
 	if err != nil {
-		logrus.Errorf("Unable to load host file with suitable default - %s", err)
-		return err
+		return utils.LogError("Unable to load host file with suitable default", err)
 	}
 	// change the default host file location for crud operation to our specified path
 	// default value /etc/hosts
 	hosts.WriteFilePath = utils.GetSpaceCloudHostsFilePath()
 	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath()); err != nil {
-		logrus.Errorf("Unable to save as host file to specified path (%s) - %s", utils.GetSpaceCloudHostsFilePath(), err)
-		return err
+		return utils.LogError(fmt.Sprintf("Unable to save as host file to specified path (%s)", utils.GetSpaceCloudHostsFilePath()), errors.New(""))
 	}
 
 	// First we create a network for space cloud
 	if _, err := cli.NetworkCreate(ctx, "space-cloud", types.NetworkCreate{Driver: "bridge"}); err != nil {
-		return utils.LogError("Unable to create a network named space-cloud", "operations", "setup", err)
+		return utils.LogError("Unable to create a network named space-cloud", err)
 	}
 
 	for _, c := range containersToCreate {
-		logrus.Infof("Starting container %s...", c.containerName)
+		utils.LogInfo(fmt.Sprintf("Starting container %s...", c.containerName))
 		// check if image already exists
 		if err := utils.PullImageIfNotExist(ctx, cli, c.containerImage); err != nil {
-			logrus.Errorf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage)
-			return err
+			return utils.LogError(fmt.Sprintf("Could not pull the image (%s). Make sure docker is running and that you have an active internet connection.", c.containerImage), errors.New(""))
 		}
 
 		// check if container is already running
 		args := filters.Arg("name", c.containerName)
 		containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 		if err != nil {
-			logrus.Errorf("error deleting service in docker unable to list containers - %s", err)
-			return err
+			return utils.LogError("error deleting service in docker unable to list containers", err)
 		}
 		if len(containers) != 0 {
-			logrus.Errorf("Container (%s) already exists", c.containerName)
-			return fmt.Errorf("container (%s) already exists", c.containerName)
+			return utils.LogError(fmt.Sprintf("Container (%s) already exists", c.containerName), errors.New(""))
 		}
 
 		// create container with specified defaults
@@ -236,34 +251,32 @@ func CodeSetup(id, username, key, secret string, dev bool, portHTTP, portHTTPS i
 			NetworkMode:  "space-cloud",
 		}, nil, c.containerName)
 		if err != nil {
-			logrus.Errorf("Unable to create container (%s) - %s", c.containerName, err)
-			return err
+			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), err)
 		}
 
 		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-			logrus.Errorf("Unable to start container (%s) - %s", c.containerName, err.Error())
-			return err
+			return utils.LogError(fmt.Sprintf("Unable to start container (%v)", c.containerName), err)
 		}
 
 		// get the ip address assigned to container
 		data, err := cli.ContainerInspect(ctx, c.containerName)
 		if err != nil {
-			logrus.Errorf("Unable to inspect container (%s) - %s", c.containerName, err)
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%v)", c.containerName), err)
 		}
 
 		ip := data.NetworkSettings.Networks["space-cloud"].IPAddress
-		utils.LogDebug(fmt.Sprintf("Adding entry (%s - %s) to hosts file", c.dnsName, ip), "operations", "setup", nil)
+		utils.LogDebug(fmt.Sprintf("Adding entry (%s - %s) to hosts file", c.dnsName, ip), nil)
 		hosts.AddHost(ip, c.dnsName)
 	}
 
-	if err := hosts.Save(); err != nil {
-		logrus.Errorf("Unable to save host file - %s", err.Error())
-		return err
+	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath()); err != nil {
+		return utils.LogError("Unable to save host file - %s", err)
 	}
 
 	fmt.Println()
-	logrus.Infof("Space Cloud (id: \"%s\") has been successfully setup! 👍", selectedAccount.ID)
-	logrus.Infof("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL)
-	logrus.Infof("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key)
+	utils.LogInfo(fmt.Sprintf("Space Cloud (id: \"%s\") has been successfully setup! 👍", selectedAccount.ID))
+	utils.LogInfo(fmt.Sprintf("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL))
+	utils.LogInfo(fmt.Sprintf("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key))
+
 	return nil
 }

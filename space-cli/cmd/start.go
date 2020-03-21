@@ -25,31 +25,31 @@ func DockerStart() error {
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		return utils.LogError("Unable to initialize docker client", "operations", "start", err)
+		return utils.LogError("Unable to initialize docker client", err)
 	}
 
 	// Get the hosts file
 	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(), WriteFilePath: utils.GetSpaceCloudHostsFilePath()})
 	if err != nil {
-		return utils.LogError("Unable to open hosts file", "operations", "start", err)
+		return utils.LogError("Unable to open hosts file", err)
 	}
 
 	// Start the add ons first
 	argsAddOns := filters.Arg("label", "app=addon")
 	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsAddOns), All: true})
 	if err != nil {
-		return utils.LogError("Unable to list space-cloud core containers", "operations", "start", err)
+		return utils.LogError("Unable to list space-cloud core containers", err)
 	}
 	for _, container := range addOnContainers {
 		// First start the container
 		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), "operations", "start", err)
+			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
 		}
 
 		// Get the container's info
 		info, err := docker.ContainerInspect(ctx, container.ID)
 		if err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), "operations", "start", err)
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), err)
 		}
 
 		hostName := utils.GetServiceDomain(info.Config.Labels["service"], info.Config.Labels["name"])
@@ -63,7 +63,7 @@ func DockerStart() error {
 
 	// Save the hosts file before continuing
 	if err := hosts.Save(); err != nil {
-		return utils.LogError("Could not save hosts file after updating add on containers", "operation", "start", err)
+		return utils.LogError("Could not save hosts file after updating add on containers", err)
 	}
 
 	// Second step is to start the gateway and runner. We'll need the runner's ip address in the next step
@@ -71,19 +71,19 @@ func DockerStart() error {
 	argsSC := filters.Arg("label", "app=space-cloud")
 	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsSC), All: true})
 	if err != nil {
-		return utils.LogError("Unable to list space-cloud core containers", "operations", "start", err)
+		return utils.LogError("Unable to list space-cloud core containers", err)
 	}
 
 	for _, container := range scContainers {
 		// First start the container
 		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), "operations", "start", err)
+			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
 		}
 
 		// Get the container's info
 		info, err := docker.ContainerInspect(ctx, container.ID)
 		if err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), "operations", "start", err)
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), err)
 		}
 
 		// Set the runner ip with the current service is the runner
@@ -102,32 +102,32 @@ func DockerStart() error {
 
 	// Check if the ip address is set
 	if runnerIP == "" {
-		return utils.LogError("Unable to set ip address of runner. Did you run space-cli setup once?", "operation", "start", nil)
+		return utils.LogError("Unable to set ip address of runner. Did you run space-cli setup once?", nil)
 	}
 
 	// Save the hosts file before continuing
 	if err := hosts.Save(); err != nil {
-		return utils.LogError("Could not save hosts file after updating sc containers", "operation", "start", err)
+		return utils.LogError("Could not save hosts file after updating sc containers", err)
 	}
 
 	// Get the list of the other containers we need to start
 	argsServices := filters.Arg("label", "app=service")
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsServices), All: true})
 	if err != nil {
-		return utils.LogError("Unable to list space-cloud services containers", "operations", "start", err)
+		return utils.LogError("Unable to list space-cloud services containers", err)
 	}
 
 	// Loop over each container and start them
 	for _, container := range containers {
 		// First start the container
 		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), "operations", "start", err)
+			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
 		}
 
 		// Get the container's info
 		info, err := docker.ContainerInspect(ctx, container.ID)
 		if err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), "operations", "start", err)
+			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), err)
 		}
 
 		projectID := info.Config.Labels["project"]
@@ -147,7 +147,7 @@ func DockerStart() error {
 
 	// Save the hosts file before continuing
 	if err := hosts.Save(); err != nil {
-		return utils.LogError("Could not save hosts file after updating services containers", "operation", "start", err)
+		return utils.LogError("Could not save hosts file after updating services containers", err)
 	}
 
 	return nil
