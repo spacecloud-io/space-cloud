@@ -14,7 +14,33 @@ import (
 
 func addDatabase(dbtype, username, password, alias, version string) error {
 	ctx := context.Background()
+
+	// Prepare the docker image name name
 	dockerImage := fmt.Sprintf("%s:%s", dbtype, version)
+
+	// Set alias if not provided
+	if alias == "" {
+		alias = dbtype
+	}
+
+	// Set the environment variables
+	var env []string
+	switch dbtype {
+	case "mysql":
+		if username != "root" {
+			return utils.LogError("Only the username root is allowed for MySQL", nil)
+		}
+		env = []string{fmt.Sprintf("MYSQL_ROOT_PASSWORD=%s", password)}
+	case "postgres":
+		env = []string{fmt.Sprintf("POSTGRES_USER=%s", username), fmt.Sprintf("POSTGRES_PASSWORD=%s", password)}
+	case "mongo":
+		if username != "" || password != "" {
+			return utils.LogError("Cannot set username or password with Mongo", nil)
+		}
+		env = []string{}
+	default:
+		return utils.LogError(fmt.Sprintf("Invalid database type (%s) provided", dbtype), nil)
+	}
 
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -40,8 +66,9 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 
 	// Create the database
 	containerRes, err := docker.ContainerCreate(ctx, &container.Config{
-		Labels: map[string]string{"app": "addon", "service": dbtype, "name": alias},
+		Labels: map[string]string{"app": "addon", "service": "db", "name": alias},
 		Image:  dockerImage,
+		Env:    env,
 	}, &container.HostConfig{
 		NetworkMode: "space-cloud",
 	}, nil, fmt.Sprintf("space-cloud--addon--db--%s", alias))
@@ -60,32 +87,26 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 		return utils.LogError("Unable to open hosts file", err)
 	}
 
-	for _, container := range containers {
-		// First start the container
-		if err := docker.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to start container (%s)", container.ID), err)
-		}
-
-		// Get the container's info
-		info, err := docker.ContainerInspect(ctx, container.ID)
-		if err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to inspect container (%s)", container.ID), err)
-		}
-
-		hostName := utils.GetServiceDomain(info.Config.Labels["service"], info.Config.Labels["name"])
-
-		// Remove the domain from the hosts file
-		hosts.RemoveHost(hostName)
-
-		// Add it back with the new ip address
-		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
+	// Get the container's info
+	info, err := docker.ContainerInspect(ctx, containerRes.ID)
+	if err != nil {
+		return utils.LogError(fmt.Sprintf("Unable to inspect c (%s)", containerRes.ID), err)
 	}
+
+	hostName := utils.GetServiceDomain("db", alias)
+
+	// Remove the domain from the hosts file
+	hosts.RemoveHost(hostName)
+
+	// Add it back with the new ip address
+	hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
 
 	// Save the hosts file
 	if err := hosts.Save(); err != nil {
 		return utils.LogError("Could not save hosts file after updating add on containers", err)
 	}
 
+	utils.LogInfo(fmt.Sprintf("Started database (%s) with alias (%s)", dbtype, alias))
 	return nil
 }
 
@@ -99,7 +120,7 @@ func removeDatabase(alias string) error {
 	}
 
 	// Check if a database container already exist
-	filterArgs := filters.Arg("label", fmt.Sprintf("space-cloud--addon--db--%s", alias))
+	filterArgs := filters.Arg("name", fmt.Sprintf("space-cloud--addon--db--%s", alias))
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
 	if err != nil {
 		return utils.LogError("Unable to check if database already exists", err)
@@ -115,15 +136,15 @@ func removeDatabase(alias string) error {
 		return utils.LogError("Unable to open hosts file", err)
 	}
 
-	for _, container := range containers {
+	for _, c := range containers {
 		hostName := utils.GetServiceDomain("db", alias)
 
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(hostName)
 
 		// remove the container from host machine
-		if err := docker.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
-			return utils.LogError(fmt.Sprintf("Unable to remove container %s", container.ID), err)
+		if err := docker.ContainerRemove(ctx, c.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to remove container %s", c.ID), err)
 		}
 	}
 
@@ -131,6 +152,8 @@ func removeDatabase(alias string) error {
 	if err := hosts.Save(); err != nil {
 		return utils.LogError("Could not save hosts file after updating add on containers", err)
 	}
+
+	utils.LogInfo(fmt.Sprintf("Removed database (%s)", alias))
 
 	return nil
 }

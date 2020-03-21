@@ -1,9 +1,9 @@
 package addons
 
 import (
-	"fmt"
-
 	"github.com/urfave/cli"
+
+	"github.com/spaceuptech/space-cli/utils"
 )
 
 // Commands is the list of commands the addon module exposes
@@ -25,7 +25,7 @@ var Commands = []cli.Command{
 					cli.StringFlag{Name: "username, U", Usage: "provide the username"},
 					cli.StringFlag{Name: "password, P", Usage: "provide the password"},
 					cli.StringFlag{Name: "alias", Usage: "provide the alias for the database"},
-					cli.StringFlag{Name: "version", Usage: "provide the version of the database"},
+					cli.StringFlag{Name: "version", Usage: "provide the version of the database", Value: "latest"},
 				},
 				Action: ActionAddDatabase,
 			},
@@ -66,32 +66,28 @@ func ActionRemoveRegistry(c *cli.Context) error {
 func ActionAddDatabase(c *cli.Context) error {
 	dbtype := c.Args().Get(0)
 	if len(dbtype) == 0 {
-		return fmt.Errorf("Database type not provided as an arguement")
+		return utils.LogError("Database type not provided as an arguement", nil)
 	}
-	username := c.GlobalString("username")
+	username := c.String("username")
 	if username == "" {
 		switch dbtype {
-		case "mongo":
-			username = "mongodb"
 		case "postgres":
 			username = "postgres"
 		case "mysql":
 			username = "root"
 		}
 	}
-	password := c.GlobalString("password")
+	password := c.String("password")
 	if password == "" {
 		switch dbtype {
-		case "mongo":
-			password = ""
 		case "postgres":
 			password = "mysecretpassword"
 		case "mysql":
 			password = "my-secret-pw"
 		}
 	}
-	alias := c.GlobalString("alias")
-	version := c.GlobalString("version")
+	alias := c.String("alias")
+	version := c.String("version")
 	return addDatabase(dbtype, username, password, alias, version)
 }
 
@@ -99,7 +95,7 @@ func ActionAddDatabase(c *cli.Context) error {
 func ActionRemoveDatabase(c *cli.Context) error {
 	alias := c.Args().Get(0)
 	if len(alias) == 0 {
-		return fmt.Errorf("Database Alias not provided as an arguement")
+		return utils.LogError("Database Alias not provided as an argument", nil)
 	}
 	return removeDatabase(alias)
 }
