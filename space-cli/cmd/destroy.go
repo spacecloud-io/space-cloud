@@ -66,6 +66,12 @@ func Destroy() error {
 		return err
 	}
 
+	// Remove the config file
+	if err := os.RemoveAll(utils.GetSpaceCloudConfigFilePath()); err != nil {
+		logrus.Errorf("Unable to remove config file file - %s", err.Error())
+		return err
+	}
+
 	logrus.Infoln("Space cloud cluster has been destroyed successfully 😢")
 	logrus.Infoln("Looking forward to seeing you again! 😊")
 	return nil
