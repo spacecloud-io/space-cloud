@@ -138,7 +138,6 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 	if err != nil {
 		return err
 	}
-	rule.ID = evType
 	if len(projectConfig.Modules.Eventing.SecurityRules) != 0 {
 		projectConfig.Modules.Eventing.SecurityRules[evType] = rule
 	} else {

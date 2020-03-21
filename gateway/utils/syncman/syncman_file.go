@@ -45,7 +45,7 @@ func (s *Manager) SetFileRule(ctx context.Context, project string, value *config
 
 	var doesExist bool
 	for index, val := range projectConfig.Modules.FileStore.Rules {
-		if val.Name == value.Name {
+		if val.ID == value.ID {
 			projectConfig.Modules.FileStore.Rules[index] = value
 			doesExist = true
 		}
@@ -76,7 +76,7 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 
 	temp := projectConfig.Modules.FileStore.Rules
 	for i, v := range projectConfig.Modules.FileStore.Rules {
-		if v.Name == filename {
+		if v.ID == filename {
 			temp = append(temp[:i], temp[i+1:]...)
 			break
 		}
@@ -122,7 +122,7 @@ func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string)
 	}
 	if ruleID != "" {
 		for _, value := range projectConfig.Modules.FileStore.Rules {
-			if ruleID == value.Name {
+			if ruleID == value.ID {
 				return []interface{}{value}, nil
 			}
 		}

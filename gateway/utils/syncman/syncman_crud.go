@@ -102,13 +102,15 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, sc
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
-	_, ok = collection.Collections[col]
-	// if collection doesn't exist then add to config
-	if !ok {
+	if collection.Collections == nil {
 		collection.Collections = map[string]*config.TableRule{}
-		logrus.Println("collection 3", collection.Collections)
 	}
-	collection.Collections[col] = &config.TableRule{Schema: schema}
+	temp, ok := collection.Collections[col]
+	if !ok {
+		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}}
+	} else {
+		temp.Schema = schema
+	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
@@ -208,12 +210,15 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 		return errors.New("specified database not present in config")
 	}
 
-	_, ok = collection.Collections[col]
-	// if collection doesn't exist then add to config
-	if !ok {
+	if collection.Collections == nil {
 		collection.Collections = map[string]*config.TableRule{}
 	}
-	collection.Collections[col] = &config.TableRule{Schema: schema}
+	temp, ok := collection.Collections[col]
+	if !ok {
+		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}}
+	} else {
+		temp.Schema = schema
+	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
@@ -260,7 +265,7 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 			collection.Collections = map[string]*config.TableRule{}
 		}
 		if !ok {
-			collection.Collections[colName] = &config.TableRule{Schema: colValue.Schema} // TODO: rule field here is null
+			collection.Collections[colName] = &config.TableRule{Schema: colValue.Schema, Rules: map[string]*config.Rule{}}
 		} else {
 			temp.Schema = colValue.Schema
 		}

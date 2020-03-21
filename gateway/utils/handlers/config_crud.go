@@ -17,8 +17,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleGetCollections is an endpoint handler which return all the collection(table) names for specified data base
-func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleGetAllTableNames is an endpoint handler which return all the collection(table) names for specified data base
+func HandleGetAllTableNames(adminMan *admin.Manager, crud *crud.Module, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -60,8 +60,8 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 	}
 }
 
-// HandleGetConnectionState gives the status of connection state of client
-func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
+// HandleGetDatabaseConnectionState gives the status of connection state of client
+func HandleGetDatabaseConnectionState(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -92,8 +92,8 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 	}
 }
 
-// HandleDeleteCollection is an endpoint handler which deletes a table in specified database & removes it from config
-func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
+// HandleDeleteTable is an endpoint handler which deletes a table in specified database & removes it from config
+func HandleDeleteTable(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -137,8 +137,8 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 	}
 }
 
-// HandleDatabaseConnection is an endpoint handler which updates database config & connects to database
-func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
+// HandleSetDatabaseConfig is an endpoint handler which updates database config & connects to database
+func HandleSetDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -175,8 +175,8 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 	}
 }
 
-// HandleGetDatabaseConnection returns handler to get Database Collection
-func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleGetDatabaseConfig returns handler to get Database Collection
+func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -297,8 +297,8 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 	}
 }
 
-// HandleGetSchema returns handler to get schema
-func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleGetSchemas returns handler to get schema
+func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -338,8 +338,8 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 	}
 }
 
-// HandleCollectionRules is an endpoint handler which update database collection rules in config & creates collection if it doesn't exist
-func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+// HandleSetTableRules is an endpoint handler which update database collection rules in config & creates collection if it doesn't exist
+func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -377,8 +377,8 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 	}
 }
 
-// HandleGetCollectionRules returns handler to get collection rule
-func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleGetTableRules returns handler to get collection rule
+func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header

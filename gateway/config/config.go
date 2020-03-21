@@ -98,7 +98,6 @@ type TableRule struct {
 
 // Rule is the authorisation object at the query level
 type Rule struct {
-	ID      string                 `json:"id,omitempty" yaml:"id,omitempty"`
 	Rule    string                 `json:"rule" yaml:"rule"`
 	Eval    string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
 	Type    string                 `json:"type,omitempty" yaml:"type,omitempty"`
@@ -161,7 +160,7 @@ type FileStore struct {
 
 // FileRule is the authorization object at the file rule level
 type FileRule struct {
-	Name   string           `json:"name" yaml:"name"`
+	ID     string           `json:"id" yaml:"id"`
 	Prefix string           `json:"prefix" yaml:"prefix"`
 	Rule   map[string]*Rule `json:"rule" yaml:"rule"` // The key can be create, read, delete
 }
@@ -194,11 +193,10 @@ type Eventing struct {
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	ID      string            `json:"id,omitempty" yaml:"id,omitempty"`
 	Type    string            `json:"type" yaml:"type"`
 	Retries int               `json:"retries" yaml:"retries"`
 	Timeout int               `json:"timeout" yaml:"timeout"`
-	Name    string            `json:"name" yaml:"name"`
+	ID      string            `json:"id" yaml:"id"`
 	URL     string            `json:"url" yaml:"url"`
 	Options map[string]string `json:"options" yaml:"options"`
 }
