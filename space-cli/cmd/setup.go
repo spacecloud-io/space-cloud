@@ -46,7 +46,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	_ = utils.CreateFileIfNotExist(utils.GetSpaceCloudRoutingConfigPath(), "{}")
 	_ = utils.CreateConfigFile(utils.GetSpaceCloudConfigFilePath())
 
-	utils.LogInfo("Setting up Space Cloud on docker on your command...", "operations", "setup")
+	utils.LogInfo("Setting up Space Cloud on docker.", "operations", "setup")
 
 	if username == "" {
 		username = "local-admin"
@@ -60,17 +60,21 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	if config == "" {
 		config = utils.GetSpaceCloudConfigFilePath()
 	}
-	if !strings.Contains(config, ".yaml") && !strings.Contains(config, ".json") {
+	if !strings.Contains(config, ".yaml") {
 		return fmt.Errorf("full path not provided for config file")
 
 	}
 	if version == "" {
+		utils.LogInfo("Fetching latest Space Cloud Version", "operations", "setup")
+
 		var err error
-		version, err = getLatestVersion("")
+		version, err = utils.GetLatestVersion("")
 		if err != nil {
-			return err
+			_ = utils.LogError("Unable to fetch the latest Space Cloud version. Sticking to tag latest", "operations", "setup", err)
+			version = "latest"
 		}
 	}
+
 	if secret == "" {
 		secret = generateRandomString(24)
 	}
@@ -83,7 +87,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 	}
 
 	if err := utils.StoreCredentials(&selectedAccount); err != nil {
-		return utils.LogError("error in setup unable to check credentials", "operations", "setup", err)
+		return utils.LogError("Unable to store credentials", "operations", "setup", err)
 	}
 
 	devMode := "false"
@@ -265,7 +269,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 		hosts.AddHost(ip, c.dnsName)
 	}
 
-	if err := hosts.Save(); err != nil {
+	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath()); err != nil {
 		return utils.LogError("Unable to save host file - %s", "operations", "setup", err)
 	}
 

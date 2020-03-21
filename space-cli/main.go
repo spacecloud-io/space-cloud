@@ -247,8 +247,8 @@ func main() {
 					Value:  "",
 				},
 				cli.StringFlag{
-					Name:   "verion",
-					Usage:  "The version is used to set SC verion",
+					Name:   "version",
+					Usage:  "The version is used to set SC version",
 					EnvVar: "VERSION",
 					Value:  "",
 				},

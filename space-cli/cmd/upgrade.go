@@ -11,65 +11,54 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	scClient "github.com/spaceuptech/space-api-go"
-	spaceApiTypes "github.com/spaceuptech/space-api-go/types"
-	"github.com/spaceuptech/space-cli/utils"
 	"github.com/txn2/txeh"
+
+	"github.com/spaceuptech/space-cli/utils"
 )
-
-type resultData struct {
-	Docs []*doc `mapstructure:"result"`
-}
-
-type doc struct {
-	ID                string `mapstructure:"_id" json:"id"`
-	VersionNo         string `mapstructure:"version_no" json:"versionNo"`
-	CompatibleVersion string `mapstructure:"compatible_version" json:"compatibleVersion"`
-}
 
 // Upgrade upgrades the environment which has been setup
 func Upgrade() error {
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"
 
-	// getting current version
+	// Getting current version
 	result := make(map[string]interface{})
 	if err := utils.Get(http.MethodGet, "/v1/config/env", map[string]string{}, &result); err != nil {
-		return err
+		return utils.LogError("Unable to get current Space Cloud version. Is Space Cloud running?", "operations", "upgrade", err)
 	}
 	currentVersion := result["version"].(string)
 
-	// getting latest version
-	latestVersion, err := getLatestVersion(currentVersion)
+	// Getting latest version
+	latestVersion, err := utils.GetLatestVersion(currentVersion)
 	if err != nil {
 		return err
 	}
 
 	if currentVersion == latestVersion {
-		return fmt.Errorf("current verion (%s) is up to date", currentVersion)
+		utils.LogInfo("Space Cloud is already up to date with the latest compatible version", "operations", "upgrade")
+		return nil
 	}
 
-	// creating docker client
+	// Creating docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		return utils.LogError("Unable to initialize docker client", "operations", "upgrade", err)
 	}
 
-	// get all containers containing < space-cloud > in their name
+	// Get all containers containing < space-cloud > in their name
 	args := filters.Arg("label", "app=space-cloud")
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
-		utils.LogInfo("space cloud is not setup. Consider running space-cli setup first.", "operation", "upgrade")
-		return err
+		return utils.LogError("Unable to get Space Cloud container details. Is Docker running?", "operations", "upgrade", err)
 	}
 
-	// parameters for gateway
+	// Parameters for gateway
 	var gatewayMounts []mount.Mount
 	var gatewayPorts nat.PortMap
 	var gatewayEnvs []string
 
-	// parameters for runner
+	// Parameters for runner
 	var runnerEnvs []string
 	var runnerMounts []mount.Mount
 
@@ -122,7 +111,7 @@ func Upgrade() error {
 
 		{
 			// runner
-			containerImage: fmt.Sprintf("%s:v%s", "spaceuptech/runner", latestVersion),
+			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", latestVersion),
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs:           runnerEnvs,
@@ -138,7 +127,7 @@ func Upgrade() error {
 
 	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(), WriteFilePath: utils.GetSpaceCloudHostsFilePath()})
 	if err != nil {
-		return utils.LogError("Unable to load host file with suitable default", "operations", "upgrade", err)
+		return utils.LogError("Unable to load host file", "operations", "upgrade", err)
 	}
 
 	for _, c := range containersToCreate {
@@ -182,40 +171,6 @@ func Upgrade() error {
 		return utils.LogError("Unable to save host file", "operations", "upgrade", err)
 	}
 
+	utils.LogInfo(fmt.Sprintf("Space Cloud has been upgraded to %s successfully", latestVersion), "operations", "upgrade")
 	return nil
-}
-
-func getLatestVersion(version string) (string, error) {
-	db := scClient.New("space_cloud", "localhost:4122", false).DB("db")
-	if db == nil {
-		return "", fmt.Errorf("cannot connect to db")
-	}
-	ctx := context.Background()
-
-	var result *spaceApiTypes.Response
-	var err error
-	if version == "" {
-		result, err = db.GetOne("space_cloud_version").Sort("-version_no").Limit(1).Apply(ctx)
-		if err != nil {
-			return "", err
-		}
-	} else {
-		result, _ = db.Get("space_cloud_version").Where(spaceApiTypes.Cond("compatible_version", "==", version)).Apply(ctx)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	r := new(resultData)
-	if err := result.Unmarshal(&r); err != nil {
-		return "", err
-	}
-	newVersion := version
-	for _, val := range r.Docs {
-		if val.VersionNo > newVersion {
-			newVersion = val.VersionNo
-			fmt.Println("new version: ", newVersion)
-		}
-	}
-	return newVersion, nil
 }
