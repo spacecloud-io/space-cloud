@@ -265,7 +265,7 @@ func CodeSetup(id, username, key, config, version, secret string, dev bool, port
 		}
 
 		ip := data.NetworkSettings.Networks["space-cloud"].IPAddress
-		utils.LogDebug(fmt.Sprintf("Adding entry (%s - %s) to hosts file", c.dnsName, ip))
+		utils.LogDebug(fmt.Sprintf("Adding entry (%s - %s) to hosts file", c.dnsName, ip), nil)
 		hosts.AddHost(ip, c.dnsName)
 	}
 

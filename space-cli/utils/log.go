@@ -26,6 +26,9 @@ func LogInfo(message string) {
 }
 
 // LogDebug logs the debug message in proper format
-func LogDebug(message string) {
+func LogDebug(message string, extraFields map[string]interface{}) {
+	if extraFields != nil {
+		logrus.WithFields(extraFields)
+	}
 	logrus.Debugln(message)
 }
