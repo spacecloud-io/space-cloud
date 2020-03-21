@@ -221,7 +221,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				tableName:     "table1",
 				project:       "test",
 				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col3": &model.FieldType{FieldName: "col3", Kind: model.TypeID, IsFieldTypeRequired: true, IsPrimary: true}}}},
-				currentSchema: model.Collection{"table2": model.Fields{}},
+				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
 			want:    []string{"CREATE TABLE test.table1 (col3 varchar(50) PRIMARY KEY NOT NULL );"},
