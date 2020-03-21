@@ -42,7 +42,7 @@ func Destroy() error {
 	// Remove the space-cloud network
 	nws, err := cli.NetworkList(ctx, types.NetworkListOptions{Filters: filters.NewArgs(args)})
 	if err != nil {
-		return utils.LogError("Unable to list networks", "operation", "destroy", err)
+		return utils.LogError("Unable to list networks", err)
 	}
 	for _, nw := range nws {
 		_ = cli.NetworkRemove(ctx, nw.ID)
