@@ -149,7 +149,7 @@ func removeRegistry(projectID string) error {
 		return err
 	}
 
-	if err := cmd.ApplySpec(login.Token, account, specObj); err != nil {
+	if err := operations.ApplySpec(login.Token, account, specObj); err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url", projectID), err)
 	}
 
