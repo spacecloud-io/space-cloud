@@ -28,12 +28,13 @@ type input struct {
 func GenerateEmptyConfig() *Config {
 	return &Config{
 		SSL:      &SSL{Enabled: false},
-		Admin:    generateAdmin(),
+		Admin:    GenerateAdmin(),
 		Projects: []*Project{},
 	}
 }
 
-func generateAdmin() *Admin {
+//GenerateAdmin generates a default admin in config file
+func GenerateAdmin() *Admin {
 	return &Admin{
 		Secret:    "some-secret",
 		Operation: OperationConfig{Mode: 0},

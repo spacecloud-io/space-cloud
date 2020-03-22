@@ -48,7 +48,7 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 			return nil, err
 		}
 		if len(p) == 0 {
-			return nil, utils.LogError("No project found", "add", "registry", fmt.Errorf("No project found with id (%s)", projectID))
+			return nil, utils.LogError(fmt.Sprintf("No project found with id (%s)", projectID), err)
 		}
 		registry, present := p[0].Spec.(map[string]interface{})["dockerRegistry"]
 		if registry == "" || !present {
