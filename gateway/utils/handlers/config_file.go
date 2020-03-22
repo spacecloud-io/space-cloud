@@ -120,7 +120,7 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file 
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(model.Response{Result: false})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: true})
 	}
 }
 
