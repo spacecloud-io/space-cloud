@@ -121,7 +121,6 @@ type Auth map[string]*AuthStub // The key here is the sign in method
 // AuthStub holds the config at a single sign in level
 type AuthStub struct {
 	ID      string `json:"id" yaml:"id"`
-	AuthID  string `json:"authId" yaml:"authId"`
 	Enabled bool   `json:"enabled" yaml:"enabled"`
 	Secret  string `json:"secret" yaml:"secret"`
 }
