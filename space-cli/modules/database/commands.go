@@ -6,7 +6,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-// Commands is the list of commands the database module exposes
+// GenerateSubCommands is the list of commands the database module exposes
 var GenerateSubCommands = []cli.Command{
 	{
 		Name:   "db-rules",
@@ -22,6 +22,7 @@ var GenerateSubCommands = []cli.Command{
 	},
 }
 
+// GetSubCommands is the list of commands the operations module exposes
 var GetSubCommands = []cli.Command{
 	{
 		Name:   "db-rules",

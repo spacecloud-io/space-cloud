@@ -8,7 +8,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the letsencrypt module exposes
+// GenerateSubCommands is the list of commands the letsencrypt module exposes
 var GenerateSubCommands = []cli.Command{
 	{
 		Name:   "letsencrypt",
@@ -16,6 +16,7 @@ var GenerateSubCommands = []cli.Command{
 	},
 }
 
+// GetSubCommands is the list of commands the letsencrypt module exposes
 var GetSubCommands = []cli.Command{{
 	Name:   "letsencrypt",
 	Action: actionGetLetsEncrypt,

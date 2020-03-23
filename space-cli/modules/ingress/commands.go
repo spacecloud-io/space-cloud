@@ -7,7 +7,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-// Commands is the list of commands the ingress module exposes
+// GenerateSubCommands is the list of commands the ingress module exposes
 var GenerateSubCommands = []cli.Command{
 	{
 		Name:   "ingress-routes",
@@ -15,6 +15,7 @@ var GenerateSubCommands = []cli.Command{
 	},
 }
 
+// GetSubCommands is the list of commands the ingress module exposes
 var GetSubCommands = []cli.Command{
 	{
 		Name:   "ingress-routes",

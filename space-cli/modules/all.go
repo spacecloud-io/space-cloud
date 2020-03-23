@@ -19,7 +19,7 @@ import (
 	"github.com/spaceuptech/space-cli/modules/services"
 )
 
-// Commands is the list of commands the all module exposes
+// GetSubCommands is the list of commands the all module exposes
 var GetSubCommands = []cli.Command{
 	{
 		Name:   "all",

@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the operations module exposes
+// GetSubCommands is the list of commands the operations module exposes
 var GetSubCommands = []cli.Command{
 	{
 		Name:   "auth-providers",

@@ -8,7 +8,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the eventing module exposes
+// GetSubCommands is the list of commands the eventing module exposes
 var GetSubCommands = []cli.Command{
 	{
 		Name:   "eventing-triggers",
@@ -28,6 +28,7 @@ var GetSubCommands = []cli.Command{
 	},
 }
 
+// GenerateSubCommands is the list of commands the eventing module exposes
 var GenerateSubCommands = []cli.Command{
 	{
 		Name:   "eventing-rule",

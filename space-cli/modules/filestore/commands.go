@@ -8,7 +8,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the filestore module exposes
+// GetSubCommands is the list of commands the filestore module exposes
 var GetSubCommands = []cli.Command{
 	{
 		Name:   "filestore-config",
@@ -20,6 +20,7 @@ var GetSubCommands = []cli.Command{
 	},
 }
 
+// GenerateSubCommands is the list of commands the filestore module exposes
 var GenerateSubCommands = []cli.Command{
 	{
 		Name:   "filestore-rules",

@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the project module exposes
+// GetSubCommands is the list of commands the project module exposes
 var GetSubCommands = []cli.Command{
 	{
 		Name:   "project",

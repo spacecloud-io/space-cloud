@@ -6,7 +6,7 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the addon module exposes
+// AddSubCommands is the list of commands the addon module exposes
 var AddSubCommands = []cli.Command{
 	{
 		Name:   "registry",
@@ -26,6 +26,7 @@ var AddSubCommands = []cli.Command{
 	},
 }
 
+// RemoveSubCommand is the list of commands the addon module exposes
 var RemoveSubCommand = []cli.Command{
 	{
 		Name:   "registry",
