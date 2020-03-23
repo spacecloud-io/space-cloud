@@ -68,7 +68,7 @@ func Login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 	defer CloseTheCloser(resp.Body)
 
 	loginResp := new(model.LoginResponse)
-	err = json.NewDecoder(resp.Body).Decode(loginResp)
+	_ = json.NewDecoder(resp.Body).Decode(loginResp)
 
 	if resp.StatusCode != 200 {
 		_ = LogError(fmt.Sprintf("error in login got http status code %v with error message - %v", resp.StatusCode, loginResp.Error), nil)

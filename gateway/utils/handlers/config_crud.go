@@ -3,13 +3,14 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -17,8 +18,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleGetCollections is an endpoint handler which return all the collection(table) names for specified data base
-func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleGetAllTableNames is an endpoint handler which return all the collection(table) names for specified data base
+func HandleGetAllTableNames(adminMan *admin.Manager, crud *crud.Module, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -56,12 +57,12 @@ func HandleGetCollections(adminMan *admin.Manager, crud *crud.Module, syncMan *s
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"collections": cols})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: cols})
 	}
 }
 
-// HandleGetConnectionState gives the status of connection state of client
-func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
+// HandleGetDatabaseConnectionState gives the status of connection state of client
+func HandleGetDatabaseConnectionState(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -88,12 +89,12 @@ func HandleGetConnectionState(adminMan *admin.Manager, crud *crud.Module) http.H
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(map[string]bool{"status": connState})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: connState})
 	}
 }
 
-// HandleDeleteCollection is an endpoint handler which deletes a table in specified database & removes it from config
-func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
+// HandleDeleteTable is an endpoint handler which deletes a table in specified database & removes it from config
+func HandleDeleteTable(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -137,8 +138,8 @@ func HandleDeleteCollection(adminMan *admin.Manager, crud *crud.Module, syncman 
 	}
 }
 
-// HandleDatabaseConnection is an endpoint handler which updates database config & connects to database
-func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
+// HandleSetDatabaseConfig is an endpoint handler which updates database config & connects to database
+func HandleSetDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -175,13 +176,8 @@ func HandleDatabaseConnection(adminMan *admin.Manager, crud *crud.Module, syncma
 	}
 }
 
-// HandleGetDatabaseConnection returns handler to get Database Collection
-func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type response struct {
-		Conn    string `json:"conn"`
-		Enabled bool   `json:"enabled"`
-		Type    string `json:"type"`
-	}
+// HandleGetDatabaseConfig returns handler to get Database Collection
+func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -191,56 +187,32 @@ func HandleGetDatabaseConnection(adminMan *admin.Manager, syncMan *syncman.Manag
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
+			logrus.Println("error1", err.Error())
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		// get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbAlias, exists := r.URL.Query()["dbAlias"]
-
-		// get project config
-		project, err := syncMan.GetConfig(projectID)
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
+			logrus.Println("error2", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		if !exists {
-			connections := make(map[string]response)
-			for k, coll := range project.Modules.Crud {
-				connections[k] = response{Conn: coll.Conn, Enabled: coll.Enabled, Type: coll.Type}
-			}
-
-			if len(connections) == 0 {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "db connections not found"})
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"connections": connections})
-			return
-		}
-
-		// get collection
-		coll, ok := project.Modules.Crud[dbAlias[0]]
-		if !ok {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present on state", dbAlias[0])})
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		connection := response{Conn: coll.Conn, Enabled: coll.Enabled, Type: coll.Type}
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"connection": connection})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: dbConfig})
 	}
 }
 
@@ -328,13 +300,9 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 	}
 }
 
-// HandleGetSchema returns handler to get schema
-func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type response struct {
-		Schema string `json:"schema"`
-	}
+// HandleGetSchemas returns handler to get schema
+func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -345,95 +313,35 @@ func HandleGetSchema(adminMan *admin.Manager, syncMan *syncman.Manager) http.Han
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 		// get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbAlias, exists := r.URL.Query()["dbAlias"]
-
-		// get project config
-		project, err := syncMan.GetConfig(projectID)
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		colQuery, exists := r.URL.Query()["col"]
+		col := ""
+		if exists {
+			col = colQuery[0]
+		}
+		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		if !exists {
-			collectionsSchemas := make(map[string]response)
-			for i, dbConfig := range project.Modules.Crud {
-				for p, val := range dbConfig.Collections {
-					s := fmt.Sprintf("%s-%s", i, p)
-					collectionsSchemas[s] = response{val.Schema}
-				}
-			}
-
-			if len(collectionsSchemas) == 0 {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "schemas not found"})
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": collectionsSchemas})
-			return
-		}
-
-		// gel col from url
-		col, exists := r.URL.Query()["col"]
-
-		// get collection
-		coll, ok := project.Modules.Crud[dbAlias[0]]
-		if !ok {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present in state", dbAlias[0])})
-			return
-		}
-
-		// check if col exists in url
-		if exists {
-			temp, ok := coll.Collections[col[0]]
-			if !ok {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("col(%s) not found", col[0])})
-				return
-			}
-
-			collectionSchema := make(map[string]response)
-			s := fmt.Sprintf("%s-%s", dbAlias[0], col[0])
-			collectionSchema[s] = response{Schema: temp.Schema}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": collectionSchema})
-			return
-		}
-
-		schemas := make(map[string]response)
-		for p, val := range coll.Collections {
-			s := fmt.Sprintf("%s-%s", dbAlias[0], p)
-			schemas[s] = response{Schema: val.Schema}
-		}
-
-		if len(schemas) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "schema not found"})
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schemas": schemas})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
 	}
 }
 
-// HandleCollectionRules is an endpoint handler which update database collection rules in config & creates collection if it doesn't exist
-func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+// HandleSetTableRules is an endpoint handler which update database collection rules in config & creates collection if it doesn't exist
+func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -471,12 +379,8 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 	}
 }
 
-// HandleGetCollectionRules returns handler to get collection rule
-func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	type response struct {
-		IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
-		Rules             map[string]*config.Rule `json:"rules"`
-	}
+// HandleGetTableRules returns handler to get collection rule
+func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -489,91 +393,31 @@ func HandleGetCollectionRules(adminMan *admin.Manager, syncMan *syncman.Manager)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 		// get project id and dbAlias
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbAlias, exists := r.URL.Query()["dbAlias"]
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		col := ""
+		colQuery, exists := r.URL.Query()["col"]
+		if exists {
+			col = colQuery[0]
+		}
 
-		// get project config
-		project, err := syncMan.GetConfig(projectID)
+		dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		if !exists {
-			collectionsRules := make(map[string]response)
-			for i, dbConfig := range project.Modules.Crud {
-				for p, val := range dbConfig.Collections {
-					s := fmt.Sprintf("%s-%s", i, p)
-					collectionsRules[s] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
-				}
-			}
-
-			if len(collectionsRules) == 0 {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "db rules not found"})
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionsRules})
-			return
-		}
-
-		// gel collection id
-		col, exists := r.URL.Query()["col"]
-
-		// get databaseConfig
-		databaseConfig, ok := project.Modules.Crud[dbAlias[0]]
-		if !ok {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("dbAlias(%s) not present in config", dbAlias[0])})
-			return
-		}
-
-		// check col present in url
-		if exists {
-			// get collection
-			collection, ok := databaseConfig.Collections[col[0]]
-			if !ok {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("col(%s) not present in config", col[0])})
-				return
-			}
-
-			collectionsRule := make(map[string]response)
-			s := fmt.Sprintf("%s-%s", dbAlias[0], col[0])
-			collectionsRule[s] = response{IsRealTimeEnabled: collection.IsRealTimeEnabled, Rules: collection.Rules}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"rule": collectionsRule})
-			return
-		}
-
-		collectionRules := make(map[string]response)
-		for p, val := range databaseConfig.Collections {
-			s := fmt.Sprintf("%s-%s", dbAlias[0], p)
-			collectionRules[s] = response{IsRealTimeEnabled: val.IsRealTimeEnabled, Rules: val.Rules}
-		}
-
-		if len(collectionRules) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "db rules not found"})
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"rules": collectionRules})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: dbConfig})
 	}
 }
 
@@ -611,7 +455,7 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"collections": colResult})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: colResult})
 		// return
 	}
 }
@@ -658,7 +502,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Sc
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schema})
 		// return
 	}
 }
@@ -698,7 +542,7 @@ func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, sy
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 		// return
 	}
 }

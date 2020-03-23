@@ -131,7 +131,12 @@ func TestMatch_Rule(t *testing.T) {
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	_ = auth.SetConfig("default", "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	decodedKey, _ := base64.StdEncoding.DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
+	err := auth.SetConfig("default", "", string(decodedKey), rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	if err != nil {
+		t.Errorf("Unable to set auth config %s", err.Error())
+		return
+	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := (auth).matchRule(context.Background(), test.project, test.rule, test.args, test.auth)
@@ -197,7 +202,7 @@ func TestMatchForce_Rule(t *testing.T) {
 			if (err != nil) != test.isErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.isErrExpected)
 			}
-			//check return value if post process is appended
+			// check return value if post process is appended
 			if test.checkPostProcess {
 				if !reflect.DeepEqual(r, test.result) {
 					t.Error("| Got This ", r, "| Wanted Result |", test.result)
@@ -276,7 +281,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 			if (err != nil) != test.isErrExpected {
 				t.Error("| Got This ", err, "| Wanted Error |", test.isErrExpected)
 			}
-			//check return value if post process is appended
+			// check return value if post process is appended
 			if test.checkPostProcess {
 				if !reflect.DeepEqual(r, test.result) {
 					t.Error("| Got This ", r, "| Wanted Result |", test.result)

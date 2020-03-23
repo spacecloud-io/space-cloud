@@ -3,19 +3,19 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleUserManagement returns the handler to get the project config and validate the user via a REST endpoint
-func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleSetUserManagement returns the handler to get the project config and validate the user via a REST endpoint
+func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -38,7 +38,7 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		provider := vars["provider"]
+		provider := vars["id"]
 
 		// Sync the config
 		if err := syncMan.SetUserManagement(ctx, projectID, provider, value); err != nil {
@@ -55,10 +55,9 @@ func HandleUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 	}
 }
 
-//GetUserManagement returns handler to get auth
-func GetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleGetUserManagement returns handler to get auth
+func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -70,40 +69,24 @@ func GetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 			return
 		}
 
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		providerID, exists := r.URL.Query()["provider"]
-
-		project, err := syncMan.GetConfig(projectID)
+		providerID := ""
+		providerQuery, exists := r.URL.Query()["id"]
+		if exists {
+			providerID = providerQuery[0]
+		}
+		providers, err := syncMan.GetUserManagement(ctx, projectID, providerID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		if exists {
-			provider, ok := project.Modules.Auth[providerID[0]]
-			if !ok {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("providerID(%s) not present in state", providerID[0])})
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"provider": provider})
-			return
-		}
-
-		if len(project.Modules.Auth) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "auth providers not found"})
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"providers": project.Modules.Auth})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: providers})
 	}
 }

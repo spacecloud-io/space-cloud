@@ -613,7 +613,7 @@ func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 // 	hosts = append(hosts, "dummy.com")
 //
 // 	return &v1alpha3.Gateway{
-// 		ObjectMeta: metav1.ObjectMeta{Name: getGatewayName(service)},
+// 		ObjectMeta: metav1.ObjectMeta{ID: getGatewayName(service)},
 // 		Spec: networkingv1alpha3.Gateway{
 // 			Selector: map[string]string{"istio": "ingressgateway"},
 // 			Servers: []*networkingv1alpha3.Server{
@@ -621,7 +621,7 @@ func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {
 // 					// TODO: make this https and load certificates dynamically
 // 					Port: &networkingv1alpha3.Port{
 // 						Number:   80,
-// 						Name:     "http",
+// 						ID:     "http",
 // 						Protocol: "HTTP",
 // 					},
 // 					Hosts: hosts,

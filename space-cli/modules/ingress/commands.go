@@ -7,34 +7,19 @@ import (
 	"github.com/urfave/cli"
 )
 
-// Commands is the list of commands the ingress module exposes
-var Commands = []cli.Command{
+// GenerateSubCommands is the list of commands the ingress module exposes
+var GenerateSubCommands = []cli.Command{
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "ingress-routes",
-				Action: actionGenerateIngressRouting,
-			},
-		},
+		Name:   "ingress-routes",
+		Action: actionGenerateIngressRouting,
 	},
+}
+
+// GetSubCommands is the list of commands the ingress module exposes
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "ingress-routes",
-				Action: actionGetIngressRoutes,
-			},
-		},
+		Name:   "ingress-routes",
+		Action: actionGetIngressRoutes,
 	},
 }
 
@@ -45,7 +30,7 @@ func actionGetIngressRoutes(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["routesID"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 
 	objs, err := GetIngressRoutes(project, commandName, params)

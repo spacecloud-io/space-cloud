@@ -5,62 +5,46 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the eventing module exposes
-var Commands = []cli.Command{
+// GetSubCommands is the list of commands the eventing module exposes
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "eventing-triggers",
-				Action: actionGetEventingTrigger,
-			},
-			{
-				Name:   "eventing-config",
-				Action: actionGetEventingConfig,
-			},
-			{
-				Name:   "eventing-schema",
-				Action: actionGetEventingSchema,
-			},
-			{
-				Name:   "eventing-rule",
-				Action: actionGetEventingSecurityRule,
-			},
-		},
+		Name:   "eventing-triggers",
+		Action: actionGetEventingTrigger,
 	},
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "eventing-rule",
-				Action: actionGenerateEventingRule,
-			},
-			{
-				Name:   "eventing-schema",
-				Action: actionGenerateEventingSchema,
-			},
-			{
-				Name:   "eventing-config",
-				Action: actionGenerateEventingConfig,
-			},
-			{
-				Name:   "eventing-triggers",
-				Action: actionGenerateEventingTrigger,
-			},
-		},
+		Name:   "eventing-config",
+		Action: actionGetEventingConfig,
+	},
+	{
+		Name:   "eventing-schema",
+		Action: actionGetEventingSchema,
+	},
+	{
+		Name:   "eventing-rule",
+		Action: actionGetEventingSecurityRule,
+	},
+}
+
+// GenerateSubCommands is the list of commands the eventing module exposes
+var GenerateSubCommands = []cli.Command{
+	{
+		Name:   "eventing-rule",
+		Action: actionGenerateEventingRule,
+	},
+	{
+		Name:   "eventing-schema",
+		Action: actionGenerateEventingSchema,
+	},
+	{
+		Name:   "eventing-config",
+		Action: actionGenerateEventingConfig,
+	},
+	{
+		Name:   "eventing-triggers",
+		Action: actionGenerateEventingTrigger,
 	},
 }
 
@@ -71,7 +55,7 @@ func actionGetEventingTrigger(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["ruleName"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 	objs, err := GetEventingTrigger(project, commandName, params)
 	if err != nil {
@@ -93,8 +77,7 @@ func actionGetEventingConfig(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	objs := []*model.SpecObject{obj}
-	if err := utils.PrintYaml(objs); err != nil {
+	if err := utils.PrintYaml(obj); err != nil {
 		return err
 	}
 	return nil
@@ -107,7 +90,7 @@ func actionGetEventingSchema(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["type"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 	objs, err := GetEventingSchema(project, commandName, params)
 	if err != nil {
@@ -126,7 +109,7 @@ func actionGetEventingSecurityRule(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["type"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 	objs, err := GetEventingSecurityRule(project, commandName, params)
 	if err != nil {

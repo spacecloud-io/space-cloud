@@ -152,7 +152,7 @@ func setLogLevel(loglevel string) {
 		logrus.SetLevel(logrus.ErrorLevel)
 	default:
 		_ = utils.LogError(fmt.Sprintf("Invalid log level (%s) provided", loglevel), nil)
-		utils.LogInfo(fmt.Sprintf("Defaulting to `info` level"))
+		utils.LogInfo("Defaulting to `info` level")
 		logrus.SetLevel(logrus.InfoLevel)
 	}
 }

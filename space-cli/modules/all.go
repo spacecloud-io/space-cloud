@@ -19,24 +19,11 @@ import (
 	"github.com/spaceuptech/space-cli/modules/services"
 )
 
-// Commands is the list of commands the all module exposes
-var Commands = []cli.Command{
+// GetSubCommands is the list of commands the all module exposes
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "all",
-				Action: getAllProjects,
-			},
-		},
+		Name:   "all",
+		Action: getAllProjects,
 	},
 }
 
@@ -47,7 +34,7 @@ func getAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("1", "project", []*model.SpecObject{obj}); err != nil {
+	if err := createConfigFile("1", "project", obj); err != nil {
 		return err
 	}
 
@@ -79,7 +66,7 @@ func getAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("5", "filestore-config", []*model.SpecObject{obj}); err != nil {
+	if err := createConfigFile("5", "filestore-config", obj); err != nil {
 		return err
 	}
 
@@ -95,7 +82,7 @@ func getAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("7", "eventing-config", []*model.SpecObject{obj}); err != nil {
+	if err := createConfigFile("7", "eventing-config", obj); err != nil {
 		return err
 	}
 
@@ -147,13 +134,13 @@ func getAllProjects(c *cli.Context) error {
 		return err
 	}
 
-	objs, err = services.GetServicesSecrets(projectName, "services-secrets", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("14", "services-secrets", objs); err != nil {
-		return err
-	}
+	// objs, err = services.GetServicesSecrets(projectName, "services-secrets", map[string]string{})
+	// if err != nil {
+	// 	return err
+	// }
+	// if err := createConfigFile("14", "services-secrets", objs); err != nil {
+	// 	return err
+	// }
 
 	objs, err = ingress.GetIngressRoutes(projectName, "ingress-routes", map[string]string{})
 	if err != nil {
@@ -175,7 +162,7 @@ func getAllProjects(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := createConfigFile("17", "letsencrypt", []*model.SpecObject{obj}); err != nil {
+	if err := createConfigFile("17", "letsencrypt", obj); err != nil {
 		return err
 	}
 

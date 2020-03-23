@@ -26,7 +26,7 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	}
 
 	serviceVersion := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Service ID", Default: "v1"}, &serviceVersion); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter Service Version", Default: "v1"}, &serviceVersion); err != nil {
 		return nil, err
 	}
 
@@ -46,7 +46,10 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 		if err != nil {
 			return nil, err
 		}
-		registry, present := p.Spec.(map[string]interface{})["dockerRegistry"]
+		if len(p) == 0 {
+			return nil, utils.LogError(fmt.Sprintf("No project found with id (%s)", projectID), err)
+		}
+		registry, present := p[0].Spec.(map[string]interface{})["dockerRegistry"]
 		if registry == "" || !present {
 			return nil, fmt.Errorf("no docker registry provided for project (%s)", projectID)
 		}

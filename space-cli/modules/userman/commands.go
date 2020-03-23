@@ -7,17 +7,11 @@ import (
 	"github.com/urfave/cli"
 )
 
-// Commands is the list of commands the userman module exposes
-var Commands = []cli.Command{
+// GenerateSubCommands is the list of commands the userman module exposes
+var GenerateSubCommands = []cli.Command{
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "auth-providers",
-				Action: actionGenerateUserManagement,
-			},
-		},
+		Name:   "auth-providers",
+		Action: actionGenerateUserManagement,
 	},
 }
 

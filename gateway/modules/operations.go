@@ -23,7 +23,7 @@ func (m *Modules) SetProjectConfig(config *config.Config, le *letsencrypt.LetsEn
 		}
 
 		logrus.Debugln("Setting config of auth module")
-		if err := m.Auth.SetConfig(p.ID, p.Secret, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
+		if err := m.Auth.SetConfig(p.ID, p.Secret, p.AESkey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 			logrus.Errorf("error setting auth module config - %s", err.Error())
 		}
 

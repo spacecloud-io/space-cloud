@@ -107,7 +107,7 @@ func generateDBConfig() (*model.SpecObject, error) {
 		Meta: map[string]string{
 			"dbAlias": dbAlias,
 			"project": projectID,
-			"id":      dbType + "-config",
+			"id":      dbAlias + "-config",
 		},
 		Spec: map[string]interface{}{
 			"conn":    conn,

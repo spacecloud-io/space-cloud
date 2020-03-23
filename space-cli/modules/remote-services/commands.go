@@ -8,34 +8,19 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the remoteservices module exposes
-var Commands = []cli.Command{
+// GenerateSubCommands is the list of commands the remoteservices module exposes
+var GenerateSubCommands = []cli.Command{
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "remote-services",
-				Action: actionGenerateService,
-			},
-		},
+		Name:   "remote-services",
+		Action: actionGenerateService,
 	},
+}
+
+// GetSubCommands is the list of commands the remoteservices module exposes
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "remote-services",
-				Action: actionGetRemoteServices,
-			},
-		},
+		Name:   "remote-services",
+		Action: actionGetRemoteServices,
 	},
 }
 
@@ -46,7 +31,7 @@ func actionGetRemoteServices(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["service"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 
 	objs, err := GetRemoteServices(project, commandName, params)

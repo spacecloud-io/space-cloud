@@ -1,7 +1,6 @@
 package letsencrypt
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -14,16 +13,8 @@ func generateLetsEncryptDomain() (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	id := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter  id"}, &id); err != nil {
-		return nil, err
-	}
 
-	whiteListedDomain := strings.Split(whiteListedDomains, ",")
-	wld := make(map[string]interface{})
-	for k, v := range whiteListedDomain {
-		wld[strconv.Itoa(k)] = v
-	}
+	whiteListedDomain := strings.Split(strings.TrimSuffix(whiteListedDomains, ","), ",")
 	project := ""
 	if err := survey.AskOne(&survey.Input{Message: "Enter project: "}, &project); err != nil {
 		return nil, err
@@ -34,10 +25,10 @@ func generateLetsEncryptDomain() (*model.SpecObject, error) {
 		Type: "letsencrypt",
 		Meta: map[string]string{
 			"project": project,
-			"id":      id,
+			"id":      "letsencrypt-config",
 		},
 		Spec: map[string]interface{}{
-			"white listed domain": wld,
+			"domains": whiteListedDomain,
 		},
 	}
 

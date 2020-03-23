@@ -69,7 +69,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.Name, batchID, utils.EventStatusStaged, r.URL, req)
+			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.ID, batchID, utils.EventStatusStaged, r.URL, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -178,14 +178,14 @@ func (m *Module) getMatchingRules(name string, options map[string]string) []conf
 
 	for n, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rule.Name = n
+			rule.ID = n
 			rules = append(rules, rule)
 		}
 	}
 
 	for n, rule := range m.config.InternalRules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rule.Name = n
+			rule.ID = n
 			rules = append(rules, rule)
 		}
 	}

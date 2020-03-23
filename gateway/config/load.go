@@ -2,11 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"os"
 	"strings"
-
-	"gopkg.in/yaml.v2"
 )
 
 func loadEnvironmentVariable(c *Config) {
