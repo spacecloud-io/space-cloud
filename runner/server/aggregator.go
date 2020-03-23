@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 )
@@ -51,7 +52,7 @@ func (a *aggregator) iterate(cb func(project, service, version string, value int
 	for key, nodes := range a.count {
 		var value int32
 		for _, c := range nodes {
-			value += int32(float32(c.value) / float32(c.nos))
+			value += int32(math.Ceil(float64(c.value) / float64(c.nos)))
 		}
 
 		project, service, version := a.splitKey(key)
@@ -71,7 +72,7 @@ func (a *aggregator) get(project, service, version string) int32 {
 	// Aggregate active request of each node
 	var value int32
 	for _, c := range nodes {
-		value += int32(float32(c.value) / float32(c.nos))
+		value += int32(math.Ceil(float64(c.value) / float64(c.nos)))
 	}
 	return value
 }

@@ -86,10 +86,16 @@ func getScaleConfigFromDeployment(deployment appsv1.Deployment) (model.ScaleConf
 		return model.ScaleConfig{}, err
 	}
 
+	mode := deployment.Annotations["mode"]
+	if mode == "" {
+		mode = "per-second"
+	}
+
 	return model.ScaleConfig{
 		Concurrency: int32(concurrency),
 		MinReplicas: int32(minReplicas),
 		MaxReplicas: int32(maxReplicas),
 		Replicas:    *deployment.Spec.Replicas,
+		Mode:        mode,
 	}, nil
 }
