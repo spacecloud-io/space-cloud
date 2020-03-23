@@ -42,7 +42,7 @@ func Destroy() error {
 	// Remove the space-cloud network
 	nws, err := cli.NetworkList(ctx, types.NetworkListOptions{Filters: filters.NewArgs(args)})
 	if err != nil {
-		return utils.LogError("Unable to list networks", "operation", "destroy", err)
+		return utils.LogError("Unable to list networks", err)
 	}
 	for _, nw := range nws {
 		_ = cli.NetworkRemove(ctx, nw.ID)
@@ -63,6 +63,12 @@ func Destroy() error {
 	// Remove the service routing file
 	if err := os.RemoveAll(utils.GetSpaceCloudRoutingConfigPath()); err != nil {
 		logrus.Errorf("Unable to remove service routing file file - %s", err.Error())
+		return err
+	}
+
+	// Remove the config file
+	if err := os.RemoveAll(utils.GetSpaceCloudConfigFilePath()); err != nil {
+		logrus.Errorf("Unable to remove config file file - %s", err.Error())
 		return err
 	}
 

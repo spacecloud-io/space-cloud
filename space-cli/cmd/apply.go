@@ -32,16 +32,16 @@ func ActionApply(cli *cli.Context) error {
 func Apply(fileName string) error {
 	account, err := utils.GetSelectedAccount()
 	if err != nil {
-		return utils.LogError("Unable to fetch account information", "apply", "", err)
+		return utils.LogError("Unable to fetch account information", err)
 	}
 	login, err := utils.Login(account)
 	if err != nil {
-		return utils.LogError("Unable to login", "apply", "", err)
+		return utils.LogError("Unable to login", err)
 	}
 
 	specs, err := utils.ReadSpecObjectsFromFile(fileName)
 	if err != nil {
-		return utils.LogError("Unable to read spec objects from file", "apply", "", err)
+		return utils.LogError("Unable to read spec objects from file", err)
 	}
 
 	// Apply all spec

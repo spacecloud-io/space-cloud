@@ -241,6 +241,18 @@ func main() {
 					Value:  "",
 				},
 				cli.StringFlag{
+					Name:   "config",
+					Usage:  "The config used to bind config file",
+					EnvVar: "CONFIG",
+					Value:  "",
+				},
+				cli.StringFlag{
+					Name:   "version",
+					Usage:  "The version is used to set SC version",
+					EnvVar: "VERSION",
+					Value:  "",
+				},
+				cli.StringFlag{
 					Name:   "secret",
 					Usage:  "The jwt secret to start space-cloud with",
 					EnvVar: "JWT_SECRET",
@@ -272,6 +284,11 @@ func main() {
 				},
 			},
 			Action: actionSetup,
+		},
+		{
+			Name:   "upgrade",
+			Usage:  "Upgrade development environment",
+			Action: actionUpgrade,
 		},
 		{
 			Name:   "start",

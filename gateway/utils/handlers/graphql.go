@@ -44,10 +44,9 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		w.Header().Set("Content-Type", "application/json")
-
 		if projectID != pid {
 			// throw some error
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "project id doesn't match"})
 			return
@@ -62,10 +61,11 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 			defer func() { ch <- struct{}{} }()
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
+				w.Header().Set("Content-Type", "application/json")
 				_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 				return
 			}
-
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
 			// return
@@ -77,6 +77,7 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 		case <-time.After(time.Duration(projectConfig.ContextTime) * time.Second):
 			log.Println("GraphQL Handler: Request timed out")
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
+			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
