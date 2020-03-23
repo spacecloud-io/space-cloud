@@ -26,6 +26,13 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 )
 
+// RealtimeInterface is used to accept the realtime module
+type RealtimeInterface interface {
+	RemoveClient(clientID string)
+	Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error)
+	Unsubscribe(clientID string, data *model.RealtimeRequest)
+}
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -33,7 +40,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // HandleWebsocket handles all websocket communications
-func HandleWebsocket(realtime model.RealtimeInterface) http.HandlerFunc {
+func HandleWebsocket(realtime RealtimeInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		projectID := vars["project"]

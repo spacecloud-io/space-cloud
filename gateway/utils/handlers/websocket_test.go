@@ -219,7 +219,7 @@ func TestHandleWebsocket(t *testing.T) {
 			}
 
 			// Create the mock server
-			s := httptest.NewServer(HandleWebsocket(realtime))
+			s := httptest.NewServer(HandleWebsocket(&realtime))
 			defer s.Close()
 
 			// Convert http://127.0.0.1 to ws://127.0.0.
@@ -263,11 +263,11 @@ func TestHandleWebsocket(t *testing.T) {
 	}
 }
 
-func (m mockRealtimeModule) RemoveClient(clientID string) {
+func (m *mockRealtimeModule) RemoveClient(clientID string) {
 	m.Called(clientID)
 }
 
-func (m mockRealtimeModule) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error) {
+func (m *mockRealtimeModule) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error) {
 	c := m.Called(ctx, clientID, data, sendFeed)
 	if err := c.Error(1); err != nil {
 		return nil, err
@@ -285,6 +285,6 @@ func (m mockRealtimeModule) Subscribe(ctx context.Context, clientID string, data
 	return c.Get(0).([]*model.FeedData), nil
 }
 
-func (m mockRealtimeModule) Unsubscribe(clientID string, data *model.RealtimeRequest) {
+func (m *mockRealtimeModule) Unsubscribe(clientID string, data *model.RealtimeRequest) {
 	m.Called(clientID, data)
 }
