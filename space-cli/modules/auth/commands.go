@@ -1,9 +1,10 @@
 package auth
 
 import (
-	"github.com/urfave/cli"
+	//"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cli/utils"
+	"github.com/urfave/cli"
 )
 
 // Commands is the list of commands the operations module exposes
