@@ -69,3 +69,44 @@ func main() {
 	// 	logrus.Fatalln("Failed to run execute command:", err)
 	// }
 }
+
+// func fetchAddSubCommands() []cli.Command {
+// 	v := []cli.Command{}
+// 	v = append(v, addons.AddSubCommands...)
+// 	return v
+// }
+
+// func fetchRemoveSubCommands() []cli.Command {
+// 	v := []cli.Command{}
+// 	v = append(v, addons.RemoveSubCommand...)
+// 	return v
+// }
+
+// func fetchGetSubCommands() []cli.Command {
+// 	v := []cli.Command{}
+// 	v = append(v, auth.GetSubCommands...)
+// 	v = append(v, database.GetSubCommands...)
+// 	v = append(v, eventing.GetSubCommands...)
+// 	v = append(v, filestore.GetSubCommands...)
+// 	v = append(v, letsencrypt.GetSubCommands...)
+// 	v = append(v, project.GetSubCommands...)
+// 	v = append(v, remoteservices.GetSubCommands...)
+// 	v = append(v, services.GetSubCommands...)
+// 	v = append(v, modules.GetSubCommands...)
+
+// 	return v
+// }
+
+// func fetchGenerateSubCommands() []cli.Command {
+// 	v := []cli.Command{}
+// 	v = append(v, database.GenerateSubCommands...)
+// 	v = append(v, eventing.GenerateSubCommands...)
+// 	v = append(v, filestore.GenerateSubCommands...)
+// 	v = append(v, ingress.GenerateSubCommands...)
+// 	v = append(v, letsencrypt.GenerateSubCommands...)
+// 	v = append(v, remoteservices.GenerateSubCommands...)
+// 	v = append(v, services.GenerateSubCommands...)
+// 	v = append(v, userman.GenerateSubCommands...)
+
+// 	return v
+// }

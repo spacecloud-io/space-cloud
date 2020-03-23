@@ -1,6 +1,7 @@
 package syncman
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -95,6 +96,17 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	decodedAESKey, err := base64.StdEncoding.DecodeString(project.AESkey)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	project.AESkey = string(decodedAESKey)
+
+	// set default context time
+	if project.ContextTime == 0 {
+		project.ContextTime = 10
+	}
+
 	// Generate internal access token
 	token, err := s.adminMan.GetInternalAccessToken()
 	if err != nil {
@@ -104,8 +116,9 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	var doesProjectExists bool
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
+			// override the existing config
 			p.Name = project.Name
-			p.AESKey = project.AESKey
+			p.AESkey = project.AESkey
 			p.Secret = project.Secret
 			p.DockerRegistry = project.DockerRegistry
 			p.ContextTime = project.ContextTime
@@ -118,10 +131,12 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	if !doesProjectExists {
 		// Append project with default modules to projects array
 		project.Modules = &config.Modules{
-			FileStore: &config.FileStore{},
-			Services:  &config.ServicesModule{},
-			Auth:      map[string]*config.AuthStub{},
-			Crud:      map[string]*config.CrudStub{},
+			FileStore:   &config.FileStore{},
+			Services:    &config.ServicesModule{},
+			Auth:        map[string]*config.AuthStub{},
+			Crud:        map[string]*config.CrudStub{},
+			Routes:      []*config.Route{},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
 		}
 		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
@@ -156,11 +171,11 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	}
 
 	projectConfig.Secret = project.Secret
-	projectConfig.AESKey = project.AESKey
+	projectConfig.AESkey = project.AESkey
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
-	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESKey)
+	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -211,6 +226,21 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 	}
 
 	return s.store.DeleteProject(ctx, projectID)
+}
+
+// GetProjectConfig returns the config of specified project
+func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Iterate over all projects stored
+	for _, p := range s.projectConfig.Projects {
+		if projectID == p.ID {
+			return []interface{}{config.Project{AESkey: base64.StdEncoding.EncodeToString([]byte(p.AESkey)), ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
+		}
+	}
+
+	return []interface{}{}, errors.New("given project is not present in state")
 }
 
 // GetConfig returns the config present in the state

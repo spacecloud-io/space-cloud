@@ -84,11 +84,11 @@ func generateIngressRouting() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/config/projects/{project}/routing/{routeId}",
+		API:  "/v1/config/projects/{project}/routing/ingress/{id}",
 		Type: "ingress-routes",
 		Meta: map[string]string{
 			"project": project,
-			"routeId": routeID,
+			"id": routeID,
 		},
 		Spec: map[string]interface{}{
 			"source": map[string]interface{}{

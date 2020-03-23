@@ -3,7 +3,7 @@ package syncman
 import (
 	"context"
 	"errors"
-
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
@@ -102,10 +102,12 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, sc
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
+	if collection.Collections == nil {
+		collection.Collections = map[string]*config.TableRule{}
+	}
 	temp, ok := collection.Collections[col]
-	// if collection doesn't exist then add to config
 	if !ok {
-		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}} // TODO: rule field here is null
+		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}}
 	} else {
 		temp.Schema = schema
 	}
@@ -208,10 +210,12 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 		return errors.New("specified database not present in config")
 	}
 
+	if collection.Collections == nil {
+		collection.Collections = map[string]*config.TableRule{}
+	}
 	temp, ok := collection.Collections[col]
-	// if collection doesn't exist then add to config
 	if !ok {
-		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}} // TODO: rule field here is null
+		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}}
 	} else {
 		temp.Schema = schema
 	}
@@ -257,8 +261,11 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 	for colName, colValue := range v.Collections {
 		temp, ok := collection.Collections[colName]
 		// if collection doesn't exist then add to config
+		if collection.Collections == nil {
+			collection.Collections = map[string]*config.TableRule{}
+		}
 		if !ok {
-			collection.Collections[colName] = &config.TableRule{Schema: colValue.Schema} // TODO: rule field here is null
+			collection.Collections[colName] = &config.TableRule{Schema: colValue.Schema, Rules: map[string]*config.Rule{}}
 		} else {
 			temp.Schema = colValue.Schema
 		}
@@ -270,4 +277,103 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 	}
 
 	return nil
+}
+
+// GetDatabaseConfig gets database config
+func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if dbAlias != "" {
+		dbConfig, ok := projectConfig.Modules.Crud[dbAlias]
+		if !ok {
+			return nil, fmt.Errorf("specified dbAlias (%s) not present in config", dbAlias)
+		}
+		return []interface{}{dbConfig}, nil
+	}
+
+	services := []interface{}{}
+	for key, value := range projectConfig.Modules.Crud {
+		services = append(services, config.Crud{key: {Enabled: value.Enabled, Conn: value.Conn, Type: value.Type}})
+	}
+	return services, nil
+}
+
+// GetCollectionRules gets collection rules
+func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	type response struct {
+		IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
+		Rules             map[string]*config.Rule `json:"rules"`
+	}
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if dbAlias != "" && col != "" {
+		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
+		if !ok {
+			return nil, fmt.Errorf("specified collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
+		}
+		return []interface{}{map[string]*response{fmt.Sprintf("%s-%s", dbAlias, col): {IsRealTimeEnabled: collectionInfo.IsRealTimeEnabled, Rules: collectionInfo.Rules}}}, nil
+	} else if dbAlias != "" {
+		collections := projectConfig.Modules.Crud[dbAlias].Collections
+		coll := map[string]*response{}
+		for key, value := range collections {
+			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &response{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
+		}
+		return []interface{}{coll}, nil
+	}
+	databases := projectConfig.Modules.Crud
+	coll := map[string]*response{}
+	for dbName, dbInfo := range databases {
+		for key, value := range dbInfo.Collections {
+			coll[fmt.Sprintf("%s-%s", dbName, key)] = &response{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
+		}
+	}
+	return []interface{}{coll}, nil
+}
+
+// GetSchemas gets schemas from config
+func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) ([]interface{}, error) {
+	// Acquire a lock
+	type response struct {
+		Schema string `json:"schema"`
+	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if dbAlias != "" && col != "" {
+		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
+		if !ok {
+			return nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
+		}
+		return []interface{}{map[string]*response{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
+	} else if dbAlias != "" {
+		collections := projectConfig.Modules.Crud[dbAlias].Collections
+		coll := map[string]*response{}
+		for key, value := range collections {
+			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &response{Schema: value.Schema}
+		}
+		return []interface{}{coll}, nil
+	}
+	databases := projectConfig.Modules.Crud
+	coll := map[string]*response{}
+	for dbName, dbInfo := range databases {
+		for key, value := range dbInfo.Collections {
+			coll[fmt.Sprintf("%s-%s", dbName, key)] = &response{Schema: value.Schema}
+		}
+	}
+	return []interface{}{coll}, nil
 }

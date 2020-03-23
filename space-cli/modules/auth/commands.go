@@ -7,24 +7,11 @@ import (
 	"github.com/urfave/cli"
 )
 
-// Commands is the list of commands the operations module exposes
-var Commands = []cli.Command{
+// GetSubCommands is the list of commands the operations module exposes
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "auth-providers",
-				Action: actionGetAuthProviders,
-			},
-		},
+		Name:   "auth-providers",
+		Action: actionGetAuthProviders,
 	},
 }
 
@@ -35,7 +22,7 @@ func actionGetAuthProviders(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["provider"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 
 	objs, err := GetAuthProviders(project, commandName, params)

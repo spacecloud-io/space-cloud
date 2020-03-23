@@ -2,10 +2,9 @@ package schema
 
 import (
 	"fmt"
-	"strings"
-	"time"
-
 	"github.com/sirupsen/logrus"
+	"time"
+"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"

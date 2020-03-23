@@ -163,6 +163,45 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "adding a table and a foreign key with ON DELETE CASCADE",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}},
+			},
+			fields:  fields{crud: crudMySQL, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col2 datetime );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			wantErr: false,
+		},
+		{
+			name: "current Schema with NO ACTION and parsedSchema with ON CASCADE DELETE ",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}, "table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}},
+			},
+			fields:  fields{crud: crudMySQL, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE test.table1 DROP INDEX c_table1_col1", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			wantErr: false,
+		},
+		{
+			name: "current Schema with CASCADE and parsedSchema with NO ACTION ",
+			args: args{
+				dbAlias:       "mysql",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}, "table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}},
+			},
+			fields:  fields{crud: crudMySQL, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE test.table1 DROP INDEX c_table1_col1", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			wantErr: false,
+		},
+		{
 			name: "adding a table and column of type boolean",
 			args: args{
 				dbAlias:       "mysql",
@@ -182,7 +221,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				tableName:     "table1",
 				project:       "test",
 				parsedSchema:  model.Type{"mysql": model.Collection{"table1": model.Fields{"col3": &model.FieldType{FieldName: "col3", Kind: model.TypeID, IsFieldTypeRequired: true, IsPrimary: true}}}},
-				currentSchema: model.Collection{"table2": model.Fields{}},
+				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
 			want:    []string{"CREATE TABLE test.table1 (col3 varchar(50) PRIMARY KEY NOT NULL );"},
@@ -886,6 +925,45 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "adding a table and a foreign key with ON DELETE CASCADE",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"sqlserver": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}},
+			},
+			fields:  fields{crud: crudSQLServer, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col2 timestamp );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			wantErr: false,
+		},
+		{
+			name: "current Schema with NO ACTION and parsedSchema with ON CASCADE DELETE ",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"sqlserver": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}, "table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}},
+			},
+			fields:  fields{crud: crudSQLServer, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_table1_col1", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			wantErr: false,
+		},
+		{
+			name: "current Schema with CASCADE and parsedSchema with NO ACTION ",
+			args: args{
+				dbAlias:       "sqlserver",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"sqlserver": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}, "table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}},
+			},
+			fields:  fields{crud: crudSQLServer, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_table1_col1", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			wantErr: false,
+		},
+		{
 			name: "adding a table and column of type boolean",
 			args: args{
 				dbAlias:       "sqlserver",
@@ -1555,7 +1633,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			wantErr: true,
 		},
 
-		// // //postgres
+		// //postgres
 		{
 			name: "adding two columns",
 			args: args{
@@ -1594,6 +1672,45 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			},
 			fields:  fields{crud: crudPostgres, project: "test"},
 			want:    []string{"CREATE TABLE test.table1 (col2 timestamp );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
+			wantErr: false,
+		},
+		{
+			name: "adding a table and a foreign key with ON CASCADE DELETE",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"CREATE TABLE test.table1 (col2 timestamp );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			wantErr: false,
+		},
+		{
+			name: "current Schema with NO ACTION and parsedSchema with ON CASCADE DELETE ",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}, "table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_table1_col1", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			wantErr: false,
+		},
+		{
+			name: "current Schema with CASCADE and parsedSchema with NO ACTION ",
+			args: args{
+				dbAlias:       "postgres",
+				tableName:     "table1",
+				project:       "test",
+				parsedSchema:  model.Type{"postgres": model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}}},
+				currentSchema: model.Collection{"table2": model.Fields{}, "table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}},
+			},
+			fields:  fields{crud: crudPostgres, project: "test"},
+			want:    []string{"ALTER TABLE test.table1 DROP CONSTRAINT c_table1_col1", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
 			wantErr: false,
 		},
 		{

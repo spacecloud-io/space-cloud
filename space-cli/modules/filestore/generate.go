@@ -25,7 +25,6 @@ func generateFilestoreRule() (*model.SpecObject, error) {
 		API:  "/v1/config/projects/{project}/file-storage/rules/{id}",
 		Type: "filestore-rule",
 		Meta: map[string]string{
-
 			"id":      ID,
 			"project": projectID,
 		},

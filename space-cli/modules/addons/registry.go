@@ -77,7 +77,10 @@ func addRegistry(projectID string) error {
 	if err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to fetch project config of project (%s)", projectID), err)
 	}
-	specObj.Spec.(map[string]interface{})["dockerRegistry"] = "localhost:5000"
+	if len(specObj) == 0 {
+		return utils.LogError(fmt.Sprintf("No project found with id (%s)", projectID), err)
+	}
+	specObj[0].Spec.(map[string]interface{})["dockerRegistry"] = "localhost:5000"
 
 	account, err := utils.GetSelectedAccount()
 	if err != nil {
@@ -88,7 +91,7 @@ func addRegistry(projectID string) error {
 		return err
 	}
 
-	if err := operations.ApplySpec(login.Token, account, specObj); err != nil {
+	if err := operations.ApplySpec(login.Token, account, specObj[0]); err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to update project (%s) with docker registry url", projectID), err)
 	}
 
@@ -138,7 +141,10 @@ func removeRegistry(projectID string) error {
 	if err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to fetch project config of project (%s)", projectID), err)
 	}
-	specObj.Spec.(map[string]interface{})["dockerRegistry"] = ""
+	if len(specObj) == 0 {
+		return utils.LogError(fmt.Sprintf("No project found with id (%s)", projectID), err)
+	}
+	specObj[0].Spec.(map[string]interface{})["dockerRegistry"] = ""
 
 	account, err := utils.GetSelectedAccount()
 	if err != nil {
@@ -149,7 +155,7 @@ func removeRegistry(projectID string) error {
 		return err
 	}
 
-	if err := operations.ApplySpec(login.Token, account, specObj); err != nil {
+	if err := operations.ApplySpec(login.Token, account, specObj[0]); err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url", projectID), err)
 	}
 
