@@ -1,6 +1,6 @@
 FROM golang:1.13.5-alpine3.10
 WORKDIR /build
-COPY .. .
+COPY . .
 #RUN apk --no-cache add build-base
 RUN GOOS=linux CGO_ENABLED=0 go build -a -ldflags '-s -w -extldflags "-static"' -o app .
 
