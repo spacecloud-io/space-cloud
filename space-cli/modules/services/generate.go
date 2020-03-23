@@ -7,10 +7,10 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/modules/project"
+	"github.com/spaceuptech/space-cli/utils"
 )
 
 // GenerateService creates a service struct
@@ -92,14 +92,14 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	if len(arr) != 0 {
 		min, err := strconv.Atoi(arr[0])
 		if err != nil {
-			logrus.Errorf("error in generate service config unable to convert replica min which is string to integer - %s", err)
+			_ = utils.LogError(fmt.Sprintf("error in generate service config unable to convert replica min which is string to integer - %s", err), nil)
 			return nil, err
 		}
 		replicaMin = min
 
 		max, err := strconv.Atoi(arr[1])
 		if err != nil {
-			logrus.Errorf("error in generate service config unable to convert replica max which is string to integer - %s", err)
+			_ = utils.LogError(fmt.Sprintf("error in generate service config unable to convert replica max which is string to integer - %s", err), nil)
 			return nil, err
 		}
 		replicaMax = max

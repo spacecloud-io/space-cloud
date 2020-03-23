@@ -6,8 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/sirupsen/logrus"
 )
 
 // Get gets spec object
@@ -49,7 +47,7 @@ func Get(method, url string, params map[string]string, vPtr interface{}) error {
 		if err := json.Unmarshal(data, &respBody); err != nil {
 			return err
 		}
-		logrus.Errorf("error while getting service got http status code (%s) got error message (%s) url (%s)", resp.Status, respBody["error"], url)
+		_ = LogError(fmt.Sprintf("error while getting service got http status code %s - %s", resp.Status, respBody["error"]), nil)
 		return fmt.Errorf("received invalid status code (%d)", resp.StatusCode)
 	}
 

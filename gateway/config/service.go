@@ -16,10 +16,11 @@ type RunnerService struct {
 
 // ScaleConfig describes the config used to scale a service
 type ScaleConfig struct {
-	Replicas    int32 `json:"replicas" yaml:"replicas"`
-	MinReplicas int32 `json:"minReplicas" yaml:"minReplicas"`
-	MaxReplicas int32 `json:"maxReplicas" yaml:"maxReplicas"`
-	Concurrency int32 `json:"concurrency" yaml:"concurrency"`
+	Replicas    int32  `json:"replicas" yaml:"replicas"`
+	MinReplicas int32  `json:"minReplicas" yaml:"minReplicas"`
+	MaxReplicas int32  `json:"maxReplicas" yaml:"maxReplicas"`
+	Concurrency int32  `json:"concurrency" yaml:"concurrency"`
+	Mode        string `json:"mode" yaml:"mode"`
 }
 
 // Task describes the configuration of a task
@@ -54,8 +55,15 @@ const (
 
 // Resources describes the resources to be used by a task
 type Resources struct {
-	CPU    int64 `json:"cpu" yaml:"cpu"`
-	Memory int64 `json:"memory" yaml:"memory"`
+	CPU    int64        `json:"cpu" yaml:"cpu"`
+	Memory int64        `json:"memory" yaml:"memory"`
+	GPU    *GPUResource `json:"gpu,omitempty" yaml:"gpu,omitempty"`
+}
+
+// GPUResource describes the GPUs required by a task
+type GPUResource struct {
+	Type  string `json:"type" yaml:"type"`
+	Value int64  `json:"value" yaml:"value"`
 }
 
 // Docker describes the docker configurations

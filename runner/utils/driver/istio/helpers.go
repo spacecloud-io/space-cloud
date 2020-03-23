@@ -133,7 +133,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 		token, _ := i.auth.SignProxyToken(ksuid.New().String(), service.ProjectID, service.ID, service.Version)
 		containers = append(containers, v1.Container{
 			Name: "metric-proxy",
-			Env:  []v1.EnvVar{{Name: "TOKEN", Value: token}},
+			Env:  []v1.EnvVar{{Name: "TOKEN", Value: token}, {Name: "MODE", Value: service.Scale.Mode}},
 
 			// Resource Related
 			Resources: *generateResourceRequirements(&model.Resources{CPU: 20, Memory: 50}),
@@ -447,6 +447,7 @@ func (i *Istio) generateDeployment(service *model.Service, token string, listOfS
 				"concurrency": strconv.Itoa(int(service.Scale.Concurrency)),
 				"minReplicas": strconv.Itoa(int(service.Scale.MinReplicas)),
 				"maxReplicas": strconv.Itoa(int(service.Scale.MaxReplicas)),
+				"mode":        service.Scale.Mode,
 				"generatedBy": getGeneratedByAnnotationName(),
 			},
 		},
@@ -647,6 +648,10 @@ func generateResourceRequirements(c *model.Resources) *v1.ResourceRequirements {
 	// resources.Limits[v1.ResourceMemory] = *resource.NewQuantity(c.Memory*1024*1024, resource.BinarySI)
 	resources.Requests[v1.ResourceMemory] = *resource.NewQuantity(c.Memory*1024*1024, resource.BinarySI)
 
+	// Set the GPU limits
+	if c.GPU != nil && c.GPU.Value > 0 && c.GPU.Type != "" {
+		resources.Limits[v1.ResourceName(fmt.Sprintf("%s.com/gpu", c.GPU.Type))] = *resource.NewQuantity(c.GPU.Value, resource.DecimalSI)
+	}
 	return &resources
 }
 

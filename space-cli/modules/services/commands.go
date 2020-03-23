@@ -9,8 +9,46 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// ActionGetServicesRoutes gets services routes
-func ActionGetServicesRoutes(c *cli.Context) error {
+// Commands is the list of commands the services module exposes
+var Commands = []cli.Command{
+	{
+		Name:  "generate",
+		Usage: "generates service config",
+		Subcommands: []cli.Command{
+			{
+				Name:   "service",
+				Action: actionGenerateService,
+			},
+		},
+	},
+	{
+		Name:  "get",
+		Usage: "gets different services",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:   "project",
+				Usage:  "The id of the project",
+				EnvVar: "PROJECT_ID",
+			},
+		},
+		Subcommands: []cli.Command{
+			{
+				Name:   "services-routes",
+				Action: actionGetServicesRoutes,
+			},
+			{
+				Name:   "services-secrets",
+				Action: actionGetServicesSecrets,
+			},
+			{
+				Name:   "services",
+				Action: actionGetServices,
+			},
+		},
+	},
+}
+
+func actionGetServicesRoutes(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
 	commandName := c.Command.Name
@@ -30,8 +68,7 @@ func ActionGetServicesRoutes(c *cli.Context) error {
 	return nil
 }
 
-// ActionGetServicesSecrets gets services routes
-func ActionGetServicesSecrets(c *cli.Context) error {
+func actionGetServicesSecrets(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
 	commandName := c.Command.Name
@@ -51,8 +88,7 @@ func ActionGetServicesSecrets(c *cli.Context) error {
 	return nil
 }
 
-// ActionGetServices gets runner services
-func ActionGetServices(c *cli.Context) error {
+func actionGetServices(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
 	commandName := c.Command.Name
@@ -75,8 +111,7 @@ func ActionGetServices(c *cli.Context) error {
 	return nil
 }
 
-// ActionGenerateService generates a service configuration
-func ActionGenerateService(_ *cli.Context) error {
+func actionGenerateService(_ *cli.Context) error {
 	// get filename from args in which service config will be stored
 	argsArr := os.Args
 	if len(argsArr) != 4 {

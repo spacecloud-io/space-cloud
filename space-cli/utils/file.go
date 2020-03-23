@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/model"
@@ -118,7 +117,7 @@ func generateYamlFile(credential *model.Credential) error {
 	}
 
 	if err := CreateDirIfNotExist(GetSpaceCloudDirectory()); err != nil {
-		logrus.Errorf("error in generating yaml file unable to create space cli directory - %v", err)
+		_ = LogError(fmt.Sprintf("error in generating yaml file unable to create space cli directory - %v", err), nil)
 		return err
 	}
 
