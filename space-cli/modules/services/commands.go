@@ -9,42 +9,27 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the services module exposes
-var Commands = []cli.Command{
+// GenerateSubCommands is the list of commands the services module exposes
+var GenerateSubCommands = []cli.Command{
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "service",
-				Action: actionGenerateService,
-			},
-		},
+		Name:   "service",
+		Action: actionGenerateService,
+	},
+}
+
+// GetSubCommands is the list of commands the services module exposes
+var GetSubCommands = []cli.Command{
+	{
+		Name:   "services-routes",
+		Action: actionGetServicesRoutes,
 	},
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "services-routes",
-				Action: actionGetServicesRoutes,
-			},
-			{
-				Name:   "services-secrets",
-				Action: actionGetServicesSecrets,
-			},
-			{
-				Name:   "services",
-				Action: actionGetServices,
-			},
-		},
+		Name:   "services-secrets",
+		Action: actionGetServicesSecrets,
+	},
+	{
+		Name:   "services",
+		Action: actionGetServices,
 	},
 }
 
@@ -55,7 +40,7 @@ func actionGetServicesRoutes(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["serviceId"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 
 	objs, err := GetServicesRoutes(project, commandName, params)
@@ -75,7 +60,7 @@ func actionGetServicesSecrets(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["name"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 
 	objs, err := GetServicesSecrets(project, commandName, params)

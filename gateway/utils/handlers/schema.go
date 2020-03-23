@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
+
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -44,9 +46,8 @@ func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, schema *sche
 			return
 		}
 
+		w.WriteHeader(http.StatusOK) // http status codee
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) //http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"collections": schemas})
-		// return
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
 	}
 }

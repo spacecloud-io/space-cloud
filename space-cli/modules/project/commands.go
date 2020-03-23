@@ -3,28 +3,14 @@ package project
 import (
 	"github.com/urfave/cli"
 
-	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the project module exposes
-var Commands = []cli.Command{
+// GetSubCommands is the list of commands the project module exposes
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "project",
-				Action: actionGetProjectConfig,
-			},
-		},
+		Name:   "project",
+		Action: actionGetProjectConfig,
 	},
 }
 
@@ -38,7 +24,7 @@ func actionGetProjectConfig(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := utils.PrintYaml([]*model.SpecObject{obj}); err != nil {
+	if err := utils.PrintYaml(obj); err != nil {
 		return err
 	}
 	return nil

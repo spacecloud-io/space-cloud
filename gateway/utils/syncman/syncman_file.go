@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -32,11 +33,12 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 }
 
 // SetFileRule sets the rule for file store
-func (s *Manager) SetFileRule(ctx context.Context, project string, value *config.FileRule) error {
+func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *config.FileRule) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	value.ID = id
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return err
@@ -44,7 +46,7 @@ func (s *Manager) SetFileRule(ctx context.Context, project string, value *config
 
 	var doesExist bool
 	for index, val := range projectConfig.Modules.FileStore.Rules {
-		if val.Name == value.Name {
+		if val.ID == value.ID {
 			projectConfig.Modules.FileStore.Rules[index] = value
 			doesExist = true
 		}
@@ -75,7 +77,7 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 
 	temp := projectConfig.Modules.FileStore.Rules
 	for i, v := range projectConfig.Modules.FileStore.Rules {
-		if v.Name == filename {
+		if v.ID == filename {
 			temp = append(temp[:i], temp[i+1:]...)
 			break
 		}
@@ -88,4 +90,49 @@ func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename strin
 	}
 
 	return s.setProject(ctx, projectConfig)
+}
+
+// GetFileStoreConfig gets file store config
+func (s *Manager) GetFileStoreConfig(ctx context.Context, project string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	return []interface{}{config.FileStore{
+		Enabled:   projectConfig.Modules.FileStore.Enabled,
+		StoreType: projectConfig.Modules.FileStore.StoreType,
+		Conn:      projectConfig.Modules.FileStore.Conn,
+		Endpoint:  projectConfig.Modules.FileStore.Endpoint,
+		Bucket:    projectConfig.Modules.FileStore.Bucket,
+	}}, nil
+}
+
+// GetFileStoreRules gets file store rules from config
+func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if ruleID != "" {
+		for _, value := range projectConfig.Modules.FileStore.Rules {
+			if ruleID == value.ID {
+				return []interface{}{value}, nil
+			}
+		}
+		return nil, fmt.Errorf("file rule (%s) not present in config", ruleID)
+	}
+
+	fileRules := []interface{}{}
+	for _, value := range projectConfig.Modules.FileStore.Rules {
+		fileRules = append(fileRules, value)
+	}
+	return fileRules, nil
 }

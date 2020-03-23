@@ -3,9 +3,10 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/gorilla/mux"
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -36,7 +37,7 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		defer cancel()
 
 		vars := mux.Vars(r)
-		service := vars["service"]
+		service := vars["id"]
 		projectID := vars["project"]
 
 		if err := syncMan.SetService(ctx, projectID, service, &v); err != nil {
@@ -57,6 +58,8 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 // HandleGetService returns handler to get services of the project
 func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -71,9 +74,12 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		serviceID, exists := r.URL.Query()["service"]
-
-		project, err := syncMan.GetConfig(projectID)
+		serviceID := ""
+		serviceQuery, ok := r.URL.Query()["id"]
+		if ok {
+			serviceID = serviceQuery[0]
+		}
+		services, err := syncMan.GetServices(ctx, projectID, serviceID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -81,32 +87,9 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			return
 		}
 
-		if exists {
-			service, ok := project.Modules.Services.Services[serviceID[0]]
-			if !ok {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": service})
-			return
-		}
-
-		services := project.Modules.Services.Services
-		if len(services) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "remote services not found"})
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": services})
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(model.Response{Result: services})
 	}
 }
 
@@ -129,7 +112,7 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		defer cancel()
 
 		vars := mux.Vars(r)
-		service := vars["service"]
+		service := vars["id"]
 		projectID := vars["project"]
 
 		if err := syncMan.DeleteService(ctx, projectID, service); err != nil {

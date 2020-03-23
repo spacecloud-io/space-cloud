@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -47,6 +48,11 @@ func ReadSpecObjectsFromFile(fileName string) ([]*model.SpecObject, error) {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(data) == 0 {
+		logrus.Infoln("empty file provided")
+		return nil, nil
 	}
 
 	// Split the files into independent objects

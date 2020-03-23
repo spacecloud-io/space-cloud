@@ -39,22 +39,22 @@ func (r *Route) SelectTarget(weight int32) (RouteTarget, error) {
 
 // RouteSource is the source of routing
 type RouteSource struct {
-	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
-	Methods    []string     `json:"methods,omitempty" yaml:"methods,omitempty"`
-	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
-	RewriteURL string       `json:"rewrite,omitempty" yaml:"rewrite,omitempty"`
-	Type       RouteURLType `json:"type,omitempty" yaml:"type,omitempty"`
-	Port       int32        `json:"port,omitempty" yaml:"port,omitempty"`
+	Hosts      []string     `json:"hosts" yaml:"hosts"`
+	Methods    []string     `json:"methods" yaml:"methods"`
+	URL        string       `json:"url" yaml:"url"`
+	RewriteURL string       `json:"rewrite" yaml:"rewrite"`
+	Type       RouteURLType `json:"type" yaml:"type"`
+	Port       int32        `json:"port" yaml:"port"`
 }
 
 // RouteTarget is the destination of routing
 type RouteTarget struct {
-	Host    string          `json:"host,omitempty" yaml:"host,omitempty"`
-	Port    int32           `json:"port,omitempty" yaml:"port,omitempty"`
-	Scheme  string          `json:"scheme,omitempty" yaml:"scheme,omitempty"`
-	Weight  int32           `json:"weight,omitempty" yaml:"weight,omitempty"`
-	Version string          `json:"version,omitempty" yaml:"version,omitempty"`
-	Type    RouteTargetType `json:"type,omitempty" yaml:"type,omitempty"`
+	Host    string          `json:"host" yaml:"host"`
+	Port    int32           `json:"port" yaml:"port"`
+	Scheme  string          `json:"scheme" yaml:"scheme"`
+	Weight  int32           `json:"weight" yaml:"weight"`
+	Version string          `json:"version" yaml:"version"`
+	Type    RouteTargetType `json:"type" yaml:"type"`
 }
 
 // RouteURLType describes how the url should be evaluated / matched

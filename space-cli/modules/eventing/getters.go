@@ -8,33 +8,18 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-//GetEventingTrigger gets eventing trigger
+// GetEventingTrigger gets eventing trigger
 func GetEventingTrigger(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/triggers", project)
 
 	// Get the spec from the server
-	result := make(map[string]interface{})
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	var array []interface{}
-	if value, p := result["rule"]; p {
-		obj := value.(map[string]interface{})
-		obj["id"] = params["ruleName"]
-		array = []interface{}{obj}
-	}
-	if value, p := result["rules"]; p {
-		obj := value.(map[string]interface{})
-		for rule, value := range obj {
-			o := value.(map[string]interface{})
-			o["id"] = rule
-			array = append(array, o)
-		}
-	}
-
 	var objs []*model.SpecObject
-	for _, item := range array {
+	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
 		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
@@ -52,52 +37,40 @@ func GetEventingTrigger(project, commandName string, params map[string]string) (
 	return objs, nil
 }
 
-//GetEventingConfig gets eventing config
-func GetEventingConfig(project, commandName string, params map[string]string) (*model.SpecObject, error) {
+// GetEventingConfig gets eventing config
+func GetEventingConfig(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/config", project)
 	// Get the spec from the server
-	vPtr := new(interface{})
-	if err := utils.Get(http.MethodGet, url, map[string]string{}, vPtr); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	// Generating the object
-	meta := map[string]string{"project": project, "id": commandName}
-	s, err := utils.CreateSpecObject("/v1/config/projects/{project}/eventing/config/{id}", commandName, meta, vPtr)
-	if err != nil {
-		return nil, err
+	var objs []*model.SpecObject
+	for _, value := range payload.Result {
+		meta := map[string]string{"project": project, "id": commandName}
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/eventing/config/{id}", commandName, meta, value)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
 	}
 
-	return s, nil
+	return objs, nil
 }
 
-//GetEventingSchema gets eventing schema
+// GetEventingSchema gets eventing schema
 func GetEventingSchema(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/schema", project)
 
 	// Get the spec from the server
-	result := make(map[string]interface{})
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	var array []interface{}
-	if value, p := result["schema"]; p {
-		obj := value.(map[string]interface{})
-		obj["id"] = params["type"]
-		array = []interface{}{obj}
-	}
-	if value, p := result["schemas"]; p {
-		obj := value.(map[string]interface{})
-		for rule, value := range obj {
-			o := value.(map[string]interface{})
-			o["id"] = rule
-			array = append(array, o)
-		}
-	}
-
 	var objs []*model.SpecObject
-	for _, item := range array {
+	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
 		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
@@ -114,33 +87,18 @@ func GetEventingSchema(project, commandName string, params map[string]string) ([
 	return objs, nil
 }
 
-//GetEventingSecurityRule gets eventing security rules
+// GetEventingSecurityRule gets eventing security rules
 func GetEventingSecurityRule(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/eventing/rules", project)
 
 	// Get the spec from the server
-	result := make(map[string]interface{})
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	var array []interface{}
-	if value, p := result["securityRule"]; p {
-		obj := value.(map[string]interface{})
-		obj["id"] = params["type"]
-		array = []interface{}{obj}
-	}
-	if value, p := result["securityRules"]; p {
-		obj := value.(map[string]interface{})
-		for rule, value := range obj {
-			o := value.(map[string]interface{})
-			o["id"] = rule
-			array = append(array, o)
-		}
-	}
-
 	var objs []*model.SpecObject
-	for _, item := range array {
+	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
 		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 

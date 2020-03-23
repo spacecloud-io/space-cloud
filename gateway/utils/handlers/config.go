@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
 
@@ -101,7 +102,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 	}
 }
 
-func getServices(syncMan *syncman.Manager, projectID, token string) (map[string]*config.RunnerService, error) {
+func getServices(syncMan *syncman.Manager, projectID, token string) (interface{}, error) {
 	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/%s/services", syncMan.GetRunnerAddr(), projectID), nil)
 	if err != nil {
 		logrus.Errorf("error while getting services in handler unable to create http request - %v", err)
@@ -115,11 +116,7 @@ func getServices(syncMan *syncman.Manager, projectID, token string) (map[string]
 		return nil, err
 	}
 
-	type resp struct {
-		Services map[string]*config.RunnerService `json:"services"`
-		Error    string                           `json:"error"`
-	}
-	data := resp{}
+	data := new(model.Response)
 	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
 		logrus.Errorf("error while getting services in handler unable to decode response body -%v", err)
 		return nil, err
@@ -130,10 +127,10 @@ func getServices(syncMan *syncman.Manager, projectID, token string) (map[string]
 		return nil, fmt.Errorf("error while getting services in handler got http request -%v -%v", httpRes.StatusCode, data.Error)
 	}
 
-	return data.Services, err
+	return data.Result, err
 }
 
-func getSecrets(syncMan *syncman.Manager, projectID, token string) (map[string]*config.Secret, error) {
+func getSecrets(syncMan *syncman.Manager, projectID, token string) (interface{}, error) {
 	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/%s/secrets", syncMan.GetRunnerAddr(), projectID), nil)
 	if err != nil {
 		logrus.Errorf("error while getting secrets in handler unable to create http request - %v", err)
@@ -147,11 +144,7 @@ func getSecrets(syncMan *syncman.Manager, projectID, token string) (map[string]*
 		return nil, err
 	}
 
-	type resp struct {
-		Secrets map[string]*config.Secret `json:"secrets"`
-		Error   string                    `json:"error"`
-	}
-	data := resp{}
+	data := new(model.Response)
 	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
 		logrus.Errorf("error while getting secrets in handler unable to decode response body -%v", err)
 		return nil, err
@@ -162,7 +155,7 @@ func getSecrets(syncMan *syncman.Manager, projectID, token string) (map[string]*
 		return nil, fmt.Errorf("http status %v message -%v", httpRes.StatusCode, data.Error)
 	}
 
-	return data.Secrets, err
+	return data.Result, err
 }
 
 // HandleRefreshToken creates the refresh-token endpoint
@@ -245,7 +238,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 		// Give positive acknowledgement
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"projects": c.Projects})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: c.Projects})
 	}
 }
 
@@ -267,7 +260,7 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		project, err := syncMan.GetConfig(projectID)
+		project, err := syncMan.GetProjectConfig(projectID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -277,7 +270,7 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"aesKey": project.AESKey, "secret": project.Secret, "name": project.Name, "dockerRegistry": project.DockerRegistry, "contextTime": project.ContextTime})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: project})
 	}
 }
 

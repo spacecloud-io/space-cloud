@@ -12,36 +12,21 @@ import (
 func GetIngressRoutes(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress", project)
 	// Get the spec from the server
-	result := make(map[string]interface{})
-	if err := utils.Get(http.MethodGet, url, params, &result); err != nil {
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 
-	var array []interface{}
-	if value, p := result["route"]; p {
-		obj := value.(map[string]interface{})
-		obj["id"] = params["routeId"]
-		array = []interface{}{obj}
-	}
-	if value, p := result["routes"]; p {
-		obj := value.(map[string]interface{})
-		for rule, value := range obj {
-			o := value.(map[string]interface{})
-			o["id"] = rule
-			array = append(array, o)
-		}
-	}
-
 	var objs []*model.SpecObject
-	for _, item := range array {
+	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"project": project, "routeId": spec["id"].(string)}
+		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 
 		// Generating the object
-		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/routing/ingress/{routeId}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/routing/ingress/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}

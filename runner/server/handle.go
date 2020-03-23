@@ -197,6 +197,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			return
 		}
 
+		result := []interface{}{}
 		respServices := make(map[string]*model.Service)
 		if serviceIDExists && versionExists {
 			for _, val := range services {
@@ -205,7 +206,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 					respServices[s] = val
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": respServices})
+					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{respServices}})
 					return
 				}
 			}
@@ -221,37 +222,24 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 				if val.ID == serviceID[0] {
 					s := fmt.Sprintf("%s-%s", val.ID, val.Version)
 					respServices[s] = val
+					result = append(result, respServices)
 				}
 			}
 
-			if len(respServices) == 0 {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present in state", serviceID[0])})
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
+			_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{result}})
 			return
 		}
 
 		for _, val := range services {
 			s := fmt.Sprintf("%s-%s", val.ID, val.Version)
 			respServices[s] = val
-		}
-
-		if len(respServices) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("services not set")})
-			return
+			result = append(result, respServices)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": respServices})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 	}
 }
 
@@ -354,7 +342,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		serviceID, exists := r.URL.Query()["serviceId"]
+		serviceID, exists := r.URL.Query()["id"]
 
 		serviceRoutes, err := s.driver.GetServiceRoutes(ctx, projectID)
 		if err != nil {
@@ -364,11 +352,11 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		}
 
 		if exists {
-			for k, val := range serviceRoutes {
+			for k, result := range serviceRoutes {
 				if k == serviceID[0] {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(map[string]interface{}{"service": val})
+					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{result}})
 					return
 				}
 			}
@@ -379,16 +367,14 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 			return
 		}
 
-		if len(serviceRoutes) == 0 {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprint("no routes not present in state")})
-			return
+		result := make([]interface{}, 0)
+		for _, value := range serviceRoutes {
+			result = append(result, value)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"services": serviceRoutes})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 	}
 }
 

@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"encoding/base64"
 	"errors"
 	"sync"
 
@@ -42,7 +41,7 @@ func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) 
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret, aesKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secret, decodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -53,11 +52,7 @@ func (m *Module) SetConfig(project string, secret, aesKey string, rules config.C
 	m.project = project
 	m.rules = rules
 	m.secret = secret
-	decodedAESKey, err := base64.StdEncoding.DecodeString(aesKey)
-	if err != nil {
-		return err
-	}
-	m.aesKey = decodedAESKey
+	m.aesKey = []byte(decodedAESKey)
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
 		m.fileStoreType = fileStore.StoreType

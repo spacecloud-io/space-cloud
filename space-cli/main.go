@@ -33,28 +33,83 @@ func main() {
 	app.EnableBashCompletion = true
 	app.Name = "space-cli"
 	app.Version = "0.16.0"
-	app.Flags = []cli.Flag{
-		cli.StringFlag{Name: "log-level", Value: "info", Usage: "Sets the log level of the command", EnvVar: "LOG_LEVEL"},
+	app.Flags = []cli.Flag{cli.StringFlag{Name: "log-level", Value: "info", Usage: "Sets the log level of the command", EnvVar: "LOG_LEVEL"}}
+	app.Commands = []cli.Command{
+		{
+			Name:        "add",
+			Usage:       "Add a add-on to the environment",
+			Subcommands: fetchAddSubCommands(),
+		},
+		{
+			Name:        "remove",
+			Usage:       "Remove a add-on from the environment",
+			Subcommands: fetchRemoveSubCommands(),
+		},
+		{
+			Name:  "get",
+			Usage: "gets different services",
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:   "project",
+					Usage:  "The id of the project",
+					EnvVar: "PROJECT_ID",
+				},
+			},
+			Subcommands: fetchGetSubCommands(),
+		},
+		{
+			Name:        "generate",
+			Usage:       "generates service config",
+			Subcommands: fetchGenerateSubCommands(),
+		},
 	}
-
-	app.Commands = append(app.Commands, addons.Commands...)
-	app.Commands = append(app.Commands, auth.Commands...)
-	app.Commands = append(app.Commands, database.Commands...)
 	app.Commands = append(app.Commands, deploy.CommandDeploy)
-	app.Commands = append(app.Commands, eventing.Commands...)
-	app.Commands = append(app.Commands, filestore.Commands...)
-	app.Commands = append(app.Commands, ingress.Commands...)
-	app.Commands = append(app.Commands, letsencrypt.Commands...)
 	app.Commands = append(app.Commands, operations.Commands...)
-	app.Commands = append(app.Commands, project.Commands...)
-	app.Commands = append(app.Commands, remoteservices.Commands...)
-	app.Commands = append(app.Commands, services.Commands...)
-	app.Commands = append(app.Commands, userman.Commands...)
-	app.Commands = append(app.Commands, modules.Commands...)
 	app.Commands = append(app.Commands, utils.LoginCommands...)
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
 		logrus.Fatalln("Failed to run execute command:", err)
 	}
+}
+
+func fetchAddSubCommands() []cli.Command {
+	v := []cli.Command{}
+	v = append(v, addons.AddSubCommands...)
+	return v
+}
+
+func fetchRemoveSubCommands() []cli.Command {
+	v := []cli.Command{}
+	v = append(v, addons.RemoveSubCommand...)
+	return v
+}
+
+func fetchGetSubCommands() []cli.Command {
+	v := []cli.Command{}
+	v = append(v, auth.GetSubCommands...)
+	v = append(v, database.GetSubCommands...)
+	v = append(v, eventing.GetSubCommands...)
+	v = append(v, filestore.GetSubCommands...)
+	v = append(v, letsencrypt.GetSubCommands...)
+	v = append(v, project.GetSubCommands...)
+	v = append(v, remoteservices.GetSubCommands...)
+	v = append(v, services.GetSubCommands...)
+	v = append(v, modules.GetSubCommands...)
+
+	return v
+}
+
+func fetchGenerateSubCommands() []cli.Command {
+	v := []cli.Command{}
+	v = append(v, database.GenerateSubCommands...)
+	v = append(v, eventing.GenerateSubCommands...)
+	v = append(v, filestore.GenerateSubCommands...)
+	v = append(v, ingress.GenerateSubCommands...)
+	v = append(v, letsencrypt.GenerateSubCommands...)
+	v = append(v, remoteservices.GenerateSubCommands...)
+	v = append(v, services.GenerateSubCommands...)
+	v = append(v, userman.GenerateSubCommands...)
+
+	return v
 }
