@@ -16,15 +16,15 @@ func prepareService(projectID, dockerFilePath, serviceFilePath string) error {
 
 	// Check if a docker file exists
 	if !utils.FileExists(dockerFilePath) {
-		utils.LogInfo(fmt.Sprintf("Could not find docker file (%s)", dockerFilePath), "deploy", "prepare")
-		utils.LogInfo(fmt.Sprintf("Creating docker file (%s)", dockerFilePath), "deploy", "prepare")
+		utils.LogInfo(fmt.Sprintf("Could not find docker file (%s)", dockerFilePath))
+		utils.LogInfo(fmt.Sprintf("Creating docker file (%s)", dockerFilePath))
 		// We need to create a docker file at the path provided. First lets try and detect the programming language
 		lang, err := getLanguage()
 		if err != nil {
-			return utils.LogError("Could not detect programing language. Only python, js and golang are currently supported. For other languages, make sure you have a Dockerfile prepared", "deploy", "prepare", err)
+			return utils.LogError("Could not detect programing language. Only python, js and golang are currently supported. For other languages, make sure you have a Dockerfile prepared", err)
 		}
 
-		utils.LogInfo(fmt.Sprintf("Language detected (%s)", lang), "deploy", "prepare")
+		utils.LogInfo(fmt.Sprintf("Language detected (%s)", lang))
 
 		var dockerFileContents string
 		switch lang {
@@ -35,39 +35,39 @@ func prepareService(projectID, dockerFilePath, serviceFilePath string) error {
 		case "python":
 			dockerFileContents = utils.DockerfilePython
 		default:
-			return utils.LogError(fmt.Sprintf("Lnaguage (%s) not supported. Consider making a Dockerfile yourself.", lang), "deploy", "prepare", nil)
+			return utils.LogError(fmt.Sprintf("Lnaguage (%s) not supported. Consider making a Dockerfile yourself.", lang), nil)
 		}
 
 		// Create the docker file
-		utils.LogInfo("Creating docker file with following contents:", "deploy", "prepare")
+		utils.LogInfo("Creating docker file with following contents:")
 		fmt.Println()
 		fmt.Println(dockerFileContents)
 		fmt.Println()
 		if err := utils.CreateFileIfNotExist(dockerFilePath, dockerFileContents); err != nil {
-			return utils.LogError(fmt.Sprintf("Could not create docker file (%s)", dockerFilePath), "deploy", "prepare", err)
+			return utils.LogError(fmt.Sprintf("Could not create docker file (%s)", dockerFilePath), err)
 		}
 	}
 
 	// Check if a services file exist
 	if !utils.FileExists(serviceFilePath) {
-		utils.LogInfo(fmt.Sprintf("Could not find service file (%s)", serviceFilePath), "deploy", "prepare")
+		utils.LogInfo(fmt.Sprintf("Could not find service file (%s)", serviceFilePath))
 
 		svc, err := services.GenerateService(projectID, "auto")
 		if err != nil {
-			return utils.LogError("Could not generate service config", "deploy", "prepare", err)
+			return utils.LogError("Could not generate service config", err)
 		}
 
 		data, _ := yaml.Marshal(svc)
-		utils.LogInfo("Creating service config file with following contents:", "deploy", "prepare")
+		utils.LogInfo("Creating service config file with following contents:")
 		fmt.Println()
 		fmt.Println(string(data))
 		fmt.Println()
 		if err := utils.AppendConfigToDisk(svc, serviceFilePath); err != nil {
-			return utils.LogError(fmt.Sprintf("Could not create service config file (%s)", dockerFilePath), "deploy", "prepare", err)
+			return utils.LogError(fmt.Sprintf("Could not create service config file (%s)", dockerFilePath), err)
 		}
 	}
 
-	utils.LogInfo("All configuration has been saved successfully. Run `space-cli deploy` to deploy your service!", "deploy", "prepare")
+	utils.LogInfo("All configuration has been saved successfully. Run `space-cli deploy` to deploy your service!")
 	return nil
 }
 

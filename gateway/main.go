@@ -249,7 +249,9 @@ func actionRun(c *cli.Context) error {
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
 	}
-
+	if conf.Admin == nil {
+		conf.Admin = config.GenerateAdmin()
+	}
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
 

@@ -7,8 +7,38 @@ import (
 	"github.com/urfave/cli"
 )
 
-// ActionGetIngressRoutes gets routes
-func ActionGetIngressRoutes(c *cli.Context) error {
+// Commands is the list of commands the ingress module exposes
+var Commands = []cli.Command{
+	{
+		Name:  "generate",
+		Usage: "generates service config",
+		Subcommands: []cli.Command{
+			{
+				Name:   "ingress-routes",
+				Action: actionGenerateIngressRouting,
+			},
+		},
+	},
+	{
+		Name:  "get",
+		Usage: "gets different services",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:   "project",
+				Usage:  "The id of the project",
+				EnvVar: "PROJECT_ID",
+			},
+		},
+		Subcommands: []cli.Command{
+			{
+				Name:   "ingress-routes",
+				Action: actionGetIngressRoutes,
+			},
+		},
+	},
+}
+
+func actionGetIngressRoutes(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
 	commandName := c.Command.Name
@@ -28,8 +58,7 @@ func ActionGetIngressRoutes(c *cli.Context) error {
 	return nil
 }
 
-// ActionGenerateIngressRouting creates spec object for service routing
-func ActionGenerateIngressRouting(c *cli.Context) error {
+func actionGenerateIngressRouting(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")

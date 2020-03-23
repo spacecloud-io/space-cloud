@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/model"
+	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 // AppendConfigToDisk creates a yml file or appends to existing
@@ -90,6 +90,21 @@ func CreateFileIfNotExist(path, content string) error {
 	return nil
 }
 
+// CreateConfigFile create empty config file
+func CreateConfigFile(path string) error {
+	val := &config.Config{
+		Projects: []*config.Project{},
+	}
+	b, err := yaml.Marshal(val)
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return ioutil.WriteFile(path, b, 0755)
+	}
+	return nil
+}
+
 func generateYamlFile(credential *model.Credential) error {
 	d, err := yaml.Marshal(&credential)
 	if err != nil {
@@ -97,7 +112,7 @@ func generateYamlFile(credential *model.Credential) error {
 	}
 
 	if err := CreateDirIfNotExist(GetSpaceCloudDirectory()); err != nil {
-		logrus.Errorf("error in generating yaml file unable to create space cli directory - %v", err)
+		_ = LogError(fmt.Sprintf("error in generating yaml file unable to create space cli directory - %v", err), nil)
 		return err
 	}
 

@@ -7,8 +7,21 @@ import (
 	"github.com/urfave/cli"
 )
 
-// ActionGenerateUserManagement creates spec object for user management
-func ActionGenerateUserManagement(c *cli.Context) error {
+// Commands is the list of commands the userman module exposes
+var Commands = []cli.Command{
+	{
+		Name:  "generate",
+		Usage: "generates service config",
+		Subcommands: []cli.Command{
+			{
+				Name:   "auth-providers",
+				Action: actionGenerateUserManagement,
+			},
+		},
+	},
+}
+
+func actionGenerateUserManagement(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")

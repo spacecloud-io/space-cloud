@@ -4,30 +4,28 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/spaceuptech/space-cli/cmd"
+	"github.com/spaceuptech/space-cli/modules/operations"
 	"github.com/spaceuptech/space-cli/utils"
 )
 
 func deployService(dockerFilePath, serviceFilePath string) error {
 	// Check if docker file exists
 	if !utils.FileExists(dockerFilePath) {
-		return utils.LogError(fmt.Sprintf("Docker file (%s) not found. Try running `space-cli deploy --prepare`", dockerFilePath), "deploy", "deploy", nil)
+		return utils.LogError(fmt.Sprintf("Docker file (%s) not found. Try running `space-cli deploy --prepare`", dockerFilePath), nil)
 	}
 
 	// Check if service config file exists
 	if !utils.FileExists(serviceFilePath) {
-		return utils.LogError(fmt.Sprintf("Service config file (%s) not found. Try running `space-cli deploy --prepare`", dockerFilePath), "deploy", "deploy", nil)
+		return utils.LogError(fmt.Sprintf("Service config file (%s) not found. Try running `space-cli deploy --prepare`", dockerFilePath), nil)
 	}
 
 	// Get the spec object from the file
 	specObj, err := utils.ReadSpecObjectsFromFile(serviceFilePath)
 	if err != nil {
-		return utils.LogError("Unable to read spec object from file", "deploy", "deploy", err)
+		return utils.LogError("Unable to read spec object from file", err)
 	}
 	if len(specObj) != 1 {
-		return utils.LogError("There can only be a single object in the service config file", "deploy", "deploy", fmt.Errorf("found %d spec objects", len(specObj)))
+		return utils.LogError("There can only be a single object in the service config file", fmt.Errorf("found %d spec objects", len(specObj)))
 	}
 
 	// Select the task with the id same as service id
@@ -45,25 +43,25 @@ func deployService(dockerFilePath, serviceFilePath string) error {
 
 	// Check if docker image was found
 	if dockerImage == "" {
-		return utils.LogError("Unable to detect project to be built. Make sure you have a task id equal to the service id", "deploy", "deploy", nil)
+		return utils.LogError("Unable to detect project to be built. Make sure you have a task id equal to the service id", nil)
 	}
 
 	// Execute the docker build command
-	utils.LogInfo(fmt.Sprintf("Building docker image (%s)", dockerImage), "deploy", "deploy")
+	utils.LogInfo(fmt.Sprintf("Building docker image (%s)", dockerImage))
 	if output, err := exec.Command("docker", "build", "--file", dockerFilePath, "--no-cache", "-t", dockerImage, ".").CombinedOutput(); err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to build docker image (%s) - %s", dockerImage, string(output)), "deploy", "deploy", err)
+		return utils.LogError(fmt.Sprintf("Unable to build docker image (%s) - %s", dockerImage, string(output)), err)
 	}
 
 	// Execute the docker push command
-	utils.LogInfo(fmt.Sprintf("Pushing docker image (%s)", dockerImage), "deploy", "deploy")
+	utils.LogInfo(fmt.Sprintf("Pushing docker image (%s)", dockerImage))
 	if output, err := exec.Command("docker", "push", dockerImage).CombinedOutput(); err != nil {
-		logrus.Errorln(string(output))
-		return utils.LogError(fmt.Sprintf("Unable to push docker image (%s). Have you logged into your registry?", dockerImage), "deploy", "deploy", err)
+		_ = utils.LogError(string(output), nil)
+		return utils.LogError(fmt.Sprintf("Unable to push docker image (%s). Have you logged into your registry?", dockerImage), err)
 	}
 
 	// Time to apply the service file config
-	if err := cmd.Apply(serviceFilePath); err != nil {
-		return utils.LogError("Unable to apply service file config", "deploy", "deploy", err)
+	if err := operations.Apply(serviceFilePath); err != nil {
+		return utils.LogError("Unable to apply service file config", err)
 	}
 
 	return nil
