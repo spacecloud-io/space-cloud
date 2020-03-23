@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/urfave/cli"
@@ -28,7 +30,45 @@ func ActionApply(cli *cli.Context) error {
 }
 
 // Apply reads the config file(s) from the provided file / directory and applies it to the server
-func Apply(fileName string) error {
+func Apply(applyName string) error {
+	fileName := applyName
+	if !strings.HasSuffix(applyName, "yaml") {
+		dirName := applyName
+		if err := os.Chdir(dirName); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to switch to directory %s", dirName), err)
+		}
+		files, err := ioutil.ReadDir(dirName)
+		if err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to fetch config files from %s", dirName), err)
+		}
+
+		for _, fileName := range files {
+			if ext := filepath.Ext(fmt.Sprintf("%s/%s", dirName, fileName)); ext == "yaml" {
+				account, err := utils.GetSelectedAccount()
+				if err != nil {
+					return utils.LogError("Unable to fetch account information", err)
+				}
+				login, err := utils.Login(account)
+				if err != nil {
+					return utils.LogError("Unable to login", err)
+				}
+
+				specs, err := utils.ReadSpecObjectsFromFile(fileName.Name())
+				if err != nil {
+					return utils.LogError("Unable to read spec objects from file", err)
+				}
+
+				// Apply all spec
+				for _, spec := range specs {
+					if err := ApplySpec(login.Token, account, spec); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		return nil
+	}
+
 	account, err := utils.GetSelectedAccount()
 	if err != nil {
 		return utils.LogError("Unable to fetch account information", err)

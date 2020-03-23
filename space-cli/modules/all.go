@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/urfave/cli"
 	"gopkg.in/yaml.v2"
@@ -29,6 +30,14 @@ var GetSubCommands = []cli.Command{
 
 func getAllProjects(c *cli.Context) error {
 	projectName := c.GlobalString("project")
+	dir := c.Args().Get(0)
+	if dir == "" {
+		return fmt.Errorf("Directory not specified as an arguement to store config files")
+	}
+
+	if err := os.Chdir(dir); err != nil {
+		return err
+	}
 
 	obj, err := project.GetProjectConfig(projectName, "project", map[string]string{})
 	if err != nil {
