@@ -19,8 +19,28 @@ import (
 	"github.com/spaceuptech/space-cli/modules/services"
 )
 
-//GetAllProjects gets project config
-func GetAllProjects(c *cli.Context) error {
+// Commands is the list of commands the all module exposes
+var Commands = []cli.Command{
+	{
+		Name:  "get",
+		Usage: "gets different services",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:   "project",
+				Usage:  "The id of the project",
+				EnvVar: "PROJECT_ID",
+			},
+		},
+		Subcommands: []cli.Command{
+			{
+				Name:   "all",
+				Action: getAllProjects,
+			},
+		},
+	},
+}
+
+func getAllProjects(c *cli.Context) error {
 	projectName := c.GlobalString("project")
 
 	obj, err := project.GetProjectConfig(projectName, "project", map[string]string{})

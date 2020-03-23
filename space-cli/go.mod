@@ -20,6 +20,8 @@ require (
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
+	google.golang.org/genproto v0.0.0-20191216164720-4f79533eabd1
+	gopkg.in/AlecAivazis/survey.v1 v1.8.5
 	gopkg.in/yaml.v2 v2.2.7
 	gotest.tools v2.2.0+incompatible // indirect
 )

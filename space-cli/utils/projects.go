@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/spaceuptech/space-cli/model"
 )
 
@@ -13,7 +11,7 @@ import (
 func GetProjectsNamesFromArray(projects []*model.Projects) ([]string, error) {
 	var projectNames []string
 	if len(projects) == 0 {
-		logrus.Error("error getting projects no projects founds, create new project from mission control")
+		_ = LogError("error getting projects no projects founds, create new project from mission control", nil)
 		return nil, fmt.Errorf("projects array empty")
 	}
 	for _, project := range projects {

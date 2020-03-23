@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/spaceuptech/space-cli/cmd"
+	"github.com/spaceuptech/space-cli/modules/operations"
 	"github.com/spaceuptech/space-cli/utils"
 )
 
@@ -57,12 +55,12 @@ func deployService(dockerFilePath, serviceFilePath string) error {
 	// Execute the docker push command
 	utils.LogInfo(fmt.Sprintf("Pushing docker image (%s)", dockerImage))
 	if output, err := exec.Command("docker", "push", dockerImage).CombinedOutput(); err != nil {
-		logrus.Errorln(string(output))
+		_ = utils.LogError(string(output), nil)
 		return utils.LogError(fmt.Sprintf("Unable to push docker image (%s). Have you logged into your registry?", dockerImage), err)
 	}
 
 	// Time to apply the service file config
-	if err := cmd.Apply(serviceFilePath); err != nil {
+	if err := operations.Apply(serviceFilePath); err != nil {
 		return utils.LogError("Unable to apply service file config", err)
 	}
 
