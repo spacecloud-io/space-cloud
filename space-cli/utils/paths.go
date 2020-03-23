@@ -21,6 +21,11 @@ func GetSpaceCloudRoutingConfigPath() string {
 	return fmt.Sprintf("%s/routing-config.json", GetSpaceCloudDirectory())
 }
 
+// GetSpaceCloudConfigFilePath returns the path of the file storing the config
+func GetSpaceCloudConfigFilePath() string {
+	return fmt.Sprintf("%s/config.yaml", GetSpaceCloudDirectory())
+}
+
 // GetSecretsDir returns the path of the directory storing all the secrets
 func GetSecretsDir() string {
 	return fmt.Sprintf("%s/secrets", GetSpaceCloudDirectory())

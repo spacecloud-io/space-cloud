@@ -8,8 +8,38 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// ActionGetRemoteServices gets remote services
-func ActionGetRemoteServices(c *cli.Context) error {
+// Commands is the list of commands the remoteservices module exposes
+var Commands = []cli.Command{
+	{
+		Name:  "generate",
+		Usage: "generates service config",
+		Subcommands: []cli.Command{
+			{
+				Name:   "remote-services",
+				Action: actionGenerateService,
+			},
+		},
+	},
+	{
+		Name:  "get",
+		Usage: "gets different services",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:   "project",
+				Usage:  "The id of the project",
+				EnvVar: "PROJECT_ID",
+			},
+		},
+		Subcommands: []cli.Command{
+			{
+				Name:   "remote-services",
+				Action: actionGetRemoteServices,
+			},
+		},
+	},
+}
+
+func actionGetRemoteServices(c *cli.Context) error {
 	// Get the project and url parameters
 	project := c.GlobalString("project")
 	commandName := c.Command.Name
@@ -29,8 +59,7 @@ func ActionGetRemoteServices(c *cli.Context) error {
 	return nil
 }
 
-// ActionGenerateService generates remote service spec object
-func ActionGenerateService(c *cli.Context) error {
+func actionGenerateService(c *cli.Context) error {
 	argsArr := c.Args()
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")

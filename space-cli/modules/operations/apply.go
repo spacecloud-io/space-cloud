@@ -1,4 +1,4 @@
-package cmd
+package operations
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cli/model"
@@ -19,7 +18,7 @@ import (
 func ActionApply(cli *cli.Context) error {
 	args := os.Args
 	if len(args) != 3 {
-		logrus.Errorf("error while applying service incorrect number of arguments provided")
+		_ = utils.LogError("error while applying service incorrect number of arguments provided", nil)
 		return fmt.Errorf("incorrect number of arguments provided")
 	}
 
@@ -32,16 +31,16 @@ func ActionApply(cli *cli.Context) error {
 func Apply(fileName string) error {
 	account, err := utils.GetSelectedAccount()
 	if err != nil {
-		return utils.LogError("Unable to fetch account information", "apply", "", err)
+		return utils.LogError("Unable to fetch account information", err)
 	}
 	login, err := utils.Login(account)
 	if err != nil {
-		return utils.LogError("Unable to login", "apply", "", err)
+		return utils.LogError("Unable to login", err)
 	}
 
 	specs, err := utils.ReadSpecObjectsFromFile(fileName)
 	if err != nil {
-		return utils.LogError("Unable to read spec objects from file", "apply", "", err)
+		return utils.LogError("Unable to read spec objects from file", err)
 	}
 
 	// Apply all spec
@@ -58,7 +57,7 @@ func Apply(fileName string) error {
 func ApplySpec(token string, account *model.Account, specObj *model.SpecObject) error {
 	requestBody, err := json.Marshal(specObj.Spec)
 	if err != nil {
-		logrus.Errorf("error while applying service unable to marshal spec - %s", err.Error())
+		_ = utils.LogError(fmt.Sprintf("error while applying service unable to marshal spec - %s", err.Error()), nil)
 		return err
 	}
 	url, err := adjustPath(fmt.Sprintf("%s%s", account.ServerURL, specObj.API), specObj.Meta)
@@ -73,7 +72,7 @@ func ApplySpec(token string, account *model.Account, specObj *model.SpecObject) 
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logrus.Errorf("error while applying service unable to send http request - %s", err.Error())
+		_ = utils.LogError(fmt.Sprintf("error while applying service unable to send http request - %s", err.Error()), nil)
 		return err
 	}
 
@@ -81,10 +80,10 @@ func ApplySpec(token string, account *model.Account, specObj *model.SpecObject) 
 	_ = json.NewDecoder(resp.Body).Decode(&v)
 	utils.CloseTheCloser(req.Body)
 	if resp.StatusCode != 200 {
-		logrus.Errorf("error while applying service got http status code %s - %s", resp.Status, v["error"])
+		_ = utils.LogError(fmt.Sprintf("error while applying service got http status code %s - %s", resp.Status, v["error"]), nil)
 		return fmt.Errorf("%v", v["error"])
 	}
-	logrus.Infof("Successfully applied %s", specObj.Type)
+	utils.LogInfo(fmt.Sprintf("Successfully applied %s", specObj.Type))
 	return nil
 }
 
