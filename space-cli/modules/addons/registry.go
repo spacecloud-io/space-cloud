@@ -11,7 +11,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/spaceuptech/space-cli/cmd"
+	"github.com/spaceuptech/space-cli/modules/operations"
 	"github.com/spaceuptech/space-cli/modules/project"
 	"github.com/spaceuptech/space-cli/utils"
 )
@@ -88,7 +88,7 @@ func addRegistry(projectID string) error {
 		return err
 	}
 
-	if err := cmd.ApplySpec(login.Token, account, specObj); err != nil {
+	if err := operations.ApplySpec(login.Token, account, specObj); err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to update project (%s) with docker registry url", projectID), err)
 	}
 
@@ -149,7 +149,7 @@ func removeRegistry(projectID string) error {
 		return err
 	}
 
-	if err := cmd.ApplySpec(login.Token, account, specObj); err != nil {
+	if err := operations.ApplySpec(login.Token, account, specObj); err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url", projectID), err)
 	}
 
