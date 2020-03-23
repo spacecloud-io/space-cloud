@@ -27,7 +27,7 @@ import (
 
 // Docker defines the type for docker instance
 type Docker struct {
-	client       *client.Client
+	client       model.DockerClient
 	auth         *auth.Module
 	artifactAddr string
 	secretPath   string
