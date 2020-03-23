@@ -196,7 +196,7 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: config.Eventing{DBType: project.Modules.Eventing.DBType, Enabled: project.Modules.Eventing.Enabled}})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{config.Eventing{DBType: project.Modules.Eventing.DBType, Enabled: project.Modules.Eventing.Enabled}}})
 	}
 }
 
@@ -341,7 +341,6 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		evType := vars["id"]
-		logrus.Println("c", c, evType)
 		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c); err != nil {
 			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
 			w.Header().Set("Content-Type", "application/json")

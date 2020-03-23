@@ -9,33 +9,17 @@ import (
 )
 
 // Commands is the list of commands the remoteservices module exposes
-var Commands = []cli.Command{
+var GenerateSubCommands = []cli.Command{
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "remote-services",
-				Action: actionGenerateService,
-			},
-		},
+		Name:   "remote-services",
+		Action: actionGenerateService,
 	},
+}
+
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "remote-services",
-				Action: actionGetRemoteServices,
-			},
-		},
+		Name:   "remote-services",
+		Action: actionGetRemoteServices,
 	},
 }
 

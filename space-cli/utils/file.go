@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"

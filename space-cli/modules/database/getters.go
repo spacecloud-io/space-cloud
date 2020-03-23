@@ -23,6 +23,9 @@ func GetDbRule(project, commandName string, params map[string]string) ([]*model.
 		obj := item.(map[string]interface{})
 		for key, value := range obj {
 			str := strings.Split(key, "-")
+			if str[1] == "event_logs" || str[1] == "invocation_logs" {
+				continue
+			}
 			meta := map[string]string{"project": project, "col": str[1], "dbAlias": str[0]}
 
 			delete(obj, "schema")
@@ -84,6 +87,9 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 		obj := item.(map[string]interface{})
 		for key, value := range obj {
 			str := strings.Split(key, "-")
+			if str[1] == "event_logs" || str[1] == "invocation_logs" {
+				continue
+			}
 			meta := map[string]string{"project": project, "col": str[1], "dbAlias": str[0]}
 
 			delete(obj, "isRealtimeEnabled")

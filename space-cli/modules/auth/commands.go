@@ -7,23 +7,10 @@ import (
 )
 
 // Commands is the list of commands the operations module exposes
-var Commands = []cli.Command{
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "auth-providers",
-				Action: actionGetAuthProviders,
-			},
-		},
+		Name:   "auth-providers",
+		Action: actionGetAuthProviders,
 	},
 }
 

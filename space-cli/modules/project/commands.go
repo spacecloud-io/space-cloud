@@ -7,23 +7,10 @@ import (
 )
 
 // Commands is the list of commands the project module exposes
-var Commands = []cli.Command{
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "project",
-				Action: actionGetProjectConfig,
-			},
-		},
+		Name:   "project",
+		Action: actionGetProjectConfig,
 	},
 }
 

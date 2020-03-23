@@ -10,41 +10,25 @@ import (
 )
 
 // Commands is the list of commands the services module exposes
-var Commands = []cli.Command{
+var GenerateSubCommands = []cli.Command{
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "service",
-				Action: actionGenerateService,
-			},
-		},
+		Name:   "service",
+		Action: actionGenerateService,
+	},
+}
+
+var GetSubCommands = []cli.Command{
+	{
+		Name:   "services-routes",
+		Action: actionGetServicesRoutes,
 	},
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "services-routes",
-				Action: actionGetServicesRoutes,
-			},
-			{
-				Name:   "services-secrets",
-				Action: actionGetServicesSecrets,
-			},
-			{
-				Name:   "services",
-				Action: actionGetServices,
-			},
-		},
+		Name:   "services-secrets",
+		Action: actionGetServicesSecrets,
+	},
+	{
+		Name:   "services",
+		Action: actionGetServices,
 	},
 }
 

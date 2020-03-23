@@ -5,46 +5,29 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
 
 // Commands is the list of commands the filestore module exposes
-var Commands = []cli.Command{
+var GetSubCommands = []cli.Command{
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "filestore-config",
-				Action: actionGetFileStoreConfig,
-			},
-			{
-				Name:   "filestore-rules",
-				Action: actionGetFileStoreRule,
-			},
-		},
+		Name:   "filestore-config",
+		Action: actionGetFileStoreConfig,
 	},
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "filestore-rules",
-				Action: actionGenerateFilestoreRule,
-			},
-			{
-				Name:   "filestore-config",
-				Action: actionGenerateFilestoreConfig,
-			},
-		},
+		Name:   "filestore-rules",
+		Action: actionGetFileStoreRule,
+	},
+}
+
+var GenerateSubCommands = []cli.Command{
+	{
+		Name:   "filestore-rules",
+		Action: actionGenerateFilestoreRule,
+	},
+	{
+		Name:   "filestore-config",
+		Action: actionGenerateFilestoreConfig,
 	},
 }
 
@@ -58,8 +41,7 @@ func actionGetFileStoreConfig(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	objs := []*model.SpecObject{obj}
-	if err := utils.PrintYaml(objs); err != nil {
+	if err := utils.PrintYaml(obj); err != nil {
 		return err
 	}
 	return nil
@@ -72,7 +54,7 @@ func actionGetFileStoreRule(c *cli.Context) error {
 
 	params := map[string]string{}
 	if len(c.Args()) != 0 {
-		params["ruleName"] = c.Args()[0]
+		params["id"] = c.Args()[0]
 	}
 
 	objs, err := GetFileStoreRule(project, commandName, params)

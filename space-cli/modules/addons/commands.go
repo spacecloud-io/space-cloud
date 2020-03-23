@@ -7,46 +7,35 @@ import (
 )
 
 // Commands is the list of commands the addon module exposes
-var Commands = []cli.Command{
+var AddSubCommands = []cli.Command{
 	{
-		Name:  "add",
-		Usage: "Add a add-on to the environment",
-		Flags: []cli.Flag{cli.StringFlag{Name: "project", Usage: "The project to add the add-on to"}},
-		Subcommands: []cli.Command{
-			{
-				Name:   "registry",
-				Usage:  "Add a docker registry",
-				Action: ActionAddRegistry,
-			},
-			{
-				Name:  "database",
-				Usage: "Add a database",
-				Flags: []cli.Flag{
-					cli.StringFlag{Name: "username, U", Usage: "provide the username"},
-					cli.StringFlag{Name: "password, P", Usage: "provide the password"},
-					cli.StringFlag{Name: "alias", Usage: "provide the alias for the database"},
-					cli.StringFlag{Name: "version", Usage: "provide the version of the database", Value: "latest"},
-				},
-				Action: ActionAddDatabase,
-			},
-		},
+		Name:   "registry",
+		Usage:  "Add a docker registry",
+		Action: ActionAddRegistry,
 	},
 	{
-		Name:  "remove",
-		Usage: "Remove a add-on from the environment",
-		Flags: []cli.Flag{cli.StringFlag{Name: "project", Usage: "The project to remove the add-on from"}},
-		Subcommands: []cli.Command{
-			{
-				Name:   "registry",
-				Usage:  "Remove a docker registry",
-				Action: ActionRemoveRegistry,
-			},
-			{
-				Name:   "database",
-				Usage:  "Remove a database",
-				Action: ActionRemoveDatabase,
-			},
+		Name:  "database",
+		Usage: "Add a database",
+		Flags: []cli.Flag{
+			cli.StringFlag{Name: "username, U", Usage: "provide the username"},
+			cli.StringFlag{Name: "password, P", Usage: "provide the password"},
+			cli.StringFlag{Name: "alias", Usage: "provide the alias for the database"},
+			cli.StringFlag{Name: "version", Usage: "provide the version of the database", Value: "latest"},
 		},
+		Action: ActionAddDatabase,
+	},
+}
+
+var RemoveSubCommand = []cli.Command{
+	{
+		Name:   "registry",
+		Usage:  "Remove a docker registry",
+		Action: ActionRemoveRegistry,
+	},
+	{
+		Name:   "database",
+		Usage:  "Remove a database",
+		Action: ActionRemoveDatabase,
 	},
 }
 

@@ -2,55 +2,38 @@ package database
 
 import (
 	"fmt"
-
 	"github.com/spaceuptech/space-cli/utils"
 	"github.com/urfave/cli"
 )
 
 // Commands is the list of commands the database module exposes
-var Commands = []cli.Command{
+var GenerateSubCommands = []cli.Command{
 	{
-		Name:  "generate",
-		Usage: "generates service config",
-		Subcommands: []cli.Command{
-			{
-				Name:   "db-rules",
-				Action: actionGenerateDBRule,
-			},
-			{
-				Name:   "db-config",
-				Action: actionGenerateDBConfig,
-			},
-			{
-				Name:   "db-schema",
-				Action: actionGenerateDBSchema,
-			},
-		},
+		Name:   "db-rules",
+		Action: actionGenerateDBRule,
 	},
 	{
-		Name:  "get",
-		Usage: "gets different services",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "project",
-				Usage:  "The id of the project",
-				EnvVar: "PROJECT_ID",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:   "db-rules",
-				Action: actionGetDbRules,
-			},
-			{
-				Name:   "db-config",
-				Action: actionGetDbConfig,
-			},
-			{
-				Name:   "db-schema",
-				Action: actionGetDbSchema,
-			},
-		},
+		Name:   "db-config",
+		Action: actionGenerateDBConfig,
+	},
+	{
+		Name:   "db-schema",
+		Action: actionGenerateDBSchema,
+	},
+}
+
+var GetSubCommands = []cli.Command{
+	{
+		Name:   "db-rules",
+		Action: actionGetDbRules,
+	},
+	{
+		Name:   "db-config",
+		Action: actionGetDbConfig,
+	},
+	{
+		Name:   "db-schema",
+		Action: actionGetDbSchema,
 	},
 }
 
@@ -86,11 +69,11 @@ func actionGetDbConfig(c *cli.Context) error {
 	if len(c.Args()) != 0 {
 		params["dbAlias"] = c.Args()[0]
 	}
-
 	objs, err := GetDbConfig(project, commandName, params)
 	if err != nil {
 		return err
 	}
+
 	if err := utils.PrintYaml(objs); err != nil {
 		return err
 	}

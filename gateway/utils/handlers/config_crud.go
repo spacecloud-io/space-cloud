@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 
@@ -186,6 +187,7 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
+			logrus.Println("error1", err.Error())
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -203,6 +205,7 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
+			logrus.Println("error2", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -300,7 +303,6 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 // HandleGetSchemas returns handler to get schema
 func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 

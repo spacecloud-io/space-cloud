@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"github.com/spaceuptech/space-cli/utils"
 	"strconv"
 	"strings"
 
