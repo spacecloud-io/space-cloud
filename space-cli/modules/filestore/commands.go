@@ -3,39 +3,76 @@ package filestore
 import (
 	"fmt"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// GetSubCommands is the list of commands the filestore module exposes
-var GetSubCommands = []cli.Command{
-	{
-		Name:   "filestore-config",
-		Action: actionGetFileStoreConfig,
-	},
-	{
-		Name:   "filestore-rules",
-		Action: actionGetFileStoreRule,
-	},
+// Commands is the list of commands the filestore module exposes
+func Commands() []*cobra.Command {
+	var generateSubCommands = &cobra.Command{}
+
+	var generaterule = &cobra.Command{
+		Use:  "filestore-rules",
+		RunE: actionGenerateFilestoreRule,
+	}
+
+	var generateconfig = &cobra.Command{
+		Use:  "filestore-config",
+		RunE: actionGenerateFilestoreConfig,
+	}
+
+	var getSubCommands = &cobra.Command{}
+
+	var getFileStoreRule = &cobra.Command{
+		Use:  "filestore-rules",
+		RunE: actionGetFileStoreRule,
+	}
+
+	var getFileStoreConfig = &cobra.Command{
+		Use:  "filestore-config",
+		RunE: actionGetFileStoreConfig,
+	}
+	generateSubCommands.AddCommand(generaterule)
+	generateSubCommands.AddCommand(generateconfig)
+	getSubCommands.AddCommand(getFileStoreRule)
+	getSubCommands.AddCommand(getFileStoreConfig)
+
+	command := make([]*cobra.Command, 0)
+	command = append(command, generateSubCommands)
+	command = append(command, getSubCommands)
+	return command
 }
 
-// GenerateSubCommands is the list of commands the filestore module exposes
-var GenerateSubCommands = []cli.Command{
-	{
-		Name:   "filestore-rules",
-		Action: actionGenerateFilestoreRule,
-	},
-	{
-		Name:   "filestore-config",
-		Action: actionGenerateFilestoreConfig,
-	},
-}
+// // GetSubCommands is the list of commands the filestore module exposes
+// var GetSubCommands = []cli.Command{
+// 	{
+// 		Name:   "filestore-config",
+// 		Action: actionGetFileStoreConfig,
+// 	},
+// 	{
+// 		Name:   "filestore-rules",
+// 		Action: actionGetFileStoreRule,
+// 	},
+// }
 
-func actionGetFileStoreConfig(c *cli.Context) error {
+// // GenerateSubCommands is the list of commands the filestore module exposes
+// var GenerateSubCommands = []cli.Command{
+// 	{
+// 		Name:   "filestore-rules",
+// 		Action: actionGenerateFilestoreRule,
+// 	},
+// 	{
+// 		Name:   "filestore-config",
+// 		Action: actionGenerateFilestoreConfig,
+// 	},
+// }
+
+func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.CalledAs()
 
 	params := map[string]string{}
 	obj, err := GetFileStoreConfig(project, commandName, params)
@@ -48,14 +85,14 @@ func actionGetFileStoreConfig(c *cli.Context) error {
 	return nil
 }
 
-func actionGetFileStoreRule(c *cli.Context) error {
+func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.CalledAs()
 
 	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["id"] = c.Args()[0]
+	if len(args) != 0 {
+		params["id"] = args[0]
 	}
 
 	objs, err := GetFileStoreRule(project, commandName, params)
@@ -68,8 +105,8 @@ func actionGetFileStoreRule(c *cli.Context) error {
 	return nil
 }
 
-func actionGenerateFilestoreRule(c *cli.Context) error {
-	argsArr := c.Args()
+func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
+	argsArr := args
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
@@ -82,8 +119,8 @@ func actionGenerateFilestoreRule(c *cli.Context) error {
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
-func actionGenerateFilestoreConfig(c *cli.Context) error {
-	argsArr := c.Args()
+func actionGenerateFilestoreConfig(cmd *cobra.Command, args []string) error {
+	argsArr := args
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}

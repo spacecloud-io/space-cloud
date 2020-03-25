@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/model"
@@ -19,16 +20,33 @@ import (
 	"github.com/spaceuptech/space-cli/modules/services"
 )
 
-// GetSubCommands is the list of commands the all module exposes
-var GetSubCommands = []cli.Command{
-	{
-		Name:   "all",
-		Action: getAllProjects,
-	},
+// Commands is the list of commands the all module exposes
+func Commands() []*cobra.Command {
+
+	var GetSubCommands = &cobra.Command{}
+
+	var getProjects = &cobra.Command{
+		Use:  "all",
+		RunE: getAllProjects,
+	}
+
+	GetSubCommands.AddCommand(getProjects)
+
+	command := make([]*cobra.Command, 0)
+	command = append(command, GetSubCommands)
+	return command
 }
 
-func getAllProjects(c *cli.Context) error {
-	projectName := c.GlobalString("project")
+// GetSubCommands is the list of commands the all module exposes
+// var GetSubCommands = []cli.Command{
+// 	{
+// 		Name:   "all",
+// 		Action: getAllProjects,
+// 	},
+// }
+
+func getAllProjects(cmd *cobra.Command, args []string) error {
+	projectName := viper.GetString("project")
 
 	obj, err := project.GetProjectConfig(projectName, "project", map[string]string{})
 	if err != nil {

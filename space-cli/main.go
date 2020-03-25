@@ -4,8 +4,29 @@ import (
 	"fmt"
 	"os"
 
+	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spaceuptech/space-cli/modules"
 	"github.com/spaceuptech/space-cli/modules/addons"
+	"github.com/spaceuptech/space-cli/modules/auth"
+	"github.com/spaceuptech/space-cli/modules/database"
+	"github.com/spaceuptech/space-cli/modules/deploy"
+	"github.com/spaceuptech/space-cli/modules/eventing"
+	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/ingress"
+	"github.com/spaceuptech/space-cli/modules/letsencrypt"
+	"github.com/spaceuptech/space-cli/modules/operations"
+	"github.com/spaceuptech/space-cli/modules/project"
+	"github.com/spaceuptech/space-cli/modules/services"
+	"github.com/spaceuptech/space-cli/modules/userman"
+	"github.com/spaceuptech/space-cli/utils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+var (
+	// Used for flags.
+	cfgFile     string
+	userLicense string
 )
 
 var rootCmd = &cobra.Command{
@@ -18,14 +39,58 @@ func execute() error {
 }
 
 func init() {
-	//cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringP("log-level", "", "info", "Sets the log level of the command")
-	addons.AddCmd.PersistentFlags().StringP("project", "", "", "The project to add the add-on to")
-	addons.RemoveCmd.PersistentFlags().StringP("project", "", "", "The project to remove the add-on from")
+	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
 
-	rootCmd.AddCommand(addons.AddCmd)
-	rootCmd.AddCommand(addons.RemoveCmd)
+	rootCmd.PersistentFlags().StringP("project", "", "", "The project to add the add-on to")
+	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
 
+	rootCmd.PersistentFlags().StringP("project", "", "", "The project to remove the add-on from")
+	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
+
+	rootCmd.AddCommand(addons.Commands()...)
+	rootCmd.AddCommand(auth.Commands()...)
+	rootCmd.AddCommand(database.Commands()...)
+	rootCmd.AddCommand(deploy.Commands()...)
+	rootCmd.AddCommand(eventing.Commands()...)
+	rootCmd.AddCommand(filestore.Commands()...)
+	rootCmd.AddCommand(ingress.Commands()...)
+	rootCmd.AddCommand(letsencrypt.Commands()...)
+	rootCmd.AddCommand(operations.Commands()...)
+	rootCmd.AddCommand(project.Commands()...)
+	rootCmd.AddCommand(services.Commands()...)
+	rootCmd.AddCommand(userman.Commands()...)
+	rootCmd.AddCommand(modules.Commands()...)
+	rootCmd.AddCommand(utils.Commands()...)
+}
+
+func er(msg interface{}) {
+	fmt.Println("Error:", msg)
+	os.Exit(1)
+}
+
+func initConfig() {
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Find home directory.
+		home, err := homedir.Dir()
+		if err != nil {
+			er(err)
+		}
+
+		// Search config in home directory with name ".cobra" (without extension).
+		viper.AddConfigPath(home)
+		viper.SetConfigName(".cobra")
+	}
+
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
 }
 
 func main() {

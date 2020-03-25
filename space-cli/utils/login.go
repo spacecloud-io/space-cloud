@@ -7,44 +7,66 @@ import (
 	"net/http"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/model"
 )
 
-// LoginCommands is the list of commands the utils module exposes
-var LoginCommands = []cli.Command{
-	{
-		Name:  "login",
-		Usage: "Logs into space cloud",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "username",
-				Usage:  "Accepts the username for login",
-				EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
-				Value:  "None",
-			},
-			cli.StringFlag{
-				Name:   "key",
-				Usage:  "Accepts the access key to be verified during login",
-				EnvVar: "KEY",
-				Value:  "None",
-			},
-			cli.StringFlag{
-				Name:   "url",
-				Usage:  "Accepts the URL of server",
-				EnvVar: "URL",
-				Value:  "http://localhost:4122",
-			},
-		},
-		Action: actionLogin,
-	},
+// Commands is the list of commands the utils module exposes
+func Commands() []*cobra.Command {
+	var loginCommands = &cobra.Command{
+		Use:   "login",
+		Short: "Logs into space cloud",
+		RunE:  actionLogin,
+	}
+	loginCommands.Flags().StringP("username", "", "None", "Accepts the username for login")
+	viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+
+	loginCommands.Flags().StringP("key", "", "None", "Accepts the access key to be verified during login")
+	viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+
+	loginCommands.Flags().StringP("url", "", "http://localhost:4122", "Accepts the URL of server")
+	viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+
+	command := make([]*cobra.Command, 0)
+	command = append(command, loginCommands)
+	return command
 }
 
-func actionLogin(c *cli.Context) error {
-	userName := c.String("username")
-	key := c.String("key")
-	url := c.String("url")
+// // LoginCommands is the list of commands the utils module exposes
+// var LoginCommands = []cli.Command{
+// 	{
+// 		Name:  "login",
+// 		Usage: "Logs into space cloud",
+// 		Flags: []cli.Flag{
+// 			cli.StringFlag{
+// 				Name:   "username",
+// 				Usage:  "Accepts the username for login",
+// 				EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
+// 				Value:  "None",
+// 			},
+// 			cli.StringFlag{
+// 				Name:   "key",
+// 				Usage:  "Accepts the access key to be verified during login",
+// 				EnvVar: "KEY",
+// 				Value:  "None",
+// 			},
+// 			cli.StringFlag{
+// 				Name:   "url",
+// 				Usage:  "Accepts the URL of server",
+// 				EnvVar: "URL",
+// 				Value:  "http://localhost:4122",
+// 			},
+// 		},
+// 		Action: actionLogin,
+// 	},
+// }
+
+func actionLogin(cmd *cobra.Command, args []string) error {
+	userName := viper.GetString("username")
+	key := viper.GetString("key")
+	url := viper.GetString("url")
 
 	return loginStart(userName, key, url)
 }

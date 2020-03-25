@@ -3,29 +3,55 @@ package letsencrypt
 import (
 	"fmt"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// GenerateSubCommands is the list of commands the letsencrypt module exposes
-var GenerateSubCommands = []cli.Command{
-	{
-		Name:   "letsencrypt",
-		Action: actionGenerateLetsEncryptDomain,
-	},
+// Commands is the list of commands the ingress module exposes
+func Commands() []*cobra.Command {
+	var generateSubCommands = &cobra.Command{}
+
+	var generateletsencrypt = &cobra.Command{
+		Use:  "letsencrypt",
+		RunE: actionGenerateLetsEncryptDomain,
+	}
+
+	var getSubCommands = &cobra.Command{}
+
+	var getletsencrypt = &cobra.Command{
+		Use:  "letsencrypt",
+		RunE: actionGetLetsEncrypt,
+	}
+
+	generateSubCommands.AddCommand(generateletsencrypt)
+	getSubCommands.AddCommand(getletsencrypt)
+
+	command := make([]*cobra.Command, 0)
+	command = append(command, generateSubCommands)
+	command = append(command, getSubCommands)
+	return command
 }
 
-// GetSubCommands is the list of commands the letsencrypt module exposes
-var GetSubCommands = []cli.Command{{
-	Name:   "letsencrypt",
-	Action: actionGetLetsEncrypt,
-}}
+// GenerateSubCommands is the list of commands the letsencrypt module exposes
+// var GenerateSubCommands = []cli.Command{
+// 	{
+// 		Name:   "letsencrypt",
+// 		Action: actionGenerateLetsEncryptDomain,
+// 	},
+// }
 
-func actionGetLetsEncrypt(c *cli.Context) error {
+// // GetSubCommands is the list of commands the letsencrypt module exposes
+// var GetSubCommands = []cli.Command{{
+// 	Name:   "letsencrypt",
+// 	Action: actionGetLetsEncrypt,
+// }}
+
+func actionGetLetsEncrypt(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.CalledAs()
 
 	params := map[string]string{}
 	obj, err := GetLetsEncryptDomain(project, commandName, params)
@@ -38,8 +64,8 @@ func actionGetLetsEncrypt(c *cli.Context) error {
 	return nil
 }
 
-func actionGenerateLetsEncryptDomain(c *cli.Context) error {
-	argsArr := c.Args()
+func actionGenerateLetsEncryptDomain(cmd *cobra.Command, args []string) error {
+	argsArr := args
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}

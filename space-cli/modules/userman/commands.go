@@ -4,19 +4,36 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/space-cli/utils"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
 )
 
-// GenerateSubCommands is the list of commands the userman module exposes
-var GenerateSubCommands = []cli.Command{
-	{
-		Name:   "auth-providers",
-		Action: actionGenerateUserManagement,
-	},
+// Commands dis the list of commands the project module exposes
+func Commands() []*cobra.Command {
+
+	var GenerateSubCommands = &cobra.Command{}
+
+	var generateUserManagement = &cobra.Command{
+		Use:  "auth-providers",
+		RunE: actionGenerateUserManagement,
+	}
+
+	GenerateSubCommands.AddCommand(generateUserManagement)
+
+	command := make([]*cobra.Command, 0)
+	command = append(command, GenerateSubCommands)
+	return command
 }
 
-func actionGenerateUserManagement(c *cli.Context) error {
-	argsArr := c.Args()
+// GenerateSubCommands is the list of commands the userman module exposes
+// var GenerateSubCommands = []cli.Command{
+// 	{
+// 		Name:   "auth-providers",
+// 		Action: actionGenerateUserManagement,
+// 	},
+// }
+
+func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
+	argsArr := args
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}

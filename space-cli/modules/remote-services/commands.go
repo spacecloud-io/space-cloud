@@ -3,35 +3,61 @@ package remoteservices
 import (
 	"fmt"
 
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// GenerateSubCommands is the list of commands the remoteservices module exposes
-var GenerateSubCommands = []cli.Command{
-	{
-		Name:   "remote-services",
-		Action: actionGenerateService,
-	},
+// Commands is the list of commands the remote-services module exposes
+func Commands() []*cobra.Command {
+	var generateSubCommands = &cobra.Command{}
+
+	var generateService = &cobra.Command{
+		Use:  "remote-services",
+		RunE: actionGenerateService,
+	}
+
+	var getSubCommands = &cobra.Command{}
+
+	var getService = &cobra.Command{
+		Use:  "remote-services",
+		RunE: actionGetRemoteServices,
+	}
+
+	generateSubCommands.AddCommand(generateService)
+	getSubCommands.AddCommand(getService)
+
+	command := make([]*cobra.Command, 0)
+	command = append(command, generateSubCommands)
+	command = append(command, getSubCommands)
+	return command
 }
 
-// GetSubCommands is the list of commands the remoteservices module exposes
-var GetSubCommands = []cli.Command{
-	{
-		Name:   "remote-services",
-		Action: actionGetRemoteServices,
-	},
-}
+// // GenerateSubCommands is the list of commands the remoteservices module exposes
+// var GenerateSubCommands = []cli.Command{
+// 	{
+// 		Name:   "remote-services",
+// 		Action: actionGenerateService,
+// 	},
+// }
 
-func actionGetRemoteServices(c *cli.Context) error {
+// // GetSubCommands is the list of commands the remoteservices module exposes
+// var GetSubCommands = []cli.Command{
+// 	{
+// 		Name:   "remote-services",
+// 		Action: actionGetRemoteServices,
+// 	},
+// }
+
+func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.CalledAs()
 
 	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["id"] = c.Args()[0]
+	if len(args) != 0 {
+		params["id"] = args[0]
 	}
 
 	objs, err := GetRemoteServices(project, commandName, params)
@@ -44,8 +70,8 @@ func actionGetRemoteServices(c *cli.Context) error {
 	return nil
 }
 
-func actionGenerateService(c *cli.Context) error {
-	argsArr := c.Args()
+func actionGenerateService(cmd *cobra.Command, args []string) error {
+	argsArr := args
 	if len(argsArr) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
