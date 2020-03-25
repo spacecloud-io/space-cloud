@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 
@@ -31,7 +30,7 @@ func (d *Docker) pullImage(ctx context.Context, projectID string, taskDocker mod
 	// image doesn't exist locally
 	options := types.ImagePullOptions{}
 	if taskDocker.Secret != "" {
-		data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, taskDocker.Secret))
+		data, err := d.fileSystem.ReadSecretsFiles(ctx, projectID, taskDocker.Secret)
 		if err != nil {
 			logrus.Errorf("error in docker unable to read file name (%s) required for pulling image from private repository - %v", taskDocker.Secret, err.Error())
 			return err
