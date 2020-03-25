@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"github.com/spaceuptech/space-cli/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -12,16 +13,28 @@ func Commands() []*cobra.Command {
 		RunE: actionDeploy,
 	}
 	commandDeploy.Flags().StringP("project", "", "", "The project to deploy the service to.")
-	viper.BindPFlag("project", commandDeploy.Flags().Lookup("project"))
+	err := viper.BindPFlag("project", commandDeploy.Flags().Lookup("project"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	commandDeploy.Flags().StringP("docker-file", "", "Dockerfile", "The path of the docker file")
-	viper.BindPFlag("docker-file", commandDeploy.Flags().Lookup("docker-file"))
+	err = viper.BindPFlag("docker-file", commandDeploy.Flags().Lookup("docker-file"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	commandDeploy.Flags().StringP("service-file", "", "service.yaml", "The path of the service config file")
-	viper.BindPFlag("service-file", commandDeploy.Flags().Lookup("service-file"))
+	err = viper.BindPFlag("service-file", commandDeploy.Flags().Lookup("service-file"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	commandDeploy.Flags().StringP("prepare", "", "", "Prepare the configuration used for deploying service")
-	viper.BindPFlag("prepare", commandDeploy.Flags().Lookup("prepare"))
+	err = viper.BindPFlag("prepare", commandDeploy.Flags().Lookup("prepare"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	command := make([]*cobra.Command, 0)
 	command = append(command, commandDeploy)

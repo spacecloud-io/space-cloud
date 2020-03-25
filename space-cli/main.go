@@ -25,8 +25,7 @@ import (
 
 var (
 	// Used for flags.
-	cfgFile     string
-	userLicense string
+	cfgFile string
 )
 
 var rootCmd = &cobra.Command{
@@ -41,13 +40,22 @@ func execute() error {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringP("log-level", "", "info", "Sets the log level of the command")
-	viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
+	err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	rootCmd.PersistentFlags().StringP("project", "", "", "The project to add the add-on to")
-	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
+	err = viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	rootCmd.PersistentFlags().StringP("project", "", "", "The project to remove the add-on from")
-	viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
+	err = viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	rootCmd.AddCommand(addons.Commands()...)
 	rootCmd.AddCommand(auth.Commands()...)

@@ -21,13 +21,22 @@ func Commands() []*cobra.Command {
 		RunE:  actionLogin,
 	}
 	loginCommands.Flags().StringP("username", "", "None", "Accepts the username for login")
-	viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	err := viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	if err != nil {
+		LogError("", err)
+	}
 
 	loginCommands.Flags().StringP("key", "", "None", "Accepts the access key to be verified during login")
-	viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	err = viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	if err != nil {
+		LogError("", err)
+	}
 
 	loginCommands.Flags().StringP("url", "", "http://localhost:4122", "Accepts the URL of server")
-	viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	err = viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	if err != nil {
+		LogError("", err)
+	}
 
 	command := make([]*cobra.Command, 0)
 	command = append(command, loginCommands)

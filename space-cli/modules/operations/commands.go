@@ -41,37 +41,70 @@ func Commands() []*cobra.Command {
 	var s []string
 	var t []string
 	setup.Flags().StringP("id", "", "", "The unique id for the cluster")
-	viper.BindPFlag("id", setup.Flags().Lookup("id"))
+	err := viper.BindPFlag("id", setup.Flags().Lookup("id"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().StringP("username", "", "", "The username used for login")
-	viper.BindPFlag("username", setup.Flags().Lookup("username"))
+	err = viper.BindPFlag("username", setup.Flags().Lookup("username"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().StringP("key", "", "", "The access key used for login")
-	viper.BindPFlag("key", setup.Flags().Lookup("key"))
+	err = viper.BindPFlag("key", setup.Flags().Lookup("key"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().StringP("config", "", "", "The config used to bind config file")
-	viper.BindPFlag("config", setup.Flags().Lookup("config"))
+	err = viper.BindPFlag("config", setup.Flags().Lookup("config"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().StringP("version", "", "", "The version is used to set SC version")
-	viper.BindPFlag("version", setup.Flags().Lookup("version"))
+	err = viper.BindPFlag("version", setup.Flags().Lookup("version"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().StringP("secret", "", "", "The jwt secret to start space-cloud with")
-	viper.BindPFlag("secret", setup.Flags().Lookup("secret"))
+	err = viper.BindPFlag("secret", setup.Flags().Lookup("secret"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().BoolP("dev", "", b, "Run space cloud in development mode")
-	viper.BindPFlag("dev", setup.Flags().Lookup("dev"))
+	err = viper.BindPFlag("dev", setup.Flags().Lookup("dev"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().Int64P("port-http", "", 4122, "The port to use for HTTP")
-	viper.BindPFlag("port-http", setup.Flags().Lookup("port-http"))
+	err = viper.BindPFlag("port-http", setup.Flags().Lookup("port-http"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().Int64P("port-https", "", 4126, "The port to use for HTTPS")
-	viper.BindPFlag("port-https", setup.Flags().Lookup("port-https"))
+	err = viper.BindPFlag("port-https", setup.Flags().Lookup("port-https"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().StringSliceP("v", "", s, "Volumes to be attached to gateway")
-	viper.BindPFlag("v", setup.Flags().Lookup("v"))
+	err = viper.BindPFlag("v", setup.Flags().Lookup("v"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	setup.Flags().StringSliceP("e", "", t, "Environment variables to be provided to gateway")
-	viper.BindPFlag("e", setup.Flags().Lookup("e"))
+	err = viper.BindPFlag("e", setup.Flags().Lookup("e"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	command := make([]*cobra.Command, 0)
 	command = append(command, setup)

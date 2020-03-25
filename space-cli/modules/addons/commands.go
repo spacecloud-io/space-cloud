@@ -48,16 +48,28 @@ func Commands() []*cobra.Command {
 	removeCmd.AddCommand(removeDatabaseCmd)
 
 	addRegistryCmd.Flags().StringP("username", "U", "", "provide the username")
-	viper.BindPFlag("username", addRegistryCmd.Flags().Lookup("username"))
+	err := viper.BindPFlag("username", addRegistryCmd.Flags().Lookup("username"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	addRegistryCmd.Flags().StringP("password", "P", "", "provide the password")
-	viper.BindPFlag("password", addRegistryCmd.Flags().Lookup("password"))
+	err = viper.BindPFlag("password", addRegistryCmd.Flags().Lookup("password"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	addRegistryCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
-	viper.BindPFlag("alias", addRegistryCmd.Flags().Lookup("alias"))
+	err = viper.BindPFlag("alias", addRegistryCmd.Flags().Lookup("alias"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	addRegistryCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
-	viper.BindPFlag("version", addRegistryCmd.Flags().Lookup("version"))
+	err = viper.BindPFlag("version", addRegistryCmd.Flags().Lookup("version"))
+	if err != nil {
+		utils.LogError("", err)
+	}
 
 	command := make([]*cobra.Command, 0)
 	command = append(command, addCmd)

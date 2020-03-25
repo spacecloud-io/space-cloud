@@ -19,12 +19,12 @@ func Commands() []*cobra.Command {
 
 	var generateconfig = &cobra.Command{
 		Use:  "db-config",
-		RunE: actionGenerateDBRule,
+		RunE: actionGenerateDBConfig,
 	}
 
 	var generateschema = &cobra.Command{
 		Use:  "db-schema",
-		RunE: actionGenerateDBRule,
+		RunE: actionGenerateDBSchema,
 	}
 
 	var getSubCommands = &cobra.Command{}
@@ -36,12 +36,12 @@ func Commands() []*cobra.Command {
 
 	var getconfig = &cobra.Command{
 		Use:  "db-config",
-		RunE: actionGenerateDBRule,
+		RunE: actionGetDbConfig,
 	}
 
 	var getschema = &cobra.Command{
 		Use:  "db-schema",
-		RunE: actionGenerateDBRule,
+		RunE: actionGetDbSchema,
 	}
 
 	generateSubCommands.AddCommand(generaterule)
