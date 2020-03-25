@@ -31,7 +31,7 @@ func Commands() []*cobra.Command {
 
 	var getrule = &cobra.Command{
 		Use:  "db-rules",
-		RunE: actionGenerateDBRule,
+		RunE: actionGetDbRules,
 	}
 
 	var getconfig = &cobra.Command{
