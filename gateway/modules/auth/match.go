@@ -246,17 +246,17 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 			if !ok {
 				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
 			}
-			decrypted := make([]byte, len(stringValue))
-			err1 := decryptAESCFB(decrypted, []byte(stringValue), m.aesKey, []byte(m.aesKey)[:aes.BlockSize])
+			decodedValue, err := base64.StdEncoding.DecodeString(stringValue)
+			if err != nil {
+				return nil, err
+			}
+			decrypted := make([]byte, len(decodedValue))
+			err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
 			if err1 != nil {
 				logrus.Errorln("error decrypting value in matchDecrypt: ", err1)
 				return nil, err1
 			}
-			decodedValue, err := base64.StdEncoding.DecodeString(string(decrypted))
-			if err != nil {
-				return nil, err
-			}
-			er := utils.StoreValue(field, decodedValue, args)
+			er := utils.StoreValue(field, string(decrypted), args)
 			if er != nil {
 				logrus.Errorln("error storing value in matchDecrypt: ", er)
 				return nil, er

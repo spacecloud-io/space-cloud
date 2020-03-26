@@ -77,17 +77,17 @@ func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interf
 				if !ok {
 					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
 				}
-				decrypted := make([]byte, len(stringValue))
-				err1 := decryptAESCFB(decrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize])
+				decodedValue, err := base64.StdEncoding.DecodeString(stringValue)
+				if err != nil {
+					return err
+				}
+				decrypted := make([]byte, len(decodedValue))
+				err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
 				if err1 != nil {
 					logrus.Errorln("error decrypting value in postProcessMethod: ", err1)
 					return err1
 				}
-				decodedValue, err := base64.StdEncoding.DecodeString(string(decrypted))
-				if err != nil {
-					return err
-				}
-				er := utils.StoreValue(field.Field, decodedValue, map[string]interface{}{"res": doc})
+				er := utils.StoreValue(field.Field, string(decrypted), map[string]interface{}{"res": doc})
 				if er != nil {
 					logrus.Errorln("error storing value in postProcessMethod: ", er)
 					return er
