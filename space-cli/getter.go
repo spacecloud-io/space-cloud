@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// FetchGetSubCommands fetches all the generatesubcommands from different modules
 func FetchGetSubCommands() *cobra.Command {
 	var getCmd = &cobra.Command{
 		Use:   "get",

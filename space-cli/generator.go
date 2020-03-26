@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// FetchGenerateSubCommands fetches all the generatesubcommands from different modules
 func FetchGenerateSubCommands() *cobra.Command {
 	var generateCmd = &cobra.Command{
 		Use:   "generate",
