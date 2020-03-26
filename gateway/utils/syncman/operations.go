@@ -168,7 +168,9 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
-	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
+	if err := s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey); err != nil {
+		return err
+	}
 
 	return s.setProject(ctx, projectConfig)
 }

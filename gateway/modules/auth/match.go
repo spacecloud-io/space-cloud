@@ -213,15 +213,14 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
 			}
 			encrypted := make([]byte, len(stringValue))
-			err1 := encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize])
-			if err1 != nil {
-				logrus.Errorln("error encrypting value in matchEncrypt: ", err1)
-				return nil, err1
+			if err = encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize]); err != nil {
+				logrus.Errorln("error encrypting value in matchEncrypt: ", err)
+				return nil, err
 			}
-			er := utils.StoreValue(field, base64.StdEncoding.EncodeToString(encrypted), args)
-			if er != nil {
-				logrus.Errorln("error storing value in matchEncrypt: ", er)
-				return nil, er
+
+			if err = utils.StoreValue(field, base64.StdEncoding.EncodeToString(encrypted), args); err != nil {
+				logrus.Errorln("error storing value in matchEncrypt: ", err)
+				return nil, err
 			}
 		} else {
 			return nil, fmt.Errorf("invalid field (%s) provided", field)

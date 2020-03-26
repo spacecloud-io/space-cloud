@@ -82,10 +82,15 @@ func (m *Module) SetSecret(secret string) {
 }
 
 // SetAESKey sets the aeskey to be used for encryption
-func (m *Module) SetAESKey(aesKey string) {
+func (m *Module) SetAESKey(encodedAESKey string) error {
 	m.Lock()
 	defer m.Unlock()
-	m.aesKey = []byte(aesKey)
+	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
+	return nil
 }
 
 // SetServicesConfig sets the service module config

@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -33,7 +32,6 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 		rows = []interface{}{}
 	}
 
-	logrus.Println("create request rows", rows, rule)
 	for _, row := range rows {
 		args["doc"] = row
 		_, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
