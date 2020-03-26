@@ -41,30 +41,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getFileStoreRule, getFileStoreConfig}
 }
 
-// // GetSubCommands is the list of commands the filestore module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "filestore-config",
-// 		Action: actionGetFileStoreConfig,
-// 	},
-// 	{
-// 		Name:   "filestore-rules",
-// 		Action: actionGetFileStoreRule,
-// 	},
-// }
-
-// // GenerateSubCommands is the list of commands the filestore module exposes
-// var GenerateSubCommands = []cli.Command{
-// 	{
-// 		Name:   "filestore-rules",
-// 		Action: actionGenerateFilestoreRule,
-// 	},
-// 	{
-// 		Name:   "filestore-config",
-// 		Action: actionGenerateFilestoreConfig,
-// 	},
-// }
-
 func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")

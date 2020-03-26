@@ -29,22 +29,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getService}
 }
 
-// // GenerateSubCommands is the list of commands the remoteservices module exposes
-// var GenerateSubCommands = []cli.Command{
-// 	{
-// 		Name:   "remote-services",
-// 		Action: actionGenerateService,
-// 	},
-// }
-
-// // GetSubCommands is the list of commands the remoteservices module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "remote-services",
-// 		Action: actionGetRemoteServices,
-// 	},
-// }
-
 func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")

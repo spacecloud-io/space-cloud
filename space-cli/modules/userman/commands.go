@@ -18,14 +18,6 @@ func GenerateSubCommands() []*cobra.Command {
 	return []*cobra.Command{generateUserManagement}
 }
 
-// GenerateSubCommands is the list of commands the userman module exposes
-// var GenerateSubCommands = []cli.Command{
-// 	{
-// 		Name:   "auth-providers",
-// 		Action: actionGenerateUserManagement,
-// 	},
-// }
-
 func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")

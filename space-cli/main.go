@@ -28,7 +28,7 @@ func init() {
 	}
 	err = viper.BindEnv("log-level", "LOG_LEVEL")
 	if err != nil {
-		_ = utils.LogError(fmt.Sprintf("Unable to bind flag ('log-level') to EnvVar"), nil)
+		_ = utils.LogError(fmt.Sprintf("Unable to bind flag ('log-level') to environment variables"), nil)
 	}
 
 	rootCmd.PersistentFlags().StringP("project", "", "", "The project id to perform the options in")

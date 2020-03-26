@@ -49,38 +49,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getrule, getconfig, getschema}
 }
 
-// GenerateSubCommands is the list of commands the database module exposes
-// var GenerateSubCommands = []cli.Command{
-// 	{
-// 		Name:   "db-rules",
-// 		Action: actionGenerateDBRule,
-// 	},
-// 	{
-// 		Name:   "db-config",
-// 		Action: actionGenerateDBConfig,
-// 	},
-// 	{
-// 		Name:   "db-schema",
-// 		Action: actionGenerateDBSchema,
-// 	},
-// }
-
-// // GetSubCommands is the list of commands the operations module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "db-rules",
-// 		Action: actionGetDbRules,
-// 	},
-// 	{
-// 		Name:   "db-config",
-// 		Action: actionGetDbConfig,
-// 	},
-// 	{
-// 		Name:   "db-schema",
-// 		Action: actionGetDbSchema,
-// 	},
-// }
-
 func actionGetDbRules(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")

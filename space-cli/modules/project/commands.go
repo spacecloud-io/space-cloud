@@ -18,14 +18,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getproject}
 }
 
-// // GetSubCommands is the list of commands the project module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "project",
-// 		Action: actionGetProjectConfig,
-// 	},
-// }
-
 func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and cmd parameters
 	project := viper.GetString("project")

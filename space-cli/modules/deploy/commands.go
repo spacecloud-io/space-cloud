@@ -41,18 +41,6 @@ func Commands() []*cobra.Command {
 	return []*cobra.Command{commandDeploy}
 }
 
-// // CommandDeploy deploys a service
-// var CommandDeploy = cli.Command{
-// 	Name: "deploy",
-// 	Flags: []cli.Flag{
-// 		cli.StringFlag{Name: "project", Usage: "The project to deploy the service to."},
-// 		cli.StringFlag{Name: "docker-file", Usage: "The path of the docker file", Value: "Dockerfile"},
-// 		cli.StringFlag{Name: "service-file", Usage: "The path of the service config file", Value: "service.yaml"},
-// 		cli.BoolFlag{Name: "prepare", Usage: "Prepare the configuration used for deploying service"},
-// 	},
-// 	Action: actionDeploy,
-// }
-
 func actionDeploy(cmd *cobra.Command, args []string) error {
 	projectID := viper.GetString("project")
 	dockerFilePath := viper.GetString("docker-file")

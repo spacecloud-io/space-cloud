@@ -15,14 +15,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getAuthProviders}
 }
 
-// GetSubCommands is the list of commands the operations module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "auth-providers",
-// 		Action: actionGetAuthProviders,
-// 	},
-// }
-
 func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")

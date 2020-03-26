@@ -61,46 +61,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{gettrigger, getconfig, getschema, getrule}
 }
 
-// // GetSubCommands is the list of commands the eventing module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "eventing-triggers",
-// 		Action: actionGetEventingTrigger,
-// 	},
-// 	{
-// 		Name:   "eventing-config",
-// 		Action: actionGetEventingConfig,
-// 	},
-// 	{
-// 		Name:   "eventing-schema",
-// 		Action: actionGetEventingSchema,
-// 	},
-// 	{
-// 		Name:   "eventing-rule",
-// 		Action: actionGetEventingSecurityRule,
-// 	},
-// }
-
-// // GenerateSubCommands is the list of commands the eventing module exposes
-// var GenerateSubCommands = []cli.Command{
-// 	{
-// 		Name:   "eventing-rule",
-// 		Action: actionGenerateEventingRule,
-// 	},
-// 	{
-// 		Name:   "eventing-schema",
-// 		Action: actionGenerateEventingSchema,
-// 	},
-// 	{
-// 		Name:   "eventing-config",
-// 		Action: actionGenerateEventingConfig,
-// 	},
-// 	{
-// 		Name:   "eventing-triggers",
-// 		Action: actionGenerateEventingTrigger,
-// 	},
-// }
-
 func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")

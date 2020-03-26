@@ -30,22 +30,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getroutes}
 }
 
-// // GenerateSubCommands is the list of commands the ingress module exposes
-// var GenerateSubCommands = []cli.Command{
-// 	{
-// 		Name:   "ingress-routes",
-// 		Action: actionGenerateIngressRouting,
-// 	},
-// }
-
-// // GetSubCommands is the list of commands the ingress module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "ingress-routes",
-// 		Action: actionGetIngressRoutes,
-// 	},
-// }
-
 func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")

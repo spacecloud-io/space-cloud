@@ -42,30 +42,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getServicesRoutes, getServicesSecrets, getService}
 }
 
-// // GenerateSubCommands is the list of commands the services module exposes
-// var GenerateSubCommands = []cli.Command{
-// 	{
-// 		Name:   "service",
-// 		Action: actionGenerateService,
-// 	},
-// }
-
-// // GetSubCommands is the list of commands the services module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "services-routes",
-// 		Action: actionGetServicesRoutes,
-// 	},
-// 	{
-// 		Name:   "services-secrets",
-// 		Action: actionGetServicesSecrets,
-// 	},
-// 	{
-// 		Name:   "services",
-// 		Action: actionGetServices,
-// 	},
-// }
-
 func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")

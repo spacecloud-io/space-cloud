@@ -30,20 +30,6 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getletsencrypt}
 }
 
-// GenerateSubCommands is the list of commands the letsencrypt module exposes
-// var GenerateSubCommands = []cli.Command{
-// 	{
-// 		Name:   "letsencrypt",
-// 		Action: actionGenerateLetsEncryptDomain,
-// 	},
-// }
-
-// // GetSubCommands is the list of commands the letsencrypt module exposes
-// var GetSubCommands = []cli.Command{{
-// 	Name:   "letsencrypt",
-// 	Action: actionGetLetsEncrypt,
-// }}
-
 func actionGetLetsEncrypt(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")

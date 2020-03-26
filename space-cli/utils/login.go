@@ -27,7 +27,7 @@ func Commands() []*cobra.Command {
 	}
 	err = viper.BindEnv("username", "USER_NAME")
 	if err != nil {
-		_ = LogError(fmt.Sprintf("Unable to bind flag ('username') to EnvVar"), nil)
+		_ = LogError(fmt.Sprintf("Unable to bind flag ('username') to environment variables"), nil)
 	}
 
 	loginCommands.Flags().StringP("key", "", "None", "Accepts the access key to be verified during login")
@@ -37,7 +37,7 @@ func Commands() []*cobra.Command {
 	}
 	err = viper.BindEnv("key", "KEY")
 	if err != nil {
-		_ = LogError(fmt.Sprintf("Unable to bind flag ('key') to EnvVar"), nil)
+		_ = LogError(fmt.Sprintf("Unable to bind flag ('key') to environment variables"), nil)
 	}
 
 	loginCommands.Flags().StringP("url", "", "http://localhost:4122", "Accepts the URL of server")
@@ -47,40 +47,11 @@ func Commands() []*cobra.Command {
 	}
 	err = viper.BindEnv("url", "URL")
 	if err != nil {
-		_ = LogError(fmt.Sprintf("Unable to bind flag ('url') to EnvVar"), nil)
+		_ = LogError(fmt.Sprintf("Unable to bind flag ('url') to environment variables"), nil)
 	}
 
 	return []*cobra.Command{loginCommands}
 }
-
-// // LoginCommands is the list of commands the utils module exposes
-// var LoginCommands = []cli.Command{
-// 	{
-// 		Name:  "login",
-// 		Usage: "Logs into space cloud",
-// 		Flags: []cli.Flag{
-// 			cli.StringFlag{
-// 				Name:   "username",
-// 				Usage:  "Accepts the username for login",
-// 				EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
-// 				Value:  "None",
-// 			},
-// 			cli.StringFlag{
-// 				Name:   "key",
-// 				Usage:  "Accepts the access key to be verified during login",
-// 				EnvVar: "KEY",
-// 				Value:  "None",
-// 			},
-// 			cli.StringFlag{
-// 				Name:   "url",
-// 				Usage:  "Accepts the URL of server",
-// 				EnvVar: "URL",
-// 				Value:  "http://localhost:4122",
-// 			},
-// 		},
-// 		Action: actionLogin,
-// 	},
-// }
 
 func actionLogin(cmd *cobra.Command, args []string) error {
 	userName := viper.GetString("username")
