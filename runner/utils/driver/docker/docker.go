@@ -26,13 +26,13 @@ import (
 
 // Docker defines the type for docker instance
 type Docker struct {
-	client       model.DockerClient
+	client       dockerClient
 	auth         *auth.Module
 	artifactAddr string
 	secretPath   string
 	hostFilePath string
-	manager      model.ProxyManager
-	fileSystem   model.FileSystem
+	manager      proxyManager
+	fileSystem   fileSystem
 }
 
 // NewDockerDriver returns a new docker instance

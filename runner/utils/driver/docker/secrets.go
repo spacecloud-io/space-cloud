@@ -166,10 +166,3 @@ func (d *Docker) writeIntoFile(secretObj *model.Secret, filePath string) error {
 	// create / update file content
 	return ioutil.WriteFile(filePath, data, 0777)
 }
-
-func (d *Docker) createDir(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return os.MkdirAll(path, 0777)
-	}
-	return nil
-}

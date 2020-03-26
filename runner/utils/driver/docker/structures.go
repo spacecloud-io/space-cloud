@@ -1,15 +1,16 @@
-package model
+package docker
 
 import (
 	"context"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/txn2/txeh"
 	"io"
 )
 
-type DockerClient interface {
+type dockerClient interface {
 	ImageInspectWithRaw(ctx context.Context, imageID string) (types.ImageInspect, []byte, error)
 	ImagePull(ctx context.Context, refStr string, options types.ImagePullOptions) (io.ReadCloser, error)
 	ContainerCreate(ctx context.Context, config *container.Config, hostConfig *container.HostConfig, networkingConfig *network.NetworkingConfig, containerName string) (container.ContainerCreateCreatedBody, error)
@@ -19,7 +20,7 @@ type DockerClient interface {
 	ContainerRemove(ctx context.Context, containerID string, options types.ContainerRemoveOptions) error
 }
 
-type FileSystem interface {
+type fileSystem interface {
 	ReadSecretsFiles(ctx context.Context, projectID, secretName string) ([]byte, error)
 	RemoveTempSecretsFolder(projectID, serviceID, version string) error
 	CreateProjectDirectory(projectID string) error
@@ -32,9 +33,9 @@ type FileSystem interface {
 	HostAddressLookUp(h *txeh.Hosts, hostName string) (bool, string, int)
 }
 
-type ProxyManager interface {
-	SetServiceRoutes(projectID, serviceID string, r Routes) error
-	SetServiceRouteIfNotExists(projectID, serviceID, version string, ports []Port) error
-	GetServiceRoutes(projectID string) (map[string]Routes, error)
+type proxyManager interface {
+	SetServiceRoutes(projectID, serviceID string, r model.Routes) error
+	SetServiceRouteIfNotExists(projectID, serviceID, version string, ports []model.Port) error
+	GetServiceRoutes(projectID string) (map[string]model.Routes, error)
 	DeleteServiceRoutes(projectID, serviceID string) error
 }

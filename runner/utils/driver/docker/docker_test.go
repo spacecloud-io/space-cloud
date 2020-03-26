@@ -568,13 +568,13 @@ func TestDocker_DeleteService(t *testing.T) {
 
 func TestDocker_GetServiceRoutes(t *testing.T) {
 	type fields struct {
-		client       model.DockerClient
+		client       dockerClient
 		auth         *auth.Module
 		artifactAddr string
 		secretPath   string
 		hostFilePath string
-		manager      model.ProxyManager
-		fileSystem   model.FileSystem
+		manager      proxyManager
+		fileSystem   fileSystem
 	}
 	type args struct {
 		in0       context.Context
@@ -615,13 +615,13 @@ func TestDocker_GetServiceRoutes(t *testing.T) {
 
 func TestDocker_GetServices(t *testing.T) {
 	type fields struct {
-		client       model.DockerClient
+		client       dockerClient
 		auth         *auth.Module
 		artifactAddr string
 		secretPath   string
 		hostFilePath string
-		manager      model.ProxyManager
-		fileSystem   model.FileSystem
+		manager      proxyManager
+		fileSystem   fileSystem
 	}
 	type args struct {
 		ctx       context.Context
@@ -661,13 +661,13 @@ func TestDocker_GetServices(t *testing.T) {
 
 func TestDocker_checkIfLastService(t *testing.T) {
 	type fields struct {
-		client       model.DockerClient
+		client       dockerClient
 		auth         *auth.Module
 		artifactAddr string
 		secretPath   string
 		hostFilePath string
-		manager      model.ProxyManager
-		fileSystem   model.FileSystem
+		manager      proxyManager
+		fileSystem   fileSystem
 	}
 	type args struct {
 		ctx       context.Context
@@ -708,13 +708,13 @@ func TestDocker_checkIfLastService(t *testing.T) {
 
 func TestDocker_createContainer(t *testing.T) {
 	type fields struct {
-		client       model.DockerClient
+		client       dockerClient
 		auth         *auth.Module
 		artifactAddr string
 		secretPath   string
 		hostFilePath string
-		manager      model.ProxyManager
-		fileSystem   model.FileSystem
+		manager      proxyManager
+		fileSystem   fileSystem
 	}
 	type args struct {
 		ctx           context.Context
