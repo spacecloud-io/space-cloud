@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,16 +33,21 @@ func GetSubCommands() []*cobra.Command {
 	return []*cobra.Command{getProjects}
 }
 
-// GetSubCommands is the list of commands the all module exposes
-// var GetSubCommands = []cli.Command{
-// 	{
-// 		Name:   "all",
-// 		Action: getAllProjects,
-// 	},
-// }
-
 func getAllProjects(cmd *cobra.Command, args []string) error {
 	projectName := viper.GetString("project")
+
+	if len(args) == 0 {
+		return fmt.Errorf("Directory not specified as an arguement to store config files")
+	}
+	dir := args[0]
+	// create directory if directory doesn't exists
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+
+	if err := os.Chdir(dir); err != nil {
+		return err
+	}
 
 	obj, err := project.GetProjectConfig(projectName, "project", map[string]string{})
 	if err != nil {

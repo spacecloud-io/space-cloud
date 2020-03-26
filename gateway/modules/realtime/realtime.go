@@ -37,18 +37,6 @@ func Init(nodeID string, eventing model.EventingRealtimeInterface, auth model.Au
 	return m, nil
 }
 
-// SendFeed is the function called whenever a data point (feed) is to be sent
-type SendFeed func(*model.FeedData)
-
-// const (
-// serviceName string = "sc-realtime"
-// funcName    string = "handle"
-// )
-
-// type handlerAck struct {
-// 	Ack bool
-// }
-
 // SetConfig set the rules and secret key required by the realtime block
 func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 	m.Lock()

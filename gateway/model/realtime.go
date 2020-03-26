@@ -2,14 +2,14 @@ package model
 
 // FeedData is the format to send realtime data
 type FeedData struct {
-	QueryID   string      `json:"id" structs:"id"`
-	Type      string      `json:"type" structs:"type"`
-	Payload   interface{} `json:"payload" structs:"payload"`
-	TimeStamp int64       `json:"time" structs:"time"`
-	Group     string      `json:"group" structs:"group"`
-	DBType    string      `json:"dbType" structs:"dbType"`
+	QueryID   string      `json:"id,omitempty" structs:"id"`
+	Type      string      `json:"type,omitempty" structs:"type"`
+	Payload   interface{} `json:"payload,omitempty" structs:"payload"`
+	TimeStamp int64       `json:"time,omitempty" structs:"time"`
+	Group     string      `json:"group,omitempty" structs:"group"`
+	DBType    string      `json:"dbType,omitempty" structs:"dbType"`
 	TypeName  string      `json:"__typename,omitempty" structs:"__typename,omitempty"`
-	Find      interface{} `json:"find" structs:"find"`
+	Find      interface{} `json:"find,omitempty" structs:"find"`
 }
 
 // RealtimeRequest is the object sent for realtime requests
@@ -26,11 +26,11 @@ type RealtimeRequest struct {
 
 // RealtimeResponse is the object sent for realtime requests
 type RealtimeResponse struct {
-	Group string      `json:"group"` // Group is the collection name
-	ID    string      `json:"id"`    // id is the query id
+	Group string      `json:"group,omitempty"` // Group is the collection name
+	ID    string      `json:"id,omitempty"`    // id is the query id
 	Ack   bool        `json:"ack"`
-	Error string      `json:"error"`
-	Docs  []*FeedData `json:"docs"`
+	Error string      `json:"error,omitempty"`
+	Docs  []*FeedData `json:"docs,omitempty"`
 }
 
 // Message is the request body of the message
@@ -44,3 +44,6 @@ type Message struct {
 type LiveQueryOptions struct {
 	SkipInitial bool `json:"skipInitial"`
 }
+
+// SendFeed is the function called whenever a data point (feed) is to be sent
+type SendFeed func(*FeedData)

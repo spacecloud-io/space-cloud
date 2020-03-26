@@ -263,9 +263,8 @@ func actionApply(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments provided")
 	}
 
-	fileName := args[2]
-
-	return Apply(fileName)
+	dirName := args[2]
+	return Apply(dirName)
 }
 
 func actionStart(cmd *cobra.Command, args []string) error {

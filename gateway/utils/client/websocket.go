@@ -51,6 +51,7 @@ func (c *WebsocketClient) Read(cb DataCallback) {
 		data := &model.Message{}
 		err := c.socket.ReadJSON(data)
 		if err != nil {
+			_ = c.socket.WriteJSON(model.Message{Type: "unknown", ID: "0", Data: map[string]interface{}{"error": "invalid request sent"}})
 			return
 		}
 
