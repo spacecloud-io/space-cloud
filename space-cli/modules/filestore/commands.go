@@ -9,9 +9,8 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the filestore module exposes
-func Commands() []*cobra.Command {
-	var generateSubCommands = &cobra.Command{}
+// GenerateSubCommands is the list of commands the filestore module exposes
+func GenerateSubCommands() []*cobra.Command {
 
 	var generaterule = &cobra.Command{
 		Use:  "filestore-rules",
@@ -23,7 +22,11 @@ func Commands() []*cobra.Command {
 		RunE: actionGenerateFilestoreConfig,
 	}
 
-	var getSubCommands = &cobra.Command{}
+	return []*cobra.Command{generaterule, generateconfig}
+}
+
+// GetSubCommands is the list of commands the filestore module exposes
+func GetSubCommands() []*cobra.Command {
 
 	var getFileStoreRule = &cobra.Command{
 		Use:  "filestore-rules",
@@ -34,15 +37,8 @@ func Commands() []*cobra.Command {
 		Use:  "filestore-config",
 		RunE: actionGetFileStoreConfig,
 	}
-	generateSubCommands.AddCommand(generaterule)
-	generateSubCommands.AddCommand(generateconfig)
-	getSubCommands.AddCommand(getFileStoreRule)
-	getSubCommands.AddCommand(getFileStoreConfig)
 
-	command := make([]*cobra.Command, 0)
-	command = append(command, generateSubCommands)
-	command = append(command, getSubCommands)
-	return command
+	return []*cobra.Command{getFileStoreRule, getFileStoreConfig}
 }
 
 // // GetSubCommands is the list of commands the filestore module exposes
@@ -72,7 +68,7 @@ func Commands() []*cobra.Command {
 func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	obj, err := GetFileStoreConfig(project, commandName, params)
@@ -88,7 +84,7 @@ func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
 func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -106,11 +102,10 @@ func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateFilestoreRule()
 	if err != nil {
 		return err
@@ -120,11 +115,10 @@ func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateFilestoreConfig(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateFilestoreConfig()
 	if err != nil {
 		return err

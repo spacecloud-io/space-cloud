@@ -9,29 +9,24 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the remote-services module exposes
-func Commands() []*cobra.Command {
-	var generateSubCommands = &cobra.Command{}
+// GenerateSubCommands is the list of commands the remote-services module exposes
+func GenerateSubCommands() []*cobra.Command {
 
 	var generateService = &cobra.Command{
 		Use:  "remote-services",
 		RunE: actionGenerateService,
 	}
+	return []*cobra.Command{generateService}
+}
 
-	var getSubCommands = &cobra.Command{}
+// GetSubCommands is the list of commands the remote-services module exposes
+func GetSubCommands() []*cobra.Command {
 
 	var getService = &cobra.Command{
 		Use:  "remote-services",
 		RunE: actionGetRemoteServices,
 	}
-
-	generateSubCommands.AddCommand(generateService)
-	getSubCommands.AddCommand(getService)
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, generateSubCommands)
-	command = append(command, getSubCommands)
-	return command
+	return []*cobra.Command{getService}
 }
 
 // // GenerateSubCommands is the list of commands the remoteservices module exposes
@@ -53,7 +48,7 @@ func Commands() []*cobra.Command {
 func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -71,11 +66,10 @@ func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateService(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateService()
 	if err != nil {
 		return err

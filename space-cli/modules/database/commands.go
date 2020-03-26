@@ -8,9 +8,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Commands is the list of commands the database module exposes
-func Commands() []*cobra.Command {
-	var generateSubCommands = &cobra.Command{}
+// GenerateSubCommands is the list of commands the database module exposes
+func GenerateSubCommands() []*cobra.Command {
 
 	var generaterule = &cobra.Command{
 		Use:  "db-rules",
@@ -26,8 +25,11 @@ func Commands() []*cobra.Command {
 		Use:  "db-schema",
 		RunE: actionGenerateDBSchema,
 	}
+	return []*cobra.Command{generaterule, generateconfig, generateschema}
+}
 
-	var getSubCommands = &cobra.Command{}
+// GetSubCommands is the list of commands the database module exposes
+func GetSubCommands() []*cobra.Command {
 
 	var getrule = &cobra.Command{
 		Use:  "db-rules",
@@ -44,17 +46,7 @@ func Commands() []*cobra.Command {
 		RunE: actionGetDbSchema,
 	}
 
-	generateSubCommands.AddCommand(generaterule)
-	generateSubCommands.AddCommand(generateconfig)
-	generateSubCommands.AddCommand(generateschema)
-	getSubCommands.AddCommand(getrule)
-	getSubCommands.AddCommand(getconfig)
-	getSubCommands.AddCommand(getschema)
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, generateSubCommands)
-	command = append(command, getSubCommands)
-	return command
+	return []*cobra.Command{getrule, getconfig, getschema}
 }
 
 // GenerateSubCommands is the list of commands the database module exposes
@@ -92,7 +84,7 @@ func Commands() []*cobra.Command {
 func actionGetDbRules(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	switch len(args) {
@@ -115,7 +107,7 @@ func actionGetDbRules(cmd *cobra.Command, args []string) error {
 func actionGetDbConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -135,7 +127,7 @@ func actionGetDbConfig(cmd *cobra.Command, args []string) error {
 func actionGetDbSchema(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	switch len(args) {
@@ -157,11 +149,10 @@ func actionGetDbSchema(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateDBRule()
 	if err != nil {
 		return err
@@ -171,11 +162,10 @@ func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateDBConfig()
 	if err != nil {
 		return err
@@ -185,11 +175,10 @@ func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateDBSchema(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateDBSchema()
 	if err != nil {
 		return err

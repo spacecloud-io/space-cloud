@@ -7,21 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Commands dis the list of commands the project module exposes
-func Commands() []*cobra.Command {
-
-	var GenerateSubCommands = &cobra.Command{}
+// GenerateSubCommands dis the list of commands the project module exposes
+func GenerateSubCommands() []*cobra.Command {
 
 	var generateUserManagement = &cobra.Command{
 		Use:  "auth-providers",
 		RunE: actionGenerateUserManagement,
 	}
 
-	GenerateSubCommands.AddCommand(generateUserManagement)
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, GenerateSubCommands)
-	return command
+	return []*cobra.Command{generateUserManagement}
 }
 
 // GenerateSubCommands is the list of commands the userman module exposes
@@ -33,11 +27,10 @@ func Commands() []*cobra.Command {
 // }
 
 func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateUserManagement()
 	if err != nil {
 		return err

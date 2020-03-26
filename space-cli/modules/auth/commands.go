@@ -6,15 +6,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Commands is the list of commands the auth module exposes
-func Commands() []*cobra.Command {
-	var GetSubCommands = &cobra.Command{
+// GetSubCommands is the list of commands the auth module exposes
+func GetSubCommands() []*cobra.Command {
+	var getAuthProviders = &cobra.Command{
 		Use:  "auth-providers",
 		RunE: actionGetAuthProviders,
 	}
-	command := make([]*cobra.Command, 0)
-	command = append(command, GetSubCommands)
-	return command
+	return []*cobra.Command{getAuthProviders}
 }
 
 // GetSubCommands is the list of commands the operations module exposes
@@ -28,7 +26,7 @@ func Commands() []*cobra.Command {
 func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {

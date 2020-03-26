@@ -1,6 +1,8 @@
 package addons
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -50,25 +52,25 @@ func Commands() []*cobra.Command {
 	addRegistryCmd.Flags().StringP("username", "U", "", "provide the username")
 	err := viper.BindPFlag("username", addRegistryCmd.Flags().Lookup("username"))
 	if err != nil {
-		utils.LogError("", err)
+		_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('username')"), nil)
 	}
 
 	addRegistryCmd.Flags().StringP("password", "P", "", "provide the password")
 	err = viper.BindPFlag("password", addRegistryCmd.Flags().Lookup("password"))
 	if err != nil {
-		utils.LogError("", err)
+		_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('password')"), nil)
 	}
 
 	addRegistryCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	err = viper.BindPFlag("alias", addRegistryCmd.Flags().Lookup("alias"))
 	if err != nil {
-		utils.LogError("", err)
+		_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('alias')"), nil)
 	}
 
 	addRegistryCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 	err = viper.BindPFlag("version", addRegistryCmd.Flags().Lookup("version"))
 	if err != nil {
-		utils.LogError("", err)
+		_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('version')"), nil)
 	}
 
 	command := make([]*cobra.Command, 0)
@@ -91,13 +93,13 @@ func ActionRemoveRegistry(cmd *cobra.Command, args []string) error {
 
 // ActionAddDatabase adds a database add on
 func ActionAddDatabase(cmd *cobra.Command, args []string) error {
-	dbtype := args
-	if len(dbtype) == 0 {
+	if len(args) == 0 {
 		return utils.LogError("Database type not provided as an arguement", nil)
 	}
+	dbtype := args[0]
 	username := viper.GetString("username")
 	if username == "" {
-		switch dbtype[0] {
+		switch dbtype {
 		case "postgres":
 			username = "postgres"
 		case "mysql":
@@ -106,7 +108,7 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	}
 	password := viper.GetString("password")
 	if password == "" {
-		switch dbtype[0] {
+		switch dbtype {
 		case "postgres":
 			password = "mysecretpassword"
 		case "mysql":
@@ -114,17 +116,15 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 		}
 	}
 	alias := viper.GetString("alias")
-
 	version := viper.GetString("versio")
 
-	return addDatabase(dbtype[0], username, password, alias, version)
+	return addDatabase(dbtype, username, password, alias, version)
 }
 
 // ActionRemoveDatabase removes a database add on
 func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
-	alias := args
-	if len(alias) == 0 {
+	if len(args) == 0 {
 		return utils.LogError("Database Alias not provided as an argument", nil)
 	}
-	return removeDatabase(alias[0])
+	return removeDatabase(args[0])
 }

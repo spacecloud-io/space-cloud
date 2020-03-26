@@ -21,26 +21,36 @@ func Commands() []*cobra.Command {
 		RunE:  actionLogin,
 	}
 	loginCommands.Flags().StringP("username", "", "None", "Accepts the username for login")
-	err := viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	err := viper.BindPFlag("username", loginCommands.Flags().Lookup("username"))
 	if err != nil {
 		LogError("", err)
+	}
+	err = viper.BindEnv("username", "USER_NAME")
+	if err != nil {
+		_ = LogError(fmt.Sprintf("Unable to bind flag ('username') to EnvVar"), nil)
 	}
 
 	loginCommands.Flags().StringP("key", "", "None", "Accepts the access key to be verified during login")
-	err = viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	err = viper.BindPFlag("key", loginCommands.Flags().Lookup("key"))
 	if err != nil {
 		LogError("", err)
+	}
+	err = viper.BindEnv("key", "KEY")
+	if err != nil {
+		_ = LogError(fmt.Sprintf("Unable to bind flag ('key') to EnvVar"), nil)
 	}
 
 	loginCommands.Flags().StringP("url", "", "http://localhost:4122", "Accepts the URL of server")
-	err = viper.BindPFlag("project", loginCommands.Flags().Lookup("project"))
+	err = viper.BindPFlag("url", loginCommands.Flags().Lookup("url"))
 	if err != nil {
 		LogError("", err)
 	}
+	err = viper.BindEnv("url", "URL")
+	if err != nil {
+		_ = LogError(fmt.Sprintf("Unable to bind flag ('url') to EnvVar"), nil)
+	}
 
-	command := make([]*cobra.Command, 0)
-	command = append(command, loginCommands)
-	return command
+	return []*cobra.Command{loginCommands}
 }
 
 // // LoginCommands is the list of commands the utils module exposes

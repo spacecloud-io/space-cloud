@@ -20,21 +20,16 @@ import (
 	"github.com/spaceuptech/space-cli/modules/services"
 )
 
-// Commands is the list of commands the all module exposes
-func Commands() []*cobra.Command {
-
-	var GetSubCommands = &cobra.Command{}
+// GetSubCommands is the list of commands the all module exposes
+func GetSubCommands() []*cobra.Command {
 
 	var getProjects = &cobra.Command{
-		Use:  "all",
-		RunE: getAllProjects,
+		Use:   "all",
+		Short: "Gets entire project config",
+		RunE:  getAllProjects,
 	}
 
-	GetSubCommands.AddCommand(getProjects)
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, GetSubCommands)
-	return command
+	return []*cobra.Command{getProjects}
 }
 
 // GetSubCommands is the list of commands the all module exposes

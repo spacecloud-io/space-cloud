@@ -9,9 +9,8 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the eventing module exposes
-func Commands() []*cobra.Command {
-	var generateSubCommands = &cobra.Command{}
+// GenerateSubCommands is the list of commands the eventing module exposes
+func GenerateSubCommands() []*cobra.Command {
 
 	var generatetrigger = &cobra.Command{
 		Use:  "eventing-triggers",
@@ -33,7 +32,11 @@ func Commands() []*cobra.Command {
 		RunE: actionGenerateEventingRule,
 	}
 
-	var getSubCommands = &cobra.Command{}
+	return []*cobra.Command{generatetrigger, generateconfig, generateschema, generaterule}
+}
+
+// GetSubCommands is the list of commands the eventing module exposes
+func GetSubCommands() []*cobra.Command {
 
 	var gettrigger = &cobra.Command{
 		Use:  "eventing-triggers",
@@ -55,19 +58,7 @@ func Commands() []*cobra.Command {
 		RunE: actionGetEventingSecurityRule,
 	}
 
-	generateSubCommands.AddCommand(generatetrigger)
-	generateSubCommands.AddCommand(generateconfig)
-	generateSubCommands.AddCommand(generateschema)
-	generateSubCommands.AddCommand(generaterule)
-	getSubCommands.AddCommand(gettrigger)
-	getSubCommands.AddCommand(getconfig)
-	getSubCommands.AddCommand(getschema)
-	getSubCommands.AddCommand(getrule)
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, generateSubCommands)
-	command = append(command, getSubCommands)
-	return command
+	return []*cobra.Command{gettrigger, getconfig, getschema, getrule}
 }
 
 // // GetSubCommands is the list of commands the eventing module exposes
@@ -113,7 +104,7 @@ func Commands() []*cobra.Command {
 func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -132,7 +123,7 @@ func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 func actionGetEventingConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	obj, err := GetEventingConfig(project, commandName, params)
@@ -148,7 +139,7 @@ func actionGetEventingConfig(cmd *cobra.Command, args []string) error {
 func actionGetEventingSchema(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -167,7 +158,7 @@ func actionGetEventingSchema(cmd *cobra.Command, args []string) error {
 func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -184,11 +175,10 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingRule()
 	if err != nil {
 		return err
@@ -198,11 +188,10 @@ func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingSchema()
 	if err != nil {
 		return err
@@ -212,11 +201,10 @@ func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingConfig()
 	if err != nil {
 		return err
@@ -226,11 +214,10 @@ func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingTrigger()
 	if err != nil {
 		return err

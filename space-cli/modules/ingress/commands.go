@@ -8,29 +8,26 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Commands is the list of commands the ingress module exposes
-func Commands() []*cobra.Command {
-	var generateSubCommands = &cobra.Command{}
+// GenerateSubCommands is the list of commands the ingress module exposes
+func GenerateSubCommands() []*cobra.Command {
 
 	var generateroutes = &cobra.Command{
 		Use:  "ingress-routes",
 		RunE: actionGenerateIngressRouting,
 	}
 
-	var getSubCommands = &cobra.Command{}
+	return []*cobra.Command{generateroutes}
+}
+
+// GetSubCommands is the list of commands the ingress module exposes
+func GetSubCommands() []*cobra.Command {
 
 	var getroutes = &cobra.Command{
 		Use:  "ingress-routes",
 		RunE: actionGetIngressRoutes,
 	}
 
-	generateSubCommands.AddCommand(generateroutes)
-	getSubCommands.AddCommand(getroutes)
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, generateSubCommands)
-	command = append(command, getSubCommands)
-	return command
+	return []*cobra.Command{getroutes}
 }
 
 // // GenerateSubCommands is the list of commands the ingress module exposes
@@ -52,7 +49,7 @@ func Commands() []*cobra.Command {
 func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -70,11 +67,10 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 }
 
 func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
-	argsArr := args
-	if len(argsArr) != 1 {
+	if len(args) != 1 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateIngressRouting()
 	if err != nil {
 		return err

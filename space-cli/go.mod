@@ -12,8 +12,6 @@ require (
 	github.com/docker/docker v1.4.2-0.20190927142053-ada3c14355ce
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/ghodss/yaml v1.0.0
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
@@ -25,8 +23,6 @@ require (
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
-	google.golang.org/genproto v0.0.0-20191216164720-4f79533eabd1
-	gopkg.in/AlecAivazis/survey.v1 v1.8.5
 	gopkg.in/yaml.v2 v2.2.7
 	gotest.tools v2.2.0+incompatible // indirect
 )

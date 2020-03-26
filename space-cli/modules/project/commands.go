@@ -7,21 +7,15 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands dis the list of commands the project module exposes
-func Commands() []*cobra.Command {
-
-	var getSubCommands = &cobra.Command{}
+// GetSubCommands dis the list of commands the project module exposes
+func GetSubCommands() []*cobra.Command {
 
 	var getproject = &cobra.Command{
 		Use:  "project",
 		RunE: actionGetProjectConfig,
 	}
 
-	getSubCommands.AddCommand(getproject)
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, getSubCommands)
-	return command
+	return []*cobra.Command{getproject}
 }
 
 // // GetSubCommands is the list of commands the project module exposes
@@ -35,7 +29,7 @@ func Commands() []*cobra.Command {
 func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and cmd parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	obj, err := GetProjectConfig(project, commandName, params)

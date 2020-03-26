@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -10,16 +9,20 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// Commands is the list of commands the services module exposes
-func Commands() []*cobra.Command {
-	var generateSubCommands = &cobra.Command{}
+// GenerateSubCommands is the list of commands the services module exposes
+func GenerateSubCommands() []*cobra.Command {
 
 	var generateService = &cobra.Command{
 		Use:  "services",
 		RunE: actionGenerateService,
 	}
 
-	var getSubCommands = &cobra.Command{}
+	return []*cobra.Command{generateService}
+
+}
+
+// GetSubCommands is the list of commands the services module exposes
+func GetSubCommands() []*cobra.Command {
 
 	var getServicesRoutes = &cobra.Command{
 		Use:  "services-routes",
@@ -36,15 +39,7 @@ func Commands() []*cobra.Command {
 		RunE: actionGetServices,
 	}
 
-	generateSubCommands.AddCommand(generateService)
-	getSubCommands.AddCommand(getServicesRoutes)
-	getSubCommands.AddCommand(getServicesSecrets)
-	getSubCommands.AddCommand(getService)
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, generateSubCommands)
-	command = append(command, getSubCommands)
-	return command
+	return []*cobra.Command{getServicesRoutes, getServicesSecrets, getService}
 }
 
 // // GenerateSubCommands is the list of commands the services module exposes
@@ -74,7 +69,7 @@ func Commands() []*cobra.Command {
 func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -94,7 +89,7 @@ func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -114,7 +109,7 @@ func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 func actionGetServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.CalledAs()
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	switch len(args) {
@@ -136,11 +131,10 @@ func actionGetServices(cmd *cobra.Command, args []string) error {
 
 func actionGenerateService(cmd *cobra.Command, args []string) error {
 	// get filename from args in which service config will be stored
-	argsArr := os.Args
-	if len(argsArr) != 4 {
+	if len(args) != 4 {
 		return fmt.Errorf("incorrect number of arguments")
 	}
-	serviceConfigFile := argsArr[3]
+	serviceConfigFile := args[3]
 
 	service, err := GenerateService("", "")
 	if err != nil {
