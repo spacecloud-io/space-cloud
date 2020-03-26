@@ -16,13 +16,13 @@ import (
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-type Alphabetic []string
+type alphabetic []string
 
-func (list Alphabetic) Len() int { return len(list) }
+func (list alphabetic) Len() int { return len(list) }
 
-func (list Alphabetic) Swap(i, j int) { list[i], list[j] = list[j], list[i] }
+func (list alphabetic) Swap(i, j int) { list[i], list[j] = list[j], list[i] }
 
-func (list Alphabetic) Less(i, j int) bool {
+func (list alphabetic) Less(i, j int) bool {
 	a, err := strconv.Atoi(strings.Split(list[i], "-")[0])
 	if err != nil {
 		logrus.Errorf("unable to convert string to int while sorting file name (i) (%s)", list[i])
@@ -58,7 +58,7 @@ func Apply(applyName string) error {
 			return utils.LogError("Unable to login", err)
 		}
 
-		fileNames := Alphabetic{}
+		fileNames := alphabetic{}
 		// filter directories
 		for _, fileInfo := range files {
 			if !fileInfo.IsDir() {
