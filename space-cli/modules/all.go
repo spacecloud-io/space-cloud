@@ -35,6 +35,11 @@ func getAllProjects(c *cli.Context) error {
 		return fmt.Errorf("Directory not specified as an arguement to store config files")
 	}
 
+	// create directory if directory doesn't exists
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+
 	if err := os.Chdir(dir); err != nil {
 		return err
 	}
