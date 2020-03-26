@@ -2,6 +2,7 @@ package realtime
 
 import (
 	"context"
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -13,8 +14,14 @@ import (
 )
 
 // Subscribe performs the realtime subscribe operation.
-func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
+func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error) {
+	// Create a 20 second context to process request
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
 
+	if data.Group == "" || data.DBType == "" || data.Where == nil {
+		return nil, errors.New("invalid request parameters provided")
+	}
 	readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
@@ -57,6 +64,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 
 	// Add the live query
 	m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
+
 	return feedData, nil
 }
 
