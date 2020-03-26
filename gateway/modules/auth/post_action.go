@@ -3,6 +3,7 @@ package auth
 import (
 	"crypto/aes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -60,7 +61,7 @@ func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interf
 					logrus.Errorln("error encrypting value in postProcessMethod: ", err1)
 					return err1
 				}
-				er := utils.StoreValue(field.Field, string(encrypted), map[string]interface{}{"res": doc})
+				er := utils.StoreValue(field.Field, base64.StdEncoding.EncodeToString(encrypted), map[string]interface{}{"res": doc})
 				if er != nil {
 					logrus.Errorln("error storing value in postProcessMethod: ", er)
 					return er
@@ -82,7 +83,11 @@ func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interf
 					logrus.Errorln("error decrypting value in postProcessMethod: ", err1)
 					return err1
 				}
-				er := utils.StoreValue(field.Field, string(decrypted), map[string]interface{}{"res": doc})
+				decodedValue, err := base64.StdEncoding.DecodeString(string(decrypted))
+				if err != nil {
+					return err
+				}
+				er := utils.StoreValue(field.Field, decodedValue, map[string]interface{}{"res": doc})
 				if er != nil {
 					logrus.Errorln("error storing value in postProcessMethod: ", er)
 					return er

@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -217,7 +218,7 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 				logrus.Errorln("error encrypting value in matchEncrypt: ", err1)
 				return nil, err1
 			}
-			er := utils.StoreValue(field, string(encrypted), args)
+			er := utils.StoreValue(field, base64.StdEncoding.EncodeToString(encrypted), args)
 			if er != nil {
 				logrus.Errorln("error storing value in matchEncrypt: ", er)
 				return nil, er
@@ -251,7 +252,11 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 				logrus.Errorln("error decrypting value in matchDecrypt: ", err1)
 				return nil, err1
 			}
-			er := utils.StoreValue(field, string(decrypted), args)
+			decodedValue, err := base64.StdEncoding.DecodeString(string(decrypted))
+			if err != nil {
+				return nil, err
+			}
+			er := utils.StoreValue(field, decodedValue, args)
 			if er != nil {
 				logrus.Errorln("error storing value in matchDecrypt: ", er)
 				return nil, er
