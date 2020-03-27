@@ -18,33 +18,36 @@ func Commands() []*cobra.Command {
 	var loginCommands = &cobra.Command{
 		Use:   "login",
 		Short: "Logs into space cloud",
-		RunE:  actionLogin,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("username", cmd.Flags().Lookup("username"))
+			if err != nil {
+				_ = LogError(fmt.Sprintf("Unable to bind the flag ('username')"), nil)
+			}
+			err = viper.BindPFlag("key", cmd.Flags().Lookup("key"))
+			if err != nil {
+				_ = LogError(fmt.Sprintf("Unable to bind the flag ('key')"), nil)
+			}
+			err = viper.BindPFlag("url", cmd.Flags().Lookup("url"))
+			if err != nil {
+				_ = LogError(fmt.Sprintf("Unable to bind the flag ('url')"), nil)
+			}
+
+		},
+		RunE: actionLogin,
 	}
 	loginCommands.Flags().StringP("username", "", "None", "Accepts the username for login")
-	err := viper.BindPFlag("username", loginCommands.Flags().Lookup("username"))
-	if err != nil {
-		_ = LogError(fmt.Sprintf("Unable to bind the flag ('username')"), nil)
-	}
-	err = viper.BindEnv("username", "USER_NAME")
+	err := viper.BindEnv("username", "USER_NAME")
 	if err != nil {
 		_ = LogError(fmt.Sprintf("Unable to bind flag ('username') to environment variables"), nil)
 	}
 
 	loginCommands.Flags().StringP("key", "", "None", "Accepts the access key to be verified during login")
-	err = viper.BindPFlag("key", loginCommands.Flags().Lookup("key"))
-	if err != nil {
-		_ = LogError(fmt.Sprintf("Unable to bind the flag ('key')"), nil)
-	}
 	err = viper.BindEnv("key", "KEY")
 	if err != nil {
 		_ = LogError(fmt.Sprintf("Unable to bind flag ('key') to environment variables"), nil)
 	}
 
 	loginCommands.Flags().StringP("url", "", "http://localhost:4122", "Accepts the URL of server")
-	err = viper.BindPFlag("url", loginCommands.Flags().Lookup("url"))
-	if err != nil {
-		_ = LogError(fmt.Sprintf("Unable to bind the flag ('url')"), nil)
-	}
 	err = viper.BindEnv("url", "URL")
 	if err != nil {
 		_ = LogError(fmt.Sprintf("Unable to bind flag ('url') to environment variables"), nil)

@@ -19,8 +19,31 @@ func Commands() []*cobra.Command {
 	var addRegistryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "Add a docker registry",
-		RunE:  ActionAddRegistry,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("username", cmd.Flags().Lookup("username"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('username')"), nil)
+			}
+			err = viper.BindPFlag("password", cmd.Flags().Lookup("password"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('password')"), nil)
+			}
+			err = viper.BindPFlag("alias", cmd.Flags().Lookup("alias"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('alias')"), nil)
+			}
+			err = viper.BindPFlag("version", cmd.Flags().Lookup("version"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('version')"), nil)
+			}
+		},
+		RunE: ActionAddRegistry,
 	}
+
+	addRegistryCmd.Flags().StringP("username", "U", "", "provide the username")
+	addRegistryCmd.Flags().StringP("password", "P", "", "provide the password")
+	addRegistryCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
+	addRegistryCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 
 	var addDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -49,34 +72,7 @@ func Commands() []*cobra.Command {
 	removeCmd.AddCommand(removeRegistryCmd)
 	removeCmd.AddCommand(removeDatabaseCmd)
 
-	addRegistryCmd.Flags().StringP("username", "U", "", "provide the username")
-	err := viper.BindPFlag("username", addRegistryCmd.Flags().Lookup("username"))
-	if err != nil {
-		_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('username')"), nil)
-	}
-
-	addRegistryCmd.Flags().StringP("password", "P", "", "provide the password")
-	err = viper.BindPFlag("password", addRegistryCmd.Flags().Lookup("password"))
-	if err != nil {
-		_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('password')"), nil)
-	}
-
-	addRegistryCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
-	err = viper.BindPFlag("alias", addRegistryCmd.Flags().Lookup("alias"))
-	if err != nil {
-		_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('alias')"), nil)
-	}
-
-	addRegistryCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
-	err = viper.BindPFlag("version", addRegistryCmd.Flags().Lookup("version"))
-	if err != nil {
-		_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('version')"), nil)
-	}
-
-	command := make([]*cobra.Command, 0)
-	command = append(command, addCmd)
-	command = append(command, removeCmd)
-	return command
+	return []*cobra.Command{addCmd, removeCmd}
 }
 
 // ActionAddRegistry adds a registry add on
