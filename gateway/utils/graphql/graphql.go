@@ -44,7 +44,7 @@ func (graph *Module) GetProjectID() string {
 }
 
 // ExecGraphQLQuery executes the provided graphql query
-func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb callback) {
+func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb model.GraphQLCallback) {
 
 	source := source.NewSource(&source.Source{
 		Body: []byte(req.Query),
@@ -60,10 +60,9 @@ func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLReq
 	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": ""}, nil, createCallback(cb))
 }
 
-type callback func(op interface{}, err error)
 type dbCallback func(dbAlias, col string, op interface{}, err error)
 
-func createCallback(cb callback) callback {
+func createCallback(cb model.GraphQLCallback) model.GraphQLCallback {
 	var lock sync.Mutex
 	var isCalled bool
 
@@ -100,7 +99,7 @@ func createDBCallback(cb dbCallback) dbCallback {
 	}
 }
 
-func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, schema model.Fields, cb callback) {
+func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, schema model.Fields, cb model.GraphQLCallback) {
 	switch node.GetKind() {
 
 	case kinds.Document:

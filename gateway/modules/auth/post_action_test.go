@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"reflect"
 	"testing"
@@ -111,7 +112,7 @@ func TestPostProcessMethod(t *testing.T) {
 			testName:    "valid key in encryption",
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 			result:      map[string]interface{}{"username": "username1"},
-			finalResult: map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
+			finalResult: map[string]interface{}{"username": base64.StdEncoding.EncodeToString([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 		},
 		{
 			testName:      "invalid key in encryption",
@@ -137,7 +138,7 @@ func TestPostProcessMethod(t *testing.T) {
 		{
 			testName:    "valid key in decryption",
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
-			result:      map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
+			result:      map[string]interface{}{"username": base64.StdEncoding.EncodeToString([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 			finalResult: map[string]interface{}{"username": "username1"},
 		},
 		{

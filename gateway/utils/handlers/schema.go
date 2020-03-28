@@ -7,15 +7,16 @@ import (
 	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 
 	"github.com/gorilla/mux"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
+
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
 // HandleInspectTrackedCollectionsSchema is an endpoint handler which return schema for all tracked collections of a particular database
-func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, schema *schema.Schema) http.HandlerFunc {
+func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -38,6 +39,7 @@ func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, schema *sche
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
+		schema := modules.Schema()
 		schemas, err := schema.GetCollectionSchema(ctx, projectID, dbAlias)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
