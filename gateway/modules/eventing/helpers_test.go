@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestModule_selectRule(t *testing.T) {
@@ -149,3 +150,307 @@ func TestModule_validate(t *testing.T) {
 		})
 	}
 }
+
+func Test_isOptionsValid(t *testing.T) {
+	type args struct {
+		ruleOptions     map[string]string
+		providedOptions map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "key present in providedOptions",
+			args: args{ruleOptions: map[string]string{"key1": "value1", "key2": "value2"}, providedOptions: map[string]string{"key1": "value1", "key2": "value2"}},
+			want: true,
+		},
+		{
+			name: "key not present in providedOptions",
+			args: args{ruleOptions: map[string]string{"key1": "value1", "key2": "value2"}, providedOptions: map[string]string{"key": "value1", "key2": "value2"}},
+			want: false,
+		},
+		{
+			name: "value not present in providedOptions",
+			args: args{ruleOptions: map[string]string{"key1": "value1", "key2": "value2"}, providedOptions: map[string]string{"key1": "value", "key2": "value2"}},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isOptionsValid(tt.args.ruleOptions, tt.args.providedOptions); got != tt.want {
+				t.Errorf("isOptionsValid() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_convertToArray(t *testing.T) {
+	type args struct {
+		eventDocs []*model.EventDocument
+	}
+	tests := []struct {
+		name string
+		args args
+		want []interface{}
+	}{
+		{
+			name: "conversion takes place",
+			args: args{eventDocs: []*model.EventDocument{&model.EventDocument{ID: "ID", BatchID: "BatchID", Type: "DB_INSERT", RuleName: "encrypt", Token: 123, Payload: "payload", Retries: 3, Status: "ok", Remark: "Remark", URL: "url"}}},
+			want: []interface{}{0: map[string]interface{}{"_id": "ID", "batchid": "BatchID", "event_timestamp": int64(0), "payload": "payload", "remark": "Remark", "retries": 3, "rule_name": "encrypt", "status": "ok", "timestamp": int64(0), "token": 123, "type": "DB_INSERT", "url": "url"}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := convertToArray(tt.args.eventDocs); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("convertToArray() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModule_getMatchingRules(t *testing.T) {
+	type args struct {
+		name    string
+		options map[string]string
+	}
+	tests := []struct {
+		name string
+		m    *Module
+		args args
+		want []config.EventingRule
+	}{
+		{
+			name: "rule type is not equal to name",
+			m: &Module{config: &config.Eventing{
+				Rules:         map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]config.EventingRule{"some-internal-rule": config.EventingRule{Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+			args: args{name: "name", options: map[string]string{"option": "value"}},
+			want: []config.EventingRule{},
+		},
+		{
+			name: "rule options are not valid",
+			m: &Module{config: &config.Eventing{
+				Rules:         map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]config.EventingRule{"some-internal-rule": config.EventingRule{Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+			args: args{name: "rule", options: map[string]string{"wrongOption": "value"}},
+			want: []config.EventingRule{},
+		},
+		{
+			name: "rule matching in Rules",
+			m: &Module{config: &config.Eventing{
+				Rules:         map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]config.EventingRule{"some-internal-rule": config.EventingRule{Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+			args: args{name: "rule", options: map[string]string{"option": "value"}},
+			want: []config.EventingRule{config.EventingRule{Type: "rule", Retries: 0, Timeout: 0, ID: "some-rule", Options: map[string]string{"option": "value"}}},
+		},
+		{
+			name: "rule matching in InternalRules",
+			m: &Module{config: &config.Eventing{
+				Rules:         map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "rule", Options: map[string]string{"option": "value"}}},
+				InternalRules: map[string]config.EventingRule{"some-internal-rule": config.EventingRule{Type: "internalRule", Options: map[string]string{"option": "value"}}}}},
+			args: args{name: "internalRule", options: map[string]string{"option": "value"}},
+			want: []config.EventingRule{config.EventingRule{Type: "internalRule", Retries: 0, Timeout: 0, ID: "some-internal-rule", Options: map[string]string{"option": "value"}}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.getMatchingRules(tt.args.name, tt.args.options); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Module.getMatchingRules() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_getCreateRows(t *testing.T) {
+	type args struct {
+		doc interface{}
+		op  string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []interface{}
+	}{
+		{
+			name: "op is utils one",
+			args: args{doc: []interface{}{}, op: utils.One},
+			want: []interface{}{[]interface{}{}},
+		},
+		{
+			name: "op is utils all",
+			args: args{doc: []interface{}{}, op: utils.All},
+			want: []interface{}{},
+		},
+		{
+			name: "default case",
+			args: args{doc: []interface{}{}, op: "notOneorAll"},
+			want: []interface{}{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getCreateRows(tt.args.doc, tt.args.op); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getCreateRows() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModule_generateProcessedEventRequest(t *testing.T) {
+	type args struct {
+		eventID string
+	}
+	tests := []struct {
+		name string
+		m    *Module
+		args args
+		want *model.UpdateRequest
+	}{
+		{
+			name: "update request returned",
+			m:    &Module{},
+			args: args{eventID: "eventID"},
+			want: &model.UpdateRequest{
+				Find:      map[string]interface{}{"_id": "eventID"},
+				Operation: utils.All,
+				Update: map[string]interface{}{
+					"$set": map[string]interface{}{"status": utils.EventStatusProcessed},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.generateProcessedEventRequest(tt.args.eventID); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Module.generateProcessedEventRequest() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModule_generateFailedEventRequest(t *testing.T) {
+	type args struct {
+		eventID string
+		remark  string
+	}
+	tests := []struct {
+		name string
+		m    *Module
+		args args
+		want *model.UpdateRequest
+	}{
+		{
+			name: "update request returned",
+			m:    &Module{},
+			args: args{eventID: "eventID", remark: "remark"},
+			want: &model.UpdateRequest{
+				Find:      map[string]interface{}{"_id": "eventID"},
+				Operation: utils.All,
+				Update: map[string]interface{}{
+					"$set": map[string]interface{}{"status": utils.EventStatusFailed, "remark": "remark"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.generateFailedEventRequest(tt.args.eventID, tt.args.remark); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Module.generateFailedEventRequest() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModule_generateStageEventRequest(t *testing.T) {
+	type args struct {
+		eventID string
+	}
+	tests := []struct {
+		name string
+		m    *Module
+		args args
+		want *model.UpdateRequest
+	}{
+		{
+			name: "update request returned",
+			m:    &Module{},
+			args: args{eventID: "eventID"},
+			want: &model.UpdateRequest{
+				Find:      map[string]interface{}{"_id": "eventID"},
+				Operation: utils.All,
+				Update: map[string]interface{}{
+					"$set": map[string]interface{}{"status": utils.EventStatusStaged},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.generateStageEventRequest(tt.args.eventID); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Module.generateStageEventRequest() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModule_generateCancelEventRequest(t *testing.T) {
+	type args struct {
+		eventID string
+	}
+	tests := []struct {
+		name string
+		m    *Module
+		args args
+		want *model.UpdateRequest
+	}{
+		{
+			name: "update request returned",
+			m:    &Module{},
+			args: args{eventID: "eventID"},
+			want: &model.UpdateRequest{
+				Find:      map[string]interface{}{"_id": "eventID"},
+				Operation: utils.All,
+				Update: map[string]interface{}{
+					"$set": map[string]interface{}{"status": utils.EventStatusCancelled},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.generateCancelEventRequest(tt.args.eventID); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Module.generateCancelEventRequest() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModule_getSpaceCloudIDFromBatchID(t *testing.T) {
+	type args struct {
+		batchID string
+	}
+	tests := []struct {
+		name string
+		m    *Module
+		args args
+		want string
+	}{
+		{
+			name: "got spaceCloud id",
+			m:    &Module{},
+			args: args{batchID: "some--id"},
+			want: "id",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.getSpaceCloudIDFromBatchID(tt.args.batchID); got != tt.want {
+				t.Errorf("Module.getSpaceCloudIDFromBatchID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TODO: generateQueueEventRequest, batchRequests, generateBatchID, transmitEvents

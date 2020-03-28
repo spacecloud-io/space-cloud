@@ -65,3 +65,41 @@ func TestModule_SetRealtimeTriggers(t *testing.T) {
 		})
 	}
 }
+
+func TestModule_IsEnabled(t *testing.T) {
+	tests := []struct {
+		name string
+		m    *Module
+		want bool
+	}{
+		{
+			name: "config is nil",
+			m:    &Module{},
+			want: false,
+		},
+		{
+			name: "config is not nil but enabled is nil",
+			m:    &Module{config: &config.Eventing{}},
+			want: false,
+		},
+		{
+			name: "enabled is true",
+			m:    &Module{config: &config.Eventing{Enabled: true}},
+			want: true,
+		},
+		{
+			name: "enabled is false",
+			m:    &Module{config: &config.Eventing{Enabled: false}},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.IsEnabled(); got != tt.want {
+				t.Errorf("Module.IsEnabled() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TODO : QueueEvent and SendEventResponse

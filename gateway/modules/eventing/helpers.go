@@ -174,7 +174,7 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 }
 
 func (m *Module) getMatchingRules(name string, options map[string]string) []config.EventingRule {
-	var rules []config.EventingRule
+	rules := make([]config.EventingRule, 0)
 
 	for n, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
