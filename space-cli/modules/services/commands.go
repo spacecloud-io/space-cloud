@@ -52,13 +52,8 @@ func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 		params["id"] = args[0]
 	}
 
-	objs, err := GetServicesRoutes(project, commandName, params)
-	if err != nil {
-		return err
-	}
-	if err := utils.PrintYaml(objs); err != nil {
-		return err
-	}
+	objs, _ := GetServicesRoutes(project, commandName, params)
+	_ = utils.PrintYaml(objs)
 	return nil
 }
 
@@ -72,13 +67,8 @@ func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 		params["id"] = args[0]
 	}
 
-	objs, err := GetServicesSecrets(project, commandName, params)
-	if err != nil {
-		return err
-	}
-	if err := utils.PrintYaml(objs); err != nil {
-		return err
-	}
+	objs, _ := GetServicesSecrets(project, commandName, params)
+	_ = utils.PrintYaml(objs)
 	return nil
 }
 
@@ -95,13 +85,8 @@ func actionGetServices(cmd *cobra.Command, args []string) error {
 		params["serviceId"] = args[0]
 		params["version"] = args[1]
 	}
-	objs, err := GetServices(project, commandName, params)
-	if err != nil {
-		return err
-	}
-	if err := utils.PrintYaml(objs); err != nil {
-		return err
-	}
+	objs, _ := GetServices(project, commandName, params)
+	_ = utils.PrintYaml(objs)
 	return nil
 }
 
@@ -112,10 +97,8 @@ func actionGenerateService(cmd *cobra.Command, args []string) error {
 	}
 	serviceConfigFile := args[3]
 
-	service, err := GenerateService("", "")
-	if err != nil {
-		return err
-	}
+	service, _ := GenerateService("", "")
 
-	return utils.AppendConfigToDisk(service, serviceConfigFile)
+	_ = utils.AppendConfigToDisk(service, serviceConfigFile)
+	return nil
 }

@@ -56,5 +56,6 @@ func actionLogin(cmd *cobra.Command, args []string) error {
 	key := viper.GetString("key")
 	url := viper.GetString("url")
 
-	return utils.LoginStart(userName, key, url)
+	_ = utils.LoginStart(userName, key, url)
+	return nil
 }

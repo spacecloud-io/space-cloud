@@ -40,149 +40,81 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	}
 	dir := args[0]
 	// create directory if directory doesn't exists
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return err
-	}
+	_ = os.MkdirAll(dir, os.ModePerm)
 
-	if err := os.Chdir(dir); err != nil {
-		return err
-	}
+	_ = os.Chdir(dir)
 
-	obj, err := project.GetProjectConfig(projectName, "project", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("1", "project", obj); err != nil {
-		return err
-	}
+	obj, _ := project.GetProjectConfig(projectName, "project", map[string]string{})
 
-	objs, err := database.GetDbConfig(projectName, "db-config", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("2", "db-config", objs); err != nil {
-		return err
-	}
+	_ = createConfigFile("1", "project", obj)
 
-	objs, err = database.GetDbRule(projectName, "db-rules", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("3", "db-rules", objs); err != nil {
-		return err
-	}
+	objs, _ := database.GetDbConfig(projectName, "db-config", map[string]string{})
 
-	objs, err = database.GetDbSchema(projectName, "db-schema", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("4", "db-schema", objs); err != nil {
-		return err
-	}
+	_ = createConfigFile("2", "db-config", objs)
 
-	obj, err = filestore.GetFileStoreConfig(projectName, "filestore-config", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("5", "filestore-config", obj); err != nil {
-		return err
-	}
+	objs, _ = database.GetDbRule(projectName, "db-rules", map[string]string{})
 
-	objs, err = filestore.GetFileStoreRule(projectName, "filestore-rule", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("6", "filestore-rule", objs); err != nil {
-		return err
-	}
+	_ = createConfigFile("3", "db-rules", objs)
 
-	obj, err = eventing.GetEventingConfig(projectName, "eventing-config", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("7", "eventing-config", obj); err != nil {
-		return err
-	}
+	objs, _ = database.GetDbSchema(projectName, "db-schema", map[string]string{})
 
-	objs, err = eventing.GetEventingTrigger(projectName, "eventing-triggers", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("8", "eventing-triggers", objs); err != nil {
-		return err
-	}
+	_ = createConfigFile("4", "db-schema", objs)
 
-	objs, err = eventing.GetEventingSecurityRule(projectName, "eventing-rule", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("9", "eventing-rule", objs); err != nil {
-		return err
-	}
+	obj, _ = filestore.GetFileStoreConfig(projectName, "filestore-config", map[string]string{})
 
-	objs, err = eventing.GetEventingSchema(projectName, "eventing-schema", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("10", "eventing-schema", objs); err != nil {
-		return err
-	}
+	_ = createConfigFile("5", "filestore-config", obj)
 
-	objs, err = remoteservices.GetRemoteServices(projectName, "remote-services", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("11", "remote-services", objs); err != nil {
-		return err
-	}
+	objs, _ = filestore.GetFileStoreRule(projectName, "filestore-rule", map[string]string{})
 
-	objs, err = services.GetServices(projectName, "services", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("12", "services", objs); err != nil {
-		return err
-	}
+	_ = createConfigFile("6", "filestore-rule", objs)
 
-	objs, err = services.GetServicesRoutes(projectName, "services-routes", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("13", "services-routes", objs); err != nil {
-		return err
-	}
+	obj, _ = eventing.GetEventingConfig(projectName, "eventing-config", map[string]string{})
 
-	// objs, err = services.GetServicesSecrets(projectName, "services-secrets", map[string]string{})
-	// if err != nil {
-	// 	return err
+	_ = createConfigFile("7", "eventing-config", obj)
+
+	objs, _ = eventing.GetEventingTrigger(projectName, "eventing-triggers", map[string]string{})
+
+	_ = createConfigFile("8", "eventing-triggers", objs)
+
+	objs, _ = eventing.GetEventingSecurityRule(projectName, "eventing-rule", map[string]string{})
+
+	_ = createConfigFile("9", "eventing-rule", objs)
+
+	objs, _ = eventing.GetEventingSchema(projectName, "eventing-schema", map[string]string{})
+
+	_ = createConfigFile("10", "eventing-schema", objs)
+
+	objs, _ = remoteservices.GetRemoteServices(projectName, "remote-services", map[string]string{})
+
+	_ = createConfigFile("11", "remote-services", objs)
+
+	objs, _ = services.GetServices(projectName, "services", map[string]string{})
+
+	_ = createConfigFile("12", "services", objs)
+
+	objs, _ = services.GetServicesRoutes(projectName, "services-routes", map[string]string{})
+
+	_ = createConfigFile("13", "services-routes", objs)
+
+	// objs, _ = services.GetServicesSecrets(projectName, "services-secrets", map[string]string{})
+	// if _ != nil {
+	// 	return _
 	// }
-	// if err := createConfigFile("14", "services-secrets", objs); err != nil {
-	// 	return err
+	// _ = createConfigFile("14", "services-secrets", objs); _ != nil {
+	// 	return _
 	// }
 
-	objs, err = ingress.GetIngressRoutes(projectName, "ingress-routes", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("15", "-ingress-routes", objs); err != nil {
-		return err
-	}
+	objs, _ = ingress.GetIngressRoutes(projectName, "ingress-routes", map[string]string{})
 
-	objs, err = auth.GetAuthProviders(projectName, "auth-providers", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("16", "auth-providers", objs); err != nil {
-		return err
-	}
+	_ = createConfigFile("15", "-ingress-routes", objs)
 
-	obj, err = letsencrypt.GetLetsEncryptDomain(projectName, "letsencrypt", map[string]string{})
-	if err != nil {
-		return err
-	}
-	if err := createConfigFile("17", "letsencrypt", obj); err != nil {
-		return err
-	}
+	objs, _ = auth.GetAuthProviders(projectName, "auth-providers", map[string]string{})
+
+	_ = createConfigFile("16", "auth-providers", objs)
+
+	obj, _ = letsencrypt.GetLetsEncryptDomain(projectName, "letsencrypt", map[string]string{})
+
+	_ = createConfigFile("17", "letsencrypt", obj)
 
 	return nil
 }

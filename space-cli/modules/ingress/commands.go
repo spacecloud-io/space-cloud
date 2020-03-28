@@ -40,13 +40,8 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 		params["id"] = args[0]
 	}
 
-	objs, err := GetIngressRoutes(project, commandName, params)
-	if err != nil {
-		return err
-	}
-	if err := utils.PrintYaml(objs); err != nil {
-		return err
-	}
+	objs, _ := GetIngressRoutes(project, commandName, params)
+	_ = utils.PrintYaml(objs)
 	return nil
 }
 
@@ -55,10 +50,8 @@ func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, err := generateIngressRouting()
-	if err != nil {
-		return err
-	}
+	dbrule, _ := generateIngressRouting()
 
-	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	return nil
 }

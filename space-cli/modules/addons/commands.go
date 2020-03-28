@@ -78,13 +78,15 @@ func Commands() []*cobra.Command {
 // ActionAddRegistry adds a registry add on
 func ActionAddRegistry(cmd *cobra.Command, args []string) error {
 	project := viper.GetString("project")
-	return addRegistry(project)
+	_ = addRegistry(project)
+	return nil
 }
 
 // ActionRemoveRegistry removes a registry add on
 func ActionRemoveRegistry(cmd *cobra.Command, args []string) error {
 	project := viper.GetString("project")
-	return removeRegistry(project)
+	_ = removeRegistry(project)
+	return nil
 }
 
 // ActionAddDatabase adds a database add on
@@ -114,7 +116,8 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	alias := viper.GetString("alias")
 	version := viper.GetString("versio")
 
-	return addDatabase(dbtype, username, password, alias, version)
+	_ = addDatabase(dbtype, username, password, alias, version)
+	return nil
 }
 
 // ActionRemoveDatabase removes a database add on
@@ -122,5 +125,6 @@ func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return utils.LogError("Database Alias not provided as an argument", nil)
 	}
-	return removeDatabase(args[0])
+	_ = removeDatabase(args[0])
+	return nil
 }

@@ -33,8 +33,8 @@ func generateRandomString(length int) string {
 	return b.String() // E.g. "ExcbsVQs"
 }
 
-// CodeSetup initializes development environment
-func CodeSetup(id, username, key, config, version, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
+// Setup initializes development environment
+func Setup(id, username, key, config, version, secret string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
 	const ContainerGateway string = "space-cloud-gateway"
 	const ContainerRunner string = "space-cloud-runner"

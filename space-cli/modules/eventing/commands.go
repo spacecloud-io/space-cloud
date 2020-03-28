@@ -70,13 +70,8 @@ func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
 		params["id"] = args[0]
 	}
-	objs, err := GetEventingTrigger(project, commandName, params)
-	if err != nil {
-		return err
-	}
-	if err := utils.PrintYaml(objs); err != nil {
-		return err
-	}
+	objs, _ := GetEventingTrigger(project, commandName, params)
+	_ = utils.PrintYaml(objs)
 	return nil
 }
 
@@ -86,13 +81,9 @@ func actionGetEventingConfig(cmd *cobra.Command, args []string) error {
 	commandName := cmd.Use
 
 	params := map[string]string{}
-	obj, err := GetEventingConfig(project, commandName, params)
-	if err != nil {
-		return err
-	}
-	if err := utils.PrintYaml(obj); err != nil {
-		return err
-	}
+	obj, _ := GetEventingConfig(project, commandName, params)
+
+	_ = utils.PrintYaml(obj)
 	return nil
 }
 
@@ -105,13 +96,8 @@ func actionGetEventingSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
 		params["id"] = args[0]
 	}
-	objs, err := GetEventingSchema(project, commandName, params)
-	if err != nil {
-		return err
-	}
-	if err := utils.PrintYaml(objs); err != nil {
-		return err
-	}
+	objs, _ := GetEventingSchema(project, commandName, params)
+	_ = utils.PrintYaml(objs)
 	return nil
 }
 
@@ -124,13 +110,8 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
 		params["id"] = args[0]
 	}
-	objs, err := GetEventingSecurityRule(project, commandName, params)
-	if err != nil {
-		return err
-	}
-	if err := utils.PrintYaml(objs); err != nil {
-		return err
-	}
+	objs, _ := GetEventingSecurityRule(project, commandName, params)
+	_ = utils.PrintYaml(objs)
 	return nil
 }
 
@@ -139,12 +120,10 @@ func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, err := generateEventingRule()
-	if err != nil {
-		return err
-	}
+	dbrule, _ := generateEventingRule()
 
-	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	return nil
 }
 
 func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
@@ -152,12 +131,10 @@ func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, err := generateEventingSchema()
-	if err != nil {
-		return err
-	}
+	dbrule, _ := generateEventingSchema()
 
-	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	return nil
 }
 
 func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
@@ -165,12 +142,10 @@ func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, err := generateEventingConfig()
-	if err != nil {
-		return err
-	}
+	dbrule, _ := generateEventingConfig()
 
-	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	return nil
 }
 
 func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
@@ -178,10 +153,8 @@ func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, err := generateEventingTrigger()
-	if err != nil {
-		return err
-	}
+	dbrule, _ := generateEventingTrigger()
 
-	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	return nil
 }
