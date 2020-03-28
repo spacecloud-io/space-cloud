@@ -158,6 +158,10 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	if err := s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey); err != nil {
+		return err
+	}
+
 	projectConfig, err := s.getConfigWithoutLock(project.ID)
 	if err != nil {
 		return err
@@ -167,10 +171,6 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	projectConfig.AESkey = project.AESkey
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
-
-	if err := s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey); err != nil {
-		return err
-	}
 
 	return s.setProject(ctx, projectConfig)
 }
