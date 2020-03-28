@@ -9,13 +9,12 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // HandleFunctionCall creates a functions request endpoint
-func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.HandlerFunc {
+func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the path parameters
@@ -23,6 +22,9 @@ func HandleFunctionCall(functions *functions.Module, auth *auth.Module) http.Han
 		projectID := vars["project"]
 		service := vars["service"]
 		function := vars["func"]
+
+		auth := modules.Auth()
+		functions := modules.Functions()
 
 		// Load the params from the body
 		req := model.FunctionsRequest{}

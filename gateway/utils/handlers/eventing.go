@@ -6,24 +6,27 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-
 	"github.com/sirupsen/logrus"
 
+	"github.com/spaceuptech/space-cloud/gateway/modules"
+
 	"github.com/gorilla/mux"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
 // HandleEventResponse gets response for event
-func HandleEventResponse(auth *auth.Module, eventing *eventing.Module) http.HandlerFunc {
+func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
 	type request struct {
 		BatchID  string      `json:"batchID"`
 		Response interface{} `json:"response"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		eventing := modules.Eventing()
 
 		req := new(request)
 		_ = json.NewDecoder(r.Body).Decode(req)
@@ -59,8 +62,10 @@ func HandleEventResponse(auth *auth.Module, eventing *eventing.Module) http.Hand
 }
 
 // HandleProcessEvent processes a transmitted event
-func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http.HandlerFunc {
+func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		eventing := modules.Eventing()
 
 		eventDocs := []*model.EventDocument{}
 		_ = json.NewDecoder(r.Body).Decode(&eventDocs)
@@ -96,8 +101,10 @@ func HandleProcessEvent(adminMan *admin.Manager, eventing *eventing.Module) http
 }
 
 // HandleQueueEvent creates a queue event endpoint
-func HandleQueueEvent(eventing *eventing.Module) http.HandlerFunc {
+func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		eventing := modules.Eventing()
 
 		// Load the params from the body
 		req := model.QueueEventRequest{}

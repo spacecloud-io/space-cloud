@@ -75,7 +75,7 @@ type Secret struct {
 	Data     map[string]string `json:"data" yaml:"data"`
 }
 
-// Crud holds the mapping of database level configuration
+// crud holds the mapping of database level configuration
 type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
@@ -115,7 +115,7 @@ type Rule struct {
 	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
 }
 
-// Auth holds the mapping of the sign in method
+// auth holds the mapping of the sign in method
 type Auth map[string]*AuthStub // The key here is the sign in method
 
 // AuthStub holds the config at a single sign in level

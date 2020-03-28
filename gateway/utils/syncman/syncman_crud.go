@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
@@ -254,7 +255,7 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 		return errors.New("specified database not present in config")
 	}
 
-	if err := s.modules.GetSchemaModule().SchemaModifyAll(ctx, dbAlias, project, v.Collections); err != nil {
+	if err := s.modules.GetSchemaModuleForSyncMan().SchemaModifyAll(ctx, dbAlias, project, v.Collections); err != nil {
 		return err
 	}
 

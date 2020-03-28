@@ -31,7 +31,7 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 			status:        200,
 		},
 		{
-			testName: "Unsuccessful Test-Unauthenticated Crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			testName: "Unsuccessful Test-Unauthenticated crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 			value: model.CreateRequest{
 				Document:  map[string]interface{}{"exp": 12},
 				Operation: "one",
@@ -101,7 +101,7 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 			status:        200,
 		},
 		{
-			testName: "Unsuccessful Test-Unauthenticated Crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			testName: "Unsuccessful Test-Unauthenticated crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 			value: model.AggregateRequest{
 				Pipeline:  map[string]interface{}{"exp": 12},
 				Operation: "one",
@@ -171,7 +171,7 @@ func TestIsReadOpAuthorised(t *testing.T) {
 			status:        200,
 		},
 		{
-			testName: "Unsuccessful Test-Unauthenticated Crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			testName: "Unsuccessful Test-Unauthenticated crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 			value: model.ReadRequest{
 				Find:      map[string]interface{}{"exp": 12},
 				Operation: "one",
@@ -180,7 +180,7 @@ func TestIsReadOpAuthorised(t *testing.T) {
 			status:        401,
 		},
 		{
-			testName: "Unsuccessful Test-Unauthorized Crud Request", dbType: "mongo", col: "tweet", project: "projec", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			testName: "Unsuccessful Test-Unauthorized crud Request", dbType: "mongo", col: "tweet", project: "projec", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 			value: model.ReadRequest{
 				Find:      map[string]interface{}{"exp": 12},
 				Operation: "one",
@@ -232,7 +232,7 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 			status:        200,
 		},
 		{
-			testName: "Unsuccessful Test-Unauthenticated Crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			testName: "Unsuccessful Test-Unauthenticated crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 			value: model.DeleteRequest{
 				Find:      map[string]interface{}{"exp": 12},
 				Operation: "one",
@@ -241,7 +241,7 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 			status:        401,
 		},
 		{
-			testName: "Unsuccessful Test-Unauthorized Crud Request", dbType: "mongo", col: "tweet", project: "projec", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			testName: "Unsuccessful Test-Unauthorized crud Request", dbType: "mongo", col: "tweet", project: "projec", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 			value: model.DeleteRequest{
 				Find:      map[string]interface{}{"exp": 12},
 				Operation: "one",
@@ -293,7 +293,7 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 			status:        200,
 		},
 		{
-			testName: "Unsuccessful Test-Unauthenticated Crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			testName: "Unsuccessful Test-Unauthenticated crud Request", dbType: "pongo", col: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 			value: model.UpdateRequest{
 				Update:    map[string]interface{}{"exp": 12},
 				Operation: "one",
@@ -302,7 +302,7 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 			status:        401,
 		},
 		{
-			testName: "Unsuccessful Test-Unauthorized Crud Request", dbType: "mongo", col: "tweet", project: "projec", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			testName: "Unsuccessful Test-Unauthorized crud Request", dbType: "mongo", col: "tweet", project: "projec", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
 			value: model.UpdateRequest{
 				Update:    map[string]interface{}{"exp": 12},
 				Operation: "one",

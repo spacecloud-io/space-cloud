@@ -9,7 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
-// SchemaCrudInterface is an interface consisting of functions of schema module used by Auth module
+// SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
 type SchemaCrudInterface interface {
 	SetConfig(conf config.Crud, project string) error
 	ValidateCreateOperation(dbType, col string, req *CreateRequest) error
@@ -17,7 +17,7 @@ type SchemaCrudInterface interface {
 	CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error
 }
 
-// CrudAuthInterface is an interface consisting of functions of crud module used by Auth module
+// CrudAuthInterface is an interface consisting of functions of crud module used by auth module
 type CrudAuthInterface interface {
 	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
 }
@@ -37,7 +37,7 @@ type CrudEventingInterface interface {
 	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
 }
 
-// AuthEventingInterface is an interface consisting of functions of Auth module used by Eventing module
+// AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
 type AuthEventingInterface interface {
 	GetInternalAccessToken() (string, error)
 	GetSCAccessToken() (string, error)
@@ -49,12 +49,12 @@ type FilestoreEventingInterface interface {
 	DoesExists(ctx context.Context, project, token, path string) error
 }
 
-// AuthFilestoreInterface is an interface consisting of functions of Auth module used by Filestore module
+// AuthFilestoreInterface is an interface consisting of functions of auth module used by Filestore module
 type AuthFilestoreInterface interface {
 	IsFileOpAuthorised(ctx context.Context, project, token, path string, op utils.FileOpType, args map[string]interface{}) (*PostProcess, error)
 }
 
-// AuthFunctionInterface is an interface consisting of functions of Auth module used by Function module
+// AuthFunctionInterface is an interface consisting of functions of auth module used by Function module
 type AuthFunctionInterface interface {
 	GetSCAccessToken() (string, error)
 }
@@ -64,7 +64,7 @@ type EventingRealtimeInterface interface {
 	SetRealtimeTriggers(eventingRules []config.EventingRule)
 }
 
-// AuthRealtimeInterface is an interface consisting of functions of Auth module used by RealTime module
+// AuthRealtimeInterface is an interface consisting of functions of auth module used by RealTime module
 type AuthRealtimeInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, int, error)
 	PostProcessMethod(postProcess *PostProcess, result interface{}) error
@@ -72,12 +72,12 @@ type AuthRealtimeInterface interface {
 	GetSCAccessToken() (string, error)
 }
 
-// CrudRealtimeInterface is an interface consisting of functions of Crud module used by RealTime module
+// CrudRealtimeInterface is an interface consisting of functions of crud module used by RealTime module
 type CrudRealtimeInterface interface {
 	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
 }
 
-// CrudSchemaInterface is an interface consisting of functions of Crud module used by Schema module
+// CrudSchemaInterface is an interface consisting of functions of crud module used by Schema module
 type CrudSchemaInterface interface {
 	GetDBType(dbAlias string) (string, error)
 	// CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error
@@ -86,7 +86,7 @@ type CrudSchemaInterface interface {
 	DescribeTable(ctx context.Context, dbAlias, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
 }
 
-// CrudUserInterface is an interface consisting of functions of Crud module used by User module
+// CrudUserInterface is an interface consisting of functions of crud module used by User module
 type CrudUserInterface interface {
 	GetDBType(dbAlias string) (string, error)
 	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
@@ -94,7 +94,7 @@ type CrudUserInterface interface {
 	Update(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
 }
 
-// AuthUserInterface is an interface consisting of functions of Auth module used by User module
+// AuthUserInterface is an interface consisting of functions of auth module used by User module
 type AuthUserInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbType, col, token string, req *ReadRequest) (*PostProcess, int, error)
 	PostProcessMethod(postProcess *PostProcess, result interface{}) error
@@ -121,7 +121,7 @@ type ModulesInterface interface {
 
 	// Getters
 
-	GetSchemaModule() SchemaEventingInterface
+	GetSchemaModuleForSyncMan() SchemaEventingInterface
 }
 
 // PostProcess filters the schema
