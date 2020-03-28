@@ -46,7 +46,7 @@ func (m *Modules) Eventing() *eventing.Module {
 	return m.eventing
 }
 
-// Graphql returns the auth module
+// GraphQL returns the auth module
 func (m *Modules) GraphQL() GraphQLInterface {
 	return m.graphql
 }

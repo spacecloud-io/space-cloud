@@ -18,7 +18,7 @@ type RealtimeInterface interface {
 	ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error
 }
 
-// GraphQLWebsocketInterface is used to mock the graphql module
+// GraphQLInterface is used to mock the graphql module
 type GraphQLInterface interface {
 	GetDBAlias(field *ast.Field) (string, error)
 	ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb model.GraphQLCallback)

@@ -25,6 +25,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 )
 
+// WebsocketModulesInterface is used to accept the modules object
 type WebsocketModulesInterface interface {
 	Realtime() modules.RealtimeInterface
 	GraphQL() modules.GraphQLInterface
@@ -115,10 +116,6 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 			return true
 		})
 	}
-}
-
-func handleWebsocket() {
-
 }
 
 type graphqlMessage struct {

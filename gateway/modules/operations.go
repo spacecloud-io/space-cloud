@@ -62,9 +62,9 @@ func (m *Modules) SetProjectConfig(config *config.Config, le *letsencrypt.LetsEn
 }
 
 // SetGlobalConfig sets the auth secret and AESKey
-func (m *Modules) SetGlobalConfig(projectID, secret, aesKey string) {
+func (m *Modules) SetGlobalConfig(projectID, secret, aesKey string) error {
 	m.auth.SetSecret(secret)
-	m.auth.SetAESKey(aesKey)
+	return m.auth.SetAESKey(aesKey)
 }
 
 // SetCrudConfig sets the config of db, auth, schema and realtime modules
