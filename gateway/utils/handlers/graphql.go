@@ -11,13 +11,13 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // HandleGraphQLRequest executes graphql queries
-func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) http.HandlerFunc {
+func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -37,20 +37,12 @@ func HandleGraphQLRequest(graphql *graphql.Module, syncMan *syncman.Manager) htt
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTime)*time.Second)
 		defer cancel()
 
-		pid := graphql.GetProjectID()
+		graphql := modules.GraphQL()
 
 		// Load the request from the body
 		req := model.GraphQLRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
-
-		if projectID != pid {
-			// throw some error
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "project id doesn't match"})
-			return
-		}
 
 		// Get the path parameters
 		token := getRequestMetaData(r).token

@@ -7,10 +7,11 @@ import (
 
 	"github.com/graphql-go/graphql/language/ast"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.Field, store utils.M, cb callback) {
+func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.Field, store utils.M, cb model.GraphQLCallback) {
 	serviceName := field.Directives[0].Name.Value
 
 	funcName, err := getFuncName(field)
