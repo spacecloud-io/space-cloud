@@ -14,6 +14,7 @@ require (
 	github.com/doug-martin/goqu/v8 v8.1.0
 	github.com/fatih/structs v1.1.0
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
@@ -38,8 +39,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/nats-io/nats-server/v2 v2.0.2 // indirect
-	github.com/nats-io/nats.go v1.8.1
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/ksuid v1.0.2
@@ -47,7 +46,8 @@ require (
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spaceuptech/space-api-go v0.16.1
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/tidwall/pretty v1.0.0 // indirect
+	github.com/stretchr/testify v1.4.0
+	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/urfave/cli v1.22.1
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
@@ -56,9 +56,9 @@ require (
 	go.etcd.io/bbolt v1.3.3
 	go.mongodb.org/mongo-driver v1.1.1
 	go.uber.org/zap v1.13.0 // indirect
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
-	golang.org/x/sys v0.0.0-20190924154521-2837fb4f24fe // indirect
+	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
 	golang.org/x/tools v0.0.0-20191217033636-bbbf87ae2631 // indirect
 	google.golang.org/api v0.14.0
 	google.golang.org/appengine v1.6.5 // indirect

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -41,7 +42,7 @@ func TestGetFileRule(t *testing.T) {
 	}{
 		{
 			testName: "Valid Test Case-Basic Path", IsErrExpected: false,
-			result:     &config.FileRule{Name: "", Prefix: "/", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
+			result:     &config.FileRule{ID: "", Prefix: "/", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
 			pathParams: map[string]interface{}{}, path: ps,
 			module: &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}},
 		},
@@ -49,18 +50,18 @@ func TestGetFileRule(t *testing.T) {
 			testName: "Test Case-local file store type", IsErrExpected: false, path: ps,
 			module:     &Module{fileRules: []*config.FileRule{fileRule, fileRule, fileRule}, fileStoreType: "local"},
 			pathParams: map[string]interface{}{},
-			result:     &config.FileRule{Name: "", Prefix: "/", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
+			result:     &config.FileRule{ID: "", Prefix: "/", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
 		},
 		{
 			testName: "Valid Test Case-File Rule with folder specified", IsErrExpected: false, path: ps + "folder",
 			module:     &Module{fileRules: []*config.FileRule{fileRule1, fileRule1, fileRule1}},
 			pathParams: map[string]interface{}{},
-			result:     &config.FileRule{Name: "", Prefix: "/folder", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
+			result:     &config.FileRule{ID: "", Prefix: "/folder", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
 		},
 		{
 			testName: "Valid Test Case-Folder with variable mentioned", IsErrExpected: false, path: ps + "folder/:suyash",
 			module:     &Module{fileRules: []*config.FileRule{fileRule2, fileRule2, fileRule2}},
-			result:     &config.FileRule{Name: "", Prefix: "/folder/:suyash", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
+			result:     &config.FileRule{ID: "", Prefix: "/folder/:suyash", Rule: map[string]*config.Rule{"rule": {Rule: "allow"}}},
 			pathParams: map[string]interface{}{"suyash": ":suyash"},
 		},
 		{
@@ -104,7 +105,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 		op                             utils.FileOpType
 		args                           map[string]interface{}
 		IsErrExpected                  bool
-		result                         *PostProcess
+		result                         *model.PostProcess
 	}{
 		{
 			testName: "Successful Test allow", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
@@ -112,7 +113,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 				Prefix: string(os.PathSeparator),
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "allow"}},
 			}},
-				project: "project"}, result: &PostProcess{},
+				project: "project"}, result: &model.PostProcess{},
 			IsErrExpected: false, op: "read", args: map[string]interface{}{"age": 12}, path: string(os.PathSeparator),
 		},
 		{

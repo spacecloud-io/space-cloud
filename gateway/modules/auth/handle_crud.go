@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -41,27 +40,23 @@ func (m *Module) IsCreateOpAuthorised(ctx context.Context, project, dbAlias, col
 		}
 	}
 
-	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
-		return http.StatusBadRequest, err
-	}
-
 	return http.StatusOK, nil
 }
 
 // IsReadOpAuthorised checks if the crud operation is authorised
-func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*PostProcess, int, error) {
+func (m *Module) IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *model.ReadRequest) (*model.PostProcess, int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticateCrudRequest(dbAlias, col, token, utils.Read)
 	if err != nil {
-		return &PostProcess{}, http.StatusUnauthorized, err
+		return nil, http.StatusUnauthorized, err
 	}
 
 	args := map[string]interface{}{"op": req.Operation, "auth": auth, "find": req.Find, "token": token}
 	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return &PostProcess{}, http.StatusForbidden, err
+		return nil, http.StatusForbidden, err
 	}
 
 	return actions, http.StatusOK, nil
@@ -81,10 +76,6 @@ func (m *Module) IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col
 	_, err = m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
 		return http.StatusForbidden, err
-	}
-
-	if err := m.schema.ValidateUpdateOperation(dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
-		return http.StatusBadRequest, err
 	}
 
 	return http.StatusOK, nil
@@ -126,46 +117,6 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, 
 	}
 
 	return http.StatusOK, nil
-}
-
-// PostProcessMethod to do processing on result
-func (m *Module) PostProcessMethod(postProcess *PostProcess, result interface{}) error {
-	// Gracefully exist if the result is nil
-	if result == nil {
-		return nil
-	}
-
-	// convert to array of interfaces
-	var resultArr []interface{}
-	switch val := result.(type) {
-	case map[string]interface{}:
-		resultArr = []interface{}{val} //make an array of interface with val element
-	case []interface{}:
-		resultArr = val
-	default:
-		return errors.New("result is of invalid type")
-	}
-
-	for _, doc := range resultArr {
-		for _, field := range postProcess.postProcessAction {
-			// apply Action on all elements
-			switch field.Action {
-			case "force":
-				if err := utils.StoreValue(field.Field, field.Value, map[string]interface{}{"res": doc}); err != nil {
-					return err
-				}
-
-			case "remove":
-				if err := utils.DeleteValue(field.Field, map[string]interface{}{"res": doc}); err != nil {
-					return err
-				}
-			default:
-				err := fmt.Errorf("invalid action (%s) received in post processing read op", field.Action)
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 func (m *Module) authenticateCrudRequest(dbAlias, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {

@@ -55,3 +55,6 @@ yarn.lock
 
 #boltdatabase
 gateway/testbolt.db
+
+
+npm-debug.log

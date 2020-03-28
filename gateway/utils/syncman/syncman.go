@@ -8,6 +8,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
+	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // Manager syncs the project config between folders
@@ -27,14 +29,18 @@ type Manager struct {
 	artifactAddr  string
 	port          int
 
-	// Global servers
-	adminMan *admin.Manager
-
 	// Configuration for clustering
-
 	storeType string
 	store     Store
 	services  []*service
+
+	// For authentication
+	adminMan *admin.Manager
+
+	// Modules
+	modules     model.ModulesInterface
+	letsencrypt *letsencrypt.LetsEncrypt
+	routing     *routing.Routing
 }
 
 type service struct {
@@ -51,6 +57,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	// Initialise the consul client if enabled
 	switch storeType {
 	case "none":
+		m.services = []*service{{id: nodeID, addr: advertiseAddr}}
 		return m, nil
 	case "kube":
 		s, err := NewKubeStore(clusterID)
@@ -86,16 +93,18 @@ func (s *Manager) SetProjectCallbacks(projects *model.ProjectCallbacks) {
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, port int) error {
+func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	// Set the callback
+	s.modules.SetProjectConfig(projectConfig, s.letsencrypt, s.routing)
 	s.port = port
 	s.configFile = configFilePath
 
 	// Write the config to file
-	config.StoreConfigToFile(s.projectConfig, s.configFile)
+	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 	if len(s.projectConfig.Projects) > 0 {
 		for _, p := range s.projectConfig.Projects {
@@ -113,7 +122,7 @@ func (s *Manager) Start(configFilePath string, port int) error {
 
 			logrus.WithFields(logrus.Fields{"projects": projects}).Debugln("Updating projects")
 			s.projectConfig.Projects = projects
-			config.StoreConfigToFile(s.projectConfig, s.configFile)
+			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
 				for _, p := range s.projectConfig.Projects {
@@ -177,4 +186,11 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.projectConfig
+}
+
+// SetModules sets all the modules
+func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+	s.modules = modulesInterface
+	s.letsencrypt = letsEncrypt
+	s.routing = routing
 }

@@ -92,13 +92,14 @@ func (i *Istio) DeleteSecret(projectID string, secretName string) error {
 	return err
 }
 
-func (i *Istio) SetFileSecretRootPath(projectId string, secretName, rootPath string) error {
+// SetFileSecretRootPath is used to set the file secret root path
+func (i *Istio) SetFileSecretRootPath(projectID string, secretName, rootPath string) error {
 	if secretName == "" || rootPath == "" {
 		logrus.Errorf("empty secret name or root path provided")
 		return fmt.Errorf("empty secret name or root path provided got (%s,%s)", secretName, rootPath)
 	}
 	// Get secret and then check type
-	kubeSecret, err := i.kube.CoreV1().Secrets(projectId).Get(secretName, metav1.GetOptions{})
+	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -114,7 +115,7 @@ func (i *Istio) SetFileSecretRootPath(projectId string, secretName, rootPath str
 	}
 
 	// Update the secret
-	_, err = i.kube.CoreV1().Secrets(projectId).Update(kubeSecret)
+	_, err = i.kube.CoreV1().Secrets(projectID).Update(kubeSecret)
 	return err
 }
 
@@ -220,4 +221,22 @@ func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) 
 		},
 		Data: encodedData,
 	}, nil
+}
+
+func (i *Istio) getSecrets(service *model.Service) (map[string]*v1.Secret, error) {
+	listOfSecrets := map[string]*v1.Secret{}
+	tasks := service.Tasks
+	for _, task := range tasks {
+		for _, secretName := range task.Secrets {
+			if _, p := listOfSecrets[secretName]; p {
+				continue
+			}
+			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+			listOfSecrets[secretName] = secrets
+		}
+	}
+	return listOfSecrets, nil
 }

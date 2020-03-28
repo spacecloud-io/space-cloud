@@ -3,24 +3,22 @@ package realtime
 import (
 	"sync"
 
-	"github.com/nats-io/nats.go"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 type queryStub struct {
-	sendFeed SendFeed
+	sendFeed model.SendFeed
 	whereObj map[string]interface{}
-	actions  *auth.PostProcess
+	actions  *model.PostProcess
 }
 
 type clientsStub struct {
 	sync.Mutex
-	clients      sync.Map
-	subscription *nats.Subscription
+	clients sync.Map
 }
 
 // AddLiveQuery tracks a client for a live query
-func (m *Module) AddLiveQuery(id, project, dbAlias, group, clientID string, whereObj map[string]interface{}, actions *auth.PostProcess, sendFeed SendFeed) {
+func (m *Module) AddLiveQuery(id, _, dbAlias, group, clientID string, whereObj map[string]interface{}, actions *model.PostProcess, sendFeed model.SendFeed) {
 	// Load clients in a particular group
 	clients := new(clientsStub)
 	t, _ := m.groups.LoadOrStore(createGroupKey(dbAlias, group), clients)

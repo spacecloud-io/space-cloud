@@ -3,13 +3,11 @@ package eventing
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
-	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
@@ -26,28 +24,36 @@ type Module struct {
 	processingEvents sync.Map
 
 	// Variables defined during initialisation
-	auth      *auth.Module
-	crud      *crud.Module
-	schema    *schema.Schema
-	functions *functions.Module
+	auth   model.AuthEventingInterface
+	crud   model.CrudEventingInterface
+	schema model.SchemaEventingInterface
+
 	adminMan  *admin.Manager
 	syncMan   *syncman.Manager
-	fileStore *filestore.Module
+	fileStore model.FilestoreEventingInterface
 
-	schemas map[string]schema.SchemaFields
+	schemas map[string]model.Fields
+
+	// stores mapping of batchID w.r.t channel for sending synchronous event response
+	eventChanMap sync.Map // key here is batchID
+}
+
+// synchronous event response
+type eventResponse struct {
+	time     time.Time
+	response chan interface{}
 }
 
 // New creates a new instance of the eventing module
-func New(auth *auth.Module, crud *crud.Module, schemaModule *schema.Schema, functions *functions.Module, adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) *Module {
+func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, schemaModule model.SchemaEventingInterface, adminMan *admin.Manager, syncMan *syncman.Manager, file model.FilestoreEventingInterface) *Module {
 
 	m := &Module{
 		auth:      auth,
 		crud:      crud,
 		schema:    schemaModule,
-		functions: functions,
 		adminMan:  adminMan,
 		syncMan:   syncMan,
-		schemas:   map[string]schema.SchemaFields{},
+		schemas:   map[string]model.Fields{},
 		fileStore: file,
 		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
@@ -89,7 +95,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		return nil
 	}
 
-	if eventing.DBType == "" || eventing.Col == "" {
+	if eventing.DBType == "" {
 		return errors.New("invalid eventing config provided")
 	}
 
@@ -101,7 +107,9 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	}
 
 	// Reset the internal rules
-	m.config.InternalRules = map[string]config.EventingRule{}
+	if m.config.InternalRules == nil {
+		m.config.InternalRules = map[string]config.EventingRule{}
+	}
 
 	return nil
 }

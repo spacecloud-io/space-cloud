@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -19,12 +20,8 @@ func (s *Manager) SetProjectRoutes(ctx context.Context, project string, c config
 
 	// Update the project's routes
 	projectConfig.Modules.Routes = c
-
-	// Apply the config
-	s.projects.SetRoutingConfig(project, c)
-
-	// Persist the config
-	return s.persistProjectConfig(ctx, projectConfig)
+	s.routing.SetProjectRoutes(project, c)
+	return s.setProject(ctx, projectConfig)
 }
 
 // GetProjectRoutes gets all the routes for specified project config
@@ -42,11 +39,12 @@ func (s *Manager) GetProjectRoutes(ctx context.Context, project string) (config.
 }
 
 // SetProjectRoute adds a route in specified project config
-func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config.Route) error {
+func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *config.Route) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	c.ID = id
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return err
@@ -54,9 +52,9 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 
 	doesExist := false
 	for _, route := range projectConfig.Modules.Routes {
-		if route.Id == c.Id {
+		if id == route.ID {
 			route.Source = c.Source
-			route.Destination = c.Destination
+			route.Targets = c.Targets
 			doesExist = true
 		}
 	}
@@ -64,11 +62,12 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project string, c *config
 		projectConfig.Modules.Routes = append(projectConfig.Modules.Routes, c)
 	}
 
+	s.routing.SetProjectRoutes(project, projectConfig.Modules.Routes)
 	return s.setProject(ctx, projectConfig)
 }
 
 // DeleteProjectRoute deletes a route from specified project config
-func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeId string) error {
+func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -78,15 +77,42 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeId strin
 		return err
 	}
 
-	routes := projectConfig.Modules.Routes
-	for index, route := range routes {
-		if route.Id == routeId {
+	for index, route := range projectConfig.Modules.Routes {
+		if route.ID == routeID {
 			// delete the route at specified index
-			routes[index] = routes[len(routes)-1]
-			projectConfig.Modules.Routes = routes[:len(routes)-1]
+			projectConfig.Modules.Routes[index] = projectConfig.Modules.Routes[len(projectConfig.Modules.Routes)-1]
+			projectConfig.Modules.Routes = projectConfig.Modules.Routes[:len(projectConfig.Modules.Routes)-1]
+
 			// update the config
+			s.routing.SetProjectRoutes(project, projectConfig.Modules.Routes)
 			return s.setProject(ctx, projectConfig)
 		}
 	}
 	return nil
+}
+
+// GetIngressRouting gets ingress routing from config
+func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string) ([]interface{}, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if routeID != "" {
+		for _, value := range projectConfig.Modules.Routes {
+			if routeID == value.ID {
+				return []interface{}{value}, nil
+			}
+		}
+		return nil, fmt.Errorf("route id (%s) not present in config", routeID)
+	}
+
+	routes := []interface{}{}
+	for _, value := range projectConfig.Modules.Routes {
+		routes = append(routes, value)
+	}
+	return routes, nil
 }

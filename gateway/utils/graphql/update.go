@@ -10,26 +10,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) execUpdateRequest(ctx context.Context, field *ast.Field, token string, store utils.M) (map[string]interface{}, error) {
-	dbAlias, err := graph.GetDBAlias(field)
-	if err != nil {
-		return nil, err
-	}
-
-	col := strings.TrimPrefix(field.Name.Value, "update_")
-	req, err := generateUpdateRequest(field, store)
-	if err != nil {
-		return nil, err
-	}
-
-	status, err := graph.auth.IsUpdateOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return utils.M{"status": status}, graph.crud.Update(ctx, dbAlias, graph.project, col, req)
-}
-
 func (graph *Module) genrateUpdateReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
 	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
@@ -96,7 +76,7 @@ func extractUpdateArgs(args []*ast.Argument, store utils.M) (utils.M, error) {
 	t := map[string]interface{}{}
 	for _, v := range args {
 		switch v.Name.Value {
-		case "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "remove":
+		case "set", "inc", "mul", "max", "min", "currentTimestamp", "currentDate", "push", "rename", "unset":
 			temp, err := utils.ParseGraphqlValue(v.Value, store)
 			if err != nil {
 				return nil, err

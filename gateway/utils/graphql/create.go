@@ -10,7 +10,6 @@ import (
 	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -44,7 +43,7 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 	return reqs, returningDocs, nil
 }
 
-func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema.SchemaFields) {
+func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields model.Fields) {
 	// FieldIDs is the array of fields for which an unique id needs to be generated. These will only be done for those
 	// fields which have the type ID.
 	// FieldDates is the array of fields for which the current time needs to be set.
@@ -53,7 +52,7 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema
 	fieldDefaults := make(map[string]interface{})
 
 	for fieldName, fieldSchema := range schemaFields {
-		if fieldSchema.Kind == schema.TypeID {
+		if fieldSchema.Kind == model.TypeID {
 			fieldIDs = append(fieldIDs, fieldName)
 		}
 

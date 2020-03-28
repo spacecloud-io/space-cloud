@@ -2,6 +2,7 @@ package realtime
 
 import (
 	"context"
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -14,11 +15,18 @@ import (
 )
 
 // Subscribe performs the realtime subscribe operation.
-func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
-	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
+func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error) {
+	// Create a 20 second context to process request
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	if data.Group == "" || data.DBType == "" || data.Where == nil {
+		return nil, errors.New("invalid request parameters provided")
+	}
+	readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
-	actions, _, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
+	actions, _, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, &readReq)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +45,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result, err := m.crud.Read(ctx2, data.DBType, data.Project, data.Group, readReq)
+	result, err := m.crud.Read(ctx2, data.DBType, data.Project, data.Group, &readReq)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +71,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 
 	// Add the live query
 	m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
+
 	return feedData, nil
 }
 

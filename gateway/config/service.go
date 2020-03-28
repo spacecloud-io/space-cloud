@@ -2,10 +2,10 @@ package config
 
 // RunnerService describes a service's configurations
 type RunnerService struct {
-	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
-	ProjectID string            `json:"projectId" yaml:"projectId"`
-	Version   string            `json:"version" yaml:"version"`
+	ID        string            `json:"id,omitempty" yaml:"id,omitempty"`
+	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
+	ProjectID string            `json:"projectId,omitempty" yaml:"projectId,omitempty"`
+	Version   string            `json:"version,omitempty" yaml:"version,omitempty"`
 	Scale     ScaleConfig       `json:"scale" yaml:"scale"`
 	Labels    map[string]string `json:"labels" yaml:"labels"`
 	Tasks     []Task            `json:"tasks" yaml:"tasks"`
@@ -16,16 +16,17 @@ type RunnerService struct {
 
 // ScaleConfig describes the config used to scale a service
 type ScaleConfig struct {
-	Replicas    int32 `json:"replicas" yaml:"replicas"`
-	MinReplicas int32 `json:"minReplicas" yaml:"minReplicas"`
-	MaxReplicas int32 `json:"maxReplicas" yaml:"maxReplicas"`
-	Concurrency int32 `json:"concurrency" yaml:"concurrency"`
+	Replicas    int32  `json:"replicas" yaml:"replicas"`
+	MinReplicas int32  `json:"minReplicas" yaml:"minReplicas"`
+	MaxReplicas int32  `json:"maxReplicas" yaml:"maxReplicas"`
+	Concurrency int32  `json:"concurrency" yaml:"concurrency"`
+	Mode        string `json:"mode" yaml:"mode"`
 }
 
 // Task describes the configuration of a task
 type Task struct {
 	ID        string            `json:"id" yaml:"id"`
-	Name      string            `json:"name" yaml:"name"`
+	Name      string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Ports     []Port            `json:"ports" yaml:"ports"`
 	Resources Resources         `json:"resources" yaml:"resources"`
 	Docker    Docker            `json:"docker" yaml:"docker"`
@@ -54,16 +55,35 @@ const (
 
 // Resources describes the resources to be used by a task
 type Resources struct {
-	CPU    int64 `json:"cpu" yaml:"cpu"`
-	Memory int64 `json:"memory" yaml:"memory"`
+	CPU    int64        `json:"cpu" yaml:"cpu"`
+	Memory int64        `json:"memory" yaml:"memory"`
+	GPU    *GPUResource `json:"gpu,omitempty" yaml:"gpu,omitempty"`
+}
+
+// GPUResource describes the GPUs required by a task
+type GPUResource struct {
+	Type  string `json:"type" yaml:"type"`
+	Value int64  `json:"value" yaml:"value"`
 }
 
 // Docker describes the docker configurations
 type Docker struct {
-	Image  string   `json:"image" yaml:"image"`
-	Cmd    []string `json:"cmd" yaml:"cmd"`
-	Secret string   `json:"secret" yaml:"secret"`
+	Image           string          `json:"image" yaml:"image"`
+	Cmd             []string        `json:"cmd" yaml:"cmd"`
+	Secret          string          `json:"secret" yaml:"secret"`
+	ImagePullPolicy ImagePullPolicy `json:"imagePullPolicy" yaml:"imagePullPolicy"`
 }
+
+// ImagePullPolicy describes the image pull policy for docker config
+type ImagePullPolicy string
+
+const (
+	// PullAlways is used for always pull policy
+	PullAlways ImagePullPolicy = "always"
+
+	// PullIfNotExists is use for pull if not exist locally pull policy
+	PullIfNotExists ImagePullPolicy = "pull-if-not-exists"
+)
 
 // Affinity describes the affinity rules of a service
 type Affinity struct {
@@ -106,22 +126,3 @@ const (
 	// Code indicates that the user's code isn't containerized. We need to use a custom runtime for this
 	Code Runtime = "code"
 )
-
-// Expose describes how an http service needs to be exposed
-type Expose struct {
-	Hosts []string     `json:"hosts" yaml:"hosts"`
-	Rules []ExposeRule `json:"rules" yaml:"rules"`
-}
-
-// ExposeRule describes the rules for exposing an http service
-type ExposeRule struct {
-	URI  ExposeRuleURI `json:"uri" yaml:"uri"`
-	Port int32         `json:"port" yaml:"port"`
-}
-
-// ExposeRuleURI describes the the http routes which need to be exposed
-type ExposeRuleURI struct {
-	Prefix  *string `json:"prefix" yaml:"prefix"`
-	Exact   *string `json:"exact" yaml:"exact"`
-	Rewrite *string `json:"rewrite" yaml:"rewrite"`
-}

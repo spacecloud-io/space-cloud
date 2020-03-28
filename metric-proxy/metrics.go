@@ -11,8 +11,8 @@ import (
 )
 
 func (p *Proxy) collectMetrics() (*EnvoyMetrics, error) {
-	logrus.Debugln("Pulling metrics from envoy...")
-	res, err := http.Get("http://localhost:15000/stats?filter=(?=.*downstream_rq_total)(?=.*http.inbound)&format=json")
+	logrus.Debugf("Pulling metrics from envoy. Using filter  - %s", p.filter)
+	res, err := http.Get(fmt.Sprintf("http://localhost:15000/stats?filter=(?=.*%s)(?=.*http.inbound)&format=json", p.filter))
 	if err != nil {
 		return nil, err
 	}
@@ -49,9 +49,20 @@ func (p *Proxy) routineCollectMetrics(duration time.Duration) {
 			continue
 		}
 
+		// Calculate the total value
+		var value uint64
+		for _, stat := range metrics.Stats {
+			value += stat.Value
+		}
+
 		// Calculate the number of requests which occurred between subsequent requests
-		count := metrics.Stats[0].Value - prevValue
-		prevValue = metrics.Stats[0].Value
+		count := value - prevValue
+		prevValue = value
+
+		// For active requests we need to send the active request value straight away
+		if p.filter == "downstream_rq_active" {
+			count = value
+		}
 
 		// Prepare and send proxy message
 		message := &ProxyMessage{ActiveRequests: int32(count)}

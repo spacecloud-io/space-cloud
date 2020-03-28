@@ -3,8 +3,9 @@ package eventing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
-	"strings"
+	"net/http"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -22,7 +23,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}
 	m.lock.RLock()
 	project := m.project
-	dbAlias, col := m.config.DBType, m.config.Col
+	dbAlias, col := m.config.DBType, utils.TableEventingLogs
 	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
@@ -41,7 +42,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 
 	results, err := m.crud.Read(ctx, dbAlias, project, col, &readRequest)
 	if err != nil {
-		log.Println("Eventing stage routine error:", err)
+		logrus.Errorf("Eventing stage routine error - %s", err.Error())
 		return
 	}
 
@@ -74,8 +75,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	// Delete the event from the processing list without fail
 	defer m.processingEvents.Delete(eventDoc.ID)
 
-	typeAndName := strings.Split(eventDoc.Type, ":")
-	evType, name := typeAndName[0], typeAndName[1]
+	evType, name := eventDoc.Type, eventDoc.RuleName
 
 	rule, err := m.selectRule(name, evType)
 	if err != nil {
@@ -108,16 +108,16 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
 	eventDoc.Payload = doc
 
-	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: evType, Source: m.syncMan.GetEventSource(), Id: eventDoc.ID,
+	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: evType, Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
 		Time: time.Unix(0, eventDoc.Timestamp*int64(time.Millisecond)).Format(time.RFC3339), Data: eventDoc.Payload}
 
 	for {
 		if err := m.invokeWebhook(ctx, rule.Timeout, eventDoc, &cloudEvent); err != nil {
-			log.Println("Eventing staged event handler could not get response from service:", err)
+			logrus.Errorf("Eventing staged event handler could not get response from service -%s", err.Error())
 
 			// Increment the retries. Exit the loop if max retries reached.
 			retries++
-			if retries >= maxRetries {
+			if retries >= maxRetries+1 {
 				// Mark event as failed
 				break
 			}
@@ -131,8 +131,8 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		return
 	}
 
-	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, m.config.Col, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
-		log.Println("Eventing staged event handler could not update event doc:", err)
+	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+		logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
 	}
 }
 
@@ -141,18 +141,19 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	defer cancel()
 	internalToken, err := m.auth.GetInternalAccessToken()
 	if err != nil {
-		log.Println("Eventing: Couldn't trigger functions -", err)
+		logrus.Errorf("error invoking web hook in eventing unable to get internal access token - %s", err.Error())
 		return err
 	}
 
 	scToken, err := m.auth.GetSCAccessToken()
 	if err != nil {
-		log.Println("Eventing: Couldn't trigger functions -", err)
+		logrus.Errorf("error invoking web hook in eventing unable to get sc access token - %s", err.Error())
 		return err
 	}
 
 	var eventResponse model.EventResponse
-	if err := m.syncMan.MakeHTTPRequest(ctxLocal, "POST", eventDoc.Url, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+	if err := m.MakeInvocationHTTPRequest(ctxLocal, http.MethodPost, eventDoc, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+		logrus.Errorf("error invoking web hook in eventing unable to send http request to url %s - %s", eventDoc.URL, err.Error())
 		return err
 	}
 
@@ -166,12 +167,25 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 		eventRequests = append(eventRequests, eventResponse.Events...)
 	}
 
-	if len(eventRequests) > 0 {
-		if err := m.batchRequests(ctx, eventRequests); err != nil {
-			log.Println("Eventing: Couldn't persist events err -", err)
+	if eventResponse.Response != nil {
+		url, err := m.syncMan.GetSpaceCloudURLFromID(m.getSpaceCloudIDFromBatchID(eventDoc.BatchID))
+		if err != nil {
+			logrus.Errorf("error invoking web hook in eventing unable to get sc addr from batchID %s - %s", eventDoc.BatchID, err)
+			return err
+		}
+		url = fmt.Sprintf("http://%s/v1/api/%s/eventing/process-event-response", url, m.project)
+		if err := m.syncMan.MakeHTTPRequest(ctxLocal, http.MethodPost, url, internalToken, scToken, map[string]interface{}{"batchID": eventDoc.BatchID, "response": eventResponse.Response}, &map[string]interface{}{}); err != nil {
+			logrus.Errorf("error invoking web hook in eventing unable to send http request for synchronous response to url %s - %s", url, err.Error())
+			return err
 		}
 	}
 
-	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, m.config.Col, m.generateProcessedEventRequest(eventDoc.ID))
+	if len(eventRequests) > 0 {
+		if err := m.batchRequests(ctx, eventRequests, eventDoc.BatchID); err != nil {
+			logrus.Errorf("error invoking web hook in eventing unable to persist events off - %s", err.Error())
+		}
+	}
+
+	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, utils.TableEventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
 	return nil
 }

@@ -12,7 +12,7 @@ import (
 )
 
 // CreateSecret create a file for every secret & update the secret if already exists and has same type
-func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
+func (d *Docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	// create folder for project
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
 
@@ -44,7 +44,8 @@ func (d *docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	return d.writeIntoFile(secretObj, filePath)
 }
 
-func (d *docker) ListSecrets(projectID string) ([]*model.Secret, error) {
+// ListSecrets list all the secrets of the project
+func (d *Docker) ListSecrets(projectID string) ([]*model.Secret, error) {
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
 	files, err := ioutil.ReadDir(projectPath)
 	if err != nil {
@@ -80,17 +81,19 @@ func (d *docker) ListSecrets(projectID string) ([]*model.Secret, error) {
 	return secretArr, nil
 }
 
-func (d *docker) DeleteSecret(projectID, secretName string) error {
+// DeleteSecret deletes the docker secret
+func (d *Docker) DeleteSecret(projectID, secretName string) error {
 	return os.RemoveAll(fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName))
 }
 
-func (d *docker) SetFileSecretRootPath(projectId string, secretName, rootPath string) error {
+// SetFileSecretRootPath sets the file secret root path
+func (d *Docker) SetFileSecretRootPath(projectID string, secretName, rootPath string) error {
 	if secretName == "" || rootPath == "" {
 		logrus.Errorf("Empty key/value provided. Key not set")
 		return fmt.Errorf("key/value not provided; got (%s,%s)", secretName, rootPath)
 	}
 	// check if file exists
-	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectId, secretName)
+	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return fmt.Errorf("file doesn't exists")
 	}
@@ -109,7 +112,8 @@ func (d *docker) SetFileSecretRootPath(projectId string, secretName, rootPath st
 	return d.writeIntoFile(fileContent, filePath)
 }
 
-func (d *docker) SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
+// SetKey sets the secret key for docker file
+func (d *Docker) SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -130,7 +134,8 @@ func (d *docker) SetKey(projectID, secretName, secretKey string, secretObj *mode
 	return d.writeIntoFile(fileContent, filePath)
 }
 
-func (d *docker) DeleteKey(projectID, secretName, secretKey string) error {
+// DeleteKey deletes the secret key for docker file
+func (d *Docker) DeleteKey(projectID, secretName, secretKey string) error {
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -152,7 +157,7 @@ func (d *docker) DeleteKey(projectID, secretName, secretKey string) error {
 }
 
 // writeIntoFile writes json data into specified file
-func (d *docker) writeIntoFile(secretObj *model.Secret, filePath string) error {
+func (d *Docker) writeIntoFile(secretObj *model.Secret, filePath string) error {
 	data, err := json.Marshal(secretObj)
 	if err != nil {
 		logrus.Errorf("error writing data in file (%s) unable to marshal data - %s", filePath, err.Error())
@@ -162,7 +167,7 @@ func (d *docker) writeIntoFile(secretObj *model.Secret, filePath string) error {
 	return ioutil.WriteFile(filePath, data, 0777)
 }
 
-func (d *docker) createDir(path string) error {
+func (d *Docker) createDir(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return os.MkdirAll(path, 0777)
 	}

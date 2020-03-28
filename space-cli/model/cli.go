@@ -18,21 +18,23 @@ type Account struct {
 	ID        string `json:"id" yaml:"id"`
 	UserName  string `json:"username" yaml:"username"`
 	Key       string `json:"key" yaml:"key"`
-	ServerUrl string `json:"serverurl" yaml:"serverurl"`
+	ServerURL string `json:"serverurl" yaml:"serverurl"`
 }
 
+// Projects describes the configuration of a single project
 type Projects struct {
-	Name         string         `json:"name" yaml:"name"`
-	ID           string         `json:"id" yaml:"id"`
-	Environments []*Environment `json:"environment,omitempty" yaml:"environment"`
+	Name string `json:"name" yaml:"name"`
+	ID   string `json:"id" yaml:"id"`
 }
 
+// Environment describes the configuration of a single environment
 type Environment struct {
 	Name     string    `json:"name" yaml:"name"`
 	ID       string    `json:"id" yaml:"id"`
 	Clusters []Cluster `json:"clusters" yaml:"clusters"`
 }
 
+// Cluster describes the configuration of a single cluster
 type Cluster struct {
 	ID  string `json:"id" yaml:"id"`
 	URL string `json:"url" yaml:"url"`

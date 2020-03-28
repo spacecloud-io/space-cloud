@@ -9,10 +9,13 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	Secret  string   `json:"secret" yaml:"secret"`
-	ID      string   `json:"id" yaml:"id"`
-	Name    string   `json:"name" yaml:"name"`
-	Modules *Modules `json:"modules" yaml:"modules"`
+	Secret         string   `json:"secret,omitempty" yaml:"secret,omitempty"`
+	AESkey         string   `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
+	ID             string   `json:"id,omitempty" yaml:"id,omitempty"`
+	Name           string   `json:"name,omitempty" yaml:"name,omitempty"`
+	DockerRegistry string   `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
+	Modules        *Modules `json:"modules,omitempty" yaml:"modules,omitempty"`
+	ContextTime    int      `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
 }
 
 // Admin stores the admin credentials
@@ -56,13 +59,15 @@ type Modules struct {
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
 	Routes      Routes          `json:"routes" yaml:"routes"`
 	Deployments Deployments     `json:"deployments" yaml:"deployments"`
-	Secrets     []*Secret       `json:"secrets" yaml:"secrets"`
+	Secrets     interface{}     `json:"secrets" yaml:"secrets"`
 }
 
+// Deployments store all services information for particular project
 type Deployments struct {
-	Services []*RunnerService `json:"services" yaml:"services"`
+	Services interface{} `json:"services" yaml:"services"`
 }
 
+// Secret stores secrets information
 type Secret struct {
 	Name     string            `json:"name" yaml:"name"`
 	Type     string            `json:"type" yaml:"type"`
@@ -75,11 +80,13 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Type        string                `json:"type" yaml:"type"` // database type
-	Conn        string                `json:"conn" yaml:"conn"`
-	Collections map[string]*TableRule `json:"collections" yaml:"collections"` // The key here is table name
-	IsPrimary   bool                  `json:"isPrimary" yaml:"isPrimary"`
-	Enabled     bool                  `json:"enabled" yaml:"enabled"`
+	Type         string                `json:"type,omitempty" yaml:"type"` // database type
+	Conn         string                `json:"conn,omitempty" yaml:"conn"`
+	Collections  map[string]*TableRule `json:"collections,omitempty" yaml:"collections"` // The key here is table name
+	IsPrimary    bool                  `json:"isPrimary" yaml:"isPrimary"`
+	Enabled      bool                  `json:"enabled" yaml:"enabled"`
+	BatchTime    int                   `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
+	BatchRecords int                   `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
 }
 
 // TableRule contains the config at the collection level
@@ -91,6 +98,7 @@ type TableRule struct {
 
 // Rule is the authorisation object at the query level
 type Rule struct {
+	ID      string                 `json:"id,omitempty" yaml:"id,omitempty"`
 	Rule    string                 `json:"rule" yaml:"rule"`
 	Eval    string                 `json:"eval,omitempty" yaml:"eval,omitempty"`
 	Type    string                 `json:"type,omitempty" yaml:"type,omitempty"`
@@ -104,7 +112,7 @@ type Rule struct {
 	Fields  []string               `json:"fields,omitempty" yaml:"fields,omitempty"`
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
-	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty`
+	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -112,8 +120,8 @@ type Auth map[string]*AuthStub // The key here is the sign in method
 
 // AuthStub holds the config at a single sign in level
 type AuthStub struct {
-	Enabled bool   `json:"enabled" yaml:"enabled"`
 	ID      string `json:"id" yaml:"id"`
+	Enabled bool   `json:"enabled" yaml:"enabled"`
 	Secret  string `json:"secret" yaml:"secret"`
 }
 
@@ -128,6 +136,7 @@ type Services map[string]*Service
 
 // Service holds the config of service
 type Service struct {
+	ID        string              `json:"id,omitempty" yaml:"id,omitempty"`   // eg. http://localhost:8080
 	URL       string              `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
 	Endpoints map[string]Endpoint `json:"endpoints" yaml:"endpoints"`
 }
@@ -146,12 +155,12 @@ type FileStore struct {
 	Conn      string      `json:"conn" yaml:"conn"`
 	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
 	Bucket    string      `json:"bucket" yaml:"bucket"`
-	Rules     []*FileRule `json:"rules" yaml:"rules"`
+	Rules     []*FileRule `json:"rules,omitempty" yaml:"rules"`
 }
 
 // FileRule is the authorization object at the file rule level
 type FileRule struct {
-	Name   string           `json:"name" yaml:"name"`
+	ID     string           `json:"id" yaml:"id"`
 	Prefix string           `json:"prefix" yaml:"prefix"`
 	Rule   map[string]*Rule `json:"rule" yaml:"rule"` // The key can be create, read, delete
 }
@@ -176,11 +185,10 @@ type StaticRoute struct {
 type Eventing struct {
 	Enabled       bool                    `json:"enabled" yaml:"enabled"`
 	DBType        string                  `json:"dbType" yaml:"dbType"`
-	Col           string                  `json:"col" yaml:"col"`
-	Rules         map[string]EventingRule `json:"rules" yaml:"rules"`
+	Rules         map[string]EventingRule `json:"rules,omitempty" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
 	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
-	Schemas       map[string]SchemaObject `json:"schemas" yaml:"schemas"`
+	Schemas       map[string]SchemaObject `json:"schemas,omitempty" yaml:"schemas,omitempty"`
 }
 
 // EventingRule holds an eventing rule
@@ -188,49 +196,19 @@ type EventingRule struct {
 	Type    string            `json:"type" yaml:"type"`
 	Retries int               `json:"retries" yaml:"retries"`
 	Timeout int               `json:"timeout" yaml:"timeout"`
-	Name    string            `json:"name" yaml:"name"`
+	ID      string            `json:"id" yaml:"id"`
 	URL     string            `json:"url" yaml:"url"`
 	Options map[string]string `json:"options" yaml:"options"`
 }
 
+// SchemaObject is the body of the request for adding schema
 type SchemaObject struct {
+	ID     string `json:"id,omitempty" yaml:"id,omitempty"`
 	Schema string `json:"schema" yaml:"schema"`
 }
 
 // LetsEncrypt describes the configuration for let's encrypt
 type LetsEncrypt struct {
+	ID                 string   `json:"id,omitempty" yaml:"id,omitempty"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
 }
-
-// Routes describes the configuration for the routing module
-type Routes []*Route
-
-// Route describes the parameters of a single route
-type Route struct {
-	Id          string           `json:"id" yaml:"id"`
-	Source      RouteSource      `json:"source" yaml:"source"`
-	Destination RouteDestination `json:"dest" yaml:"dest"`
-}
-
-type RouteSource struct {
-	Hosts      []string     `json:"hosts,omitempty" yaml:"hosts,omitempty"`
-	URL        string       `json:"url,omitempty" yaml:"url,omitempty"`
-	RewriteURL string       `json:"rewrite,omitempty" yaml:"rewrite,omitempty"`
-	Type       RouteURLType `json:"type,omitempty" yaml:"type,omitempty"`
-}
-
-type RouteDestination struct {
-	Host string `json:"host,omitempty" yaml:"host,omitempty"`
-	Port string `json:"port,omitempty" yaml:"port,omitempty"`
-}
-
-// RouteURLType describes how the url should be evaluated / matched
-type RouteURLType string
-
-const (
-	// RoutePrefix is used for prefix matching
-	RoutePrefix RouteURLType = "prefix"
-
-	// RouteExact is used for matching the url exactly as it is
-	RouteExact RouteURLType = "exact"
-)

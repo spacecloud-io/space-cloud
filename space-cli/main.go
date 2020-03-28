@@ -5,6 +5,22 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"github.com/spaceuptech/space-cli/modules"
+	"github.com/spaceuptech/space-cli/modules/addons"
+	"github.com/spaceuptech/space-cli/modules/auth"
+	"github.com/spaceuptech/space-cli/modules/database"
+	"github.com/spaceuptech/space-cli/modules/deploy"
+	"github.com/spaceuptech/space-cli/modules/eventing"
+	"github.com/spaceuptech/space-cli/modules/filestore"
+	"github.com/spaceuptech/space-cli/modules/ingress"
+	"github.com/spaceuptech/space-cli/modules/letsencrypt"
+	"github.com/spaceuptech/space-cli/modules/operations"
+	"github.com/spaceuptech/space-cli/modules/project"
+	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
+	"github.com/spaceuptech/space-cli/modules/services"
+	"github.com/spaceuptech/space-cli/modules/userman"
+	"github.com/spaceuptech/space-cli/utils"
 )
 
 func main() {
@@ -17,91 +33,83 @@ func main() {
 	app.EnableBashCompletion = true
 	app.Name = "space-cli"
 	app.Version = "0.16.0"
+	app.Flags = []cli.Flag{cli.StringFlag{Name: "log-level", Value: "info", Usage: "Sets the log level of the command", EnvVar: "LOG_LEVEL"}}
 	app.Commands = []cli.Command{
 		{
-			Name:  "generate",
-			Usage: "generates service config",
-			Subcommands: []cli.Command{
-				{
-					Name:   "service",
-					Action: actionGenerateService,
-				},
-			},
+			Name:        "add",
+			Usage:       "Add a add-on to the environment",
+			Subcommands: fetchAddSubCommands(),
 		},
 		{
-			Name:   "apply",
-			Usage:  "deploys service",
-			Action: actionApply,
+			Name:        "remove",
+			Usage:       "Remove a add-on from the environment",
+			Subcommands: fetchRemoveSubCommands(),
 		},
 		{
-			Name:   "destroy",
-			Usage:  "clean development environment & remove secrets",
-			Action: actionDestroy,
-		},
-		{
-			Name:  "login",
-			Usage: "Logs into space cloud",
+			Name:  "get",
+			Usage: "gets different services",
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:   "username",
-					Usage:  "Accepts the username for login",
-					EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
-					Value:  "None",
-				},
-				cli.StringFlag{
-					Name:   "key",
-					Usage:  "Accepts the access key to be verified during login",
-					EnvVar: "KEY",
-					Value:  "None",
-				},
-				cli.StringFlag{
-					Name:   "url",
-					Usage:  "Accepts the URL of server",
-					EnvVar: "URL",
-					Value:  "http://localhost:4122",
+					Name:   "project",
+					Usage:  "The id of the project",
+					EnvVar: "PROJECT_ID",
 				},
 			},
-			Action: actionLogin,
+			Subcommands: fetchGetSubCommands(),
 		},
 		{
-			Name:  "setup",
-			Usage: "setup development environment",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:   "id",
-					Usage:  "The unique id for the cluster",
-					EnvVar: "CLUSTER_ID",
-					Value:  "",
-				},
-				cli.StringFlag{
-					Name:   "username",
-					Usage:  "The username used for login",
-					EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
-					Value:  "",
-				},
-				cli.StringFlag{
-					Name:   "key",
-					Usage:  "The access key used for login",
-					EnvVar: "KEY",
-					Value:  "",
-				},
-				cli.StringFlag{
-					Name:   "secret",
-					Usage:  "The jwt secret to start space-cloud with",
-					EnvVar: "JWT_SECRET",
-					Value:  "",
-				},
-				cli.BoolFlag{
-					Name:  "dev",
-					Usage: "Run space cloud in development mode",
-				},
-			},
-			Action: actionSetup,
+			Name:        "generate",
+			Usage:       "generates service config",
+			Subcommands: fetchGenerateSubCommands(),
 		},
 	}
+	app.Commands = append(app.Commands, deploy.CommandDeploy)
+	app.Commands = append(app.Commands, operations.Commands...)
+	app.Commands = append(app.Commands, utils.LoginCommands...)
 
 	// Start the app
 	if err := app.Run(os.Args); err != nil {
-		logrus.Fatalln("Failed to start space cli:", err)
+		logrus.Fatalln("Failed to run execute command:", err)
 	}
+}
+
+func fetchAddSubCommands() []cli.Command {
+	v := []cli.Command{}
+	v = append(v, addons.AddSubCommands...)
+	return v
+}
+
+func fetchRemoveSubCommands() []cli.Command {
+	v := []cli.Command{}
+	v = append(v, addons.RemoveSubCommand...)
+	return v
+}
+
+func fetchGetSubCommands() []cli.Command {
+	v := []cli.Command{}
+	v = append(v, auth.GetSubCommands...)
+	v = append(v, database.GetSubCommands...)
+	v = append(v, eventing.GetSubCommands...)
+	v = append(v, filestore.GetSubCommands...)
+	v = append(v, letsencrypt.GetSubCommands...)
+	v = append(v, project.GetSubCommands...)
+	v = append(v, remoteservices.GetSubCommands...)
+	v = append(v, services.GetSubCommands...)
+	v = append(v, modules.GetSubCommands...)
+
+	return v
+}
+
+func fetchGenerateSubCommands() []cli.Command {
+	v := []cli.Command{}
+	v = append(v, database.GenerateSubCommands...)
+	v = append(v, eventing.GenerateSubCommands...)
+	v = append(v, filestore.GenerateSubCommands...)
+	v = append(v, ingress.GenerateSubCommands...)
+	v = append(v, letsencrypt.GenerateSubCommands...)
+	v = append(v, remoteservices.GenerateSubCommands...)
+	v = append(v, services.GenerateSubCommands...)
+	v = append(v, userman.GenerateSubCommands...)
+
+	return v
 }

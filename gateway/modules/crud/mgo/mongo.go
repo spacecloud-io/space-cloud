@@ -77,7 +77,7 @@ func (m *Mongo) connect() error {
 	return nil
 }
 
-// GetDBAlias returns the dbType of the crud block
+// GetDBType returns the dbType of the crud block
 func (m *Mongo) GetDBType() utils.DBType {
 	return utils.Mongo
 }

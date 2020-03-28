@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/fatih/structs"
@@ -47,10 +48,17 @@ func (m *Module) transmitEvents(eventToken int, eventDocs []*model.EventDocument
 	}
 }
 
-func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest) error {
+func (m *Module) getSpaceCloudIDFromBatchID(batchID string) string {
+	return strings.Split(batchID, "--")[1]
+}
+
+func (m *Module) generateBatchID() string {
+	return fmt.Sprintf("%s--%s", ksuid.New().String(), m.syncMan.GetNodeID())
+}
+
+func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := ksuid.New().String()
 
 	// Create an eventDocs array
 	var eventDocs []*model.EventDocument
@@ -61,14 +69,14 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.Name, batchID, utils.EventStatusStaged, r.URL, req)
+			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.ID, batchID, utils.EventStatusStaged, r.URL, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
 
 	// Persist the events
-	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
+	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
@@ -99,14 +107,15 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 	return &model.EventDocument{
 		ID:             ksuid.New().String(),
 		BatchID:        batchID,
-		Type:           fmt.Sprintf("%s:%s", event.Type, name),
+		Type:           event.Type,
+		RuleName:       name,
 		Token:          token,
 		Timestamp:      timestamp,
 		EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond),
 		Payload:        string(data),
 		Status:         status,
 		Retries:        retries,
-		Url:            url,
+		URL:            url,
 	}
 }
 
@@ -169,35 +178,18 @@ func (m *Module) getMatchingRules(name string, options map[string]string) []conf
 
 	for n, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rule.Name = n
+			rule.ID = n
 			rules = append(rules, rule)
 		}
 	}
 
 	for n, rule := range m.config.InternalRules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
-			rule.Name = n
+			rule.ID = n
 			rules = append(rules, rule)
 		}
 	}
 	return rules
-}
-
-func isRulesMatching(rule1 *config.EventingRule, rule2 *config.EventingRule) bool {
-
-	if rule1.Type != rule2.Type {
-		return false
-	}
-
-	if !isOptionsValid(rule1.Options, rule2.Options) {
-		return false
-	}
-
-	if rule1.URL != rule2.URL {
-		return false
-	}
-
-	return true
 }
 
 func convertToArray(eventDocs []*model.EventDocument) []interface{} {
@@ -246,6 +238,7 @@ func (m *Module) validate(ctx context.Context, project, token string, event *mod
 	if !p {
 		return nil
 	}
+
 	_, err := m.schema.SchemaValidator(event.Type, schema, event.Payload.(map[string]interface{}))
 	return err
 }

@@ -25,8 +25,8 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 
 		// Load the params from the body
 		req := model.FunctionsRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Load the project state
 		state, err := projects.LoadProject(projectID)
@@ -43,18 +43,22 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 		defer cancel()
 
 		if _, err := state.Auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		result, err := state.Functions.CallWithContext(ctx, service, function, token, req.Params)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
 }

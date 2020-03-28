@@ -2,10 +2,11 @@ package routing
 
 import (
 	"encoding/json"
-	"github.com/spaceuptech/space-cloud/gateway/config"
 	"log"
 	"reflect"
 	"testing"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 func Test_sortFileRule(t *testing.T) {
@@ -22,43 +23,43 @@ func Test_sortFileRule(t *testing.T) {
 			args: args{
 				rules: []*config.Route{
 					{
-						Id: "1",
+						ID: "1",
 						Source: config.RouteSource{
 							URL: "/",
 						},
 					},
 					{
-						Id: "2",
+						ID: "2",
 						Source: config.RouteSource{
 							URL: "/api",
 						},
 					},
 					{
-						Id: "3",
+						ID: "3",
 						Source: config.RouteSource{
 							URL: "/api/good/create/yes",
 						},
 					},
 					{
-						Id: "4",
+						ID: "4",
 						Source: config.RouteSource{
 							URL: "/api/good",
 						},
 					},
 					{
-						Id: "5",
+						ID: "5",
 						Source: config.RouteSource{
 							URL: "/api/abc",
 						},
 					},
 					{
-						Id: "6",
+						ID: "6",
 						Source: config.RouteSource{
 							URL: "/api/abc/create/yes",
 						},
 					},
 					{
-						Id: "7",
+						ID: "7",
 						Source: config.RouteSource{
 							URL: "/api/abc/yes",
 						},
@@ -68,43 +69,43 @@ func Test_sortFileRule(t *testing.T) {
 			want: args{
 				rules: []*config.Route{
 					{
-						Id: "6",
+						ID: "6",
 						Source: config.RouteSource{
 							URL: "/api/abc/create/yes",
 						},
 					},
 					{
-						Id: "3",
+						ID: "3",
 						Source: config.RouteSource{
 							URL: "/api/good/create/yes",
 						},
 					},
 					{
-						Id: "7",
+						ID: "7",
 						Source: config.RouteSource{
 							URL: "/api/abc/yes",
 						},
 					},
 					{
-						Id: "5",
+						ID: "5",
 						Source: config.RouteSource{
 							URL: "/api/abc",
 						},
 					},
 					{
-						Id: "4",
+						ID: "4",
 						Source: config.RouteSource{
 							URL: "/api/good",
 						},
 					},
 					{
-						Id: "2",
+						ID: "2",
 						Source: config.RouteSource{
 							URL: "/api",
 						},
 					},
 					{
-						Id: "1",
+						ID: "1",
 						Source: config.RouteSource{
 							URL: "/",
 						},

@@ -74,7 +74,7 @@ func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRe
 		if err != nil {
 			return 0, nil, err
 		}
-		defer cur.Close(ctx)
+		defer func() { _ = cur.Close(ctx) }()
 
 		var count int64
 		// Finding multiple documents returns a cursor

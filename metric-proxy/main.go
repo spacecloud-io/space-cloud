@@ -47,12 +47,19 @@ func main() {
 					Usage:  "Set the log level [debug | info | error]",
 					Value:  loglevelInfo,
 				},
+				cli.StringFlag{
+					Name:   "mode",
+					EnvVar: "MODE",
+					Usage:  "The collection mode [parallel | per-second]",
+					Value:  "per-second",
+				},
 			},
 			Action: func(c *cli.Context) error {
 				// Get all flags
 				addr := c.String("addr")
 				token := c.String("token")
 				loglevel := c.String("log-level")
+				mode := c.String("mode")
 
 				// Set the log level
 				setLogLevel(loglevel)
@@ -63,7 +70,7 @@ func main() {
 				}
 
 				// Start the proxy
-				p := New(addr, token)
+				p := New(addr, token, mode)
 				return p.Start()
 			},
 		},

@@ -170,3 +170,15 @@ func (m *Module) DoesExists(ctx context.Context, project, token, path string) er
 	// Read the file from file storage
 	return m.store.DoesExists(path)
 }
+
+// GetState checks if selected storage is active
+func (m *Module) GetState(ctx context.Context) error {
+	// Exit if file storage is not enabled
+	if !m.IsEnabled() {
+		return errors.New("This feature isn't enabled")
+	}
+	m.RLock()
+	defer m.RUnlock()
+	// Read the state from file storage
+	return m.store.GetState(ctx)
+}

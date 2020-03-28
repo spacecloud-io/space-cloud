@@ -1,14 +1,14 @@
 package routing
 
 import (
-	"github.com/spaceuptech/space-cloud/gateway/config"
 	"sort"
 	"strings"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 func sortRoutes(rules []*config.Route) {
-	var newRoutes routes
-	newRoutes = rules
+	var newRoutes routes = rules
 	sort.Stable(newRoutes)
 }
 

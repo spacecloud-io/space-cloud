@@ -9,14 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
@@ -27,20 +25,19 @@ type Server struct {
 
 	nodeID         string
 	configFilePath string
-
-	adminMan    *admin.Manager
-	syncMan     *syncman.Manager
-	metrics     *metrics.Module
-	letsencrypt *letsencrypt.LetsEncrypt
-	routing     *routing.Routing
-
-	projects *projects.Projects
-	ssl      *config.SSL
+	adminMan       *admin.Manager
+	syncMan        *syncman.Manager
+	letsencrypt    *letsencrypt.LetsEncrypt
+	routing        *routing.Routing
+	metrics        *metrics.Module
+	ssl            *config.SSL
+	modules        *modules.Modules
 }
 
 // New creates a new server instance
 func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 
+	// Create the fundamental modules
 	m, err := metrics.New(nodeID, metricsConfig)
 	if err != nil {
 		return nil, err
@@ -61,36 +58,23 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	// Initialise the routing module
 	r := routing.New()
 
-	p := projects.New(nodeID, removeProjectScope, driver.New(removeProjectScope), adminMan, syncMan, m, le, r)
-	syncMan.SetProjectCallbacks(&model.ProjectCallbacks{
-		Store:            p.StoreProject,
-		StoreIgnoreError: p.StoreIgnoreErrors,
+	modules, err := modules.New(nodeID, removeProjectScope, syncMan, adminMan, m)
+	if err != nil {
+		return nil, err
+	}
 
-		SetGlobalConfig:      p.SetGlobalConfig,
-		SetCrudConfig:        p.SetCrudConfig,
-		SetServicesConfig:    p.SetServicesConfig,
-		SetFileStorageConfig: p.SetFileStoreConfig,
-		SetEventingConfig:    p.SetEventingConfig,
-		SetUserManConfig:     p.SetUserManConfig,
-		SetLetsencryptConfig: p.SetLetsencryptDomains,
-		SetRoutingConfig:     p.SetProjectRoutes,
-
-		Delete:     p.DeleteProject,
-		ProjectIDs: p.GetProjectIDs,
-	})
+	syncMan.SetModules(modules, le, r)
 
 	logrus.Infoln("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, projects: p, letsencrypt: le, routing: r,
-		syncMan: syncMan, adminMan: adminMan, configFilePath: utils.DefaultConfigFilePath,
-	}, nil
+	return &Server{nodeID: nodeID, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m, configFilePath: utils.DefaultConfigFilePath, modules: modules}, nil
 }
 
 // Start begins the server operations
-func (s *Server) Start(profiler, disableMetrics bool, staticPath, configDomain string, port int) error {
+func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port int, restrictedHosts []string) error {
 
 	// Start the sync manager
-	if err := s.syncMan.Start(s.configFilePath, port); err != nil {
+	if err := s.syncMan.Start(s.configFilePath, s.syncMan.GetGlobalConfig(), port); err != nil {
 		return err
 	}
 
@@ -105,7 +89,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath, configDomain s
 	if s.ssl != nil && s.ssl.Enabled {
 
 		// Setup the handler
-		handler := corsObj.Handler(s.routes(profiler, staticPath, configDomain))
+		handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
 		handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 		handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
@@ -130,7 +114,7 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath, configDomain s
 
 	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
-	handler := corsObj.Handler(s.routes(profiler, staticPath, configDomain))
+	handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
 	handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 	handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/segmentio/ksuid"
 	"github.com/sirupsen/logrus"
@@ -22,11 +23,6 @@ const (
 )
 
 var essentialFlags = []cli.Flag{
-	cli.StringFlag{
-		Name:   "config-domain",
-		EnvVar: "CONFIG_DOMAIN",
-		Usage:  "Set mission control and config domain names",
-	},
 	cli.StringFlag{
 		Name:   "log-level",
 		EnvVar: "LOG_LEVEL",
@@ -70,6 +66,7 @@ var essentialFlags = []cli.Flag{
 		Name:   "advertise-addr",
 		Usage:  "The address which will be broadcast to other space cloud instances",
 		EnvVar: "ADVERTISE_ADDR",
+		Value:  "localhost:4122",
 	},
 	cli.StringFlag{
 		Name:   "store-type",
@@ -81,6 +78,12 @@ var essentialFlags = []cli.Flag{
 		Name:   "port",
 		EnvVar: "PORT",
 		Value:  4122,
+	},
+	cli.StringFlag{
+		Name:   "restrict-hosts",
+		EnvVar: "RESTRICT_HOSTS",
+		Usage:  "Comma separated values of the hosts to restrict mission-control to",
+		Value:  "*",
 	},
 	cli.BoolFlag{
 		Name:   "remove-project-scope",
@@ -221,15 +224,13 @@ func actionRun(c *cli.Context) error {
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
-	advertiseAddr := c.String("advice-addr")
+	advertiseAddr := c.String("advertise-addr")
 
 	// Load the flags for the metrics module
 	enableMetrics := c.Bool("enable-metrics")
 	metricsSink := c.String("metrics-sink")
 	metricsConn := c.String("metrics-conn")
 	metricsScope := c.String("metrics-scope")
-
-	configDomain := c.String("config-domain")
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
@@ -247,7 +248,9 @@ func actionRun(c *cli.Context) error {
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
 	}
-
+	if conf.Admin == nil {
+		conf.Admin = config.GenerateAdmin()
+	}
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
 
@@ -276,7 +279,7 @@ func actionRun(c *cli.Context) error {
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(false, disableMetrics, staticPath, configDomain, port)
+	return s.Start(profiler, disableMetrics, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
 }
 
 func actionInit(*cli.Context) error {

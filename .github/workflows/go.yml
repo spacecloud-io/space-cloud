@@ -5,7 +5,6 @@ jobs:
     name: Build and test gateway
     runs-on: ubuntu-latest
     steps:
-
       - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
@@ -15,24 +14,28 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
 
-      - name: Get dependencies
-        run: |
-          cd gateway && go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
+      - name: Cache Go Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Build
         run: cd gateway && go build -v .
       - name: Test
         run: cd gateway && go test ./...
+      - name: Lint
+        run: |
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.23.8
+          sudo cp ./bin/golangci-lint $GOPATH/bin/
+          cd gateway && golangci-lint run -E golint --exclude-use-default=false --timeout 600s ./...
 
   runner:
     name: Build and test Runner
     runs-on: ubuntu-latest
     steps:
-
       - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
@@ -42,23 +45,28 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
 
-      - name: Get dependencies
-        run: |
-          cd runner && go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
+      - name: Cache Go Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Build
         run: cd runner && go build -v .
       - name: Test
         run: cd runner && go test ./...
+      - name: Lint
+        run: |
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.23.8
+          sudo cp ./bin/golangci-lint $GOPATH/bin/
+          cd runner && golangci-lint run -E golint --exclude-use-default=false --timeout 180s ./...
+
   metric:
     name: Build and test metric proxy
     runs-on: ubuntu-latest
     steps:
-
       - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
@@ -67,16 +75,49 @@ jobs:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
-
-      - name: Get dependencies
-        run: |
-          cd metric-proxy && go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
+      - name: Cache Go Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Build
         run: cd metric-proxy && go build -v .
       - name: Test
         run: cd metric-proxy && go test ./...
+      - name: Lint
+        run: |
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.23.8
+          sudo cp ./bin/golangci-lint $GOPATH/bin/
+          cd metric-proxy && golangci-lint run -E golint --exclude-use-default=false --timeout 180s ./...
+
+  cli:
+    name: Build and test space cli
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+      - name: Cache Go Modules
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build
+        run: cd space-cli && go build -v .
+      - name: Test
+        run: cd space-cli && go test ./...
+      - name: Lint
+        run: |
+          curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.23.8
+          sudo cp ./bin/golangci-lint $GOPATH/bin/
+          cd space-cli && golangci-lint run -E golint --exclude-use-default=false --timeout 180s ./...

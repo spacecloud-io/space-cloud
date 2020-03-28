@@ -20,7 +20,6 @@ func (s *SQL) DescribeTable(ctx context.Context, project, col string) ([]utils.F
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
 	index, err := s.getIndexDetails(ctx, project, col)
 	if err != nil {
 		return nil, nil, nil, err
@@ -57,7 +56,7 @@ WHERE (isc.table_schema, isc.table_name) = ($2, $1)
 ORDER BY isc.ordinal_position;`
 
 		args = append(args, col, project)
-	case utils.SqlServer:
+	case utils.SQLServer:
 
 		queryString = `SELECT DISTINCT C.COLUMN_NAME as 'Field', C.IS_NULLABLE as 'Null' , 
     case when C.DATA_TYPE = 'varchar' then concat(C.DATA_TYPE,'(',c.CHARACTER_MAXIMUM_LENGTH,')') else C.DATA_TYPE end as 'Type',
@@ -102,15 +101,18 @@ WHERE C.TABLE_SCHEMA=@p2 AND C.table_name = @p1`
 
 func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]utils.ForeignKeysType, error) {
 	queryString := ""
+	args := []interface{}{}
 	switch utils.DBType(s.dbType) {
 
 	case utils.MySQL:
-		queryString = "select TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE REFERENCED_TABLE_SCHEMA = ? and TABLE_NAME = ?"
+		queryString = "select KCU.TABLE_NAME, KCU.COLUMN_NAME, KCU.CONSTRAINT_NAME, RC.DELETE_RULE, KCU.REFERENCED_TABLE_NAME, KCU.REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS KCU JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS RC ON RC.CONSTRAINT_NAME=KCU.CONSTRAINT_NAME WHERE KCU.REFERENCED_TABLE_SCHEMA = ? and KCU.TABLE_NAME = ?"
+		args = append(args, project, col)
 	case utils.Postgres:
 		queryString = `SELECT
 		tc.table_name AS "TABLE_NAME", 
 		kcu.column_name AS "COLUMN_NAME", 
 		tc.constraint_name AS "CONSTRAINT_NAME", 
+		rc.delete_rule AS "DELETE_RULE",
 		ccu.table_name AS "REFERENCED_TABLE_NAME",
 		ccu.column_name AS "REFERENCED_COLUMN_NAME"
 	FROM 
@@ -121,20 +123,25 @@ func (s *SQL) getForeignKeyDetails(ctx context.Context, project, col string) ([]
 		JOIN information_schema.constraint_column_usage AS ccu
 		  ON ccu.constraint_name = tc.constraint_name
 		  AND ccu.table_schema = tc.table_schema
-	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $1  AND tc.table_name= $2
+		JOIN information_schema.referential_constraints AS rc
+		  ON tc.constraint_name = rc.constraint_name
+		  AND rc.unique_constraint_schema= $1
+	WHERE tc.constraint_type = 'FOREIGN KEY'  AND tc.table_schema = $2  AND tc.table_name= $3
 	`
-	case utils.SqlServer:
+		args = append(args, project, project, col)
+	case utils.SQLServer:
 		queryString = `SELECT 
-		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME,
+		CCU.TABLE_NAME, CCU.COLUMN_NAME, CCU.CONSTRAINT_NAME, RC.DELETE_RULE,
 		isnull(KCU.TABLE_NAME,'') AS 'REFERENCED_TABLE_NAME', isnull(KCU.COLUMN_NAME,'') AS 'REFERENCED_COLUMN_NAME'
 	FROM INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE CCU
 		FULL JOIN INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc
 			ON CCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME 
 		FULL JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE KCU 
 			ON KCU.CONSTRAINT_NAME = RC.CONSTRAINT_NAME  
-	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2`
+	WHERE CCU.TABLE_SCHEMA = @p1 AND CCU.TABLE_NAME= @p2 AND KCU.TABLE_NAME= @p3`
+		args = append(args, project, col, col)
 	}
-	rows, err := s.client.QueryxContext(ctx, queryString, []interface{}{project, col}...)
+	rows, err := s.client.QueryxContext(ctx, queryString, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +192,7 @@ func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]utils
     		t.relname,
     		i.relname,
     		array_position(ix.indkey, a.attnum)`
-	case utils.SqlServer:
+	case utils.SQLServer:
 		queryString = `SELECT 
     	TABLE_NAME = t.name,
     	COLUMN_NAME = col.name,

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/graph-gophers/dataloader"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -20,9 +22,15 @@ type Module struct {
 	blocks  map[string]*stub
 	project string
 
+	// batch operation
+	batchMapTableToChan batchMap // every table gets mapped to group of channels
+
+	dataLoader loader
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
+
+	schema model.SchemaCrudInterface
 
 	// Drivers handler
 	h *driver.Handler
@@ -31,9 +39,19 @@ type Module struct {
 	adminMan *admin.Manager
 }
 
+type loader struct {
+	loaderMap      map[string]*dataloader.Loader
+	dataLoaderLock sync.Mutex
+}
+
 // Init create a new instance of the Module object
 func Init(h *driver.Handler, adminMan *admin.Manager) *Module {
 	return &Module{blocks: make(map[string]*stub), h: h, adminMan: adminMan}
+}
+
+// SetSchema sets the schema module
+func (m *Module) SetSchema(s model.SchemaCrudInterface) {
+	m.schema = s
 }
 
 // SetHooks sets the internal hooks
@@ -46,6 +64,7 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
+	m.closeBatchOperation()
 
 	if err := m.adminMan.IsDBConfigValid(crud); err != nil {
 		return err
@@ -57,8 +76,10 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	for _, v := range m.blocks {
 		m.h.RemoveBlock(v.dbType, v.conn)
 	}
-
 	m.blocks = make(map[string]*stub, len(crud))
+
+	// clear previous data loader
+	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 
 	// Create a new crud blocks
 	for dbAlias, v := range crud {
@@ -78,6 +99,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 		log.Println("Successfully connected to " + dbAlias)
 	}
+	m.initBatchOperation(project, crud)
 	return nil
 }
 

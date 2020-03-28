@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // WebsocketClient is the websocket client
@@ -41,7 +42,7 @@ func (c *WebsocketClient) Write(res *model.Message) {
 func (c *WebsocketClient) Close() {
 	c.cancel()
 	close(c.channel)
-	c.socket.Close()
+	utils.CloseTheCloser(c.socket)
 }
 
 // Read starts a blocking reader routine
@@ -50,6 +51,7 @@ func (c *WebsocketClient) Read(cb DataCallback) {
 		data := &model.Message{}
 		err := c.socket.ReadJSON(data)
 		if err != nil {
+			_ = c.socket.WriteJSON(model.Message{Type: "unknown", ID: "0", Data: map[string]interface{}{"error": "invalid request sent"}})
 			return
 		}
 

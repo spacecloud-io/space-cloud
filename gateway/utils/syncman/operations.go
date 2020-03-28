@@ -1,6 +1,7 @@
 package syncman
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -48,7 +49,8 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	return urls
 }
 
-func (s *Manager) GetRealtimeUrl(project string) string {
+// GetRealtimeURL get the url of realtime
+func (s *Manager) GetRealtimeURL(project string) string {
 	return string(fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project))
 }
 
@@ -88,7 +90,8 @@ func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
 	return len(s.services), nil
 }
 
-func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Project) (error, int) {
+// ApplyProjectConfig creates the config for the project
+func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Project) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -97,35 +100,67 @@ func (s *Manager) CreateProjectConfig(ctx context.Context, project *config.Proje
 		return errors.New("Cannot create new project. Upgrade your plan"), http.StatusBadRequest
 	}
 
+	decodedAESKey, err := base64.StdEncoding.DecodeString(project.AESkey)
+	if err != nil {
+		return http.StatusInternalServerError, err
+	}
+	project.AESkey = string(decodedAESKey)
+
+	// set default context time
+	if project.ContextTime == 0 {
+		project.ContextTime = 10
+	}
+
 	// Generate internal access token
 	token, err := s.adminMan.GetInternalAccessToken()
 	if err != nil {
-		return err, http.StatusInternalServerError
+		return http.StatusInternalServerError, err
 	}
 
+	var doesProjectExists bool
 	for _, p := range s.projectConfig.Projects {
 		if p.ID == project.ID {
-			return errors.New("project already exists in config"), http.StatusConflict
+			// override the existing config
+			p.Name = project.Name
+			p.AESkey = project.AESkey
+			p.Secret = project.Secret
+			p.DockerRegistry = project.DockerRegistry
+			p.ContextTime = project.ContextTime
+
+			// Mark project as existing
+			doesProjectExists = true
 		}
 	}
 
-	// Create a project in the runner as well
-	if s.runnerAddr != "" {
-		params := map[string]interface{}{"id": project.ID}
-		if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project", s.runnerAddr), token, "", params, &map[string]interface{}{}); err != nil {
-			return err, http.StatusInternalServerError
+	if !doesProjectExists {
+		// Append project with default modules to projects array
+		project.Modules = &config.Modules{
+			FileStore:   &config.FileStore{},
+			Services:    &config.ServicesModule{},
+			Auth:        map[string]*config.AuthStub{},
+			Crud:        map[string]*config.CrudStub{},
+			Routes:      []*config.Route{},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+		}
+		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
+
+		// Create a project in the runner as well
+		if s.runnerAddr != "" {
+			params := map[string]interface{}{"id": project.ID}
+			if err := s.MakeHTTPRequest(ctx, "POST", fmt.Sprintf("http://%s/v1/runner/project/%s", s.runnerAddr, project.ID), token, "", params, &map[string]interface{}{}); err != nil {
+				return http.StatusInternalServerError, err
+			}
 		}
 	}
 
 	// We will ignore the error for the create project request
-	s.setProjectConfig(project)
-	go s.projects.StoreIgnoreError(project)
+	go s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 
 	if s.storeType == "none" {
-		return config.StoreConfigToFile(s.projectConfig, s.configFile), http.StatusInternalServerError
+		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
 	}
 
-	return s.store.SetProject(ctx, project), http.StatusInternalServerError
+	return http.StatusInternalServerError, s.store.SetProject(ctx, project)
 }
 
 // SetProjectGlobalConfig applies the set project config command to the raft log
@@ -140,7 +175,11 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	}
 
 	projectConfig.Secret = project.Secret
+	projectConfig.AESkey = project.AESkey
 	projectConfig.Name = project.Name
+	projectConfig.ContextTime = project.ContextTime
+
+	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
 
 	// Set the user man config
 	if err := s.projects.SetGlobalConfig(project.ID, projectConfig.Secret); err != nil {
@@ -160,18 +199,12 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 		return errors.New("Cannot create new project. Upgrade your plan")
 	}
 
+	go s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+
 	return s.setProject(ctx, project)
 }
 
 func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
-	if err := s.projects.Store(project); err != nil {
-		return err
-	}
-
-	return s.persistProjectConfig(ctx, project)
-}
-
-func (s *Manager) persistProjectConfig(ctx context.Context, project *config.Project) error {
 	s.setProjectConfig(project)
 
 	if s.storeType == "none" {
@@ -207,6 +240,21 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 	}
 
 	return s.store.DeleteProject(ctx, projectID)
+}
+
+// GetProjectConfig returns the config of specified project
+func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Iterate over all projects stored
+	for _, p := range s.projectConfig.Projects {
+		if projectID == p.ID {
+			return []interface{}{config.Project{AESkey: base64.StdEncoding.EncodeToString([]byte(p.AESkey)), ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
+		}
+	}
+
+	return []interface{}{}, errors.New("given project is not present in state")
 }
 
 // GetConfig returns the config present in the state

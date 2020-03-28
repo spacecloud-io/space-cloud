@@ -73,3 +73,18 @@ func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error
 
 	return nil, fmt.Errorf("given project (%s) is not present in state", projectID)
 }
+
+// GetNodeID returns node id assigned to sc
+func (s *Manager) GetNodeID() string {
+	return s.nodeID
+}
+
+// GetSpaceCloudURLFromID returns addr for corresponding nodeID
+func (s *Manager) GetSpaceCloudURLFromID(nodeID string) (string, error) {
+	for _, service := range s.services {
+		if nodeID == service.id {
+			return service.addr, nil
+		}
+	}
+	return "", fmt.Errorf("service with specified nodeID doesn't exists")
+}

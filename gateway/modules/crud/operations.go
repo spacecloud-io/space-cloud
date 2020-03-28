@@ -2,15 +2,22 @@ package crud
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// Create inserts a document (or multiple when op is "all") into the database based on dbType
+// Create inserts a documents (or multiple when op is "all") into the database based on dbType
 func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
+
+	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
+		return err
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
@@ -27,8 +34,14 @@ func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *
 		return err
 	}
 
-	// Perform the create operation
-	n, err := crud.Create(ctx, project, col, req)
+	var n int64
+	if req.IsBatch {
+		// add the request for batch operation
+		n, err = m.createBatch(project, dbAlias, col, req.Document)
+	} else {
+		// Perform the create operation
+		n, err = crud.Create(ctx, project, col, req)
+	}
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
@@ -40,7 +53,7 @@ func (m *Module) Create(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
-// Read returns the document(s) which match a query from the database based on dbType
+// Read returns the documents(s) which match a query from the database based on dbType
 func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *model.ReadRequest) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
@@ -53,9 +66,23 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	if err := crud.IsClientSafe(); err != nil {
 		return nil, err
 	}
-
+	if req.IsBatch {
+		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req}
+		dataLoader, ok := m.getLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
+		if !ok {
+			dataLoader = m.createLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
+		}
+		return dataLoader.Load(ctx, key)()
+	}
 	n, result, err := crud.Read(ctx, project, col, req)
-
+	// NOTE : currently jsonb is supported for only postgres
+	// in future if jsonb is supported for multiple databases change below code
+	if crud.GetDBType() == utils.Postgres {
+		if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
+			logrus.Errorf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", project, col)
+			return nil, err
+		}
+	}
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		m.metricHook(m.project, dbAlias, col, n, utils.Read)
@@ -64,10 +91,14 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	return result, err
 }
 
-// Update updates the document(s) which match a query from the database based on dbType
+// Update updates the documents(s) which match a query from the database based on dbType
 func (m *Module) Update(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
+
+	if err := m.schema.ValidateUpdateOperation(dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
+		return err
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
@@ -97,7 +128,7 @@ func (m *Module) Update(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
-// Delete removes the document(s) which match a query from the database based on dbType
+// Delete removes the documents(s) which match a query from the database based on dbType
 func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *model.DeleteRequest) error {
 	m.RLock()
 	defer m.RUnlock()
@@ -151,6 +182,19 @@ func (m *Module) Aggregate(ctx context.Context, dbAlias, project, col string, re
 func (m *Module) Batch(ctx context.Context, dbAlias, project string, req *model.BatchRequest) error {
 	m.RLock()
 	defer m.RUnlock()
+
+	for _, r := range req.Requests {
+		switch r.Type {
+		case string(utils.Create):
+			if err := m.schema.ValidateCreateOperation(dbAlias, r.Col, &model.CreateRequest{Document: r.Document, Operation: r.Operation}); err != nil {
+				return err
+			}
+		case string(utils.Update):
+			if err := m.schema.ValidateUpdateOperation(dbAlias, r.Col, r.Operation, r.Update, r.Find); err != nil {
+				return err
+			}
+		}
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
@@ -233,8 +277,8 @@ func (m *Module) GetCollections(ctx context.Context, project, dbAlias string) ([
 	return crud.GetCollections(ctx, project)
 }
 
-// CreateProjectIfNotExists creates a database / schema if it doesn't already exists
-func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error {
+// CreateDatabaseIfNotExist creates a database if not exist which has same name of project
+func (m *Module) CreateDatabaseIfNotExist(ctx context.Context, project, dbAlias string) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -252,7 +296,7 @@ func (m *Module) CreateProjectIfNotExists(ctx context.Context, project, dbAlias 
 		return err
 	}
 
-	return crud.CreateProjectIfNotExist(ctx, project)
+	return crud.CreateDatabaseIfNotExist(ctx, project)
 }
 
 // GetConnectionState gets the current state of client

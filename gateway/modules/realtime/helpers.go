@@ -1,8 +1,6 @@
 package realtime
 
 import (
-	"strings"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -60,13 +58,4 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 
 func createGroupKey(dbAlias, col string) string {
 	return dbAlias + "::" + col
-}
-
-func getSubjectName(project, dbAlias, col string) string {
-	return "realtime:" + project + ":" + dbAlias + ":" + col
-}
-
-func getDBTypeAndColFromGroupKey(key string) (dbAlias string, col string) {
-	array := strings.Split(key, "::")
-	return array[0], array[1]
 }
