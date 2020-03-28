@@ -133,9 +133,8 @@ func actionApply(cli *cli.Context) error {
 		return fmt.Errorf("incorrect number of arguments provided")
 	}
 
-	fileName := args[2]
-
-	return Apply(fileName)
+	dirName := args[2]
+	return Apply(dirName)
 }
 
 func actionStart(_ *cli.Context) error {

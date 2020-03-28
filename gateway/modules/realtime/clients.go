@@ -7,7 +7,7 @@ import (
 )
 
 type queryStub struct {
-	sendFeed SendFeed
+	sendFeed model.SendFeed
 	whereObj map[string]interface{}
 	actions  *model.PostProcess
 }
@@ -18,7 +18,7 @@ type clientsStub struct {
 }
 
 // AddLiveQuery tracks a client for a live query
-func (m *Module) AddLiveQuery(id, _, dbAlias, group, clientID string, whereObj map[string]interface{}, actions *model.PostProcess, sendFeed SendFeed) {
+func (m *Module) AddLiveQuery(id, _, dbAlias, group, clientID string, whereObj map[string]interface{}, actions *model.PostProcess, sendFeed model.SendFeed) {
 	// Load clients in a particular group
 	clients := new(clientsStub)
 	t, _ := m.groups.LoadOrStore(createGroupKey(dbAlias, group), clients)

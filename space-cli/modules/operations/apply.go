@@ -4,31 +4,88 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"sort"
+	"strconv"
 	"strings"
-
-	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// ActionApply applies the file / folder
-func ActionApply(cli *cli.Context) error {
-	args := os.Args
-	if len(args) != 3 {
-		_ = utils.LogError("error while applying service incorrect number of arguments provided", nil)
-		return fmt.Errorf("incorrect number of arguments provided")
+type alphabetic []string
+
+func (list alphabetic) Len() int { return len(list) }
+
+func (list alphabetic) Swap(i, j int) { list[i], list[j] = list[j], list[i] }
+
+func (list alphabetic) Less(i, j int) bool {
+	a, err := strconv.Atoi(strings.Split(list[i], "-")[0])
+	if err != nil {
+		logrus.Errorf("unable to convert string to int while sorting file name (i) (%s)", list[i])
+		return false
 	}
-
-	fileName := args[2]
-
-	return Apply(fileName)
+	b, err := strconv.Atoi(strings.Split(list[j], "-")[0])
+	if err != nil {
+		logrus.Errorf("unable to convert string to int while sorting file name (j) (%s)", list[j])
+		return false
+	}
+	return a < b
 }
 
 // Apply reads the config file(s) from the provided file / directory and applies it to the server
-func Apply(fileName string) error {
+func Apply(applyName string) error {
+	if !strings.HasSuffix(applyName, ".yaml") {
+		dirName := applyName
+		if err := os.Chdir(dirName); err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to switch to directory %s", dirName), err)
+		}
+		// list file of current directory. Note : we have changed the directory with the help of above function
+		files, err := ioutil.ReadDir(".")
+		if err != nil {
+			return utils.LogError(fmt.Sprintf("Unable to fetch config files from %s", dirName), err)
+		}
+
+		account, err := utils.GetSelectedAccount()
+		if err != nil {
+			return utils.LogError("Unable to fetch account information", err)
+		}
+		login, err := utils.Login(account)
+		if err != nil {
+			return utils.LogError("Unable to login", err)
+		}
+
+		fileNames := alphabetic{}
+		// filter directories
+		for _, fileInfo := range files {
+			if !fileInfo.IsDir() {
+				fileNames = append(fileNames, fileInfo.Name())
+			}
+		}
+		// sort file names alphanumerically
+		sort.Stable(fileNames)
+
+		for _, fileName := range fileNames {
+			if strings.HasSuffix(fileName, ".yaml") {
+				specs, err := utils.ReadSpecObjectsFromFile(fileName)
+				if err != nil {
+					return utils.LogError("Unable to read spec objects from file", err)
+				}
+
+				// Apply all spec
+				for _, spec := range specs {
+					if err := ApplySpec(login.Token, account, spec); err != nil {
+						return err
+					}
+				}
+			}
+		}
+		return nil
+	}
+
 	account, err := utils.GetSelectedAccount()
 	if err != nil {
 		return utils.LogError("Unable to fetch account information", err)
@@ -38,7 +95,7 @@ func Apply(fileName string) error {
 		return utils.LogError("Unable to login", err)
 	}
 
-	specs, err := utils.ReadSpecObjectsFromFile(fileName)
+	specs, err := utils.ReadSpecObjectsFromFile(applyName)
 	if err != nil {
 		return utils.LogError("Unable to read spec objects from file", err)
 	}
