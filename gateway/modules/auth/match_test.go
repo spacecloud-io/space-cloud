@@ -116,7 +116,7 @@ func TestMatch_Rule(t *testing.T) {
 		},
 		{name: "match-decrypt rule", IsErrExpected: false, project: "default",
 			rule: &config.Rule{Rule: "decrypt", Fields: []string{"args.username"}},
-			args: map[string]interface{}{"args": map[string]interface{}{"username": "username1"}},
+			args: map[string]interface{}{"args": map[string]interface{}{"username": base64.StdEncoding.EncodeToString([]byte("username1"))}},
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 		{
@@ -131,8 +131,7 @@ func TestMatch_Rule(t *testing.T) {
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	decodedKey, _ := base64.StdEncoding.DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
-	err := auth.SetConfig("default", "", string(decodedKey), rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	err := auth.SetConfig("default", "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	if err != nil {
 		t.Errorf("Unable to set auth config %s", err.Error())
 		return

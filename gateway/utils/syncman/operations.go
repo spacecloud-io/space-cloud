@@ -1,7 +1,6 @@
 package syncman
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -96,12 +95,6 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	decodedAESKey, err := base64.StdEncoding.DecodeString(project.AESkey)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	project.AESkey = string(decodedAESKey)
-
 	// set default context time
 	if project.ContextTime == 0 {
 		project.ContextTime = 10
@@ -165,6 +158,10 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	if err := s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey); err != nil {
+		return err
+	}
+
 	projectConfig, err := s.getConfigWithoutLock(project.ID)
 	if err != nil {
 		return err
@@ -174,8 +171,6 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	projectConfig.AESkey = project.AESkey
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
-
-	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -236,7 +231,7 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {
 		if projectID == p.ID {
-			return []interface{}{config.Project{AESkey: base64.StdEncoding.EncodeToString([]byte(p.AESkey)), ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
+			return []interface{}{config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
 

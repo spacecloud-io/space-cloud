@@ -79,7 +79,7 @@ func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, re
 	return map[string]interface{}{"status": 200}, graph.crud.Batch(ctx, dbAlias, graph.project, req)
 }
 
-func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token string, store utils.M, cb callback) {
+func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token string, store utils.M, cb model.GraphQLCallback) {
 	op := node.(*ast.OperationDefinition)
 	fieldDBMapping := map[string]string{}
 	fieldReturningDocsMapping := map[string][]interface{}{}
