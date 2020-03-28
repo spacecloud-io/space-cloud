@@ -50,11 +50,11 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('port-https')"), nil)
 			}
-			err = viper.BindPFlag("v", cmd.Flags().Lookup("v"))
+			err = viper.BindPFlag("volume", cmd.Flags().Lookup("volume"))
 			if err != nil {
 				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('v')"), nil)
 			}
-			err = viper.BindPFlag("e", cmd.Flags().Lookup("e"))
+			err = viper.BindPFlag("env", cmd.Flags().Lookup("env"))
 			if err != nil {
 				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('e')"), nil)
 			}
@@ -112,9 +112,9 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError(fmt.Sprintf("Unable to bind flag ('port-https') to environment variables"), nil)
 	}
 
-	setup.Flags().StringSliceP("v", "", []string{}, "Volumes to be attached to gateway")
+	setup.Flags().StringSliceP("volume", "v", []string{}, "Volumes to be attached to gateway")
 
-	setup.Flags().StringSliceP("e", "", []string{}, "Environment variables to be provided to gateway")
+	setup.Flags().StringSliceP("env", "e", []string{}, "Environment variables to be provided to gateway")
 
 	var upgrade = &cobra.Command{
 		Use:   "upgrade",
@@ -151,10 +151,11 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	local := viper.GetBool("dev")
 	portHTTP := viper.GetInt64("port-http")
 	portHTTPS := viper.GetInt64("port-https")
-	volumes := viper.GetStringSlice("v")
-	environmentVariables := viper.GetStringSlice("e")
+	volumes := viper.GetStringSlice("volume")
+	environmentVariables := viper.GetStringSlice("env")
 
-	return CodeSetup(id, userName, key, config, version, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
+	_ = Setup(id, userName, key, config, version, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
+	return nil
 }
 
 func actionUpgrade(cmd *cobra.Command, args []string) error {
