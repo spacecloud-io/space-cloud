@@ -21,8 +21,7 @@ import (
 	"github.com/spaceuptech/space-cli/modules/services"
 )
 
-// GetSubCommands is the list of commands the all module exposes
-func GetSubCommands() []*cobra.Command {
+func getSubCommands() []*cobra.Command {
 
 	var getProjects = &cobra.Command{
 		Use:   "all",

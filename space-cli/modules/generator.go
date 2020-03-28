@@ -1,4 +1,4 @@
-package main
+package modules
 
 import (
 	"github.com/spaceuptech/space-cli/modules/database"

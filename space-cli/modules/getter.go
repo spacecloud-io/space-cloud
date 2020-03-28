@@ -1,7 +1,6 @@
-package main
+package modules
 
 import (
-	"github.com/spaceuptech/space-cli/modules"
 	"github.com/spaceuptech/space-cli/modules/auth"
 	"github.com/spaceuptech/space-cli/modules/database"
 	"github.com/spaceuptech/space-cli/modules/eventing"
@@ -29,7 +28,7 @@ func FetchGetSubCommands() *cobra.Command {
 	getCmd.AddCommand(project.GetSubCommands()...)
 	getCmd.AddCommand(remoteservices.GetSubCommands()...)
 	getCmd.AddCommand(services.GetSubCommands()...)
-	getCmd.AddCommand(modules.GetSubCommands()...)
+	getCmd.AddCommand(getSubCommands()...)
 
 	return getCmd
 }

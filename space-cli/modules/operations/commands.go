@@ -3,7 +3,6 @@ package operations
 import (
 	"fmt"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cli/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -178,20 +177,4 @@ func actionApply(cmd *cobra.Command, args []string) error {
 
 func actionStart(cmd *cobra.Command, args []string) error {
 	return DockerStart()
-}
-
-// SetLogLevel sets a single verbosity level for log messages.
-func SetLogLevel(loglevel string) {
-	switch loglevel {
-	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
-	case "info":
-		logrus.SetLevel(logrus.InfoLevel)
-	case "error":
-		logrus.SetLevel(logrus.ErrorLevel)
-	default:
-		_ = utils.LogError(fmt.Sprintf("Invalid log level (%s) provided", loglevel), nil)
-		utils.LogInfo("Defaulting to `info` level")
-		logrus.SetLevel(logrus.InfoLevel)
-	}
 }
