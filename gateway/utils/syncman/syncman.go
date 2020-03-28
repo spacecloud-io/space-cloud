@@ -1,10 +1,10 @@
 package syncman
 
 import (
-	"log"
 	"sync"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
@@ -18,7 +18,6 @@ type Manager struct {
 
 	// Config related to cluster config
 	projectConfig *config.Config
-	projects      *model.ProjectCallbacks
 	configFile    string
 
 	// Configuration for cluster information
@@ -85,21 +84,12 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	return m, nil
 }
 
-func (s *Manager) SetProjectCallbacks(projects *model.ProjectCallbacks) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	s.projects = projects
-}
-
 // Start begins the sync manager operations
 func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	// Set the callback
-	s.modules.SetProjectConfig(projectConfig, s.letsencrypt, s.routing)
 	s.port = port
 	s.configFile = configFilePath
 
@@ -108,8 +98,9 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 
 	if len(s.projectConfig.Projects) > 0 {
 		for _, p := range s.projectConfig.Projects {
-			if err := s.projects.StoreIgnoreError(p); err != nil {
-				log.Println("Load Project Error: ", err)
+			if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
+				logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
+				break
 			}
 		}
 	}
@@ -126,14 +117,9 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
 				for _, p := range s.projectConfig.Projects {
-
-					if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), p); !ok {
-						log.Println("Cannot create new project. Upgrade your plan")
+					if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
+						logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
 						break
-					}
-
-					if err := s.projects.StoreIgnoreError(p); err != nil {
-						log.Println("Load Project Error: ", err)
 					}
 				}
 			}
@@ -155,24 +141,6 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 
 	return nil
 }
-
-// func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
-//	if !s.storeType {
-//		return errors.New("consul is not enabled")
-//	}
-//
-//	s.port = port
-//
-//	// Creating an HTTP server that serves via Connect
-//	server := &http.Server{
-//		Addr:      ":" + strconv.Itoa(s.port+2),
-//		TLSConfig: s.consulService.ServerTLSConfig(),
-//		Handler:   handler,
-//	}
-//
-//	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
-//	return server.ListenAndServeTLS("", "")
-// }
 
 // SetGlobalConfig sets the global config. This must be called before the Start command.
 func (s *Manager) SetGlobalConfig(c *config.Config) {

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -19,21 +20,16 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/client"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 )
 
-// RealtimeInterface is used to accept the realtime module
-type RealtimeInterface interface {
-	RemoveClient(clientID string)
-	Subscribe(clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error)
-	Unsubscribe(clientID string, data *model.RealtimeRequest)
-}
-
-// GraphQLWebsocketInterface is sued to accept the graphql module
-type GraphQLWebsocketInterface interface {
-	GetDBAlias(field *ast.Field) (string, error)
+// WebsocketModulesInterface is used to accept the modules object
+type WebsocketModulesInterface interface {
+	Realtime(projectID string) (modules.RealtimeInterface, error)
+	GraphQL(projectID string) (modules.GraphQLInterface, error)
 }
 
 var upgrader = websocket.Upgrader{
@@ -43,7 +39,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // HandleWebsocket handles all websocket communications
-func HandleWebsocket(realtime RealtimeInterface) http.HandlerFunc {
+func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -54,18 +50,19 @@ func HandleWebsocket(realtime RealtimeInterface) http.HandlerFunc {
 			return
 		}
 
-		state, err := s.projects.LoadProject(projectID)
-		if err != nil {
-			log.Println("Websocket error:", err)
-			return
-		}
-
 		// Create a new client
 		c := client.CreateWebsocketClient(socket)
 		defer c.Close()
 
-		// Unregister the client
-		defer state.Realtime.RemoveClient(c.ClientID())
+		realtime, err := modules.Realtime(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		defer realtime.RemoveClient(c.ClientID())
 
 		go c.RoutineWrite()
 
@@ -87,7 +84,7 @@ func HandleWebsocket(realtime RealtimeInterface) http.HandlerFunc {
 				data.Project = projectID
 
 				// Subscribe to the realtime feed
-				feedData, err := state.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
+				feedData, err := realtime.Subscribe(clientID, data, func(feed *model.FeedData) {
 					c.Write(&model.Message{Type: utils.TypeRealtimeFeed, Data: feed})
 				})
 				if err != nil {
@@ -110,9 +107,10 @@ func HandleWebsocket(realtime RealtimeInterface) http.HandlerFunc {
 					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 					return true
 				}
+
 				data.Project = projectID
 
-				state.Realtime.Unsubscribe(clientID, data)
+				realtime.Unsubscribe(clientID, data)
 
 				// Send response to c
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
@@ -148,17 +146,25 @@ type gqlError struct {
 }
 
 // HandleGraphqlSocket handles graphql subscriptions
-func HandleGraphqlSocket(projects *projects.Projects) http.HandlerFunc {
+func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projectID := mux.Vars(r)["project"]
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
+		realtime, err := modules.Realtime(projectID)
 		if err != nil {
-			log.Println("Websocket graphql: invalid project provided")
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		graph, err := modules.GraphQL(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 		// Create a map to store subscription ids
 		var graphqlIDMapper sync.Map
 
@@ -176,7 +182,7 @@ func HandleGraphqlSocket(projects *projects.Projects) http.HandlerFunc {
 
 		// Create a new client ID that we will use to make subscriptions
 		clientID := ksuid.New().String()
-		defer state.Realtime.RemoveClient(clientID)
+		defer realtime.RemoveClient(clientID)
 
 		// Make a channel to send graphql responses
 		channel := make(chan *graphqlMessage)
@@ -255,7 +261,7 @@ func HandleGraphqlSocket(projects *projects.Projects) http.HandlerFunc {
 					continue
 				}
 
-				dbAlias, err := state.Graph.GetDBAlias(v)
+				dbAlias, err := graph.GetDBAlias(v)
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					continue
@@ -273,9 +279,8 @@ func HandleGraphqlSocket(projects *projects.Projects) http.HandlerFunc {
 				graphqlIDMapper.Store(m.ID, data.Group)
 
 				// Subscribe to realtime feed
-				feedData, err := state.Realtime.Subscribe(ctx, clientID, data, func(feed *model.FeedData) {
+				feedData, err := realtime.Subscribe(clientID, data, func(feed *model.FeedData) {
 					feed.TypeName = "subscribe_" + feed.Group
-
 					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GqlData, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed), "find": feed.Find}}}
 				})
 
@@ -299,8 +304,8 @@ func HandleGraphqlSocket(projects *projects.Projects) http.HandlerFunc {
 				data.ID = m.ID
 				data.Group = group.(string)
 
-				state.Realtime.Unsubscribe(clientID, data)
-				channel <- (&graphqlMessage{ID: m.ID, Type: utils.GQL_STOP, Payload: payloadObject{}})
+				realtime.Unsubscribe(clientID, data)
+				channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlStop, Payload: payloadObject{}}
 				graphqlIDMapper.Delete(m.ID)
 
 			default:

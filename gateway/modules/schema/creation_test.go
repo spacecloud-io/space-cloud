@@ -34,11 +34,11 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 	crudPostgres := crud.Init(driver.New(false), adminMan)
 	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
 
-	crudMySql := crud.Init(driver.New(false), adminMan)
-	_ = crudMySql.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	crudMySQL := crud.Init(driver.New(false), adminMan)
+	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
 
-	crudSqlServer := crud.Init(driver.New(false), adminMan)
-	_ = crudSqlServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	crudSQLServer := crud.Init(driver.New(false), adminMan)
+	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
 
 	tests := []struct {
 		name    string

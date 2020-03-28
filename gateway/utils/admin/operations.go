@@ -41,13 +41,13 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 	return nil
 }
 
-// ValidateSyncOperation validates if an operation is permitted based on the mode
-func (m *Manager) ValidateSyncOperation(projects []string, project *config.Project) bool {
+// ValidateProjectSyncOperation validates if an operation is permitted based on the mode
+func (m *Manager) ValidateProjectSyncOperation(projects []string, projectID string) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	for _, p := range projects {
-		if p == project.ID {
+		if p == projectID {
 			return true
 		}
 	}

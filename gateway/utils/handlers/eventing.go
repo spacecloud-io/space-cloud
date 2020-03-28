@@ -6,25 +6,42 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-
 	"github.com/sirupsen/logrus"
+
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 )
 
 // HandleEventResponse gets response for event
-func HandleEventResponse(auth *auth.Module, eventing *eventing.Module) http.HandlerFunc {
+func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
 	type request struct {
 		BatchID  string      `json:"batchID"`
 		Response interface{} `json:"response"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		auth, err := modules.Auth(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		eventing, err := modules.Eventing(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		req := new(request)
 		_ = json.NewDecoder(r.Body).Decode(req)
@@ -60,26 +77,26 @@ func HandleEventResponse(auth *auth.Module, eventing *eventing.Module) http.Hand
 }
 
 // HandleProcessEvent processes a transmitted event
-func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) http.HandlerFunc {
+func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
+
+		eventing, err := modules.Eventing(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		eventDocs := []*model.EventDocument{}
 		_ = json.NewDecoder(r.Body).Decode(&eventDocs)
 		defer utils.CloseTheCloser(r.Body)
 
-		state, err := projects.LoadProject(project)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Project id isn't present in the state"})
-			return
-		}
-
 		// Return if the eventing module is not enabled
-		if !state.Eventing.IsEnabled() {
+		if !eventing.IsEnabled() {
+			logrus.Errorf("error handling process event request eventing feature isn't enabled")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
@@ -98,7 +115,7 @@ func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) ht
 		}
 
 		// Process the incoming events
-		state.Eventing.ProcessTransmittedEvents(eventDocs)
+		eventing.ProcessTransmittedEvents(eventDocs)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -107,27 +124,26 @@ func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) ht
 }
 
 // HandleQueueEvent creates a queue event endpoint
-func HandleQueueEvent(projects *projects.Projects) http.HandlerFunc {
+func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		projectID := vars["project"]
 
+		eventing, err := modules.Eventing(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 		// Load the params from the body
 		req := model.QueueEventRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Get the path parameters
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-
-		state, err := projects.LoadProject(projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Project id isn't present in the state"})
-			return
-		}
-
 		// Return if the eventing module is not enabled
-		if !state.Eventing.IsEnabled() {
+		if !eventing.IsEnabled() {
+			logrus.Errorf("error handling queue event request eventing feature isn't enabled")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
@@ -140,7 +156,9 @@ func HandleQueueEvent(projects *projects.Projects) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := state.Eventing.QueueEvent(ctx, projectID, token, &req); err != nil {
+		res, err := eventing.QueueEvent(ctx, projectID, token, &req)
+		if err != nil {
+			logrus.Errorf("error handling queue event request - %s", err.Error())
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

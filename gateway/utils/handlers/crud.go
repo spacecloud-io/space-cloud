@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 )
 
 type requestMetaData struct {
@@ -19,31 +19,37 @@ type requestMetaData struct {
 }
 
 // HandleCrudCreate creates the create operation endpoint
-func HandleCrudCreate(projects *projects.Projects) http.HandlerFunc {
+func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
 
 		// Get the path parameters
 		meta := getRequestMetaData(r)
+
+		auth, err := modules.Auth(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		crud, err := modules.DB(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		defer cancel()
 
 		// Load the request from the body
 		req := model.CreateRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Load the project state
-		state, err := projects.LoadProject(meta.projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Check if the user is authenticated
-		status, err := state.Auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		status, err := auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
@@ -52,7 +58,7 @@ func HandleCrudCreate(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Perform the write operation
-		err = state.Crud.Create(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		err = crud.Create(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 
 			// Send http response
@@ -70,15 +76,31 @@ func HandleCrudCreate(projects *projects.Projects) http.HandlerFunc {
 }
 
 // HandleCrudRead creates the read operation endpoint
-func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
+func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the path parameters
+		meta := getRequestMetaData(r)
+
+		auth, err := modules.Auth(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		crud, err := modules.DB(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-
-		// Get the path parameters
-		meta := getRequestMetaData(r)
 
 		// Load the request from the body
 		req := model.ReadRequest{}
@@ -90,16 +112,8 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 			req.Options = new(model.ReadOptions)
 		}
 
-		// Load the project state
-		state, err := projects.LoadProject(meta.projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Check if the user is authenticated
-		actions, status, err := state.Auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		actions, status, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
@@ -108,7 +122,7 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Perform the read operation
-		result, err := state.Crud.Read(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		result, err := crud.Read(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -117,7 +131,7 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// function to do postProcessing on result
-		_ = state.Auth.PostProcessMethod(actions, result)
+		_ = auth.PostProcessMethod(actions, result)
 
 		// Give positive acknowledgement
 		w.Header().Set("Content-Type", "application/json")
@@ -127,30 +141,35 @@ func HandleCrudRead(projects *projects.Projects) http.HandlerFunc {
 }
 
 // HandleCrudUpdate creates the update operation endpoint
-func HandleCrudUpdate(projects *projects.Projects) http.HandlerFunc {
+func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the path parameters
+		meta := getRequestMetaData(r)
 
+		auth, err := modules.Auth(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		crud, err := modules.DB(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-
-		// Get the path parameters
-		meta := getRequestMetaData(r)
 
 		// Load the request from the body
 		req := model.UpdateRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Load the project state
-		state, err := projects.LoadProject(meta.projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		status, err := state.Auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		status, err := auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
@@ -159,7 +178,7 @@ func HandleCrudUpdate(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Perform the update operation
-		err = state.Crud.Update(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		err = crud.Update(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 
 			// Send http response
@@ -177,30 +196,37 @@ func HandleCrudUpdate(projects *projects.Projects) http.HandlerFunc {
 }
 
 // HandleCrudDelete creates the delete operation endpoint
-func HandleCrudDelete(projects *projects.Projects) http.HandlerFunc {
+func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the path parameters
+		meta := getRequestMetaData(r)
+
+		auth, err := modules.Auth(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		crud, err := modules.DB(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-
-		// Get the path parameters
-		meta := getRequestMetaData(r)
 
 		// Load the request from the body
 		req := model.DeleteRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Load the project state
-		state, err := projects.LoadProject(meta.projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		status, err := state.Auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		status, err := auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
@@ -209,7 +235,7 @@ func HandleCrudDelete(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Perform the delete operation
-		err = state.Crud.Delete(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		err = crud.Delete(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 			// Send http response
 			w.Header().Set("Content-Type", "application/json")
@@ -226,30 +252,37 @@ func HandleCrudDelete(projects *projects.Projects) http.HandlerFunc {
 }
 
 // HandleCrudAggregate creates the aggregate operation endpoint
-func HandleCrudAggregate(projects *projects.Projects) http.HandlerFunc {
+func HandleCrudAggregate(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the path parameters
+		meta := getRequestMetaData(r)
+
+		auth, err := modules.Auth(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		crud, err := modules.DB(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-
-		// Get the path parameters
-		meta := getRequestMetaData(r)
 
 		// Load the request from the body
 		req := model.AggregateRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Load the project state
-		state, err := projects.LoadProject(meta.projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		status, err := state.Auth.IsAggregateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		status, err := auth.IsAggregateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
@@ -257,8 +290,8 @@ func HandleCrudAggregate(projects *projects.Projects) http.HandlerFunc {
 			return
 		}
 
-		// Perform the read operation
-		result, err := state.Crud.Aggregate(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		// Perform the aggregate operation
+		result, err := crud.Aggregate(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -292,23 +325,30 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 }
 
 // HandleCrudBatch creates the batch operation endpoint
-func HandleCrudBatch(projects *projects.Projects) http.HandlerFunc {
+func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the path parameters
+		meta := getRequestMetaData(r)
+
+		auth, err := modules.Auth(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		crud, err := modules.DB(meta.projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-
-		// Get the path parameters
-		meta := getRequestMetaData(r)
-
-		// Load the project state
-		state, err := projects.LoadProject(meta.projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
 
 		// Load the request from the body
 		var txRequest model.BatchRequest
@@ -324,15 +364,15 @@ func HandleCrudBatch(projects *projects.Projects) http.HandlerFunc {
 			switch req.Type {
 			case string(utils.Create):
 				r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
-				status, err = state.Auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
+				status, err = auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			case string(utils.Update):
 				r := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
-				status, err = state.Auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
+				status, err = auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			case string(utils.Delete):
 				r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
-				status, err = state.Auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
+				status, err = auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			}
 
@@ -347,8 +387,7 @@ func HandleCrudBatch(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Perform the batch operation
-		err = state.Crud.Batch(ctx, meta.dbType, meta.projectID, &txRequest)
-		if err != nil {
+		if err := crud.Batch(ctx, meta.dbType, meta.projectID, &txRequest); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

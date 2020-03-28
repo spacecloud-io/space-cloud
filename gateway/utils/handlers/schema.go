@@ -7,16 +7,16 @@ import (
 	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 )
 
-// HandleGetCollectionSchemas is an endpoint handler which return schema for all the collection in the config.crud
-func HandleGetCollectionSchemas(adminMan *admin.Manager, projects *projects.Projects) http.HandlerFunc {
+// HandleInspectTrackedCollectionsSchema is an endpoint handler which return schema for all tracked collections of a particular database
+func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -39,15 +39,15 @@ func HandleGetCollectionSchemas(adminMan *admin.Manager, projects *projects.Proj
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
+		schema, err := modules.Schema(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		schemas, err := state.Schema.GetCollectionSchema(ctx, projectID, dbAlias)
+		schemas, err := schema.GetCollectionSchema(ctx, projectID, dbAlias)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)

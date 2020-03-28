@@ -255,7 +255,12 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 		return errors.New("specified database not present in config")
 	}
 
-	if err := s.modules.GetSchemaModule().SchemaModifyAll(ctx, dbAlias, project, v.Collections); err != nil {
+	schemaModule, err := s.modules.GetSchemaModuleForSyncMan(project)
+	if err != nil {
+		return err
+	}
+
+	if err := schemaModule.SchemaModifyAll(ctx, dbAlias, project, v.Collections); err != nil {
 		return err
 	}
 

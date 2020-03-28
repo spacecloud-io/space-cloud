@@ -58,7 +58,3 @@ func getSidecarName(serviceID, version string) string {
 func getGeneratedByAnnotationName() string {
 	return fmt.Sprintf("space-cloud-runner-%s", model.Version)
 }
-
-func getGeneratedByAnnotationName() string {
-	return fmt.Sprintf("space-cloud-runner-%s", model.Version)
-}

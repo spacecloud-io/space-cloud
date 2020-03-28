@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
@@ -92,8 +92,11 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 }
 
 // HandleGetFileState gets file state
-func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file *filestore.Module) http.HandlerFunc {
+func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -106,6 +109,14 @@ func HandleGetFileState(adminMan *admin.Manager, syncMan *syncman.Manager, file 
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		file, err := modules.File(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}

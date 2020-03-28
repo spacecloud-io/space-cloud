@@ -24,12 +24,6 @@ func (s *Manager) SetProjectLetsEncryptDomains(ctx context.Context, project stri
 		logrus.Errorf("error setting letsencrypt project domains - %s", err.Error())
 		return err
 	}
-
-	// Apply the config change
-	if err := s.projects.SetLetsencryptConfig(project, c); err != nil {
-		return err
-	}
-
 	// Persist the config
-	return s.persistProjectConfig(ctx, projectConfig)
+	return s.setProject(ctx, projectConfig)
 }

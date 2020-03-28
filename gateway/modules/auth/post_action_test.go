@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"reflect"
 	"testing"
@@ -9,7 +10,9 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
+	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
+	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
 func hash(s string) string {
@@ -111,7 +114,7 @@ func TestPostProcessMethod(t *testing.T) {
 			testName:    "valid key in encryption",
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "encrypt", Field: "res.username"}}},
 			result:      map[string]interface{}{"username": "username1"},
-			finalResult: map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
+			finalResult: map[string]interface{}{"username": base64.StdEncoding.EncodeToString([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 		},
 		{
 			testName:      "invalid key in encryption",
@@ -137,7 +140,7 @@ func TestPostProcessMethod(t *testing.T) {
 		{
 			testName:    "valid key in decryption",
 			postProcess: &model.PostProcess{PostProcessAction: []model.PostProcessAction{model.PostProcessAction{Action: "decrypt", Field: "res.username"}}},
-			result:      map[string]interface{}{"username": string([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
+			result:      map[string]interface{}{"username": base64.StdEncoding.EncodeToString([]byte{5, 120, 168, 68, 222, 6, 202, 246, 108})},
 			finalResult: map[string]interface{}{"username": "username1"},
 		},
 		{
@@ -170,7 +173,7 @@ func TestPostProcessMethod(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init(driver.New(false), admin.New("")), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
 	_ = auth.SetConfig(project, "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})

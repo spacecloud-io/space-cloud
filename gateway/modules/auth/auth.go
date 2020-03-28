@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"errors"
 	"sync"
 
@@ -41,7 +42,7 @@ func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) 
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret, decodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -52,7 +53,11 @@ func (m *Module) SetConfig(project string, secret, decodedAESKey string, rules c
 	m.project = project
 	m.rules = rules
 	m.secret = secret
-	m.aesKey = []byte(decodedAESKey)
+	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
 		m.fileStoreType = fileStore.StoreType
@@ -70,17 +75,16 @@ func (m *Module) SetConfig(project string, secret, decodedAESKey string, rules c
 }
 
 func (m *Module) SetCrudConfig(project string, rules config.Crud) error {
+	m.Lock()
+	defer m.Unlock()
 	m.project = project
 	m.rules = rules
-
-	if err := m.schema.SetConfig(rules, project); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (m *Module) SetServicesConfig(project string, services *config.ServicesModule) {
+	m.Lock()
+	defer m.Unlock()
 	m.project = project
 
 	if services != nil {
@@ -89,11 +93,11 @@ func (m *Module) SetServicesConfig(project string, services *config.ServicesModu
 }
 
 func (m *Module) SetFileStoreConfig(project string, fileStore *config.FileStore) {
+	m.Lock()
+	defer m.Unlock()
 	m.project = project
-	if fileStore != nil {
-		sortFileRule(fileStore.Rules)
-	}
 	if fileStore != nil && fileStore.Enabled {
+		sortFileRule(fileStore.Rules)
 		m.fileRules = fileStore.Rules
 		m.fileStoreType = fileStore.StoreType
 	}
@@ -107,34 +111,15 @@ func (m *Module) SetSecret(secret string) {
 }
 
 // SetAESKey sets the aeskey to be used for encryption
-func (m *Module) SetAESKey(aesKey string) {
+func (m *Module) SetAESKey(encodedAESKey string) error {
 	m.Lock()
 	defer m.Unlock()
-	m.aesKey = []byte(aesKey)
-}
-
-// SetServicesConfig sets the service module config
-func (m *Module) SetServicesConfig(projectID string, services *config.ServicesModule) {
-	m.Lock()
-	defer m.Unlock()
-	m.project = projectID
-	m.funcRules = services
-}
-
-// SetFileStoreConfig sets the file store module config
-func (m *Module) SetFileStoreConfig(projectID string, fileStore *config.FileStore) {
-	m.Lock()
-	defer m.Unlock()
-	m.project = projectID
-	m.fileRules = fileStore.Rules
-}
-
-// SetCrudConfig sets the crud module config
-func (m *Module) SetCrudConfig(projectID string, crud config.Crud) {
-	m.Lock()
-	defer m.Unlock()
-	m.project = projectID
-	m.rules = crud
+	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
+	return nil
 }
 
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud

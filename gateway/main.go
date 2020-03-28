@@ -279,7 +279,7 @@ func actionRun(c *cli.Context) error {
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(profiler, disableMetrics, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
+	return s.Start(false, disableMetrics, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
 }
 
 func actionInit(*cli.Context) error {

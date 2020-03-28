@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -14,8 +15,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 )
 
 // Supported content types
@@ -26,25 +27,17 @@ const (
 )
 
 // HandleCreateFile creates the create file or directory endpoint
-func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
+func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Extract the path from the url
 		token, projectID, _ := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
+		fileStore, err := modules.File(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		// Exit if file storage is not enabled
-		if !state.FileStore.IsEnabled() {
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -97,7 +90,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 				fileName = tempName
 			}
 
-			status, err := state.FileStore.UploadFile(ctx, projectID, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
+			status, err := fileStore.UploadFile(ctx, projectID, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
 			if err != nil {
@@ -107,7 +100,7 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 			_ = json.NewEncoder(w).Encode(map[string]string{})
 		} else {
 			name := r.FormValue("name")
-			status, err := state.FileStore.CreateDir(ctx, projectID, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
+			status, err := fileStore.CreateDir(ctx, projectID, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
 			if err != nil {
@@ -120,32 +113,29 @@ func HandleCreateFile(projects *projects.Projects) http.HandlerFunc {
 }
 
 // HandleRead creates read file and list directory endpoint
-func HandleRead(projects *projects.Projects) http.HandlerFunc {
+func HandleRead(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
+
+		fileStore, err := modules.File(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		op := r.URL.Query().Get("op")
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// List the specified directory if op type is list
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
-			status, res, err := state.FileStore.ListFiles(ctx, projectID, token, &model.ListFilesRequest{Path: path, Type: mode})
-
+			status, res, err := fileStore.ListFiles(ctx, projectID, token, &model.ListFilesRequest{Path: path, Type: mode})
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
 			if err != nil {
@@ -155,7 +145,7 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
 			return
 		} else if op == "exist" {
-			if err := state.FileStore.DoesExists(ctx, projectID, token, path); err != nil {
+			if err := fileStore.DoesExists(ctx, projectID, token, path); err != nil {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusNotFound)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -168,7 +158,7 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 		}
 
 		// Read the file from file storage
-		status, file, err := state.FileStore.DownloadFile(ctx, projectID, token, path)
+		status, file, err := fileStore.DownloadFile(ctx, projectID, token, path)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if err != nil {
@@ -181,28 +171,28 @@ func HandleRead(projects *projects.Projects) http.HandlerFunc {
 }
 
 // HandleDelete creates read file and list directory endpoint
-func HandleDelete(projects *projects.Projects) http.HandlerFunc {
+func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
 		defer utils.CloseTheCloser(r.Body)
 
+		fileStore, err := modules.File(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		v := map[string]interface{}{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
+		log.Println("v", v)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		status, err := state.FileStore.DeleteFile(ctx, projectID, token, path, v)
+		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)

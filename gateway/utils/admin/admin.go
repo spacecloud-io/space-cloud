@@ -21,6 +21,7 @@ type Manager struct {
 func New(nodeID string) *Manager {
 	m := new(Manager)
 	m.nodeID = nodeID
+	m.admin = new(config.Admin)
 	return m
 }
 

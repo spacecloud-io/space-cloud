@@ -61,13 +61,8 @@ func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *co
 		return err
 	}
 
-	// Set the file storage config
-	if err := s.projects.SetFileStorageConfig(project, projectConfig.Modules.FileStore); err != nil {
-		return err
-	}
-
 	// Persist the config
-	return s.persistProjectConfig(ctx, projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
 // SetDeleteFileRule deletes a rule from file store

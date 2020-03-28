@@ -1,7 +1,6 @@
 package syncman
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -96,15 +95,9 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), project); !ok {
-		return errors.New("Cannot create new project. Upgrade your plan"), http.StatusBadRequest
+	if valid := s.adminMan.ValidateProjectSyncOperation(s.modules.ProjectIDs(), project.ID); !valid {
+		return http.StatusUpgradeRequired, errors.New("upgrade your plan to create a new project")
 	}
-
-	decodedAESKey, err := base64.StdEncoding.DecodeString(project.AESkey)
-	if err != nil {
-		return http.StatusInternalServerError, err
-	}
-	project.AESkey = string(decodedAESKey)
 
 	// set default context time
 	if project.ContextTime == 0 {
@@ -154,7 +147,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	}
 
 	// We will ignore the error for the create project request
-	go s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+	_ = s.modules.SetProjectConfig(project, s.letsencrypt, s.routing)
 
 	if s.storeType == "none" {
 		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -169,6 +162,10 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	if err := s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey); err != nil {
+		return err
+	}
+
 	projectConfig, err := s.getConfigWithoutLock(project.ID)
 	if err != nil {
 		return err
@@ -179,14 +176,7 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
 
-	s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey)
-
-	// Set the user man config
-	if err := s.projects.SetGlobalConfig(project.ID, projectConfig.Secret); err != nil {
-		return err
-	}
-
-	return s.persistProjectConfig(ctx, projectConfig)
+	return s.setProject(ctx, projectConfig)
 }
 
 // SetProjectConfig applies the set project config command to the raft log
@@ -195,11 +185,7 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), project); !ok {
-		return errors.New("Cannot create new project. Upgrade your plan")
-	}
-
-	go s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+	go s.modules.SetProjectConfig(project, s.letsencrypt, s.routing)
 
 	return s.setProject(ctx, project)
 }
@@ -233,7 +219,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 	}
 
 	s.delete(projectID)
-	s.projects.Delete(projectID)
+	s.modules.Delete(projectID)
 
 	if s.storeType == "none" {
 		return config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -250,7 +236,7 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {
 		if projectID == p.ID {
-			return []interface{}{config.Project{AESkey: base64.StdEncoding.EncodeToString([]byte(p.AESkey)), ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
+			return []interface{}{config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
 

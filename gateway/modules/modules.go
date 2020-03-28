@@ -1,65 +1,165 @@
 package modules
 
 import (
-	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
-	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
-	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
-	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
-	"github.com/spaceuptech/space-cloud/gateway/modules/userman"
+	"errors"
+	"fmt"
+	"sync"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
+	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // Modules is an object that sets up the modules
 type Modules struct {
-	Auth      *auth.Module
-	Crud      *crud.Module
-	User      *userman.Module
-	File      *filestore.Module
-	Functions *functions.Module
-	Realtime  *realtime.Module
-	Eventing  *eventing.Module
-	Graphql   *graphql.Module
-	Schema    *schema.Schema
+	lock   sync.RWMutex
+	blocks map[string]*Module
+
+	nodeID             string
+	removeProjectScope bool
+	syncMan            *syncman.Manager
+	adminMan           *admin.Manager
+	metrics            *metrics.Module
+	driver             *driver.Handler
+
+	letsencrypt *letsencrypt.LetsEncrypt
+	routing     *routing.Routing
 }
 
 // New creates a new modules instance
 func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
+	return &Modules{
+		blocks:             map[string]*Module{},
+		nodeID:             nodeID,
+		removeProjectScope: removeProjectScope,
+		syncMan:            syncMan,
+		adminMan:           adminMan,
+		metrics:            metrics,
+		driver:             driver.New(removeProjectScope),
+	}, nil
+}
 
-	c := crud.Init(removeProjectScope)
-	s := schema.Init(c, removeProjectScope)
-	c.SetSchema(s)
+// SetGlobalModules sets the global modules
+func (m *Modules) SetGlobalModules(letsencrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+	m.letsencrypt = letsencrypt
+	m.routing = routing
+}
 
-	a := auth.Init(nodeID, c, removeProjectScope)
-	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
-
-	fn := functions.Init(a, syncMan)
-	f := filestore.Init(a)
-
-	e := eventing.New(a, c, s, adminMan, syncMan, f)
-	f.SetEventingModule(e)
-
-	c.SetHooks(&model.CrudHooks{
-		Create: e.HookDBCreateIntent,
-		Update: e.HookDBUpdateIntent,
-		Delete: e.HookDBDeleteIntent,
-		Batch:  e.HookDBBatchIntent,
-		Stage:  e.HookStage,
-	}, metrics.AddDBOperation)
-
-	rt, err := realtime.Init(nodeID, e, a, c, metrics, syncMan)
+// SetProjectConfig sets the config all modules
+func (m *Modules) SetProjectConfig(config *config.Project, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) error {
+	module, err := m.loadModule(config.ID)
 	if err != nil {
-		return nil, err
+		module, err = m.newModule(config.ID)
+		if err != nil {
+			return err
+		}
+	}
+	module.SetProjectConfig(config, le, ingressRouting)
+	return nil
+}
+
+// SetGlobalConfig sets the auth secret and AESKey
+func (m *Modules) SetGlobalConfig(projectID, secret, aesKey string) error {
+	module, err := m.loadModule(projectID)
+	if err != nil {
+		return err
+	}
+	return module.SetGlobalConfig(projectID, secret, aesKey)
+}
+
+// SetCrudConfig sets the config of db, auth, schema and realtime modules
+func (m *Modules) SetCrudConfig(projectID string, crudConfig config.Crud) error {
+	module, err := m.loadModule(projectID)
+	if err != nil {
+		return err
+	}
+	return module.SetCrudConfig(projectID, crudConfig)
+}
+
+// SetServicesConfig sets the config of auth and functions modules
+func (m *Modules) SetServicesConfig(projectID string, services *config.ServicesModule) error {
+	module, err := m.loadModule(projectID)
+	if err != nil {
+		return err
+	}
+	return module.SetServicesConfig(projectID, services)
+}
+
+// SetFileStoreConfig sets the config of auth and filestore modules
+func (m *Modules) SetFileStoreConfig(projectID string, fileStore *config.FileStore) error {
+	module, err := m.loadModule(projectID)
+	if err != nil {
+		return err
+	}
+	return module.SetFileStoreConfig(projectID, fileStore)
+}
+
+// SetEventingConfig sets the config of eventing module
+func (m *Modules) SetEventingConfig(projectID string, eventingConfig *config.Eventing) error {
+	module, err := m.loadModule(projectID)
+	if err != nil {
+		return err
+	}
+	return module.SetEventingConfig(projectID, eventingConfig)
+}
+
+// SetUsermanConfig set the config of the userman module
+func (m *Modules) SetUsermanConfig(projectID string, auth config.Auth) error {
+	module, err := m.loadModule(projectID)
+	if err != nil {
+		return err
+	}
+	module.SetUsermanConfig(projectID, auth)
+	return nil
+}
+
+func (m *Modules) ProjectIDs() []string {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	ids := make([]string, 0)
+	for id := range m.blocks {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func (m *Modules) Delete(projectID string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	// Remove config from global modules
+	_ = m.letsencrypt.DeleteProjectDomains(projectID)
+	m.routing.DeleteProjectRoutes(projectID)
+}
+
+func (m *Modules) loadModule(projectID string) (*Module, error) {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	if module, p := m.blocks[projectID]; p {
+		return module, nil
 	}
 
-	u := userman.Init(c, a)
-	graphqlMan := graphql.New(a, c, fn, s)
+	return nil, fmt.Errorf("project (%s) not found in server state", projectID)
+}
 
-	return &Modules{Auth: a, Crud: c, User: u, File: f, Functions: fn, Realtime: rt, Eventing: e, Graphql: graphqlMan, Schema: s}, nil
+func (m *Modules) newModule(projectID string) (*Module, error) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	if ok := m.adminMan.ValidateProjectSyncOperation(m.ProjectIDs(), projectID); !ok {
+		logrus.Println("Cannot create new project. Upgrade your plan")
+		return nil, errors.New("upgrade your plan to create new project")
+	}
+
+	module := newModule(m.nodeID, m.removeProjectScope, m.syncMan, m.adminMan, m.metrics, m.driver)
+	m.blocks[projectID] = module
+	return module, nil
 }

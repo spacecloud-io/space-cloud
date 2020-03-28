@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // HandleCluster returns handler cluster

@@ -10,7 +10,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -35,7 +34,7 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 }
 
 // DoRealtimeSubscribe makes the realtime query
-func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, actions *auth.PostProcess, sendFeed SendFeed) ([]*model.FeedData, error) {
+func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, actions *model.PostProcess, sendFeed model.SendFeed) ([]*model.FeedData, error) {
 	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
 	if data.Options.SkipInitial {
 		m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
@@ -45,7 +44,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result, err := m.crud.Read(ctx2, data.DBType, data.Project, data.Group, &readReq)
+	result, err := m.crud.Read(ctx2, data.DBType, data.Project, data.Group, readReq)
 	if err != nil {
 		return nil, err
 	}

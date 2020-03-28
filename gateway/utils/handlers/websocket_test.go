@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http/httptest"
 	"reflect"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -214,7 +216,7 @@ func TestHandleWebsocket(t *testing.T) {
 			}
 
 			// Create the mock server
-			s := httptest.NewServer(HandleWebsocket(&realtime))
+			s := httptest.NewServer(HandleWebsocket(&mockWebsocketModules{realtime: &realtime}))
 			defer s.Close()
 
 			// Convert http://127.0.0.1 to ws://127.0.0.
@@ -492,7 +494,7 @@ subscription {
 			}
 
 			// Create the mock server
-			s := httptest.NewServer(HandleGraphqlSocket(&realtime, &graph))
+			s := httptest.NewServer(HandleGraphqlSocket(&mockWebsocketModules{&realtime, &graph}))
 			defer s.Close()
 
 			// Convert http://127.0.0.1 to ws://127.0.0.
@@ -536,6 +538,19 @@ subscription {
 	}
 }
 
+type mockWebsocketModules struct {
+	realtime modules.RealtimeInterface
+	graphql  modules.GraphQLInterface
+}
+
+func (m *mockWebsocketModules) Realtime(projectID string) (modules.RealtimeInterface, error) {
+	return m.realtime, nil
+}
+
+func (m *mockWebsocketModules) GraphQL(projectID string) (modules.GraphQLInterface, error) {
+	return m.graphql, nil
+}
+
 // Create all the mock interfaces
 type mockRealtimeModule struct {
 	mock.Mock
@@ -569,6 +584,14 @@ func (m *mockRealtimeModule) Unsubscribe(clientID string, data *model.RealtimeRe
 	m.Called(clientID, data)
 }
 
+func (m *mockRealtimeModule) HandleRealtimeEvent(ctx context.Context, eventDoc *model.CloudEventPayload) error {
+	return m.Called(ctx, eventDoc).Error(0)
+}
+
+func (m *mockRealtimeModule) ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error {
+	return m.Called(eventDoc).Error(0)
+}
+
 type mockGraphQLModule struct {
 	mock.Mock
 }
@@ -576,4 +599,8 @@ type mockGraphQLModule struct {
 func (m *mockGraphQLModule) GetDBAlias(field *ast.Field) (string, error) {
 	c := m.Called(field)
 	return c.String(0), c.Error(1)
+}
+
+func (m *mockGraphQLModule) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb model.GraphQLCallback) {
+	m.Called(ctx, req, token, cb)
 }

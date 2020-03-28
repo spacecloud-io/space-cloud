@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -10,11 +11,13 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleGraphQLRequest creates the graphql operation endpoint
-func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
+// HandleGraphQLRequest executes graphql queries
+func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -34,12 +37,7 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTime)*time.Second)
 		defer cancel()
 
-		// Load the request from the body
-		req := model.GraphQLRequest{}
-		_ = json.NewDecoder(r.Body).Decode(&req)
-		defer utils.CloseTheCloser(r.Body)
-
-		state, err := p.LoadProject(project)
+		graphql, err := modules.GraphQL(projectID)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
@@ -47,11 +45,18 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 			return
 		}
 
+		// Load the request from the body
+		req := model.GraphQLRequest{}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
+
+		// Get the path parameters
+		token := getRequestMetaData(r).token
+
 		ch := make(chan struct{}, 1)
 
-		state.Graph.ExecGraphQLQuery(ctx, &req, token, func(op interface{}, err error) {
+		graphql.ExecGraphQLQuery(ctx, &req, token, func(op interface{}, err error) {
 			defer func() { ch <- struct{}{} }()
-
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
 				w.Header().Set("Content-Type", "application/json")
@@ -68,10 +73,12 @@ func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
 		case <-ch:
 			return
 		case <-time.After(time.Duration(projectConfig.ContextTime) * time.Second):
+			log.Println("GraphQL Handler: Request timed out")
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
 	}
+
 }

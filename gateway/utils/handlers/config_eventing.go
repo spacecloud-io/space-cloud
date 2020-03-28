@@ -151,7 +151,6 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-
 		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBType, c.Enabled); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -342,7 +341,6 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		evType := vars["id"]
-
 		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c); err != nil {
 			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
 			w.Header().Set("Content-Type", "application/json")
