@@ -36,8 +36,14 @@ func actionGetLetsEncrypt(cmd *cobra.Command, args []string) error {
 	commandName := cmd.Use
 
 	params := map[string]string{}
-	obj, _ := GetLetsEncryptDomain(project, commandName, params)
-	_ = utils.PrintYaml(obj)
+	obj, err := GetLetsEncryptDomain(project, commandName, params)
+	if err != nil {
+		return nil
+	}
+
+	if err := utils.PrintYaml(obj); err != nil {
+		return nil
+	}
 	return nil
 }
 
@@ -46,7 +52,10 @@ func actionGenerateLetsEncryptDomain(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, _ := generateLetsEncryptDomain()
+	dbrule, err := generateLetsEncryptDomain()
+	if err != nil {
+		return nil
+	}
 
 	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 	return nil

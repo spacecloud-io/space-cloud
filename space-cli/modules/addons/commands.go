@@ -114,7 +114,7 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 		}
 	}
 	alias := viper.GetString("alias")
-	version := viper.GetString("versio")
+	version := viper.GetString("version")
 
 	_ = addDatabase(dbtype, username, password, alias, version)
 	return nil

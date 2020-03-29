@@ -25,8 +25,13 @@ func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 		params["id"] = args[0]
 	}
 
-	objs, _ := GetAuthProviders(project, commandName, params)
+	objs, err := GetAuthProviders(project, commandName, params)
+	if err != nil {
+		return nil
+	}
 
-	_ = utils.PrintYaml(objs)
+	if err := utils.PrintYaml(objs); err != nil {
+		return nil
+	}
 	return nil
 }

@@ -24,7 +24,13 @@ func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	commandName := cmd.Use
 
 	params := map[string]string{}
-	obj, _ := GetProjectConfig(project, commandName, params)
-	_ = utils.PrintYaml(obj)
+	obj, err := GetProjectConfig(project, commandName, params)
+	if err != nil {
+		return nil
+	}
+
+	if err := utils.PrintYaml(obj); err != nil {
+		return nil
+	}
 	return nil
 }

@@ -77,9 +77,14 @@ func actionGetDbConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 0 {
 		params["dbAlias"] = args[0]
 	}
-	objs, _ := GetDbConfig(project, commandName, params)
+	objs, err := GetDbConfig(project, commandName, params)
+	if err != nil {
+		return nil
+	}
 
-	_ = utils.PrintYaml(objs)
+	if err := utils.PrintYaml(objs); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -97,8 +102,13 @@ func actionGetDbSchema(cmd *cobra.Command, args []string) error {
 		params["col"] = args[1]
 	}
 
-	objs, _ := GetDbSchema(project, commandName, params)
-	_ = utils.PrintYaml(objs)
+	objs, err := GetDbSchema(project, commandName, params)
+	if err != nil {
+		return nil
+	}
+	if err := utils.PrintYaml(objs); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -107,7 +117,10 @@ func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, _ := generateDBRule()
+	dbrule, err := generateDBRule()
+	if err != nil {
+		return nil
+	}
 
 	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
@@ -117,7 +130,10 @@ func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, _ := generateDBConfig()
+	dbrule, err := generateDBConfig()
+	if err != nil {
+		return nil
+	}
 
 	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 	return nil
@@ -128,7 +144,10 @@ func actionGenerateDBSchema(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, _ := generateDBSchema()
+	dbrule, err := generateDBSchema()
+	if err != nil {
+		return nil
+	}
 
 	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 	return nil

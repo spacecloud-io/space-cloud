@@ -47,8 +47,14 @@ func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
 	commandName := cmd.Use
 
 	params := map[string]string{}
-	obj, _ := GetFileStoreConfig(project, commandName, params)
-	_ = utils.PrintYaml(obj)
+	obj, err := GetFileStoreConfig(project, commandName, params)
+	if err != nil {
+		return nil
+	}
+
+	if err := utils.PrintYaml(obj); err != nil {
+		return nil
+	}
 	return nil
 }
 
@@ -62,8 +68,14 @@ func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 		params["id"] = args[0]
 	}
 
-	objs, _ := GetFileStoreRule(project, commandName, params)
-	_ = utils.PrintYaml(objs)
+	objs, err := GetFileStoreRule(project, commandName, params)
+	if err != nil {
+		return nil
+	}
+
+	if err := utils.PrintYaml(objs); err != nil {
+		return nil
+	}
 	return nil
 }
 
@@ -72,7 +84,10 @@ func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, _ := generateFilestoreRule()
+	dbrule, err := generateFilestoreRule()
+	if err != nil {
+		return nil
+	}
 
 	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 	return nil
@@ -83,7 +98,10 @@ func actionGenerateFilestoreConfig(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, _ := generateFilestoreConfig()
+	dbrule, err := generateFilestoreConfig()
+	if err != nil {
+		return nil
+	}
 
 	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 	return nil

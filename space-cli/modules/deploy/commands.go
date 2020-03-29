@@ -49,7 +49,10 @@ func actionDeploy(cmd *cobra.Command, args []string) error {
 
 	// Prepare configuration files
 	if prepare {
-		_ = prepareService(projectID, dockerFilePath, serviceFilePath)
+		err := prepareService(projectID, dockerFilePath, serviceFilePath)
+		if err != nil {
+			return nil
+		}
 	}
 
 	_ = deployService(dockerFilePath, serviceFilePath)

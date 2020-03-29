@@ -23,7 +23,10 @@ func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("incorrect number of arguments")
 	}
 	dbruleConfigFile := args[0]
-	dbrule, _ := generateUserManagement()
+	dbrule, err := generateUserManagement()
+	if err != nil {
+		return nil
+	}
 
 	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 	return nil
