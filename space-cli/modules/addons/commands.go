@@ -1,64 +1,102 @@
 package addons
 
 import (
-	"github.com/urfave/cli"
+	"fmt"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// AddSubCommands is the list of commands the addon module exposes
-var AddSubCommands = []cli.Command{
-	{
-		Name:   "registry",
-		Usage:  "Add a docker registry",
-		Action: ActionAddRegistry,
-	},
-	{
-		Name:  "database",
-		Usage: "Add a database",
-		Flags: []cli.Flag{
-			cli.StringFlag{Name: "username, U", Usage: "provide the username"},
-			cli.StringFlag{Name: "password, P", Usage: "provide the password"},
-			cli.StringFlag{Name: "alias", Usage: "provide the alias for the database"},
-			cli.StringFlag{Name: "version", Usage: "provide the version of the database", Value: "latest"},
-		},
-		Action: ActionAddDatabase,
-	},
-}
+// Commands is the list of commands the addon module exposes
+func Commands() []*cobra.Command {
+	var addCmd = &cobra.Command{
+		Use:   "add",
+		Short: "Add a add-on to the environment",
+	}
 
-// RemoveSubCommand is the list of commands the addon module exposes
-var RemoveSubCommand = []cli.Command{
-	{
-		Name:   "registry",
-		Usage:  "Remove a docker registry",
-		Action: ActionRemoveRegistry,
-	},
-	{
-		Name:   "database",
-		Usage:  "Remove a database",
-		Action: ActionRemoveDatabase,
-	},
+	var addRegistryCmd = &cobra.Command{
+		Use:   "registry",
+		Short: "Add a docker registry",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("username", cmd.Flags().Lookup("username"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('username')"), nil)
+			}
+			err = viper.BindPFlag("password", cmd.Flags().Lookup("password"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('password')"), nil)
+			}
+			err = viper.BindPFlag("alias", cmd.Flags().Lookup("alias"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('alias')"), nil)
+			}
+			err = viper.BindPFlag("version", cmd.Flags().Lookup("version"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('version')"), nil)
+			}
+		},
+		RunE: ActionAddRegistry,
+	}
+
+	addRegistryCmd.Flags().StringP("username", "U", "", "provide the username")
+	addRegistryCmd.Flags().StringP("password", "P", "", "provide the password")
+	addRegistryCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
+	addRegistryCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
+
+	var addDatabaseCmd = &cobra.Command{
+		Use:   "database",
+		Short: "Add a database",
+		RunE:  ActionAddDatabase,
+	}
+
+	var removeCmd = &cobra.Command{
+		Use:   "remove",
+		Short: "Remove a add-on from the environment",
+	}
+
+	var removeRegistryCmd = &cobra.Command{
+		Use:   "registry",
+		Short: "Remove a docker registry",
+		RunE:  ActionRemoveRegistry,
+	}
+
+	var removeDatabaseCmd = &cobra.Command{
+		Use:   "database",
+		Short: "Remove a database",
+		RunE:  ActionRemoveDatabase,
+	}
+	addCmd.AddCommand(addRegistryCmd)
+	addCmd.AddCommand(addDatabaseCmd)
+	removeCmd.AddCommand(removeRegistryCmd)
+	removeCmd.AddCommand(removeDatabaseCmd)
+
+	return []*cobra.Command{addCmd, removeCmd}
 }
 
 // ActionAddRegistry adds a registry add on
-func ActionAddRegistry(c *cli.Context) error {
-	project := c.GlobalString("project")
-	return addRegistry(project)
+func ActionAddRegistry(cmd *cobra.Command, args []string) error {
+	project := viper.GetString("project")
+	_ = addRegistry(project)
+	return nil
 }
 
 // ActionRemoveRegistry removes a registry add on
-func ActionRemoveRegistry(c *cli.Context) error {
-	project := c.GlobalString("project")
-	return removeRegistry(project)
+func ActionRemoveRegistry(cmd *cobra.Command, args []string) error {
+	project := viper.GetString("project")
+	_ = removeRegistry(project)
+	return nil
 }
 
 // ActionAddDatabase adds a database add on
-func ActionAddDatabase(c *cli.Context) error {
-	dbtype := c.Args().Get(0)
-	if len(dbtype) == 0 {
-		return utils.LogError("Database type not provided as an arguement", nil)
+func ActionAddDatabase(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		_ = utils.LogError("Database type not provided as an arguement", nil)
+		return nil
 	}
-	username := c.String("username")
+	dbtype := args[0]
+	username := viper.GetString("username")
 	if username == "" {
 		switch dbtype {
 		case "postgres":
@@ -67,7 +105,7 @@ func ActionAddDatabase(c *cli.Context) error {
 			username = "root"
 		}
 	}
-	password := c.String("password")
+	password := viper.GetString("password")
 	if password == "" {
 		switch dbtype {
 		case "postgres":
@@ -76,16 +114,19 @@ func ActionAddDatabase(c *cli.Context) error {
 			password = "my-secret-pw"
 		}
 	}
-	alias := c.String("alias")
-	version := c.String("version")
-	return addDatabase(dbtype, username, password, alias, version)
+	alias := viper.GetString("alias")
+	version := viper.GetString("version")
+
+	_ = addDatabase(dbtype, username, password, alias, version)
+	return nil
 }
 
 // ActionRemoveDatabase removes a database add on
-func ActionRemoveDatabase(c *cli.Context) error {
-	alias := c.Args().Get(0)
-	if len(alias) == 0 {
-		return utils.LogError("Database Alias not provided as an argument", nil)
+func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		_ = utils.LogError("Database Alias not provided as an argument", nil)
+		return nil
 	}
-	return removeDatabase(alias)
+	_ = removeDatabase(args[0])
+	return nil
 }
