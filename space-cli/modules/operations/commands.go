@@ -171,7 +171,8 @@ func actionDestroy(cmd *cobra.Command, args []string) error {
 func actionApply(cmd *cobra.Command, args []string) error {
 	if len(args) != 3 {
 		_ = utils.LogError("error while applying service incorrect number of arguments provided", nil)
-		return fmt.Errorf("incorrect number of arguments provided")
+		_ = fmt.Errorf("incorrect number of arguments provided")
+		return nil
 	}
 
 	dirName := args[2]

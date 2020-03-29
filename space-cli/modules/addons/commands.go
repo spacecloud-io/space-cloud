@@ -92,7 +92,8 @@ func ActionRemoveRegistry(cmd *cobra.Command, args []string) error {
 // ActionAddDatabase adds a database add on
 func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		return utils.LogError("Database type not provided as an arguement", nil)
+		_ = utils.LogError("Database type not provided as an arguement", nil)
+		return nil
 	}
 	dbtype := args[0]
 	username := viper.GetString("username")
@@ -123,7 +124,8 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 // ActionRemoveDatabase removes a database add on
 func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		return utils.LogError("Database Alias not provided as an argument", nil)
+		_ = utils.LogError("Database Alias not provided as an argument", nil)
+		return nil
 	}
 	_ = removeDatabase(args[0])
 	return nil

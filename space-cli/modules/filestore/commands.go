@@ -81,7 +81,8 @@ func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+		_ = fmt.Errorf("incorrect number of arguments")
+		return nil
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateFilestoreRule()
@@ -95,7 +96,8 @@ func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateFilestoreConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+		_ = fmt.Errorf("incorrect number of arguments")
+		return nil
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateFilestoreConfig()

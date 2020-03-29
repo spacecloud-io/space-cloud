@@ -36,7 +36,8 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	projectName := viper.GetString("project")
 
 	if len(args) == 0 {
-		return fmt.Errorf("Directory not specified as an arguement to store config files")
+		_ = fmt.Errorf("Directory not specified as an arguement to store config files")
+		return nil
 	}
 	dir := args[0]
 	// create directory if directory doesn't exists

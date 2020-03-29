@@ -139,7 +139,8 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+		_ = fmt.Errorf("incorrect number of arguments")
+		return nil
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingRule()
@@ -153,7 +154,8 @@ func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+		_ = fmt.Errorf("incorrect number of arguments")
+		return nil
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingSchema()
@@ -167,7 +169,8 @@ func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+		_ = fmt.Errorf("incorrect number of arguments")
+		return nil
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingConfig()
@@ -181,7 +184,8 @@ func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+		_ = fmt.Errorf("incorrect number of arguments")
+		return nil
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingTrigger()

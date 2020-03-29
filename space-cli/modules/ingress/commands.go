@@ -53,7 +53,8 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 
 func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+		_ = fmt.Errorf("incorrect number of arguments")
+		return nil
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateIngressRouting()
