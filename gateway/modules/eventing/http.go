@@ -8,11 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 
 	"golang.org/x/net/context"
 
-	"github.com/segmentio/ksuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -20,9 +18,7 @@ import (
 
 func (s *Module) logInvocation(ctx context.Context, eventID string, payload []byte, responseStatusCode int, responseBody, errorMsg string) error {
 	invocationDoc := map[string]interface{}{
-		"_id":                  ksuid.New().String(),
 		"event_id":             eventID,
-		"invocation_time":      time.Now().Format(time.RFC3339),
 		"request_payload":      string(payload),
 		"response_status_code": responseStatusCode,
 		"response_body":        responseBody,
