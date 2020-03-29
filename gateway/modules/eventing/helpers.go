@@ -52,8 +52,11 @@ func (m *Module) getSpaceCloudIDFromBatchID(batchID string) string {
 	return strings.Split(batchID, "--")[1]
 }
 
-func (m *Module) generateBatchID() string {
-	return fmt.Sprintf("%s--%s", ksuid.New().String(), m.syncMan.GetNodeID())
+func (m *Module) generateBatchID(ID string) string {
+	if ID == "" {
+		ID = ksuid.New().String()
+	}
+	return fmt.Sprintf("%s--%s", ID, m.syncMan.GetNodeID())
 }
 
 func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {

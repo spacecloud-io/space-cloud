@@ -13,6 +13,10 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 	m.RLock()
 	defer m.RUnlock()
 
+	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
+		return err
+	}
+
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return err

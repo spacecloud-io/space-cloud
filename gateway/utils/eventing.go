@@ -9,7 +9,7 @@ const (
 	SchemaInvocationLogs string = `type invocation_logs {
 		_id: ID! @primary
 		event_id: ID! @foreign(table: "event_logs", field: "_id")
-		invocation_time: DateTime!
+		invocation_time: DateTime! @createdAt
 		request_payload: String
 		response_status_code: Integer
 		response_body: String

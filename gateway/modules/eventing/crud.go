@@ -26,7 +26,7 @@ func (m *Module) HookDBCreateIntent(ctx context.Context, dbAlias, col string, re
 
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := m.generateBatchID()
+	batchID := m.generateBatchID("")
 
 	// Process the documents
 	eventDocs := m.processCreateDocs(token, batchID, dbAlias, col, rows)
@@ -57,7 +57,7 @@ func (m *Module) HookDBBatchIntent(ctx context.Context, dbAlias string, req *mod
 
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := m.generateBatchID()
+	batchID := m.generateBatchID("")
 	eventDocs := make([]*model.EventDocument, 0)
 
 	// Iterate over all batched requests
@@ -129,7 +129,7 @@ func (m *Module) HookDBDeleteIntent(ctx context.Context, dbAlias, col string, re
 // hookDBUpdateDeleteIntent is used as the hook for update and delete events
 func (m *Module) hookDBUpdateDeleteIntent(ctx context.Context, eventType, dbAlias, col string, find map[string]interface{}) (*model.EventIntent, error) {
 	// Create a unique batch id and token
-	batchID := m.generateBatchID()
+	batchID := m.generateBatchID("")
 	token := rand.Intn(utils.MaxEventTokens)
 
 	eventDocs, ok := m.processUpdateDeleteHook(token, eventType, batchID, dbAlias, col, find)

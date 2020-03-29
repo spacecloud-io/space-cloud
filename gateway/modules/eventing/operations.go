@@ -35,7 +35,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 		return nil, err
 	}
 
-	batchID := m.generateBatchID()
+	batchID := m.generateBatchID("")
 	responseChan := make(chan interface{}, 1)
 	defer close(responseChan) // close channel
 	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})

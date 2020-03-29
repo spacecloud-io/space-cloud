@@ -97,3 +97,5 @@ func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, project, col stri
 func (m *mockCrudInterface) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
 	return nil
 }
+
+// TODO: MakeInvocationHTTPRequest
