@@ -1,8 +1,6 @@
 package filestore
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -81,7 +79,7 @@ func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]
@@ -96,7 +94,7 @@ func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateFilestoreConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]

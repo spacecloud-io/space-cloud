@@ -1,8 +1,6 @@
 package database
 
 import (
-	"fmt"
-
 	"github.com/spaceuptech/space-cli/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -88,7 +86,7 @@ func actionGetDbConfig(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
@@ -112,14 +110,14 @@ func actionGetDbSchema(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
 
 func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]
@@ -134,7 +132,7 @@ func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]
@@ -149,7 +147,7 @@ func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]

@@ -1,8 +1,6 @@
 package userman
 
 import (
-	"fmt"
-
 	"github.com/spaceuptech/space-cli/utils"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +18,7 @@ func GenerateSubCommands() []*cobra.Command {
 
 func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]

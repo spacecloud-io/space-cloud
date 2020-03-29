@@ -19,6 +19,7 @@ import (
 	"github.com/spaceuptech/space-cli/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/modules/remote-services"
 	"github.com/spaceuptech/space-cli/modules/services"
+	"github.com/spaceuptech/space-cli/utils"
 )
 
 func getSubCommands() []*cobra.Command {
@@ -36,7 +37,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	projectName := viper.GetString("project")
 
 	if len(args) == 0 {
-		_ = fmt.Errorf("Directory not specified as an arguement to store config files")
+		_ = utils.LogError("Directory not specified as an arguement to store config files", nil)
 		return nil
 	}
 	dir := args[0]

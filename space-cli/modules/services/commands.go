@@ -1,8 +1,6 @@
 package services
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -109,7 +107,7 @@ func actionGetServices(cmd *cobra.Command, args []string) error {
 func actionGenerateService(cmd *cobra.Command, args []string) error {
 	// get filename from args in which service config will be stored
 	if len(args) != 4 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	serviceConfigFile := args[3]

@@ -1,8 +1,6 @@
 package letsencrypt
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -49,7 +47,7 @@ func actionGetLetsEncrypt(cmd *cobra.Command, args []string) error {
 
 func actionGenerateLetsEncryptDomain(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]

@@ -1,8 +1,6 @@
 package ingress
 
 import (
-	"fmt"
-
 	"github.com/spaceuptech/space-cli/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -53,7 +51,7 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 
 func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]

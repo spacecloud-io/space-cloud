@@ -1,8 +1,6 @@
 package eventing
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -75,7 +73,7 @@ func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
@@ -139,7 +137,7 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]
@@ -154,7 +152,7 @@ func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]
@@ -169,7 +167,7 @@ func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]
@@ -184,7 +182,7 @@ func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]

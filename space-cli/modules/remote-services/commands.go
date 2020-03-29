@@ -1,8 +1,6 @@
 package remoteservices
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -52,7 +50,7 @@ func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
 
 func actionGenerateService(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = fmt.Errorf("incorrect number of arguments")
+		_ = utils.LogError("incorrect number of arguments", nil)
 		return nil
 	}
 	dbruleConfigFile := args[0]
