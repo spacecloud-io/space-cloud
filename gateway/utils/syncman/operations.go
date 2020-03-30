@@ -16,6 +16,19 @@ func (s *Manager) GetEventSource() string {
 	return fmt.Sprintf("sc-%s", s.nodeID)
 }
 
+// GetClusterID get cluster id
+func (s *Manager) GetClusterID() string {
+	return s.clusterID
+}
+
+// GetNodesInCluster get total number of gateways
+func (s *Manager) GetNodesInCluster() int {
+	if len(s.services) == 0 {
+		return 1
+	}
+	return len(s.services)
+}
+
 // GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
 func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
 	s.lock.RLock()

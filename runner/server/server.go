@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/spaceuptech/space-cloud/runner/metrics"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -27,7 +28,7 @@ type Server struct {
 
 	// For internal use
 	auth     *auth.Module
-	driver   driver.Driver
+	driver   driver.Interface
 	debounce *utils.Debounce
 
 	// For autoscaler
@@ -44,13 +45,15 @@ func New(c *Config) (*Server, error) {
 	}
 	c.Driver.ProxyPort = uint32(proxyPort)
 
+	metric := metrics.New(c.IsMetricDisabled, c.Driver.DriverType)
+
 	// Initialise all modules
 	a, err := auth.New(c.Auth)
 	if err != nil {
 		return nil, err
 	}
 
-	d, err := driver.New(a, c.Driver)
+	d, err := driver.New(a, c.Driver, metric.AddServiceCall)
 	if err != nil {
 		return nil, err
 	}

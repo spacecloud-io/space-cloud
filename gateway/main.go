@@ -47,11 +47,6 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "DEV",
 	},
 	cli.BoolFlag{
-		Name:   "disable-metrics",
-		Usage:  "Disable anonymous metric collection",
-		EnvVar: "DISABLE_METRICS",
-	},
-	cli.BoolFlag{
 		Name:   "profiler",
 		Usage:  "Enable profiler endpoints for profiling",
 		EnvVar: "PROFILER",
@@ -142,9 +137,9 @@ var essentialFlags = []cli.Flag{
 
 	// Flags for the metrics module
 	cli.BoolFlag{
-		Name:   "enable-metrics",
-		Usage:  "Enable the metrics module",
-		EnvVar: "ENABLE_METRICS",
+		Name:   "disable-metrics",
+		Usage:  "Disable anonymous metric collection",
+		EnvVar: "DISABLE_METRICS",
 	},
 	cli.BoolFlag{
 		Name:   "disable-bandwidth",
@@ -199,7 +194,6 @@ func actionRun(c *cli.Context) error {
 	nodeID := c.String("id")
 	configPath := c.String("config")
 	isDev := c.Bool("dev")
-	disableMetrics := c.Bool("disable-metrics")
 	disableBandwidth := c.Bool("disable-bandwidth")
 	profiler := c.Bool("profiler")
 	logLevel := c.String("log-level")
@@ -228,7 +222,7 @@ func actionRun(c *cli.Context) error {
 	advertiseAddr := c.String("advertise-addr")
 
 	// Load the flags for the metrics module
-	enableMetrics := c.Bool("enable-metrics")
+	disableMetrics := c.Bool("disable-metrics")
 	metricsSink := c.String("metrics-sink")
 	metricsConn := c.String("metrics-conn")
 	metricsScope := c.String("metrics-scope")
@@ -239,7 +233,7 @@ func actionRun(c *cli.Context) error {
 	}
 
 	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, removeProjectScope,
-		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
+		&metrics.Config{IsDisabled: disableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
 	if err != nil {
 		return err
 	}
@@ -280,7 +274,7 @@ func actionRun(c *cli.Context) error {
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(profiler, disableMetrics, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
+	return s.Start(profiler, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
 }
 
 func actionInit(*cli.Context) error {

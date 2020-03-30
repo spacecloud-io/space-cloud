@@ -11,8 +11,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
-// IsEnabled returns whether the eventing module is enabled or not
-func (m *Module) IsEnabled() bool {
+// IsDisabled returns whether the eventing module is enabled or not
+func (m *Module) IsDisabled() bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 

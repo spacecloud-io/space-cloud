@@ -17,7 +17,7 @@ import (
 func (m *Module) processStagedEvents(t *time.Time) {
 
 	// Return if module is not enabled
-	if !m.IsEnabled() {
+	if !m.IsDisabled() {
 		return
 	}
 	m.lock.RLock()

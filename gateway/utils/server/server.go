@@ -11,7 +11,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
@@ -35,13 +34,13 @@ type Server struct {
 func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
 
 	// Create the fundamental modules
-	m, err := metrics.New(nodeID, metricsConfig)
+	adminMan := admin.New()
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, adminMan)
 	if err != nil {
 		return nil, err
 	}
 
-	adminMan := admin.New()
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, adminMan)
+	m, err := metrics.New(clusterID, nodeID, metricsConfig, syncMan, adminMan.LoadEnv())
 	if err != nil {
 		return nil, err
 	}
@@ -68,16 +67,11 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 }
 
 // Start begins the server operations
-func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port int, restrictedHosts []string) error {
+func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHosts []string) error {
 
 	// Start the sync manager
 	if err := s.syncMan.Start(s.configFilePath, s.syncMan.GetGlobalConfig(), port); err != nil {
 		return err
-	}
-
-	// Anonymously collect usage metrics if not explicitly disabled
-	if !disableMetrics {
-		go s.RoutineMetrics()
 	}
 
 	// Allow cors
@@ -87,7 +81,6 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 
 		// Setup the handler
 		handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
-		handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 		handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
 		// Add existing certificates if any
@@ -109,10 +102,10 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 		}()
 	}
 
+	s.metrics.SetSSL(s.ssl)
 	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
-	handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 	handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
 	logrus.Infoln("Starting http server on port: " + strconv.Itoa(port))

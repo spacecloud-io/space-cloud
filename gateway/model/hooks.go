@@ -9,6 +9,12 @@ import (
 // MetricCrudHook is used to log a database operation
 type MetricCrudHook func(project, dbAlias, col string, count int64, op utils.OperationType)
 
+// MetricFileHook is used to log a file operation
+type MetricFileHook func(project, storeType string, op utils.OperationType)
+
+// MetricFunctionHook is used to log a function operation
+type MetricFunctionHook func(project string)
+
 // CreateIntentHook is used to log a create intent
 type CreateIntentHook func(ctx context.Context, dbAlias, col string, req *CreateRequest) (*EventIntent, error)
 

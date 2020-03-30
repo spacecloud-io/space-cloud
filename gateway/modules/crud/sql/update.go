@@ -77,7 +77,9 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			doc := make(map[string]interface{})
 			dates := make(map[string]interface{})
 			for k, v := range req.Find {
-				doc[k] = v
+				for _, newValue := range v.(map[string]interface{}) {
+					doc[k] = newValue
+				}
 			}
 			for op := range req.Update {
 				m, ok := req.Update[op].(map[string]interface{})

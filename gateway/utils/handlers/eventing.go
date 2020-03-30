@@ -33,7 +33,7 @@ func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		// Return if the eventing module is not enabled
-		if !eventing.IsEnabled() {
+		if !eventing.IsDisabled() {
 			logrus.Errorf("error handling process event response eventing feature isn't enabled")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
@@ -72,7 +72,7 @@ func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.
 		defer utils.CloseTheCloser(r.Body)
 
 		// Return if the eventing module is not enabled
-		if !eventing.IsEnabled() {
+		if !eventing.IsDisabled() {
 			logrus.Errorf("error handling process event request eventing feature isn't enabled")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
@@ -112,7 +112,7 @@ func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		// Return if the eventing module is not enabled
-		if !eventing.IsEnabled() {
+		if !eventing.IsDisabled() {
 			logrus.Errorf("error handling queue event request eventing feature isn't enabled")
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)

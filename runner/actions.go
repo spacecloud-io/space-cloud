@@ -1,15 +1,15 @@
 package main
 
 import (
+	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/utils/auth"
+	"github.com/spaceuptech/space-cloud/runner/utils/driver"
 	"os"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/server"
-	"github.com/spaceuptech/space-cloud/runner/utils/auth"
-	"github.com/spaceuptech/space-cloud/runner/utils/driver"
 )
 
 func actionRunner(c *cli.Context) error {
@@ -28,6 +28,7 @@ func actionRunner(c *cli.Context) error {
 	outsideCluster := c.Bool("outside-cluster")
 
 	isDev := c.Bool("dev")
+	isMetricDisabled := c.Bool("is-metric-disabled")
 
 	ArtifactAddr := c.String("artifact-addr")
 	// Set the log level
@@ -35,8 +36,9 @@ func actionRunner(c *cli.Context) error {
 
 	// Create a new runner object
 	r, err := server.New(&server.Config{
-		Port:      port,
-		ProxyPort: proxyPort,
+		Port:             port,
+		ProxyPort:        proxyPort,
+		IsMetricDisabled: isMetricDisabled,
 		Auth: &auth.Config{
 			Secret:      jwtSecret,
 			ProxySecret: jwtProxySecret,

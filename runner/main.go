@@ -46,6 +46,11 @@ func main() {
 			Usage: "Starts a runner instance",
 			Flags: []cli.Flag{
 				cli.BoolFlag{
+					Name:   "is-metric-disabled",
+					EnvVar: "IS_METRIC_DISABLED",
+					Usage:  "enable or disable metrics collection",
+				},
+				cli.BoolFlag{
 					Name:   "dev",
 					EnvVar: "DEV",
 					Usage:  "start runner without authentication",
