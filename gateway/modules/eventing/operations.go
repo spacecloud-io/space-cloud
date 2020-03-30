@@ -41,7 +41,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
 	defer m.eventChanMap.Delete(batchID)
 
-	if err = m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
+	if err = m.batchRequests(ctx, "", 0, []*model.QueueEventRequest{req}, batchID); err != nil {
 		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
 		return nil, err
 	}

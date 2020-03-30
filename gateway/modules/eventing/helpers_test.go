@@ -5,6 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -720,4 +721,167 @@ func (m *mockAuthEventingInterface) GetInternalAccessToken() (string, error) {
 	return c.String(0), c.Error(1)
 }
 
-// TODO: generateQueueEventRequest, batchRequests
+func TestModule_batchRequests(t *testing.T) {
+	var res interface{}
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		ctx        context.Context
+		eventDocID string
+		token      int
+		requests   []*model.QueueEventRequest
+		batchID    string
+	}
+	tests := []struct {
+		name            string
+		m               *Module
+		args            args
+		crudMockArgs    []mockArgs
+		syncmanMockArgs []mockArgs
+		adminMockArgs   []mockArgs
+		authMockArgs    []mockArgs
+		wantErr         bool
+	}{
+		{
+			name: "error during internal create",
+			m:    &Module{config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
+			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{&model.QueueEventRequest{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: int64(0)}}},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, utils.TableEventingLogs, &model.CreateRequest{Document: []interface{}{map[string]interface{}{"_id": mock.Anything, "batchid": mock.Anything, "event_timestamp": time.Now().UTC().UnixNano() / int64(time.Millisecond), "payload": "\"payload\"", "remark": "", "retries": 3, "rule_name": "some-rule", "status": "staged", "timestamp": time.Now().UTC().UnixNano() / int64(time.Millisecond), "token": 50, "type": "DB_INSERT", "url": mock.Anything}}, Operation: utils.All, IsBatch: true}, false},
+					paramsReturned: []interface{}{errors.New("some error")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "requests are batched",
+			m:    &Module{config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
+			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{&model.QueueEventRequest{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: int64(0)}}},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, utils.TableEventingLogs, &model.CreateRequest{Document: []interface{}{map[string]interface{}{"_id": mock.Anything, "batchid": mock.Anything, "event_timestamp": time.Now().UTC().UnixNano() / int64(time.Millisecond), "payload": "\"payload\"", "remark": "", "retries": 3, "rule_name": "some-rule", "status": "staged", "timestamp": time.Now().UTC().UnixNano() / int64(time.Millisecond), "token": 50, "type": "DB_INSERT", "url": mock.Anything}}, Operation: utils.All, IsBatch: true}, false},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			syncmanMockArgs: []mockArgs{
+				mockArgs{
+					method:         "GetAssignedSpaceCloudURL",
+					args:           []interface{}{mock.Anything, mock.Anything, 50},
+					paramsReturned: []interface{}{mock.Anything, nil},
+				},
+				mockArgs{
+					method:         "MakeHTTPRequest",
+					args:           []interface{}{mock.Anything, "POST", mock.Anything, mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{ID: mock.Anything, BatchID: mock.Anything, Type: "DB_INSERT", RuleName: "some-rule", Token: 50, Timestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond), EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond), Payload: "\"payload\"", Retries: 3, Status: "staged", Remark: "", URL: mock.Anything}}, &res},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			adminMockArgs: []mockArgs{
+				mockArgs{
+					method:         "GetInternalAccessToken",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{mock.Anything, nil},
+				},
+			},
+			authMockArgs: []mockArgs{
+				mockArgs{
+					method:         "GetSCAccessToken",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{mock.Anything, nil},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockCrud := mockCrudInterface{}
+			mockSyncman := mockSyncmanEventingInterface{}
+			mockAdmin := mockAdminEventingInterface{}
+			mockAuth := mockAuthEventingInterface{}
+
+			for _, m := range tt.crudMockArgs {
+				mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.syncmanMockArgs {
+				mockSyncman.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.adminMockArgs {
+				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.authMockArgs {
+				mockAuth.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			tt.m.crud = &mockCrud
+			tt.m.syncMan = &mockSyncman
+			tt.m.adminMan = &mockAdmin
+			tt.m.auth = &mockAuth
+
+			if err := tt.m.batchRequests(tt.args.ctx, tt.args.eventDocID, tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
+				t.Errorf("Module.batchRequests() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			mockCrud.AssertExpectations(t)
+			mockSyncman.AssertExpectations(t)
+			mockAdmin.AssertExpectations(t)
+			mockAuth.AssertExpectations(t)
+		})
+	}
+}
+
+func TestModule_generateQueueEventRequest(t *testing.T) {
+	type args struct {
+		token      int
+		retries    int
+		eventDocID string
+		name       string
+		batchID    string
+		status     string
+		url        string
+		event      *model.QueueEventRequest
+	}
+	tests := []struct {
+		name string
+		m    *Module
+		args args
+		want *model.EventDocument
+	}{
+		{
+			name: "event timestamp < timestamp && event delay = 0 && retries != 0",
+			m:    &Module{project: mock.Anything},
+			args: args{token: 50, retries: 1, eventDocID: "id", name: "rule", batchID: "batchid", status: "ok", url: "url", event: &model.QueueEventRequest{Type: utils.EventDBCreate, Delay: 0, Timestamp: int64(0), Payload: "payload", IsSynchronous: false, Options: map[string]string{}}},
+			want: &model.EventDocument{BatchID: "batchid", EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond), ID: "id", Type: utils.EventDBCreate, RuleName: "rule", Token: 50, Timestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond), Payload: "\"payload\"", Status: "ok", Retries: 1, URL: "url"},
+		},
+		{
+			name: "event timestamp > timestamp && event delay = 0 && retries != 0",
+			m:    &Module{project: mock.Anything},
+			args: args{token: 50, retries: 1, eventDocID: "id", name: "rule", batchID: "batchid", status: "ok", url: "url", event: &model.QueueEventRequest{Type: utils.EventDBCreate, Delay: 0, Timestamp: time.Now().UTC().UnixNano()/int64(time.Millisecond) + int64(100), Payload: "payload", IsSynchronous: false, Options: map[string]string{}}},
+			want: &model.EventDocument{BatchID: "batchid", EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond), ID: "id", Type: utils.EventDBCreate, RuleName: "rule", Token: 50, Timestamp: time.Now().UTC().UnixNano()/int64(time.Millisecond) + int64(100), Payload: "\"payload\"", Status: "ok", Retries: 1, URL: "url"},
+		},
+		{
+			name: "event timestamp > timestamp && event delay > 0 && retries != 0",
+			m:    &Module{project: mock.Anything},
+			args: args{token: 50, retries: 1, eventDocID: "id", name: "rule", batchID: "batchid", status: "ok", url: "url", event: &model.QueueEventRequest{Type: utils.EventDBCreate, Delay: int64(10), Timestamp: time.Now().UTC().UnixNano()/int64(time.Millisecond) + int64(100), Payload: "payload", IsSynchronous: false, Options: map[string]string{}}},
+			want: &model.EventDocument{BatchID: "batchid", EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond), ID: "id", Type: utils.EventDBCreate, RuleName: "rule", Token: 50, Timestamp: time.Now().UTC().UnixNano()/int64(time.Millisecond) + int64(110), Payload: "\"payload\"", Status: "ok", Retries: 1, URL: "url"},
+		},
+		{
+			name: "event timestamp > timestamp && event delay > 0 && retries = 0",
+			m:    &Module{project: mock.Anything},
+			args: args{token: 50, retries: 0, eventDocID: "id", name: "rule", batchID: "batchid", status: "ok", url: "url", event: &model.QueueEventRequest{Type: utils.EventDBCreate, Delay: int64(10), Timestamp: time.Now().UTC().UnixNano()/int64(time.Millisecond) + int64(100), Payload: "payload", IsSynchronous: false, Options: map[string]string{}}},
+			want: &model.EventDocument{BatchID: "batchid", EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond), ID: "id", Type: utils.EventDBCreate, RuleName: "rule", Token: 50, Timestamp: time.Now().UTC().UnixNano()/int64(time.Millisecond) + int64(110), Payload: "\"payload\"", Status: "ok", Retries: 3, URL: "url"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.generateQueueEventRequest(tt.args.token, tt.args.retries, tt.args.eventDocID, tt.args.name, tt.args.batchID, tt.args.status, tt.args.url, tt.args.event); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

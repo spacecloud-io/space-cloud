@@ -59,9 +59,11 @@ func (m *Module) generateBatchID(ID string) string {
 	return fmt.Sprintf("%s--%s", ID, m.syncMan.GetNodeID())
 }
 
-func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {
+func (m *Module) batchRequests(ctx context.Context, eventDocID string, token int, requests []*model.QueueEventRequest, batchID string) error {
 	// Create the meta information
-	token := rand.Intn(utils.MaxEventTokens)
+	if token == 0 {
+		token = rand.Intn(utils.MaxEventTokens)
+	}
 
 	// Create an eventDocs array
 	var eventDocs []*model.EventDocument
@@ -72,7 +74,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.ID, batchID, utils.EventStatusStaged, r.URL, req)
+			eventDoc := m.generateQueueEventRequest(token, r.Retries, eventDocID, r.ID, batchID, utils.EventStatusStaged, r.URL, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -88,9 +90,13 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token, retries int, eventDocID, name, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
 
 	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
+
+	if eventDocID == "" {
+		eventDocID = ksuid.New().String()
+	}
 
 	if event.Timestamp > timestamp {
 		timestamp = event.Timestamp
@@ -108,7 +114,7 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 	}
 
 	return &model.EventDocument{
-		ID:             ksuid.New().String(),
+		ID:             eventDocID,
 		BatchID:        batchID,
 		Type:           event.Type,
 		RuleName:       name,
