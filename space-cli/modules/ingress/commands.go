@@ -1,58 +1,65 @@
 package ingress
 
 import (
-	"fmt"
-
 	"github.com/spaceuptech/space-cli/utils"
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // GenerateSubCommands is the list of commands the ingress module exposes
-var GenerateSubCommands = []cli.Command{
-	{
-		Name:   "ingress-routes",
-		Action: actionGenerateIngressRouting,
-	},
+func GenerateSubCommands() []*cobra.Command {
+
+	var generateroutes = &cobra.Command{
+		Use:  "ingress-routes",
+		RunE: actionGenerateIngressRouting,
+	}
+
+	return []*cobra.Command{generateroutes}
 }
 
 // GetSubCommands is the list of commands the ingress module exposes
-var GetSubCommands = []cli.Command{
-	{
-		Name:   "ingress-routes",
-		Action: actionGetIngressRoutes,
-	},
+func GetSubCommands() []*cobra.Command {
+
+	var getroutes = &cobra.Command{
+		Use:  "ingress-routes",
+		RunE: actionGetIngressRoutes,
+	}
+
+	return []*cobra.Command{getroutes}
 }
 
-func actionGetIngressRoutes(c *cli.Context) error {
+func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.Use
 
 	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["id"] = c.Args()[0]
+	if len(args) != 0 {
+		params["id"] = args[0]
 	}
 
 	objs, err := GetIngressRoutes(project, commandName, params)
 	if err != nil {
-		return err
+		return nil
 	}
+
 	if err := utils.PrintYaml(objs); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
 
-func actionGenerateIngressRouting(c *cli.Context) error {
-	argsArr := c.Args()
-	if len(argsArr) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+func actionGenerateIngressRouting(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		_ = utils.LogError("incorrect number of arguments", nil)
+		return nil
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateIngressRouting()
 	if err != nil {
-		return err
+		return nil
 	}
 
-	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	return nil
 }

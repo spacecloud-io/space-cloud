@@ -1,113 +1,124 @@
 package services
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/urfave/cli"
+        "os"
+        
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/utils"
 )
 
 // GenerateSubCommands is the list of commands the services module exposes
-var GenerateSubCommands = []cli.Command{
-	{
-		Name:   "service",
-		Action: actionGenerateService,
-	},
+func GenerateSubCommands() []*cobra.Command {
+
+	var generateService = &cobra.Command{
+		Use:  "services",
+		RunE: actionGenerateService,
+	}
+
+	return []*cobra.Command{generateService}
+
 }
 
 // GetSubCommands is the list of commands the services module exposes
-var GetSubCommands = []cli.Command{
-	{
-		Name:   "services-routes",
-		Action: actionGetServicesRoutes,
-	},
-	{
-		Name:   "services-secrets",
-		Action: actionGetServicesSecrets,
-	},
-	{
-		Name:   "services",
-		Action: actionGetServices,
-	},
+func GetSubCommands() []*cobra.Command {
+
+	var getServicesRoutes = &cobra.Command{
+		Use:  "services-routes",
+		RunE: actionGetServicesRoutes,
+	}
+
+	var getServicesSecrets = &cobra.Command{
+		Use:  "services-secrets",
+		RunE: actionGetServicesSecrets,
+	}
+
+	var getService = &cobra.Command{
+		Use:  "services",
+		RunE: actionGetServices,
+	}
+
+	return []*cobra.Command{getServicesRoutes, getServicesSecrets, getService}
 }
 
-func actionGetServicesRoutes(c *cli.Context) error {
+func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.Use
 
 	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["id"] = c.Args()[0]
+	if len(args) != 0 {
+		params["id"] = args[0]
 	}
 
 	objs, err := GetServicesRoutes(project, commandName, params)
 	if err != nil {
-		return err
+		return nil
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
 
-func actionGetServicesSecrets(c *cli.Context) error {
+func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.Use
 
 	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["id"] = c.Args()[0]
+	if len(args) != 0 {
+		params["id"] = args[0]
 	}
 
 	objs, err := GetServicesSecrets(project, commandName, params)
 	if err != nil {
-		return err
+		return nil
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
 
-func actionGetServices(c *cli.Context) error {
+func actionGetServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.Use
 
 	params := map[string]string{}
-	switch len(c.Args()) {
+	switch len(args) {
 	case 1:
-		params["serviceId"] = c.Args()[0]
+		params["serviceId"] = args[0]
 	case 2:
-		params["serviceId"] = c.Args()[0]
-		params["version"] = c.Args()[1]
+		params["serviceId"] = args[0]
+		params["version"] = args[1]
 	}
 	objs, err := GetServices(project, commandName, params)
 	if err != nil {
-		return err
+		return nil
 	}
+
 	if err := utils.PrintYaml(objs); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
 
-func actionGenerateService(_ *cli.Context) error {
+func actionGenerateService(cmd *cobra.Command, args []string) error {
 	// get filename from args in which service config will be stored
-	argsArr := os.Args
-	if len(argsArr) != 4 {
-		return fmt.Errorf("incorrect number of arguments")
+	if len(os.Args) != 4 {
+		_ = utils.LogError("incorrect number of arguments", nil)
+		return nil
 	}
-	serviceConfigFile := argsArr[3]
+	serviceConfigFile := os.Args[3]
 
 	service, err := GenerateService("", "")
 	if err != nil {
-		return err
+		return nil
 	}
 
-	return utils.AppendConfigToDisk(service, serviceConfigFile)
+	_ = utils.AppendConfigToDisk(service, serviceConfigFile)
+	return nil
 }
