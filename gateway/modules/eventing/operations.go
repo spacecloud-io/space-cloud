@@ -54,9 +54,13 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 				// clear channel
 				return nil, ctx.Err()
 			case result := <-responseChan:
+				m.metricHook(req.Type)
 				return result, nil
 			}
 		}
+	}
+	if err == nil {
+		m.metricHook(req.Type)
 	}
 	return nil, nil
 }

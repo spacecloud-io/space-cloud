@@ -1,11 +1,9 @@
 package metrics
 
 import (
+	"github.com/segmentio/ksuid"
 	"strings"
 	"sync"
-	"time"
-
-	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -14,7 +12,7 @@ func newMetrics() *metrics {
 	return &metrics{}
 }
 
-func (m *Module) createFileDocuments(project string, opMetrics *sync.Map, t *time.Time) []interface{} {
+func (m *Module) createFileDocuments(project string, opMetrics *sync.Map, t string) []interface{} {
 	docs := make([]interface{}, 0)
 
 	opMetrics.Range(func(key, value interface{}) bool {
@@ -46,7 +44,7 @@ func (m *Module) createFileDocuments(project string, opMetrics *sync.Map, t *tim
 	return docs
 }
 
-func (m *Module) createCrudDocuments(project string, opMetrics *sync.Map, t *time.Time) []interface{} {
+func (m *Module) createCrudDocuments(project string, opMetrics *sync.Map, t string) []interface{} {
 	docs := make([]interface{}, 0)
 
 	opMetrics.Range(func(key, value interface{}) bool {
@@ -82,14 +80,22 @@ func (m *Module) createCrudDocuments(project string, opMetrics *sync.Map, t *tim
 	return docs
 }
 
-func (m *Module) createDocument(project, dbType, col, module string, op utils.OperationType, count uint64, t *time.Time) interface{} {
+func (m *Module) createFunctionDocument(project string, count uint64, t string) []interface{} {
+	docs := make([]interface{}, 0)
+	if count > 0 {
+		docs = append(docs, m.createDocument(project, "na", "na", "function", "calls", count, t))
+	}
+	return docs
+}
+
+func (m *Module) createDocument(project, dbType, col, module string, op utils.OperationType, count uint64, t string) interface{} {
 	return map[string]interface{}{
 		"id":         ksuid.New().String(),
 		"project_id": project,
 		"module":     module,
 		"type":       op,
 		"sub_type":   col,
-		"ts":         t.String(),
+		"ts":         t,
 		"count":      count,
 		"driver":     dbType,
 		"node_id":    m.nodeID,

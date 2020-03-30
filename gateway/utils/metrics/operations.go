@@ -11,18 +11,17 @@ import (
 func (m *Module) AddEventingType(eventingType string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-
 	// Return if the metrics module is disabled
 	if m.config.IsDisabled {
 		return
 	}
 
 	value, ok := m.eventing[eventingType]
-	if ok {
-		m.eventing[eventingType] = value + 1
+	if !ok {
+		m.eventing[eventingType] = 1
 		return
 	}
-	m.eventing[eventingType] = 1
+	m.eventing[eventingType] = value + 1
 }
 
 // AddFunctionOperation counts the number of time a particular function gets invoked
@@ -115,7 +114,7 @@ func (m *Module) LoadMetrics() []interface{} {
 	metricDocs := make([]interface{}, 0)
 
 	// Capture the current time
-	t := time.Now()
+	t := time.Now().Format(time.RFC3339)
 
 	// Iterate over all projects to generate the metric docs
 	m.projects.Range(func(key, value interface{}) bool {
@@ -124,9 +123,9 @@ func (m *Module) LoadMetrics() []interface{} {
 		project := key.(string)
 		metrics := value.(*metrics)
 
-		metricDocs = append(metricDocs, m.createCrudDocuments(project, &metrics.crud, &t)...)
-		metricDocs = append(metricDocs, m.createFileDocuments(project, &metrics.fileStore, &t)...)
-		metricDocs = append(metricDocs, m.createDocument(project, "na", "na", "function", "calls", metrics.function, &t))
+		metricDocs = append(metricDocs, m.createCrudDocuments(project, &metrics.crud, t)...)
+		metricDocs = append(metricDocs, m.createFileDocuments(project, &metrics.fileStore, t)...)
+		metricDocs = append(metricDocs, m.createFunctionDocument(project, metrics.function, t)...)
 		// Delete the project
 		m.projects.Delete(key)
 

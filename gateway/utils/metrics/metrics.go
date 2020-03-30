@@ -49,7 +49,7 @@ func New(clusterID, nodeID string, config *Config, syncMan *syncman.Manager, isP
 	conn := api.New("projectmetrics", "localhost:4122", false).DB("postgres")
 
 	// Create a new metrics module
-	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, config: *config, syncMan: syncMan, isProd: isProd}
+	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, config: *config, syncMan: syncMan, isProd: isProd, eventing: map[string]int{}}
 	logrus.Println("metrics started")
 	// Start routine to flush metrics to the sink
 	go m.routineFlushMetricsToSink()

@@ -7,8 +7,10 @@ import (
 	"time"
 )
 
+const metricsUpdaterInterval = 30 * time.Second
+
 func (m *Module) routineFlushMetricsToSink() {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(metricsUpdaterInterval)
 
 	for range ticker.C {
 		logrus.Println("executing ticker")

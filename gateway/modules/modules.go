@@ -42,7 +42,7 @@ func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, admin
 	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
 
-	e := eventing.New(a, c, s, adminMan, syncMan, f)
+	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
 	f.SetEventingModule(e)
 
 	c.SetHooks(&model.CrudHooks{

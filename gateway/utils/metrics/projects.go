@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const metricsUpdaterInterval = 30 * time.Second
-
 func currentTimeInMillis() int64 {
 	// subtracting interval time make sures that multiple gateways in a cluster don't write to database frequently
 	return time.Now().Add(-metricsUpdaterInterval).UnixNano()
@@ -60,7 +58,7 @@ func (m *Module) generateMetricsRequest() (string, map[string]interface{}, map[s
 			for _, v := range modules.Crud {
 				if v.Enabled {
 					temps[v.Type] = map[string]interface{}{
-						"tables": len(v.Collections) - 2, // NOTE : 2 is the number of tables used internally for eventing (invocation logs & event logs)
+						"tables": len(v.Collections) - 3, // NOTE : 2 is the number of tables used internally for eventing (invocation logs & event logs) + 1 which is the default table
 					}
 				}
 			}
@@ -103,14 +101,11 @@ func (m *Module) generateMetricsRequest() (string, map[string]interface{}, map[s
 		}
 
 		// eventing info
+		set["total_events"] = len(modules.Eventing.Rules)
 		temps := map[string]interface{}{}
-		for k, v := range modules.Eventing.Rules {
-			temps[k] = map[string]interface{}{
-				"type": m.eventing[v.Type],
-			}
+		for _, v := range modules.Eventing.Rules {
+			temps[v.Type] = m.eventing[v.Type]
 		}
-		m.eventing = map[string]int{}
-
 		set["eventing"] = temps
 	}
 
