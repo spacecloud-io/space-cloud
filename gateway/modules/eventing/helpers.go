@@ -74,7 +74,7 @@ func (m *Module) batchRequests(ctx context.Context, eventDocID string, token int
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.ID, batchID, utils.EventStatusStaged, req)
+			eventDoc := m.generateQueueEventRequest(token, r.ID, eventDocID, batchID, utils.EventStatusStaged, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -90,9 +90,13 @@ func (m *Module) batchRequests(ctx context.Context, eventDocID string, token int
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token int, name string, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token int, name, eventDocID, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
 
 	timestamp := time.Now()
+
+	if eventDocID == "" {
+		eventDocID = ksuid.New().String()
+	}
 
 	// Parse the timestamp provided
 	eventTs, err := time.Parse(time.RFC3339, event.Timestamp)
@@ -116,7 +120,7 @@ func (m *Module) generateQueueEventRequest(token int, name string, batchID, stat
 	data, _ := json.Marshal(event.Payload)
 
 	return &model.EventDocument{
-		ID:        ksuid.New().String(),
+		ID:        eventDocID,
 		BatchID:   batchID,
 		Type:      event.Type,
 		RuleName:  name,

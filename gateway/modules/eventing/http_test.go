@@ -2,10 +2,12 @@ package eventing
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/net/context"
 )
@@ -98,4 +100,165 @@ func (m *mockCrudInterface) InternalUpdate(ctx context.Context, dbAlias, project
 	return nil
 }
 
-// TODO: MakeInvocationHTTPRequest
+func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
+	var eventResponse model.EventResponse
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		ctx     context.Context
+		client  model.HTTPEventingInterface
+		method  string
+		url     string
+		eventID string
+		token   string
+		scToken string
+		payload interface{}
+		vPtr    interface{}
+	}
+	tests := []struct {
+		name         string
+		s            *Module
+		args         args
+		crudMockArgs []mockArgs
+		httpMockArgs []mockArgs
+		wantErr      bool
+	}{
+		{
+			name: "error making new request with context and invocation is logged",
+			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			args: args{method: "some-method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{nil, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "net/http: nil Context"}, Operation: utils.One, IsBatch: true}, false},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error making new request with context and invocation is not logged",
+			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			args: args{method: "some-method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{nil, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "net/http: nil Context"}, Operation: utils.One, IsBatch: true}, false},
+					paramsReturned: []interface{}{errors.New("some error")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error doing the request and invocation is logged",
+			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "some error"}, Operation: utils.One, IsBatch: true}, false},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			httpMockArgs: []mockArgs{
+				mockArgs{
+					paramsReturned: []interface{}{nil, errors.New("some error")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error doing the request and invocation is not logged",
+			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "some error"}, Operation: utils.One, IsBatch: true}, false},
+					paramsReturned: []interface{}{errors.New("some error")},
+				},
+			},
+			httpMockArgs: []mockArgs{
+				mockArgs{
+					paramsReturned: []interface{}{nil, errors.New("some error")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error unmarshalling and invocation is logged",
+			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "unexpected end of JSON input"}, Operation: utils.One, IsBatch: true}, false},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			httpMockArgs: []mockArgs{
+				mockArgs{
+					paramsReturned: []interface{}{&http.Response{Body: http.NoBody}, nil},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error unmarshalling and invocation is not logged",
+			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "unexpected end of JSON input"}, Operation: utils.One, IsBatch: true}, false},
+					paramsReturned: []interface{}{errors.New("some error")},
+				},
+			},
+			httpMockArgs: []mockArgs{
+				mockArgs{
+					paramsReturned: []interface{}{&http.Response{Body: http.NoBody}, nil},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockCrud := mockCrudInterface{}
+			mockHTTP := mockHTTPInterface{}
+
+			for _, m := range tt.crudMockArgs {
+				mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			for _, m := range tt.httpMockArgs {
+				mockHTTP.On("Do", mock.Anything).Return(m.paramsReturned...)
+			}
+
+			tt.args.client = &mockHTTP
+			tt.s.crud = &mockCrud
+
+			if err := tt.s.MakeInvocationHTTPRequest(tt.args.ctx, tt.args.client, tt.args.method, tt.args.url, tt.args.eventID, tt.args.token, tt.args.scToken, tt.args.payload, tt.args.vPtr); (err != nil) != tt.wantErr {
+				t.Errorf("Module.MakeInvocationHTTPRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			mockCrud.AssertExpectations(t)
+			mockHTTP.AssertExpectations(t)
+		})
+	}
+}
+
+type mockHTTPInterface struct {
+	mock.Mock
+}
+
+func (m *mockHTTPInterface) Do(req *http.Request) (*http.Response, error) {
+	c := m.Called(req)
+	return &http.Response{Body: http.NoBody}, c.Error(1)
+}
+
+// TODO: Write test cases for ahead unmarshal

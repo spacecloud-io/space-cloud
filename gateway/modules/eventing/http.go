@@ -32,7 +32,7 @@ func (s *Module) logInvocation(ctx context.Context, eventID string, payload []by
 }
 
 // MakeInvocationHTTPRequest fires an http request and returns a response
-func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method, url, eventID, token, scToken string, payload, vPtr interface{}) error {
+func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTTPEventingInterface, method, url, eventID, token, scToken string, payload, vPtr interface{}) error {
 	// Marshal json into byte array
 	data, _ := json.Marshal(payload)
 
@@ -53,9 +53,6 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method, url, eve
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("x-sc-token", "Bearer "+scToken)
-
-	// Create a http client and fire the request
-	client := &http.Client{}
 
 	// if s.storeType && s.isConsulConnectEnabled && strings.Contains(url, "https") && strings.Contains(url, ".consul") {
 	// 	 client = s.consulService.HTTPClient()

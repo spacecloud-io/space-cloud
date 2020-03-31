@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -137,6 +138,11 @@ type SyncmanEventingInterface interface {
 // AdminEventingInterface is an interface consisting of functions of admin module used by eventing module
 type AdminEventingInterface interface {
 	GetInternalAccessToken() (string, error)
+}
+
+// HTTPEventingInterface is an interface consisting of functions of a http client used by eventing module
+type HTTPEventingInterface interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // PostProcess filters the schema

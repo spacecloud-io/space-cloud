@@ -121,3 +121,5 @@ func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAli
 	c := m.Called(ctx, dbAlias, project, tables)
 	return c.Error(0)
 }
+
+// TODO: write test case for len(schemaType["dummyDBName"][eventType]) != 0
