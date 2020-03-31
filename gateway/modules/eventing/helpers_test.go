@@ -25,9 +25,9 @@ func TestModule_selectRule(t *testing.T) {
 	}{
 		{
 			name: "event type is an internal type",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "DB_INSERT"}}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"some-rule": {Type: "DB_INSERT", URL: "abc"}}}},
 			args: args{name: "some-rule", evType: "DB_INSERT"},
-			want: config.EventingRule{Type: "DB_INSERT", Retries: 3, Timeout: 5000},
+			want: config.EventingRule{Type: "DB_INSERT", URL: "abc"},
 		},
 		{
 			name: "event type is found in rules",
@@ -51,7 +51,7 @@ func TestModule_selectRule(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.selectRule(tt.args.name, tt.args.evType)
+			got, err := tt.m.selectRule(tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.selectRule() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -101,18 +101,18 @@ func TestModule_validate(t *testing.T) {
 		{
 			name: "event type is an internal type",
 			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: "DB_INSERT"}}}},
-			args: args{event: &model.QueueEventRequest{Type: "DB_INSERT", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args: args{event: &model.QueueEventRequest{Type: "DB_INSERT", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 		},
 		{
 			name:    "invalid project details",
 			m:       &Module{auth: &auth.Module{}},
-			args:    args{ctx: context.Background(), project: "some-project", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args:    args{ctx: context.Background(), project: "some-project", event: &model.QueueEventRequest{Type: "event", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 			wantErr: true,
 		},
 		{
 			name:    "invalid token",
 			m:       &Module{auth: &auth.Module{}},
-			args:    args{ctx: context.Background(), token: "token", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args:    args{ctx: context.Background(), token: "token", event: &model.QueueEventRequest{Type: "event", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 			wantErr: true,
 		},
 		{
@@ -122,7 +122,7 @@ func TestModule_validate(t *testing.T) {
 				config: &config.Eventing{
 					SecurityRules: map[string]*config.Rule{"event": {Rule: "authenticated"}},
 					Schemas:       map[string]config.SchemaObject{"event": config.SchemaObject{Schema: "some-schema"}}}},
-			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: "some-schema", Options: make(map[string]string)}},
+			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Payload: "some-schema", Options: make(map[string]string)}},
 		},
 		{
 			name: "no schema given",
@@ -136,7 +136,7 @@ func TestModule_validate(t *testing.T) {
 							Rule: "authenticated",
 						}},
 					Schemas: map[string]config.SchemaObject{"event": config.SchemaObject{Schema: "type event {id: ID! title: String}"}}}},
-			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Timestamp: 0, Payload: make(map[string]interface{}), Options: make(map[string]string)}},
+			args: args{ctx: context.Background(), project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "event", Delay: 0, Payload: make(map[string]interface{}), Options: make(map[string]string)}},
 		},
 	}
 	for _, tt := range tests {

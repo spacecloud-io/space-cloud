@@ -50,7 +50,7 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 
 // GetRealtimeURL get the url of realtime
 func (s *Manager) GetRealtimeURL(project string) string {
-	return string(fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project))
+	return fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project)
 }
 
 // GetAssignedTokens returns the array or tokens assigned to this node
