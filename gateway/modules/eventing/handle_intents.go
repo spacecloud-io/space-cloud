@@ -49,13 +49,17 @@ func (m *Module) processIntents(t *time.Time) {
 		// Parse event doc to EventDocument
 		eventDoc := new(model.EventDocument)
 		if err := mapstructure.Decode(doc, eventDoc); err != nil {
+			logrus.Errorf("Could not covert object (%v) as intent event doc - %s", doc, err.Error())
 			continue
 		}
 
-		timestamp := eventDoc.EventTimestamp
-		currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
+		timestamp, err := time.Parse(time.RFC3339, eventDoc.EventTimestamp) // We are using event timestamp since intent are processed wrt the time the event was created
+		if err != nil {
+			logrus.Errorf("Could not parse (%s) in intent event doc (%s) as time - %s", eventDoc.EventTimestamp, eventDoc.ID, err.Error())
+			continue
+		}
 
-		if currentTimestamp > timestamp+(30*1000) {
+		if t.After(timestamp.Add(30 * time.Second)) {
 			go m.processIntent(eventDoc)
 		}
 	}
@@ -107,7 +111,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &updateEvent)
 
 		// Get the document from the database
-		timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
+		timestamp := time.Now()
 		readRequest := &model.ReadRequest{Operation: utils.One, Find: updateEvent.Find.(map[string]interface{})}
 		result, err := m.crud.Read(ctx, updateEvent.DBType, m.project, updateEvent.Col, readRequest)
 		if err != nil {
@@ -131,7 +135,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 			// Broadcast the event so the concerned worker can process it immediately
 			eventDoc.Status = utils.EventStatusStaged
 			eventDoc.Payload = string(data)
-			eventDoc.Timestamp = timestamp
+			eventDoc.Timestamp = timestamp.Format(time.RFC3339)
 			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 		}
 

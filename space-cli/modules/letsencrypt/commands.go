@@ -1,53 +1,61 @@
 package letsencrypt
 
 import (
-	"fmt"
-
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// GenerateSubCommands is the list of commands the letsencrypt module exposes
-var GenerateSubCommands = []cli.Command{
-	{
-		Name:   "letsencrypt",
-		Action: actionGenerateLetsEncryptDomain,
-	},
+// GenerateSubCommands is the list of commands the ingress module exposes
+func GenerateSubCommands() []*cobra.Command {
+
+	var generateletsencrypt = &cobra.Command{
+		Use:  "letsencrypt",
+		RunE: actionGenerateLetsEncryptDomain,
+	}
+	return []*cobra.Command{generateletsencrypt}
 }
 
-// GetSubCommands is the list of commands the letsencrypt module exposes
-var GetSubCommands = []cli.Command{{
-	Name:   "letsencrypt",
-	Action: actionGetLetsEncrypt,
-}}
+// GetSubCommands is the list of commands the ingress module exposes
+func GetSubCommands() []*cobra.Command {
 
-func actionGetLetsEncrypt(c *cli.Context) error {
+	var getletsencrypt = &cobra.Command{
+		Use:  "letsencrypt",
+		RunE: actionGetLetsEncrypt,
+	}
+
+	return []*cobra.Command{getletsencrypt}
+}
+
+func actionGetLetsEncrypt(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.Use
 
 	params := map[string]string{}
 	obj, err := GetLetsEncryptDomain(project, commandName, params)
 	if err != nil {
-		return err
+		return nil
 	}
+
 	if err := utils.PrintYaml(obj); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
 
-func actionGenerateLetsEncryptDomain(c *cli.Context) error {
-	argsArr := c.Args()
-	if len(argsArr) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+func actionGenerateLetsEncryptDomain(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		_ = utils.LogError("incorrect number of arguments", nil)
+		return nil
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateLetsEncryptDomain()
 	if err != nil {
-		return err
+		return nil
 	}
 
-	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	return nil
 }
