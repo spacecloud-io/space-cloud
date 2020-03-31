@@ -69,7 +69,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, r.ID, batchID, utils.EventStatusStaged, r.URL, req)
+			eventDoc := m.generateQueueEventRequest(token, r.ID, batchID, utils.EventStatusStaged, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -85,7 +85,7 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token int, name string, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
 
 	timestamp := time.Now()
 
@@ -109,10 +109,6 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 	}
 
 	data, _ := json.Marshal(event.Payload)
-
-	if retries == 0 {
-		retries = 3
-	}
 
 	return &model.EventDocument{
 		ID:        ksuid.New().String(),
