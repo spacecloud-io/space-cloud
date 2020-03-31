@@ -60,6 +60,7 @@ func getmodule() (*cobra.Command, error) {
 		}
 		file, _ := json.Marshal(data)
 		_ = ioutil.WriteFile("config.json", file, 0644)
+		return getplugin()
 	}
 
 	return rootCmd, nil

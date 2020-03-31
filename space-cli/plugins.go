@@ -8,24 +8,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type Cmd interface {
+	Getcommand() *cobra.Command
+}
+
 func getplugin() (*cobra.Command, error) {
-	mod := fmt.Sprintf("%s/cmd_%s.so", getSpaceCliDirectory(), latestVersion)
+	mod := fmt.Sprintf("./cmd/cmd_%s.so", LatestVersion)
 	plug, err := plugin.Open(mod)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
 	}
-	_, err = plug.Lookup("")
+	commands, err := plug.Lookup("Cmd")
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 		os.Exit(1)
 	}
 
-	// //var greeter Greeter
-	// greeter, ok := symGreeter.(Greeter)
-	// if !ok {
-	// 	fmt.Println("unexpected type from module symbol")
-	// 	os.Exit(1)
-	// }
-	return nil, nil
+	var cmd Cmd
+	cmd, ok := commands.(Cmd)
+	if !ok {
+		fmt.Println("unexpected type from module symbol")
+		return nil, nil
+		os.Exit(1)
+	}
+
+	rootCmd := cmd.Getcommand()
+	return rootCmd, nil
+
 }
