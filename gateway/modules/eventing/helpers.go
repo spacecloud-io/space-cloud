@@ -87,15 +87,25 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 
 func (m *Module) generateQueueEventRequest(token, retries int, name string, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
 
-	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
+	timestamp := time.Now()
 
-	if event.Timestamp > timestamp {
-		timestamp = event.Timestamp
+	// Parse the timestamp provided
+	eventTs, err := time.Parse(time.RFC3339, event.Timestamp)
+	if err != nil {
+		// Log warning only if time stamp was provided in the request
+		if event.Timestamp != "" {
+			logrus.Warningf("Invalid timestamp format (%s) provided. Defaulting to current time.", event.Timestamp)
+		}
+		eventTs = timestamp
 	}
 
-	// Add the delay if provided
+	if eventTs.After(timestamp) {
+		timestamp = eventTs
+	}
+
+	// Add the delay if provided. Delay is always provided as milliseconds
 	if event.Delay > 0 {
-		timestamp += event.Delay
+		timestamp = timestamp.Add(time.Duration(event.Delay) * time.Millisecond)
 	}
 
 	data, _ := json.Marshal(event.Payload)
@@ -105,17 +115,14 @@ func (m *Module) generateQueueEventRequest(token, retries int, name string, batc
 	}
 
 	return &model.EventDocument{
-		ID:             ksuid.New().String(),
-		BatchID:        batchID,
-		Type:           event.Type,
-		RuleName:       name,
-		Token:          token,
-		Timestamp:      timestamp,
-		EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond),
-		Payload:        string(data),
-		Status:         status,
-		Retries:        retries,
-		URL:            url,
+		ID:        ksuid.New().String(),
+		BatchID:   batchID,
+		Type:      event.Type,
+		RuleName:  name,
+		Token:     token,
+		Timestamp: timestamp.Format(time.RFC3339),
+		Payload:   string(data),
+		Status:    status,
 	}
 }
 
@@ -211,11 +218,7 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 	return true
 }
 
-func (m *Module) selectRule(name, evType string) (config.EventingRule, error) {
-	if evType == utils.EventDBCreate || evType == utils.EventDBDelete || evType == utils.EventDBUpdate || evType == utils.EventFileCreate || evType == utils.EventFileDelete {
-		return config.EventingRule{Timeout: 5000, Type: evType, Retries: 3}, nil
-	}
-
+func (m *Module) selectRule(name string) (config.EventingRule, error) {
 	if rule, ok := m.config.Rules[name]; ok {
 		return rule, nil
 	}

@@ -110,7 +110,6 @@ func (s *Schema) ValidateCreateOperation(dbAlias, col string, req *model.CreateR
 	return nil
 }
 func (s *Schema) checkType(col string, value interface{}, fieldValue *model.FieldType) (interface{}, error) {
-
 	switch v := value.(type) {
 	case int:
 		// TODO: int64
@@ -157,6 +156,9 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *model.Fiel
 		default:
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Bool", fieldValue.FieldName, col, fieldValue.Kind)
 		}
+
+	case time.Time, *time.Time:
+		return v, nil
 
 	case map[string]interface{}:
 		if fieldValue.Kind == model.TypeJSON {

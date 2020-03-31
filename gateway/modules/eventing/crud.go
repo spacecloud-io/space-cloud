@@ -209,7 +209,7 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 			}
 
 			doc.Payload = string(data)
-			doc.Timestamp = time.Now().UTC().UnixNano() / int64(time.Millisecond)
+			doc.Timestamp = time.Now().Format(time.RFC3339)
 
 			updateRequest := model.UpdateRequest{
 				Find:      map[string]interface{}{"_id": doc.ID},
