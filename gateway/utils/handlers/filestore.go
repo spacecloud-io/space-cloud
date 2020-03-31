@@ -15,9 +15,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-
-	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
 )
 
 // Supported content types
@@ -28,8 +27,10 @@ const (
 )
 
 // HandleCreateFile creates the create file or directory endpoint
-func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
+func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		fileStore := modules.File()
 
 		// Extract the path from the url
 		token, projectID, _ := getFileStoreMeta(r)
@@ -108,8 +109,10 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 }
 
 // HandleRead creates read file and list directory endpoint
-func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
+func HandleRead(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		fileStore := modules.File()
 
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
@@ -159,8 +162,10 @@ func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 }
 
 // HandleDelete creates read file and list directory endpoint
-func HandleDelete(fileStore *filestore.Module) http.HandlerFunc {
+func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		fileStore := modules.File()
 
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)

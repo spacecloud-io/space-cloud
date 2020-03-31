@@ -1,59 +1,64 @@
 package remoteservices
 
 import (
-	"fmt"
-
-	"github.com/urfave/cli"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/utils"
 )
 
-// GenerateSubCommands is the list of commands the remoteservices module exposes
-var GenerateSubCommands = []cli.Command{
-	{
-		Name:   "remote-services",
-		Action: actionGenerateService,
-	},
+// GenerateSubCommands is the list of commands the remote-services module exposes
+func GenerateSubCommands() []*cobra.Command {
+
+	var generateService = &cobra.Command{
+		Use:  "remote-services",
+		RunE: actionGenerateService,
+	}
+	return []*cobra.Command{generateService}
 }
 
-// GetSubCommands is the list of commands the remoteservices module exposes
-var GetSubCommands = []cli.Command{
-	{
-		Name:   "remote-services",
-		Action: actionGetRemoteServices,
-	},
+// GetSubCommands is the list of commands the remote-services module exposes
+func GetSubCommands() []*cobra.Command {
+
+	var getService = &cobra.Command{
+		Use:  "remote-services",
+		RunE: actionGetRemoteServices,
+	}
+	return []*cobra.Command{getService}
 }
 
-func actionGetRemoteServices(c *cli.Context) error {
+func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := c.GlobalString("project")
-	commandName := c.Command.Name
+	project := viper.GetString("project")
+	commandName := cmd.Use
 
 	params := map[string]string{}
-	if len(c.Args()) != 0 {
-		params["id"] = c.Args()[0]
+	if len(args) != 0 {
+		params["id"] = args[0]
 	}
 
 	objs, err := GetRemoteServices(project, commandName, params)
 	if err != nil {
-		return err
+		return nil
 	}
+
 	if err := utils.PrintYaml(objs); err != nil {
-		return err
+		return nil
 	}
 	return nil
 }
 
-func actionGenerateService(c *cli.Context) error {
-	argsArr := c.Args()
-	if len(argsArr) != 1 {
-		return fmt.Errorf("incorrect number of arguments")
+func actionGenerateService(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		_ = utils.LogError("incorrect number of arguments", nil)
+		return nil
 	}
-	dbruleConfigFile := argsArr[0]
+	dbruleConfigFile := args[0]
 	dbrule, err := generateService()
 	if err != nil {
-		return err
+		return nil
 	}
 
-	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
+	return nil
 }

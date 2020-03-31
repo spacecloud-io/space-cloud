@@ -5,14 +5,16 @@ import (
 	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // HandleRealtimeEvent handles the request coming from the eventing module
-func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleRealtimeEvent(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		realtime := modules.Realtime()
 
 		// Load the params from the body
 		eventDoc := model.CloudEventPayload{}
@@ -45,8 +47,11 @@ func HandleRealtimeEvent(auth *auth.Module, realtime *realtime.Module) http.Hand
 
 // HandleRealtimeProcessRequest handles the request received from the realtime module. This is a request sent to every gateway
 // instance in the cluster to propagate realtime changes
-func HandleRealtimeProcessRequest(auth *auth.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleRealtimeProcessRequest(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		realtime := modules.Realtime()
 
 		// Load the params from the body
 		eventDoc := model.CloudEventPayload{}

@@ -3,23 +3,23 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // HandleGetAllTableNames is an endpoint handler which return all the collection(table) names for specified data base
-func HandleGetAllTableNames(adminMan *admin.Manager, crud *crud.Module, syncMan *syncman.Manager) http.HandlerFunc {
+func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -42,6 +42,7 @@ func HandleGetAllTableNames(adminMan *admin.Manager, crud *crud.Module, syncMan 
 		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
 
+		crud := modules.DB()
 		collections, err := crud.GetCollections(ctx, projectID, dbAlias)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -62,7 +63,7 @@ func HandleGetAllTableNames(adminMan *admin.Manager, crud *crud.Module, syncMan 
 }
 
 // HandleGetDatabaseConnectionState gives the status of connection state of client
-func HandleGetDatabaseConnectionState(adminMan *admin.Manager, crud *crud.Module) http.HandlerFunc {
+func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -85,6 +86,7 @@ func HandleGetDatabaseConnectionState(adminMan *admin.Manager, crud *crud.Module
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
 
+		crud := modules.DB()
 		connState := crud.GetConnectionState(ctx, dbAlias)
 
 		w.Header().Set("Content-Type", "application/json")
@@ -94,7 +96,7 @@ func HandleGetDatabaseConnectionState(adminMan *admin.Manager, crud *crud.Module
 }
 
 // HandleDeleteTable is an endpoint handler which deletes a table in specified database & removes it from config
-func HandleDeleteTable(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
+func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -118,6 +120,7 @@ func HandleDeleteTable(adminMan *admin.Manager, crud *crud.Module, syncman *sync
 		projectID := vars["project"]
 		col := vars["col"]
 
+		crud := modules.DB()
 		if err := crud.DeleteTable(ctx, projectID, dbAlias, col); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -139,7 +142,7 @@ func HandleDeleteTable(adminMan *admin.Manager, crud *crud.Module, syncman *sync
 }
 
 // HandleSetDatabaseConfig is an endpoint handler which updates database config & connects to database
-func HandleSetDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
+func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -217,7 +220,7 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 }
 
 // HandleRemoveDatabaseConfig is an endpoint handler which removes database config
-func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, syncman *syncman.Manager) http.HandlerFunc {
+func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer utils.CloseTheCloser(r.Body)
@@ -254,7 +257,7 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, crud *crud.Module, sync
 }
 
 // HandleModifySchema is an endpoint handler which updates the existing schema & updates the config
-func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
+func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -280,7 +283,9 @@ func HandleModifySchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-		if err := schemaArg.SchemaModifyAll(ctx, dbAlias, projectID, map[string]*config.TableRule{col: &v}); err != nil {
+
+		schema := modules.Schema()
+		if err := schema.SchemaModifyAll(ctx, dbAlias, projectID, map[string]*config.TableRule{col: &v}); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -422,7 +427,7 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 }
 
 // HandleReloadSchema is an endpoint handler which return & sets the schemas of all collection in config
-func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
+func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -445,7 +450,8 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, schemaArg)
+		schema := modules.Schema()
+		colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, schema)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -461,7 +467,7 @@ func HandleReloadSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncm
 }
 
 // HandleInspectCollectionSchema gets the schema for particular collection & update the database collection schema in config
-func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
+func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -485,7 +491,8 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Sc
 		col := vars["col"]
 		projectID := vars["project"]
 
-		schema, err := schemaArg.SchemaInspection(ctx, dbAlias, projectID, col)
+		schema := modules.Schema()
+		s, err := schema.SchemaInspection(ctx, dbAlias, projectID, col)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -493,7 +500,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Sc
 			return
 		}
 
-		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, schema); err != nil {
+		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -502,13 +509,13 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, schemaArg *schema.Sc
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(model.Response{Result: schema})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: s})
 		// return
 	}
 }
 
 // HandleModifyAllSchema is an endpoint handler which updates the existing schema & updates the config
-func HandleModifyAllSchema(adminMan *admin.Manager, schemaArg *schema.Schema, syncman *syncman.Manager) http.HandlerFunc {
+func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header

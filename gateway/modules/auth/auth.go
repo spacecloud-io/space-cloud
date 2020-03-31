@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/base64"
 	"errors"
 	"sync"
 
@@ -41,7 +42,7 @@ func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) 
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret, decodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -52,7 +53,11 @@ func (m *Module) SetConfig(project string, secret, decodedAESKey string, rules c
 	m.project = project
 	m.rules = rules
 	m.secret = secret
-	m.aesKey = []byte(decodedAESKey)
+	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
 		m.fileStoreType = fileStore.StoreType
@@ -77,10 +82,15 @@ func (m *Module) SetSecret(secret string) {
 }
 
 // SetAESKey sets the aeskey to be used for encryption
-func (m *Module) SetAESKey(aesKey string) {
+func (m *Module) SetAESKey(encodedAESKey string) error {
 	m.Lock()
 	defer m.Unlock()
-	m.aesKey = []byte(aesKey)
+	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
+	return nil
 }
 
 // SetServicesConfig sets the service module config
