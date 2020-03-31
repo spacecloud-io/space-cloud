@@ -92,11 +92,11 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string)
 	}
 }
 
-func (m *Module) getCrudBlock(dbType string) (Crud, error) {
-	if m.block != nil {
+func (m *Module) getCrudBlock(dbAlias string) (Crud, error) {
+	if m.block != nil && m.alias == dbAlias {
 		return m.block, nil
 	}
-	return nil, fmt.Errorf("crud module not initialized yet for %q", dbType)
+	return nil, fmt.Errorf("crud module not initialized yet for %q", dbAlias)
 }
 
 // SetConfig set the rules and secret key required by the crud block
