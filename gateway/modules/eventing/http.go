@@ -32,14 +32,14 @@ func (s *Module) logInvocation(ctx context.Context, eventID string, payload []by
 }
 
 // MakeInvocationHTTPRequest fires an http request and returns a response
-func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, eventDoc *model.EventDocument, token, scToken string, params, vPtr interface{}) error {
+func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method, url, eventID, token, scToken string, payload, vPtr interface{}) error {
 	// Marshal json into byte array
-	data, _ := json.Marshal(params)
+	data, _ := json.Marshal(payload)
 
 	// Make a request object
-	req, err := http.NewRequestWithContext(ctx, method, eventDoc.URL, bytes.NewBuffer(data))
+	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(data))
 	if err != nil {
-		if err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", err.Error()); err != nil {
+		if err := s.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -64,7 +64,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
 	if err != nil {
-		if err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", err.Error()); err != nil {
+		if err := s.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -73,7 +73,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	defer utils.CloseTheCloser(resp.Body)
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		if err := s.logInvocation(ctx, eventDoc.ID, data, 0, "", err.Error()); err != nil {
+		if err := s.logInvocation(ctx, eventID, data, 0, "", err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -81,7 +81,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	}
 
 	if err := json.Unmarshal(responseBody, vPtr); err != nil {
-		if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
+		if err := s.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
@@ -89,14 +89,14 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, method string, e
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
+		if err := s.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
 		return fmt.Errorf("service responded with status code - %s", strconv.Itoa(resp.StatusCode))
 	}
 
-	if err := s.logInvocation(ctx, eventDoc.ID, data, resp.StatusCode, string(responseBody), ""); err != nil {
+	if err := s.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), ""); err != nil {
 		logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 		return err
 	}

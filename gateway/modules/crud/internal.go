@@ -13,6 +13,7 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 	m.RLock()
 	defer m.RUnlock()
 
+	// First step is to validate the create operation
 	if err := m.schema.ValidateCreateOperation(dbAlias, col, req); err != nil {
 		return err
 	}
@@ -47,6 +48,11 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
 	m.RLock()
 	defer m.RUnlock()
+
+	// First step is to validate the update operation
+	if err := m.schema.ValidateUpdateOperation(dbAlias, col, req.Operation, req.Update, req.Find); err != nil {
+		return err
+	}
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {

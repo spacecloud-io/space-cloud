@@ -193,8 +193,9 @@ type Eventing struct {
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	Type    string            `json:"type" yaml:"type"`
-	Retries int               `json:"retries" yaml:"retries"`
+	Type    string `json:"type" yaml:"type"`
+	Retries int    `json:"retries" yaml:"retries"`
+	// Timeout is in milliseconds
 	Timeout int               `json:"timeout" yaml:"timeout"`
 	ID      string            `json:"id" yaml:"id"`
 	URL     string            `json:"url" yaml:"url"`

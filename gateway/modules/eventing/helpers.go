@@ -74,7 +74,7 @@ func (m *Module) batchRequests(ctx context.Context, eventDocID string, token int
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.Retries, eventDocID, r.ID, batchID, utils.EventStatusStaged, r.URL, req)
+			eventDoc := m.generateQueueEventRequest(token, r.ID, batchID, utils.EventStatusStaged, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -90,41 +90,40 @@ func (m *Module) batchRequests(ctx context.Context, eventDocID string, token int
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token, retries int, eventDocID, name, batchID, status, url string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token int, name string, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
 
-	timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
+	timestamp := time.Now()
 
-	if eventDocID == "" {
-		eventDocID = ksuid.New().String()
+	// Parse the timestamp provided
+	eventTs, err := time.Parse(time.RFC3339, event.Timestamp)
+	if err != nil {
+		// Log warning only if time stamp was provided in the request
+		if event.Timestamp != "" {
+			logrus.Warningf("Invalid timestamp format (%s) provided. Defaulting to current time.", event.Timestamp)
+		}
+		eventTs = timestamp
 	}
 
-	if event.Timestamp > timestamp {
-		timestamp = event.Timestamp
+	if eventTs.After(timestamp) {
+		timestamp = eventTs
 	}
 
-	// Add the delay if provided
+	// Add the delay if provided. Delay is always provided as milliseconds
 	if event.Delay > 0 {
-		timestamp += event.Delay
+		timestamp = timestamp.Add(time.Duration(event.Delay) * time.Millisecond)
 	}
 
 	data, _ := json.Marshal(event.Payload)
 
-	if retries == 0 {
-		retries = 3
-	}
-
 	return &model.EventDocument{
-		ID:             eventDocID,
-		BatchID:        batchID,
-		Type:           event.Type,
-		RuleName:       name,
-		Token:          token,
-		Timestamp:      timestamp,
-		EventTimestamp: time.Now().UTC().UnixNano() / int64(time.Millisecond),
-		Payload:        string(data),
-		Status:         status,
-		Retries:        retries,
-		URL:            url,
+		ID:        ksuid.New().String(),
+		BatchID:   batchID,
+		Type:      event.Type,
+		RuleName:  name,
+		Token:     token,
+		Timestamp: timestamp.Format(time.RFC3339),
+		Payload:   string(data),
+		Status:    status,
 	}
 }
 
@@ -220,11 +219,7 @@ func isOptionsValid(ruleOptions, providedOptions map[string]string) bool {
 	return true
 }
 
-func (m *Module) selectRule(name, evType string) (config.EventingRule, error) {
-	if evType == utils.EventDBCreate || evType == utils.EventDBDelete || evType == utils.EventDBUpdate || evType == utils.EventFileCreate || evType == utils.EventFileDelete {
-		return config.EventingRule{Timeout: 5000, Type: evType, Retries: 3}, nil
-	}
-
+func (m *Module) selectRule(name string) (config.EventingRule, error) {
 	if rule, ok := m.config.Rules[name]; ok {
 		return rule, nil
 	}

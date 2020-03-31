@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/doug-martin/goqu/v8"
+	"github.com/sirupsen/logrus"
 
 	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postgres
@@ -22,6 +23,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 		return 0, err
 	}
 
+	logrus.Debugf("Executing create query (%v): %s - %v", req, sqlQuery, args)
 	res, err := doExecContext(ctx, sqlQuery, args, s.client)
 	if err != nil {
 		return 0, err

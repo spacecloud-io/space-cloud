@@ -23,12 +23,10 @@ const (
 		type: String
 		rule_name: String
 		token: Integer
-		timestamp: Integer
-		event_timestamp: Integer
+		ts: DateTime
+		event_ts: DateTime @createdAt
 		payload: String
 		status: String
-		retries: Integer
-		url: String
 		remark: String
 		invocations: [invocation_logs]! @link(table: "invocation_logs", from: "_id", to: "event_id")
 	  }`
