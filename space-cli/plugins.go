@@ -2,18 +2,17 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"plugin"
 
 	"github.com/spf13/cobra"
 )
 
-type Cmd interface {
-	Getcommand() *cobra.Command
+type GetRootCommand interface {
+	Rootcommand() *cobra.Command
 }
 
-func getplugin() (*cobra.Command, error) {
-	mod := fmt.Sprintf("./cmd/cmd_%s.so", LatestVersion)
+func getplugin(latestVersion string) (*cobra.Command, error) {
+	mod := fmt.Sprintf("./cmd/cmd_%s.so", latestVersion)
 	plug, err := plugin.Open(mod)
 	if err != nil {
 		return nil, err
@@ -21,18 +20,16 @@ func getplugin() (*cobra.Command, error) {
 	commands, err := plug.Lookup("Cmd")
 	if err != nil {
 		return nil, err
-		os.Exit(1)
 	}
 
-	var cmd Cmd
-	cmd, ok := commands.(Cmd)
+	var getRootCommand GetRootCommand
+	getRootCommand, ok := commands.(GetRootCommand)
 	if !ok {
 		fmt.Println("unexpected type from module symbol")
 		return nil, nil
-		os.Exit(1)
 	}
 
-	rootCmd := cmd.Getcommand()
+	rootCmd := getRootCommand.Rootcommand()
 	return rootCmd, nil
 
 }

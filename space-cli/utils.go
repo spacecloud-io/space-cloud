@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -38,28 +39,9 @@ func getHomeDirectory() string {
 	return os.Getenv("HOME")
 }
 
-func getSpaceCliDirectory() string {
-	return fmt.Sprintf("%s/.space-cli", getSpaceCloudDirectory())
+func getSpaceCLIDirectory() string {
+	return fmt.Sprintf("%s/cli", getSpaceCloudDirectory())
 }
-
-// // CreateConfigFile create empty config file
-// func CreateConfigFile(path string) error {
-// 	val := &config.Config{
-// 		Projects: []*config.Project{},
-// 	}
-// 	b, err := yaml.Marshal(val)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if _, err := os.Stat(path); os.IsNotExist(err) {
-// 		return ioutil.WriteFile(path, b, 0755)
-// 	}
-// 	return nil
-// }
-
-// func GetSpaceCliConfigFilePath() string {
-// 	return fmt.Sprintf("%s/config.yaml", GetSpaceCliDirectory())
-// }
 
 // CreateFileIfNotExist creates a file with the provided content if it doesn't already exists
 func createFileIfNotExist(path, content string) error {
@@ -69,8 +51,8 @@ func createFileIfNotExist(path, content string) error {
 	return nil
 }
 
-func getSpaceCliConfigPath() string {
-	return fmt.Sprintf("%s/config.json", getSpaceCliDirectory())
+func getSpaceCLIConfigPath() string {
+	return fmt.Sprintf("%s/config.json", getSpaceCLIDirectory())
 }
 
 // GetLatestVersion retrieves the latest Space Cloud version based on the current version
@@ -88,7 +70,7 @@ func getLatestVersion() (string, int32, error) {
 		return "", 0, err
 	}
 
-	r := scVersionResponse{}
+	r := cliVersionResponse{}
 	if err := result.Unmarshal(&r); err != nil {
 		return "", 0, err
 	}
@@ -100,6 +82,17 @@ func getLatestVersion() (string, int32, error) {
 		}
 	}
 	return newVersion, newVersionCode, nil
+}
+
+func readVersionConfig() (cliVersionResponse, error) {
+	var data cliVersionResponse
+	file, err := ioutil.ReadFile("config.json")
+	if err != nil {
+		return data, err
+	}
+	err = json.Unmarshal([]byte(file), &data)
+	return data, err
+
 }
 
 func downloadFile(url string, filepath string) error {

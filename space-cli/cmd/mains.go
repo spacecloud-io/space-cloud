@@ -46,12 +46,12 @@ func init() {
 	rootCmd.AddCommand(login.Commands()...)
 }
 
-type command string
+type getRootCommand string
 
-// Getcommand return the rootcmd
-func (c command) Getcommand() *cobra.Command {
+// Rootcommand return the rootcmd
+func (g getRootCommand) Rootcommand() *cobra.Command {
 	return rootCmd
 }
 
-// Cmd exported as symbol named "command"
-var Cmd command
+// GetRootCommand exported as symbol named "command"
+var GetRootCommand getRootCommand
