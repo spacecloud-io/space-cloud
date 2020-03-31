@@ -22,7 +22,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 		return "", nil
 	}
 
-	inspectionCollection, err := s.Inspector(ctx, dbType, dbAlias, project, col)
+	inspectionCollection, err := s.Inspector(ctx, dbAlias, dbType, project, col)
 	if err != nil {
 		return "", err
 	}
@@ -32,7 +32,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 }
 
 // Inspector generates schema
-func (s *Schema) Inspector(ctx context.Context, dbType, dbAlias, project, col string) (model.Collection, error) {
+func (s *Schema) Inspector(ctx context.Context, dbAlias, dbType, project, col string) (model.Collection, error) {
 	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbAlias, project, col)
 
 	if err != nil {
