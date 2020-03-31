@@ -8,13 +8,15 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/userman"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // HandleProfile returns the handler for fetching single user profile
-func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
+func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -43,8 +45,10 @@ func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
 }
 
 // HandleProfiles returns the handler for fetching all user profiles
-func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
+func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -72,8 +76,10 @@ func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
 }
 
 // HandleEmailSignIn returns the handler for email sign in
-func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -102,8 +108,10 @@ func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
 }
 
 // HandleEmailSignUp returns the handler for email sign up
-func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -132,8 +140,10 @@ func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
 }
 
 // HandleEmailEditProfile returns the handler for edit profile
-func HandleEmailEditProfile(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailEditProfile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)

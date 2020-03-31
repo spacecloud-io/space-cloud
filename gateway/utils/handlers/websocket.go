@@ -19,21 +19,20 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/client"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
 )
 
-// RealtimeInterface is used to accept the realtime module
-type RealtimeInterface interface {
-	RemoveClient(clientID string)
-	Subscribe(clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error)
-	Unsubscribe(clientID string, data *model.RealtimeRequest)
+// WebsocketModulesInterface is used to accept the modules object
+type WebsocketModulesInterface interface {
+	Realtime() modules.RealtimeInterface
+	GraphQL() modules.GraphQLInterface
 }
 
-// GraphQLWebsocketInterface is sued to accept the graphql module
-type GraphQLWebsocketInterface interface {
-	GetDBAlias(field *ast.Field) (string, error)
+// RealtimeInterface is used to accept the realtime module
+type RealtimeInterface interface {
 }
 
 var upgrader = websocket.Upgrader{
@@ -43,7 +42,7 @@ var upgrader = websocket.Upgrader{
 }
 
 // HandleWebsocket handles all websocket communications
-func HandleWebsocket(realtime RealtimeInterface) http.HandlerFunc {
+func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		projectID := vars["project"]
@@ -56,6 +55,8 @@ func HandleWebsocket(realtime RealtimeInterface) http.HandlerFunc {
 
 		c := client.CreateWebsocketClient(socket)
 		defer c.Close()
+
+		realtime := modules.Realtime()
 
 		defer realtime.RemoveClient(c.ClientID())
 
@@ -139,9 +140,12 @@ type gqlError struct {
 }
 
 // HandleGraphqlSocket handles graphql subscriptions
-func HandleGraphqlSocket(realtime RealtimeInterface, graph GraphQLWebsocketInterface) http.HandlerFunc {
+func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projectID := mux.Vars(r)["project"]
+
+		realtime := modules.Realtime()
+		graph := modules.GraphQL()
 
 		// Create a map to store subscription ids
 		var graphqlIDMapper sync.Map

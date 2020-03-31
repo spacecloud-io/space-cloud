@@ -7,47 +7,8 @@ import (
 	"net/http"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/urfave/cli"
-
 	"github.com/spaceuptech/space-cli/model"
 )
-
-// LoginCommands is the list of commands the utils module exposes
-var LoginCommands = []cli.Command{
-	{
-		Name:  "login",
-		Usage: "Logs into space cloud",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:   "username",
-				Usage:  "Accepts the username for login",
-				EnvVar: "USER_NAME", // don't set environment variable as USERNAME -> defaults to username of host machine in linux
-				Value:  "None",
-			},
-			cli.StringFlag{
-				Name:   "key",
-				Usage:  "Accepts the access key to be verified during login",
-				EnvVar: "KEY",
-				Value:  "None",
-			},
-			cli.StringFlag{
-				Name:   "url",
-				Usage:  "Accepts the URL of server",
-				EnvVar: "URL",
-				Value:  "http://localhost:4122",
-			},
-		},
-		Action: actionLogin,
-	},
-}
-
-func actionLogin(c *cli.Context) error {
-	userName := c.String("username")
-	key := c.String("key")
-	url := c.String("url")
-
-	return loginStart(userName, key, url)
-}
 
 // Login logs the user in
 func Login(selectedAccount *model.Account) (*model.LoginResponse, error) {
@@ -77,7 +38,8 @@ func Login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 	return loginResp, err
 }
 
-func loginStart(userName, key, url string) error {
+// LoginStart take info of the user
+func LoginStart(userName, key, url string) error {
 	if userName == "None" {
 		if err := survey.AskOne(&survey.Input{Message: "Enter username:"}, &userName); err != nil {
 			_ = LogError(fmt.Sprintf("error in login start unable to get username - %v", err), nil)

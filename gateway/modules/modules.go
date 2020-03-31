@@ -18,15 +18,15 @@ import (
 
 // Modules is an object that sets up the modules
 type Modules struct {
-	Auth      *auth.Module
-	Crud      *crud.Module
-	User      *userman.Module
-	File      *filestore.Module
-	Functions *functions.Module
-	Realtime  *realtime.Module
-	Eventing  *eventing.Module
-	Graphql   *graphql.Module
-	Schema    *schema.Schema
+	auth      *auth.Module
+	db        *crud.Module
+	user      *userman.Module
+	file      *filestore.Module
+	functions *functions.Module
+	realtime  *realtime.Module
+	eventing  *eventing.Module
+	graphql   *graphql.Module
+	schema    *schema.Schema
 }
 
 // New creates a new modules instance
@@ -61,5 +61,5 @@ func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, admin
 	u := userman.Init(c, a)
 	graphqlMan := graphql.New(a, c, fn, s)
 
-	return &Modules{Auth: a, Crud: c, User: u, File: f, Functions: fn, Realtime: rt, Eventing: e, Graphql: graphqlMan, Schema: s}, nil
+	return &Modules{auth: a, db: c, user: u, file: f, functions: fn, realtime: rt, eventing: e, graphql: graphqlMan, schema: s}, nil
 }

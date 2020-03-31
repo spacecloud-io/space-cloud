@@ -27,3 +27,6 @@ func (key ReadRequestKey) String() string {
 func (key ReadRequestKey) Raw() interface{} {
 	return key
 }
+
+// GraphQLCallback is used as a callback for graphql requests
+type GraphQLCallback func(op interface{}, err error)

@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -215,15 +216,14 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
 			}
 			encrypted := make([]byte, len(stringValue))
-			err1 := encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize])
-			if err1 != nil {
-				logrus.Errorln("error encrypting value in matchEncrypt: ", err1)
-				return nil, err1
+			if err = encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize]); err != nil {
+				logrus.Errorln("error encrypting value in matchEncrypt: ", err)
+				return nil, err
 			}
-			er := utils.StoreValue(field, string(encrypted), args)
-			if er != nil {
-				logrus.Errorln("error storing value in matchEncrypt: ", er)
-				return nil, er
+
+			if err = utils.StoreValue(field, base64.StdEncoding.EncodeToString(encrypted), args); err != nil {
+				logrus.Errorln("error storing value in matchEncrypt: ", err)
+				return nil, err
 			}
 		} else {
 			return nil, fmt.Errorf("invalid field (%s) provided", field)
@@ -248,8 +248,12 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 			if !ok {
 				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
 			}
-			decrypted := make([]byte, len(stringValue))
-			err1 := decryptAESCFB(decrypted, []byte(stringValue), m.aesKey, []byte(m.aesKey)[:aes.BlockSize])
+			decodedValue, err := base64.StdEncoding.DecodeString(stringValue)
+			if err != nil {
+				return nil, err
+			}
+			decrypted := make([]byte, len(decodedValue))
+			err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
 			if err1 != nil {
 				logrus.Errorln("error decrypting value in matchDecrypt: ", err1)
 				return nil, err1

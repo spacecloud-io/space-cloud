@@ -10,9 +10,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -21,8 +19,11 @@ type requestMetaData struct {
 }
 
 // HandleCrudCreate creates the create operation endpoint
-func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		crud := modules.DB()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -64,8 +65,11 @@ func HandleCrudCreate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 }
 
 // HandleCrudRead creates the read operation endpoint
-func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
+func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		crud := modules.DB()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -113,8 +117,11 @@ func HandleCrudRead(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
 }
 
 // HandleCrudUpdate creates the update operation endpoint
-func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		crud := modules.DB()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -155,8 +162,11 @@ func HandleCrudUpdate(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 }
 
 // HandleCrudDelete creates the delete operation endpoint
-func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		crud := modules.DB()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -196,8 +206,11 @@ func HandleCrudDelete(auth *auth.Module, crud *crud.Module, realtime *realtime.M
 }
 
 // HandleCrudAggregate creates the aggregate operation endpoint
-func HandleCrudAggregate(auth *auth.Module, crud *crud.Module) http.HandlerFunc {
+func HandleCrudAggregate(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		crud := modules.DB()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
@@ -254,8 +267,11 @@ func getRequestMetaData(r *http.Request) *requestMetaData {
 }
 
 // HandleCrudBatch creates the batch operation endpoint
-func HandleCrudBatch(auth *auth.Module, crud *crud.Module, realtime *realtime.Module) http.HandlerFunc {
+func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		crud := modules.DB()
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
