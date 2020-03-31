@@ -95,7 +95,10 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 	if err != nil {
 		return nil, err
 	}
-	utils.StoreValue("args.result", data, args)
+	err = utils.StoreValue("args.result", data, args)
+	if err != nil {
+		return nil, err
+	}
 	return m.matchRule(ctx, project, rule.Clause, args, nil)
 }
 
