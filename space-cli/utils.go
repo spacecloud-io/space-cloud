@@ -104,6 +104,7 @@ func downloadFile(url string, filepath string) error {
 		return err
 	}
 	defer out.Close()
+
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
