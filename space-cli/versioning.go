@@ -15,10 +15,8 @@ type cliVersionResponse struct {
 type cliVersionDoc struct {
 	VersionNo   string `mapstructure:"version_no" json:"versionNo"`
 	VersionCode int32  `mapstructure:"version_code" json:"versionCode"`
-	//Id          TypeID     `mapstructure:"id" json:"id"`
+	ID          string `mapstructure:"id" json:"id"`
 }
-
-//const TypeID string ="ID"
 
 func getmodule() (*cobra.Command, error) {
 
@@ -26,42 +24,37 @@ func getmodule() (*cobra.Command, error) {
 	_ = createDirIfNotExist(getSpaceCLIDirectory())
 	_ = createFileIfNotExist(getSpaceCLIConfigPath(), "{}")
 
-	data, err1 := readVersionConfig()
-	currentVersion := data.Docs[0].VersionNo
-	currentVersionCode := data.Docs[0].VersionCode
+	currentVersion, err1 := readVersionConfig()
+	latestVersion, err2 := getLatestVersion()
 
-	latestVersion, latestVersionCode, err2 := getLatestVersion()
-
+	//Return error if we could not get the current or latest version
 	if err1 != nil && err2 != nil {
-		fmt.Println("There is an error please try again")
-		return nil, err1
-	} else if err1 == nil && err2 != nil {
-		return getplugin(currentVersion)
-	} else if err1 != nil && err2 == nil {
-		url := fmt.Sprintf("http://localhost:5000/Download/cli/%s", latestVersion)
-		filepath := fmt.Sprintf("%s/cmd_%s.so", getSpaceCLIDirectory(), latestVersion)
-		_ = downloadFile(url, filepath)
-		data := &cliVersionDoc{
-			VersionNo:   latestVersion,
-			VersionCode: latestVersionCode,
-		}
-		file, _ := json.Marshal(data)
-		_ = ioutil.WriteFile("config.json", file, 0644)
-		return getplugin(latestVersion)
+		return nil, logError("Could not fetch space-cli plugin", err2)
+	}
+	// Return currentVersion if we could not get the latest version
+	if err1 == nil && err2 != nil {
+		return getplugin(currentVersion.VersionNo)
 	}
 
-	if latestVersionCode > currentVersionCode {
-		url := fmt.Sprintf("http://localhost:5000/Download/cli/%s", latestVersion)
-		filepath := fmt.Sprintf("%s/cmd_%s.so", getSpaceCLIDirectory(), latestVersion)
-		_ = downloadFile(url, filepath)
-		data := &cliVersionDoc{
-			VersionNo:   latestVersion,
-			VersionCode: latestVersionCode,
+	if err2 == nil {
+		if err1 == nil {
+			if latestVersion.VersionCode <= currentVersion.VersionCode {
+				return getplugin(currentVersion.VersionNo)
+			}
 		}
-		file, _ := json.Marshal(data)
-		_ = ioutil.WriteFile("config.json", file, 0644)
-		return getplugin(latestVersion)
+		url := fmt.Sprintf("http://localhost:5000/cmd_%s.so", latestVersion.VersionNo)
+		filepath := fmt.Sprintf("%s/cmd_%s.so", getSpaceCLIDirectory(), latestVersion.VersionNo)
+		err := downloadFile(url, filepath)
+		if err != nil {
+			return nil, err
+		}
+		docs := &cliVersionDoc{
+			VersionNo:   latestVersion.VersionNo,
+			VersionCode: latestVersion.VersionCode,
+			ID:          latestVersion.ID,
+		}
+		file, _ := json.Marshal(docs)
+		_ = ioutil.WriteFile(fmt.Sprintf("%s/config.json", getSpaceCLIDirectory()), file, 0644)
 	}
-
-	return getplugin(latestVersion)
+	return getplugin(latestVersion.VersionNo)
 }

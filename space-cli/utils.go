@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/sirupsen/logrus"
 	api "github.com/spaceuptech/space-api-go"
 	spaceApiTypes "github.com/spaceuptech/space-api-go/types"
 )
@@ -43,7 +45,7 @@ func getSpaceCLIDirectory() string {
 	return fmt.Sprintf("%s/cli", getSpaceCloudDirectory())
 }
 
-// CreateFileIfNotExist creates a file with the provided content if it doesn't already exists
+// createFileIfNotExist creates a file with the provided content if it doesn't already exists
 func createFileIfNotExist(path, content string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return ioutil.WriteFile(path, []byte(content), 0755)
@@ -55,8 +57,8 @@ func getSpaceCLIConfigPath() string {
 	return fmt.Sprintf("%s/config.json", getSpaceCLIDirectory())
 }
 
-// GetLatestVersion retrieves the latest Space Cloud version based on the current version
-func getLatestVersion() (string, int32, error) {
+// getLatestVersion retrieves the latest Space Cloud version based on the current version
+func getLatestVersion() (*cliVersionDoc, error) {
 	// Create a db object
 	db := api.New("spacecloud", "localhost:4122", false).DB("db")
 
@@ -65,34 +67,34 @@ func getLatestVersion() (string, int32, error) {
 
 	var result *spaceApiTypes.Response
 	var err error
-	result, err = db.Get("cli_version").Sort("-version_code").Limit(1).Apply(ctx)
+	result, err = db.Get("cli_version").Sort("-version_cod").Limit(1).Apply(ctx)
 	if err != nil {
-		return "", 0, err
+		return nil, err
 	}
-
-	r := cliVersionResponse{}
+	r := new(cliVersionResponse)
 	if err := result.Unmarshal(&r); err != nil {
-		return "", 0, err
+		return nil, err
 	}
-	newVersion, newVersionCode := "", int32(0)
+	doc := new(cliVersionDoc)
 	for _, val := range r.Docs {
-		if val.VersionCode > newVersionCode {
-			newVersion = val.VersionNo
-			newVersionCode = val.VersionCode
+		if val.VersionCode > doc.VersionCode {
+			doc.VersionNo = val.VersionNo
+			doc.VersionCode = val.VersionCode
+			doc.ID = val.ID
 		}
 	}
-	return newVersion, newVersionCode, nil
+	return doc, nil
 }
 
-func readVersionConfig() (cliVersionResponse, error) {
-	var data cliVersionResponse
-	file, err := ioutil.ReadFile("config.json")
+func readVersionConfig() (*cliVersionDoc, error) {
+	file, err := ioutil.ReadFile(fmt.Sprintf("%s/config.json", getSpaceCLIDirectory()))
 	if err != nil {
-		return data, err
+		return nil, err
 	}
-	err = json.Unmarshal([]byte(file), &data)
-	return data, err
 
+	doc := new(cliVersionDoc)
+	err = json.Unmarshal([]byte(file), doc)
+	return doc, err
 }
 
 func downloadFile(url string, filepath string) error {
@@ -102,7 +104,6 @@ func downloadFile(url string, filepath string) error {
 		return err
 	}
 	defer out.Close()
-
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
@@ -117,4 +118,16 @@ func downloadFile(url string, filepath string) error {
 	}
 
 	return nil
+}
+
+func logError(message string, err error) error {
+	// Log with error if provided
+	if err != nil {
+		logrus.WithField("error", err.Error()).Errorln(message)
+	} else {
+		logrus.Errorln(message)
+	}
+
+	// Return the error message
+	return errors.New(message)
 }
