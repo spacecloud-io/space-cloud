@@ -1,7 +1,9 @@
 package eventing
 
 import (
+	"bytes"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -195,7 +197,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "unexpected end of JSON input"}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"name\":\"Test Name\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -213,13 +215,56 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "unexpected end of JSON input"}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"name\":\"Test Name\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			httpMockArgs: []mockArgs{
 				mockArgs{
 					paramsReturned: []interface{}{&http.Response{Body: http.NoBody}, nil},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "no error and invocation is logged",
+			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"name\":\"Test Name\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			httpMockArgs: []mockArgs{
+				mockArgs{
+					paramsReturned: []interface{}{&http.Response{
+						Proto:      "HTTP/1.1",
+						ProtoMajor: 1,
+						ProtoMinor: 1,
+					}, nil},
+				},
+			},
+		},
+		{
+			name: "no error and invocation is not logged",
+			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
+			crudMockArgs: []mockArgs{
+				mockArgs{
+					method:         "InternalCreate",
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"name\":\"Test Name\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
+					paramsReturned: []interface{}{errors.New("some error")},
+				},
+			},
+			httpMockArgs: []mockArgs{
+				mockArgs{
+					paramsReturned: []interface{}{&http.Response{
+						Proto:      "HTTP/1.1",
+						ProtoMajor: 1,
+						ProtoMinor: 1,
+					}, nil},
 				},
 			},
 			wantErr: true,
@@ -258,7 +303,7 @@ type mockHTTPInterface struct {
 
 func (m *mockHTTPInterface) Do(req *http.Request) (*http.Response, error) {
 	c := m.Called(req)
-	return &http.Response{Body: http.NoBody}, c.Error(1)
+	return &http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"name":"Test Name"}`)))}, c.Error(1)
 }
 
-// TODO: Write test cases for ahead unmarshal
+// TODO: Write test cases for error in ReadAll and for statusCode not <200 or >300

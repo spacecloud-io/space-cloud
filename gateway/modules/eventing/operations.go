@@ -25,7 +25,7 @@ func (m *Module) IsEnabled() bool {
 }
 
 // QueueEvent queues a new event
-func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) (interface{}, error) {
+func (m *Module) QueueEvent(ctx context.Context, project, eventDocID, batchID, token string, eventToken int, req *model.QueueEventRequest) (interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -35,13 +35,15 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 		return nil, err
 	}
 
-	batchID := m.generateBatchID("")
+	if batchID == "" {
+		batchID = m.generateBatchID("")
+	}
 	responseChan := make(chan interface{}, 1)
 	defer close(responseChan) // close channel
 	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
 	defer m.eventChanMap.Delete(batchID)
 
-	if err = m.batchRequests(ctx, "", 0, []*model.QueueEventRequest{req}, batchID); err != nil {
+	if err = m.batchRequests(ctx, eventDocID, eventToken, []*model.QueueEventRequest{req}, batchID); err != nil {
 		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
 		return nil, err
 	}
