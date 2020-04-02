@@ -99,7 +99,6 @@ func readVersionConfig() (*cliVersionDoc, error) {
 
 func downloadPlugin(latestVersion *cliVersionDoc) error {
 
-	// Download the latest plugin version
 	url := fmt.Sprintf("http://localhost:5000/cmd_%s.so", latestVersion.VersionNo)
 	filepath := fmt.Sprintf("%s/cmd_%s.so", getSpaceCLIDirectory(), latestVersion.VersionNo)
 
@@ -128,7 +127,9 @@ func downloadPlugin(latestVersion *cliVersionDoc) error {
 		ID:          latestVersion.ID,
 	}
 	file, _ := json.Marshal(docs)
-	_ = ioutil.WriteFile(fmt.Sprintf("%s/config.json", getSpaceCLIDirectory()), file, 0644)
+	if err := ioutil.WriteFile(fmt.Sprintf("%s/config.json", getSpaceCLIDirectory()), file, 0644); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -38,6 +38,7 @@ func getmodule() (*cobra.Command, error) {
 				return getplugin(currentVersion.VersionNo)
 			}
 		}
+		// Download the latest plugin version
 		if err := downloadPlugin(latestVersion); err != nil {
 			return nil, err
 		}
