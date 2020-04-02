@@ -127,10 +127,8 @@ func downloadPlugin(latestVersion *cliVersionDoc) error {
 		ID:          latestVersion.ID,
 	}
 	file, _ := json.Marshal(docs)
-	if err := ioutil.WriteFile(fmt.Sprintf("%s/config.json", getSpaceCLIDirectory()), file, 0644); err != nil {
-		return err
-	}
-	return nil
+	err = ioutil.WriteFile(fmt.Sprintf("%s/config.json", getSpaceCLIDirectory()), file, 0644)
+	return err
 }
 
 func logError(message string, err error) error {
