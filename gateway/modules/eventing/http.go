@@ -22,7 +22,7 @@ func (s *Module) logInvocation(ctx context.Context, eventID string, payload []by
 	invocationDoc := map[string]interface{}{
 		"_id":                  ksuid.New().String(),
 		"event_id":             eventID,
-		"invocation_time":      time.Now().Format(time.RFC3339),
+		"invocation_time":      time.Now().UTC().Format(time.RFC3339),
 		"request_payload":      string(payload),
 		"response_status_code": responseStatusCode,
 		"response_body":        responseBody,
