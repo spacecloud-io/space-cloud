@@ -1,9 +1,7 @@
 package eventing
 
 import (
-	"bytes"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"testing"
 
@@ -80,26 +78,6 @@ func TestModule_logInvocation(t *testing.T) {
 			mockCrud.AssertExpectations(t)
 		})
 	}
-}
-
-type mockCrudInterface struct {
-	mock.Mock
-}
-
-func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project, col string, req *model.CreateRequest, isIgnoreMetrics bool) error {
-	c := m.Called(ctx, dbAlias, project, col, req, isIgnoreMetrics)
-	if err := c.Error(0); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, project, col string, req *model.ReadRequest) (interface{}, error) {
-	return nil, nil
-}
-
-func (m *mockCrudInterface) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
-	return nil
 }
 
 func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
@@ -295,15 +273,6 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			mockHTTP.AssertExpectations(t)
 		})
 	}
-}
-
-type mockHTTPInterface struct {
-	mock.Mock
-}
-
-func (m *mockHTTPInterface) Do(req *http.Request) (*http.Response, error) {
-	c := m.Called(req)
-	return &http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"name":"Test Name"}`)))}, c.Error(1)
 }
 
 // TODO: Write test cases for error in ReadAll and for statusCode not <200 or >300

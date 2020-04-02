@@ -184,7 +184,7 @@ func (m *Module) invokeWebhook(ctx context.Context, rule config.EventingRule, ev
 	}
 
 	if len(eventRequests) > 0 {
-		if err := m.batchRequests(ctx, "", 0, eventRequests, eventDoc.BatchID); err != nil {
+		if err := m.batchRequests(ctx, eventRequests, eventDoc.BatchID); err != nil {
 			logrus.Errorf("error invoking web hook in eventing unable to persist events off - %s", err.Error())
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -461,95 +462,26 @@ func TestModule_getSpaceCloudIDFromBatchID(t *testing.T) {
 func TestModule_generateBatchID(t *testing.T) {
 	admin := admin.New()
 	syncman, _ := syncman.New("nodeID", "clusterID", "advertiseAddr", "storeType", "runnerAddr", "artifactAddr", admin)
-
-	type args struct {
-		ID string
-	}
 	tests := []struct {
 		name string
 		m    *Module
-		args args
 		want string
 	}{
 		{
 			name: "ID is generated",
 			m:    &Module{syncMan: syncman},
-			args: args{ID: "id"},
-			want: "id--nodeID",
+			want: "nodeID",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.generateBatchID(tt.args.ID); got != tt.want {
+			got := tt.m.generateBatchID()
+			got = strings.Split(got, "--")[1]
+			if got != tt.want {
 				t.Errorf("Module.generateBatchID() = %v, want %v", got, tt.want)
 			}
 		})
 	}
-}
-
-type mockSyncmanEventingInterface struct {
-	mock.Mock
-}
-
-func (m *mockSyncmanEventingInterface) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
-	c := m.Called(ctx, project, token)
-	return c.String(0), c.Error(1)
-}
-
-func (m *mockSyncmanEventingInterface) GetAssignedTokens() (start, end int) {
-	c := m.Called()
-	return c.Int(0), c.Int(1)
-}
-
-func (m *mockSyncmanEventingInterface) GetEventSource() string {
-	c := m.Called()
-	return c.String(0)
-}
-
-func (m *mockSyncmanEventingInterface) GetNodeID() string {
-	c := m.Called()
-	return c.String(0)
-}
-
-func (m *mockSyncmanEventingInterface) GetSpaceCloudURLFromID(nodeID string) (string, error) {
-	c := m.Called(nodeID)
-	return c.String(0), c.Error(1)
-}
-
-func (m *mockSyncmanEventingInterface) MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
-	c := m.Called(ctx, method, url, token, scToken, params, vPtr)
-	return c.Error(0)
-}
-
-type mockAdminEventingInterface struct {
-	mock.Mock
-}
-
-func (m *mockAdminEventingInterface) GetInternalAccessToken() (string, error) {
-	c := m.Called()
-	return c.String(0), c.Error(1)
-}
-
-type mockAuthEventingInterface struct {
-	mock.Mock
-}
-
-func (m *mockAuthEventingInterface) IsEventingOpAuthorised(ctx context.Context, project, token string, event *model.QueueEventRequest) error {
-	c := m.Called(ctx, project, token, event)
-	if err := c.Error(0); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *mockAuthEventingInterface) GetSCAccessToken() (string, error) {
-	c := m.Called()
-	return mock.Anything, c.Error(1)
-}
-
-func (m *mockAuthEventingInterface) GetInternalAccessToken() (string, error) {
-	c := m.Called()
-	return c.String(0), c.Error(1)
 }
 
 func TestModule_transmitEvents(t *testing.T) {
@@ -721,7 +653,7 @@ func TestModule_transmitEvents(t *testing.T) {
 	}
 }
 
-func TestModule_generateQueueEventRequest(t *testing.T) {
+func TestModule_generateQueueEventRequestRaw(t *testing.T) {
 	type args struct {
 		token      int
 		name       string
@@ -769,14 +701,14 @@ func TestModule_generateQueueEventRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.generateQueueEventRequest(tt.args.token, tt.args.name, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.m.generateQueueEventRequestRaw(tt.args.token, tt.args.name, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestModule_batchRequests(t *testing.T) {
+func TestModule_batchRequestsRaw(t *testing.T) {
 	var res interface{}
 	type mockArgs struct {
 		method         string
@@ -878,7 +810,7 @@ func TestModule_batchRequests(t *testing.T) {
 			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
 
-			if err := tt.m.batchRequests(tt.args.ctx, tt.args.eventDocID, tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
+			if err := tt.m.batchRequestsRaw(tt.args.ctx, tt.args.eventDocID, tt.args.token, tt.args.requests, tt.args.batchID); (err != nil) != tt.wantErr {
 				t.Errorf("Module.batchRequests() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

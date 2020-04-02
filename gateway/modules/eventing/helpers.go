@@ -52,14 +52,14 @@ func (m *Module) getSpaceCloudIDFromBatchID(batchID string) string {
 	return strings.Split(batchID, "--")[1]
 }
 
-func (m *Module) generateBatchID(ID string) string {
-	if ID == "" {
-		ID = ksuid.New().String()
-	}
-	return fmt.Sprintf("%s--%s", ID, m.syncMan.GetNodeID())
+func (m *Module) generateBatchID() string {
+	return fmt.Sprintf("%s--%s", ksuid.New().String(), m.syncMan.GetNodeID())
 }
 
-func (m *Module) batchRequests(ctx context.Context, eventDocID string, token int, requests []*model.QueueEventRequest, batchID string) error {
+func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {
+	return m.batchRequestsRaw(ctx, "", 0, requests, batchID)
+}
+func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token int, requests []*model.QueueEventRequest, batchID string) error {
 	// Create the meta information
 	if token == 0 {
 		token = rand.Intn(utils.MaxEventTokens)
@@ -74,7 +74,7 @@ func (m *Module) batchRequests(ctx context.Context, eventDocID string, token int
 		// Iterate over matching rules
 		rules := m.getMatchingRules(req.Type, map[string]string{})
 		for _, r := range rules {
-			eventDoc := m.generateQueueEventRequest(token, r.ID, eventDocID, batchID, utils.EventStatusStaged, req)
+			eventDoc := m.generateQueueEventRequest(token, r.ID, batchID, utils.EventStatusStaged, req)
 			eventDocs = append(eventDocs, eventDoc)
 		}
 	}
@@ -90,8 +90,11 @@ func (m *Module) batchRequests(ctx context.Context, eventDocID string, token int
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token int, name, eventDocID, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token int, name, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+	return m.generateQueueEventRequestRaw(token, name, "", batchID, status, event)
+}
 
+func (m *Module) generateQueueEventRequestRaw(token int, name, eventDocID, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
 	timestamp := time.Now()
 
 	if eventDocID == "" {

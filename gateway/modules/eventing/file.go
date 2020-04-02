@@ -21,14 +21,14 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := m.generateBatchID("")
+	batchID := m.generateBatchID()
 
 	rules := m.getMatchingRules(utils.EventFileCreate, map[string]string{})
 
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
-		eventDoc := m.generateQueueEventRequest(token, rule.ID, "",
+		eventDoc := m.generateQueueEventRequest(token, rule.ID,
 			batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 				Type: utils.EventFileCreate,
 				Payload: &model.FilePayload{
@@ -63,14 +63,14 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	}
 
 	// Create a unique batch id and token
-	batchID := m.generateBatchID("")
+	batchID := m.generateBatchID()
 	token := rand.Intn(utils.MaxEventTokens)
 
 	rules := m.getMatchingRules(utils.EventFileDelete, map[string]string{})
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
-		eventDoc := m.generateQueueEventRequest(token, rule.ID, "",
+		eventDoc := m.generateQueueEventRequest(token, rule.ID,
 			batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 				Type: utils.EventFileDelete,
 				Payload: &model.FilePayload{

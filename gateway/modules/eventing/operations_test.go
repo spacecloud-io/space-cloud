@@ -109,7 +109,7 @@ func TestModule_IsEnabled(t *testing.T) {
 }
 
 func TestModule_SendEventResponse(t *testing.T) {
-
+	resultChan := make(chan interface{}, 1)
 	type args struct {
 		batchID string
 		payload interface{}
@@ -118,6 +118,7 @@ func TestModule_SendEventResponse(t *testing.T) {
 		name string
 		m    *Module
 		args args
+		rcv  interface{}
 	}{
 		{
 			name: "key not present in eventChanMap",
@@ -128,14 +129,24 @@ func TestModule_SendEventResponse(t *testing.T) {
 			name: "event response is sent",
 			m:    &Module{},
 			args: args{batchID: "batchid", payload: "payload"},
+			rcv:  "payload",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			tt.m.eventChanMap.Store("batchid", eventResponse{time: time.Now(), response: make(chan interface{}, 1)})
+			tt.m.eventChanMap.Store("batchid", eventResponse{time: time.Now(), response: resultChan})
 
 			tt.m.SendEventResponse(tt.args.batchID, tt.args.payload)
+
+			if len(resultChan) > 1 {
+				close(resultChan)
+				for response := range resultChan {
+					if !reflect.DeepEqual(response, tt.rcv) {
+						t.Fatalf("SendEventResponse() = got - %v; wanted - %v", response, tt.rcv)
+					}
+				}
+			}
 		})
 	}
 }
@@ -148,13 +159,10 @@ func TestModule_QueueEvent(t *testing.T) {
 		paramsReturned []interface{}
 	}
 	type args struct {
-		ctx        context.Context
-		project    string
-		eventDocID string
-		batchID    string
-		token      string
-		eventToken int
-		req        *model.QueueEventRequest
+		ctx     context.Context
+		project string
+		token   string
+		req     *model.QueueEventRequest
 	}
 	tests := []struct {
 		name            string
@@ -170,7 +178,7 @@ func TestModule_QueueEvent(t *testing.T) {
 		{
 			name: "error validating",
 			m:    &Module{project: mock.Anything, config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "someType", Options: make(map[string]string)}}}},
-			args: args{ctx: context.Background(), project: "project", eventDocID: "eventid", batchID: "batchid", token: "token", eventToken: 50, req: &model.QueueEventRequest{Type: "someType", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
+			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "someType", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			authMockArgs: []mockArgs{
 				mockArgs{
 					method:         "IsEventingOpAuthorised",
@@ -183,7 +191,14 @@ func TestModule_QueueEvent(t *testing.T) {
 		{
 			name: "error batching requests",
 			m:    &Module{project: mock.Anything, config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
-			args: args{ctx: context.Background(), project: "project", eventDocID: "eventid", batchID: "batchid", token: "token", eventToken: 50, req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
+			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
+			syncmanMockArgs: []mockArgs{
+				mockArgs{
+					method:         "GetNodeID",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{"nodeID"},
+				},
+			},
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
@@ -196,7 +211,7 @@ func TestModule_QueueEvent(t *testing.T) {
 		{
 			name: "event is queued",
 			m:    &Module{project: mock.Anything, config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
-			args: args{ctx: context.Background(), project: "project", eventDocID: "eventid", batchID: "batchid", token: "token", eventToken: 50, req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
+			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
@@ -206,8 +221,13 @@ func TestModule_QueueEvent(t *testing.T) {
 			},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
+					method:         "GetNodeID",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{"nodeID"},
+				},
+				mockArgs{
 					method:         "GetAssignedSpaceCloudURL",
-					args:           []interface{}{mock.Anything, mock.Anything, 50},
+					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 				mockArgs{
@@ -259,7 +279,7 @@ func TestModule_QueueEvent(t *testing.T) {
 			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
 
-			got, err := tt.m.QueueEvent(tt.args.ctx, tt.args.project, tt.args.eventDocID, tt.args.batchID, tt.args.token, tt.args.eventToken, tt.args.req)
+			got, err := tt.m.QueueEvent(tt.args.ctx, tt.args.project, tt.args.token, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Module.QueueEvent() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -276,4 +296,4 @@ func TestModule_QueueEvent(t *testing.T) {
 	}
 }
 
-// TODO: write test case in QueueEvent where request ia synchronous
+// TODO: write test case in QueueEvent where request is synchronous

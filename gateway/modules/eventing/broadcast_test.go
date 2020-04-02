@@ -18,13 +18,11 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 	}
 	tests := []struct {
 		name         string
-		m            *Module
 		args         args
-		synvMockArgs []mockArgs
+		syncMockArgs []mockArgs
 	}{
 		{
 			name: "token less than start",
-			m:    &Module{},
 			args: args{eventDocs: []*model.EventDocument{
 				&model.EventDocument{
 					ID:        "id",
@@ -32,7 +30,7 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 					Timestamp: time.Now().Format(time.RFC3339),
 				},
 			}},
-			synvMockArgs: []mockArgs{
+			syncMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetAssignedTokens",
 					args:           []interface{}{},
@@ -42,7 +40,6 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 		},
 		{
 			name: "error parsing timestamp",
-			m:    &Module{},
 			args: args{eventDocs: []*model.EventDocument{
 				&model.EventDocument{
 					ID:        "id",
@@ -50,7 +47,7 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 					Timestamp: "",
 				},
 			}},
-			synvMockArgs: []mockArgs{
+			syncMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetAssignedTokens",
 					args:           []interface{}{},
@@ -60,7 +57,6 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 		},
 		{
 			name: "current timestamp not equal to or after timestamp",
-			m:    &Module{},
 			args: args{eventDocs: []*model.EventDocument{
 				&model.EventDocument{
 					ID:        "id",
@@ -68,7 +64,7 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 					Timestamp: "5020-03-31T16:16:26+05:30",
 				},
 			}},
-			synvMockArgs: []mockArgs{
+			syncMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetAssignedTokens",
 					args:           []interface{}{},
@@ -80,15 +76,17 @@ func TestModule_ProcessTransmittedEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
+			m := &Module{}
+
 			mockSync := mockSyncmanEventingInterface{}
 
-			for _, m := range tt.synvMockArgs {
+			for _, m := range tt.syncMockArgs {
 				mockSync.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
 
-			tt.m.syncMan = &mockSync
+			m.syncMan = &mockSync
 
-			tt.m.ProcessTransmittedEvents(tt.args.eventDocs)
+			m.ProcessTransmittedEvents(tt.args.eventDocs)
 
 			mockSync.AssertExpectations(t)
 		})

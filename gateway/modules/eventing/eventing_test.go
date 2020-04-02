@@ -1,13 +1,11 @@
 package eventing
 
 import (
-	"context"
 	"errors"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestModule_SetConfig(t *testing.T) {
@@ -96,30 +94,6 @@ func TestModule_SetConfig(t *testing.T) {
 			mockSchema.AssertExpectations(t)
 		})
 	}
-}
-
-type mockSchemaEventingInterface struct {
-	mock.Mock
-}
-
-func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
-	c := m.Called(dbAlias, col, obj, isFind)
-	return nil, c.Bool(1)
-}
-
-func (m *mockSchemaEventingInterface) Parser(crud config.Crud) (model.Type, error) {
-	c := m.Called(crud)
-	return nil, c.Error(1)
-}
-
-func (m *mockSchemaEventingInterface) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
-	c := m.Called(col, collectionFields, doc)
-	return nil, c.Error(1)
-}
-
-func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error {
-	c := m.Called(ctx, dbAlias, project, tables)
-	return c.Error(0)
 }
 
 // TODO: New function && write test case for len(schemaType["dummyDBName"][eventType]) != 0

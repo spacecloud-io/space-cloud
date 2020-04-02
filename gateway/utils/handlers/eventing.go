@@ -130,7 +130,7 @@ func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		res, err := eventing.QueueEvent(ctx, projectID, "", "", token, 0, &req)
+		res, err := eventing.QueueEvent(ctx, projectID, token, &req)
 		if err != nil {
 			logrus.Errorf("error handling queue event request - %s", err.Error())
 			w.Header().Set("Content-Type", "application/json")
