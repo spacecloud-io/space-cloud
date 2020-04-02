@@ -1,10 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-
 	"github.com/spf13/cobra"
 )
 
@@ -35,26 +31,16 @@ func getmodule() (*cobra.Command, error) {
 	if err1 == nil && err2 != nil {
 		return getplugin(currentVersion.VersionNo)
 	}
-
+	// Returns latestVersion if latestVersion is availabe or currentVersion not found
 	if err2 == nil {
 		if err1 == nil {
 			if latestVersion.VersionCode <= currentVersion.VersionCode {
 				return getplugin(currentVersion.VersionNo)
 			}
 		}
-		url := fmt.Sprintf("http://localhost:5000/cmd_%s.so", latestVersion.VersionNo)
-		filepath := fmt.Sprintf("%s/cmd_%s.so", getSpaceCLIDirectory(), latestVersion.VersionNo)
-		err := downloadFile(url, filepath)
-		if err != nil {
+		if err := downloadPlugin(latestVersion); err != nil {
 			return nil, err
 		}
-		docs := &cliVersionDoc{
-			VersionNo:   latestVersion.VersionNo,
-			VersionCode: latestVersion.VersionCode,
-			ID:          latestVersion.ID,
-		}
-		file, _ := json.Marshal(docs)
-		_ = ioutil.WriteFile(fmt.Sprintf("%s/config.json", getSpaceCLIDirectory()), file, 0644)
 	}
 	return getplugin(latestVersion.VersionNo)
 }
