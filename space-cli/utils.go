@@ -103,14 +103,22 @@ func downloadFile(url string, filepath string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		if err = out.Close(); err != nil {
+			return
+		}
+	}()
 
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err = resp.Body.Close(); err != nil {
+			return
+		}
+	}()
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)

@@ -7,10 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type GetRootCommand interface {
-	Rootcommand() *cobra.Command
-}
-
 func getplugin(latestversion string) (*cobra.Command, error) {
 	mod := fmt.Sprintf("%s/cmd_%s.so", getSpaceCLIDirectory(), latestversion)
 	plug, err := plugin.Open(mod)
@@ -22,14 +18,7 @@ func getplugin(latestversion string) (*cobra.Command, error) {
 		return nil, err
 	}
 
-	var getRootCommand GetRootCommand
-	getRootCommand, ok := commands.(GetRootCommand)
-	if !ok {
-		fmt.Println("unexpected type from module symbol")
-		return nil, nil
-	}
-
-	rootCmd := getRootCommand.Rootcommand()
+	rootCmd := commands.(func() *cobra.Command)()
 	return rootCmd, nil
 
 }

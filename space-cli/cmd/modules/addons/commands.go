@@ -19,6 +19,12 @@ func Commands() []*cobra.Command {
 	var addRegistryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "Add a docker registry",
+		RunE:  ActionAddRegistry,
+	}
+
+	var addDatabaseCmd = &cobra.Command{
+		Use:   "database",
+		Short: "Add a database",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := viper.BindPFlag("username", cmd.Flags().Lookup("username"))
 			if err != nil {
@@ -37,19 +43,13 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('version')"), nil)
 			}
 		},
-		RunE: ActionAddRegistry,
+		RunE: ActionAddDatabase,
 	}
 
-	addRegistryCmd.Flags().StringP("username", "U", "", "provide the username")
-	addRegistryCmd.Flags().StringP("password", "P", "", "provide the password")
-	addRegistryCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
-	addRegistryCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
-
-	var addDatabaseCmd = &cobra.Command{
-		Use:   "database",
-		Short: "Add a database",
-		RunE:  ActionAddDatabase,
-	}
+	addDatabaseCmd.Flags().StringP("username", "U", "", "provide the username")
+	addDatabaseCmd.Flags().StringP("password", "P", "", "provide the password")
+	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
+	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 
 	var removeCmd = &cobra.Command{
 		Use:   "remove",

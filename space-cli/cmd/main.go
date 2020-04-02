@@ -21,7 +21,8 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func init() {
+// GetRootCommand return the rootcmd
+func GetRootCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringP("log-level", "", "info", "Sets the log level of the command")
 	err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
 	if err != nil {
@@ -44,14 +45,5 @@ func init() {
 	rootCmd.AddCommand(deploy.Commands()...)
 	rootCmd.AddCommand(operations.Commands()...)
 	rootCmd.AddCommand(login.Commands()...)
-}
-
-type getRootCommand string
-
-// Rootcommand return the rootcmd
-func (g getRootCommand) Rootcommand() *cobra.Command {
 	return rootCmd
 }
-
-// GetRootCommand exported as symbol named "command"
-var GetRootCommand getRootCommand
