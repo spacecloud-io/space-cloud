@@ -35,7 +35,7 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		return err
 	}
 
-	currentSchema, _ := s.Inspector(ctx, dbType, project, tableName)
+	currentSchema, _ := s.Inspector(ctx, dbAlias, dbType, project, tableName)
 
 	queries, err := s.generateCreationQueries(ctx, dbAlias, tableName, project, parsedSchema, currentSchema)
 	if err != nil {

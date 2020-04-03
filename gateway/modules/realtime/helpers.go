@@ -45,6 +45,8 @@ func generateEventRules(crudConfig config.Crud, project, url string) []config.Ev
 							Type:    eventType,
 							URL:     url,
 							Options: map[string]string{"db": dbAlias, "col": col},
+							Retries: 3,
+							Timeout: 5000, // Timeout is in milliseconds
 						}
 						eventingRules = append(eventingRules, rule)
 					}
