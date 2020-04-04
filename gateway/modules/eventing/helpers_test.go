@@ -701,8 +701,29 @@ func TestModule_generateQueueEventRequestRaw(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.generateQueueEventRequestRaw(tt.args.token, tt.args.name, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+			got := tt.m.generateQueueEventRequestRaw(tt.args.token, tt.args.name, tt.args.eventDocID, tt.args.batchID, tt.args.status, tt.args.event)
+			if got != nil {
+				if !reflect.DeepEqual(got.BatchID, tt.want.BatchID) {
+					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.ID, tt.want.ID) {
+					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Type, tt.want.Type) {
+					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.RuleName, tt.want.RuleName) {
+					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Token, tt.want.Token) {
+					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Payload, tt.want.Payload) {
+					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+				}
+				if !reflect.DeepEqual(got.Status, tt.want.Status) {
+					t.Errorf("Module.generateQueueEventRequest() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}
