@@ -109,6 +109,13 @@ func (m *Module) SetFileStoreConfig(projectID string, fileStore *config.FileStor
 	m.fileRules = fileStore.Rules
 }
 
+// SetEventingConfig sets the eventing config
+func (m *Module) SetEventingConfig(securiyRules map[string]*config.Rule) {
+	m.Lock()
+	defer m.Unlock()
+	m.eventingRules = securiyRules
+}
+
 // SetCrudConfig sets the crud module config
 func (m *Module) SetCrudConfig(projectID string, crud config.Crud) {
 	m.Lock()

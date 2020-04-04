@@ -102,11 +102,17 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.project = project
 	m.config = eventing
 
+	m.config.Rules = eventing.Rules
 	if m.config.Rules == nil {
 		m.config.Rules = map[string]config.EventingRule{}
 	}
 
+	m.config.SecurityRules = eventing.SecurityRules
+	if m.config.SecurityRules == nil {
+		m.config.SecurityRules = map[string]*config.Rule{}
+	}
 	// Reset the internal rules
+	m.config.InternalRules = eventing.InternalRules
 	if m.config.InternalRules == nil {
 		m.config.InternalRules = map[string]config.EventingRule{}
 	}

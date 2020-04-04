@@ -116,7 +116,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	userRouter.Methods(http.MethodPost).Path("/email/signup").HandlerFunc(handlers.HandleEmailSignUp(s.modules))
 	userRouter.Methods(http.MethodGet).Path("/profile/{id}").HandlerFunc(handlers.HandleProfile(s.modules))
 	userRouter.Methods(http.MethodGet).Path("/profiles").HandlerFunc(handlers.HandleProfiles(s.modules))
-	userRouter.Methods(http.MethodGet).Path("/edit_profile/{id}").HandlerFunc(handlers.HandleEmailEditProfile(s.modules))
+	userRouter.Methods(http.MethodPost).Path("/edit_profile/{id}").HandlerFunc(handlers.HandleEmailEditProfile(s.modules))
 
 	// Initialize the routes for the file management operations
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.modules))

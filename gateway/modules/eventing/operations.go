@@ -66,7 +66,7 @@ func (m *Module) SendEventResponse(batchID string, payload interface{}) {
 	// get channel from map
 	value, ok := m.eventChanMap.Load(batchID)
 	if !ok {
-		logrus.Errorf("error sending synchronous event response to client unable to find channel in map for batch %s", batchID)
+		logrus.Warningln("sending synchronous event response to client unable to find channel in map for batch %s", batchID)
 		return
 	}
 	result := value.(eventResponse)
