@@ -33,7 +33,8 @@ func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project
 }
 
 func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, project, col string, req *model.ReadRequest) (interface{}, error) {
-	return nil, nil
+	c := m.Called(ctx, dbAlias, project, col, req)
+	return c.Get(0).(interface{}), c.Error(1)
 }
 
 func (m *mockCrudInterface) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
