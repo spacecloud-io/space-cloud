@@ -130,3 +130,12 @@ func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAli
 	c := m.Called(ctx, dbAlias, project, tables)
 	return c.Error(0)
 }
+
+type mockFileStoreEventingInterface struct {
+	mock.Mock
+}
+
+func (m *mockFileStoreEventingInterface) DoesExists(ctx context.Context, project, token, path string) error {
+	c := m.Called(ctx, project, token, path)
+	return c.Error(0)
+}
