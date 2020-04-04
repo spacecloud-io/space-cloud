@@ -28,7 +28,7 @@ type Module struct {
 	project            string
 	removeProjectScope bool
 	schema             model.SchemaCrudInterface
-
+	queries            config.PreparedQuery
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
 
@@ -53,6 +53,7 @@ type Crud interface {
 	Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
 	RawExec(ctx context.Context, project string) error
+	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, project, col string) error
 	CreateDatabaseIfNotExist(ctx context.Context, project string) error

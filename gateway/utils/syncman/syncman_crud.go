@@ -65,6 +65,35 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 	return s.setProject(ctx, projectConfig)
 }
 
+// SetPreparedQueries sets database preparedqueries
+func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id string, v config.PreparedQuery) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+
+	// update database config
+	coll, ok := projectConfig.Modules.Crud[dbAlias].PreparedQueries[id]
+	if !ok {
+		projectConfig.Modules.Crud[dbAlias].PreparedQueries[id] = &config.PreparedQuery{ID: v.ID, SQL: v.SQL, Arguments: v.Arguments}
+	} else {
+		coll.ID = v.ID
+		coll.SQL = v.SQL
+		coll.Arguments = v.Arguments
+	}
+
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		logrus.Errorf("error setting crud config - %s", err.Error())
+		return err
+	}
+
+	return s.setProject(ctx, projectConfig)
+}
+
 // RemoveDatabaseConfig removes the database config
 func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias string) error {
 	// Acquire a lock
@@ -78,6 +107,28 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 
 	// update database config
 	delete(projectConfig.Modules.Crud, dbAlias)
+
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		logrus.Errorf("error setting crud config - %s", err.Error())
+		return err
+	}
+
+	return s.setProject(ctx, projectConfig)
+}
+
+// RemovePreparedQueries removes the database config
+func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, id string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+
+	// update database config
+	delete(projectConfig.Modules.Crud[dbAlias].PreparedQueries, id)
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
@@ -374,6 +425,43 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) 
 	for dbName, dbInfo := range databases {
 		for key, value := range dbInfo.Collections {
 			coll[fmt.Sprintf("%s-%s", dbName, key)] = &response{Schema: value.Schema}
+		}
+	}
+	return []interface{}{coll}, nil
+}
+
+// GetPreparedQuery gets preparedQuery from config
+func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id string) ([]interface{}, error) {
+	// Acquire a lock
+	type response struct {
+		Schema string `json:"schema"`
+	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+	if dbAlias != "" && id != "" {
+		preparedQueries, ok := projectConfig.Modules.Crud[dbAlias].PreparedQueries[id]
+		if !ok {
+			return nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, id)
+		}
+		return []interface{}{map[string]*response{fmt.Sprintf("%s-%s", dbAlias, id): {Schema: preparedQueries.SQL}}}, nil
+	} else if dbAlias != "" {
+		preparedQueries := projectConfig.Modules.Crud[dbAlias].PreparedQueries
+		coll := map[string]*response{}
+		for key, value := range preparedQueries {
+			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &response{Schema: value.SQL}
+		}
+		return []interface{}{coll}, nil
+	}
+	databases := projectConfig.Modules.Crud
+	coll := map[string]*response{}
+	for dbName, dbInfo := range databases {
+		for key, value := range dbInfo.PreparedQueries {
+			coll[fmt.Sprintf("%s-%s", dbName, key)] = &response{Schema: value.SQL}
 		}
 	}
 	return []interface{}{coll}, nil

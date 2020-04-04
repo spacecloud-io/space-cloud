@@ -160,6 +160,32 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
+// ExecPreparedQuery removes the documents(s) which match a query from the database based on dbType
+func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id string, req *model.PreparedQueryRequest) error {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbAlias)
+	if err != nil {
+		return err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	var args []interface{}
+	for i := 0; i < len(m.queries.Arguments); i++ {
+		arg, err := utils.LoadValue(m.queries.Arguments[i], req.Params)
+		if err != nil {
+			return err
+		}
+		args = append(args, arg)
+	}
+	a, b, err := crud.RawQuery(ctx, project, args)
+	return err
+}
+
 // Aggregate performs an aggregation defined via the pipeline
 func (m *Module) Aggregate(ctx context.Context, dbAlias, project, col string, req *model.AggregateRequest) (interface{}, error) {
 	m.RLock()
