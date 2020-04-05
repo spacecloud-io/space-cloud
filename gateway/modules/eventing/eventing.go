@@ -100,7 +100,8 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	}
 
 	m.project = project
-	m.config = eventing
+	m.config.Enabled = eventing.Enabled
+	m.config.DBType = eventing.DBType
 
 	m.config.Rules = eventing.Rules
 	if m.config.Rules == nil {
@@ -111,8 +112,8 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	if m.config.SecurityRules == nil {
 		m.config.SecurityRules = map[string]*config.Rule{}
 	}
-	// Reset the internal rules
-	m.config.InternalRules = eventing.InternalRules
+
+	// `m.config.InternalRules` cannot be set by the eventing module. Its used by other modules only.
 	if m.config.InternalRules == nil {
 		m.config.InternalRules = map[string]config.EventingRule{}
 	}
