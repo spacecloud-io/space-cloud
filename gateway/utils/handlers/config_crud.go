@@ -179,45 +179,6 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 	}
 }
 
-// HandleSetPreparedQueries is an endpoint handler which updates database config & connects to database
-func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
-		var v config.PreparedQuery
-		_ = json.NewDecoder(r.Body).Decode(&v)
-		defer utils.CloseTheCloser(r.Body)
-
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		project := vars["project"]
-		id := vars["id"]
-
-		if err := syncman.SetPreparedQueries(ctx, project, dbAlias, id, v); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-	}
-}
-
 // HandleGetDatabaseConfig returns handler to get Database Collection
 func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -295,7 +256,86 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 	}
 }
 
-// HandleRemovePreparedQueries is an endpoint handler which removes database config
+// HandleGetPreparedQuery returns handler to get PreparedQuery
+func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		// get project id and dbType from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		idQuery, exists := r.URL.Query()["id"]
+		id := ""
+		if exists {
+			id = idQuery[0]
+		}
+		schemas, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
+	}
+}
+
+// HandleSetPreparedQueries is an endpoint handler which updates database PreparedQueries
+func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		v := config.PreparedQuery{}
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		project := vars["project"]
+		id := vars["id"]
+
+		if err := syncman.SetPreparedQueries(ctx, project, dbAlias, id, &v); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) // http status codee
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+	}
+}
+
+// HandleRemovePreparedQueries is an endpoint handler which removes database PreparedQueries
 func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -411,46 +451,6 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			col = colQuery[0]
 		}
 		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
-	}
-}
-
-// HandleGetPreparedQuery returns handler to get schema
-func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-		// get project id and dbType from url
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		dbAlias := ""
-		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
-		if exists {
-			dbAlias = dbAliasQuery[0]
-		}
-		idQuery, exists := r.URL.Query()["id"]
-		id := ""
-		if exists {
-			id = idQuery[0]
-		}
-		schemas, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)

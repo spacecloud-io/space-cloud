@@ -38,7 +38,7 @@ type DeleteRequest struct {
 	Operation string                 `json:"op"`
 }
 
-// PreparedQueryRequest is the http body received for a delete request
+// PreparedQueryRequest is the http body received for a PreparedQuery request
 type PreparedQueryRequest struct {
 	Params map[string]interface{} `json:"params"`
 }

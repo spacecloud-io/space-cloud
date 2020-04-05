@@ -8,11 +8,11 @@ import (
 // RawExec performs an operation for schema creation
 // NOTE: not to be exposed externally
 func (b *Bolt) RawExec(ctx context.Context, project string) error {
-	return fmt.Errorf("error raw exec cannot be performed over selected database")
+	return fmt.Errorf("error raw exec cannot be performed over embedded database")
 }
 
 func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
-	return 0, "", fmt.Errorf("error raw querry cannot be performed over selected database")
+	return 0, "", fmt.Errorf("error raw querry cannot be performed over embedded database")
 }
 
 // CreateDatabaseIfNotExist creates a project if none exist

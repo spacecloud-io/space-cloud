@@ -126,7 +126,7 @@ func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequ
 	return s.readexec(ctx, sqlString, args, req.Operation, executor)
 }
 
-func (s *SQL) readexec(ctx context.Context, project string, args []interface{}, req string, executor executor) (int64, interface{}, error) {
+func (s *SQL) readexec(ctx context.Context, project string, args []interface{}, operation string, executor executor) (int64, interface{}, error) {
 	stmt, err := executor.PreparexContext(ctx, project)
 	if err != nil {
 		return 0, nil, err
@@ -146,7 +146,7 @@ func (s *SQL) readexec(ctx context.Context, project string, args []interface{}, 
 		rowTypes, _ = rows.ColumnTypes()
 	}
 
-	switch req {
+	switch operation {
 	case utils.Count:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {

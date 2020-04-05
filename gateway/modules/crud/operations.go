@@ -160,30 +160,35 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
-// ExecPreparedQuery removes the documents(s) which match a query from the database based on dbType
-func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id string, req *model.PreparedQueryRequest) error {
+// ExecPreparedQuery TODO
+func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id string, req *model.PreparedQueryRequest) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
-		return err
+		return nil, err
 	}
 
 	var args []interface{}
-	for i := 0; i < len(m.queries.Arguments); i++ {
-		arg, err := utils.LoadValue(m.queries.Arguments[i], req.Params)
+	preparedQuery, p := m.queries[id]
+	if !p {
+		logrus.Errorf("given id does not exist")
+		return nil, nil
+	}
+	for i := 0; i < len(preparedQuery.Arguments); i++ {
+		arg, err := utils.LoadValue(preparedQuery.Arguments[i], req.Params)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		args = append(args, arg)
 	}
-	a, b, err := crud.RawQuery(ctx, project, args)
-	return err
+	_, b, err := crud.RawQuery(ctx, project, args)
+	return b, err
 }
 
 // Aggregate performs an aggregation defined via the pipeline
