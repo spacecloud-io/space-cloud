@@ -175,7 +175,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"name\":\"Test Name\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -193,7 +193,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"name\":\"Test Name\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
@@ -211,7 +211,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"name\":\"Test Name\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
@@ -232,7 +232,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
-					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"name\":\"Test Name\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
+					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},

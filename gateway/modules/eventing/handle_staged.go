@@ -115,7 +115,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		Time: eventDoc.Timestamp, Data: eventDoc.Payload}
 
 	for {
-		if err := m.invokeWebhook(ctx, rule, eventDoc, &cloudEvent); err != nil {
+		if err := m.invokeWebhook(ctx, &http.Client{}, rule, eventDoc, &cloudEvent); err != nil {
 			logrus.Errorf("Eventing staged event handler could not get response from service -%s", err.Error())
 
 			// Increment the retries. Exit the loop if max retries reached.
@@ -139,7 +139,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	}
 }
 
-func (m *Module) invokeWebhook(ctx context.Context, rule config.EventingRule, eventDoc *model.EventDocument, cloudEvent *model.CloudEventPayload) error {
+func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule config.EventingRule, eventDoc *model.EventDocument, cloudEvent *model.CloudEventPayload) error {
 	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(rule.Timeout)*time.Millisecond)
 	defer cancel()
 	internalToken, err := m.auth.GetInternalAccessToken()
@@ -155,7 +155,7 @@ func (m *Module) invokeWebhook(ctx context.Context, rule config.EventingRule, ev
 	}
 
 	var eventResponse model.EventResponse
-	if err := m.MakeInvocationHTTPRequest(ctxLocal, &http.Client{}, http.MethodPost, rule.URL, eventDoc.ID, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+	if err := m.MakeInvocationHTTPRequest(ctxLocal, client, http.MethodPost, rule.URL, eventDoc.ID, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
 		logrus.Errorf("error invoking web hook in eventing unable to send http request to url %s - %s", rule.URL, err.Error())
 		return err
 	}

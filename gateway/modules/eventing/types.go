@@ -17,7 +17,7 @@ type mockHTTPInterface struct {
 
 func (m *mockHTTPInterface) Do(req *http.Request) (*http.Response, error) {
 	c := m.Called(req)
-	return &http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"name":"Test Name"}`)))}, c.Error(1)
+	return &http.Response{StatusCode: 200, Body: ioutil.NopCloser(bytes.NewReader([]byte(`{"event": {"type": "someType"}, "response": "response"}`)))}, c.Error(1)
 }
 
 type mockCrudInterface struct {
@@ -34,7 +34,10 @@ func (m *mockCrudInterface) InternalCreate(ctx context.Context, dbAlias, project
 
 func (m *mockCrudInterface) Read(ctx context.Context, dbAlias, project, col string, req *model.ReadRequest) (interface{}, error) {
 	c := m.Called(ctx, dbAlias, project, col, req)
-	return c.Get(0).(interface{}), c.Error(1)
+	if len(c) > 1 {
+		return c.Get(0).(interface{}), c.Error(1)
+	}
+	return c.Get(0).(interface{}), nil
 }
 
 func (m *mockCrudInterface) InternalUpdate(ctx context.Context, dbAlias, project, col string, req *model.UpdateRequest) error {
@@ -68,7 +71,10 @@ func (m *mockSyncmanEventingInterface) GetNodeID() string {
 
 func (m *mockSyncmanEventingInterface) GetSpaceCloudURLFromID(nodeID string) (string, error) {
 	c := m.Called(nodeID)
-	return c.String(0), c.Error(1)
+	if len(c) > 1 {
+		return c.String(0), c.Error(1)
+	}
+	return c.String(0), nil
 }
 
 func (m *mockSyncmanEventingInterface) MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
