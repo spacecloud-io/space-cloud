@@ -36,7 +36,7 @@ func Commands() []*cobra.Command {
 	commandDeploy.Flags().StringP("project", "", "", "The project to deploy the service to.")
 	commandDeploy.Flags().StringP("docker-file", "", "Dockerfile", "The path of the docker file")
 	commandDeploy.Flags().StringP("service-file", "", "service.yaml", "The path of the service config file")
-	commandDeploy.Flags().StringP("prepare", "", "", "Prepare the configuration used for deploying service")
+	commandDeploy.Flags().BoolP("prepare", "", false, "Prepare the configuration used for deploying service")
 
 	return []*cobra.Command{commandDeploy}
 }
@@ -49,10 +49,8 @@ func actionDeploy(cmd *cobra.Command, args []string) error {
 
 	// Prepare configuration files
 	if prepare {
-		err := prepareService(projectID, dockerFilePath, serviceFilePath)
-		if err != nil {
-			return nil
-		}
+		_ = prepareService(projectID, dockerFilePath, serviceFilePath)
+		return nil
 	}
 
 	_ = deployService(dockerFilePath, serviceFilePath)
