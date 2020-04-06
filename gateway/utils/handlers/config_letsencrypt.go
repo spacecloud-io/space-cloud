@@ -3,9 +3,10 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"net/http"
 	"time"
+
+	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/gorilla/mux"
 

@@ -3,8 +3,9 @@ package schema
 import (
 	"context"
 	"errors"
-	"github.com/sirupsen/logrus"
 	"reflect"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
@@ -37,7 +38,9 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 	}
 
 	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, project, tableName)
-	logrus.Debugln("Schema Inspector Error", err)
+	if err != nil {
+		logrus.Debugln("Schema Inspector Error", err)
+	}
 
 	queries, err := s.generateCreationQueries(ctx, dbAlias, tableName, project, parsedSchema, currentSchema)
 	if err != nil {

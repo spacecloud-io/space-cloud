@@ -28,7 +28,7 @@ func TestModule_SetConfig(t *testing.T) {
 		{
 			name: "unable to parse schema",
 			m:    &Module{},
-			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBType: "mysql", Schemas: map[string]config.SchemaObject{"eventType": config.SchemaObject{ID: "id", Schema: "schema"}}}},
+			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBAlias: "mysql", Schemas: map[string]config.SchemaObject{"eventType": config.SchemaObject{ID: "id", Schema: "schema"}}}},
 			schemaMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Parser",
@@ -41,7 +41,7 @@ func TestModule_SetConfig(t *testing.T) {
 		{
 			name: "eventing is not enabled",
 			m:    &Module{config: &config.Eventing{Enabled: true}},
-			args: args{project: "abc", eventing: &config.Eventing{Enabled: false, DBType: "mysql", Schemas: map[string]config.SchemaObject{"eventType": config.SchemaObject{ID: "id", Schema: "schema"}}}},
+			args: args{project: "abc", eventing: &config.Eventing{Enabled: false, DBAlias: "mysql", Schemas: map[string]config.SchemaObject{"eventType": config.SchemaObject{ID: "id", Schema: "schema"}}}},
 			schemaMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Parser",
@@ -53,7 +53,7 @@ func TestModule_SetConfig(t *testing.T) {
 		{
 			name: "DBType not mentioned",
 			m:    &Module{config: &config.Eventing{Enabled: true}},
-			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBType: "", Schemas: map[string]config.SchemaObject{"eventType": config.SchemaObject{ID: "id", Schema: "schema"}}}},
+			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBAlias: "", Schemas: map[string]config.SchemaObject{"eventType": config.SchemaObject{ID: "id", Schema: "schema"}}}},
 			schemaMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Parser",
@@ -66,7 +66,7 @@ func TestModule_SetConfig(t *testing.T) {
 		{
 			name: "config is set",
 			m:    &Module{},
-			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBType: "mysql", Schemas: map[string]config.SchemaObject{"eventType": config.SchemaObject{ID: "id", Schema: "schema"}}}},
+			args: args{project: "abc", eventing: &config.Eventing{Enabled: true, DBAlias: "mysql", Schemas: map[string]config.SchemaObject{"eventType": config.SchemaObject{ID: "id", Schema: "schema"}}}},
 			schemaMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Parser",

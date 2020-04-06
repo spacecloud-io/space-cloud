@@ -184,7 +184,7 @@ type StaticRoute struct {
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
 	Enabled       bool                    `json:"enabled" yaml:"enabled"`
-	DBType        string                  `json:"dbType" yaml:"dbType"`
+	DBAlias       string                  `json:"dbAlias" yaml:"dbAlias"`
 	Rules         map[string]EventingRule `json:"rules,omitempty" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
 	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`

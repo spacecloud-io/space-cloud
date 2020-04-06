@@ -95,13 +95,13 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		return nil
 	}
 
-	if eventing.DBType == "" {
+	if eventing.DBAlias == "" {
 		return errors.New("invalid eventing config provided")
 	}
 
 	m.project = project
 	m.config.Enabled = eventing.Enabled
-	m.config.DBType = eventing.DBType
+	m.config.DBAlias = eventing.DBAlias
 
 	m.config.Rules = eventing.Rules
 	if m.config.Rules == nil {

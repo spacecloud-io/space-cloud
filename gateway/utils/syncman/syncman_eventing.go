@@ -64,7 +64,11 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	if err != nil {
 		return err
 	}
-	projectConfig.Modules.Eventing.DBType = dbAlias
+	_, ok := projectConfig.Modules.Crud[dbAlias]
+	if !ok {
+		return fmt.Errorf("unknow dbAlias provided while setting eventing config")
+	}
+	projectConfig.Modules.Eventing.DBAlias = dbAlias
 	projectConfig.Modules.Eventing.Enabled = enabled
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {

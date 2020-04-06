@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
@@ -15,7 +17,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestModule_selectRule(t *testing.T) {
@@ -755,7 +756,7 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 	}{
 		{
 			name: "internalCreate error",
-			m:    &Module{config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
+			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
 			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{&model.QueueEventRequest{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: time.Now().Format(time.RFC3339)}}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -768,7 +769,7 @@ func TestModule_batchRequestsRaw(t *testing.T) {
 		},
 		{
 			name: "requests are batched",
-			m:    &Module{config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
+			m:    &Module{config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"some-rule": config.EventingRule{Type: utils.EventDBCreate, ID: mock.Anything, Options: map[string]string{}, URL: mock.Anything, Retries: 3}}}, project: mock.Anything},
 			args: args{ctx: context.Background(), eventDocID: mock.Anything, token: 50, batchID: mock.Anything, requests: []*model.QueueEventRequest{&model.QueueEventRequest{Type: utils.EventDBCreate, Delay: 0, IsSynchronous: false, Options: map[string]string{}, Payload: "payload", Timestamp: time.Now().Format(time.RFC3339)}}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
