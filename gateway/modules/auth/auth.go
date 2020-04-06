@@ -3,7 +3,6 @@ package auth
 import (
 	"encoding/base64"
 	"errors"
-	"sort"
 	"sync"
 
 	"github.com/dgrijalva/jwt-go"
@@ -184,7 +183,7 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 			return []byte(secret), nil
 		})
 		if err != nil {
-			return nil, err
+			continue
 		}
 
 		// Get the claims
@@ -209,13 +208,11 @@ func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 }
 
 func (m *Module) getGreatestSecretKey() int {
-	keys := make([]int, 0)
+	greatesKey := 0
 	for key := range m.secrets {
-		keys = append(keys, key)
+		if key > greatesKey {
+			greatesKey = key
+		}
 	}
-	sort.Ints(keys)
-	if len(keys) == 0 {
-		return 0
-	}
-	return keys[len(keys)-1]
+	return greatesKey
 }

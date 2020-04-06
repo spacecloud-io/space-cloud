@@ -9,7 +9,7 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	Secrets        map[int]string `json:"secret,omitempty" yaml:"secret,omitempty"`
+	Secrets        map[int]string `json:"secrets,omitempty" yaml:"secrets,omitempty"`
 	AESkey         string         `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
 	ID             string         `json:"id,omitempty" yaml:"id,omitempty"`
 	Name           string         `json:"name,omitempty" yaml:"name,omitempty"`

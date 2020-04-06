@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"sort"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -12,21 +11,23 @@ import (
 
 func loadEnvironmentVariable(c *Config) {
 	for _, p := range c.Projects {
-		if strings.HasPrefix(p.Secrets[getGreatestSecretKey(p.Secrets)], "$") {
-			tempString := strings.TrimPrefix(p.Secrets[getGreatestSecretKey(p.Secrets)], "$")
-			tempEnvVar, present := os.LookupEnv(tempString)
+		for key := range p.Secrets {
+			if strings.HasPrefix(p.Secrets[key], "$") {
+				tempString := strings.TrimPrefix(p.Secrets[key], "$")
+				tempEnvVar, present := os.LookupEnv(tempString)
 
-			if present {
-				p.Secrets[getGreatestSecretKey(p.Secrets)] = tempEnvVar
+				if present {
+					p.Secrets[key] = tempEnvVar
+				}
 			}
-		}
-		for _, value := range p.Modules.Crud {
-			if strings.HasPrefix(value.Conn, "$") {
-				tempStringC := strings.TrimPrefix(value.Conn, "$")
-				tempEnvVarC, presentC := os.LookupEnv(tempStringC)
+			for _, value := range p.Modules.Crud {
+				if strings.HasPrefix(value.Conn, "$") {
+					tempStringC := strings.TrimPrefix(value.Conn, "$")
+					tempEnvVarC, presentC := os.LookupEnv(tempStringC)
 
-				if presentC {
-					value.Conn = tempEnvVarC
+					if presentC {
+						value.Conn = tempEnvVarC
+					}
 				}
 			}
 		}
@@ -54,13 +55,4 @@ func LoadConfigFromFile(path string) (*Config, error) {
 
 	loadEnvironmentVariable(conf)
 	return conf, nil
-}
-
-func getGreatestSecretKey(secrets map[int]string) int {
-	keys := make([]int, 0)
-	for key := range secrets {
-		keys = append(keys, key)
-	}
-	sort.Ints(keys)
-	return keys[len(keys)-1]
 }
