@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -122,6 +123,26 @@ type ModulesInterface interface {
 	// Getters
 
 	GetSchemaModuleForSyncMan() SchemaEventingInterface
+}
+
+// SyncmanEventingInterface is an interface consisting of functions of syncman module used by eventing module
+type SyncmanEventingInterface interface {
+	GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error)
+	GetAssignedTokens() (start, end int)
+	GetEventSource() string
+	GetSpaceCloudURLFromID(nodeID string) (string, error)
+	GetNodeID() string
+	MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
+}
+
+// AdminEventingInterface is an interface consisting of functions of admin module used by eventing module
+type AdminEventingInterface interface {
+	GetInternalAccessToken() (string, error)
+}
+
+// HTTPEventingInterface is an interface consisting of functions of a http client used by eventing module
+type HTTPEventingInterface interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // PostProcess filters the schema
