@@ -41,7 +41,7 @@ type CloudEventPayload struct {
 
 // EventResponse is struct response of events
 type EventResponse struct {
-	Event    *QueueEventRequest   `json:"even,omitempty"`
+	Event    *QueueEventRequest   `json:"event,omitempty"`
 	Events   []*QueueEventRequest `json:"events,omitempty"`
 	Response interface{}          `json:"response,omitempty"` // for getting response of synchronous events
 	Error    string               `json:"error,omitempty"`
