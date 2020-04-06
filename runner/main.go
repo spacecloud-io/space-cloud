@@ -46,9 +46,9 @@ func main() {
 			Usage: "Starts a runner instance",
 			Flags: []cli.Flag{
 				cli.BoolFlag{
-					Name:   "is-metric-disabled",
-					EnvVar: "IS_METRIC_DISABLED",
-					Usage:  "enable or disable metrics collection",
+					Name:   "disable-metrics",
+					EnvVar: "DISABLE_METRICS",
+					Usage:  "Disable anonymous metric collection",
 				},
 				cli.BoolFlag{
 					Name:   "dev",

@@ -1,10 +1,9 @@
 package metrics
 
 import (
-	"github.com/segmentio/ksuid"
 	"strings"
-	"sync"
 
+	"github.com/segmentio/ksuid"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -12,92 +11,86 @@ func newMetrics() *metrics {
 	return &metrics{}
 }
 
-func (m *Module) createFileDocuments(project string, opMetrics *sync.Map, t string) []interface{} {
+func (m *Module) createFileDocuments(key string, metrics *metricOperations, t string) []interface{} {
 	docs := make([]interface{}, 0)
 
-	opMetrics.Range(func(key, value interface{}) bool {
-		parts := key.(string)
-		metrics := value.(*metricOperations)
-		module := "file"
-		if metrics.create > 0 {
-			docs = append(docs, m.createDocument(project, parts, "na", module, utils.Create, metrics.create, t))
-		}
+	arr := strings.Split(key, ":")
+	module := "file"
+	if metrics.create > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], "na", module, utils.Create, metrics.create, t))
+	}
 
-		if metrics.read > 0 {
-			docs = append(docs, m.createDocument(project, parts, "na", module, utils.Read, metrics.read, t))
-		}
+	if metrics.read > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], "na", module, utils.Read, metrics.read, t))
+	}
 
-		if metrics.update > 0 {
-			docs = append(docs, m.createDocument(project, parts, "na", module, utils.Update, metrics.update, t))
-		}
+	if metrics.delete > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], "na", module, utils.Delete, metrics.delete, t))
+	}
 
-		if metrics.delete > 0 {
-			docs = append(docs, m.createDocument(project, parts, "na", module, utils.Delete, metrics.delete, t))
-		}
-
-		// Delete the key from the map
-		opMetrics.Delete(key)
-
-		return true
-	})
+	if metrics.list > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], "na", module, utils.List, metrics.list, t))
+	}
 
 	return docs
 }
 
-func (m *Module) createCrudDocuments(project string, opMetrics *sync.Map, t string) []interface{} {
+func (m *Module) createCrudDocuments(key string, value *metricOperations, t string) []interface{} {
 	docs := make([]interface{}, 0)
 
-	opMetrics.Range(func(key, value interface{}) bool {
-		parts := strings.Split(key.(string), ":")
-		metrics := value.(*metricOperations)
-		module := "db"
-		if metrics.create > 0 {
-			docs = append(docs, m.createDocument(project, parts[0], parts[1], module, utils.Create, metrics.create, t))
-		}
+	arr := strings.Split(key, ":")
+	module := "db"
+	if value.create > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Create, value.create, t))
+	}
 
-		if metrics.read > 0 {
-			docs = append(docs, m.createDocument(project, parts[0], parts[1], module, utils.Read, metrics.read, t))
-		}
+	if value.read > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Read, value.read, t))
+	}
 
-		if metrics.update > 0 {
-			docs = append(docs, m.createDocument(project, parts[0], parts[1], module, utils.Update, metrics.update, t))
-		}
+	if value.update > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Update, value.update, t))
+	}
 
-		if metrics.delete > 0 {
-			docs = append(docs, m.createDocument(project, parts[0], parts[1], module, utils.Delete, metrics.delete, t))
-		}
+	if value.delete > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Delete, value.delete, t))
+	}
 
-		if metrics.batch > 0 {
-			docs = append(docs, m.createDocument(project, parts[0], parts[1], module, utils.Batch, metrics.batch, t))
-		}
-
-		// Delete the key from the map
-		opMetrics.Delete(key)
-
-		return true
-	})
+	if value.batch > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Batch, value.batch, t))
+	}
 
 	return docs
 }
 
-func (m *Module) createFunctionDocument(project string, count uint64, t string) []interface{} {
+func (m *Module) createEventDocument(key string, count uint64, t string) []interface{} {
+	arr := strings.Split(key, ":")
 	docs := make([]interface{}, 0)
 	if count > 0 {
-		docs = append(docs, m.createDocument(project, "na", "na", "function", "calls", count, t))
+		docs = append(docs, m.createDocument(arr[0], "na", "na", "eventing", utils.OperationType(arr[1]), count, t))
 	}
 	return docs
 }
 
-func (m *Module) createDocument(project, dbType, col, module string, op utils.OperationType, count uint64, t string) interface{} {
+func (m *Module) createFunctionDocument(key string, count uint64, t string) []interface{} {
+	arr := strings.Split(key, ":")
+	docs := make([]interface{}, 0)
+	if count > 0 {
+		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], "function", "calls", count, t))
+	}
+	return docs
+}
+
+func (m *Module) createDocument(project, driver, subType, module string, op utils.OperationType, count uint64, t string) interface{} {
 	return map[string]interface{}{
 		"id":         ksuid.New().String(),
 		"project_id": project,
 		"module":     module,
 		"type":       op,
-		"sub_type":   col,
+		"sub_type":   subType,
 		"ts":         t,
 		"count":      count,
-		"driver":     dbType,
+		"driver":     driver,
 		"node_id":    m.nodeID,
 		"cluster_id": m.clusterID,
 	}

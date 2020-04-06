@@ -2,12 +2,14 @@ package metrics
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
-	"github.com/spaceuptech/space-api-go/types"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"net/http"
 	"runtime"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spaceuptech/space-api-go/types"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func currentTimeInMillis() int64 {
@@ -43,30 +45,29 @@ func (m *Module) generateMetricsRequest() (string, map[string]interface{}, map[s
 	}
 
 	set["ssl_enabled"] = m.ssl != nil && m.ssl.Enabled
-	set["mode"] = 0
-	if c.Admin != nil {
-		set["mode"] = c.Admin.Operation.Mode
-	}
 	if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
 		modules := c.Projects[0].Modules
 		set["project"] = c.Projects[0].ID
 
 		// crud info
 		set["crud"] = map[string]interface{}{"tables": map[string]interface{}{}}
+		set["databases"] = map[string][]string{"databases": {}}
 		if modules.Crud != nil {
 			temps := map[string]interface{}{}
-			for _, v := range modules.Crud {
+			dbs := []string{}
+			for dbAlias, v := range modules.Crud {
 				if v.Enabled {
-					temps[v.Type] = map[string]interface{}{
+					dbs = append(dbs, v.Type)
+					temps[dbAlias] = map[string]interface{}{
 						"tables": len(v.Collections) - 3, // NOTE : 2 is the number of tables used internally for eventing (invocation logs & event logs) + 1 which is the default table
 					}
 				}
 			}
 			set["crud"] = temps
+			set["databases"] = map[string][]string{"databases": dbs}
 		}
 
-		// file store info
-		set["file_store_store_type"] = ""
+		set["file_store_store_type"] = "na"
 		set["file_store_rules"] = 0
 		if modules.FileStore != nil && modules.FileStore.Enabled {
 			set["file_store_store_type"] = modules.FileStore.StoreType
@@ -102,11 +103,6 @@ func (m *Module) generateMetricsRequest() (string, map[string]interface{}, map[s
 
 		// eventing info
 		set["total_events"] = len(modules.Eventing.Rules)
-		temps := map[string]interface{}{}
-		for _, v := range modules.Eventing.Rules {
-			temps[v.Type] = m.eventing[v.Type]
-		}
-		set["eventing"] = temps
 	}
 
 	return find, set, min, false

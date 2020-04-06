@@ -95,6 +95,9 @@ const (
 	// Read is the type used for query operation
 	Read OperationType = "read"
 
+	// List is the type used for file store list operation
+	List OperationType = "list"
+
 	// Update is the type used ofr update operations
 	Update OperationType = "update"
 

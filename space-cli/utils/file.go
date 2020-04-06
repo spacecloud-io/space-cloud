@@ -2,10 +2,11 @@ package utils
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v2"
 

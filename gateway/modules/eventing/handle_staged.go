@@ -17,7 +17,7 @@ import (
 func (m *Module) processStagedEvents(t *time.Time) {
 
 	// Return if module is not enabled
-	if !m.IsDisabled() {
+	if !m.IsEnabled() {
 		return
 	}
 	m.lock.RLock()
@@ -183,6 +183,5 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	}
 
 	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, utils.TableEventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
-	m.metricHook(eventDoc.Type)
 	return nil
 }

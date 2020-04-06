@@ -2,9 +2,10 @@ package metrics
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const metricsUpdaterInterval = 30 * time.Second
@@ -28,7 +29,6 @@ func (m *Module) flushMetrics(docs []interface{}) {
 	if len(docs) == 0 {
 		return
 	}
-	logrus.Println("docs of flush", docs)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	result, err := m.sink.Insert("operation_metrics").Docs(docs).Apply(ctx)

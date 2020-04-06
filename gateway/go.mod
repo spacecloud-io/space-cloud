@@ -11,6 +11,7 @@ require (
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20191001013358-cfbb681360f0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/docker/distribution v2.7.1+incompatible
 	github.com/doug-martin/goqu/v8 v8.1.0
 	github.com/fatih/structs v1.1.0
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
@@ -39,6 +40,8 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
+	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/ksuid v1.0.2

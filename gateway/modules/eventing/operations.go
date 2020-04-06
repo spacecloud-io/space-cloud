@@ -11,8 +11,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
-// IsDisabled returns whether the eventing module is enabled or not
-func (m *Module) IsDisabled() bool {
+// IsEnabled returns whether the eventing module is enabled or not
+func (m *Module) IsEnabled() bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
@@ -29,8 +29,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	err := m.validate(ctx, project, token, req)
-	if err != nil {
+	if err := m.validate(ctx, project, token, req); err != nil {
 		logrus.Errorf("error queueing event in eventing unable to validate - %s", err.Error())
 		return nil, err
 	}
@@ -41,7 +40,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
 	defer m.eventChanMap.Delete(batchID)
 
-	if err = m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
+	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
 		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
 		return nil, err
 	}
@@ -54,14 +53,12 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 				// clear channel
 				return nil, ctx.Err()
 			case result := <-responseChan:
-				m.metricHook(req.Type)
+				m.metricHook(m.project, req.Type)
 				return result, nil
 			}
 		}
 	}
-	if err == nil {
-		m.metricHook(req.Type)
-	}
+	m.metricHook(m.project, req.Type)
 	return nil, nil
 }
 

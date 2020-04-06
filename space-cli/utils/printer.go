@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+
 	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/model"

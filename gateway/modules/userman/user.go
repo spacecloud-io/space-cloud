@@ -42,8 +42,8 @@ func (m *Module) IsActive(method string) bool {
 	return p && s.Enabled
 }
 
-// IsDisabled shows if the user management module is enabled
-func (m *Module) IsDisabled() bool {
+// IsEnabled shows if the user management module is enabled
+func (m *Module) IsEnabled() bool {
 	m.RLock()
 	defer m.RUnlock()
 

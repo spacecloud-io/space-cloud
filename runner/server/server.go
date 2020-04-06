@@ -2,11 +2,12 @@ package server
 
 import (
 	"fmt"
-	"github.com/spaceuptech/space-cloud/runner/metrics"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/spaceuptech/space-cloud/runner/metrics"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gorilla/mux"

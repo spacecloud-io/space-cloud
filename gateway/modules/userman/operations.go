@@ -16,7 +16,7 @@ import (
 
 // Profile fetches the profile of the user
 func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string) (int, map[string]interface{}, error) {
-	if !m.IsDisabled() {
+	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
 
@@ -58,7 +58,7 @@ func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string
 
 // Profiles fetches all the user profiles
 func (m *Module) Profiles(ctx context.Context, token, dbAlias, project string) (int, map[string]interface{}, error) {
-	if !m.IsDisabled() {
+	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("This feature isn't enabled")
 	}
 	// Create the find object
@@ -201,7 +201,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 // EmailEditProfile allows the user to edit a profile
 func (m *Module) EmailEditProfile(ctx context.Context, token, dbAlias, project, id, email, name, password string) (int, map[string]interface{}, error) {
 	// Allow this feature only if the email sign in function is enabled
-	if !m.IsDisabled() {
+	if !m.IsEnabled() {
 		return http.StatusNotFound, nil, errors.New("Email sign in feature is not enabled")
 	}
 

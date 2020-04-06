@@ -19,7 +19,7 @@ func (m *Module) Call(service, function, token string, params interface{}, timeo
 	if err != nil {
 		return nil, err
 	}
-	m.metricHook(m.project)
+	m.metricHook(m.project, service, function)
 	return result, err
 }
 
@@ -33,7 +33,7 @@ func (m *Module) CallWithContext(ctx context.Context, service, function, token s
 	if err != nil {
 		return nil, err
 	}
-	m.metricHook(m.project)
+	m.metricHook(m.project, service, function)
 	return result, err
 }
 

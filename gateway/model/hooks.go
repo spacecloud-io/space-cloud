@@ -13,10 +13,10 @@ type MetricCrudHook func(project, dbAlias, col string, count int64, op utils.Ope
 type MetricFileHook func(project, storeType string, op utils.OperationType)
 
 // MetricFunctionHook is used to log a function operation
-type MetricFunctionHook func(project string)
+type MetricFunctionHook func(project, service, function string)
 
 // MetricEventingHook is used to log a eventing operation
-type MetricEventingHook func(eventingType string)
+type MetricEventingHook func(project, eventingType string)
 
 // CreateIntentHook is used to log a create intent
 type CreateIntentHook func(ctx context.Context, dbAlias, col string, req *CreateRequest) (*EventIntent, error)

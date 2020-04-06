@@ -26,6 +26,7 @@ type input struct {
 
 // GenerateEmptyConfig creates an empty config file
 func GenerateEmptyConfig() *Config {
+
 	return &Config{
 		SSL:      &SSL{Enabled: false},
 		Admin:    GenerateAdmin(),

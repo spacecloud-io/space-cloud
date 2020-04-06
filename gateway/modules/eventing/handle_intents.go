@@ -15,7 +15,7 @@ import (
 func (m *Module) processIntents(t *time.Time) {
 
 	// Return if module is not enabled
-	if !m.IsDisabled() {
+	if !m.IsEnabled() {
 		return
 	}
 	m.lock.RLock()

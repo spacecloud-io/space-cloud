@@ -141,11 +141,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Disable anonymous metric collection",
 		EnvVar: "DISABLE_METRICS",
 	},
-	cli.BoolFlag{
-		Name:   "disable-bandwidth",
-		Usage:  "disable the bandwidth measurement",
-		EnvVar: "DISABLE_BANDWIDTH",
-	},
 	cli.StringFlag{
 		Name:   "metrics-sink",
 		Usage:  "The sink to output metrics data to",

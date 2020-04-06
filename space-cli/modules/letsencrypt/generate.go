@@ -13,7 +13,6 @@ func generateLetsEncryptDomain() (*model.SpecObject, error) {
 		return nil, err
 	}
 
-
 	whiteListedDomain := strings.Split(strings.TrimSuffix(whiteListedDomains, ","), ",")
 	project := ""
 	if err := survey.AskOne(&survey.Input{Message: "Enter project: "}, &project); err != nil {
