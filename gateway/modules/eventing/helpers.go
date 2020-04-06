@@ -57,8 +57,13 @@ func (m *Module) generateBatchID() string {
 }
 
 func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEventRequest, batchID string) error {
+	return m.batchRequestsRaw(ctx, "", 0, requests, batchID)
+}
+func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token int, requests []*model.QueueEventRequest, batchID string) error {
 	// Create the meta information
-	token := rand.Intn(utils.MaxEventTokens)
+	if token == 0 {
+		token = rand.Intn(utils.MaxEventTokens)
+	}
 
 	// Create an eventDocs array
 	var eventDocs []*model.EventDocument
@@ -85,9 +90,16 @@ func (m *Module) batchRequests(ctx context.Context, requests []*model.QueueEvent
 	return nil
 }
 
-func (m *Module) generateQueueEventRequest(token int, name string, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+func (m *Module) generateQueueEventRequest(token int, name, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
+	return m.generateQueueEventRequestRaw(token, name, "", batchID, status, event)
+}
 
+func (m *Module) generateQueueEventRequestRaw(token int, name, eventDocID, batchID, status string, event *model.QueueEventRequest) *model.EventDocument {
 	timestamp := time.Now()
+
+	if eventDocID == "" {
+		eventDocID = ksuid.New().String()
+	}
 
 	// Parse the timestamp provided
 	eventTs, err := time.Parse(time.RFC3339, event.Timestamp)
@@ -111,7 +123,7 @@ func (m *Module) generateQueueEventRequest(token int, name string, batchID, stat
 	data, _ := json.Marshal(event.Payload)
 
 	return &model.EventDocument{
-		ID:        ksuid.New().String(),
+		ID:        eventDocID,
 		BatchID:   batchID,
 		Type:      event.Type,
 		RuleName:  name,
@@ -177,7 +189,7 @@ func getCreateRows(doc interface{}, op string) []interface{} {
 }
 
 func (m *Module) getMatchingRules(name string, options map[string]string) []config.EventingRule {
-	var rules []config.EventingRule
+	rules := make([]config.EventingRule, 0)
 
 	for n, rule := range m.config.Rules {
 		if rule.Type == name && isOptionsValid(rule.Options, options) {
