@@ -28,8 +28,8 @@ type Module struct {
 	crud   model.CrudEventingInterface
 	schema model.SchemaEventingInterface
 
-	adminMan  *admin.Manager
-	syncMan   *syncman.Manager
+	adminMan  model.AdminEventingInterface
+	syncMan   model.SyncmanEventingInterface
 	fileStore model.FilestoreEventingInterface
 
 	schemas map[string]model.Fields
