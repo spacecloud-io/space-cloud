@@ -155,7 +155,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 	if databaseConfig.PreparedQueries == nil {
 		databaseConfig.PreparedQueries = make(map[string]*config.PreparedQuery, 1)
 	}
-	databaseConfig.PreparedQueries[id] = &config.PreparedQuery{ID: v.ID, SQL: v.SQL, Arguments: v.Arguments}
+	databaseConfig.PreparedQueries = map[string]*config.PreparedQuery{id: v}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())

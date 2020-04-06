@@ -105,7 +105,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	// Initialize the routes for the crud operations
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/batch").HandlerFunc(handlers.HandleCrudBatch(s.modules))
-
+	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/prepared-queries/{id}").HandlerFunc(handlers.HandleCrudPreparedQuery(s.modules))
 	crudRouter := router.Methods(http.MethodPost).PathPrefix("/v1/api/{project}/crud/{dbAlias}/{col}").Subrouter()
 	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.modules))
 	crudRouter.HandleFunc("/read", handlers.HandleCrudRead(s.modules))

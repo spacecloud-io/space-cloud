@@ -94,6 +94,7 @@ type CrudStub struct {
 type PreparedQuery struct {
 	ID        string   `json:"id,omitempty" yaml:"id,omitempty"`
 	SQL       string   `json:"sql" yaml:"sql"`
+	Rule      *Rule    `json:"rule" yaml:"rule"`
 	Arguments []string `json:"arguments" yaml:"arguments"`
 }
 

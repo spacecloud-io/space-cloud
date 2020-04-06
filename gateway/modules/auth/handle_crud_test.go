@@ -212,6 +212,63 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	}
 }
 
+func TestIsPreparedQueryAuthorised(t *testing.T) {
+	var authMatchQuery = []struct {
+		module                      *Module
+		testName, dbType, id, token string
+		project                     string
+		IsErrExpected               bool
+		rule                        *config.Crud
+		value                       model.PreparedQueryRequest
+		status                      int
+	}{
+		{
+			testName: "Successful Test allow", dbType: "mongo", id: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			value: model.PreparedQueryRequest{
+				Params: map[string]interface{}{"exp": 12},
+			},
+			IsErrExpected: false,
+			status:        200,
+		},
+		{
+			testName: "Unsuccessful Test-Unauthenticated crud Request", dbType: "pongo", id: "tweet", project: "project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			value: model.PreparedQueryRequest{
+				Params: map[string]interface{}{"exp": 12},
+			},
+			IsErrExpected: true,
+			status:        401,
+		},
+		{
+			testName: "Unsuccessful Test-Unauthorized crud Request", dbType: "mongo", id: "tweet", project: "projec", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			value: model.PreparedQueryRequest{
+				Params: map[string]interface{}{"exp": 12},
+			},
+			IsErrExpected: true,
+			status:        403,
+		},
+	}
+	project := "project"
+	rule := config.Crud{"mongo": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"tweet": {Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}
+	s := schema.Init(crud.Init(false), false)
+	if err := s.SetConfig(rule, project); err != nil {
+		t.Errorf("error setting config of schema - %s", err.Error())
+	}
+	auth := Init("1", &crud.Module{}, false)
+	if er := auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
+	}
+	for _, test := range authMatchQuery {
+		t.Run(test.testName, func(t *testing.T) {
+			_, r, err := (auth).IsPreparedQueryAuthorised(context.Background(), test.project, test.dbType, test.id, test.token, &test.value)
+			if (err != nil) != test.IsErrExpected {
+				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
+			}
+			if !reflect.DeepEqual(r, test.status) {
+				t.Error("Received Status Code-", r, "Expected Status-", test.status)
+			}
+		})
+	}
+}
 func TestIsDeleteOpAuthorised(t *testing.T) {
 	var authMatchQuery = []struct {
 		module                       *Module
