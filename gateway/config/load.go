@@ -2,20 +2,22 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
+
+	"github.com/ghodss/yaml"
 )
 
 func loadEnvironmentVariable(c *Config) {
 	for _, p := range c.Projects {
-		if strings.HasPrefix(p.Secret, "$") {
-			tempString := strings.TrimPrefix(p.Secret, "$")
+		if strings.HasPrefix(p.Secrets[getGreatestSecretKey(p.Secrets)], "$") {
+			tempString := strings.TrimPrefix(p.Secrets[getGreatestSecretKey(p.Secrets)], "$")
 			tempEnvVar, present := os.LookupEnv(tempString)
 
 			if present {
-				p.Secret = tempEnvVar
+				p.Secrets[getGreatestSecretKey(p.Secrets)] = tempEnvVar
 			}
 		}
 		for _, value := range p.Modules.Crud {
@@ -52,4 +54,13 @@ func LoadConfigFromFile(path string) (*Config, error) {
 
 	loadEnvironmentVariable(conf)
 	return conf, nil
+}
+
+func getGreatestSecretKey(secrets map[int]string) int {
+	keys := make([]int, 0)
+	for key := range secrets {
+		keys = append(keys, key)
+	}
+	sort.Ints(keys)
+	return keys[len(keys)-1]
 }
