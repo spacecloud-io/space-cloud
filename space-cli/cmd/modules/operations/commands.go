@@ -169,12 +169,12 @@ func actionDestroy(cmd *cobra.Command, args []string) error {
 }
 
 func actionApply(cmd *cobra.Command, args []string) error {
-	if len(args) != 3 {
+	if len(args) != 1 {
 		_ = utils.LogError("error while applying service incorrect number of arguments provided", nil)
 		return nil
 	}
 
-	dirName := args[2]
+	dirName := args[0]
 	_ = Apply(dirName)
 	return nil
 }

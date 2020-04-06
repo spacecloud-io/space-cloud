@@ -8,9 +8,20 @@ import (
 )
 
 // SetProjectConfig sets the config all modules
-func (m *Modules) SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
-	if config.Projects != nil && len(config.Projects) > 0 {
-		p := config.Projects[0]
+func (m *Modules) SetProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
+	if c.Projects != nil && len(c.Projects) > 0 {
+		p := c.Projects[0]
+
+		if p.Modules == nil {
+			p.Modules = &config.Modules{
+				FileStore:   &config.FileStore{},
+				Services:    &config.ServicesModule{},
+				Auth:        map[string]*config.AuthStub{},
+				Crud:        map[string]*config.CrudStub{},
+				Routes:      []*config.Route{},
+				LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+			}
+		}
 
 		logrus.Debugln("Setting config of db module")
 		if err := m.db.SetConfig(p.ID, p.Modules.Crud); err != nil {

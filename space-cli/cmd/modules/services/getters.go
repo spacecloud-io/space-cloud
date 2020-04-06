@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
@@ -61,7 +60,7 @@ func GetServicesSecrets(project, commandName string, params map[string]string) (
 		delete(spec, "name")
 
 		// Printing the object on the screen
-		s, err := utils.CreateSpecObject("//v1/runner/{project}/secrets/{id}", commandName, meta, spec)
+		s, err := utils.CreateSpecObject("/v1/runner/{project}/secrets/{id}", commandName, meta, spec)
 		if err != nil {
 			return nil, err
 		}
@@ -88,8 +87,7 @@ func GetServices(project, commandName string, params map[string]string) ([]*mode
 			// array may have an empty object
 			continue
 		}
-		str := strings.Split(id.(string), "-")
-		meta := map[string]string{"project": project, "version": str[1], "serviceId": str[0]}
+		meta := map[string]string{"project": project, "version": spec["version"].(string), "serviceId": id.(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
