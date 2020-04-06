@@ -28,8 +28,8 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
-		eventDoc := m.generateQueueEventRequest(token, rule.Retries, rule.ID,
-			batchID, utils.EventStatusIntent, rule.URL, &model.QueueEventRequest{
+		eventDoc := m.generateQueueEventRequest(token, rule.ID,
+			batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 				Type: utils.EventFileCreate,
 				Payload: &model.FilePayload{
 					Meta: req.Meta,
@@ -70,8 +70,8 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
-		eventDoc := m.generateQueueEventRequest(token, rule.Retries, rule.ID,
-			batchID, utils.EventStatusIntent, rule.URL, &model.QueueEventRequest{
+		eventDoc := m.generateQueueEventRequest(token, rule.ID,
+			batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 				Type: utils.EventFileDelete,
 				Payload: &model.FilePayload{
 					Path: path,

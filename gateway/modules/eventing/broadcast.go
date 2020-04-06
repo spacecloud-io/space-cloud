@@ -3,6 +3,8 @@ package eventing
 import (
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
@@ -13,14 +15,17 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 	start, end := m.syncMan.GetAssignedTokens()
 
 	// Get current timestamp
-	t := time.Now()
-	currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
+	currentTimestamp := time.Now()
 
 	for _, eventDoc := range eventDocs {
 		if eventDoc.Token >= start && eventDoc.Token <= end {
-			timestamp := eventDoc.Timestamp
+			timestamp, err := time.Parse(time.RFC3339, eventDoc.Timestamp)
+			if err != nil {
+				logrus.Errorf("Could not parse (%s) in event doc (%s) as time - %s", eventDoc.Timestamp, eventDoc.ID, err.Error())
+				continue
+			}
 
-			if currentTimestamp >= timestamp {
+			if currentTimestamp.After(timestamp) || currentTimestamp.Equal(timestamp) {
 				go m.processStagedEvent(eventDoc)
 			}
 		}

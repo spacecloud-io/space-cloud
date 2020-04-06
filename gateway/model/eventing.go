@@ -10,12 +10,10 @@ type EventDocument struct {
 	Type           string      `structs:"type" json:"type" bson:"type" mapstructure:"type"`
 	RuleName       string      `structs:"rule_name" json:"rule_name" bson:"rule_name" mapstructure:"rule_name"`
 	Token          int         `structs:"token" json:"token" bson:"token" mapstructure:"token"`
-	Timestamp      int64       `structs:"timestamp" json:"timestamp" bson:"timestamp" mapstructure:"timestamp"`                         // The timestamp of when the event should get executed
-	EventTimestamp int64       `structs:"event_timestamp" json:"event_timestamp" bson:"event_timestamp" mapstructure:"event_timestamp"` // The time stamp of when the event was logged
+	Timestamp      string      `structs:"ts" json:"ts" bson:"ts" mapstructure:"ts"`                         // The timestamp of when the event should get executed
+	EventTimestamp string      `structs:"event_ts" json:"event_ts" bson:"event_ts" mapstructure:"event_ts"` // The time stamp of when the event was logged
 	Payload        interface{} `structs:"payload" json:"payload" bson:"payload" mapstructure:"payload"`
 	Status         string      `structs:"status" json:"status" bson:"status" mapstructure:"status"`
-	Retries        int         `structs:"retries" json:"retries" bson:"retries" mapstructure:"retries"`
-	URL            string      `structs:"url" json:"url" bson:"url" mapstructure:"url"`
 	Remark         string      `structs:"remark" json:"remark" bson:"remark" mapstructure:"remark"`
 }
 
@@ -53,7 +51,7 @@ type EventResponse struct {
 type QueueEventRequest struct {
 	Type          string            `json:"type"`                // The type of the event
 	Delay         int64             `json:"delay,omitempty"`     // Time in seconds
-	Timestamp     int64             `json:"timestamp,omitempty"` // Milliseconds from unix epoch (UTC)
+	Timestamp     string            `json:"timestamp,omitempty"` // Milliseconds from unix epoch (UTC)
 	Payload       interface{}       `json:"payload,omitempty"`   // Payload contains necessary event dat
 	Options       map[string]string `json:"options"`
 	IsSynchronous bool              `json:"isSynchronous"` // if true then client will wait for response of event

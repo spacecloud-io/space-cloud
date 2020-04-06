@@ -75,35 +75,35 @@ func TestModule_IsEventingOpAuthorised(t *testing.T) {
 		{
 			name: "got rule",
 			m:    &Module{project: "some-project", eventingRules: map[string]*config.Rule{"some-type": &config.Rule{Rule: "authenticated"}}, secret: "mySecretkey"},
-			args: args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args: args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 		},
 		{
 			name:    "did not get rule",
 			m:       &Module{eventingRules: map[string]*config.Rule{"some-type": &config.Rule{}}, secret: "mySecretkey"},
-			args:    args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type1", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args:    args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type1", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 			wantErr: true,
 		},
 		{
 			name: "valid project details",
 			m:    &Module{project: "some-project", eventingRules: map[string]*config.Rule{"some-type": &config.Rule{Rule: "allow"}}, secret: "mySecretkey"},
-			args: args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args: args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 		},
 		{
 			name:    "invalid project details",
 			m:       &Module{project: "some-project", eventingRules: map[string]*config.Rule{"some-type": &config.Rule{Rule: "allow"}}, secret: "mySecretkey"},
-			args:    args{ctx: context.Background(), project: "some-project1", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args:    args{ctx: context.Background(), project: "some-project1", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 			wantErr: true,
 		},
 		{
 			name:    "did not get auth",
 			m:       &Module{project: "some-project", eventingRules: map[string]*config.Rule{"some-type": &config.Rule{Rule: "authenticated"}}, secret: "mySecretkey"},
-			args:    args{ctx: context.Background(), project: "some-project", token: "token", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args:    args{ctx: context.Background(), project: "some-project", token: "token", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 			wantErr: true,
 		},
 		{
 			name:    "rules did not match",
 			m:       &Module{project: "some-project", eventingRules: map[string]*config.Rule{"some-type": &config.Rule{Rule: "deny"}}, secret: "mySecretkey"},
-			args:    args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Timestamp: 0, Payload: "something", Options: make(map[string]string)}},
+			args:    args{ctx: context.Background(), project: "some-project", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", event: &model.QueueEventRequest{Type: "some-type", Delay: 0, Payload: "something", Options: make(map[string]string)}},
 			wantErr: true,
 		},
 	}
