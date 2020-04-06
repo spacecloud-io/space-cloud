@@ -115,6 +115,10 @@ func (m *Module) updateSCMetrics(find string, set, min map[string]interface{}) {
 	if err != nil {
 		logrus.Errorf("error querying database got error")
 	}
+	if result == nil {
+		// when space api go is not able to connect to server, the result is empty
+		return
+	}
 	if result.Status != http.StatusOK {
 		logrus.Errorf("error querying database got status (%d) (%s)", result.Status, result.Error)
 	}

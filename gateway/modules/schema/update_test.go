@@ -160,19 +160,6 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded integer got float",
-			IsErrExpected: true,
-			args: args{
-				dbType: "mongo",
-				col:    "tweet",
-				updateDoc: map[string]interface{}{
-					"$inc": map[string]interface{}{
-						"age": 6.34,
-					},
-				},
-			},
-		},
-		{
 			name:          "Invalid Test case-document not of type object",
 			IsErrExpected: true,
 			args: args{

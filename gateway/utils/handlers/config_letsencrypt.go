@@ -42,7 +42,8 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-
+		id := vars["id"]
+		value.ID = id
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 

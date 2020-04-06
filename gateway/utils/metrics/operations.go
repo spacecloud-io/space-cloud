@@ -16,13 +16,9 @@ func (m *Module) AddEventingType(project, eventingType string) {
 	if m.config.IsDisabled {
 		return
 	}
-
-	value, ok := m.eventing.LoadOrStore(fmt.Sprintf("%s:%s", project, eventingType), uint64(1))
-	if ok {
-		v := value.(uint64)
-		atomic.AddUint64(&v, uint64(1))
-		return
-	}
+	value, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s", project, eventingType), newMetrics())
+	metrics := value.(*metrics)
+	atomic.AddUint64(&metrics.eventing, uint64(1))
 }
 
 // AddFunctionOperation counts the number of time a particular function gets invoked
@@ -37,7 +33,6 @@ func (m *Module) AddFunctionOperation(project, service, function string) {
 
 	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s", project, service, function), newMetrics())
 	metrics := metricsTemp.(*metrics)
-
 	atomic.AddUint64(&metrics.function, uint64(1))
 }
 
@@ -83,23 +78,20 @@ func (m *Module) AddFileOperation(project, storeType string, op utils.OperationT
 	}
 
 	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s", project, storeType), newMetrics())
-	metrics := metricsTemp.(*metricOperations)
+	metrics := metricsTemp.(*metrics)
 
 	switch op {
 	case utils.Create:
-		atomic.AddUint64(&metrics.create, uint64(1))
+		atomic.AddUint64(&metrics.fileStore.create, uint64(1))
 
 	case utils.Read:
-		atomic.AddUint64(&metrics.read, uint64(1))
-
-	case utils.Update:
-		atomic.AddUint64(&metrics.update, uint64(1))
+		atomic.AddUint64(&metrics.fileStore.read, uint64(1))
 
 	case utils.Delete:
-		atomic.AddUint64(&metrics.delete, uint64(1))
+		atomic.AddUint64(&metrics.fileStore.delete, uint64(1))
 
 	case utils.List:
-		atomic.AddUint64(&metrics.list, uint64(1))
+		atomic.AddUint64(&metrics.fileStore.list, uint64(1))
 	}
 }
 

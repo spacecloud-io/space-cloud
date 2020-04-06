@@ -5,6 +5,7 @@ import (
 
 	api "github.com/spaceuptech/space-api-go"
 	"github.com/spaceuptech/space-api-go/db"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
@@ -20,7 +21,6 @@ type Module struct {
 	clusterID string
 	nodeID    string
 	projects  sync.Map // key -> project; value -> *metrics
-	eventing  sync.Map // key -> eventType value -> count
 	// Variables to store the configuration
 	config Config
 
@@ -46,7 +46,7 @@ func New(clusterID, nodeID string, config *Config, syncMan *syncman.Manager, isP
 	}
 
 	// Initialise the sink
-	conn := api.New("spacecloud", "localhost:4122", false).DB("db")
+	conn := api.New("spacecloud", "localhost:4123", false).DB("db")
 
 	// Create a new metrics module
 	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, config: *config, syncMan: syncMan, isProd: isProd}

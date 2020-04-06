@@ -24,6 +24,9 @@ func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	commandName := cmd.Use
 
 	params := map[string]string{}
+	if len(args) != 0 {
+		params["id"] = args[0]
+	}
 	obj, err := GetProjectConfig(project, commandName, params)
 	if err != nil {
 		return nil
