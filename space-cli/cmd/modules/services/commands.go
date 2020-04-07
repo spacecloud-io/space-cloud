@@ -25,12 +25,12 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getServicesRoutes = &cobra.Command{
-		Use:  "services-routes",
+		Use:  "service-routes",
 		RunE: actionGetServicesRoutes,
 	}
 
 	var getServicesSecrets = &cobra.Command{
-		Use:  "services-secrets",
+		Use:  "secrets",
 		RunE: actionGetServicesSecrets,
 	}
 

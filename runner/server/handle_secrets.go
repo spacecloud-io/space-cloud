@@ -30,7 +30,7 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		// get nameSpace from requestUrl!
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		secretName := vars["name"]
+		secretName := vars["id"]
 
 		// Parse request body
 		reqBody := new(request)
@@ -68,7 +68,7 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		// get nameSpace from requestUrl!
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		name := vars["name"]
+		name := vars["id"]
 
 		// Parse request body
 		secretObj := new(model.Secret)
@@ -78,7 +78,7 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 			return
 		}
 
-		secretObj.Name = name
+		secretObj.ID = name
 
 		// create/update secret
 		if err := s.driver.CreateSecret(projectID, secretObj); err != nil {
@@ -119,7 +119,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 
 		if exists {
 			for _, val := range secrets {
-				if val.Name == name[0] {
+				if val.ID == name[0] {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{val}})
@@ -136,7 +136,6 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: secrets})
-
 	}
 }
 
@@ -157,7 +156,7 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		// get nameSpace from requestUrl!
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		name := vars["name"]
+		name := vars["id"]
 
 		// list all secrets
 		if err := s.driver.DeleteSecret(projectID, name); err != nil {
@@ -187,8 +186,8 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 		// get nameSpace and secretKey from requestUrl!
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		name := vars["name"] // secret-name
-		key := vars["key"]   // secret-key
+		name := vars["id"] // secret-name
+		key := vars["key"] // secret-key
 
 		// body will only contain "value": secretValue (not-encoded!)
 		secretVal := new(model.SecretValue)
@@ -224,8 +223,8 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		name := vars["name"] // secret-name
-		key := vars["key"]   // secret-key
+		name := vars["id"] // secret-name
+		key := vars["key"] // secret-key
 		// setSecretKey
 		if err := s.driver.DeleteKey(projectID, name, key); err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())

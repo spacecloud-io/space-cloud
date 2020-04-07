@@ -67,14 +67,6 @@ type Deployments struct {
 	Services interface{} `json:"services" yaml:"services"`
 }
 
-// Secret stores secrets information
-type Secret struct {
-	Name     string            `json:"name" yaml:"name"`
-	Type     string            `json:"type" yaml:"type"`
-	RootPath string            `json:"rootPath" yaml:"rootPath"`
-	Data     map[string]string `json:"data" yaml:"data"`
-}
-
 // Crud holds the mapping of database level configuration
 type Crud map[string]*CrudStub // The key here is the alias for database type
 

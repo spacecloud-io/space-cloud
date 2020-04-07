@@ -17,7 +17,7 @@ func (d *Docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
 
 	// check if file exists
-	filePath := fmt.Sprintf("%s/%s.json", projectPath, secretObj.Name)
+	filePath := fmt.Sprintf("%s/%s.json", projectPath, secretObj.ID)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		// create file & set it's content
 		return d.writeIntoFile(secretObj, filePath)
@@ -67,11 +67,11 @@ func (d *Docker) ListSecrets(projectID string) ([]*model.Secret, error) {
 
 			// remove all value of secrets
 			secrets := map[string]string{}
-			for key := range fileContent.Data {
-				secrets[key] = ""
+			for key, data := range fileContent.Data {
+				secrets[key] = data
 			}
 			secretArr[index] = &model.Secret{
-				Name:     fileContent.Name,
+				ID:       fileContent.ID,
 				Type:     fileContent.Type,
 				RootPath: fileContent.RootPath,
 				Data:     secrets,
