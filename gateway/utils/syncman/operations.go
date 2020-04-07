@@ -231,7 +231,7 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	// Iterate over all projects stored
 	for _, p := range s.projectConfig.Projects {
 		if projectID == p.ID {
-			return []interface{}{config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Secrets: p.Secrets, Name: p.Name, ID: p.ID}}, nil
+			return []interface{}{config.Project{DockerRegistry: p.DockerRegistry, AESkey: p.AESkey, ContextTime: p.ContextTime, Secrets: p.Secrets, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
 

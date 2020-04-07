@@ -197,16 +197,14 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 			return
 		}
 
-		result := []interface{}{}
-		respServices := make(map[string]*model.Service)
+		var result []*model.Service
 		if serviceIDExists && versionExists {
 			for _, val := range services {
 				if val.ProjectID == projectID && val.ID == serviceID[0] && val.Version == version[0] {
-					s := fmt.Sprintf("%s-%s", serviceID, version)
-					respServices[s] = val
+					result = append(result, val)
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{respServices}})
+					_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 					return
 				}
 			}
@@ -220,22 +218,17 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		if serviceIDExists && !versionExists {
 			for _, val := range services {
 				if val.ID == serviceID[0] {
-					s := fmt.Sprintf("%s-%s", val.ID, val.Version)
-					respServices[s] = val
-					result = append(result, respServices)
+					result = append(result, val)
 				}
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{result}})
+			_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 			return
 		}
 
-		for _, val := range services {
-			s := fmt.Sprintf("%s-%s", val.ID, val.Version)
-			respServices[s] = val
-			result = append(result, respServices)
-		}
+		result = services
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -356,7 +349,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 				if k == serviceID[0] {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{result}})
+					_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 					return
 				}
 			}
@@ -367,9 +360,9 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 			return
 		}
 
-		result := make([]interface{}, 0)
+		var result model.Routes
 		for _, value := range serviceRoutes {
-			result = append(result, value)
+			result = append(result, value...)
 		}
 
 		w.Header().Set("Content-Type", "application/json")
