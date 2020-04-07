@@ -11,6 +11,7 @@ func (b *Bolt) RawExec(ctx context.Context, project string) error {
 	return fmt.Errorf("error raw exec cannot be performed over embedded database")
 }
 
+// RawQuery query document(s) from the database
 func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
 	return 0, "", fmt.Errorf("error raw querry cannot be performed over embedded database")
 }

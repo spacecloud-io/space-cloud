@@ -91,7 +91,9 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id string) ([]interface{}, error) {
 	// Acquire a lock
 	type response struct {
-		SQL string `json:"sql"`
+		ID        string   `json:"id"`
+		SQL       string   `json:"sql"`
+		Arguments []string `json:"arguments" yaml:"arguments"`
 	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -100,25 +102,32 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	if err != nil {
 		return nil, err
 	}
-	if dbAlias != "" && id != "" {
-		preparedQueries, ok := projectConfig.Modules.Crud[dbAlias].PreparedQueries[id]
+
+	if dbAlias != "" {
+		databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 		if !ok {
-			return nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, id)
+			return nil, fmt.Errorf("specified database:{%s} not present in config", dbAlias)
 		}
-		return []interface{}{map[string]*response{fmt.Sprintf("%s-%s", dbAlias, id): {SQL: preparedQueries.SQL}}}, nil
-	} else if dbAlias != "" {
-		preparedQueries := projectConfig.Modules.Crud[dbAlias].PreparedQueries
-		coll := map[string]*response{}
-		for key, value := range preparedQueries {
-			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &response{SQL: value.SQL}
+
+		if id != "" {
+			preparedQuery, ok := databaseConfig.PreparedQueries[id]
+			if !ok {
+				return nil, fmt.Errorf("Prepared Queries for id (%s) not present in config for dbAlias (%s) )", id, dbAlias)
+			}
+			return []interface{}{&response{ID: preparedQuery.ID, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments}}, nil
+		}
+		preparedQuery := databaseConfig.PreparedQueries
+		var coll []interface{} = make([]interface{}, 0)
+		for key, value := range preparedQuery {
+			coll = append(coll, &response{ID: key, SQL: value.SQL, Arguments: value.Arguments})
 		}
 		return []interface{}{coll}, nil
 	}
 	databases := projectConfig.Modules.Crud
-	coll := map[string]*response{}
-	for dbName, dbInfo := range databases {
+	var coll []interface{} = make([]interface{}, 0)
+	for _, dbInfo := range databases {
 		for key, value := range dbInfo.PreparedQueries {
-			coll[fmt.Sprintf("%s-%s", dbName, key)] = &response{SQL: value.SQL}
+			coll = append(coll, &response{ID: key, SQL: value.SQL, Arguments: value.Arguments})
 		}
 	}
 	return []interface{}{coll}, nil
@@ -138,24 +147,13 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 	// update database PreparedQueries
 	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return errors.New("specified database not present in config")
+		return fmt.Errorf("specified database:{%s} not present in config", dbAlias)
 	}
-	// preparedQuery, ok := databaseConfig.PreparedQueries[id]
-	// if !ok {
-	// 	if databaseConfig.PreparedQueries == nil {
-	// 		databaseConfig.PreparedQueries = map[string]*config.PreparedQuery{id: v}
-	// 	} else {
-	// 		databaseConfig.PreparedQueries[id] = &config.PreparedQuery{ID: v.ID, SQL: v.SQL, Arguments: v.Arguments}
-	// 	}
-	// } else {
-	// 	preparedQuery.ID = v.ID
-	// 	preparedQuery.SQL = v.SQL
-	// 	preparedQuery.Arguments = v.Arguments
-	// }
+
 	if databaseConfig.PreparedQueries == nil {
 		databaseConfig.PreparedQueries = make(map[string]*config.PreparedQuery, 1)
 	}
-	databaseConfig.PreparedQueries = map[string]*config.PreparedQuery{id: v}
+	databaseConfig.PreparedQueries[id] = v
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
@@ -176,8 +174,13 @@ func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, i
 		return err
 	}
 
+	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
+	if !ok {
+		return fmt.Errorf("specified database:{%s} not present in config", dbAlias)
+	}
+
 	// update database reparedQueries
-	delete(projectConfig.Modules.Crud[dbAlias].PreparedQueries, id)
+	delete(databaseConfig.PreparedQueries, id)
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())

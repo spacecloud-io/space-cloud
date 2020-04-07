@@ -92,7 +92,7 @@ type CrudStub struct {
 
 // PreparedQuery contains the config at the collection level
 type PreparedQuery struct {
-	ID        string   `json:"id,omitempty" yaml:"id,omitempty"`
+	ID        string   `json:"id" yaml:"id"`
 	SQL       string   `json:"sql" yaml:"sql"`
 	Rule      *Rule    `json:"rule" yaml:"rule"`
 	Arguments []string `json:"arguments" yaml:"arguments"`

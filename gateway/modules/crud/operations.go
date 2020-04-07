@@ -160,13 +160,13 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
-// GetPreparedQuery checks if id exist
-func (m *Module) GetPreparedQuery(id string) bool {
+// IsPreparedQueryPresent checks if id exist
+func (m *Module) IsPreparedQueryPresent(id string) bool {
 	_, p := m.queries[id]
 	return p
 }
 
-// ExecPreparedQuery TODO
+// ExecPreparedQuery executes PreparedQueries request
 func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id string, req *model.PreparedQueryRequest) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
@@ -183,8 +183,7 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id str
 	var args []interface{}
 	preparedQuery, p := m.queries[id]
 	if !p {
-		logrus.Errorf("given id does not exist")
-		return nil, nil
+		return nil, fmt.Errorf("Prepared Query for given id:{%s} does not exist", id)
 	}
 	for i := 0; i < len(preparedQuery.Arguments); i++ {
 		arg, err := utils.LoadValue(preparedQuery.Arguments[i], req.Params)

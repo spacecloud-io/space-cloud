@@ -284,7 +284,7 @@ func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		if exists {
 			id = idQuery[0]
 		}
-		schemas, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id)
+		result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -292,7 +292,7 @@ func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
 	}
 }
 

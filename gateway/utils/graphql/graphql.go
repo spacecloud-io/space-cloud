@@ -180,10 +180,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 						return
 					}
 
-					// Load the schema
-					s, _ := graph.schema.GetSchema(dbAlias, col)
-
-					graph.processQueryResult(ctx, field, token, store, result, s, cb)
+					graph.processQueryResult(ctx, field, token, store, result, nil, cb)
 				}))
 				return
 			}
@@ -240,10 +237,10 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 	}
 }
 
-func (graph *Module) getQueryKind(directive, id string) string {
+func (graph *Module) getQueryKind(directive, fieldName string) string {
 	_, err := graph.crud.GetDBType(directive)
 	if err == nil {
-		if graph.crud.GetPreparedQuery(id) {
+		if graph.crud.IsPreparedQueryPresent(fieldName) {
 			return "prepared-queries"
 		}
 		return "read"

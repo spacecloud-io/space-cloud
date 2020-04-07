@@ -34,7 +34,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		dbAlias := vars["dbAlias"]
 		project := vars["project"]
 		id := vars["id"]
-		token := vars["token"]
+		token := utils.GetTokenFromHeader(r)
 
 		// Load the request from the body
 		req := model.PreparedQueryRequest{}

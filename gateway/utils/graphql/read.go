@@ -74,17 +74,14 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 		return
 	}
 
-	id, err := getCollection(field)
+	id := field.Name.Value
+
+	params, err := getFuncParams(field, store)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
-	param, err := getFuncParams(field, store)
-	if err != nil {
-		cb("", "", nil, err)
-		return
-	}
-	req := model.PreparedQueryRequest{Params: param}
+	req := model.PreparedQueryRequest{Params: params}
 	// Check if PreparedQuery op is authorised
 	actions, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
 	if err != nil {
