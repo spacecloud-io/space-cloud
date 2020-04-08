@@ -2,20 +2,23 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/ghodss/yaml"
 )
 
 func loadEnvironmentVariable(c *Config) {
 	for _, p := range c.Projects {
-		if strings.HasPrefix(p.Secret, "$") {
-			tempString := strings.TrimPrefix(p.Secret, "$")
-			tempEnvVar, present := os.LookupEnv(tempString)
+		for key := range p.Secrets {
+			if strings.HasPrefix(p.Secrets[key], "$") {
+				tempString := strings.TrimPrefix(p.Secrets[key], "$")
+				tempEnvVar, present := os.LookupEnv(tempString)
 
-			if present {
-				p.Secret = tempEnvVar
+				if present {
+					p.Secrets[key] = tempEnvVar
+				}
 			}
 		}
 		for _, value := range p.Modules.Crud {

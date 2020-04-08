@@ -3,9 +3,11 @@ package auth
 import (
 	"encoding/base64"
 	"errors"
+	"strconv"
 	"sync"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -25,7 +27,7 @@ type Module struct {
 	sync.RWMutex
 	rules           config.Crud
 	nodeID          string
-	secret          string
+	secrets         map[string]string
 	crud            model.CrudAuthInterface
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
@@ -42,7 +44,7 @@ func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) 
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secrets map[string]string, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -52,7 +54,7 @@ func (m *Module) SetConfig(project string, secret, encodedAESKey string, rules c
 
 	m.project = project
 	m.rules = rules
-	m.secret = secret
+	m.secrets = secrets
 	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
 	if err != nil {
 		return err
@@ -74,11 +76,11 @@ func (m *Module) SetConfig(project string, secret, encodedAESKey string, rules c
 	return nil
 }
 
-// SetSecret sets the secret key to be used for JWT authentication
-func (m *Module) SetSecret(secret string) {
+// SetSecrets sets the secrets to be used for JWT authentication
+func (m *Module) SetSecrets(secrets map[string]string) {
 	m.Lock()
 	defer m.Unlock()
-	m.secret = secret
+	m.secrets = secrets
 }
 
 // SetAESKey sets the aeskey to be used for encryption
@@ -152,7 +154,7 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(m.secret))
+	tokenString, err := token.SignedString([]byte(m.secrets[m.getGreatestSecretKey()]))
 	if err != nil {
 		return "", err
 	}
@@ -179,29 +181,30 @@ func (m *Module) IsTokenInternal(token string) error {
 }
 
 func (m *Module) parseToken(token string) (TokenClaims, error) {
-	// Parse the JWT token
-	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, ErrInvalidSigningMethod
+	for _, secret := range m.secrets {
+		// Parse the JWT token
+		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+			// Don't forget to validate the alg is what you expect:
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, ErrInvalidSigningMethod
+			}
+
+			return []byte(secret), nil
+		})
+		if err != nil {
+			continue
 		}
 
-		return []byte(m.secret), nil
-	})
-	if err != nil {
-		return nil, err
-	}
+		// Get the claims
+		if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
+			obj := make(TokenClaims, len(claims))
+			for key, val := range claims {
+				obj[key] = val
+			}
 
-	// Get the claims
-	if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
-		obj := make(TokenClaims, len(claims))
-		for key, val := range claims {
-			obj[key] = val
+			return obj, nil
 		}
-
-		return obj, nil
 	}
-
 	return nil, ErrTokenVerification
 }
 
@@ -211,4 +214,20 @@ func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 	defer m.Unlock()
 
 	m.makeHTTPRequest = function
+}
+
+func (m *Module) getGreatestSecretKey() string {
+	greatesKey := 0
+	for key := range m.secrets {
+		intKey, err := strconv.Atoi(key)
+		if err != nil {
+			logrus.Errorf("Couldn't convert secrets key %s to an integer - %s", key, err.Error())
+			continue
+		}
+		if intKey > greatesKey {
+			greatesKey = intKey
+		}
+	}
+	stringKey := strconv.Itoa(greatesKey)
+	return stringKey
 }
