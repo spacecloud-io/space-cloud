@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -211,7 +212,11 @@ func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 func (m *Module) getGreatestSecretKey() string {
 	greatesKey := 0
 	for key := range m.secrets {
-		intKey, _ := strconv.Atoi(key)
+		intKey, err := strconv.Atoi(key)
+		if err != nil {
+			logrus.Errorf("Couldn't convert secrets key %s to an integer - %s", key, err.Error())
+			continue
+		}
 		if intKey > greatesKey {
 			greatesKey = intKey
 		}

@@ -92,3 +92,34 @@ func TestParseToken(t *testing.T) {
 		})
 	}
 }
+
+func TestModule_getGreatestSecretKey(t *testing.T) {
+	tests := []struct {
+		name string
+		m    *Module
+		want string
+	}{
+		{
+			name: "no secrets stored",
+			m:    &Module{secrets: map[string]string{}},
+			want: "0",
+		},
+		{
+			name: "error converting key to int",
+			m:    &Module{secrets: map[string]string{"abc": "mySecretKey", "1": "someKey", "2": "some other key"}},
+			want: "2",
+		},
+		{
+			name: "key converted to int and returned as a string",
+			m:    &Module{secrets: map[string]string{"0": "mySecretKey", "1": "someKey", "2": "some other key"}},
+			want: "2",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.m.getGreatestSecretKey(); got != tt.want {
+				t.Errorf("Module.getGreatestSecretKey() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
