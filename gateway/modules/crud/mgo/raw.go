@@ -3,7 +3,6 @@ package mgo
 import (
 	"context"
 	"errors"
-	"fmt"
 )
 
 // RawBatch performs a batch operation for schema creation
@@ -20,7 +19,7 @@ func (m *Mongo) RawExec(ctx context.Context, query string) error {
 
 // RawQuery query document(s) from the database
 func (m *Mongo) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
-	return 0, "", fmt.Errorf("error raw querry operation cannot be performed on mongo")
+	return 0, "", errors.New("error raw querry operation cannot be performed on mongo")
 }
 
 // GetConnectionState : function to check connection state

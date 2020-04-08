@@ -95,7 +95,7 @@ type PreparedQuery struct {
 	ID        string   `json:"id" yaml:"id"`
 	SQL       string   `json:"sql" yaml:"sql"`
 	Rule      *Rule    `json:"rule" yaml:"rule"`
-	Arguments []string `json:"arguments" yaml:"arguments"`
+	Arguments []string `json:"args" yaml:"args"`
 }
 
 // TableRule contains the config at the collection level

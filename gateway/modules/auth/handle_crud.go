@@ -191,7 +191,7 @@ func (m *Module) getCrudRule(dbAlias, col string, query utils.OperationType) (*c
 func (m *Module) getPrepareQueryRule(dbAlias, id string) (*config.Rule, error) {
 	dbRules, p1 := m.rules[dbAlias]
 	if !p1 {
-		return nil, fmt.Errorf("given database does not exist")
+		return nil, fmt.Errorf("given database (%s) does not exist", dbAlias)
 	}
 	if dbPreparedQuery, p2 := dbRules.PreparedQueries[id]; p2 && dbPreparedQuery.Rule != nil {
 		return dbPreparedQuery.Rule, nil
@@ -199,5 +199,5 @@ func (m *Module) getPrepareQueryRule(dbAlias, id string) (*config.Rule, error) {
 	if defaultPreparedQuery, p2 := dbRules.PreparedQueries["default"]; p2 && defaultPreparedQuery.Rule != nil {
 		return defaultPreparedQuery.Rule, nil
 	}
-	return nil, fmt.Errorf("no rule found for Prepared Queries %s in database %s", id, dbAlias)
+	return nil, fmt.Errorf("no rule found for Prepared Query (%s) in database (%s)", id, dbAlias)
 }

@@ -391,3 +391,87 @@ func TestIsPreparedQueryAuthorised(t *testing.T) {
 		})
 	}
 }
+
+func TestModule_authenticatePreparedQueryRequest(t *testing.T) {
+	tests := []struct {
+		name               string
+		module             *Module
+		dbAlias, id, token string
+		wantRule           *config.Rule
+		wantAuth           map[string]interface{}
+		wantErr            bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "Successful Test for authenticate Prepared Query Request", dbAlias: "mongo", id: "tweet", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			module:   &Module{rules: config.Crud{"mongo": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"tweet": {Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}},
+			wantRule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			wantAuth: nil,
+			wantErr:  false,
+		},
+		{
+			name: "Unsuccessful Test-authenticate Prepared Query Request", dbAlias: "pongo", id: "tweet", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc",
+			module:   &Module{rules: config.Crud{"mongo": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"tweet": {Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}},
+			wantRule: nil,
+			wantAuth: nil,
+			wantErr:  true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotRule, gotAuth, err := (tt.module).authenticatePreparedQueryRequest(tt.dbAlias, tt.id, tt.token)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Module.authenticatePreparedQueryRequest() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotRule, tt.wantRule) {
+				t.Errorf("Module.authenticatePreparedQueryRequest() gotRule = %v, want %v", gotRule, tt.wantRule)
+			}
+			if !reflect.DeepEqual(gotAuth, tt.wantAuth) {
+				t.Errorf("Module.authenticatePreparedQueryRequest() gotAuth = %v, want %v", gotAuth, tt.wantAuth)
+			}
+		})
+	}
+}
+
+func TestModule_getPrepareQueryRule(t *testing.T) {
+	tests := []struct {
+		name        string
+		module      *Module
+		dbAlias, id string
+		project     string
+		want        *config.Rule
+		wantErr     bool
+	}{
+		{
+			name: "Successful Test to get Prepare Query Rule", dbAlias: "mongo", id: "tweet",
+			module:  &Module{rules: config.Crud{"mongo": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"tweet": {Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}},
+			want:    &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			wantErr: false,
+		},
+		{
+			name: "Unsuccessful Test- Prepared Query Rule Request", dbAlias: "pongo", id: "tweet",
+			module:  &Module{rules: config.Crud{"mongo": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"tweet": {Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "Successful Test to get default Prepare Query Rule", dbAlias: "mongo", id: "weet",
+			module:  &Module{rules: config.Crud{"mongo": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"tweet": {Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}, "default": {Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}},
+			want:    &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := (tt.module).getPrepareQueryRule(tt.dbAlias, tt.id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Module.getPrepareQueryRule() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Module.getPrepareQueryRule() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

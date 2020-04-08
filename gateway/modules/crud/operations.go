@@ -6,6 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -160,8 +161,15 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
+// SetCrudQueries set queries present in Crud modules
+func (m *Module) SetCrudQueries(id string, v *config.PreparedQuery) {
+	m.queries[id] = v
+}
+
 // IsPreparedQueryPresent checks if id exist
 func (m *Module) IsPreparedQueryPresent(id string) bool {
+	m.RLock()
+	defer m.RUnlock()
 	_, p := m.queries[id]
 	return p
 }
@@ -183,7 +191,7 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id str
 	var args []interface{}
 	preparedQuery, p := m.queries[id]
 	if !p {
-		return nil, fmt.Errorf("Prepared Query for given id:{%s} does not exist", id)
+		return nil, fmt.Errorf("Prepared Query for given id (%s) does not exist", id)
 	}
 	for i := 0; i < len(preparedQuery.Arguments); i++ {
 		arg, err := utils.LoadValue(preparedQuery.Arguments[i], req.Params)
