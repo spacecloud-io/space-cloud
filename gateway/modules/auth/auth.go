@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/base64"
 	"errors"
+	"strconv"
 	"sync"
 
 	"github.com/dgrijalva/jwt-go"
@@ -25,7 +26,7 @@ type Module struct {
 	sync.RWMutex
 	rules           config.Crud
 	nodeID          string
-	secrets         map[int]string
+	secrets         map[string]string
 	crud            model.CrudAuthInterface
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
@@ -42,7 +43,7 @@ func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) 
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secrets map[int]string, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secrets map[string]string, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -75,7 +76,7 @@ func (m *Module) SetConfig(project string, secrets map[int]string, encodedAESKey
 }
 
 // SetSecrets sets the secrets to be used for JWT authentication
-func (m *Module) SetSecrets(secrets map[int]string) {
+func (m *Module) SetSecrets(secrets map[string]string) {
 	m.Lock()
 	defer m.Unlock()
 	m.secrets = secrets
@@ -207,12 +208,14 @@ func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 	m.makeHTTPRequest = function
 }
 
-func (m *Module) getGreatestSecretKey() int {
+func (m *Module) getGreatestSecretKey() string {
 	greatesKey := 0
 	for key := range m.secrets {
-		if key > greatesKey {
-			greatesKey = key
+		intKey, _ := strconv.Atoi(key)
+		if intKey > greatesKey {
+			greatesKey = intKey
 		}
 	}
-	return greatesKey
+	stringKey := strconv.Itoa(greatesKey)
+	return stringKey
 }

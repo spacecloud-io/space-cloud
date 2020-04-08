@@ -12,14 +12,14 @@ import (
 func TestCreateToken(t *testing.T) {
 	var authCreateToken = []struct {
 		testName, wantThis string
-		secretKeys         map[int]string
+		secretKeys         map[string]string
 		IsTokenInvalid     bool
 		IsErrExpected      bool
 		object             map[string]interface{}
 	}{
-		{testName: "Successful Test", IsTokenInvalid: false, secretKeys: map[int]string{0: "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-sc-user"}},
-		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKeys: map[int]string{0: "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-scuser"}},
-		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKeys: map[int]string{0: "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
+		{testName: "Successful Test", IsTokenInvalid: false, secretKeys: map[string]string{"0": "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-sc-user"}},
+		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKeys: map[string]string{"0": "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-scuser"}},
+		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKeys: map[string]string{"0": "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
 	authModule := Init("1", &crud.Module{}, false)
 	for _, test := range authCreateToken {
@@ -39,12 +39,12 @@ func TestCreateToken(t *testing.T) {
 func TestIsTokenInternal(t *testing.T) {
 	var authCreateToken = []struct {
 		testName, token string
-		secretKeys      map[int]string
+		secretKeys      map[string]string
 		IsErrExpected   bool
 	}{
-		{testName: "Unsuccessful Test-Token has not been internally created", secretKeys: map[int]string{0: "mySecretkey"}, IsErrExpected: true, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
-		{testName: "Unsuccessful Test-Signature is Invalid", IsErrExpected: true, secretKeys: map[int]string{0: "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.MKIZkrXy6nUMu5ejqiYKl7EOU1TxEoKTOww-eoQm6Lw"},
-		{testName: "Successful Test Case", IsErrExpected: false, secretKeys: map[int]string{0: "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
+		{testName: "Unsuccessful Test-Token has not been internally created", secretKeys: map[string]string{"0": "mySecretkey"}, IsErrExpected: true, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
+		{testName: "Unsuccessful Test-Signature is Invalid", IsErrExpected: true, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.MKIZkrXy6nUMu5ejqiYKl7EOU1TxEoKTOww-eoQm6Lw"},
+		{testName: "Successful Test Case", IsErrExpected: false, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
 	authModule := Init("1", &crud.Module{}, false)
 	for _, test := range authCreateToken {
@@ -62,17 +62,17 @@ func TestParseToken(t *testing.T) {
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
-		secretKeys    map[int]string
+		secretKeys    map[string]string
 		token         string
 		wantThis      TokenClaims
 		reason        error
 	}{
-		{name: "Test should successfully parse a token", IsErrExpected: false, secretKeys: map[int]string{0: "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
-		{name: "Test should successfully parse a token with multiple secrets", IsErrExpected: false, secretKeys: map[int]string{1: "someKey", 0: "mySecretkey", 2: "someOtherKey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
-		{name: "Test should fail if signing method not HS256", IsErrExpected: true, secretKeys: map[int]string{0: "mySecretkey"}, token: "eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.nakZ1JcYWHcXcG1ZfIY7mJNwcVPQ7U1HvuLEsG9fyz-H9ig3ql8BiI3T-7A2PHe-lBIxjS7hXx8O8lxMg7y7rqUHtPLAGOuCd4Ft88KupgPcF5w-KVpeSgWl598zNLWqJpjcwiPewt3gsU6pwSaTz24JmfZQRrDX8KOtejaGs5OECdk2dDW2rwO98npNX39yYx6eSfZbXCLJ7wIhT3UDbuaOGHnD3wyEtih013NDrnkvVXJRKXUwF7F-g31NWgEgVt-tWkR5vcBBSRYKzIbD7-wxpV4ifLp_XdbVNl3Uf7ja6FeUnGq1Pb9AnAY7lD4Rk7sYQe4P-ATHtkgSg5levw"},
-		{name: "Test should fail for an invalid token", IsErrExpected: true, secretKeys: map[int]string{0: "mysecretkey"}, token: "1234.abcd"},
-		{name: "Test should fail for invalid signature-illegal base64 data at input", IsErrExpected: true, secretKeys: map[int]string{0: "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N"},
-		{name: "Test should fail as invalid secret key-invalid signature", IsErrExpected: true, secretKeys: map[int]string{0: "mysecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
+		{name: "Test should successfully parse a token", IsErrExpected: false, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
+		{name: "Test should successfully parse a token with multiple secrets", IsErrExpected: false, secretKeys: map[string]string{"1": "someKey", "0": "mySecretkey", "2": "someOtherKey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
+		{name: "Test should fail if signing method not HS256", IsErrExpected: true, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.nakZ1JcYWHcXcG1ZfIY7mJNwcVPQ7U1HvuLEsG9fyz-H9ig3ql8BiI3T-7A2PHe-lBIxjS7hXx8O8lxMg7y7rqUHtPLAGOuCd4Ft88KupgPcF5w-KVpeSgWl598zNLWqJpjcwiPewt3gsU6pwSaTz24JmfZQRrDX8KOtejaGs5OECdk2dDW2rwO98npNX39yYx6eSfZbXCLJ7wIhT3UDbuaOGHnD3wyEtih013NDrnkvVXJRKXUwF7F-g31NWgEgVt-tWkR5vcBBSRYKzIbD7-wxpV4ifLp_XdbVNl3Uf7ja6FeUnGq1Pb9AnAY7lD4Rk7sYQe4P-ATHtkgSg5levw"},
+		{name: "Test should fail for an invalid token", IsErrExpected: true, secretKeys: map[string]string{"0": "mysecretkey"}, token: "1234.abcd"},
+		{name: "Test should fail for invalid signature-illegal base64 data at input", IsErrExpected: true, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N"},
+		{name: "Test should fail as invalid secret key-invalid signature", IsErrExpected: true, secretKeys: map[string]string{"0": "mysecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
 	}
 
 	authModule := Init("1", &crud.Module{}, false)

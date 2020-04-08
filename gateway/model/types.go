@@ -108,7 +108,7 @@ type ModulesInterface interface {
 	// SetProjectConfig sets the config all modules
 	SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing)
 	// SetGlobalConfig sets the auth secret and AESKey
-	SetGlobalConfig(projectID string, secrets map[int]string, aesKey string) error
+	SetGlobalConfig(projectID string, secrets map[string]string, aesKey string) error
 	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
 	SetCrudConfig(projectID string, crudConfig config.Crud) error
 	// SetServicesConfig sets the config of auth and functions modules

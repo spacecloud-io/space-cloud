@@ -73,7 +73,7 @@ func (m *Modules) SetProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt
 }
 
 // SetGlobalConfig sets the auth secret and AESKey
-func (m *Modules) SetGlobalConfig(projectID string, secrets map[int]string, aesKey string) error {
+func (m *Modules) SetGlobalConfig(projectID string, secrets map[string]string, aesKey string) error {
 	m.auth.SetSecrets(secrets)
 	return m.auth.SetAESKey(aesKey)
 }

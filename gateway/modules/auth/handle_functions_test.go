@@ -14,7 +14,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 	var authMatchQuery = []struct {
 		module                                      *Module
 		testName, project, token, service, function string
-		secretKeys                                  map[int]string
+		secretKeys                                  map[string]string
 		params                                      interface{}
 		result                                      TokenClaims
 		IsErrExpected, CheckResult                  bool
@@ -38,7 +38,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 					},
 				},
 				project: "project"},
-			service: "service", secretKeys: map[int]string{0: "mySecretkey"},
+			service: "service", secretKeys: map[string]string{"0": "mySecretkey"},
 			function:      "ep",
 			IsErrExpected: false,
 		},
@@ -61,7 +61,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 					},
 				},
 				project: "project"},
-			service: "service", secretKeys: map[int]string{0: "mySecretkey"},
+			service: "service", secretKeys: map[string]string{"0": "mySecretkey"},
 			function:      "ep",
 			IsErrExpected: true,
 		},
@@ -84,7 +84,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 					},
 				},
 				project: "project"},
-			service: "service", secretKeys: map[int]string{0: "mySecretkey"},
+			service: "service", secretKeys: map[string]string{"0": "mySecretkey"},
 			function:      "ep",
 			IsErrExpected: true,
 		},
@@ -106,7 +106,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				},
 			},
 				project: "project"},
-			service: "service", secretKeys: map[int]string{0: "mySecretkey"},
+			service: "service", secretKeys: map[string]string{"0": "mySecretkey"},
 			function:      "ep",
 			IsErrExpected: false,
 			CheckResult:   true,
