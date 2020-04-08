@@ -18,7 +18,6 @@ import (
 type Module struct {
 	sync.RWMutex
 	store       FileStore
-	storeType   string
 	enabled     bool
 	auth        model.AuthFilestoreInterface
 	eventing    model.EventingModule
@@ -82,7 +81,7 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	}
 	m.store = s
 	m.enabled = true
-	m.storeType = conf.StoreType
+
 	return nil
 }
 

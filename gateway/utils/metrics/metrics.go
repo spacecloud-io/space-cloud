@@ -22,26 +22,21 @@ type Module struct {
 	nodeID    string
 	projects  sync.Map // key -> project; value -> *metrics
 	// Variables to store the configuration
-	config Config
-
+	isMetricDisabled bool
 	// Variables to interact with the sink
 	sink *db.DB
 }
 
 // Config is the configuration required by the metrics module
 type Config struct {
-	IsDisabled       bool
-	DisableBandwidth bool
-	SinkType         string
-	SinkConn         string
-	Scope            string
+	IsDisabled bool
 }
 
 // New creates a new instance of the metrics module
-func New(clusterID, nodeID string, config *Config, syncMan *syncman.Manager, isProd bool) (*Module, error) {
+func New(clusterID, nodeID string, isMetricDisabled bool, syncMan *syncman.Manager, isProd bool) (*Module, error) {
 
 	// Return an empty object if the module isn't enabled
-	if config.IsDisabled {
+	if isMetricDisabled {
 		return new(Module), nil
 	}
 
@@ -49,7 +44,7 @@ func New(clusterID, nodeID string, config *Config, syncMan *syncman.Manager, isP
 	conn := api.New("spacecloud", "localhost:4123", false).DB("db")
 
 	// Create a new metrics module
-	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, config: *config, syncMan: syncMan, isProd: isProd}
+	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, isMetricDisabled: isMetricDisabled, syncMan: syncMan, isProd: isProd}
 	// Start routine to flush metrics to the sink
 	go m.routineFlushMetricsToSink()
 
@@ -75,6 +70,5 @@ type metricOperations struct {
 	read   uint64
 	update uint64
 	delete uint64
-	batch  uint64
 	list   uint64
 }

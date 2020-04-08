@@ -38,7 +38,6 @@ func (m *Module) createFileDocuments(key string, metrics *metricOperations, t st
 
 func (m *Module) createCrudDocuments(key string, value *metricOperations, t string) []interface{} {
 	docs := make([]interface{}, 0)
-
 	arr := strings.Split(key, ":")
 	module := "db"
 	if value.create > 0 {
@@ -55,10 +54,6 @@ func (m *Module) createCrudDocuments(key string, value *metricOperations, t stri
 
 	if value.delete > 0 {
 		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Delete, value.delete, t))
-	}
-
-	if value.batch > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Batch, value.batch, t))
 	}
 
 	return docs

@@ -14,7 +14,6 @@ func (m *Module) routineFlushMetricsToSink() {
 	ticker := time.NewTicker(metricsUpdaterInterval)
 
 	for range ticker.C {
-		logrus.Println("executing ticker")
 		go m.flushMetrics(m.LoadMetrics())
 
 		find, set, min, isSkip := m.generateMetricsRequest()

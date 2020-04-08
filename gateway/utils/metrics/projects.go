@@ -47,6 +47,9 @@ func (m *Module) generateMetricsRequest() (string, map[string]interface{}, map[s
 	set["ssl_enabled"] = m.ssl != nil && m.ssl.Enabled
 	if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
 		modules := c.Projects[0].Modules
+		if c.Projects[0].ID == "" {
+			return "", nil, nil, true
+		}
 		set["project"] = c.Projects[0].ID
 
 		// crud info

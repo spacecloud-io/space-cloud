@@ -11,7 +11,7 @@ import (
 // GetProjectConfig gets global config
 func GetProjectConfig(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
 	if project == "" {
-		project = "-" // for getting all projects
+		project = "*" // for getting all projects
 		value, ok := params["id"]
 		if ok {
 			project = value

@@ -12,7 +12,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
 	"github.com/spaceuptech/space-cloud/gateway/utils/server"
 )
 
@@ -141,21 +140,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Disable anonymous metric collection",
 		EnvVar: "DISABLE_METRICS",
 	},
-	cli.StringFlag{
-		Name:   "metrics-sink",
-		Usage:  "The sink to output metrics data to",
-		EnvVar: "METRICS_SINK",
-	},
-	cli.StringFlag{
-		Name:   "metrics-conn",
-		Usage:  "The connection string of the sink",
-		EnvVar: "METRICS_CONN",
-	},
-	cli.StringFlag{
-		Name:   "metrics-scope",
-		Usage:  "The database / topic to push the metrics to",
-		EnvVar: "METRICS_SCOPE",
-	},
 }
 
 func main() {
@@ -189,7 +173,6 @@ func actionRun(c *cli.Context) error {
 	nodeID := c.String("id")
 	configPath := c.String("config")
 	isDev := c.Bool("dev")
-	disableBandwidth := c.Bool("disable-bandwidth")
 	profiler := c.Bool("profiler")
 	logLevel := c.String("log-level")
 	setLogLevel(logLevel)
@@ -218,17 +201,13 @@ func actionRun(c *cli.Context) error {
 
 	// Load the flags for the metrics module
 	disableMetrics := c.Bool("disable-metrics")
-	metricsSink := c.String("metrics-sink")
-	metricsConn := c.String("metrics-conn")
-	metricsScope := c.String("metrics-scope")
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, removeProjectScope,
-		&metrics.Config{IsDisabled: disableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, removeProjectScope, disableMetrics)
 	if err != nil {
 		return err
 	}

@@ -31,15 +31,13 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 		return http.StatusInternalServerError, err
 	}
 
-	err = m.store.CreateDir(req)
-	if err == nil {
+	if err = m.store.CreateDir(req); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
-		m.metricsHook(project, m.storeType, utils.Create)
-		return http.StatusOK, err
+		return http.StatusInternalServerError, nil
 	}
-
 	m.eventing.HookStage(ctx, intent, err)
-	return http.StatusInternalServerError, nil
+	m.metricsHook(project, string(m.store.GetStoreType()), utils.Create)
+	return http.StatusOK, err
 }
 
 // DeleteFile deletes a file at the provided path
@@ -63,15 +61,14 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 		return http.StatusInternalServerError, err
 	}
 
-	err = m.store.DeleteFile(path)
-	if err == nil {
+	if err = m.store.DeleteFile(path); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
-		m.metricsHook(project, m.storeType, utils.Delete)
-		return http.StatusOK, err
+		return http.StatusInternalServerError, nil
 	}
 
 	m.eventing.HookStage(ctx, intent, err)
-	return http.StatusInternalServerError, nil
+	m.metricsHook(project, string(m.store.GetStoreType()), utils.Delete)
+	return http.StatusOK, err
 }
 
 // ListFiles lists all the files in the provided path
@@ -95,7 +92,7 @@ func (m *Module) ListFiles(ctx context.Context, project, token string, req *mode
 		return http.StatusInternalServerError, nil, err
 	}
 
-	m.metricsHook(project, m.storeType, utils.List)
+	m.metricsHook(project, string(m.store.GetStoreType()), utils.List)
 	return http.StatusOK, res, nil
 }
 
@@ -120,15 +117,14 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 		return 500, err
 	}
 
-	err = m.store.CreateFile(req, reader)
-	if err == nil {
+	if err = m.store.CreateFile(req, reader); err != nil {
 		m.eventing.HookStage(ctx, intent, err)
-		m.metricsHook(project, m.storeType, utils.Create)
-		return http.StatusOK, err
+		return http.StatusInternalServerError, nil
 	}
 
 	m.eventing.HookStage(ctx, intent, err)
-	return http.StatusInternalServerError, nil
+	m.metricsHook(project, string(m.store.GetStoreType()), utils.Create)
+	return http.StatusOK, err
 }
 
 // DownloadFile downloads a file from the provided path
@@ -153,7 +149,7 @@ func (m *Module) DownloadFile(ctx context.Context, project, token, path string) 
 		return http.StatusInternalServerError, nil, err
 	}
 
-	m.metricsHook(project, m.storeType, utils.Read)
+	m.metricsHook(project, string(m.store.GetStoreType()), utils.Read)
 	return http.StatusOK, file, nil
 }
 

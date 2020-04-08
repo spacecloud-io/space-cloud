@@ -17,7 +17,6 @@ import (
 func Unzip(src string, dest string) error {
 
 	r, err := zip.OpenReader(src)
-
 	if err != nil {
 		return err
 	}

@@ -244,9 +244,9 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	// Iterate over all projects stored
 	v := []interface{}{}
 	for _, p := range s.projectConfig.Projects {
-		if projectID == "-" {
+		if projectID == "*" {
 			// get all projects
-			v = append(v, config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID})
+			v = append(v, config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Name: p.Name, ID: p.ID})
 			continue
 		}
 

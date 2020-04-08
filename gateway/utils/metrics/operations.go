@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -13,10 +14,10 @@ func (m *Module) AddEventingType(project, eventingType string) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	// Return if the metrics module is disabled
-	if m.config.IsDisabled {
+	if m.isMetricDisabled {
 		return
 	}
-	value, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s", project, eventingType), newMetrics())
+	value, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s", "eventing", project, eventingType), newMetrics())
 	metrics := value.(*metrics)
 	atomic.AddUint64(&metrics.eventing, uint64(1))
 }
@@ -27,11 +28,11 @@ func (m *Module) AddFunctionOperation(project, service, function string) {
 	defer m.lock.RUnlock()
 
 	// Return if the metrics module is disabled
-	if m.config.IsDisabled {
+	if m.isMetricDisabled {
 		return
 	}
 
-	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s", project, service, function), newMetrics())
+	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s:%s", "function", project, service, function), newMetrics())
 	metrics := metricsTemp.(*metrics)
 	atomic.AddUint64(&metrics.function, uint64(1))
 }
@@ -40,13 +41,12 @@ func (m *Module) AddFunctionOperation(project, service, function string) {
 func (m *Module) AddDBOperation(project, dbType, col string, count int64, op utils.OperationType) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-
 	// Return if the metrics module is disabled
-	if m.config.IsDisabled {
+	if m.isMetricDisabled {
 		return
 	}
 
-	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s", project, dbType, col), newMetrics())
+	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s:%s", "db", project, dbType, col), newMetrics())
 	metrics := metricsTemp.(*metrics)
 
 	switch op {
@@ -61,9 +61,6 @@ func (m *Module) AddDBOperation(project, dbType, col string, count int64, op uti
 
 	case utils.Delete:
 		atomic.AddUint64(&metrics.crud.delete, uint64(count))
-
-	case utils.Batch:
-		atomic.AddUint64(&metrics.crud.batch, uint64(count))
 	}
 }
 
@@ -73,11 +70,11 @@ func (m *Module) AddFileOperation(project, storeType string, op utils.OperationT
 	defer m.lock.RUnlock()
 
 	// Return if the metrics module is disabled
-	if m.config.IsDisabled {
+	if m.isMetricDisabled {
 		return
 	}
 
-	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s", project, storeType), newMetrics())
+	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s", "file", project, storeType), newMetrics())
 	metrics := metricsTemp.(*metrics)
 
 	switch op {
@@ -99,7 +96,6 @@ func (m *Module) AddFileOperation(project, storeType string, op utils.OperationT
 func (m *Module) LoadMetrics() []interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-
 	// Create an array of metric docs)
 	metricDocs := make([]interface{}, 0)
 
@@ -110,13 +106,18 @@ func (m *Module) LoadMetrics() []interface{} {
 	m.projects.Range(func(key, value interface{}) bool {
 
 		// Load the project and metrics object
-		project := key.(string)
+		v := strings.Split(key.(string), ":")
 		metrics := value.(*metrics)
-
-		metricDocs = append(metricDocs, m.createCrudDocuments(project, &metrics.crud, t)...)
-		metricDocs = append(metricDocs, m.createFileDocuments(project, &metrics.fileStore, t)...)
-		metricDocs = append(metricDocs, m.createFunctionDocument(project, metrics.function, t)...)
-		metricDocs = append(metricDocs, m.createEventDocument(project, metrics.eventing, t)...)
+		switch v[0] {
+		case "eventing":
+			metricDocs = append(metricDocs, m.createEventDocument(strings.Join(v[1:], ":"), metrics.eventing, t)...)
+		case "file":
+			metricDocs = append(metricDocs, m.createFileDocuments(strings.Join(v[1:], ":"), &metrics.fileStore, t)...)
+		case "db":
+			metricDocs = append(metricDocs, m.createCrudDocuments(strings.Join(v[1:], ":"), &metrics.crud, t)...)
+		case "function":
+			metricDocs = append(metricDocs, m.createFunctionDocument(strings.Join(v[1:], ":"), metrics.function, t)...)
+		}
 		// Delete the project
 		m.projects.Delete(key)
 

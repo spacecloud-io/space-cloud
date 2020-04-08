@@ -31,7 +31,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, disableMetrics bool) (*Server, error) {
 
 	// Create the fundamental modules
 	adminMan := admin.New()
@@ -40,7 +40,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 		return nil, err
 	}
 
-	m, err := metrics.New(clusterID, nodeID, metricsConfig, syncMan, adminMan.LoadEnv())
+	m, err := metrics.New(clusterID, nodeID, disableMetrics, syncMan, adminMan.LoadEnv())
 	if err != nil {
 		return nil, err
 	}

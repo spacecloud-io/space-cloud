@@ -6,10 +6,19 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/stretchr/testify/mock"
 )
+
+type mockEventingMetric struct {
+	mock.Mock
+}
+
+func (m *mockEventingMetric) metricHook(project string, eventType string) {
+	m.Called(project, eventType)
+}
 
 type mockHTTPInterface struct {
 	mock.Mock
