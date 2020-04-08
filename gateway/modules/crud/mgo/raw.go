@@ -19,7 +19,7 @@ func (m *Mongo) RawExec(ctx context.Context, query string) error {
 }
 
 // RawQuery query document(s) from the database
-func (b *Mongo) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
+func (m *Mongo) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
 	return 0, "", fmt.Errorf("error raw querry operation cannot be performed on mongo")
 }
 
