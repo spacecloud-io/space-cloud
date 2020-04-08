@@ -66,7 +66,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	}
 	_, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		return fmt.Errorf("unknow dbAlias provided while setting eventing config")
+		return fmt.Errorf("unknown db (%s) provided while setting eventing config", dbAlias)
 	}
 	projectConfig.Modules.Eventing.DBAlias = dbAlias
 	projectConfig.Modules.Eventing.Enabled = enabled
@@ -102,7 +102,7 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 		projectConfig.Modules.Eventing.Schemas[evType] = config.SchemaObject{Schema: schema, ID: evType}
 	} else {
 		projectConfig.Modules.Eventing.Schemas = map[string]config.SchemaObject{
-			evType: config.SchemaObject{Schema: schema, ID: evType},
+			evType: {Schema: schema, ID: evType},
 		}
 	}
 
