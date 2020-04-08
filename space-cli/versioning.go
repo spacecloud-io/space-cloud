@@ -14,7 +14,7 @@ type cliVersionDoc struct {
 	ID          string `mapstructure:"id" json:"id"`
 }
 
-func getmodule() (*cobra.Command, error) {
+func getModule() (*cobra.Command, error) {
 
 	_ = createDirIfNotExist(getSpaceCloudDirectory())
 	_ = createDirIfNotExist(getSpaceCLIDirectory())
@@ -23,7 +23,7 @@ func getmodule() (*cobra.Command, error) {
 	currentVersion, err1 := readVersionConfig()
 	latestVersion, err2 := getLatestVersion()
 
-	//Return error if we could not get the current or latest version
+	// Return error if we could not get the current or latest version
 	if err1 != nil && err2 != nil {
 		return nil, logError("Could not fetch space-cli plugin", err2)
 	}

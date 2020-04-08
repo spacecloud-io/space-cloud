@@ -114,7 +114,7 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 		},
 		Spec: &model.Service{
 			Labels: map[string]string{},
-			Scale:  model.ScaleConfig{Replicas: int32(replicaMin), MinReplicas: int32(replicaMin), MaxReplicas: int32(replicaMax), Concurrency: 50},
+			Scale:  model.ScaleConfig{Replicas: int32(replicaMin), MinReplicas: int32(replicaMin), MaxReplicas: int32(replicaMax), Concurrency: 50, Mode: "parallel"},
 			Tasks: []model.Task{
 				{
 					ID:        serviceID,

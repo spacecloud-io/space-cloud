@@ -125,7 +125,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			// override the existing config
 			p.Name = project.Name
 			p.AESkey = project.AESkey
-			p.Secret = project.Secret
+			p.Secrets = project.Secrets
 			p.DockerRegistry = project.DockerRegistry
 			p.ContextTime = project.ContextTime
 
@@ -171,7 +171,7 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if err := s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey); err != nil {
+	if err := s.modules.SetGlobalConfig(project.Name, project.Secrets, project.AESkey); err != nil {
 		return err
 	}
 
@@ -180,7 +180,7 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 		return err
 	}
 
-	projectConfig.Secret = project.Secret
+	projectConfig.Secrets = project.Secrets
 	projectConfig.AESkey = project.AESkey
 	projectConfig.Name = project.Name
 	projectConfig.ContextTime = project.ContextTime
@@ -251,7 +251,7 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 		}
 
 		if projectID == p.ID {
-			return []interface{}{config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
+			return []interface{}{config.Project{DockerRegistry: p.DockerRegistry, AESkey: p.AESkey, ContextTime: p.ContextTime, Secrets: p.Secrets, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
 	if len(v) > 0 {
