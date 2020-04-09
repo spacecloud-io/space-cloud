@@ -131,7 +131,7 @@ func TestMatch_Rule(t *testing.T) {
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	err := auth.SetConfig("default", "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	err := auth.SetConfig("default", map[string]string{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	if err != nil {
 		t.Errorf("Unable to set auth config %s", err.Error())
 		return
@@ -194,7 +194,7 @@ func TestMatchForce_Rule(t *testing.T) {
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	_ = auth.SetConfig("default", "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	_ = auth.SetConfig("default", map[string]string{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := m.matchForce(context.Background(), "testID", test.rule, test.args, emptyAuth)
@@ -273,7 +273,7 @@ func TestMatchRemove_Rule(t *testing.T) {
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	_ = auth.SetConfig("default", "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	_ = auth.SetConfig("default", map[string]string{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := m.matchRemove(context.Background(), "testID", test.rule, test.args, emptyAuth)

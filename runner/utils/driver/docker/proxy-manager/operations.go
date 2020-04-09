@@ -58,10 +58,14 @@ func (m *Manager) GetServiceRoutes(projectID string) (map[string]model.Routes, e
 	defer m.lock.RUnlock()
 
 	serviceConfig := map[string]model.Routes{}
-	for k, v := range m.serviceRoutes {
+	for k, routes := range m.serviceRoutes {
 		pID, serviceID := getProjectAndServiceIDFromKey(k)
 		if pID == projectID {
-			serviceConfig[serviceID] = v
+			// Don't forget to set the service id of the routes
+			for _, r := range routes {
+				r.ID = serviceID
+			}
+			serviceConfig[serviceID] = routes
 		}
 	}
 
