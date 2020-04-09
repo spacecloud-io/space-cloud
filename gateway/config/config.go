@@ -7,6 +7,20 @@ type Config struct {
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 }
 
+// Admin describes the config needed by the admin module for running in enterprise mode
+type Admin struct {
+	ClusterID  string `json:"clusterId" yaml:"clusterId"`
+	ClusterKey string `json:"clusterKey" yaml:"clusterKey"`
+	Version    int    `json:"version" yaml:"version"`
+}
+
+// AdminUser describes the user credentials
+type AdminUser struct {
+	User   string
+	Pass   string
+	Secret string
+}
+
 // Project holds the project level configuration
 type Project struct {
 	Secret         string   `json:"secret,omitempty" yaml:"secret,omitempty"`
@@ -16,27 +30,6 @@ type Project struct {
 	DockerRegistry string   `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
 	Modules        *Modules `json:"modules,omitempty" yaml:"modules,omitempty"`
 	ContextTime    int      `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
-}
-
-// Admin stores the admin credentials
-type Admin struct {
-	Secret    string          `json:"secret" yaml:"secret"`
-	Operation OperationConfig `json:"operation"`
-	Users     []AdminUser     `json:"users" yaml:"users"`
-}
-
-// OperationConfig holds the operation mode config
-type OperationConfig struct {
-	Mode   int    `json:"mode" yaml:"mode"`
-	UserID string `json:"userId" yaml:"userId"`
-	Key    string `json:"key" yaml:"key"`
-}
-
-// AdminUser holds the user credentials and scope
-type AdminUser struct {
-	User   string       `json:"user" yaml:"user"`
-	Pass   string       `json:"pass" yaml:"pass"`
-	Scopes ProjectScope `json:"scopes" yaml:"scopes"`
 }
 
 // ProjectScope contains the project level scope

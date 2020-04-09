@@ -68,6 +68,45 @@ func (s *ConsulStore) Register() {
 }
 
 // WatchProjects maintains consistency between all instances of sc
+func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
+	watchParams := map[string]interface{}{
+		"type":   "keyprefix",
+		"prefix": "sc/admin-config/" + s.clusterID,
+	}
+	p, err := watch.Parse(watchParams)
+	if err != nil {
+		return err
+	}
+
+	p.HybridHandler = func(val watch.BlockingParamVal, data interface{}) {
+		kvPairs := data.(api.KVPairs)
+		clusters := []*config.Admin{
+			{
+				ClusterID:  "",
+				ClusterKey: "",
+				Version:    0,
+			},
+		}
+
+		for _, kv := range kvPairs {
+			if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
+				log.Println("Sync manager: Could not parse project received -", err)
+				continue
+			}
+		}
+		cb(clusters)
+	}
+
+	go func() {
+		if err := p.Run(""); err != nil {
+			log.Println("Sync Manager: could not start watcher -", err)
+			os.Exit(-1)
+		}
+	}()
+	return nil
+}
+
+// WatchProjects maintains consistency between all instances of sc
 func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 	watchParams := map[string]interface{}{
 		"type":   "keyprefix",
@@ -159,6 +198,20 @@ func (s *ConsulStore) SetProject(ctx context.Context, project *config.Project) e
 
 	_, err := s.consulClient.KV().Put(&api.KVPair{
 		Key:   fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID),
+		Value: data,
+	}, opts)
+
+	return err
+}
+
+func (s *ConsulStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	data, _ := json.Marshal(cluster)
+
+	_, err := s.consulClient.KV().Put(&api.KVPair{
+		Key:   fmt.Sprintf("sc/admin-config/%s", s.clusterID),
 		Value: data,
 	}, opts)
 

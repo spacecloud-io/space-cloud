@@ -2,8 +2,10 @@ package database
 
 import (
 	"fmt"
-	"github.com/spaceuptech/space-cli/utils"
+
 	"github.com/urfave/cli"
+
+	"github.com/spaceuptech/space-cli/utils"
 )
 
 // GenerateSubCommands is the list of commands the database module exposes

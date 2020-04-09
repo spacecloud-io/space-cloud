@@ -1,8 +1,11 @@
 package server
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (s *Server) routes() {
+	s.router.Methods(http.MethodGet).Path("/v1/runner/cluster-type").HandlerFunc(s.handleGetClusterType())
 	// project routes
 	s.router.Methods(http.MethodPost).Path("/v1/runner/project/{project}").HandlerFunc(s.handleCreateProject())
 	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}").HandlerFunc(s.handleDeleteProject())

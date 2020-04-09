@@ -25,7 +25,6 @@ type Manager struct {
 	clusterID     string
 	advertiseAddr string
 	runnerAddr    string
-	artifactAddr  string
 	port          int
 
 	// Configuration for clustering
@@ -36,7 +35,7 @@ type Manager struct {
 	// For authentication
 	adminMan *admin.Manager
 
-	// Modules
+	// Modules≤
 	modules     model.ModulesInterface
 	letsencrypt *letsencrypt.LetsEncrypt
 	routing     *routing.Routing
@@ -48,10 +47,10 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, artifactAddr: artifactAddr}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	switch storeType {
@@ -137,6 +136,24 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 		}); err != nil {
 			return err
 		}
+
+		// Start routine to observe space cloud projects
+		if err := s.store.WatchAdminConfig(func(clusters []*config.Admin) {
+			s.lock.Lock()
+			defer s.lock.Unlock()
+			logrus.WithFields(logrus.Fields{"admin config": clusters}).Debugln("Updating admin config")
+			for _, cluster := range clusters {
+				if err := s.adminMan.SetConfig(cluster); err != nil {
+					logrus.Errorf("unable to apply admin config")
+					break
+				}
+				s.projectConfig.Admin = cluster
+				_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
+			}
+		}); err != nil {
+			return err
+		}
+
 	}
 
 	return nil

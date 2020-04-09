@@ -586,8 +586,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 	}
-
-	c := crud.Init(driver.New(false), admin.New("abc"))
+	adminMan := admin.New("abc", &config.AdminUser{})
+	c := crud.Init(driver.New(false), adminMan)
 	if err := c.SetConfig("", TestCases); err != nil {
 		t.Errorf("error in schmea update test file unable to set config of crud (%s)", err.Error())
 	}
