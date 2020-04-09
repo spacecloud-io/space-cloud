@@ -26,7 +26,7 @@ func (m *Module) routineFlushMetricsToSink() {
 func initialiseSink(c *Config) (*crud.Module, error) {
 
 	// Create a new crud module
-	sink := crud.Init(driver.New(true), admin.New("node"))
+	sink := crud.Init(driver.New(true), admin.New("node", &config.AdminUser{User: "admin", Pass: "123", Secret: "some-secret"}))
 
 	// Configure the crud module
 	if err := sink.SetConfig(c.Scope, config.Crud{c.SinkType: &config.CrudStub{Enabled: true, Conn: c.SinkConn}}); err != nil {

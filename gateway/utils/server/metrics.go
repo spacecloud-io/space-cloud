@@ -49,7 +49,7 @@ func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) 
 	if c != nil {
 		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
 		if c.Admin != nil {
-			set["mode"] = c.Admin.Operation.Mode
+			set["mode"] = s.adminMan.IsEnterpriseMode()
 		}
 		if c.Projects != nil && len(c.Projects) > 0 {
 			set["modules"] = getProjectInfo(c.Projects)

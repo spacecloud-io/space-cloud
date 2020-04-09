@@ -336,10 +336,9 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager)
 		}
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token, c.ID)
-		if err != nil {
+		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
+			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -374,10 +373,9 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token, project)
-		if err != nil {
+		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
+			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -385,8 +383,7 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		err = syncMan.DeleteProjectConfig(ctx, project)
-		if err != nil {
+		if err := syncMan.DeleteProjectConfig(ctx, project); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

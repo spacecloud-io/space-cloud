@@ -151,10 +151,11 @@ func (m *Modules) loadModule(projectID string) (*Module, error) {
 }
 
 func (m *Modules) newModule(projectID string) (*Module, error) {
+	projectsIDs := m.ProjectIDs()
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	if ok := m.adminMan.ValidateProjectSyncOperation(m.ProjectIDs(), projectID); !ok {
+	if ok := m.adminMan.ValidateProjectSyncOperation(projectsIDs, projectID); !ok {
 		logrus.Println("Cannot create new project. Upgrade your plan")
 		return nil, errors.New("upgrade your plan to create new project")
 	}

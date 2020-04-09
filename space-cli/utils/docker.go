@@ -2,10 +2,11 @@ package utils
 
 import (
 	"context"
-	"github.com/briandowns/spinner"
 	"io"
 	"io/ioutil"
 	"time"
+
+	"github.com/briandowns/spinner"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"

@@ -28,18 +28,25 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		parsedSchema  model.Type
 		currentSchema model.Collection
 	}
-	adminMan := admin.New("")
-	adminMan.SetConfig(&config.Admin{Operation: config.OperationConfig{Mode: 0}})
-
+	adminMan := admin.New("", &config.AdminUser{})
 	crudPostgres := crud.Init(driver.New(false), adminMan)
-	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+	err := crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+	if err != nil {
+		t.Fatal("unable to initialize postgres", err)
+	}
 
 	crudMySQL := crud.Init(driver.New(false), adminMan)
-	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	err = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+	if err != nil {
+		t.Fatal("unable to initialize my sql", err)
 
+	}
 	crudSQLServer := crud.Init(driver.New(false), adminMan)
-	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	err = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	if err != nil {
+		t.Fatal("unable to initialize sql server", err)
 
+	}
 	tests := []struct {
 		name    string
 		fields  fields

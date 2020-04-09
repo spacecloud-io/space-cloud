@@ -64,11 +64,13 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
-	m.closeBatchOperation()
 
+	// Check if database can be added
 	if err := m.adminMan.IsDBConfigValid(crud); err != nil {
 		return err
 	}
+
+	m.closeBatchOperation()
 
 	m.project = project
 

@@ -125,6 +125,56 @@ func (s *ETCDStore) Register() {
 }
 
 // WatchProjects maintains consistency between all instances of sc
+func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
+	// Query all KVs with prefix
+	res, err := s.etcdClient.Get(context.Background(), "sc/admin-config/"+s.clusterID, clientv3.WithPrefix())
+	if err != nil {
+		return err
+	}
+
+	clusters := []*config.Admin{
+		{
+			ClusterID:  "",
+			ClusterKey: "",
+			Version:    0,
+		},
+	}
+	for _, kv := range res.Kvs {
+		// Get the id of the item
+		if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
+			log.Println("Sync manager: Could not parse project received -", err)
+			continue
+		}
+	}
+	cb(clusters)
+
+	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/admin-config/%s", s.clusterID), clientv3.WithPrefix())
+
+	go func() {
+		for watchResponse := range ch {
+
+			for _, event := range watchResponse.Events {
+				if watchResponse.Err() != nil {
+					log.Fatal(watchResponse.Err())
+				}
+				kv := event.Kv
+
+				switch event.Type {
+				case mvccpb.PUT:
+					if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
+						log.Println("Sync manager: Could not parse project received -", err)
+						continue
+					}
+
+					cb(clusters)
+				}
+			}
+		}
+	}()
+	return nil
+}
+
+// WatchProjects maintains consistency between all instances of sc
 func (s *ETCDStore) WatchProjects(cb func(projects []*config.Project)) error {
 	idxID := 3
 	itemsMeta := map[string]*trackedItemMeta{}
@@ -298,7 +348,15 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 
 // SetProject sets the project of the etcd store
 func (s *ETCDStore) SetProject(ctx context.Context, project *config.Project) error {
+	// todo : why we are setting value as project Id, should'n we marshal the data ?
 	_, err := s.kv.Put(ctx, fmt.Sprintf("sc/projects/%s/%s", s.clusterID, project.ID), project.ID)
+
+	return err
+}
+
+func (s *ETCDStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
+	data, _ := json.Marshal(cluster)
+	_, err := s.kv.Put(ctx, fmt.Sprintf("sc/admin-config/%s", s.clusterID), string(data))
 
 	return err
 }

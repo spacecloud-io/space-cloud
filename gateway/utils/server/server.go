@@ -12,7 +12,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/handlers"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
@@ -35,7 +34,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, metricsConfig *metrics.Config) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, metricsConfig *metrics.Config, adminUserInfo *config.AdminUser, adminConfig *config.Admin) (*Server, error) {
 
 	// Create the fundamental modules
 	m, err := metrics.New(nodeID, metricsConfig)
@@ -43,8 +42,9 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 		return nil, err
 	}
 
-	adminMan := admin.New(nodeID)
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, adminMan)
+	adminMan := admin.New(nodeID, adminUserInfo)
+
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	}
 
 	syncMan.SetModules(modules, le, r)
-
+	modules.SetGlobalModules(le, r)
 	logrus.Infoln("Creating a new server with id", nodeID)
 
 	return &Server{nodeID: nodeID, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m, configFilePath: utils.DefaultConfigFilePath, modules: modules}, nil
@@ -72,7 +72,6 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 
 // Start begins the server operations
 func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port int, restrictedHosts []string) error {
-
 	// Start the sync manager
 	if err := s.syncMan.Start(s.configFilePath, s.syncMan.GetGlobalConfig(), port); err != nil {
 		return err
@@ -90,7 +89,6 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 
 		// Setup the handler
 		handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
-		handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 		handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
 		// Add existing certificates if any
@@ -115,7 +113,6 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
-	handler = handlers.HandleMetricMiddleWare(handler, s.metrics)
 	handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)
 
 	logrus.Infoln("Starting http server on port: " + strconv.Itoa(port))
@@ -129,11 +126,11 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 }
 
 // SetConfig sets the config
-func (s *Server) SetConfig(c *config.Config, isProd bool) {
+func (s *Server) SetConfig(c *config.Config, isProd bool) error {
 	s.ssl = c.SSL
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetEnv(isProd)
-	s.adminMan.SetConfig(c.Admin)
+	return s.adminMan.SetConfig(c.Admin)
 }
 
 // SetConfigFilePath sets the config file path

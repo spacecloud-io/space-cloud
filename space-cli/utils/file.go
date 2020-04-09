@@ -2,15 +2,17 @@ package utils
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"gopkg.in/yaml.v2"
 
-	"github.com/spaceuptech/space-cli/model"
 	"github.com/spaceuptech/space-cloud/gateway/config"
+
+	"github.com/spaceuptech/space-cli/model"
 )
 
 // AppendConfigToDisk creates a yml file or appends to existing

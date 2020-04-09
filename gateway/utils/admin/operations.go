@@ -1,8 +1,7 @@
 package admin
 
 import (
-	"errors"
-	"net/http"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -34,8 +33,8 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if m.admin.Operation.Mode == 0 && len(config) > 1 {
-		return errors.New("community edition can have a maximum of 1 dbs in a single project")
+	if len(config) > m.quotas.MaxDatabases {
+		return fmt.Errorf("plan needs to be upgraded to use more than %d databases", m.quotas.MaxDatabases)
 	}
 
 	return nil
@@ -45,69 +44,17 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 func (m *Manager) ValidateProjectSyncOperation(projects []string, projectID string) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-
 	for _, p := range projects {
 		if p == projectID {
 			return true
 		}
 	}
 
-	maxProjects := 1
-	if m.admin.Operation.Mode == 1 {
-		maxProjects = 3
-	} else if m.admin.Operation.Mode == 2 {
-		maxProjects = 5
-	}
-
-	if len(projects) < maxProjects {
+	if len(projects) < m.quotas.MaxProjects {
 		return true
 	}
 
 	return false
-}
-
-// IsAdminOpAuthorised checks if the admin operation is authorised.
-// TODO add scope level restrictions as well
-func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	if !m.isProd {
-		return http.StatusOK, nil
-	}
-
-	auth, err := m.parseToken(token)
-	if err != nil {
-		return http.StatusUnauthorized, err
-	}
-
-	user, p := auth["id"]
-	if !p {
-		return http.StatusUnauthorized, errors.New("Invalid Token")
-	}
-
-	if user == utils.InternalUserID {
-		return http.StatusOK, nil
-	}
-
-	for _, u := range m.admin.Users {
-		if u.User == user {
-
-			// Allow full access for scope name `all`
-			if _, p := u.Scopes["all"]; p {
-				return http.StatusOK, nil
-			}
-
-			// Check if scope is present
-			if _, p := u.Scopes[scope]; p {
-				return http.StatusOK, nil
-			}
-
-			break
-		}
-	}
-
-	return http.StatusForbidden, errors.New("You are not authorized to make this request")
 }
 
 // RefreshToken is used to create a new token based on an existing one
@@ -127,8 +74,9 @@ func (m *Manager) RefreshToken(token string) (string, error) {
 	return newToken, nil
 }
 
-func (m *Manager) reduceOpMode() {
+func (m *Manager) IsEnterpriseMode() bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	m.admin.Operation.Mode = 0
+
+	return m.isEnterpriseMode()
 }

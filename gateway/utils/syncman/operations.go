@@ -145,7 +145,6 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			}
 		}
 	}
-
 	// We will ignore the error for the create project request
 	_ = s.modules.SetProjectConfig(project, s.letsencrypt, s.routing)
 
@@ -198,6 +197,23 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 	}
 
 	return s.store.SetProject(ctx, project)
+}
+
+func (s *Manager) setAdminConfig(ctx context.Context, cluster *config.Admin) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if err := s.adminMan.SetConfig(cluster); err != nil {
+		return err
+	}
+
+	s.projectConfig.Admin = cluster
+
+	if s.storeType == "none" {
+		return config.StoreConfigToFile(s.projectConfig, s.configFile)
+	}
+
+	return s.store.SetAdminConfig(ctx, cluster)
 }
 
 // DeleteProjectConfig applies delete project config command to the raft log

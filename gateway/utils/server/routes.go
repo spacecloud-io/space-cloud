@@ -16,6 +16,8 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	}
 
 	router := mux.NewRouter()
+	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/version/upgrade").HandlerFunc(handlers.HandleVersionUpgrade(s.adminMan, s.syncMan))
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
@@ -137,9 +139,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	// Add addresses for runner
 	router.PathPrefix("/v1/runner").HandlerFunc(s.syncMan.HandleRunnerRequests(s.adminMan))
-
-	// forward request to artifact store
-	router.PathPrefix("/v1/artifact").HandlerFunc(s.syncMan.HandleArtifactRequests(s.adminMan))
 
 	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
