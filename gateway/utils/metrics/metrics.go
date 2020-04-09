@@ -6,16 +6,14 @@ import (
 	api "github.com/spaceuptech/space-api-go"
 	"github.com/spaceuptech/space-api-go/db"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // Module struct for metrics
 type Module struct {
-	lock    sync.RWMutex
-	syncMan *syncman.Manager
-	isProd  bool
-	ssl     *config.SSL
+	lock   sync.RWMutex
+	isProd bool
 
 	// Variables for metric state
 	clusterID string
@@ -25,6 +23,10 @@ type Module struct {
 	isMetricDisabled bool
 	// Variables to interact with the sink
 	sink *db.DB
+
+	// Global modules
+	adminMan *admin.Manager
+	syncMan  *syncman.Manager
 }
 
 // Config is the configuration required by the metrics module
@@ -33,7 +35,7 @@ type Config struct {
 }
 
 // New creates a new instance of the metrics module
-func New(clusterID, nodeID string, isMetricDisabled bool, syncMan *syncman.Manager, isProd bool) (*Module, error) {
+func New(clusterID, nodeID string, isMetricDisabled bool, adminMan *admin.Manager, syncMan *syncman.Manager, isProd bool) (*Module, error) {
 
 	// Return an empty object if the module isn't enabled
 	if isMetricDisabled {
@@ -44,18 +46,11 @@ func New(clusterID, nodeID string, isMetricDisabled bool, syncMan *syncman.Manag
 	conn := api.New("spacecloud", "localhost:4123", false).DB("db")
 
 	// Create a new metrics module
-	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, isMetricDisabled: isMetricDisabled, syncMan: syncMan, isProd: isProd}
+	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, isMetricDisabled: isMetricDisabled, adminMan: adminMan, syncMan: syncMan, isProd: isProd}
 	// Start routine to flush metrics to the sink
 	go m.routineFlushMetricsToSink()
 
 	return m, nil
-}
-
-// SetSSL sets ssl field
-func (m *Module) SetSSL(ssl *config.SSL) {
-	m.lock.Lock()
-	defer m.lock.Unlock()
-	m.ssl = ssl
 }
 
 type metrics struct {

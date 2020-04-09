@@ -114,3 +114,8 @@ func (m *Manager) RefreshToken(token string) (string, error) {
 	}
 	return newToken, nil
 }
+
+// GetClusterID returns the cluster id
+func (m *Manager) GetClusterID() string {
+	return m.clusterID
+}

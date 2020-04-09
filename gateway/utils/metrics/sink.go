@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const metricsUpdaterInterval = 30 * time.Second
+const metricsUpdaterInterval = 5 * time.Minute
 
 func (m *Module) routineFlushMetricsToSink() {
 	ticker := time.NewTicker(metricsUpdaterInterval)
@@ -16,11 +16,16 @@ func (m *Module) routineFlushMetricsToSink() {
 	for range ticker.C {
 		go m.flushMetrics(m.LoadMetrics())
 
-		find, set, min, isSkip := m.generateMetricsRequest()
-		if isSkip {
-			continue
-		}
-		m.updateSCMetrics(find, set, min)
+		go func() {
+			// Flush project metrics only if our index is 0
+			if index := m.syncMan.GetGatewayIndex(); index == 0 {
+				find, set, min, isSkip := m.generateMetricsRequest()
+				if isSkip {
+					return
+				}
+				m.updateSCMetrics(find, set, min)
+			}
+		}()
 	}
 }
 
@@ -28,7 +33,7 @@ func (m *Module) flushMetrics(docs []interface{}) {
 	if len(docs) == 0 {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	result, err := m.sink.Insert("operation_metrics").Docs(docs).Apply(ctx)
 	if err != nil {

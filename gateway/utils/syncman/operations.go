@@ -76,30 +76,10 @@ func (s *Manager) GetAssignedTokens() (start, end int) {
 		return calcTokens(1, utils.MaxEventTokens, 0)
 	}
 
-	index := 0
-
-	for i, v := range s.services {
-		if v.id == s.nodeID {
-			index = i
-			break
-		}
-	}
+	index := s.GetGatewayIndex()
 
 	totalMembers := len(s.services)
 	return calcTokens(totalMembers, utils.MaxEventTokens, index)
-}
-
-// GetClusterSize returns the size of the cluster
-func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	// Return 1 if not running with consul
-	if s.storeType == "none" {
-		return 1, nil
-	}
-
-	return len(s.services), nil
 }
 
 // ApplyProjectConfig creates the config for the project

@@ -81,7 +81,6 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	}
 	m.store = s
 	m.enabled = true
-
 	return nil
 }
 

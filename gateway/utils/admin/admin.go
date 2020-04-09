@@ -13,11 +13,13 @@ type Manager struct {
 	lock   sync.RWMutex
 	admin  *config.Admin
 	isProd bool
+
+	clusterID string
 }
 
 // New creates a new admin manager instance
-func New() *Manager {
-	return &Manager{}
+func New(clusterID string) *Manager {
+	return &Manager{clusterID: clusterID}
 }
 
 // SetConfig sets the admin config

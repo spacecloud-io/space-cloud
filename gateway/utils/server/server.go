@@ -31,16 +31,16 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, removeProjectScope bool, disableMetrics bool) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, disableMetrics bool) (*Server, error) {
 
 	// Create the fundamental modules
-	adminMan := admin.New()
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, adminMan)
+	adminMan := admin.New(clusterID)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan)
 	if err != nil {
 		return nil, err
 	}
 
-	m, err := metrics.New(clusterID, nodeID, disableMetrics, syncMan, adminMan.LoadEnv())
+	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, adminMan.LoadEnv())
 	if err != nil {
 		return nil, err
 	}
@@ -101,9 +101,6 @@ func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHos
 			}
 		}()
 	}
-
-	s.metrics.SetSSL(s.ssl)
-	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
 	handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)

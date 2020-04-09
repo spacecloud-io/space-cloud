@@ -12,11 +12,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func currentTimeInMillis() int64 {
-	// subtracting interval time make sures that multiple gateways in a cluster don't write to database frequently
-	return time.Now().Add(-metricsUpdaterInterval).UnixNano()
-}
-
 func (m *Module) generateMetricsRequest() (string, map[string]interface{}, map[string]interface{}, bool) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -26,25 +21,21 @@ func (m *Module) generateMetricsRequest() (string, map[string]interface{}, map[s
 		return "", nil, nil, true
 	}
 
-	// Get the cluster size
-	clusterSize, err := m.syncMan.GetClusterSize(context.Background())
-	if err != nil {
-		clusterSize = 1
-	}
-	find := m.syncMan.GetClusterID()
-	min := map[string]interface{}{"start_time": currentTimeInMillis()}
+	find := m.adminMan.GetClusterID()
+
+	min := map[string]interface{}{"start_time": time.Now().Format(time.RFC3339)}
 	// Create the find and update clauses
 	set := map[string]interface{}{
 		"nodes":        m.syncMan.GetNodesInCluster(),
 		"os":           runtime.GOOS,
 		"is_prod":      m.isProd,
 		"version":      utils.BuildVersion,
-		"cluster_size": clusterSize,
 		"distribution": "ce",
 		"last_updated": time.Now().Format(time.RFC3339),
 	}
 
-	set["ssl_enabled"] = m.ssl != nil && m.ssl.Enabled
+	set["ssl_enabled"] = c.SSL != nil && c.SSL.Enabled
+
 	if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
 		modules := c.Projects[0].Modules
 		if c.Projects[0].ID == "" {

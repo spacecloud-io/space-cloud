@@ -35,7 +35,8 @@ func (m *Module) CreateDir(ctx context.Context, project, token string, req *mode
 		m.eventing.HookStage(ctx, intent, err)
 		return http.StatusInternalServerError, nil
 	}
-	m.eventing.HookStage(ctx, intent, err)
+
+	m.eventing.HookStage(ctx, intent, nil)
 	m.metricsHook(project, string(m.store.GetStoreType()), utils.Create)
 	return http.StatusOK, err
 }
@@ -66,7 +67,7 @@ func (m *Module) DeleteFile(ctx context.Context, project, token string, path str
 		return http.StatusInternalServerError, nil
 	}
 
-	m.eventing.HookStage(ctx, intent, err)
+	m.eventing.HookStage(ctx, intent, nil)
 	m.metricsHook(project, string(m.store.GetStoreType()), utils.Delete)
 	return http.StatusOK, err
 }
@@ -122,7 +123,7 @@ func (m *Module) UploadFile(ctx context.Context, project, token string, req *mod
 		return http.StatusInternalServerError, nil
 	}
 
-	m.eventing.HookStage(ctx, intent, err)
+	m.eventing.HookStage(ctx, intent, nil)
 	m.metricsHook(project, string(m.store.GetStoreType()), utils.Create)
 	return http.StatusOK, err
 }
