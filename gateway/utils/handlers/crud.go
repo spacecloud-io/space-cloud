@@ -18,6 +18,57 @@ type requestMetaData struct {
 	projectID, dbType, col, token string
 }
 
+// HandleCrudPreparedQuery creates the PreparedQuery operation endpoint
+func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		auth := modules.Auth()
+		crud := modules.DB()
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+		defer cancel()
+
+		// Get the path parameters
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		project := vars["project"]
+		id := vars["id"]
+		token := utils.GetTokenFromHeader(r)
+
+		// Load the request from the body
+		req := model.PreparedQueryRequest{}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
+
+		// Check if the user is authenticated
+		actions, status, err := auth.IsPreparedQueryAuthorised(ctx, project, dbAlias, id, token, &req)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(status)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Perform the PreparedQuery operation
+		result, err := crud.ExecPreparedQuery(ctx, project, dbAlias, id, &req)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// function to do postProcessing on result
+		_ = auth.PostProcessMethod(actions, result)
+
+		// Give positive acknowledgement
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+	}
+}
+
 // HandleCrudCreate creates the create operation endpoint
 func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

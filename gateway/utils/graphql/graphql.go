@@ -157,7 +157,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 		// No directive means its a nested field
 		if len(field.Directives) > 0 {
 			directive := field.Directives[0].Name.Value
-			kind := graph.getQueryKind(directive)
+			kind := graph.getQueryKind(directive, field.Name.Value)
 			if kind == "read" {
 				graph.execReadRequest(ctx, field, token, store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 					if err != nil {
@@ -169,6 +169,18 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 					s, _ := graph.schema.GetSchema(dbAlias, col)
 
 					graph.processQueryResult(ctx, field, token, store, result, s, cb)
+				}))
+				return
+			}
+
+			if kind == "prepared-queries" {
+				graph.execPreparedQueryRequest(ctx, field, token, store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
+					if err != nil {
+						cb(nil, err)
+						return
+					}
+
+					graph.processQueryResult(ctx, field, token, store, result, nil, cb)
 				}))
 				return
 			}
@@ -225,9 +237,12 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 	}
 }
 
-func (graph *Module) getQueryKind(directive string) string {
+func (graph *Module) getQueryKind(directive, fieldName string) string {
 	_, err := graph.crud.GetDBType(directive)
 	if err == nil {
+		if graph.crud.IsPreparedQueryPresent(fieldName) {
+			return "prepared-queries"
+		}
 		return "read"
 	}
 	return "func"

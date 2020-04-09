@@ -67,6 +67,35 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	}()
 }
 
+func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
+	dbAlias, err := graph.GetDBAlias(field)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	id := field.Name.Value
+
+	params, err := getFuncParams(field, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+	req := model.PreparedQueryRequest{Params: params}
+	// Check if PreparedQuery op is authorised
+	actions, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	go func() {
+		result, err := graph.crud.ExecPreparedQuery(ctx, graph.project, dbAlias, id, &req)
+		_ = graph.auth.PostProcessMethod(actions, result)
+		cb(dbAlias, id, result, err)
+	}()
+}
+
 func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, bool, error) {
 	var err error
 

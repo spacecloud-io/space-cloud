@@ -119,9 +119,45 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, 
 	return http.StatusOK, nil
 }
 
+// IsPreparedQueryAuthorised checks if the crud operation is authorised
+func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, int, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	rule, auth, err := m.authenticatePreparedQueryRequest(dbAlias, id, token)
+	if err != nil {
+		return nil, http.StatusUnauthorized, err
+	}
+
+	args := map[string]interface{}{"auth": auth, "params": req.Params, "token": token}
+	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
+	if err != nil {
+		return nil, http.StatusForbidden, err
+	}
+
+	return actions, http.StatusOK, nil
+}
+
 func (m *Module) authenticateCrudRequest(dbAlias, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
 	// Get rule
 	rule, err = m.getCrudRule(dbAlias, col, op)
+	if err != nil {
+		return
+	}
+
+	// Return if rule is allow
+	if rule.Rule == "allow" {
+		return
+	}
+
+	// Parse token
+	auth, err = m.parseToken(token)
+	return
+}
+
+func (m *Module) authenticatePreparedQueryRequest(dbAlias, id, token string) (rule *config.Rule, auth map[string]interface{}, err error) {
+	// Get rule
+	rule, err = m.getPrepareQueryRule(dbAlias, id)
 	if err != nil {
 		return
 	}
@@ -150,4 +186,18 @@ func (m *Module) getCrudRule(dbAlias, col string, query utils.OperationType) (*c
 		}
 	}
 	return nil, fmt.Errorf("no rule found for collection %s in database %s", col, dbAlias)
+}
+
+func (m *Module) getPrepareQueryRule(dbAlias, id string) (*config.Rule, error) {
+	dbRules, p1 := m.rules[dbAlias]
+	if !p1 {
+		return nil, fmt.Errorf("given database (%s) does not exist", dbAlias)
+	}
+	if dbPreparedQuery, p2 := dbRules.PreparedQueries[id]; p2 && dbPreparedQuery.Rule != nil {
+		return dbPreparedQuery.Rule, nil
+	}
+	if defaultPreparedQuery, p2 := dbRules.PreparedQueries["default"]; p2 && defaultPreparedQuery.Rule != nil {
+		return defaultPreparedQuery.Rule, nil
+	}
+	return nil, fmt.Errorf("no rule found for Prepared Query (%s) in database (%s)", id, dbAlias)
 }
