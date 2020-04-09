@@ -160,14 +160,6 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
-// IsPreparedQueryPresent checks if id exist
-func (m *Module) IsPreparedQueryPresent(dbAlias, id string) bool {
-	m.RLock()
-	defer m.RUnlock()
-	_, p := m.queries[getPreparedQueryKey(dbAlias, id)]
-	return p
-}
-
 // ExecPreparedQuery executes PreparedQueries request
 func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id string, req *model.PreparedQueryRequest) (interface{}, error) {
 	m.RLock()
