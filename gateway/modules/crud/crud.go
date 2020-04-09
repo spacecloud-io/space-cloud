@@ -112,6 +112,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 	m.project = project
 
+	// Reset all existing prepared query
+	m.queries = map[string]*config.PreparedQuery{}
+
 	// Close the previous database connection
 	if m.block != nil {
 		utils.CloseTheCloser(m.block)
@@ -142,6 +145,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.dbType = v.Type
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
+
+		// Add the prepared queries in this db
+		for id, query := range v.PreparedQueries {
+			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
+		}
 	}
 	m.initBatchOperation(project, crud)
 	return nil

@@ -376,7 +376,7 @@ func TestIsPreparedQueryAuthorised(t *testing.T) {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
 	auth := Init("1", &crud.Module{}, false)
-	if er := auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+	if er := auth.SetConfig(project, map[string]string{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
 	for _, test := range authMatchQuery {

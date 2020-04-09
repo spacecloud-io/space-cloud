@@ -240,7 +240,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 func (graph *Module) getQueryKind(directive, fieldName string) string {
 	_, err := graph.crud.GetDBType(directive)
 	if err == nil {
-		if graph.crud.IsPreparedQueryPresent(fieldName) {
+		if graph.crud.IsPreparedQueryPresent(directive, fieldName) {
 			return "prepared-queries"
 		}
 		return "read"

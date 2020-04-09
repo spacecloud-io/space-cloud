@@ -32,3 +32,7 @@ func (m *Module) createBatch(project, dbAlias, col string, doc interface{}) (int
 	result := <-response
 	return docsInserted, result.err
 }
+
+func getPreparedQueryKey(dbAlias, id string) string {
+	return fmt.Sprintf("%s--%s", dbAlias, id)
+}
