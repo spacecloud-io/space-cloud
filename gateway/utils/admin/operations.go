@@ -37,11 +37,7 @@ func (m *Manager) ValidateSyncOperation(c *config.Config, project *config.Projec
 		}
 	}
 
-	if len(c.Projects) < m.quotas.MaxProjects {
-		return true
-	}
-
-	return false
+	return len(c.Projects) < m.quotas.MaxProjects
 }
 
 // RefreshToken is used to create a new token based on an existing one
@@ -61,10 +57,12 @@ func (m *Manager) RefreshToken(token string) (string, error) {
 	return newToken, nil
 }
 
+// GetQuotas gets number of projects & databases that can be created
 func (m *Manager) GetQuotas() map[string]interface{} {
 	return map[string]interface{}{"projects": m.quotas.MaxProjects, "databases": m.quotas.MaxDatabases}
 }
 
+// GetCredentials gets user name & pass
 func (m *Manager) GetCredentials() map[string]interface{} {
 	return map[string]interface{}{"user": m.user.User, "pass": m.user.Pass}
 }

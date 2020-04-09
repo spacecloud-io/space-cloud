@@ -18,6 +18,7 @@ type Project struct {
 	ContextTime    int               `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
 }
 
+// Admin holds the admin config
 type Admin struct {
 	ClusterID  string `json:"clusterId" yaml:"clusterId"`
 	ClusterKey string `json:"clusterKey" yaml:"clusterKey"`
