@@ -29,8 +29,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	err := m.validate(ctx, project, token, req)
-	if err != nil {
+	if err := m.validate(ctx, project, token, req); err != nil {
 		logrus.Errorf("error queueing event in eventing unable to validate - %s", err.Error())
 		return nil, err
 	}
@@ -42,7 +41,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
 	defer m.eventChanMap.Delete(batchID)
 
-	if err = m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
+	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
 		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
 		return nil, err
 	}
@@ -55,10 +54,12 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 				// clear channel
 				return nil, ctx.Err()
 			case result := <-responseChan:
+				m.metricHook(m.project, req.Type)
 				return result, nil
 			}
 		}
 	}
+	m.metricHook(m.project, req.Type)
 	return nil, nil
 }
 
@@ -67,7 +68,7 @@ func (m *Module) SendEventResponse(batchID string, payload interface{}) {
 	// get channel from map
 	value, ok := m.eventChanMap.Load(batchID)
 	if !ok {
-		logrus.Errorf("error sending synchronous event response to client unable to find channel in map for batch %s", batchID)
+		logrus.Warnf("Event source (%s) not accepting any responses", batchID)
 		return
 	}
 	result := value.(eventResponse)

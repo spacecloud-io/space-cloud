@@ -71,12 +71,12 @@ func getLatestVersion() (*cliVersionDoc, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := new(cliVersionResponse)
+	r := make([]*cliVersionDoc, 0)
 	if err := result.Unmarshal(&r); err != nil {
 		return nil, err
 	}
 	doc := new(cliVersionDoc)
-	for _, val := range r.Docs {
+	for _, val := range r {
 		if val.VersionCode > doc.VersionCode {
 			doc.VersionNo = val.VersionNo
 			doc.VersionCode = val.VersionCode

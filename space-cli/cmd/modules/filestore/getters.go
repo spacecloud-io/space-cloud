@@ -39,11 +39,10 @@ func GetFileStoreRule(project, commandName string, params map[string]string) ([]
 	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
-
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"project": project, "id": spec["name"].(string)}
+		meta := map[string]string{"project": project, "id": spec["id"].(string)}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "name")

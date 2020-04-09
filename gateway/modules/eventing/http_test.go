@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+	"golang.org/x/net/context"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/stretchr/testify/mock"
-	"golang.org/x/net/context"
 )
 
 func TestModule_logInvocation(t *testing.T) {
@@ -35,7 +36,7 @@ func TestModule_logInvocation(t *testing.T) {
 	}{
 		{
 			name: "invocation is logged",
-			s:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			s:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			crudMockArgs: []mockArgs{
 				{
 					method:        "InternalCreate",
@@ -48,7 +49,7 @@ func TestModule_logInvocation(t *testing.T) {
 		},
 		{
 			name: "invocation is not logged",
-			s:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			s:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			crudMockArgs: []mockArgs{
 				{
 					method:        "InternalCreate",
@@ -108,7 +109,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 	}{
 		{
 			name: "error making new request with context and invocation is logged",
-			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{method: "some-method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -121,7 +122,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "error making new request with context and invocation is not logged",
-			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{method: "some-method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -134,7 +135,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "error doing the request and invocation is logged",
-			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -152,7 +153,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "error doing the request and invocation is not logged",
-			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -170,7 +171,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "error unmarshalling and invocation is logged",
-			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -188,7 +189,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "error unmarshalling and invocation is not logged",
-			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -206,7 +207,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "no error and invocation is logged",
-			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -227,7 +228,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 		},
 		{
 			name: "no error and invocation is not logged",
-			s:    &Module{config: &config.Eventing{DBType: mock.Anything}, project: mock.Anything},
+			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
 			crudMockArgs: []mockArgs{
 				mockArgs{

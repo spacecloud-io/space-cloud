@@ -12,12 +12,11 @@ require (
 	github.com/docker/docker v1.4.2-0.20190927142053-ada3c14355ce
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spaceuptech/space-api-go v0.16.2
+	github.com/spaceuptech/space-api-go v0.17.0
 	github.com/spaceuptech/space-cloud/gateway v0.0.0-20200220130157-1246a52c7148
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2

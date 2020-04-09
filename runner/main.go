@@ -4,10 +4,11 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
+
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/modules/routing"
 	"github.com/spaceuptech/space-cloud/runner/modules/secrets"
-	"github.com/urfave/cli"
 )
 
 const (
@@ -45,6 +46,11 @@ func main() {
 			Name:  "start",
 			Usage: "Starts a runner instance",
 			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:   "disable-metrics",
+					EnvVar: "DISABLE_METRICS",
+					Usage:  "Disable anonymous metric collection",
+				},
 				cli.BoolFlag{
 					Name:   "dev",
 					EnvVar: "DEV",

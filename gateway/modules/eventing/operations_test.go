@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestModule_SetRealtimeTriggers(t *testing.T) {
@@ -177,7 +178,7 @@ func TestModule_QueueEvent(t *testing.T) {
 	}{
 		{
 			name: "error validating",
-			m:    &Module{project: mock.Anything, config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "someType", Options: make(map[string]string)}}}},
+			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "someType", Options: make(map[string]string)}}}},
 			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "someType", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -190,7 +191,7 @@ func TestModule_QueueEvent(t *testing.T) {
 		},
 		{
 			name: "error batching requests",
-			m:    &Module{project: mock.Anything, config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
+			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
 			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
@@ -210,7 +211,7 @@ func TestModule_QueueEvent(t *testing.T) {
 		},
 		{
 			name: "event is queued",
-			m:    &Module{project: mock.Anything, config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
+			m:    &Module{metricHook: func(project, eventingType string) {}, project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
 			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			crudMockArgs: []mockArgs{
 				mockArgs{

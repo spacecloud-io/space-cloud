@@ -12,6 +12,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -25,7 +26,7 @@ func (s *Module) logInvocation(ctx context.Context, eventID string, payload []by
 		"error_msg":            errorMsg,
 	}
 	createRequest := &model.CreateRequest{Document: invocationDoc, Operation: utils.One, IsBatch: true}
-	if err := s.crud.InternalCreate(ctx, s.config.DBType, s.project, utils.TableInvocationLogs, createRequest, false); err != nil {
+	if err := s.crud.InternalCreate(ctx, s.config.DBAlias, s.project, utils.TableInvocationLogs, createRequest, false); err != nil {
 		return errors.New("eventing module couldn't log the request - " + err.Error())
 	}
 	return nil

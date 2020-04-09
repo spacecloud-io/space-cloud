@@ -6,24 +6,34 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // Manager manages all admin transactions
 type Manager struct {
 	lock   sync.RWMutex
-	admin  *config.Admin
+	config *config.Admin
+	quotas model.UsageQuotas
+	user   *config.AdminUser
 	isProd bool
+
+	clusterID string
 }
 
 // New creates a new admin manager instance
-func New() *Manager {
-	return &Manager{}
+func New(clusterID string, adminUserInfo *config.AdminUser) *Manager {
+	m := new(Manager)
+	m.config = new(config.Admin)
+	m.user = adminUserInfo
+	m.quotas = model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1, Version: 0}
+	m.clusterID = clusterID
+	return m
 }
 
 // SetConfig sets the admin config
 func (m *Manager) SetConfig(admin *config.Admin) {
 	m.lock.Lock()
-	m.admin = admin
+	m.config = admin
 	m.lock.Unlock()
 }
 
@@ -46,14 +56,12 @@ func (m *Manager) Login(user, pass string) (int, string, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	for _, u := range m.admin.Users {
-		if u.User == user && u.Pass == pass {
-			token, err := m.createToken(map[string]interface{}{"id": user, "role": user})
-			if err != nil {
-				return http.StatusInternalServerError, "", err
-			}
-			return http.StatusOK, token, nil
+	if m.user.User == user && m.user.Pass == pass {
+		token, err := m.createToken(map[string]interface{}{"id": user, "role": user})
+		if err != nil {
+			return http.StatusInternalServerError, "", err
 		}
+		return http.StatusOK, token, nil
 	}
 
 	return http.StatusUnauthorized, "", errors.New("Invalid credentials provided")

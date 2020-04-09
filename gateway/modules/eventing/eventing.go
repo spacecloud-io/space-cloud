@@ -32,8 +32,8 @@ type Module struct {
 	syncMan   model.SyncmanEventingInterface
 	fileStore model.FilestoreEventingInterface
 
-	schemas map[string]model.Fields
-
+	schemas    map[string]model.Fields
+	metricHook model.MetricEventingHook
 	// stores mapping of batchID w.r.t channel for sending synchronous event response
 	eventChanMap sync.Map // key here is batchID
 }
@@ -45,17 +45,18 @@ type eventResponse struct {
 }
 
 // New creates a new instance of the eventing module
-func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, schemaModule model.SchemaEventingInterface, adminMan *admin.Manager, syncMan *syncman.Manager, file model.FilestoreEventingInterface) *Module {
+func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, schemaModule model.SchemaEventingInterface, adminMan *admin.Manager, syncMan *syncman.Manager, file model.FilestoreEventingInterface, hook model.MetricEventingHook) *Module {
 
 	m := &Module{
-		auth:      auth,
-		crud:      crud,
-		schema:    schemaModule,
-		adminMan:  adminMan,
-		syncMan:   syncMan,
-		schemas:   map[string]model.Fields{},
-		fileStore: file,
-		config:    &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
+		auth:       auth,
+		crud:       crud,
+		schema:     schemaModule,
+		adminMan:   adminMan,
+		syncMan:    syncMan,
+		schemas:    map[string]model.Fields{},
+		fileStore:  file,
+		metricHook: hook,
+		config:     &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 	}
 
 	// Start the internal processes
@@ -95,18 +96,25 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		return nil
 	}
 
-	if eventing.DBType == "" {
+	if eventing.DBAlias == "" {
 		return errors.New("invalid eventing config provided")
 	}
 
 	m.project = project
-	m.config = eventing
+	m.config.Enabled = eventing.Enabled
+	m.config.DBAlias = eventing.DBAlias
 
+	m.config.Rules = eventing.Rules
 	if m.config.Rules == nil {
 		m.config.Rules = map[string]config.EventingRule{}
 	}
 
-	// Reset the internal rules
+	m.config.SecurityRules = eventing.SecurityRules
+	if m.config.SecurityRules == nil {
+		m.config.SecurityRules = map[string]*config.Rule{}
+	}
+
+	// `m.config.InternalRules` cannot be set by the eventing module. Its used by other modules only.
 	if m.config.InternalRules == nil {
 		m.config.InternalRules = map[string]config.EventingRule{}
 	}

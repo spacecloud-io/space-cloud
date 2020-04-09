@@ -6,9 +6,10 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/stretchr/testify/mock"
 )
 
 type mockHTTPInterface struct {

@@ -216,7 +216,7 @@ func (m *Module) Batch(ctx context.Context, dbAlias, project string, req *model.
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		for i, r := range req.Requests {
-			m.metricHook(m.project, dbAlias, r.Col, counts[i], utils.OperationType(r.Operation))
+			m.metricHook(m.project, dbAlias, r.Col, counts[i], utils.OperationType(r.Type))
 		}
 	}
 

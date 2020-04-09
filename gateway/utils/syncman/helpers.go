@@ -56,6 +56,19 @@ func calcIndex(token, totalTokens, n int) int {
 	return token / bucketSize
 }
 
+// GetGatewayIndex returns the position of th current gateway instance
+func (s *Manager) GetGatewayIndex() int {
+	index := 0
+
+	for i, v := range s.services {
+		if v.id == s.nodeID {
+			index = i
+			break
+		}
+	}
+	return index
+}
+
 // getConfigWithoutLock returns the config present in the state
 func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error) {
 	// Iterate over all projects stored
