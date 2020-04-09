@@ -69,8 +69,8 @@ func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFee
 }
 
 // Unsubscribe performs the realtime unsubscribe operation.
-func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) {
-	m.RemoveLiveQuery(data.DBType, data.Group, clientID, data.ID)
+func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) error {
+	return m.RemoveLiveQuery(data.DBType, data.Group, clientID, data.ID)
 }
 
 // HandleRealtimeEvent handles an incoming realtime event from the eventing module

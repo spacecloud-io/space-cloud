@@ -286,11 +286,11 @@ func TestHandleGraphqlSocket(t *testing.T) {
 			},
 			graphMockArgs: []mockArg{},
 			push:          []*model.FeedData{},
-			send:          []*graphqlMessage{{Type: utils.GqlConnectionInit, ID: "1", Payload: payloadObject{ConnectionParams: token{Token: "abc"}}}},
+			send:          []*graphqlMessage{{Type: utils.GqlConnectionInit, ID: "1"}},
 			rcv:           []*graphqlMessage{{Type: utils.GqlConnectionAck, ID: "1"}},
 		},
 		{
-			name: "valid init ack followed by start",
+			name: "valid start",
 			realtimeMockArgs: []mockArg{
 				{
 					method:        "RemoveClient",
@@ -306,7 +306,6 @@ func TestHandleGraphqlSocket(t *testing.T) {
 			graphMockArgs: []mockArg{{method: "GetDBAlias", args: []interface{}{mock.Anything}, paramReturned: []interface{}{"db", nil}}},
 			push:          []*model.FeedData{},
 			send: []*graphqlMessage{
-				{Type: utils.GqlConnectionInit, ID: "1", Payload: payloadObject{ConnectionParams: token{Token: "abc"}}},
 				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Query: `
 subscription {
 	col(where: {foo: bar}) @db {
@@ -316,15 +315,14 @@ subscription {
 		find
   }
 }
-`}},
+`, Token: "abc"}},
 			},
 			rcv: []*graphqlMessage{
-				{Type: utils.GqlConnectionAck, ID: "1"},
 				{Type: utils.GqlData, ID: "2", Payload: payloadObject{Data: map[string]interface{}{"col": map[string]interface{}{"payload": map[string]interface{}{"f1": "1", "__typename": "col"}, "find": map[string]interface{}{"foo": "bar"}}}}},
 			},
 		},
 		{
-			name: "valid init ack followed by start with skip initial",
+			name: "valid start with payload without selection",
 			realtimeMockArgs: []mockArg{
 				{
 					method:        "RemoveClient",
@@ -333,14 +331,109 @@ subscription {
 				},
 				{
 					method:        "Subscribe",
-					args:          []interface{}{mock.Anything, &model.RealtimeRequest{Type: "start", Token: "abc", Group: "col", DBType: "db", ID: "2", Where: map[string]interface{}{"foo": "bar"}, Options: model.LiveQueryOptions{SkipInitial: true}}, mock.Anything},
+					args:          []interface{}{mock.Anything, &model.RealtimeRequest{Type: "start", Token: "abc", Group: "col", DBType: "db", ID: "2", Where: map[string]interface{}{"foo": "bar"}}, mock.Anything},
 					paramReturned: []interface{}{[]*model.FeedData{{Group: "col", Payload: map[string]interface{}{"f1": "1", "f2": 2}, Find: map[string]interface{}{"foo": "bar"}}}, nil},
 				},
 			},
 			graphMockArgs: []mockArg{{method: "GetDBAlias", args: []interface{}{mock.Anything}, paramReturned: []interface{}{"db", nil}}},
 			push:          []*model.FeedData{},
 			send: []*graphqlMessage{
-				{Type: utils.GqlConnectionInit, ID: "1", Payload: payloadObject{ConnectionParams: token{Token: "abc"}}},
+				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Token: "abc", Query: `
+subscription {
+	col(where: {foo: bar}) @db {
+    payload
+		find
+  }
+}
+`}},
+			},
+			rcv: []*graphqlMessage{
+				{Type: utils.GqlData, ID: "2", Payload: payloadObject{Data: map[string]interface{}{"col": map[string]interface{}{"payload": map[string]interface{}{"f1": "1", "f2": float64(2), "__typename": "col"}, "find": map[string]interface{}{"foo": "bar"}}}}},
+			},
+		},
+		{
+			name: "valid start with payload without selection and push delete feed",
+			realtimeMockArgs: []mockArg{
+				{
+					method:        "RemoveClient",
+					args:          []interface{}{mock.Anything},
+					paramReturned: []interface{}{},
+				},
+				{
+					method:        "Subscribe",
+					args:          []interface{}{mock.Anything, &model.RealtimeRequest{Type: "start", Token: "abc", Group: "col", DBType: "db", ID: "2", Where: map[string]interface{}{"foo": "bar"}}, mock.Anything},
+					paramReturned: []interface{}{[]*model.FeedData{{Type: "initial", Group: "col", Payload: map[string]interface{}{"f1": "1", "f2": "2"}, Find: map[string]interface{}{"foo": "bar"}}}, nil},
+				},
+			},
+			graphMockArgs: []mockArg{{method: "GetDBAlias", args: []interface{}{mock.Anything}, paramReturned: []interface{}{"db", nil}}},
+			push:          []*model.FeedData{{Group: "col", Type: utils.RealtimeDelete, Find: map[string]interface{}{"foo": "bar"}}},
+			send: []*graphqlMessage{
+				{Type: utils.GqlConnectionInit, ID: "1"},
+				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Token: "abc", Query: `
+subscription {
+	col(where: {foo: bar}) @db {
+    payload
+		find
+		type
+  }
+}
+`}},
+			},
+			rcv: []*graphqlMessage{
+				{Type: utils.GqlConnectionAck, ID: "1"},
+				{Type: utils.GqlData, ID: "2", Payload: payloadObject{Data: map[string]interface{}{"col": map[string]interface{}{"payload": map[string]interface{}{"f1": "1", "f2": "2", "__typename": "col"}, "find": map[string]interface{}{"foo": "bar"}, "type": "initial"}}}},
+				{Type: utils.GqlData, ID: "2", Payload: payloadObject{Data: map[string]interface{}{"col": map[string]interface{}{"payload": map[string]interface{}{"__typename": "col", "foo": "bar"}, "find": map[string]interface{}{"foo": "bar"}, "type": "delete"}}}},
+			},
+		},
+		{
+			name: "valid start and query with variables",
+			realtimeMockArgs: []mockArg{
+				{
+					method:        "RemoveClient",
+					args:          []interface{}{mock.Anything},
+					paramReturned: []interface{}{},
+				},
+				{
+					method:        "Subscribe",
+					args:          []interface{}{mock.Anything, &model.RealtimeRequest{Type: "start", Group: "col", DBType: "db", ID: "2", Where: map[string]interface{}{"foo": "bar"}}, mock.Anything},
+					paramReturned: []interface{}{[]*model.FeedData{{Group: "col", Payload: map[string]interface{}{"f1": "1", "f2": 2}, Find: map[string]interface{}{"foo": "bar"}}}, nil},
+				},
+			},
+			graphMockArgs: []mockArg{{method: "GetDBAlias", args: []interface{}{mock.Anything}, paramReturned: []interface{}{"db", nil}}},
+			push:          []*model.FeedData{},
+			send: []*graphqlMessage{
+				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Query: `
+subscription {
+	col(where: $where) @db {
+    payload {
+			f1
+		}
+		find
+  }
+}
+`, Variables: map[string]interface{}{"where": map[string]string{"foo": "bar"}}}},
+			},
+			rcv: []*graphqlMessage{
+				{Type: utils.GqlData, ID: "2", Payload: payloadObject{Data: map[string]interface{}{"col": map[string]interface{}{"payload": map[string]interface{}{"f1": "1", "__typename": "col"}, "find": map[string]interface{}{"foo": "bar"}}}}},
+			},
+		},
+		{
+			name: "valid start with skip initial",
+			realtimeMockArgs: []mockArg{
+				{
+					method:        "RemoveClient",
+					args:          []interface{}{mock.Anything},
+					paramReturned: []interface{}{},
+				},
+				{
+					method:        "Subscribe",
+					args:          []interface{}{mock.Anything, &model.RealtimeRequest{Type: "start", Group: "col", DBType: "db", ID: "2", Where: map[string]interface{}{"foo": "bar"}, Options: model.LiveQueryOptions{SkipInitial: true}}, mock.Anything},
+					paramReturned: []interface{}{[]*model.FeedData{{Group: "col", Payload: map[string]interface{}{"f1": "1", "f2": 2}, Find: map[string]interface{}{"foo": "bar"}}}, nil},
+				},
+			},
+			graphMockArgs: []mockArg{{method: "GetDBAlias", args: []interface{}{mock.Anything}, paramReturned: []interface{}{"db", nil}}},
+			push:          []*model.FeedData{},
+			send: []*graphqlMessage{
 				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Query: `
 subscription {
 	col(where: {foo: bar}, skipInitial: true) @db {
@@ -353,12 +446,11 @@ subscription {
 `}},
 			},
 			rcv: []*graphqlMessage{
-				{Type: utils.GqlConnectionAck, ID: "1"},
 				{Type: utils.GqlData, ID: "2", Payload: payloadObject{Data: map[string]interface{}{"col": map[string]interface{}{"payload": map[string]interface{}{"f1": "1", "__typename": "col"}, "find": map[string]interface{}{"foo": "bar"}}}}},
 			},
 		},
 		{
-			name: "valid init ack followed by start with invalid skip initial",
+			name: "valid start with invalid skip initial",
 			realtimeMockArgs: []mockArg{
 				{
 					method:        "RemoveClient",
@@ -374,16 +466,14 @@ subscription {
 			graphMockArgs: []mockArg{{method: "GetDBAlias", args: []interface{}{mock.Anything}, paramReturned: []interface{}{"db", nil}}},
 			push:          []*model.FeedData{},
 			send: []*graphqlMessage{
-				{Type: utils.GqlConnectionInit, ID: "1", Payload: payloadObject{ConnectionParams: token{Token: "abc"}}},
-				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Query: `subscription {	col(where: {foo: bar}, skipInitial: "bad value") @db {find}}`}},
+				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Token: "abc", Query: `subscription {	col(where: {foo: bar}, skipInitial: "bad value") @db {find}}`}},
 			},
 			rcv: []*graphqlMessage{
-				{Type: utils.GqlConnectionAck, ID: "1"},
 				{Type: utils.GqlData, ID: "2", Payload: payloadObject{Data: map[string]interface{}{"col": map[string]interface{}{"find": map[string]interface{}{"foo": "bar"}}}}},
 			},
 		},
 		{
-			name: "valid init ack followed by start with invalid db alias",
+			name: "valid  start with invalid db alias",
 			realtimeMockArgs: []mockArg{
 				{
 					method:        "RemoveClient",
@@ -394,11 +484,9 @@ subscription {
 			graphMockArgs: []mockArg{{method: "GetDBAlias", args: []interface{}{mock.Anything}, paramReturned: []interface{}{"", errors.New("forced error")}}},
 			push:          []*model.FeedData{},
 			send: []*graphqlMessage{
-				{Type: utils.GqlConnectionInit, ID: "1", Payload: payloadObject{ConnectionParams: token{Token: "abc"}}},
 				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Query: `subscription {	col(where: {foo: bar}, skipInitial: "bad value") @db {find}}`}},
 			},
 			rcv: []*graphqlMessage{
-				{Type: utils.GqlConnectionAck, ID: "1"},
 				{Type: utils.GqlError, ID: "2"},
 			},
 		},
@@ -448,7 +536,7 @@ subscription {
 				},
 				{
 					method:        "Subscribe",
-					args:          []interface{}{mock.Anything, &model.RealtimeRequest{Type: "start", Token: "abc", Group: "col", DBType: "db", ID: "2", Where: map[string]interface{}{"foo": "bar"}}, mock.Anything},
+					args:          []interface{}{mock.Anything, &model.RealtimeRequest{Type: "start", Group: "col", DBType: "db", ID: "2", Where: map[string]interface{}{"foo": "bar"}}, mock.Anything},
 					paramReturned: []interface{}{[]*model.FeedData{}, nil},
 				},
 				{
@@ -460,7 +548,6 @@ subscription {
 			graphMockArgs: []mockArg{{method: "GetDBAlias", args: []interface{}{mock.Anything}, paramReturned: []interface{}{"db", nil}}},
 			push:          []*model.FeedData{},
 			send: []*graphqlMessage{
-				{Type: utils.GqlConnectionInit, ID: "1", Payload: payloadObject{ConnectionParams: token{Token: "abc"}}},
 				{Type: utils.GqlStart, ID: "2", Payload: payloadObject{Query: `
 subscription {
 	col(where: {foo: bar}) @db {
@@ -474,8 +561,7 @@ subscription {
 				{Type: utils.GqlStop, ID: "2"},
 			},
 			rcv: []*graphqlMessage{
-				{Type: utils.GqlConnectionAck, ID: "1"},
-				{Type: utils.GqlStop, ID: "2"},
+				{Type: utils.GqlComplete, ID: "2"},
 			},
 		},
 	}
@@ -580,8 +666,9 @@ func (m *mockRealtimeModule) Subscribe(clientID string, data *model.RealtimeRequ
 	return c.Get(0).([]*model.FeedData), nil
 }
 
-func (m *mockRealtimeModule) Unsubscribe(clientID string, data *model.RealtimeRequest) {
+func (m *mockRealtimeModule) Unsubscribe(clientID string, data *model.RealtimeRequest) error {
 	m.Called(clientID, data)
+	return nil
 }
 
 func (m *mockRealtimeModule) HandleRealtimeEvent(ctx context.Context, eventDoc *model.CloudEventPayload) error {

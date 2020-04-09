@@ -164,7 +164,7 @@ func filterResults(field *ast.Field, results map[string]interface{}) map[string]
 			value, ok := v[returnFieldName]
 			if ok {
 				if returnField.SelectionSet != nil {
-					value = filter(returnField, value)
+					value = Filter(returnField, value)
 				}
 				filteredResults[returnFieldName] = value
 			}
@@ -180,7 +180,7 @@ func filterResults(field *ast.Field, results map[string]interface{}) map[string]
 	return filteredResults
 }
 
-func filter(field *ast.Field, value interface{}) interface{} {
+func Filter(field *ast.Field, value interface{}) interface{} {
 	switch val := value.(type) {
 	case map[string]interface{}:
 		newMap := map[string]interface{}{}
@@ -190,7 +190,7 @@ func filter(field *ast.Field, value interface{}) interface{} {
 				returnFieldName := returnField.Name.Value
 				if k == returnFieldName {
 					if returnField.SelectionSet != nil {
-						v = filter(returnField, v)
+						v = Filter(returnField, v)
 					}
 					newMap[k] = v
 				}
@@ -200,7 +200,7 @@ func filter(field *ast.Field, value interface{}) interface{} {
 	case []interface{}:
 		newArray := make([]interface{}, len(val))
 		for i, v := range val {
-			newArray[i] = filter(field, v)
+			newArray[i] = Filter(field, v)
 		}
 		return newArray
 
