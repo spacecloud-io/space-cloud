@@ -31,7 +31,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, disableMetrics bool, adminUserInfo *config.AdminUser, adminConfig *config.Admin) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
 
 	// Create the fundamental modules
 	adminMan := admin.New(clusterID, adminUserInfo)
