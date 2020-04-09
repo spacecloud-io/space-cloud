@@ -213,7 +213,7 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: dbConfig})
 	}
@@ -457,6 +457,7 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
 	}
@@ -538,6 +539,7 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: dbConfig})
 	}
