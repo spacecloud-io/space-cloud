@@ -180,6 +180,7 @@ func filterResults(field *ast.Field, results map[string]interface{}) map[string]
 	return filteredResults
 }
 
+// Filter filers the result based on the provided selection set
 func Filter(field *ast.Field, value interface{}) interface{} {
 	switch val := value.(type) {
 	case map[string]interface{}:

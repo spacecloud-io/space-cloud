@@ -105,9 +105,12 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 
 				data.Project = projectID
 
-				realtime.Unsubscribe(clientID, data)
+				if err := realtime.Unsubscribe(clientID, data); err != nil {
+					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false}
+					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				}
 
-				// Send response to c
+				// Send response to client
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
 				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 			default:
@@ -292,7 +295,11 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 				data.ID = m.ID
 				data.Group = group.(string)
 
-				realtime.Unsubscribe(clientID, data)
+				if err := realtime.Unsubscribe(clientID, data); err != nil {
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					continue
+				}
+
 				channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlComplete}
 				graphqlIDMapper.Delete(m.ID)
 
