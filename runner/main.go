@@ -4,10 +4,11 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
+
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/modules/routing"
 	"github.com/spaceuptech/space-cloud/runner/modules/secrets"
-	"github.com/urfave/cli"
 )
 
 const (

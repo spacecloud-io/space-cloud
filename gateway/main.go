@@ -201,32 +201,29 @@ func actionRun(c *cli.Context) error {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, removeProjectScope, disableMetrics)
-	if err != nil {
-		return err
-	}
-
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
 	}
-	if conf.Admin == nil {
-		conf.Admin = config.GenerateAdmin()
+
+	// Override the admin config if provided
+	if adminUser == "" {
+		adminUser = "admin"
+	}
+	if adminPass == "" {
+		adminPass = "123"
+	}
+	if adminSecret == "" {
+		adminSecret = "some-secret"
+	}
+	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, removeProjectScope, disableMetrics, adminUserInfo)
+	if err != nil {
+		return err
 	}
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
-
-	// Override the admin config if provided
-	if adminUser != "" {
-		conf.Admin.Users[0].User = adminUser
-	}
-	if adminPass != "" {
-		conf.Admin.Users[0].Pass = adminPass
-	}
-	if adminSecret != "" {
-		conf.Admin.Secret = adminSecret
-	}
 
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)

@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestModule_processIntents(t *testing.T) {
@@ -30,12 +31,12 @@ func TestModule_processIntents(t *testing.T) {
 	}{
 		{
 			name: "eventing is not enable",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype", Enabled: false}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: false}},
 			args: args{t: &timeValue},
 		},
 		{
 			name: "error reading",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype", Enabled: true}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
@@ -53,7 +54,7 @@ func TestModule_processIntents(t *testing.T) {
 		},
 		{
 			name: "mapstructure decode error",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype", Enabled: true}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
@@ -71,7 +72,7 @@ func TestModule_processIntents(t *testing.T) {
 		},
 		{
 			name: "time parsing error",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype", Enabled: true}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
@@ -89,7 +90,7 @@ func TestModule_processIntents(t *testing.T) {
 		},
 		{
 			name: "no error",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype", Enabled: true}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
@@ -157,7 +158,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db create case with error in read but no error in internal update",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBCreate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -174,7 +175,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db create case with error in read and error in internal update",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBCreate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -191,7 +192,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db create case with no error in read but error in internal update",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBCreate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -208,7 +209,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db create case with no errors",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBCreate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -249,7 +250,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db update case with error while reading",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBUpdate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -261,7 +262,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db update case with error while updating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBUpdate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -278,7 +279,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db update case with no errors",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBUpdate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -319,7 +320,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db delete case with no error while reading",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBDelete, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -336,7 +337,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db delete case with error while reading and updating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBDelete, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -353,7 +354,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "db delete case with error while reading",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBDelete, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
 				mockArgs{
@@ -394,7 +395,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file create case with error while getting internal access token",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -405,7 +406,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file create case with error while DoesExists and not while updating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -430,7 +431,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file create case with error while DoesExists and while updating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -455,7 +456,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file create case with error while updating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -480,7 +481,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file create case with no errors",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -527,7 +528,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file delete case with error while getting internal access token",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileDelete, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -538,7 +539,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file delete case with no error while DoesExists but while updating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileDelete, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -563,7 +564,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file delete case with error while DoesExists and also while updating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileDelete, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -588,7 +589,7 @@ func TestModule_processIntent(t *testing.T) {
 		},
 		{
 			name: "file delete case with error while DoesExists but not while updating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileDelete, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
 				mockArgs{

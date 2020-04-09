@@ -31,15 +31,14 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, disableMetrics bool) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
 
 	// Create the fundamental modules
-	adminMan := admin.New(clusterID)
+	adminMan := admin.New(clusterID, adminUserInfo)
 	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan)
 	if err != nil {
 		return nil, err
 	}
-
 	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, adminMan.LoadEnv())
 	if err != nil {
 		return nil, err

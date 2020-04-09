@@ -4,10 +4,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type cliVersionResponse struct {
-	Docs []*cliVersionDoc `mapstructure:"result"`
-}
-
 type cliVersionDoc struct {
 	VersionNo   string `mapstructure:"version_no" json:"versionNo"`
 	VersionCode int32  `mapstructure:"version_code" json:"versionCode"`

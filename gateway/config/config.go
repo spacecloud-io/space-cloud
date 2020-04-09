@@ -18,29 +18,19 @@ type Project struct {
 	ContextTime    int               `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
 }
 
-// Admin stores the admin credentials
+// Admin holds the admin config
 type Admin struct {
-	Secret    string          `json:"secret" yaml:"secret"`
-	Operation OperationConfig `json:"operation"`
-	Users     []AdminUser     `json:"users" yaml:"users"`
-}
-
-// OperationConfig holds the operation mode config
-type OperationConfig struct {
-	Mode   int    `json:"mode" yaml:"mode"`
-	UserID string `json:"userId" yaml:"userId"`
-	Key    string `json:"key" yaml:"key"`
+	ClusterID  string `json:"clusterId" yaml:"clusterId"`
+	ClusterKey string `json:"clusterKey" yaml:"clusterKey"`
+	Version    int    `json:"version" yaml:"version"`
 }
 
 // AdminUser holds the user credentials and scope
 type AdminUser struct {
-	User   string       `json:"user" yaml:"user"`
-	Pass   string       `json:"pass" yaml:"pass"`
-	Scopes ProjectScope `json:"scopes" yaml:"scopes"`
+	User   string `json:"user" yaml:"user"`
+	Pass   string `json:"pass" yaml:"pass"`
+	Secret string `json:"secret" yaml:"secret"`
 }
-
-// ProjectScope contains the project level scope
-type ProjectScope map[string][]string // (project name -> []scopes)
 
 // SSL holds the certificate and key file locations
 type SSL struct {
@@ -176,7 +166,7 @@ type StaticRoute struct {
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
 	Enabled       bool                    `json:"enabled" yaml:"enabled"`
-	DBType        string                  `json:"dbType" yaml:"dbType"`
+	DBAlias       string                  `json:"dbAlias" yaml:"dbAlias"`
 	Rules         map[string]EventingRule `json:"rules,omitempty" yaml:"rules"`
 	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
 	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`

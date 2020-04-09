@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestModule_processStagedEvents(t *testing.T) {
@@ -32,12 +33,12 @@ func TestModule_processStagedEvents(t *testing.T) {
 	}{
 		{
 			name: "config is not enabled",
-			m:    &Module{project: "abc", config: &config.Eventing{Enabled: false, DBType: "db"}},
+			m:    &Module{project: "abc", config: &config.Eventing{Enabled: false, DBAlias: "db"}},
 			args: args{t: &timeValue},
 		},
 		{
 			name: "error while reading",
-			m:    &Module{project: "abc", config: &config.Eventing{Enabled: true, DBType: "db"}},
+			m:    &Module{project: "abc", config: &config.Eventing{Enabled: true, DBAlias: "db"}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
@@ -55,7 +56,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 		},
 		{
 			name: "error while decoding",
-			m:    &Module{project: "abc", config: &config.Eventing{Enabled: true, DBType: "db"}},
+			m:    &Module{project: "abc", config: &config.Eventing{Enabled: true, DBAlias: "db"}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
@@ -73,7 +74,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 		},
 		{
 			name: "no error staging events",
-			m:    &Module{project: "abc", config: &config.Eventing{Enabled: true, DBType: "db"}},
+			m:    &Module{project: "abc", config: &config.Eventing{Enabled: true, DBAlias: "db"}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
@@ -140,7 +141,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 	}{
 		{
 			name: "error getting internal access token",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -152,7 +153,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		},
 		{
 			name: "error getting sc access token",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -168,7 +169,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		},
 		{
 			name: "error making invocation http request",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -196,7 +197,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		},
 		{
 			name: "error getting space cloud url from id",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -235,7 +236,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		},
 		{
 			name: "error making http request",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				mockArgs{
@@ -279,7 +280,7 @@ func TestModule_invokeWebhook(t *testing.T) {
 		},
 		{
 			name: "no error making invocation http request and a valid response",
-			m:    &Module{project: "abc", config: &config.Eventing{DBType: "dbtype"}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{ctx: context.Background(), rule: config.EventingRule{Timeout: 100, URL: "url"}, eventDoc: &model.EventDocument{ID: "id", BatchID: "batchid--url"}, cloudEvent: &model.CloudEventPayload{Data: "payload"}},
 			authMockArgs: []mockArgs{
 				mockArgs{

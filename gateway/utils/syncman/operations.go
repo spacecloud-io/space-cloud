@@ -87,6 +87,9 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	if !s.adminMan.ValidateSyncOperation(s.projectConfig, project) {
+		return http.StatusInternalServerError, fmt.Errorf("upgrade your plan to create more projects")
+	}
 
 	// set default context time
 	if project.ContextTime == 0 {
@@ -134,7 +137,6 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			}
 		}
 	}
-
 	// We will ignore the error for the create project request
 	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 

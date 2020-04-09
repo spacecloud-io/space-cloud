@@ -1,9 +1,6 @@
 package admin
 
 import (
-	"errors"
-	"net/http"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -40,62 +37,7 @@ func (m *Manager) ValidateSyncOperation(c *config.Config, project *config.Projec
 		}
 	}
 
-	maxProjects := 1
-	if m.admin.Operation.Mode == 1 {
-		maxProjects = 3
-	} else if m.admin.Operation.Mode == 2 {
-		maxProjects = 5
-	}
-
-	if len(c.Projects) == (maxProjects - 1) {
-		return true
-	}
-
-	return false
-}
-
-// IsAdminOpAuthorised checks if the admin operation is authorised.
-// TODO add scope level restrictions as well
-func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	if !m.isProd {
-		return http.StatusOK, nil
-	}
-
-	auth, err := m.parseToken(token)
-	if err != nil {
-		return http.StatusUnauthorized, err
-	}
-
-	user, p := auth["id"]
-	if !p {
-		return http.StatusUnauthorized, errors.New("Invalid Token")
-	}
-
-	if user == utils.InternalUserID {
-		return http.StatusOK, nil
-	}
-
-	for _, u := range m.admin.Users {
-		if u.User == user {
-
-			// Allow full access for scope name `all`
-			if _, p := u.Scopes["all"]; p {
-				return http.StatusOK, nil
-			}
-
-			// Check if scope is present
-			if _, p := u.Scopes[scope]; p {
-				return http.StatusOK, nil
-			}
-
-			break
-		}
-	}
-
-	return http.StatusForbidden, errors.New("You are not authorized to make this request")
+	return len(c.Projects) < m.quotas.MaxProjects
 }
 
 // RefreshToken is used to create a new token based on an existing one
@@ -113,6 +55,16 @@ func (m *Manager) RefreshToken(token string) (string, error) {
 		return "", err
 	}
 	return newToken, nil
+}
+
+// GetQuotas gets number of projects & databases that can be created
+func (m *Manager) GetQuotas() map[string]interface{} {
+	return map[string]interface{}{"projects": m.quotas.MaxProjects, "databases": m.quotas.MaxDatabases}
+}
+
+// GetCredentials gets user name & pass
+func (m *Manager) GetCredentials() map[string]interface{} {
+	return map[string]interface{}{"user": m.user.User, "pass": m.user.Pass}
 }
 
 // GetClusterID returns the cluster id

@@ -109,8 +109,6 @@ github.com/docker/go-units v0.4.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDD
 github.com/docker/spdystream v0.0.0-20160310174837-449fdfce4d96/go.mod h1:Qh8CwZgvJUkLughtfhJv5dyTYa91l1fOUCrgjqmcifM=
 github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815/go.mod h1:WwZ+bS3ebgob9U8Nd0kOddGdZWjyMGR8Wziv+TBNwSE=
 github.com/doug-martin/goqu/v8 v8.1.0/go.mod h1:wiiYWkiguNXK5d4kGIkYmOxBScEL37d9Cfv9tXhPsTk=
-github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
-github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5mFgVsvEsIPBvNs=
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
@@ -409,9 +407,8 @@ github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1
 github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a/go.mod h1:syvi0/a8iFYH4r/RixwvyeAJjdLS9QV7WQ/tjFTllLA=
 github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4kGIyLM=
 github.com/spaceuptech/space-api-go v0.16.1/go.mod h1:6ObvRFO/APiszcZKVQV2tiVNawtiRS46jc3jngPKuDc=
-github.com/spaceuptech/space-api-go v0.16.2 h1:Q8MMhp/ISfNsnjnxUme6VqSNaQP54O553krqW+5tUE4=
-github.com/spaceuptech/space-api-go v0.16.2/go.mod h1:+7VTNWQICAbh9Lm2uTTeKXgRPnxF/l7wsrc6XX4LSSg=
-github.com/spaceuptech/space-cloud v0.16.0 h1:lT/3VxnhGtljHZ3FWyRuiVuxfAFiYYI2XfEMxXFX6CQ=
+github.com/spaceuptech/space-api-go v0.17.0 h1:PUD6JmmUGQRQyQunoKcDRg//K5JSSNxL32V6yi4AwSI=
+github.com/spaceuptech/space-api-go v0.17.0/go.mod h1:+7VTNWQICAbh9Lm2uTTeKXgRPnxF/l7wsrc6XX4LSSg=
 github.com/spaceuptech/space-cloud/gateway v0.0.0-20200220130157-1246a52c7148 h1:BghYhVx9Cb65iI9zq1J+NP292NLr8iuN5aOKqsM3soc=
 github.com/spaceuptech/space-cloud/gateway v0.0.0-20200220130157-1246a52c7148/go.mod h1:1muO/Kku/YQjAa3Jq4lcV7/tAZd+kz1s/WE2UHaUcaE=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=

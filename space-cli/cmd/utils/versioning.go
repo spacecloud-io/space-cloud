@@ -7,10 +7,6 @@ import (
 	spaceApiTypes "github.com/spaceuptech/space-api-go/types"
 )
 
-type scVersionResponse struct {
-	Docs []*scVersionDoc `mapstructure:"result"`
-}
-
 type scVersionDoc struct {
 	VersionNo         string `mapstructure:"version_no" json:"versionNo"`
 	VersionCode       int32  `mapstructure:"version_code" json:"versionCode"`
@@ -39,12 +35,12 @@ func GetLatestVersion(version string) (string, error) {
 		}
 	}
 
-	r := scVersionResponse{}
-	if err := result.Unmarshal(&r); err != nil {
+	docs := []*scVersionDoc{}
+	if err := result.Unmarshal(&docs); err != nil {
 		return "", err
 	}
 	newVersion, newVersionCode := "", int32(0)
-	for _, val := range r.Docs {
+	for _, val := range docs {
 		if val.VersionCode > newVersionCode {
 			newVersion = val.VersionNo
 			newVersionCode = val.VersionCode

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -151,7 +152,7 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBType, c.Enabled); err != nil {
+		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -196,7 +197,7 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{config.Eventing{DBType: project.Modules.Eventing.DBType, Enabled: project.Modules.Eventing.Enabled}}})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: []interface{}{config.Eventing{DBAlias: project.Modules.Eventing.DBAlias, Enabled: project.Modules.Eventing.Enabled}}})
 	}
 }
 
