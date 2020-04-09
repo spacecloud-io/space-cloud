@@ -392,7 +392,7 @@ func TestIsPreparedQueryAuthorised(t *testing.T) {
 	}
 }
 
-func TestModule_authenticatePreparedQueryRequest(t *testing.T) {
+func Test_authenticatePreparedQueryRequest(t *testing.T) {
 	tests := []struct {
 		name               string
 		module             *Module
@@ -434,7 +434,7 @@ func TestModule_authenticatePreparedQueryRequest(t *testing.T) {
 	}
 }
 
-func TestModule_getPrepareQueryRule(t *testing.T) {
+func Test_getPrepareQueryRule(t *testing.T) {
 	tests := []struct {
 		name        string
 		module      *Module

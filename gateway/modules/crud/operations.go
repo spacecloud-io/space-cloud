@@ -163,6 +163,9 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 
 // SetCrudQueries set queries present in Crud modules
 func (m *Module) SetCrudQueries(id string, v *config.PreparedQuery) {
+	if _, p := m.queries[id]; !p {
+		m.queries = make(map[string]*config.PreparedQuery, 1)
+	}
 	m.queries[id] = v
 }
 
