@@ -336,10 +336,9 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 		}
 
 		// Check if the request is authorised
-		status, err := adminMan.IsAdminOpAuthorised(token, c.ID)
-		if err != nil {
+		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
+			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
