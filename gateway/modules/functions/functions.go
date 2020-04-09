@@ -18,13 +18,14 @@ type Module struct {
 	manager *syncman.Manager
 
 	// Variable configuration
-	project string
-	config  *config.ServicesModule
+	project    string
+	metricHook model.MetricFunctionHook
+	config     *config.ServicesModule
 }
 
 // Init returns a new instance of the Functions module
-func Init(auth model.AuthFunctionInterface, manager *syncman.Manager) *Module {
-	return &Module{auth: auth, manager: manager}
+func Init(auth model.AuthFunctionInterface, manager *syncman.Manager, hook model.MetricFunctionHook) *Module {
+	return &Module{auth: auth, manager: manager, metricHook: hook}
 }
 
 // SetConfig sets the configuration of the functions module

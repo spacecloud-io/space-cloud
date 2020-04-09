@@ -16,6 +16,19 @@ func (s *Manager) GetEventSource() string {
 	return fmt.Sprintf("sc-%s", s.nodeID)
 }
 
+// GetClusterID get cluster id
+func (s *Manager) GetClusterID() string {
+	return s.clusterID
+}
+
+// GetNodesInCluster get total number of gateways
+func (s *Manager) GetNodesInCluster() int {
+	if len(s.services) == 0 {
+		return 1
+	}
+	return len(s.services)
+}
+
 // GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
 func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
 	s.lock.RLock()
@@ -63,30 +76,10 @@ func (s *Manager) GetAssignedTokens() (start, end int) {
 		return calcTokens(1, utils.MaxEventTokens, 0)
 	}
 
-	index := 0
-
-	for i, v := range s.services {
-		if v.id == s.nodeID {
-			index = i
-			break
-		}
-	}
+	index := s.GetGatewayIndex()
 
 	totalMembers := len(s.services)
 	return calcTokens(totalMembers, utils.MaxEventTokens, index)
-}
-
-// GetClusterSize returns the size of the cluster
-func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	// Return 1 if not running with consul
-	if s.storeType == "none" {
-		return 1, nil
-	}
-
-	return len(s.services), nil
 }
 
 // ApplyProjectConfig creates the config for the project
@@ -231,12 +224,21 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	defer s.lock.RUnlock()
 
 	// Iterate over all projects stored
+	v := []interface{}{}
 	for _, p := range s.projectConfig.Projects {
+		if projectID == "*" {
+			// get all projects
+			v = append(v, config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Name: p.Name, ID: p.ID})
+			continue
+		}
+
 		if projectID == p.ID {
 			return []interface{}{config.Project{DockerRegistry: p.DockerRegistry, AESkey: p.AESkey, ContextTime: p.ContextTime, Secrets: p.Secrets, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
-
+	if len(v) > 0 {
+		return v, nil
+	}
 	return []interface{}{}, errors.New("given project is not present in state")
 }
 

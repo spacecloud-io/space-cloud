@@ -17,15 +17,16 @@ import (
 // Module is responsible for managing the file storage module
 type Module struct {
 	sync.RWMutex
-	store    FileStore
-	enabled  bool
-	auth     model.AuthFilestoreInterface
-	eventing model.EventingModule
+	store       FileStore
+	enabled     bool
+	auth        model.AuthFilestoreInterface
+	eventing    model.EventingModule
+	metricsHook model.MetricFileHook
 }
 
 // Init creates a new instance of the file store object
-func Init(auth model.AuthFilestoreInterface) *Module {
-	return &Module{enabled: false, store: nil, auth: auth}
+func Init(auth model.AuthFilestoreInterface, hook model.MetricFileHook) *Module {
+	return &Module{enabled: false, store: nil, auth: auth, metricsHook: hook}
 }
 
 // SetEventingModule sets the eventing module

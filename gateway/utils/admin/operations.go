@@ -68,3 +68,8 @@ func (m *Manager) GetQuotas() map[string]interface{} {
 func (m *Manager) GetCredentials() map[string]interface{} {
 	return map[string]interface{}{"user": m.user.User, "pass": m.user.Pass}
 }
+
+// GetClusterID returns the cluster id
+func (m *Manager) GetClusterID() string {
+	return m.clusterID
+}

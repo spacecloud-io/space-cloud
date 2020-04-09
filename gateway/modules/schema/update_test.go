@@ -160,8 +160,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded integer got float",
-			IsErrExpected: true,
+			name:          "Valid Test case- increment float but kind is integer type",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",

@@ -211,7 +211,7 @@ func TestModule_QueueEvent(t *testing.T) {
 		},
 		{
 			name: "event is queued",
-			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
+			m:    &Module{metricHook: func(project, eventingType string) {}, project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
 			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			crudMockArgs: []mockArgs{
 				mockArgs{

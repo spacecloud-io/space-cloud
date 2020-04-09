@@ -16,14 +16,17 @@ type Manager struct {
 	quotas model.UsageQuotas
 	user   *config.AdminUser
 	isProd bool
+
+	clusterID string
 }
 
 // New creates a new admin manager instance
-func New(adminUserInfo *config.AdminUser) *Manager {
+func New(clusterID string, adminUserInfo *config.AdminUser) *Manager {
 	m := new(Manager)
 	m.config = new(config.Admin)
 	m.user = adminUserInfo
 	m.quotas = model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1, Version: 0}
+	m.clusterID = clusterID
 	return m
 }
 
