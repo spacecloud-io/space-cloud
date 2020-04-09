@@ -169,7 +169,6 @@ func TestModule_QueueEvent(t *testing.T) {
 		name            string
 		m               *Module
 		args            args
-		metricMockArg   []mockArgs
 		crudMockArgs    []mockArgs
 		syncmanMockArgs []mockArgs
 		adminMockArgs   []mockArgs
@@ -212,15 +211,8 @@ func TestModule_QueueEvent(t *testing.T) {
 		},
 		{
 			name: "event is queued",
-			m:    &Module{project: mock.Anything, config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
+			m:    &Module{metricHook: func(project, eventingType string) {}, project: mock.Anything, config: &config.Eventing{DBType: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
 			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
-			metricMockArg: []mockArgs{
-				{
-					method:         "metricHook",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{},
-				},
-			},
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "InternalCreate",
@@ -265,15 +257,11 @@ func TestModule_QueueEvent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			mockMetric := mockEventingMetric{}
 			mockCrud := mockCrudInterface{}
 			mockSyncman := mockSyncmanEventingInterface{}
 			mockAdmin := mockAdminEventingInterface{}
 			mockAuth := mockAuthEventingInterface{}
 
-			for _, m := range tt.metricMockArg {
-				mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
-			}
 			for _, m := range tt.crudMockArgs {
 				mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
 			}
@@ -291,7 +279,6 @@ func TestModule_QueueEvent(t *testing.T) {
 			tt.m.syncMan = &mockSyncman
 			tt.m.adminMan = &mockAdmin
 			tt.m.auth = &mockAuth
-			tt.m.metricHook = mockMetric.metricHook
 
 			got, err := tt.m.QueueEvent(tt.args.ctx, tt.args.project, tt.args.token, tt.args.req)
 			if (err != nil) != tt.wantErr {

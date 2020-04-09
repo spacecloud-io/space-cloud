@@ -12,14 +12,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
-type mockEventingMetric struct {
-	mock.Mock
-}
-
-func (m *mockEventingMetric) metricHook(project string, eventType string) {
-	m.Called(project, eventType)
-}
-
 type mockHTTPInterface struct {
 	mock.Mock
 }
