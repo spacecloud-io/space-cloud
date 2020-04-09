@@ -411,6 +411,7 @@ github.com/soheilhy/cmux v0.1.4/go.mod h1:IM3LyeVVIOuxMH7sFAkER9+bJ4dT7Ms6E4xg4k
 github.com/spaceuptech/space-api-go v0.16.1/go.mod h1:6ObvRFO/APiszcZKVQV2tiVNawtiRS46jc3jngPKuDc=
 github.com/spaceuptech/space-api-go v0.16.2 h1:Q8MMhp/ISfNsnjnxUme6VqSNaQP54O553krqW+5tUE4=
 github.com/spaceuptech/space-api-go v0.16.2/go.mod h1:+7VTNWQICAbh9Lm2uTTeKXgRPnxF/l7wsrc6XX4LSSg=
+github.com/spaceuptech/space-api-go v0.17.0/go.mod h1:+7VTNWQICAbh9Lm2uTTeKXgRPnxF/l7wsrc6XX4LSSg=
 github.com/spaceuptech/space-cloud v0.16.0 h1:lT/3VxnhGtljHZ3FWyRuiVuxfAFiYYI2XfEMxXFX6CQ=
 github.com/spaceuptech/space-cloud/gateway v0.0.0-20200220130157-1246a52c7148 h1:BghYhVx9Cb65iI9zq1J+NP292NLr8iuN5aOKqsM3soc=
 github.com/spaceuptech/space-cloud/gateway v0.0.0-20200220130157-1246a52c7148/go.mod h1:1muO/Kku/YQjAa3Jq4lcV7/tAZd+kz1s/WE2UHaUcaE=
