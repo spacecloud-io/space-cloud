@@ -40,7 +40,7 @@ func (s *Server) generateMetricsRequest() (find, update map[string]interface{}) 
 	if c != nil {
 		set["sslEnabled"] = s.ssl != nil && s.ssl.Enabled
 		if c.Admin != nil {
-			set["mode"] = c.Admin.Operation.Mode
+			set["mode"] = 0 // this binary will always be in open source mode
 		}
 		if c.Projects != nil && len(c.Projects) > 0 && c.Projects[0].Modules != nil {
 			set["modules"] = getProjectInfo(c.Projects[0].Modules)
