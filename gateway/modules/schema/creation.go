@@ -72,7 +72,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 	currentTableInfo, ok := currentSchema[realTableName]
 	if !ok {
 		// create table with primary key
-		query, err := addNewTable(project, dbAlias, realTableName, realTableInfo, s.removeProjectScope)
+		query, err := addNewTable(project, dbType, realTableName, realTableInfo, s.removeProjectScope)
 		if err != nil {
 			return nil, err
 		}

@@ -1,8 +1,9 @@
 package gcpstorage
 
 import (
-	"cloud.google.com/go/storage"
 	"context"
+
+	"cloud.google.com/go/storage"
 )
 
 // DoesExists checks if the path exists
