@@ -19,11 +19,11 @@ func (m *Module) routineFlushMetricsToSink() {
 		go func() {
 			// Flush project metrics only if our index is 0
 			if index := m.syncMan.GetGatewayIndex(); index == 0 {
-				find, set, min, isSkip := m.generateMetricsRequest()
-				if isSkip {
-					return
+				c := m.syncMan.GetGlobalConfig()
+				ssl := c.SSL
+				for _, project := range c.Projects {
+					m.updateSCMetrics(m.generateMetricsRequest(project, ssl))
 				}
-				m.updateSCMetrics(find, set, min)
 			}
 		}()
 	}
