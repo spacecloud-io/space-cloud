@@ -7,7 +7,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
@@ -155,8 +154,7 @@ func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id s
 		databaseConfig.PreparedQueries = make(map[string]*config.PreparedQuery, 1)
 	}
 	databaseConfig.PreparedQueries[id] = v
-	c := crud.Module{}
-	c.SetCrudQueries(id, v)
+
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())
 		return err
