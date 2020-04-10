@@ -3,50 +3,50 @@ package metrics
 import (
 	"sync"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
+	api "github.com/spaceuptech/space-api-go"
+	"github.com/spaceuptech/space-api-go/db"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
+	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // Module struct for metrics
 type Module struct {
-	lock sync.RWMutex
+	lock   sync.RWMutex
+	isProd bool
 
 	// Variables for metric state
-	nodeID   string
-	projects sync.Map // key -> project; value -> *metrics
-
+	clusterID string
+	nodeID    string
+	projects  sync.Map // key -> project; value -> *metrics
 	// Variables to store the configuration
-	config Config
-
+	isMetricDisabled bool
 	// Variables to interact with the sink
-	sink *crud.Module
+	sink *db.DB
+
+	// Global modules
+	adminMan *admin.Manager
+	syncMan  *syncman.Manager
 }
 
 // Config is the configuration required by the metrics module
 type Config struct {
-	IsEnabled        bool
-	DisableBandwidth bool
-	SinkType         string
-	SinkConn         string
-	Scope            string
+	IsDisabled bool
 }
 
 // New creates a new instance of the metrics module
-func New(nodeID string, config *Config) (*Module, error) {
+func New(clusterID, nodeID string, isMetricDisabled bool, adminMan *admin.Manager, syncMan *syncman.Manager, isProd bool) (*Module, error) {
 
 	// Return an empty object if the module isn't enabled
-	if !config.IsEnabled {
+	if isMetricDisabled {
 		return new(Module), nil
 	}
 
 	// Initialise the sink
-	c, err := initialiseSink(config)
-	if err != nil {
-		return nil, err
-	}
+	conn := api.New("spacecloud", "localhost:4123", false).DB("db")
 
 	// Create a new metrics module
-	m := &Module{nodeID: nodeID, sink: c, config: *config}
-
+	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, isMetricDisabled: isMetricDisabled, adminMan: adminMan, syncMan: syncMan, isProd: isProd}
 	// Start routine to flush metrics to the sink
 	go m.routineFlushMetricsToSink()
 
@@ -54,19 +54,16 @@ func New(nodeID string, config *Config) (*Module, error) {
 }
 
 type metrics struct {
-	bw   bwMetrics
-	crud sync.Map // key -> dbType:col; value -> *dbMetrics
+	crud      metricOperations // key -> dbType:col; value -> *metricOperations
+	fileStore metricOperations // key -> storeType value -> *metricOperations
+	eventing  uint64
+	function  uint64
 }
 
-type bwMetrics struct {
-	ingressBW uint64
-	egressBW  uint64
-}
-
-type crudMetrics struct {
+type metricOperations struct {
 	create uint64
 	read   uint64
 	update uint64
 	delete uint64
-	batch  uint64
+	list   uint64
 }

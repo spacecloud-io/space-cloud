@@ -12,7 +12,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
 	"github.com/spaceuptech/space-cloud/gateway/utils/server"
 )
 
@@ -45,11 +44,6 @@ var essentialFlags = []cli.Flag{
 		Name:   "dev",
 		Usage:  "Run space-cloud in development mode",
 		EnvVar: "DEV",
-	},
-	cli.BoolFlag{
-		Name:   "disable-metrics",
-		Usage:  "Disable anonymous metric collection",
-		EnvVar: "DISABLE_METRICS",
 	},
 	cli.BoolFlag{
 		Name:   "profiler",
@@ -95,11 +89,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "The address used to reach the runner",
 		EnvVar: "RUNNER_ADDR",
 	},
-	cli.StringFlag{
-		Name:   "artifact-addr",
-		Usage:  "The address used to reach the artifact server",
-		EnvVar: "ARTIFACT_ADDR",
-	},
 
 	// Flags for ssl
 	cli.BoolFlag{
@@ -142,29 +131,9 @@ var essentialFlags = []cli.Flag{
 
 	// Flags for the metrics module
 	cli.BoolFlag{
-		Name:   "enable-metrics",
-		Usage:  "Enable the metrics module",
-		EnvVar: "ENABLE_METRICS",
-	},
-	cli.BoolFlag{
-		Name:   "disable-bandwidth",
-		Usage:  "disable the bandwidth measurement",
-		EnvVar: "DISABLE_BANDWIDTH",
-	},
-	cli.StringFlag{
-		Name:   "metrics-sink",
-		Usage:  "The sink to output metrics data to",
-		EnvVar: "METRICS_SINK",
-	},
-	cli.StringFlag{
-		Name:   "metrics-conn",
-		Usage:  "The connection string of the sink",
-		EnvVar: "METRICS_CONN",
-	},
-	cli.StringFlag{
-		Name:   "metrics-scope",
-		Usage:  "The database / topic to push the metrics to",
-		EnvVar: "METRICS_SCOPE",
+		Name:   "disable-metrics",
+		Usage:  "Disable anonymous metric collection",
+		EnvVar: "DISABLE_METRICS",
 	},
 }
 
@@ -199,8 +168,6 @@ func actionRun(c *cli.Context) error {
 	nodeID := c.String("id")
 	configPath := c.String("config")
 	isDev := c.Bool("dev")
-	disableMetrics := c.Bool("disable-metrics")
-	disableBandwidth := c.Bool("disable-bandwidth")
 	profiler := c.Bool("profiler")
 	logLevel := c.String("log-level")
 	setLogLevel(logLevel)
@@ -210,7 +177,6 @@ func actionRun(c *cli.Context) error {
 
 	removeProjectScope := c.Bool("remove-project-scope")
 	runnerAddr := c.String("runner-addr")
-	artifactAddr := c.String("artifact-addr")
 
 	// Load flags related to ssl
 	sslEnable := c.Bool("ssl-enable")
@@ -228,20 +194,11 @@ func actionRun(c *cli.Context) error {
 	advertiseAddr := c.String("advertise-addr")
 
 	// Load the flags for the metrics module
-	enableMetrics := c.Bool("enable-metrics")
-	metricsSink := c.String("metrics-sink")
-	metricsConn := c.String("metrics-conn")
-	metricsScope := c.String("metrics-scope")
+	disableMetrics := c.Bool("disable-metrics")
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
-	}
-
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, removeProjectScope,
-		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
-	if err != nil {
-		return err
 	}
 
 	// Load the configFile from path if provided
@@ -249,22 +206,24 @@ func actionRun(c *cli.Context) error {
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
 	}
-	if conf.Admin == nil {
-		conf.Admin = config.GenerateAdmin()
+
+	// Override the admin config if provided
+	if adminUser == "" {
+		adminUser = "admin"
+	}
+	if adminPass == "" {
+		adminPass = "123"
+	}
+	if adminSecret == "" {
+		adminSecret = "some-secret"
+	}
+	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, removeProjectScope, disableMetrics, adminUserInfo)
+	if err != nil {
+		return err
 	}
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
-
-	// Override the admin config if provided
-	if adminUser != "" {
-		conf.Admin.Users[0].User = adminUser
-	}
-	if adminPass != "" {
-		conf.Admin.Users[0].Pass = adminPass
-	}
-	if adminSecret != "" {
-		conf.Admin.Secret = adminSecret
-	}
 
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
@@ -280,7 +239,7 @@ func actionRun(c *cli.Context) error {
 	// Configure all modules
 	s.SetConfig(conf, !isDev)
 
-	return s.Start(profiler, disableMetrics, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
+	return s.Start(profiler, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
 }
 
 func actionInit(*cli.Context) error {

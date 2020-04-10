@@ -10,6 +10,7 @@ import (
 	"github.com/graph-gophers/dataloader"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/bolt"
@@ -103,12 +104,12 @@ func (m *Module) getCrudBlock(dbAlias string) (Crud, error) {
 func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.Lock()
 	defer m.Unlock()
-	m.closeBatchOperation()
 
 	if len(crud) > 1 {
 		return errors.New("crud module cannot have more than 1 db")
 	}
 
+	m.closeBatchOperation()
 	m.project = project
 
 	// Close the previous database connection

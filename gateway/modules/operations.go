@@ -131,6 +131,7 @@ func (m *Modules) SetEventingConfig(projectID string, eventingConfig *config.Eve
 		logrus.Errorf("error setting eventing module config - %s", err.Error())
 		return err
 	}
+	m.auth.SetEventingConfig(eventingConfig.SecurityRules)
 	return nil
 }
 
