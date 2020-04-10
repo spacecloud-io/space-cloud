@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
@@ -19,6 +21,7 @@ type fieldsToPostProcess struct {
 func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
+
 	colInfo, ok := s.SchemaDoc[dbAlias]
 	if !ok {
 		logrus.Errorf("error crud post process in schema module cannot find dbAlias (%s) in schemaDoc", dbAlias)
@@ -73,7 +76,9 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 				case model.TypeDateTime:
 					switch v := column.(type) {
 					case time.Time:
-						doc[field.name] = v.Format(time.RFC3339)
+						doc[field.name] = v.UTC().Format(time.RFC3339)
+					case primitive.DateTime:
+						doc[field.name] = v.Time().UTC().Format(time.RFC3339)
 					}
 				}
 			}
