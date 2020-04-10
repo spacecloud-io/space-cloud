@@ -132,7 +132,7 @@ type payloadObject struct {
 	Query     string                 `json:"query,omitempty"`
 	Token     string                 `json:"authToken"`
 	Variables map[string]interface{} `json:"variables"`
-	Error     []gqlError             `json:"error,omitempty"`
+	Error     []gqlError             `json:"errors,omitempty"`
 	Data      interface{}            `json:"data,omitempty"`
 }
 
