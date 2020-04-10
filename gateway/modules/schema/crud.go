@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 type fieldsToPostProcess struct {
@@ -80,6 +81,64 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 					case primitive.DateTime:
 						doc[field.name] = v.Time().UTC().Format(time.RFC3339)
 					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// AdjustWhereClause adjusts where clause to take care of types
+func (s *Schema) AdjustWhereClause(dbAlias string, dbType utils.DBType, col string, find map[string]interface{}) error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	// Currently this is only required for mongo. Return if its any other database
+	if dbType != utils.Mongo {
+		return nil
+	}
+
+	colInfo, ok := s.SchemaDoc[dbAlias]
+	if !ok {
+		// Gracefully return if the schema isn't provided
+		return nil
+	}
+
+	tableInfo, ok := colInfo[col]
+	if !ok {
+		// Gracefully return if the schema isn't provided
+		return nil
+	}
+
+	for k, v := range find {
+		field, p := tableInfo[k]
+		if !p {
+			continue
+		}
+
+		switch field.Kind {
+		case model.TypeDateTime:
+			switch param := v.(type) {
+			case string:
+				t, err := time.Parse(time.RFC3339, param)
+				if err != nil {
+					return fmt.Errorf("invalid format of datetime (%s) provided for field (%s)", param, k)
+				}
+				find[k] = t
+
+			case map[string]interface{}:
+				for operator, paramInterface := range param {
+					paramString, ok := paramInterface.(string)
+					if !ok {
+						return fmt.Errorf("invalid format of datetime (%v) provided for field (%s)", paramInterface, k)
+					}
+
+					t, err := time.Parse(time.RFC3339, paramString)
+					if err != nil {
+						return fmt.Errorf("invalid format of datetime (%s) provided for field (%s)", param, k)
+					}
+					param[operator] = t
 				}
 			}
 		}

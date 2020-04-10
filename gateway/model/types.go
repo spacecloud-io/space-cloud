@@ -16,6 +16,7 @@ type SchemaCrudInterface interface {
 	ValidateCreateOperation(dbType, col string, req *CreateRequest) error
 	ValidateUpdateOperation(dbType, col, op string, updateDoc, find map[string]interface{}) error
 	CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error
+	AdjustWhereClause(dbAlias string, dbType utils.DBType, col string, find map[string]interface{}) error
 }
 
 // CrudAuthInterface is an interface consisting of functions of crud module used by auth module
