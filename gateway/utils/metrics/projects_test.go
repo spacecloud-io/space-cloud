@@ -182,7 +182,6 @@ func TestModule_updateSCMetrics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				lock:             tt.fields.lock,
 				isProd:           tt.fields.isProd,
 				clusterID:        tt.fields.clusterID,
 				nodeID:           tt.fields.nodeID,

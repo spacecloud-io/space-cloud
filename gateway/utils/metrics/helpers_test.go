@@ -68,7 +68,6 @@ func TestModule_createCrudDocuments(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				lock:             tt.fields.lock,
 				isProd:           tt.fields.isProd,
 				clusterID:        tt.fields.clusterID,
 				nodeID:           tt.fields.nodeID,
@@ -133,7 +132,6 @@ func TestModule_createDocument(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				lock:             tt.fields.lock,
 				isProd:           tt.fields.isProd,
 				clusterID:        tt.fields.clusterID,
 				nodeID:           tt.fields.nodeID,
@@ -199,7 +197,6 @@ func TestModule_createEventDocument(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				lock:             tt.fields.lock,
 				isProd:           tt.fields.isProd,
 				clusterID:        tt.fields.clusterID,
 				nodeID:           tt.fields.nodeID,
@@ -287,7 +284,6 @@ func TestModule_createFileDocuments(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				lock:             tt.fields.lock,
 				isProd:           tt.fields.isProd,
 				clusterID:        tt.fields.clusterID,
 				nodeID:           tt.fields.nodeID,
@@ -369,7 +365,6 @@ func TestModule_createFunctionDocument(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				lock:             tt.fields.lock,
 				isProd:           tt.fields.isProd,
 				clusterID:        tt.fields.clusterID,
 				nodeID:           tt.fields.nodeID,
