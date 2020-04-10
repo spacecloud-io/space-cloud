@@ -65,7 +65,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 		return err
 	}
 	_, ok := projectConfig.Modules.Crud[dbAlias]
-	if !ok {
+	if !ok && enabled {
 		return fmt.Errorf("unknown db (%s) provided while setting eventing config", dbAlias)
 	}
 	projectConfig.Modules.Eventing.DBAlias = dbAlias

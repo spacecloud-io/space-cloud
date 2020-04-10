@@ -39,16 +39,10 @@ func TestModule_SetConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "eventing is not enabled",
-			m:    &Module{config: &config.Eventing{Enabled: true}},
-			args: args{project: "abc", eventing: &config.Eventing{Enabled: false, DBAlias: "mysql", Schemas: map[string]config.SchemaObject{"eventType": {ID: "id", Schema: "schema"}}}},
-			schemaMockArgs: []mockArgs{
-				{
-					method:         "Parser",
-					args:           []interface{}{config.Crud{"dummyDBName": &config.CrudStub{Collections: map[string]*config.TableRule{"eventType": {Schema: "schema"}}}}},
-					paramsReturned: []interface{}{model.Type{"dummyDBName": model.Collection{"eventType": model.Fields{}}}, nil},
-				},
-			},
+			name:           "eventing is not enabled",
+			m:              &Module{config: &config.Eventing{Enabled: true}},
+			args:           args{project: "abc", eventing: &config.Eventing{Enabled: false, DBAlias: "mysql", Schemas: map[string]config.SchemaObject{"eventType": {ID: "id", Schema: "schema"}}}},
+			schemaMockArgs: []mockArgs{},
 		},
 		{
 			name: "DBType not mentioned",
