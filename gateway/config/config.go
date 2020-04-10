@@ -9,13 +9,19 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	Secrets        map[string]string `json:"secrets,omitempty" yaml:"secrets,omitempty"`
-	AESkey         string            `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
-	ID             string            `json:"id,omitempty" yaml:"id,omitempty"`
-	Name           string            `json:"name,omitempty" yaml:"name,omitempty"`
-	DockerRegistry string            `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
-	Modules        *Modules          `json:"modules,omitempty" yaml:"modules,omitempty"`
-	ContextTime    int               `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
+	Secrets        []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	AESKey         string    `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
+	ID             string    `json:"id,omitempty" yaml:"id,omitempty"`
+	Name           string    `json:"name,omitempty" yaml:"name,omitempty"`
+	DockerRegistry string    `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
+	Modules        *Modules  `json:"modules,omitempty" yaml:"modules,omitempty"`
+	ContextTime    int       `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
+}
+
+// Secret describes the a secret object
+type Secret struct {
+	IsPrimary bool   `json:"isPrimary" yaml:"isPrimary"`
+	Secret    string `json:"isPrimary" yaml:"isPrimary"`
 }
 
 // Admin holds the admin config

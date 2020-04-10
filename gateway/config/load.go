@@ -11,13 +11,13 @@ import (
 
 func loadEnvironmentVariable(c *Config) {
 	for _, p := range c.Projects {
-		for key := range p.Secrets {
-			if strings.HasPrefix(p.Secrets[key], "$") {
-				tempString := strings.TrimPrefix(p.Secrets[key], "$")
+		for i, secret := range p.Secrets {
+			if strings.HasPrefix(secret.Secret, "$") {
+				tempString := strings.TrimPrefix(secret.Secret, "$")
 				tempEnvVar, present := os.LookupEnv(tempString)
 
 				if present {
-					p.Secrets[key] = tempEnvVar
+					p.Secrets[i].Secret = tempEnvVar
 				}
 			}
 		}

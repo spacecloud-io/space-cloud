@@ -12,14 +12,14 @@ import (
 func TestCreateToken(t *testing.T) {
 	var authCreateToken = []struct {
 		testName, wantThis string
-		secretKeys         map[string]string
+		secretKeys         []*config.Secret
 		IsTokenInvalid     bool
 		IsErrExpected      bool
 		object             map[string]interface{}
 	}{
-		{testName: "Successful Test", IsTokenInvalid: false, secretKeys: map[string]string{"0": "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-sc-user"}},
-		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKeys: map[string]string{"0": "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-scuser"}},
-		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKeys: map[string]string{"0": "mySecretkey"}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
+		{testName: "Successful Test", IsTokenInvalid: false, secretKeys: []*config.Secret{{true, "mySecretkey"}}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-sc-user"}},
+		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{true, "mySecretkey"}}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-scuser"}},
+		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{true, "mySecretkey"}}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
 	authModule := Init("1", &crud.Module{}, false)
 	for _, test := range authCreateToken {
@@ -39,12 +39,12 @@ func TestCreateToken(t *testing.T) {
 func TestIsTokenInternal(t *testing.T) {
 	var authCreateToken = []struct {
 		testName, token string
-		secretKeys      map[string]string
+		secretKeys      []*config.Secret
 		IsErrExpected   bool
 	}{
-		{testName: "Unsuccessful Test-Token has not been internally created", secretKeys: map[string]string{"0": "mySecretkey"}, IsErrExpected: true, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
-		{testName: "Unsuccessful Test-Signature is Invalid", IsErrExpected: true, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.MKIZkrXy6nUMu5ejqiYKl7EOU1TxEoKTOww-eoQm6Lw"},
-		{testName: "Successful Test Case", IsErrExpected: false, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
+		{testName: "Unsuccessful Test-Token has not been internally created", secretKeys: []*config.Secret{{true, "mySecretkey"}}, IsErrExpected: true, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
+		{testName: "Unsuccessful Test-Signature is Invalid", IsErrExpected: true, secretKeys: []*config.Secret{{true, "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.MKIZkrXy6nUMu5ejqiYKl7EOU1TxEoKTOww-eoQm6Lw"},
+		{testName: "Successful Test Case", IsErrExpected: false, secretKeys: []*config.Secret{{true, "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
 	authModule := Init("1", &crud.Module{}, false)
 	for _, test := range authCreateToken {
@@ -62,17 +62,17 @@ func TestParseToken(t *testing.T) {
 	var testCases = []struct {
 		name          string
 		IsErrExpected bool
-		secretKeys    map[string]string
+		secretKeys    []*config.Secret
 		token         string
 		wantThis      TokenClaims
 		reason        error
 	}{
-		{name: "Test should successfully parse a token", IsErrExpected: false, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
-		{name: "Test should successfully parse a token with multiple secrets", IsErrExpected: false, secretKeys: map[string]string{"1": "someKey", "0": "mySecretkey", "2": "someOtherKey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
-		{name: "Test should fail if signing method not HS256", IsErrExpected: true, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.nakZ1JcYWHcXcG1ZfIY7mJNwcVPQ7U1HvuLEsG9fyz-H9ig3ql8BiI3T-7A2PHe-lBIxjS7hXx8O8lxMg7y7rqUHtPLAGOuCd4Ft88KupgPcF5w-KVpeSgWl598zNLWqJpjcwiPewt3gsU6pwSaTz24JmfZQRrDX8KOtejaGs5OECdk2dDW2rwO98npNX39yYx6eSfZbXCLJ7wIhT3UDbuaOGHnD3wyEtih013NDrnkvVXJRKXUwF7F-g31NWgEgVt-tWkR5vcBBSRYKzIbD7-wxpV4ifLp_XdbVNl3Uf7ja6FeUnGq1Pb9AnAY7lD4Rk7sYQe4P-ATHtkgSg5levw"},
-		{name: "Test should fail for an invalid token", IsErrExpected: true, secretKeys: map[string]string{"0": "mysecretkey"}, token: "1234.abcd"},
-		{name: "Test should fail for invalid signature-illegal base64 data at input", IsErrExpected: true, secretKeys: map[string]string{"0": "mySecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N"},
-		{name: "Test should fail as invalid secret key-invalid signature", IsErrExpected: true, secretKeys: map[string]string{"0": "mysecretkey"}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
+		{name: "Test should successfully parse a token", IsErrExpected: false, secretKeys: []*config.Secret{{true, "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
+		{name: "Test should successfully parse a token with multiple secrets", IsErrExpected: false, secretKeys: []*config.Secret{{false, "someKey"}, {true, "mySecretkey"}, {false, "someOtherKey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},
+		{name: "Test should fail if signing method not HS256", IsErrExpected: true, secretKeys: []*config.Secret{{true, "mySecretkey"}}, token: "eyJhbGciOiJQUzM4NCIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.nakZ1JcYWHcXcG1ZfIY7mJNwcVPQ7U1HvuLEsG9fyz-H9ig3ql8BiI3T-7A2PHe-lBIxjS7hXx8O8lxMg7y7rqUHtPLAGOuCd4Ft88KupgPcF5w-KVpeSgWl598zNLWqJpjcwiPewt3gsU6pwSaTz24JmfZQRrDX8KOtejaGs5OECdk2dDW2rwO98npNX39yYx6eSfZbXCLJ7wIhT3UDbuaOGHnD3wyEtih013NDrnkvVXJRKXUwF7F-g31NWgEgVt-tWkR5vcBBSRYKzIbD7-wxpV4ifLp_XdbVNl3Uf7ja6FeUnGq1Pb9AnAY7lD4Rk7sYQe4P-ATHtkgSg5levw"},
+		{name: "Test should fail for an invalid token", IsErrExpected: true, secretKeys: []*config.Secret{{true, "mysecretkey"}}, token: "1234.abcd"},
+		{name: "Test should fail for invalid signature-illegal base64 data at input", IsErrExpected: true, secretKeys: []*config.Secret{{true, "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N"},
+		{name: "Test should fail as invalid secret key-invalid signature", IsErrExpected: true, secretKeys: []*config.Secret{{true, "mysecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
 	}
 
 	authModule := Init("1", &crud.Module{}, false)
@@ -93,32 +93,41 @@ func TestParseToken(t *testing.T) {
 	}
 }
 
-func TestModule_getGreatestSecretKey(t *testing.T) {
+func TestModule_getPrimarySecret(t *testing.T) {
 	tests := []struct {
-		name string
-		m    *Module
-		want string
+		name    string
+		secrets []*config.Secret
+		want    string
+		wantErr bool
 	}{
 		{
-			name: "no secrets stored",
-			m:    &Module{secrets: map[string]string{}},
-			want: "0",
+			name:    "no secrets stored",
+			secrets: []*config.Secret{},
+			wantErr: true,
 		},
 		{
-			name: "error converting key to int",
-			m:    &Module{secrets: map[string]string{"abc": "mySecretKey", "1": "someKey", "2": "some other key"}},
-			want: "2",
+			name:    "no primary secret stored",
+			secrets: []*config.Secret{{false, "1"}, {false, "2"}},
+			wantErr: true,
 		},
 		{
-			name: "key converted to int and returned as a string",
-			m:    &Module{secrets: map[string]string{"0": "mySecretKey", "1": "someKey", "2": "some other key"}},
-			want: "2",
+			name:    "valid case",
+			secrets: []*config.Secret{{false, "1"}, {true, "2"}, {false, "3"}},
+			want:    "2",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.getGreatestSecretKey(); got != tt.want {
-				t.Errorf("Module.getGreatestSecretKey() = %v, want %v", got, tt.want)
+			m := &Module{
+				secrets: tt.secrets,
+			}
+			got, err := m.getPrimarySecret()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getPrimarySecret() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getPrimarySecret() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
