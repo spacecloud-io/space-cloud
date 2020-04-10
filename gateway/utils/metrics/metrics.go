@@ -48,7 +48,7 @@ func New(clusterID, nodeID string, isMetricDisabled bool, adminMan *admin.Manage
 	// Create a new metrics module
 	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, isMetricDisabled: isMetricDisabled, adminMan: adminMan, syncMan: syncMan, isProd: isProd}
 	// Start routine to flush metrics to the sink
-	// go m.routineFlushMetricsToSink()
+	go m.routineFlushMetricsToSink()
 
 	return m, nil
 }

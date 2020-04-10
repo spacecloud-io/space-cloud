@@ -2,43 +2,29 @@ package metrics
 
 import (
 	"reflect"
-	"sync"
 	"testing"
 
-	"github.com/spaceuptech/space-api-go/db"
 	"github.com/stretchr/testify/mock"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 func TestModule_createCrudDocuments(t *testing.T) {
-	type fields struct {
-		lock             sync.RWMutex
-		isProd           bool
-		clusterID        string
-		nodeID           string
-		projects         sync.Map
-		isMetricDisabled bool
-		sink             *db.DB
-		adminMan         *admin.Manager
-		syncMan          *syncman.Manager
-	}
 	type args struct {
 		key   string
 		value *metricOperations
 		t     string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   []interface{}
+		name string
+		args args
+		want []interface{}
 	}{
 		{
-			name:   "valid test case",
-			fields: fields{nodeID: "nodeID", clusterID: "clusterID"},
+			name: "valid test case",
 			args: args{
 				key:   "project:dbAlias:tableName",
 				value: &metricOperations{create: 100, update: 100, read: 100, delete: 100},
@@ -52,8 +38,7 @@ func TestModule_createCrudDocuments(t *testing.T) {
 			},
 		},
 		{
-			name:   "valid test case read & update are zero",
-			fields: fields{nodeID: "nodeID", clusterID: "clusterID"},
+			name: "valid test case read & update are zero",
 			args: args{
 				key:   "project:dbAlias:tableName",
 				value: &metricOperations{create: 100, delete: 100},
@@ -65,18 +50,10 @@ func TestModule_createCrudDocuments(t *testing.T) {
 			},
 		},
 	}
+	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &Module{
-				isProd:           tt.fields.isProd,
-				clusterID:        tt.fields.clusterID,
-				nodeID:           tt.fields.nodeID,
-				projects:         tt.fields.projects,
-				isMetricDisabled: tt.fields.isMetricDisabled,
-				sink:             tt.fields.sink,
-				adminMan:         tt.fields.adminMan,
-				syncMan:          tt.fields.syncMan,
-			}
 			got := m.createCrudDocuments(tt.args.key, tt.args.value, tt.args.t)
 			if len(got) != len(tt.want) {
 				t.Errorf("createCrudDocuments() want & got length mismatch got = %v want = %v", len(got), len(tt.want))
@@ -101,17 +78,6 @@ func TestModule_createCrudDocuments(t *testing.T) {
 }
 
 func TestModule_createDocument(t *testing.T) {
-	type fields struct {
-		lock             sync.RWMutex
-		isProd           bool
-		clusterID        string
-		nodeID           string
-		projects         sync.Map
-		isMetricDisabled bool
-		sink             *db.DB
-		adminMan         *admin.Manager
-		syncMan          *syncman.Manager
-	}
 	type args struct {
 		project string
 		driver  string
@@ -122,25 +88,16 @@ func TestModule_createDocument(t *testing.T) {
 		t       string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   interface{}
+		name string
+		args args
+		want interface{}
 	}{
 		// TODO: Add test cases.
 	}
+	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &Module{
-				isProd:           tt.fields.isProd,
-				clusterID:        tt.fields.clusterID,
-				nodeID:           tt.fields.nodeID,
-				projects:         tt.fields.projects,
-				isMetricDisabled: tt.fields.isMetricDisabled,
-				sink:             tt.fields.sink,
-				adminMan:         tt.fields.adminMan,
-				syncMan:          tt.fields.syncMan,
-			}
 			if got := m.createDocument(tt.args.project, tt.args.driver, tt.args.subType, tt.args.module, tt.args.op, tt.args.count, tt.args.t); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("createDocument() = %v, want %v", got, tt.want)
 			}
@@ -149,31 +106,18 @@ func TestModule_createDocument(t *testing.T) {
 }
 
 func TestModule_createEventDocument(t *testing.T) {
-	type fields struct {
-		lock             sync.RWMutex
-		isProd           bool
-		clusterID        string
-		nodeID           string
-		projects         sync.Map
-		isMetricDisabled bool
-		sink             *db.DB
-		adminMan         *admin.Manager
-		syncMan          *syncman.Manager
-	}
 	type args struct {
 		key   string
 		value uint64
 		t     string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   []interface{}
+		name string
+		args args
+		want []interface{}
 	}{
 		{
-			name:   "valid test case",
-			fields: fields{nodeID: "nodeID", clusterID: "clusterID"},
+			name: "valid test case",
 			args: args{
 				key:   "project:event-name",
 				value: 100,
@@ -184,8 +128,7 @@ func TestModule_createEventDocument(t *testing.T) {
 			},
 		},
 		{
-			name:   "valid test case read & list are zero",
-			fields: fields{nodeID: "nodeID", clusterID: "clusterID"},
+			name: "valid test case read & list are zero",
 			args: args{
 				key:   "project:local",
 				value: 0,
@@ -194,18 +137,11 @@ func TestModule_createEventDocument(t *testing.T) {
 			want: []interface{}{},
 		},
 	}
+
+	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &Module{
-				isProd:           tt.fields.isProd,
-				clusterID:        tt.fields.clusterID,
-				nodeID:           tt.fields.nodeID,
-				projects:         tt.fields.projects,
-				isMetricDisabled: tt.fields.isMetricDisabled,
-				sink:             tt.fields.sink,
-				adminMan:         tt.fields.adminMan,
-				syncMan:          tt.fields.syncMan,
-			}
 			got := m.createEventDocument(tt.args.key, tt.args.value, tt.args.t)
 			if len(got) != len(tt.want) {
 				t.Errorf("createEventDocument() want & got length mismatch got = %v want = %v", len(got), len(tt.want))
@@ -230,31 +166,18 @@ func TestModule_createEventDocument(t *testing.T) {
 }
 
 func TestModule_createFileDocuments(t *testing.T) {
-	type fields struct {
-		lock             sync.RWMutex
-		isProd           bool
-		clusterID        string
-		nodeID           string
-		projects         sync.Map
-		isMetricDisabled bool
-		sink             *db.DB
-		adminMan         *admin.Manager
-		syncMan          *syncman.Manager
-	}
 	type args struct {
 		key   string
 		value *metricOperations
 		t     string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   []interface{}
+		name string
+		args args
+		want []interface{}
 	}{
 		{
-			name:   "valid test case",
-			fields: fields{nodeID: "nodeID", clusterID: "clusterID"},
+			name: "valid test case",
 			args: args{
 				key:   "project:local:tableName",
 				value: &metricOperations{create: 100, list: 100, read: 100, delete: 100},
@@ -268,8 +191,7 @@ func TestModule_createFileDocuments(t *testing.T) {
 			},
 		},
 		{
-			name:   "valid test case read & list are zero",
-			fields: fields{nodeID: "nodeID", clusterID: "clusterID"},
+			name: "valid test case read & list are zero",
 			args: args{
 				key:   "project:local",
 				value: &metricOperations{create: 100, delete: 100},
@@ -281,18 +203,10 @@ func TestModule_createFileDocuments(t *testing.T) {
 			},
 		},
 	}
+	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &Module{
-				isProd:           tt.fields.isProd,
-				clusterID:        tt.fields.clusterID,
-				nodeID:           tt.fields.nodeID,
-				projects:         tt.fields.projects,
-				isMetricDisabled: tt.fields.isMetricDisabled,
-				sink:             tt.fields.sink,
-				adminMan:         tt.fields.adminMan,
-				syncMan:          tt.fields.syncMan,
-			}
 			got := m.createFileDocuments(tt.args.key, tt.args.value, tt.args.t)
 			if len(got) != len(tt.want) {
 				t.Errorf("createFileDocuments() want & got length mismatch got = %v want = %v", len(got), len(tt.want))
@@ -317,31 +231,18 @@ func TestModule_createFileDocuments(t *testing.T) {
 }
 
 func TestModule_createFunctionDocument(t *testing.T) {
-	type fields struct {
-		lock             sync.RWMutex
-		isProd           bool
-		clusterID        string
-		nodeID           string
-		projects         sync.Map
-		isMetricDisabled bool
-		sink             *db.DB
-		adminMan         *admin.Manager
-		syncMan          *syncman.Manager
-	}
 	type args struct {
 		key   string
 		value uint64
 		t     string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   []interface{}
+		name string
+		args args
+		want []interface{}
 	}{
 		{
-			name:   "valid test case",
-			fields: fields{nodeID: "nodeID", clusterID: "clusterID"},
+			name: "valid test case",
 			args: args{
 				key:   "project:service:endpoint",
 				value: 100,
@@ -352,8 +253,7 @@ func TestModule_createFunctionDocument(t *testing.T) {
 			},
 		},
 		{
-			name:   "valid test case read & list are zero",
-			fields: fields{nodeID: "nodeID", clusterID: "clusterID"},
+			name: "valid test case read & list are zero",
 			args: args{
 				key:   "project:local",
 				value: 0,
@@ -362,18 +262,10 @@ func TestModule_createFunctionDocument(t *testing.T) {
 			want: []interface{}{},
 		},
 	}
+	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &Module{
-				isProd:           tt.fields.isProd,
-				clusterID:        tt.fields.clusterID,
-				nodeID:           tt.fields.nodeID,
-				projects:         tt.fields.projects,
-				isMetricDisabled: tt.fields.isMetricDisabled,
-				sink:             tt.fields.sink,
-				adminMan:         tt.fields.adminMan,
-				syncMan:          tt.fields.syncMan,
-			}
 			got := m.createFunctionDocument(tt.args.key, tt.args.value, tt.args.t)
 			if len(got) != len(tt.want) {
 				t.Errorf("createFunctionDocument() want & got length mismatch got = %v want = %v", len(got), len(tt.want))

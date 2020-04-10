@@ -3,34 +3,14 @@ package metrics
 import (
 	"reflect"
 	"runtime"
-	"sync"
 	"testing"
 	"time"
-
-	"github.com/spaceuptech/space-api-go/db"
-	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
-
-type mockAdminInterface struct {
-	mock.Mock
-}
-
-func (i *mockAdminInterface) GetClusterID() string {
-	return i.Called().String(0)
-}
-
-type mockSyncManInterface struct {
-	mock.Mock
-}
-
-func (i *mockSyncManInterface) GetNodesInCluster() int {
-	return i.Called().Int(0)
-}
 
 func TestModule_generateMetricsRequest(t *testing.T) {
 	type args struct {
@@ -155,17 +135,6 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 }
 
 func TestModule_updateSCMetrics(t *testing.T) {
-	type fields struct {
-		lock             sync.RWMutex
-		isProd           bool
-		clusterID        string
-		nodeID           string
-		projects         sync.Map
-		isMetricDisabled bool
-		sink             *db.DB
-		adminMan         *admin.Manager
-		syncMan          *syncman.Manager
-	}
 	type args struct {
 		clusterID string
 		projectID string
@@ -173,24 +142,15 @@ func TestModule_updateSCMetrics(t *testing.T) {
 		min       map[string]interface{}
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
+		name string
+		args args
 	}{
 		// TODO: Add test cases.
 	}
+	m, _ := New("", "", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &Module{
-				isProd:           tt.fields.isProd,
-				clusterID:        tt.fields.clusterID,
-				nodeID:           tt.fields.nodeID,
-				projects:         tt.fields.projects,
-				isMetricDisabled: tt.fields.isMetricDisabled,
-				sink:             tt.fields.sink,
-				adminMan:         tt.fields.adminMan,
-				syncMan:          tt.fields.syncMan,
-			}
 			m.updateSCMetrics(tt.args.clusterID, tt.args.projectID, tt.args.set, tt.args.min)
 		})
 	}
