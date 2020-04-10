@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -254,7 +255,7 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 					}
 				}
 
-				graphqlIDMapper.Store(m.ID, data.Group)
+				graphqlIDMapper.Store(m.ID, getGraphQLMapKey(data.DBType, data.Group))
 
 				// Subscribe to realtime feed
 				feedData, err := realtime.Subscribe(clientID, data, func(feed *model.FeedData) {
@@ -286,14 +287,14 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 				}
 
 			case utils.GqlStop:
-				group, ok := graphqlIDMapper.Load(m.ID)
+				key, ok := graphqlIDMapper.Load(m.ID)
 				if !ok {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: errors.New("got " + utils.GqlStop + " wanted " + utils.GqlStart).Error()}}}}
 					continue
 				}
 				data := new(model.RealtimeRequest)
 				data.ID = m.ID
-				data.Group = group.(string)
+				data.DBType, data.Group = getValuesFromGraphQLKey(key.(string))
 
 				if err := realtime.Unsubscribe(clientID, data); err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
@@ -308,6 +309,15 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 			}
 		}
 	}
+}
+
+func getGraphQLMapKey(dbAlias, col string) string {
+	return fmt.Sprintf("%s--%s", dbAlias, col)
+}
+
+func getValuesFromGraphQLKey(key string) (dbAlias, col string) {
+	arr := strings.Split(key, "--")
+	return arr[0], arr[1]
 }
 
 func filterGraphqlSubscriptionResults(field *ast.Field, feed *model.FeedData) map[string]interface{} {

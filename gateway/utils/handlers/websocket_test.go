@@ -541,7 +541,7 @@ subscription {
 				},
 				{
 					method:        "Unsubscribe",
-					args:          []interface{}{mock.Anything, &model.RealtimeRequest{Group: "col", ID: "2"}},
+					args:          []interface{}{mock.Anything, &model.RealtimeRequest{DBType: "db", Group: "col", ID: "2"}},
 					paramReturned: []interface{}{[]*model.FeedData{}, nil},
 				},
 			},
