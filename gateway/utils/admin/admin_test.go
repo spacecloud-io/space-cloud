@@ -33,7 +33,6 @@ func TestManager_LoadEnv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				lock:      tt.fields.lock,
 				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
@@ -126,7 +125,6 @@ func TestManager_SetConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				lock:      tt.fields.lock,
 				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
@@ -169,7 +167,6 @@ func TestManager_SetEnv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
-				lock:      tt.fields.lock,
 				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
