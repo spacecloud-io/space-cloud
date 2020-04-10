@@ -21,7 +21,7 @@ type Project struct {
 // Secret describes the a secret object
 type Secret struct {
 	IsPrimary bool   `json:"isPrimary" yaml:"isPrimary"`
-	Secret    string `json:"isPrimary" yaml:"isPrimary"`
+	Secret    string `json:"secret" yaml:"secret"`
 }
 
 // Admin holds the admin config

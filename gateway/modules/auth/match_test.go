@@ -131,7 +131,7 @@ func TestMatch_Rule(t *testing.T) {
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	err := auth.SetConfig("default", []*config.Secret{{true, "mySecretKey"}}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	err := auth.SetConfig("default", []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	if err != nil {
 		t.Errorf("Unable to set auth config %s", err.Error())
 		return

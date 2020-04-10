@@ -89,7 +89,7 @@ func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, project string, tabl
 
 func TestModule_validate(t *testing.T) {
 	authModule := auth.Init("1", &crud.Module{}, false)
-	err := authModule.SetConfig("project", []*config.Secret{{true, "mySecretkey"}}, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}})
+	err := authModule.SetConfig("project", []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())
 	}
