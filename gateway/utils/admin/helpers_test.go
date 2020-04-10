@@ -2,7 +2,6 @@ package admin
 
 import (
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -11,7 +10,6 @@ import (
 
 func TestManager_createToken(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser

@@ -2,7 +2,6 @@ package admin
 
 import (
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -11,7 +10,6 @@ import (
 
 func TestManager_GetClusterID(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
@@ -47,7 +45,6 @@ func TestManager_GetClusterID(t *testing.T) {
 
 func TestManager_GetCredentials(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
@@ -110,7 +107,6 @@ func TestManager_GetInternalAccessToken(t *testing.T) {
 
 func TestManager_GetQuotas(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
@@ -146,7 +142,6 @@ func TestManager_GetQuotas(t *testing.T) {
 
 func TestManager_IsTokenValid(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser

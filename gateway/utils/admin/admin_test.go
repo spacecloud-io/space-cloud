@@ -12,7 +12,6 @@ import (
 
 func TestManager_LoadEnv(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
@@ -33,6 +32,7 @@ func TestManager_LoadEnv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
+				lock:      sync.RWMutex{},
 				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
@@ -99,7 +99,6 @@ func TestManager_Login(t *testing.T) {
 
 func TestManager_SetConfig(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
@@ -125,6 +124,7 @@ func TestManager_SetConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Manager{
+				lock:      sync.RWMutex{},
 				config:    tt.fields.config,
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
@@ -141,7 +141,6 @@ func TestManager_SetConfig(t *testing.T) {
 
 func TestManager_SetEnv(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		config    *config.Admin
 		quotas    model.UsageQuotas
 		user      *config.AdminUser
