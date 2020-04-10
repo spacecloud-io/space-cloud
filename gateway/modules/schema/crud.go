@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -123,23 +124,37 @@ func (s *Schema) AdjustWhereClause(dbAlias string, dbType utils.DBType, col stri
 			case string:
 				t, err := time.Parse(time.RFC3339, param)
 				if err != nil {
-					return fmt.Errorf("invalid format of datetime (%s) provided for field (%s)", param, k)
+					return fmt.Errorf("invalid string format of datetime (%s) provided for field (%s)", param, k)
 				}
 				find[k] = t
 
 			case map[string]interface{}:
 				for operator, paramInterface := range param {
-					paramString, ok := paramInterface.(string)
-					if !ok {
-						return fmt.Errorf("invalid format of datetime (%v) provided for field (%s)", paramInterface, k)
+
+					// Don't do anything if value is already time.Time
+					if _, ok := paramInterface.(time.Time); ok {
+						break
 					}
 
+					// Check if the value is string
+					paramString, ok := paramInterface.(string)
+					if !ok {
+						return fmt.Errorf("invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(paramInterface), paramInterface, k)
+					}
+
+					// Try parsing it to time.Time
 					t, err := time.Parse(time.RFC3339, paramString)
 					if err != nil {
-						return fmt.Errorf("invalid format of datetime (%s) provided for field (%s)", param, k)
+						return fmt.Errorf("invalid string format of datetime (%s) provided for field (%s)", param, k)
 					}
+
+					// Store the value
 					param[operator] = t
 				}
+			case time.Time:
+				break
+			default:
+				return fmt.Errorf("invalid format (%s) of datetime (%v) provided for field (%s)", reflect.TypeOf(param), param, k)
 			}
 		}
 	}
