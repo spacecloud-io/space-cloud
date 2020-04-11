@@ -174,7 +174,7 @@ type Eventing struct {
 	Enabled       bool                    `json:"enabled" yaml:"enabled"`
 	DBAlias       string                  `json:"dbAlias" yaml:"dbAlias"`
 	Rules         map[string]EventingRule `json:"triggers,omitempty" yaml:"triggers"`
-	InternalRules map[string]EventingRule `json:"internalSecurityRules,omitempty" yaml:"internalSecurityRules,omitempty"`
+	InternalRules map[string]EventingRule `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty"`
 	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 	Schemas       map[string]SchemaObject `json:"schemas,omitempty" yaml:"schemas,omitempty"`
 }
