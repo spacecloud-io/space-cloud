@@ -3,17 +3,24 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/spaceuptech/space-cli/cmd"
 )
 
 func main() {
-	rootCmd, err := getModule()
-	if err != nil {
+	// rootCmd, err := getModule()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
+	//
+	// if err := rootCmd.Execute(); err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
+
+	if err := cmd.GetRootCommand().Execute(); err != nil {
 		fmt.Println(err)
-		os.Exit(1)
-	}
-	err = rootCmd.Execute()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		os.Exit(-1)
 	}
 }
