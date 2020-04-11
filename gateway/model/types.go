@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -15,6 +16,7 @@ type SchemaCrudInterface interface {
 	ValidateCreateOperation(dbType, col string, req *CreateRequest) error
 	ValidateUpdateOperation(dbType, col, op string, updateDoc, find map[string]interface{}) error
 	CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error
+	AdjustWhereClause(dbAlias string, dbType utils.DBType, col string, find map[string]interface{}) error
 }
 
 // CrudAuthInterface is an interface consisting of functions of crud module used by auth module
@@ -107,7 +109,7 @@ type ModulesInterface interface {
 	// SetProjectConfig sets the config all modules
 	SetProjectConfig(config *config.Project, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) error
 	// SetGlobalConfig sets the auth secret and AESKey
-	SetGlobalConfig(projectID, secret, aesKey string) error
+	SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error
 	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
 	SetCrudConfig(projectID string, crudConfig config.Crud) error
 	// SetServicesConfig sets the config of auth and functions modules
@@ -125,6 +127,26 @@ type ModulesInterface interface {
 
 	// Delete
 	Delete(projectID string)
+}
+
+// SyncmanEventingInterface is an interface consisting of functions of syncman module used by eventing module
+type SyncmanEventingInterface interface {
+	GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error)
+	GetAssignedTokens() (start, end int)
+	GetEventSource() string
+	GetSpaceCloudURLFromID(nodeID string) (string, error)
+	GetNodeID() string
+	MakeHTTPRequest(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
+}
+
+// AdminEventingInterface is an interface consisting of functions of admin module used by eventing module
+type AdminEventingInterface interface {
+	GetInternalAccessToken() (string, error)
+}
+
+// HTTPEventingInterface is an interface consisting of functions of a http client used by eventing module
+type HTTPEventingInterface interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // PostProcess filters the schema

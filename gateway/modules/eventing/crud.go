@@ -38,7 +38,7 @@ func (m *Module) HookDBCreateIntent(ctx context.Context, dbAlias, col string, re
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 	}
 
@@ -93,7 +93,7 @@ func (m *Module) HookDBBatchIntent(ctx context.Context, dbAlias string, req *mod
 
 	// Persist the event intent
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
+	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return nil, errors.New("eventing module couldn't log the request -" + err.Error())
 	}
 
@@ -136,7 +136,7 @@ func (m *Module) hookDBUpdateDeleteIntent(ctx context.Context, eventType, dbAlia
 	if ok {
 		// Persist the event intent
 		createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
-		if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
+		if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 			return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 		}
 
@@ -172,7 +172,7 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 	update := map[string]interface{}{"$set": set}
 
 	updateRequest := model.UpdateRequest{Find: find, Operation: utils.All, Update: update}
-	if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
+	if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
 		log.Println("Eventing Error: event could not be updated", err)
 		return
 	}
@@ -209,14 +209,14 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 			}
 
 			doc.Payload = string(data)
-			doc.Timestamp = time.Now().UTC().UnixNano() / int64(time.Millisecond)
+			doc.Timestamp = time.Now().Format(time.RFC3339)
 
 			updateRequest := model.UpdateRequest{
 				Find:      map[string]interface{}{"_id": doc.ID},
 				Operation: utils.All,
 				Update:    map[string]interface{}{"$set": map[string]interface{}{"payload": doc.Payload}},
 			}
-			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
+			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, &updateRequest); err != nil {
 				log.Println("Eventing Error: event could not be updated", err)
 				return
 			}
@@ -248,8 +248,8 @@ func (m *Module) processCreateDocs(token int, batchID, dbAlias, col string, rows
 
 		// Iterate over all rules
 		for _, rule := range rules {
-			eventDoc := m.generateQueueEventRequest(token, rule.Retries, rule.ID,
-				batchID, utils.EventStatusIntent, rule.URL, &model.QueueEventRequest{
+			eventDoc := m.generateQueueEventRequest(token, rule.ID,
+				batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 					Type:    utils.EventDBCreate,
 					Payload: model.DatabaseEventMessage{DBType: dbAlias, Col: col, Doc: doc, Find: findForCreate},
 				})
@@ -278,8 +278,8 @@ func (m *Module) processUpdateDeleteHook(token int, eventType, batchID, dbAlias,
 
 	for i, rule := range rules {
 		// Create an event doc
-		eventDocs[i] = m.generateQueueEventRequest(token, rule.Retries, rule.ID,
-			batchID, utils.EventStatusIntent, rule.URL, &model.QueueEventRequest{
+		eventDocs[i] = m.generateQueueEventRequest(token, rule.ID,
+			batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 				Type:    eventType,
 				Payload: model.DatabaseEventMessage{DBType: dbAlias, Col: col, Find: findForUpdate}, // The doc here contains the where clause
 			})

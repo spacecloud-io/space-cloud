@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -110,9 +111,12 @@ func HandleWebsocket(modules WebsocketModulesInterface) http.HandlerFunc {
 
 				data.Project = projectID
 
-				realtime.Unsubscribe(clientID, data)
+				if err := realtime.Unsubscribe(clientID, data); err != nil {
+					res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: false}
+					c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
+				}
 
-				// Send response to c
+				// Send response to client
 				res := model.RealtimeResponse{Group: data.Group, ID: data.ID, Ack: true}
 				c.Write(&model.Message{ID: req.ID, Type: req.Type, Data: res})
 			default:
@@ -131,14 +135,11 @@ type graphqlMessage struct {
 }
 
 type payloadObject struct {
-	ConnectionParams token       `json:"connectionParams,omitempty"`
-	Query            string      `json:"query,omitempty"`
-	Error            []gqlError  `json:"error,omitempty"`
-	Data             interface{} `json:"data,omitempty"`
-}
-
-type token struct {
-	Token string `json:"token,omitempty"`
+	Query     string                 `json:"query,omitempty"`
+	Token     string                 `json:"authToken"`
+	Variables map[string]interface{} `json:"variables"`
+	Error     []gqlError             `json:"errors,omitempty"`
+	Data      interface{}            `json:"data,omitempty"`
 }
 
 type gqlError struct {
@@ -177,9 +178,6 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 		}
 		defer utils.CloseTheCloser(socket)
 
-		// Variable to store token between consecutive requests
-		var token string
-
 		// Create a new client ID that we will use to make subscriptions
 		clientID := ksuid.New().String()
 		defer realtime.RemoveClient(clientID)
@@ -215,7 +213,6 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 			switch m.Type {
 			case utils.GqlConnectionInit:
 				// Check if the request is authorised
-				token = m.Payload.ConnectionParams.Token
 				channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlConnectionAck, Payload: payloadObject{}}
 
 				if onlyOnce {
@@ -255,7 +252,7 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 					continue
 				}
 
-				whereData, err := graphql.ExtractWhereClause(v.Arguments, utils.M{})
+				whereData, err := graphql.ExtractWhereClause(v.Arguments, utils.M{"vars": m.Payload.Variables})
 				if err != nil {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
 					continue
@@ -267,7 +264,7 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 					continue
 				}
 
-				data := &model.RealtimeRequest{Token: token, Where: whereData, DBType: dbAlias, Project: projectID, Group: v.Name.Value, Type: m.Type, ID: m.ID}
+				data := &model.RealtimeRequest{Token: m.Payload.Token, Where: whereData, DBType: dbAlias, Project: projectID, Group: v.Name.Value, Type: m.Type, ID: m.ID}
 				for _, dirValue := range v.Arguments {
 					if dirValue.Name.Value == "skipInitial" {
 						if boolVal, ok := dirValue.Value.(*ast.BooleanValue); ok {
@@ -276,12 +273,25 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 					}
 				}
 
-				graphqlIDMapper.Store(m.ID, data.Group)
+				graphqlIDMapper.Store(m.ID, getGraphQLMapKey(data.DBType, data.Group))
 
 				// Subscribe to realtime feed
 				feedData, err := realtime.Subscribe(clientID, data, func(feed *model.FeedData) {
 					feed.TypeName = "subscribe_" + feed.Group
-					channel <- &graphqlMessage{ID: feed.QueryID, Type: utils.GqlData, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed), "find": feed.Find}}}
+					if feed.Type == utils.RealtimeDelete {
+						// Make a new map
+						find := feed.Find.(map[string]interface{})
+						payload := make(map[string]interface{}, len(find))
+
+						// Copy the kev value pairs of find in this new ma
+						for k, v := range find {
+							payload[k] = v
+						}
+
+						// Set the payload
+						feed.Payload = payload
+					}
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlData, Payload: payloadObject{Data: map[string]interface{}{feed.Group: filterGraphqlSubscriptionResults(v, feed)}}}
 				})
 
 				if err != nil {
@@ -295,17 +305,21 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 				}
 
 			case utils.GqlStop:
-				group, ok := graphqlIDMapper.Load(m.ID)
+				key, ok := graphqlIDMapper.Load(m.ID)
 				if !ok {
 					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: errors.New("got " + utils.GqlStop + " wanted " + utils.GqlStart).Error()}}}}
 					continue
 				}
 				data := new(model.RealtimeRequest)
 				data.ID = m.ID
-				data.Group = group.(string)
+				data.DBType, data.Group = getValuesFromGraphQLKey(key.(string))
 
-				realtime.Unsubscribe(clientID, data)
-				channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlStop, Payload: payloadObject{}}
+				if err := realtime.Unsubscribe(clientID, data); err != nil {
+					channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlError, Payload: payloadObject{Error: []gqlError{{Message: err.Error()}}}}
+					continue
+				}
+
+				channel <- &graphqlMessage{ID: m.ID, Type: utils.GqlComplete}
 				graphqlIDMapper.Delete(m.ID)
 
 			default:
@@ -313,6 +327,15 @@ func HandleGraphqlSocket(modules WebsocketModulesInterface) http.HandlerFunc {
 			}
 		}
 	}
+}
+
+func getGraphQLMapKey(dbAlias, col string) string {
+	return fmt.Sprintf("%s--%s", dbAlias, col)
+}
+
+func getValuesFromGraphQLKey(key string) (dbAlias, col string) {
+	arr := strings.Split(key, "--")
+	return arr[0], arr[1]
 }
 
 func filterGraphqlSubscriptionResults(field *ast.Field, feed *model.FeedData) map[string]interface{} {
@@ -324,24 +347,19 @@ func filterGraphqlSubscriptionResults(field *ast.Field, feed *model.FeedData) ma
 		returnFieldName := returnField.(*ast.Field).Name.Value
 
 		if returnFieldName == "payload" {
-			result := map[string]interface{}{}
-			for _, value := range returnField.GetSelectionSet().Selections {
-				valueName := value.(*ast.Field).Name.Value
-				v, ok := feedMap[returnFieldName]
-				if !ok {
-					continue
-				}
-				val, ok := v.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				a, ok := val[valueName]
-				if ok {
-					result[valueName] = a
-				}
+			if returnField.GetSelectionSet() == nil {
+				filteredResults[returnFieldName] = feedMap[returnFieldName]
+				filteredResults[returnFieldName].(map[string]interface{})["__typename"] = feed.Group
+				continue
 			}
 
-			result["__typename"] = feed.Group
+			v, ok := feedMap[returnFieldName]
+			if !ok {
+				continue
+			}
+
+			result := graphql.Filter(returnField.(*ast.Field), v)
+			result.(map[string]interface{})["__typename"] = feed.Group
 			filteredResults[returnFieldName] = result
 			continue
 		}

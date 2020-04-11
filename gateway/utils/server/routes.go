@@ -16,8 +16,12 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	}
 
 	router := mux.NewRouter()
+	router.Methods(http.MethodGet).Path("/v1/config/quotas").HandlerFunc(handlers.HandleGetQuotas(s.adminMan))
+	router.Methods(http.MethodGet).Path("/v1/config/credentials").HandlerFunc(handlers.HandleGetCredentials(s.adminMan))
+
 	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/version/upgrade").HandlerFunc(handlers.HandleVersionUpgrade(s.adminMan, s.syncMan))
+
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
 	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
@@ -118,7 +122,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	userRouter.Methods(http.MethodPost).Path("/email/signup").HandlerFunc(handlers.HandleEmailSignUp(s.modules))
 	userRouter.Methods(http.MethodGet).Path("/profile/{id}").HandlerFunc(handlers.HandleProfile(s.modules))
 	userRouter.Methods(http.MethodGet).Path("/profiles").HandlerFunc(handlers.HandleProfiles(s.modules))
-	userRouter.Methods(http.MethodGet).Path("/edit_profile/{id}").HandlerFunc(handlers.HandleEmailEditProfile(s.modules))
+	userRouter.Methods(http.MethodPost).Path("/edit_profile/{id}").HandlerFunc(handlers.HandleEmailEditProfile(s.modules))
 
 	// Initialize the routes for the file management operations
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/files").HandlerFunc(handlers.HandleCreateFile(s.modules))

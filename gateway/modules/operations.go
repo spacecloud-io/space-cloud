@@ -8,8 +8,19 @@ import (
 )
 
 // SetProjectConfig sets the config all modules
-func (m *Module) SetProjectConfig(config *config.Project, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
-	p := config
+func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
+	p := c
+
+	if p.Modules == nil {
+		p.Modules = &config.Modules{
+			FileStore:   &config.FileStore{},
+			Services:    &config.ServicesModule{},
+			Auth:        map[string]*config.AuthStub{},
+			Crud:        map[string]*config.CrudStub{},
+			Routes:      []*config.Route{},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+		}
+	}
 
 	logrus.Debugln("Setting config of db module")
 	if err := m.db.SetConfig(p.ID, p.Modules.Crud); err != nil {
@@ -22,7 +33,7 @@ func (m *Module) SetProjectConfig(config *config.Project, le *letsencrypt.LetsEn
 	}
 
 	logrus.Debugln("Setting config of auth module")
-	if err := m.auth.SetConfig(p.ID, p.Secret, p.AESkey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
+	if err := m.auth.SetConfig(p.ID, p.Secrets, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 		logrus.Errorf("error setting auth module config - %s", err.Error())
 	}
 
@@ -60,8 +71,8 @@ func (m *Module) SetProjectConfig(config *config.Project, le *letsencrypt.LetsEn
 }
 
 // SetGlobalConfig sets the auth secret and AESKey
-func (m *Module) SetGlobalConfig(projectID, secret, aesKey string) error {
-	m.auth.SetSecret(secret)
+func (m *Module) SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error {
+	m.auth.SetSecrets(secrets)
 	return m.auth.SetAESKey(aesKey)
 }
 
@@ -118,6 +129,7 @@ func (m *Module) SetEventingConfig(projectID string, eventingConfig *config.Even
 		logrus.Errorf("error setting eventing module config - %s", err.Error())
 		return err
 	}
+	m.auth.SetEventingConfig(eventingConfig.SecurityRules)
 	return nil
 }
 

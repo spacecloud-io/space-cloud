@@ -22,10 +22,10 @@ func (s *Server) routes() {
 	s.router.HandleFunc("/v1/runner/socket", s.handleWebsocketRequest())
 
 	// secret routes
-	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{name}").HandlerFunc(s.handleApplySecret())
+	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{id}").HandlerFunc(s.handleApplySecret())
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/secrets").HandlerFunc(s.handleListSecrets())
-	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{name}/root-path").HandlerFunc(s.handleSetFileSecretRootPath())
-	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}/secrets/{name}").HandlerFunc(s.handleDeleteSecret())
-	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{name}/{key}").HandlerFunc(s.handleSetSecretKey())
-	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}/secrets/{name}/{key}").HandlerFunc(s.handleDeleteSecretKey())
+	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{id}/root-path").HandlerFunc(s.handleSetFileSecretRootPath())
+	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}/secrets/{id}").HandlerFunc(s.handleDeleteSecret())
+	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{id}/{key}").HandlerFunc(s.handleSetSecretKey())
+	s.router.Methods(http.MethodDelete).Path("/v1/runner/{project}/secrets/{id}/{key}").HandlerFunc(s.handleDeleteSecretKey())
 }

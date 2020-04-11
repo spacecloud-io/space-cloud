@@ -64,7 +64,9 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(driver.New(false), nil), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
-	_ = auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
+	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			r, err := (auth).IsCreateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
@@ -130,7 +132,9 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(driver.New(false), nil), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
-	_ = auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
+	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			r, err := (auth).IsAggregateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
@@ -187,7 +191,9 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(driver.New(false), nil), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
-	_ = auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
+	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			_, r, err := (auth).IsReadOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
@@ -244,8 +250,9 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(driver.New(false), nil), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
-	_ = auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
-
+	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
+	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			r, err := (auth).IsDeleteOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)
@@ -302,7 +309,9 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	s := schema.Init(crud.Init(driver.New(false), nil), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
-	_ = auth.SetConfig(project, "", "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
+		t.Errorf("error setting config of auth module  - %s", er.Error())
+	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
 			r, err := (auth).IsUpdateOpAuthorised(context.Background(), test.project, test.dbType, test.col, test.token, &test.value)

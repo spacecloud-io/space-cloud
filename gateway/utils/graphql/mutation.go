@@ -58,17 +58,17 @@ func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, re
 		switch r.Type {
 		case string(utils.Create):
 			t := model.CreateRequest{Operation: r.Operation, Document: r.Document}
-			return map[string]interface{}{"status": 200}, graph.crud.Create(ctx, dbAlias, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Create(ctx, dbAlias, graph.project, r.Col, &t)
 
 		case string(utils.Delete):
 
 			t := model.DeleteRequest{Operation: r.Operation, Find: r.Find}
-			return map[string]interface{}{"status": 200}, graph.crud.Delete(ctx, dbAlias, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Delete(ctx, dbAlias, graph.project, r.Col, &t)
 
 		case string(utils.Update):
 
 			t := model.UpdateRequest{Operation: r.Operation, Find: r.Find, Update: r.Update}
-			return map[string]interface{}{"status": 200}, graph.crud.Update(ctx, dbAlias, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Update(ctx, dbAlias, graph.project, r.Col, &t)
 
 		default:
 			return map[string]interface{}{"error": "Wrong Operation"}, nil
@@ -76,7 +76,7 @@ func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, re
 		}
 
 	}
-	return map[string]interface{}{"status": 200}, graph.crud.Batch(ctx, dbAlias, graph.project, req)
+	return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Batch(ctx, dbAlias, graph.project, req)
 }
 
 func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token string, store utils.M, cb model.GraphQLCallback) {
@@ -164,7 +164,7 @@ func filterResults(field *ast.Field, results map[string]interface{}) map[string]
 			value, ok := v[returnFieldName]
 			if ok {
 				if returnField.SelectionSet != nil {
-					value = filter(returnField, value)
+					value = Filter(returnField, value)
 				}
 				filteredResults[returnFieldName] = value
 			}
@@ -180,7 +180,8 @@ func filterResults(field *ast.Field, results map[string]interface{}) map[string]
 	return filteredResults
 }
 
-func filter(field *ast.Field, value interface{}) interface{} {
+// Filter filers the result based on the provided selection set
+func Filter(field *ast.Field, value interface{}) interface{} {
 	switch val := value.(type) {
 	case map[string]interface{}:
 		newMap := map[string]interface{}{}
@@ -190,7 +191,7 @@ func filter(field *ast.Field, value interface{}) interface{} {
 				returnFieldName := returnField.Name.Value
 				if k == returnFieldName {
 					if returnField.SelectionSet != nil {
-						v = filter(returnField, v)
+						v = Filter(returnField, v)
 					}
 					newMap[k] = v
 				}
@@ -200,7 +201,7 @@ func filter(field *ast.Field, value interface{}) interface{} {
 	case []interface{}:
 		newArray := make([]interface{}, len(val))
 		for i, v := range val {
-			newArray[i] = filter(field, v)
+			newArray[i] = Filter(field, v)
 		}
 		return newArray
 

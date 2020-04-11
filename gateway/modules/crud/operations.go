@@ -66,6 +66,12 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	if err := crud.IsClientSafe(); err != nil {
 		return nil, err
 	}
+
+	// Adjust where clause
+	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+		return nil, err
+	}
+
 	if req.IsBatch {
 		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req}
 		dataLoader, ok := m.getLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
@@ -74,15 +80,15 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 		}
 		return dataLoader.Load(ctx, key)()
 	}
+
 	n, result, err := crud.Read(ctx, project, col, req)
-	// NOTE : currently jsonb is supported for only postgres
-	// in future if jsonb is supported for multiple databases change below code
-	if crud.GetDBType() == utils.Postgres {
-		if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
-			logrus.Errorf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", project, col)
-			return nil, err
-		}
+
+	// Process the response
+	if err := m.schema.CrudPostProcess(ctx, dbAlias, col, result); err != nil {
+		logrus.Errorf("error executing read request in crud module unable to perform schema post process for un marshalling json for project (%s) col (%s)", project, col)
+		return nil, err
 	}
+
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		m.metricHook(m.project, dbAlias, col, n, utils.Read)
@@ -106,6 +112,11 @@ func (m *Module) Update(ctx context.Context, dbAlias, project, col string, req *
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	// Adjust where clause
+	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return err
 	}
 
@@ -139,6 +150,11 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	// Adjust where clause
+	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return err
 	}
 
@@ -217,7 +233,7 @@ func (m *Module) Batch(ctx context.Context, dbAlias, project string, req *model.
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		for i, r := range req.Requests {
-			m.metricHook(m.project, dbAlias, r.Col, counts[i], utils.OperationType(r.Operation))
+			m.metricHook(m.project, dbAlias, r.Col, counts[i], utils.OperationType(r.Type))
 		}
 	}
 

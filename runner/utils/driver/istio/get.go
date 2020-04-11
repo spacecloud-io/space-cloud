@@ -171,6 +171,7 @@ func (i *Istio) GetServiceRoutes(_ context.Context, projectID string) (map[strin
 	serviceRoutes := make(map[string]model.Routes, len(services.Items))
 
 	for _, service := range services.Items {
+		serviceID := service.Labels["app"]
 		routes := make(model.Routes, len(service.Spec.Http))
 
 		for i, route := range service.Spec.Http {
@@ -209,11 +210,11 @@ func (i *Istio) GetServiceRoutes(_ context.Context, projectID string) (map[strin
 			}
 
 			// Set the route
-			routes[i] = &model.Route{Source: model.RouteSource{Port: int32(route.Match[0].Port)}, Targets: targets}
+			routes[i] = &model.Route{ID: serviceID, Source: model.RouteSource{Port: int32(route.Match[0].Port)}, Targets: targets}
 		}
 
 		// Set the routes of a service
-		serviceRoutes[service.Labels["app"]] = routes
+		serviceRoutes[serviceID] = routes
 	}
 
 	return serviceRoutes, nil

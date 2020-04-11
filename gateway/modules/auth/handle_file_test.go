@@ -150,7 +150,7 @@ func TestIsFileOpAuthorised(t *testing.T) {
 				Rule:   map[string]*config.Rule{"read": &config.Rule{Rule: "deny"}},
 			}},
 				project: "project",
-				secret:  "mySecretkey",
+				secrets: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}},
 			},
 			IsErrExpected: true, op: "read", args: map[string]interface{}{"params": "age"}, path: string(os.PathSeparator),
 		},

@@ -162,8 +162,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 		{
-			name:          "Invalid Test case-IsErrExpecteded integer got float",
-			IsErrExpected: true,
+			name:          "Valid Test case- increment float but kind is integer type",
+			IsErrExpected: false,
 			args: args{
 				dbType: "mongo",
 				col:    "tweet",
@@ -586,7 +586,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 	}
-	adminMan := admin.New("abc", &config.AdminUser{})
+	adminMan := admin.New("node", "abc", &config.AdminUser{})
 	c := crud.Init(driver.New(false), adminMan)
 	if err := c.SetConfig("", TestCases); err != nil {
 		t.Errorf("error in schmea update test file unable to set config of crud (%s)", err.Error())

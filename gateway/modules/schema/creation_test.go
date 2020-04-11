@@ -28,7 +28,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		parsedSchema  model.Type
 		currentSchema model.Collection
 	}
-	adminMan := admin.New("", &config.AdminUser{})
+	adminMan := admin.New("", "", &config.AdminUser{})
 	crudPostgres := crud.Init(driver.New(false), adminMan)
 	err := crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
 	if err != nil {

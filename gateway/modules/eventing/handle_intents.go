@@ -20,7 +20,7 @@ func (m *Module) processIntents(t *time.Time) {
 	}
 	m.lock.RLock()
 	project := m.project
-	dbAlias, col := m.config.DBType, utils.TableEventingLogs
+	dbAlias, col := m.config.DBAlias, utils.TableEventingLogs
 	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
@@ -49,13 +49,17 @@ func (m *Module) processIntents(t *time.Time) {
 		// Parse event doc to EventDocument
 		eventDoc := new(model.EventDocument)
 		if err := mapstructure.Decode(doc, eventDoc); err != nil {
+			logrus.Errorf("Could not covert object (%v) as intent event doc - %s", doc, err.Error())
 			continue
 		}
 
-		timestamp := eventDoc.EventTimestamp
-		currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
+		timestamp, err := time.Parse(time.RFC3339, eventDoc.EventTimestamp) // We are using event timestamp since intent are processed wrt the time the event was created
+		if err != nil {
+			logrus.Errorf("Could not parse (%s) in intent event doc (%s) as time - %s", eventDoc.EventTimestamp, eventDoc.ID, err.Error())
+			continue
+		}
 
-		if currentTimestamp > timestamp+(30*1000) {
+		if t.After(timestamp.Add(30 * time.Second)) {
 			go m.processIntent(eventDoc)
 		}
 	}
@@ -85,14 +89,14 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		if _, err := m.crud.Read(ctx, createEvent.DBType, m.project, createEvent.Col, readRequest); err != nil {
 
 			// Mark event as cancelled if it document doesn't exist
-			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
+			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
 				logrus.Errorf("Eventing: Couldn't cancel intent - %s", err.Error())
 			}
 			return
 		}
 
 		// Mark event as staged if document does exist
-		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err != nil {
+		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err != nil {
 			logrus.Errorf("Eventing: Couldn't update intent to staged - %s", err.Error())
 			return
 		}
@@ -107,7 +111,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &updateEvent)
 
 		// Get the document from the database
-		timestamp := time.Now().UTC().UnixNano() / int64(time.Millisecond)
+		timestamp := time.Now()
 		readRequest := &model.ReadRequest{Operation: utils.One, Find: updateEvent.Find.(map[string]interface{})}
 		result, err := m.crud.Read(ctx, updateEvent.DBType, m.project, updateEvent.Col, readRequest)
 		if err != nil {
@@ -118,7 +122,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		// Update the payload and mark event as staged
 		updateEvent.Doc = result
 		data, _ := json.Marshal(updateEvent)
-		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, &model.UpdateRequest{
+		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, &model.UpdateRequest{
 			Find: map[string]interface{}{"_id": eventID},
 			Update: map[string]interface{}{
 				"$set": map[string]interface{}{
@@ -131,7 +135,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 			// Broadcast the event so the concerned worker can process it immediately
 			eventDoc.Status = utils.EventStatusStaged
 			eventDoc.Payload = string(data)
-			eventDoc.Timestamp = timestamp
+			eventDoc.Timestamp = timestamp.Format(time.RFC3339)
 			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
 		}
 
@@ -145,12 +149,12 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		if _, err := m.crud.Read(ctx, deleteEvent.DBType, m.project, deleteEvent.Col, readRequest); err == nil {
 
 			// Mark the event as cancelled if the document still exists
-			_ = m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID))
+			_ = m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID))
 			return
 		}
 
 		// Mark the event as staged if the document doesn't exist
-		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err == nil {
+		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err == nil {
 			// Broadcast the event so the concerned worker can process it immediately
 			eventDoc.Status = utils.EventStatusStaged
 			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})
@@ -170,14 +174,14 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		if err := m.fileStore.DoesExists(ctx, m.project, token, filePayload.Path); err != nil {
 
 			// Mark event as cancelled if it document doesn't exist
-			if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
+			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
 				logrus.Errorf("Eventing: Couldn't cancel intent - %s", err.Error())
 			}
 			return
 		}
 
 		// Mark event as staged if document does exist
-		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err != nil {
+		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err != nil {
 			logrus.Errorf("Eventing: Couldn't update intent to staged - %s", err.Error())
 			return
 		}
@@ -198,12 +202,12 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		if err := m.fileStore.DoesExists(ctx, m.project, token, filePayload.Path); err == nil {
 			// Mark the event as cancelled if the object still exists
-			_ = m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID))
+			_ = m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID))
 			return
 		}
 
 		// Mark the event as staged if the object doesn't exist
-		if err := m.crud.InternalUpdate(ctx, m.config.DBType, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err == nil {
+		if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateStageEventRequest(eventID)); err == nil {
 			// Broadcast the event so the concerned worker can process it immediately
 			eventDoc.Status = utils.EventStatusStaged
 			m.transmitEvents(eventDoc.Token, []*model.EventDocument{eventDoc})

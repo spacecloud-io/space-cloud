@@ -36,6 +36,7 @@ gateway/vendor
 space-cli/vendor
 
 space-cli/cmd/cmd
+
 raft-store
 publish.sh
 runner/runner.db

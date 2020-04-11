@@ -25,7 +25,7 @@ type Module struct {
 	sync.RWMutex
 	rules           config.Crud
 	nodeID          string
-	secret          string
+	secrets         []*config.Secret
 	crud            model.CrudAuthInterface
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
@@ -42,7 +42,7 @@ func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) 
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secrets []*config.Secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -52,7 +52,7 @@ func (m *Module) SetConfig(project string, secret, encodedAESKey string, rules c
 
 	m.project = project
 	m.rules = rules
-	m.secret = secret
+	m.secrets = secrets
 	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
 	if err != nil {
 		return err
@@ -74,40 +74,11 @@ func (m *Module) SetConfig(project string, secret, encodedAESKey string, rules c
 	return nil
 }
 
-func (m *Module) SetCrudConfig(project string, rules config.Crud) error {
+// SetSecrets sets the secrets to be used for JWT authentication
+func (m *Module) SetSecrets(secrets []*config.Secret) {
 	m.Lock()
 	defer m.Unlock()
-	m.project = project
-	m.rules = rules
-	return nil
-}
-
-func (m *Module) SetServicesConfig(project string, services *config.ServicesModule) {
-	m.Lock()
-	defer m.Unlock()
-	m.project = project
-
-	if services != nil {
-		m.funcRules = services
-	}
-}
-
-func (m *Module) SetFileStoreConfig(project string, fileStore *config.FileStore) {
-	m.Lock()
-	defer m.Unlock()
-	m.project = project
-	if fileStore != nil && fileStore.Enabled {
-		sortFileRule(fileStore.Rules)
-		m.fileRules = fileStore.Rules
-		m.fileStoreType = fileStore.StoreType
-	}
-}
-
-// SetSecret sets the secret key to be used for JWT authentication
-func (m *Module) SetSecret(secret string) {
-	m.Lock()
-	defer m.Unlock()
-	m.secret = secret
+	m.secrets = secrets
 }
 
 // SetAESKey sets the aeskey to be used for encryption
@@ -120,6 +91,41 @@ func (m *Module) SetAESKey(encodedAESKey string) error {
 	}
 	m.aesKey = decodedAESKey
 	return nil
+}
+
+// SetServicesConfig sets the service module config
+func (m *Module) SetServicesConfig(projectID string, services *config.ServicesModule) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+	m.funcRules = services
+}
+
+// SetFileStoreConfig sets the file store module config
+func (m *Module) SetFileStoreConfig(projectID string, fileStore *config.FileStore) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+
+	sortFileRule(fileStore.Rules)
+	m.fileRules = fileStore.Rules
+	m.fileStoreType = fileStore.StoreType
+
+}
+
+// SetEventingConfig sets the eventing config
+func (m *Module) SetEventingConfig(securiyRules map[string]*config.Rule) {
+	m.Lock()
+	defer m.Unlock()
+	m.eventingRules = securiyRules
+}
+
+// SetCrudConfig sets the crud module config
+func (m *Module) SetCrudConfig(projectID string, crud config.Crud) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+	m.rules = crud
 }
 
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud
@@ -150,7 +156,13 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(m.secret))
+
+	secret, err := m.getPrimarySecret()
+	if err != nil {
+		return "", err
+	}
+
+	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", err
 	}
@@ -177,29 +189,30 @@ func (m *Module) IsTokenInternal(token string) error {
 }
 
 func (m *Module) parseToken(token string) (TokenClaims, error) {
-	// Parse the JWT token
-	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, ErrInvalidSigningMethod
+	for _, secret := range m.secrets {
+		// Parse the JWT token
+		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+			// Don't forget to validate the alg is what you expect:
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, ErrInvalidSigningMethod
+			}
+
+			return []byte(secret.Secret), nil
+		})
+		if err != nil {
+			continue
 		}
 
-		return []byte(m.secret), nil
-	})
-	if err != nil {
-		return nil, err
-	}
+		// Get the claims
+		if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
+			obj := make(TokenClaims, len(claims))
+			for key, val := range claims {
+				obj[key] = val
+			}
 
-	// Get the claims
-	if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
-		obj := make(TokenClaims, len(claims))
-		for key, val := range claims {
-			obj[key] = val
+			return obj, nil
 		}
-
-		return obj, nil
 	}
-
 	return nil, ErrTokenVerification
 }
 
@@ -209,4 +222,14 @@ func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 	defer m.Unlock()
 
 	m.makeHTTPRequest = function
+}
+
+func (m *Module) getPrimarySecret() (string, error) {
+	for _, s := range m.secrets {
+		if s.IsPrimary {
+			return s.Secret, nil
+		}
+	}
+
+	return "", errors.New("no primary secret provided")
 }

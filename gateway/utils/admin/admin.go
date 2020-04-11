@@ -9,31 +9,31 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/spaceuptech/space-cloud/gateway/model"
-
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // Manager manages all admin transactions
 type Manager struct {
-	lock      sync.RWMutex
-	nodeID    string
-	publicKey *rsa.PublicKey
-	isProd    bool
-
-	quotas model.UsageQuotas
+	lock   sync.RWMutex
 	config *config.Admin
+	quotas model.UsageQuotas
+	user   *config.AdminUser
+	isProd bool
 
+	clusterID string
+
+	// Config for enterprise
+	nodeID                 string
+	publicKey              *rsa.PublicKey
 	closeFetchPublicRSAKey chan struct{}
-
-	// config
-	user *config.AdminUser
 }
 
 // New creates a new admin manager instance
-func New(nodeID string, adminUserInfo *config.AdminUser) *Manager {
+func New(nodeID, clusterID string, adminUserInfo *config.AdminUser) *Manager {
 	m := new(Manager)
 	m.nodeID = nodeID
+	m.clusterID = clusterID
 
 	// Initialise all config
 	m.config = new(config.Admin)

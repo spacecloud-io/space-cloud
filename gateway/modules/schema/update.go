@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -130,12 +131,13 @@ func validateMathOperations(col string, doc interface{}, SchemaDoc model.Fields)
 	}
 
 	for fieldKey, fieldValue := range v {
-
 		schemaDocValue, ok := SchemaDoc[fieldKey]
 		if !ok {
 			return fmt.Errorf("field %s from collection %s is not defined in the schema", fieldKey, col)
 		}
-
+		if schemaDocValue.Kind == model.TypeInteger && reflect.TypeOf(fieldValue).Kind() == reflect.Float64 {
+			fieldValue = int(fieldValue.(float64))
+		}
 		switch fieldValue.(type) {
 		case int:
 			if schemaDocValue.Kind != model.TypeInteger && schemaDocValue.Kind != model.TypeFloat {

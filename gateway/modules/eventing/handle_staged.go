@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 
+	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -23,7 +23,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	}
 	m.lock.RLock()
 	project := m.project
-	dbAlias, col := m.config.DBType, utils.TableEventingLogs
+	dbAlias, col := m.config.DBAlias, utils.TableEventingLogs
 	m.lock.RUnlock()
 
 	// Create a context with 5 second timeout
@@ -50,14 +50,17 @@ func (m *Module) processStagedEvents(t *time.Time) {
 	for _, temp := range eventDocs {
 		eventDoc := new(model.EventDocument)
 		if err := mapstructure.Decode(temp, eventDoc); err != nil {
-			log.Println("Could not decode eventing payload:", err)
+			logrus.Errorf("Could not covert object (%v) as staged event doc - %s", temp, err.Error())
 			continue
 		}
 
-		timestamp := eventDoc.Timestamp
-		currentTimestamp := t.UTC().UnixNano() / int64(time.Millisecond)
+		timestamp, err := time.Parse(time.RFC3339, eventDoc.Timestamp) // We are using event timestamp since intent are processed wrt the time the event was created
+		if err != nil {
+			logrus.Errorf("Could not parse time (%s) in staged event doc (%s) as time - %s", eventDoc.Timestamp, eventDoc.ID, err.Error())
+			continue
+		}
 
-		if currentTimestamp >= timestamp {
+		if t.After(timestamp) || t.Equal(timestamp) {
 			go m.processStagedEvent(eventDoc)
 		}
 	}
@@ -77,7 +80,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 
 	evType, name := eventDoc.Type, eventDoc.RuleName
 
-	rule, err := m.selectRule(name, evType)
+	rule, err := m.selectRule(name)
 	if err != nil {
 		logrus.Errorln("Error processing staged event:", err)
 		return
@@ -109,10 +112,10 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	eventDoc.Payload = doc
 
 	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: evType, Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
-		Time: time.Unix(0, eventDoc.Timestamp*int64(time.Millisecond)).Format(time.RFC3339), Data: eventDoc.Payload}
+		Time: eventDoc.Timestamp, Data: eventDoc.Payload}
 
 	for {
-		if err := m.invokeWebhook(ctx, rule.Timeout, eventDoc, &cloudEvent); err != nil {
+		if err := m.invokeWebhook(ctx, &http.Client{}, rule, eventDoc, &cloudEvent); err != nil {
 			logrus.Errorf("Eventing staged event handler could not get response from service -%s", err.Error())
 
 			// Increment the retries. Exit the loop if max retries reached.
@@ -131,13 +134,13 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		return
 	}
 
-	if err := m.crud.InternalUpdate(context.Background(), m.config.DBType, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+	if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
 	}
 }
 
-func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model.EventDocument, cloudEvent *model.CloudEventPayload) error {
-	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Millisecond)
+func (m *Module) invokeWebhook(ctx context.Context, client model.HTTPEventingInterface, rule config.EventingRule, eventDoc *model.EventDocument, cloudEvent *model.CloudEventPayload) error {
+	ctxLocal, cancel := context.WithTimeout(ctx, time.Duration(rule.Timeout)*time.Millisecond)
 	defer cancel()
 	internalToken, err := m.auth.GetInternalAccessToken()
 	if err != nil {
@@ -152,8 +155,8 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 	}
 
 	var eventResponse model.EventResponse
-	if err := m.MakeInvocationHTTPRequest(ctxLocal, http.MethodPost, eventDoc, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
-		logrus.Errorf("error invoking web hook in eventing unable to send http request to url %s - %s", eventDoc.URL, err.Error())
+	if err := m.MakeInvocationHTTPRequest(ctxLocal, client, http.MethodPost, rule.URL, eventDoc.ID, internalToken, scToken, cloudEvent, &eventResponse); err != nil {
+		logrus.Errorf("error invoking web hook in eventing unable to send http request to url %s - %s", rule.URL, err.Error())
 		return err
 	}
 
@@ -186,6 +189,6 @@ func (m *Module) invokeWebhook(ctx context.Context, timeout int, eventDoc *model
 		}
 	}
 
-	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBType, m.project, utils.TableEventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
+	_ = m.crud.InternalUpdate(ctxLocal, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateProcessedEventRequest(eventDoc.ID))
 	return nil
 }

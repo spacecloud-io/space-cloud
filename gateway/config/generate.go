@@ -26,10 +26,11 @@ type input struct {
 
 // GenerateEmptyConfig creates an empty config file
 func GenerateEmptyConfig() *Config {
+
 	return &Config{
-		Projects: []*Project{},
 		SSL:      &SSL{Enabled: false},
 		Admin:    new(Admin),
+		Projects: []*Project{},
 	}
 }
 

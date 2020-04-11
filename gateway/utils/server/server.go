@@ -34,17 +34,15 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, metricsConfig *metrics.Config, adminUserInfo *config.AdminUser, adminConfig *config.Admin) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
 
 	// Create the fundamental modules
-	m, err := metrics.New(nodeID, metricsConfig)
+	adminMan := admin.New("", clusterID, adminUserInfo)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan)
 	if err != nil {
 		return nil, err
 	}
-
-	adminMan := admin.New(nodeID, adminUserInfo)
-
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan)
+	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, adminMan.LoadEnv())
 	if err != nil {
 		return nil, err
 	}
@@ -71,15 +69,11 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeP
 }
 
 // Start begins the server operations
-func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port int, restrictedHosts []string) error {
+func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHosts []string) error {
+
 	// Start the sync manager
 	if err := s.syncMan.Start(s.configFilePath, s.syncMan.GetGlobalConfig(), port); err != nil {
 		return err
-	}
-
-	// Anonymously collect usage metrics if not explicitly disabled
-	if !disableMetrics {
-		go s.RoutineMetrics()
 	}
 
 	// Allow cors
@@ -109,8 +103,6 @@ func (s *Server) Start(profiler, disableMetrics bool, staticPath string, port in
 			}
 		}()
 	}
-
-	// go s.syncMan.StartConnectServer(port, handlers.HandleMetricMiddleWare(corsObj.Handler(s.routerConnect), s.metrics))
 
 	handler := corsObj.Handler(s.routes(profiler, staticPath, restrictedHosts))
 	handler = s.letsencrypt.LetsEncryptHTTPChallengeHandler(handler)

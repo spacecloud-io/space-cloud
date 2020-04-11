@@ -38,10 +38,10 @@ func newModule(nodeID string, removeProjectScope bool, syncMan *syncman.Manager,
 	a := auth.Init(nodeID, c, removeProjectScope)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
-	fn := functions.Init(a, syncMan)
-	f := filestore.Init(a)
+	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
+	f := filestore.Init(a, metrics.AddFileOperation)
 
-	e := eventing.New(a, c, s, adminMan, syncMan, f)
+	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
 	f.SetEventingModule(e)
 
 	c.SetHooks(&model.CrudHooks{
@@ -52,7 +52,7 @@ func newModule(nodeID string, removeProjectScope bool, syncMan *syncman.Manager,
 		Stage:  e.HookStage,
 	}, metrics.AddDBOperation)
 
-	rt := realtime.Init(nodeID, e, a, c, metrics, syncMan)
+	rt, _ := realtime.Init(nodeID, e, a, c, s, metrics, syncMan)
 
 	u := userman.Init(c, a)
 	graphqlMan := graphql.New(a, c, fn, s)

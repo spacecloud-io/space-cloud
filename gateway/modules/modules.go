@@ -65,7 +65,7 @@ func (m *Modules) SetProjectConfig(config *config.Project, le *letsencrypt.LetsE
 }
 
 // SetGlobalConfig sets the auth secret and AESKey
-func (m *Modules) SetGlobalConfig(projectID, secret, aesKey string) error {
+func (m *Modules) SetGlobalConfig(projectID string, secret []*config.Secret, aesKey string) error {
 	module, err := m.loadModule(projectID)
 	if err != nil {
 		return err

@@ -56,11 +56,15 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	if ok {
 		timeStamp := time.Now().Unix()
 		for _, row := range array {
+			// Get the appropriate find object
+			find, _ := m.schema.CheckIfEventingIsPossible(data.DBType, data.Group, row.(map[string]interface{}), false)
+
+			// Create the feed data object
 			feedData = append(feedData, &model.FeedData{
 				Group:     data.Group,
 				Type:      utils.RealtimeInitial,
 				TimeStamp: timeStamp,
-				Find:      data.Where,
+				Find:      find,
 				DBType:    data.DBType,
 				Payload:   row,
 				QueryID:   data.ID,
@@ -75,8 +79,8 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 }
 
 // Unsubscribe performs the realtime unsubscribe operation.
-func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) {
-	m.RemoveLiveQuery(data.DBType, data.Group, clientID, data.ID)
+func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) error {
+	return m.RemoveLiveQuery(data.DBType, data.Group, clientID, data.ID)
 }
 
 // HandleRealtimeEvent handles an incoming realtime event from the eventing module

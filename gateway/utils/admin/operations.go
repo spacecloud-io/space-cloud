@@ -50,11 +50,7 @@ func (m *Manager) ValidateProjectSyncOperation(projects []string, projectID stri
 		}
 	}
 
-	if len(projects) < m.quotas.MaxProjects {
-		return true
-	}
-
-	return false
+	return len(projects) < m.quotas.MaxProjects
 }
 
 // RefreshToken is used to create a new token based on an existing one
@@ -79,4 +75,19 @@ func (m *Manager) IsEnterpriseMode() bool {
 	defer m.lock.RUnlock()
 
 	return m.isEnterpriseMode()
+}
+
+// GetQuotas gets number of projects & databases that can be created
+func (m *Manager) GetQuotas() map[string]interface{} {
+	return map[string]interface{}{"projects": m.quotas.MaxProjects, "databases": m.quotas.MaxDatabases}
+}
+
+// GetCredentials gets user name & pass
+func (m *Manager) GetCredentials() map[string]interface{} {
+	return map[string]interface{}{"user": m.user.User, "pass": m.user.Pass}
+}
+
+// GetClusterID returns the cluster id
+func (m *Manager) GetClusterID() string {
+	return m.clusterID
 }

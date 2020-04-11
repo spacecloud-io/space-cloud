@@ -5,7 +5,7 @@ import (
 )
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.16.0"
+const BuildVersion = "0.17.0"
 
 const (
 	// One operation returns a single document from the database
@@ -94,6 +94,9 @@ const (
 
 	// Read is the type used for query operation
 	Read OperationType = "read"
+
+	// List is the type used for file store list operation
+	List OperationType = "list"
 
 	// Update is the type used ofr update operations
 	Update OperationType = "update"

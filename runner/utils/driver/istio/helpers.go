@@ -52,7 +52,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 
 		// Prepare command and args
 		var cmd, args []string
-		if task.Docker.Cmd != nil {
+		if task.Docker.Cmd != nil && len(task.Docker.Cmd) > 0 {
 			cmd = task.Docker.Cmd[0:1]
 			if len(task.Docker.Cmd) > 1 {
 				args = task.Docker.Cmd[1:]
@@ -339,6 +339,7 @@ func updateOrCreateVirtualServiceRoutes(service *model.Service, proxyPort uint32
 								Host: destHost,
 								Port: &networkingv1alpha3.PortSelector{Number: destPort},
 							},
+							Weight: 100,
 						},
 					},
 				})

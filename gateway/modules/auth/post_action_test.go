@@ -173,10 +173,10 @@ func TestPostProcessMethod(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(driver.New(false), admin.New("", &config.AdminUser{})), false)
+	s := schema.Init(crud.Init(driver.New(false), admin.New("", "", &config.AdminUser{})), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
-	_ = auth.SetConfig(project, "", "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	_ = auth.SetConfig(project, []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		if test.testName == "invalid key in encryption" || test.testName == "invalid key in decryption" {
 			auth.aesKey = stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g")

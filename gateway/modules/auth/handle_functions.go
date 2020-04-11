@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
@@ -37,7 +38,7 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 
 func (m *Module) getFunctionRule(service, function string) (*config.Rule, error) {
 	if m.funcRules == nil {
-		return nil, ErrRuleNotFound
+		return nil, fmt.Errorf("no rule has been provided for endpoint (%s) in service (%s)", function, service)
 	}
 	if serviceStub, p := m.funcRules.InternalServices[service]; p && serviceStub.Endpoints != nil {
 		if funcStub, p := serviceStub.Endpoints[function]; p && funcStub.Rule != nil {
@@ -49,5 +50,5 @@ func (m *Module) getFunctionRule(service, function string) (*config.Rule, error)
 		}
 	}
 
-	return nil, ErrRuleNotFound
+	return nil, fmt.Errorf("no rule has been provided for endpoint (%s) in service (%s)", function, service)
 }

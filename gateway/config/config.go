@@ -7,33 +7,36 @@ type Config struct {
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 }
 
-// Admin describes the config needed by the admin module for running in enterprise mode
+// Project holds the project level configuration
+type Project struct {
+	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	AESKey             string    `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
+	ID                 string    `json:"id,omitempty" yaml:"id,omitempty"`
+	Name               string    `json:"name,omitempty" yaml:"name,omitempty"`
+	DockerRegistry     string    `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
+	Modules            *Modules  `json:"modules,omitempty" yaml:"modules,omitempty"`
+	ContextTimeGraphQL int       `json:"contextTimeGraphQL,omitempty" yaml:"contextTimeGraphQL,omitempty"` // contextTime sets the timeout of query
+}
+
+// Secret describes the a secret object
+type Secret struct {
+	IsPrimary bool   `json:"isPrimary" yaml:"isPrimary"`
+	Secret    string `json:"secret" yaml:"secret"`
+}
+
+// Admin holds the admin config
 type Admin struct {
 	ClusterID  string `json:"clusterId" yaml:"clusterId"`
 	ClusterKey string `json:"clusterKey" yaml:"clusterKey"`
 	Version    int    `json:"version" yaml:"version"`
 }
 
-// AdminUser describes the user credentials
+// AdminUser holds the user credentials and scope
 type AdminUser struct {
-	User   string
-	Pass   string
-	Secret string
+	User   string `json:"user" yaml:"user"`
+	Pass   string `json:"pass" yaml:"pass"`
+	Secret string `json:"secret" yaml:"secret"`
 }
-
-// Project holds the project level configuration
-type Project struct {
-	Secret         string   `json:"secret,omitempty" yaml:"secret,omitempty"`
-	AESkey         string   `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
-	ID             string   `json:"id,omitempty" yaml:"id,omitempty"`
-	Name           string   `json:"name,omitempty" yaml:"name,omitempty"`
-	DockerRegistry string   `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
-	Modules        *Modules `json:"modules,omitempty" yaml:"modules,omitempty"`
-	ContextTime    int      `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
-}
-
-// ProjectScope contains the project level scope
-type ProjectScope map[string][]string // (project name -> []scopes)
 
 // SSL holds the certificate and key file locations
 type SSL struct {
@@ -44,13 +47,13 @@ type SSL struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud        Crud            `json:"crud" yaml:"crud"`
-	Auth        Auth            `json:"auth" yaml:"auth"`
-	Services    *ServicesModule `json:"services" yaml:"services"`
+	Crud        Crud            `json:"db" yaml:"db"`
+	Auth        Auth            `json:"userMan" yaml:"userMan"`
+	Services    *ServicesModule `json:"remoteServices" yaml:"remoteServices"`
 	FileStore   *FileStore      `json:"fileStore" yaml:"fileStore"`
 	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
-	Routes      Routes          `json:"routes" yaml:"routes"`
+	Routes      Routes          `json:"ingressRoutes" yaml:"ingressRoutes"`
 	Deployments Deployments     `json:"deployments" yaml:"deployments"`
 	Secrets     interface{}     `json:"secrets" yaml:"secrets"`
 }
@@ -58,14 +61,6 @@ type Modules struct {
 // Deployments store all services information for particular project
 type Deployments struct {
 	Services interface{} `json:"services" yaml:"services"`
-}
-
-// Secret stores secrets information
-type Secret struct {
-	Name     string            `json:"name" yaml:"name"`
-	Type     string            `json:"type" yaml:"type"`
-	RootPath string            `json:"rootPath" yaml:"rootPath"`
-	Data     map[string]string `json:"data" yaml:"data"`
 }
 
 // Crud holds the mapping of database level configuration
@@ -177,17 +172,18 @@ type StaticRoute struct {
 // Eventing holds the config for the eventing module (task queue)
 type Eventing struct {
 	Enabled       bool                    `json:"enabled" yaml:"enabled"`
-	DBType        string                  `json:"dbType" yaml:"dbType"`
-	Rules         map[string]EventingRule `json:"rules,omitempty" yaml:"rules"`
-	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
+	DBAlias       string                  `json:"dbAlias" yaml:"dbAlias"`
+	Rules         map[string]EventingRule `json:"triggers,omitempty" yaml:"triggers"`
+	InternalRules map[string]EventingRule `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty"`
 	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 	Schemas       map[string]SchemaObject `json:"schemas,omitempty" yaml:"schemas,omitempty"`
 }
 
 // EventingRule holds an eventing rule
 type EventingRule struct {
-	Type    string            `json:"type" yaml:"type"`
-	Retries int               `json:"retries" yaml:"retries"`
+	Type    string `json:"type" yaml:"type"`
+	Retries int    `json:"retries" yaml:"retries"`
+	// Timeout is in milliseconds
 	Timeout int               `json:"timeout" yaml:"timeout"`
 	ID      string            `json:"id" yaml:"id"`
 	URL     string            `json:"url" yaml:"url"`

@@ -16,6 +16,19 @@ func (s *Manager) GetEventSource() string {
 	return fmt.Sprintf("sc-%s", s.nodeID)
 }
 
+// GetClusterID get cluster id
+func (s *Manager) GetClusterID() string {
+	return s.clusterID
+}
+
+// GetNodesInCluster get total number of gateways
+func (s *Manager) GetNodesInCluster() int {
+	if len(s.services) == 0 {
+		return 1
+	}
+	return len(s.services)
+}
+
 // GetAssignedSpaceCloudURL returns the space cloud url assigned for the provided token
 func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, token int) (string, error) {
 	s.lock.RLock()
@@ -50,7 +63,7 @@ func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 
 // GetRealtimeURL get the url of realtime
 func (s *Manager) GetRealtimeURL(project string) string {
-	return string(fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project))
+	return fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/handle", s.port, project)
 }
 
 // GetAssignedTokens returns the array or tokens assigned to this node
@@ -63,30 +76,10 @@ func (s *Manager) GetAssignedTokens() (start, end int) {
 		return calcTokens(1, utils.MaxEventTokens, 0)
 	}
 
-	index := 0
-
-	for i, v := range s.services {
-		if v.id == s.nodeID {
-			index = i
-			break
-		}
-	}
+	index := s.GetGatewayIndex()
 
 	totalMembers := len(s.services)
 	return calcTokens(totalMembers, utils.MaxEventTokens, index)
-}
-
-// GetClusterSize returns the size of the cluster
-func (s *Manager) GetClusterSize(ctxParent context.Context) (int, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	// Return 1 if not running with consul
-	if s.storeType == "none" {
-		return 1, nil
-	}
-
-	return len(s.services), nil
 }
 
 // ApplyProjectConfig creates the config for the project
@@ -95,13 +88,13 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if valid := s.adminMan.ValidateProjectSyncOperation(s.modules.ProjectIDs(), project.ID); !valid {
+	if !s.adminMan.ValidateProjectSyncOperation(s.modules.ProjectIDs(), project.ID) {
 		return http.StatusUpgradeRequired, errors.New("upgrade your plan to create a new project")
 	}
 
 	// set default context time
-	if project.ContextTime == 0 {
-		project.ContextTime = 10
+	if project.ContextTimeGraphQL == 0 {
+		project.ContextTimeGraphQL = 10
 	}
 
 	// Generate internal access token
@@ -115,10 +108,10 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 		if p.ID == project.ID {
 			// override the existing config
 			p.Name = project.Name
-			p.AESkey = project.AESkey
-			p.Secret = project.Secret
+			p.AESKey = project.AESKey
+			p.Secrets = project.Secrets
 			p.DockerRegistry = project.DockerRegistry
-			p.ContextTime = project.ContextTime
+			p.ContextTimeGraphQL = project.ContextTimeGraphQL
 
 			// Mark project as existing
 			doesProjectExists = true
@@ -161,7 +154,7 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if err := s.modules.SetGlobalConfig(project.Name, project.Secret, project.AESkey); err != nil {
+	if err := s.modules.SetGlobalConfig(project.Name, project.Secrets, project.AESKey); err != nil {
 		return err
 	}
 
@@ -170,10 +163,10 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 		return err
 	}
 
-	projectConfig.Secret = project.Secret
-	projectConfig.AESkey = project.AESkey
+	projectConfig.Secrets = project.Secrets
+	projectConfig.AESKey = project.AESKey
 	projectConfig.Name = project.Name
-	projectConfig.ContextTime = project.ContextTime
+	projectConfig.ContextTimeGraphQL = project.ContextTimeGraphQL
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -250,12 +243,21 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	defer s.lock.RUnlock()
 
 	// Iterate over all projects stored
+	v := []interface{}{}
 	for _, p := range s.projectConfig.Projects {
+		if projectID == "*" {
+			// get all projects
+			v = append(v, config.Project{AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Name: p.Name, ID: p.ID})
+			continue
+		}
+
 		if projectID == p.ID {
-			return []interface{}{config.Project{AESkey: p.AESkey, ContextTime: p.ContextTime, Secret: p.Secret, Name: p.Name, ID: p.ID}}, nil
+			return []interface{}{config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
-
+	if len(v) > 0 {
+		return v, nil
+	}
 	return []interface{}{}, errors.New("given project is not present in state")
 }
 
