@@ -38,6 +38,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 
 	responseChan := make(chan interface{}, 1)
 	defer close(responseChan) // close channel
+
 	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
 	defer m.eventChanMap.Delete(batchID)
 
@@ -59,6 +60,7 @@ func (m *Module) QueueEvent(ctx context.Context, project, token string, req *mod
 			}
 		}
 	}
+
 	m.metricHook(m.project, req.Type)
 	return nil, nil
 }

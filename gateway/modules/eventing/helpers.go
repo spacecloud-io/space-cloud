@@ -79,6 +79,11 @@ func (m *Module) batchRequestsRaw(ctx context.Context, eventDocID string, token 
 		}
 	}
 
+	// Return if no docs are to be queued
+	if len(eventDocs) == 0 {
+		return nil
+	}
+
 	// Persist the events
 	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
 	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {

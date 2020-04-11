@@ -37,9 +37,10 @@ func (m *Module) flushMetrics(docs []interface{}) {
 	defer cancel()
 	result, err := m.sink.Insert("operation_metrics").Docs(docs).Apply(ctx)
 	if err != nil {
-		logrus.Errorf("error querying database got error")
+		logrus.Debugln("Unable to push metrics:", err)
+		return
 	}
 	if result.Status != http.StatusOK {
-		logrus.Errorf("error querying database got status (%d) (%s)", result.Status, result.Error)
+		logrus.Debugln("Unable to push metrics:", result.Error)
 	}
 }

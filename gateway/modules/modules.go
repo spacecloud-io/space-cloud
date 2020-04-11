@@ -53,7 +53,7 @@ func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, admin
 		Stage:  e.HookStage,
 	}, metrics.AddDBOperation)
 
-	rt, err := realtime.Init(nodeID, e, a, c, metrics, syncMan)
+	rt, err := realtime.Init(nodeID, e, a, c, s, metrics, syncMan)
 	if err != nil {
 		return nil, err
 	}

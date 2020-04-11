@@ -174,7 +174,7 @@ func TestPostProcessMethod(t *testing.T) {
 	s := schema.Init(crud.Init(false), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
-	_ = auth.SetConfig(project, map[string]string{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	_ = auth.SetConfig(project, []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		if test.testName == "invalid key in encryption" || test.testName == "invalid key in decryption" {
 			auth.aesKey = stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g")
