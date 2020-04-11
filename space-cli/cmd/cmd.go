@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -53,6 +53,6 @@ func GetRootCommand() *cobra.Command {
 	return rootCmd
 }
 
-func main() {
-	_ = GetRootCommand()
-}
+// func main() {
+// 	_ = GetRootCommand()
+// }
