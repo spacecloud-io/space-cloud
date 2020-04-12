@@ -9,13 +9,19 @@ type Config struct {
 
 // Project holds the project level configuration
 type Project struct {
-	Secrets        map[string]string `json:"secrets,omitempty" yaml:"secrets,omitempty"`
-	AESkey         string            `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
-	ID             string            `json:"id,omitempty" yaml:"id,omitempty"`
-	Name           string            `json:"name,omitempty" yaml:"name,omitempty"`
-	DockerRegistry string            `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
-	Modules        *Modules          `json:"modules,omitempty" yaml:"modules,omitempty"`
-	ContextTime    int               `json:"contextTime,omitempty" yaml:"contextTime,omitempty"` // contextTime sets the timeout of query
+	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	AESKey             string    `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
+	ID                 string    `json:"id,omitempty" yaml:"id,omitempty"`
+	Name               string    `json:"name,omitempty" yaml:"name,omitempty"`
+	DockerRegistry     string    `json:"dockerRegistry,omitempty" yaml:"dockerRegistry,omitempty"`
+	Modules            *Modules  `json:"modules,omitempty" yaml:"modules,omitempty"`
+	ContextTimeGraphQL int       `json:"contextTimeGraphQL,omitempty" yaml:"contextTimeGraphQL,omitempty"` // contextTime sets the timeout of query
+}
+
+// Secret describes the a secret object
+type Secret struct {
+	IsPrimary bool   `json:"isPrimary" yaml:"isPrimary"`
+	Secret    string `json:"secret" yaml:"secret"`
 }
 
 // Admin holds the admin config
@@ -41,13 +47,13 @@ type SSL struct {
 
 // Modules holds the config of all the modules of that environment
 type Modules struct {
-	Crud        Crud            `json:"crud" yaml:"crud"`
-	Auth        Auth            `json:"auth" yaml:"auth"`
-	Services    *ServicesModule `json:"services" yaml:"services"`
+	Crud        Crud            `json:"db" yaml:"db"`
+	Auth        Auth            `json:"userMan" yaml:"userMan"`
+	Services    *ServicesModule `json:"remoteServices" yaml:"remoteServices"`
 	FileStore   *FileStore      `json:"fileStore" yaml:"fileStore"`
 	Eventing    Eventing        `json:"eventing,omitempty" yaml:"eventing,omitempty"`
 	LetsEncrypt LetsEncrypt     `json:"letsencrypt" yaml:"letsencrypt"`
-	Routes      Routes          `json:"routes" yaml:"routes"`
+	Routes      Routes          `json:"ingressRoutes" yaml:"ingressRoutes"`
 	Deployments Deployments     `json:"deployments" yaml:"deployments"`
 	Secrets     interface{}     `json:"secrets" yaml:"secrets"`
 }
@@ -167,8 +173,8 @@ type StaticRoute struct {
 type Eventing struct {
 	Enabled       bool                    `json:"enabled" yaml:"enabled"`
 	DBAlias       string                  `json:"dbAlias" yaml:"dbAlias"`
-	Rules         map[string]EventingRule `json:"rules,omitempty" yaml:"rules"`
-	InternalRules map[string]EventingRule `json:"internalRules,omitempty" yaml:"internalRules,omitempty"`
+	Rules         map[string]EventingRule `json:"triggers,omitempty" yaml:"triggers"`
+	InternalRules map[string]EventingRule `json:"internalTriggers,omitempty" yaml:"internalTriggers,omitempty"`
 	SecurityRules map[string]*Rule        `json:"securityRules,omitempty" yaml:"securityRules,omitempty"`
 	Schemas       map[string]SchemaObject `json:"schemas,omitempty" yaml:"schemas,omitempty"`
 }

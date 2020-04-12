@@ -39,13 +39,13 @@ func TestModule_processIntents(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedTokens",
 					paramsReturned: []interface{}{1, 100},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{}, errors.New("some error")},
@@ -57,13 +57,13 @@ func TestModule_processIntents(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedTokens",
 					paramsReturned: []interface{}{1, 100},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{"key"}, nil},
@@ -75,13 +75,13 @@ func TestModule_processIntents(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedTokens",
 					paramsReturned: []interface{}{1, 100},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{EventTimestamp: time.Now().Format(time.RFC1123), ID: "id"}}, nil},
@@ -93,13 +93,13 @@ func TestModule_processIntents(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true}},
 			args: args{t: &timeValue},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedTokens",
 					paramsReturned: []interface{}{1, 100},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{EventTimestamp: time.Now().Format(time.RFC3339), ID: "id"}}, nil},
@@ -161,12 +161,12 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBCreate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"_id": "id"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": utils.EventStatusCancelled}}}},
 					paramsReturned: []interface{}{nil},
@@ -178,12 +178,12 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBCreate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"_id": "id"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": utils.EventStatusCancelled}}}},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -195,12 +195,12 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBCreate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"_id": "id"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": utils.EventStatusStaged}}}},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -212,37 +212,37 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBCreate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"_id": "id"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": utils.EventStatusStaged}}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{ID: "id", Type: "DB_INSERT", Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`, Status: "staged"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{ID: "id", Type: "DB_INSERT", Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`, Status: "staged"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
@@ -253,7 +253,7 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBUpdate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
@@ -265,12 +265,12 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBUpdate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -282,37 +282,37 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBUpdate, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{ID: "id", Type: "DB_UPDATE", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: "{\"db\":\"db\",\"col\":\"col\",\"doc\":{},\"find\":{}}", Status: "staged"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{ID: "id", Type: "DB_UPDATE", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: "{\"db\":\"db\",\"col\":\"col\",\"doc\":{},\"find\":{}}", Status: "staged"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
@@ -323,12 +323,12 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBDelete, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{nil},
@@ -340,12 +340,12 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBDelete, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -357,37 +357,37 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventDBDelete, Token: 50, Payload: `{"db": "db", "col": "col", "doc": {}, "find": {}}`}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{ID: "id", Type: "DB_DELETE", Token: 50, Payload: "{\"db\": \"db\", \"col\": \"col\", \"doc\": {}, \"find\": {}}", Status: "staged"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{ID: "id", Type: "DB_DELETE", Token: 50, Payload: "{\"db\": \"db\", \"col\": \"col\", \"doc\": {}, \"find\": {}}", Status: "staged"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
@@ -398,7 +398,7 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"", errors.New("some error")},
 				},
@@ -409,20 +409,20 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"token", nil},
 				},
 			},
 			filestoreMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{nil},
@@ -434,20 +434,20 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"token", nil},
 				},
 			},
 			filestoreMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -459,20 +459,20 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"token", nil},
 				},
 			},
 			filestoreMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -484,43 +484,43 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileCreate, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"token", nil},
 				},
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			filestoreMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{ID: "id", Type: "FILE_CREATE", Token: 50, Payload: "{\"meta\": {\"key\": \"value\"}, \"path\": \"path\"}", Status: "staged"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{ID: "id", Type: "FILE_CREATE", Token: 50, Payload: "{\"meta\": {\"key\": \"value\"}, \"path\": \"path\"}", Status: "staged"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
@@ -531,7 +531,7 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileDelete, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"", errors.New("some error")},
 				},
@@ -542,20 +542,20 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileDelete, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"token", nil},
 				},
 			},
 			filestoreMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -567,20 +567,20 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileDelete, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"token", nil},
 				},
 			},
 			filestoreMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -592,43 +592,43 @@ func TestModule_processIntent(t *testing.T) {
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
 			args: args{&model.EventDocument{ID: "id", Type: utils.EventFileDelete, Token: 50, Payload: `{"meta": {"key": "value"}, "path": "path"}`}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"token", nil},
 				},
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			filestoreMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "DoesExists",
 					args:           []interface{}{mock.Anything, "abc", "token", "path"},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{ID: "id", Type: "FILE_DELETE", Token: 50, Payload: "{\"meta\": {\"key\": \"value\"}, \"path\": \"path\"}", Status: "staged"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{ID: "id", Type: "FILE_DELETE", Token: 50, Payload: "{\"meta\": {\"key\": \"value\"}, \"path\": \"path\"}", Status: "staged"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},

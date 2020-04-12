@@ -29,12 +29,12 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 			return
 		}
 
-		if projectConfig.ContextTime == 0 {
-			projectConfig.ContextTime = 10
+		if projectConfig.ContextTimeGraphQL == 0 {
+			projectConfig.ContextTimeGraphQL = 10
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTime)*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTimeGraphQL)*time.Second)
 		defer cancel()
 
 		graphql := modules.GraphQL()
@@ -66,7 +66,7 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 		select {
 		case <-ch:
 			return
-		case <-time.After(time.Duration(projectConfig.ContextTime) * time.Second):
+		case <-time.After(time.Duration(projectConfig.ContextTimeGraphQL) * time.Second):
 			log.Println("GraphQL Handler: Request timed out")
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
 			w.Header().Set("Content-Type", "application/json")

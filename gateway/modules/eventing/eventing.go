@@ -71,6 +71,11 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	if eventing == nil || !eventing.Enabled {
+		m.config.Enabled = false
+		return nil
+	}
+
 	for eventType, schemaObj := range eventing.Schemas {
 		dummyCrud := config.Crud{
 			"dummyDBName": &config.CrudStub{
@@ -89,11 +94,6 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		if len(schemaType["dummyDBName"][eventType]) != 0 {
 			m.schemas[eventType] = schemaType["dummyDBName"][eventType]
 		}
-	}
-
-	if eventing == nil || !eventing.Enabled {
-		m.config.Enabled = false
-		return nil
 	}
 
 	if eventing.DBAlias == "" {
