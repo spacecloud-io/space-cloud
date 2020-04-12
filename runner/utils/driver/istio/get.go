@@ -84,9 +84,9 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 			}
 
 			// Get the image pull policy
-			imagePullPolicy := model.PullAlways
-			if containerInfo.ImagePullPolicy == v1.PullIfNotPresent {
-				imagePullPolicy = model.PullIfNotExists
+			imagePullPolicy := model.PullIfNotExists
+			if containerInfo.ImagePullPolicy == v1.PullAlways {
+				imagePullPolicy = model.PullAlways
 			}
 
 			// Move all secrets from map to array
