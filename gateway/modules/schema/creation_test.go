@@ -8,7 +8,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
@@ -29,19 +28,22 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		currentSchema model.Collection
 	}
 	adminMan := admin.New("", "", &config.AdminUser{})
-	crudPostgres := crud.Init(driver.New(false), adminMan)
+	crudPostgres := crud.Init(false)
+	crudPostgres.SetAdminManager(adminMan)
 	err := crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize postgres", err)
 	}
 
-	crudMySQL := crud.Init(driver.New(false), adminMan)
+	crudMySQL := crud.Init(false)
+	crudMySQL.SetAdminManager(adminMan)
 	err = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize my sql", err)
 
 	}
-	crudSQLServer := crud.Init(driver.New(false), adminMan)
+	crudSQLServer := crud.Init(false)
+	crudSQLServer.SetAdminManager(adminMan)
 	err = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize sql server", err)

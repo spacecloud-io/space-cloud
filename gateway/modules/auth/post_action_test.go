@@ -10,9 +10,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
 func hash(s string) string {
@@ -173,7 +171,7 @@ func TestPostProcessMethod(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(driver.New(false), admin.New("", "", &config.AdminUser{})), false)
+	s := schema.Init(crud.Init(false), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
 	_ = auth.SetConfig(project, []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
