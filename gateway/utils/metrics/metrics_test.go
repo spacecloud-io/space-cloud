@@ -5,12 +5,23 @@ import (
 	"testing"
 
 	api "github.com/spaceuptech/space-api-go"
+	"github.com/spaceuptech/space-api-go/db"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 func TestNew(t *testing.T) {
+	type fields struct {
+		isProd           bool
+		clusterID        string
+		nodeID           string
+		projects         sync.Map
+		isMetricDisabled bool
+		sink             *db.DB
+		adminMan         *admin.Manager
+		syncMan          *syncman.Manager
+	}
 	type args struct {
 		clusterID        string
 		nodeID           string
@@ -22,7 +33,7 @@ func TestNew(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *Module
+		want    *fields
 		wantErr bool
 	}{
 		{
@@ -33,8 +44,7 @@ func TestNew(t *testing.T) {
 				adminMan:  &admin.Manager{},
 				syncMan:   &syncman.Manager{},
 			},
-			want: &Module{
-				lock:             sync.RWMutex{},
+			want: &fields{
 				isProd:           false,
 				clusterID:        "clusterID",
 				nodeID:           "nodeID",
@@ -50,7 +60,7 @@ func TestNew(t *testing.T) {
 			args: args{
 				isMetricDisabled: true,
 			},
-			want:    new(Module),
+			want:    new(fields),
 			wantErr: false,
 		},
 	}
@@ -67,7 +77,7 @@ func TestNew(t *testing.T) {
 			testFuncIsEqual(t, got.nodeID, tt.want.nodeID)
 			testFuncIsEqual(t, got.adminMan, tt.want.adminMan)
 			testFuncIsEqual(t, got.syncMan, tt.want.syncMan)
-			testFuncIsEqual(t, got.projects, tt.want.projects)
+			testFuncIsEqual(t, &got.projects, &tt.want.projects)
 			// isEqual(t, got.sink, tt.want.sink) unable to compare sink field
 		})
 	}

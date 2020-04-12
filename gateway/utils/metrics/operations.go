@@ -90,8 +90,8 @@ func (m *Module) AddFileOperation(project, storeType string, op utils.OperationT
 	}
 }
 
-// NOTE: test not written for below function
 // LoadMetrics loads the metrics
+// NOTE: test not written for below function
 func (m *Module) LoadMetrics() []interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()

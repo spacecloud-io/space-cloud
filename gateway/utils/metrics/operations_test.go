@@ -15,23 +15,23 @@ func testFuncIsEqual(t *testing.T, x, y interface{}) {
 	}
 }
 
-func testFuncGenerateEventingSyncMapData(key string) sync.Map {
+func testFuncGenerateEventingSyncMapData(key string) *sync.Map {
 	v := sync.Map{}
 	value, _ := v.LoadOrStore(key, newMetrics())
 	metrics := value.(*metrics)
 	atomic.AddUint64(&metrics.eventing, uint64(1))
-	return v
+	return &v
 }
 
-func testFuncGenerateFunctionSyncMapData(key string) sync.Map {
+func testFuncGenerateFunctionSyncMapData(key string) *sync.Map {
 	v := sync.Map{}
 	value, _ := v.LoadOrStore(key, newMetrics())
 	metrics := value.(*metrics)
 	atomic.AddUint64(&metrics.function, uint64(1))
-	return v
+	return &v
 }
 
-func testFuncGenerateDatabaseSyncMapData(key string, create, read, update, delete int) sync.Map {
+func testFuncGenerateDatabaseSyncMapData(key string, create, read, update, delete int) *sync.Map {
 	v := sync.Map{}
 	value, _ := v.LoadOrStore(key, newMetrics())
 	metrics := value.(*metrics)
@@ -39,10 +39,10 @@ func testFuncGenerateDatabaseSyncMapData(key string, create, read, update, delet
 	atomic.AddUint64(&metrics.crud.read, uint64(read))
 	atomic.AddUint64(&metrics.crud.update, uint64(update))
 	atomic.AddUint64(&metrics.crud.delete, uint64(delete))
-	return v
+	return &v
 }
 
-func testFuncGenerateFileSyncMapData(key string) sync.Map {
+func testFuncGenerateFileSyncMapData(key string) *sync.Map {
 	v := sync.Map{}
 	value, _ := v.LoadOrStore(key, newMetrics())
 	metrics := value.(*metrics)
@@ -50,7 +50,7 @@ func testFuncGenerateFileSyncMapData(key string) sync.Map {
 	atomic.AddUint64(&metrics.fileStore.read, uint64(1))
 	atomic.AddUint64(&metrics.fileStore.list, uint64(1))
 	atomic.AddUint64(&metrics.fileStore.delete, uint64(1))
-	return v
+	return &v
 }
 
 func testFuncIsMetricOpEqual(t *testing.T, gotValue, wantValue interface{}, op utils.OperationType, module string) {
@@ -97,7 +97,7 @@ func TestModule_AddDBOperation(t *testing.T) {
 		name   string
 		args   args
 		fields *Module
-		want   sync.Map
+		want   *sync.Map
 	}{
 		{
 			name: "valid create case",
@@ -154,7 +154,7 @@ func TestModule_AddDBOperation(t *testing.T) {
 				dbAlias: "local",
 			},
 			fields: &Module{isMetricDisabled: true},
-			want:   sync.Map{},
+			want:   &sync.Map{},
 		},
 	}
 	for _, tt := range tests {
@@ -181,7 +181,7 @@ func TestModule_AddEventingType(t *testing.T) {
 		name   string
 		args   args
 		fields *Module
-		want   sync.Map
+		want   *sync.Map
 	}{
 		{
 			name: "valid case",
@@ -199,7 +199,7 @@ func TestModule_AddEventingType(t *testing.T) {
 				eventingType: "type",
 			},
 			fields: &Module{isMetricDisabled: true},
-			want:   sync.Map{},
+			want:   &sync.Map{},
 		},
 	}
 	for _, tt := range tests {
@@ -229,7 +229,7 @@ func TestModule_AddFileOperation(t *testing.T) {
 		name   string
 		args   args
 		fields *Module
-		want   sync.Map
+		want   *sync.Map
 	}{
 		{
 			name: "valid create case",
@@ -278,7 +278,7 @@ func TestModule_AddFileOperation(t *testing.T) {
 				storeType: "local",
 			},
 			fields: &Module{isMetricDisabled: true},
-			want:   sync.Map{},
+			want:   &sync.Map{},
 		},
 	}
 	for _, tt := range tests {
@@ -306,7 +306,7 @@ func TestModule_AddFunctionOperation(t *testing.T) {
 		name   string
 		args   args
 		fields *Module
-		want   sync.Map
+		want   *sync.Map
 	}{
 		{
 			name: "valid case",
@@ -324,7 +324,7 @@ func TestModule_AddFunctionOperation(t *testing.T) {
 				project: "projectID",
 			},
 			fields: &Module{isMetricDisabled: true},
-			want:   sync.Map{},
+			want:   &sync.Map{},
 		},
 	}
 	for _, tt := range tests {
