@@ -1,6 +1,8 @@
 package routing
 
-import "github.com/spaceuptech/space-cloud/gateway/config"
+import (
+	"github.com/spaceuptech/space-cloud/gateway/config"
+)
 
 // SetProjectRoutes adds a project's routes to the global list of routes
 func (r *Routing) SetProjectRoutes(project string, routes config.Routes) {
