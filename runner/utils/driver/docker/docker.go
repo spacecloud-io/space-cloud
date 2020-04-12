@@ -252,6 +252,7 @@ func (d *Docker) createContainer(ctx context.Context, index int, task model.Task
 
 	service.Labels["internalServiceId"] = service.ID
 	service.Labels["internalProjectId"] = service.ProjectID
+	service.Labels["internalPullPolicy"] = string(task.Docker.ImagePullPolicy)
 
 	hostConfig := &container.HostConfig{
 		// receiving memory in mega bytes converting into bytes
@@ -442,6 +443,11 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 		}
 		dockerSecrets := service.Labels["internalDockerSecrets"]
 
+		imagePullPolicy := service.Labels["internalPullPolicy"]
+		if imagePullPolicy == "" {
+			imagePullPolicy = string(model.PullIfNotExists)
+		}
+
 		delete(service.Labels, "internalSecrets")
 		delete(service.Labels, "internalDockerSecrets")
 		delete(service.Labels, "internalRuntime")
@@ -452,6 +458,7 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 		delete(service.Labels, "internalWhitelist")
 		delete(service.Labels, "internalAffinity")
 		delete(service.Labels, "internalUpstream")
+		delete(service.Labels, "internalPullPolicy")
 
 		// set environment variable of task
 		envs := map[string]string{}
@@ -497,9 +504,10 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 			Name:    taskID,
 			Secrets: secrets,
 			Docker: model.Docker{
-				Image:  containerInspect.Config.Image,
-				Cmd:    containerInspect.Config.Cmd,
-				Secret: dockerSecrets,
+				Image:           containerInspect.Config.Image,
+				Cmd:             containerInspect.Config.Cmd,
+				Secret:          dockerSecrets,
+				ImagePullPolicy: model.ImagePullPolicy(imagePullPolicy),
 			},
 			Resources: model.Resources{
 				Memory: containerInspect.HostConfig.Memory / (1024 * 1024),
