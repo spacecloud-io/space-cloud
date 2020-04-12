@@ -2,11 +2,12 @@ package utils
 
 import (
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/sirupsen/logrus"
 	"log"
 	"reflect"
 	"regexp"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/sirupsen/logrus"
 )
 
 func attemptConvertBoolToInt64(val interface{}) interface{} {
