@@ -11,7 +11,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 // AppendConfigToDisk creates a yml file or appends to existing
@@ -99,9 +98,7 @@ func CreateFileIfNotExist(path, content string) error {
 
 // CreateConfigFile create empty config file
 func CreateConfigFile(path string) error {
-	val := &config.Config{
-		Projects: []*config.Project{},
-	}
+	val := map[string]interface{}{"projects": []struct{}{}, "admin": struct{}{}}
 	b, err := yaml.Marshal(val)
 	if err != nil {
 		return err
