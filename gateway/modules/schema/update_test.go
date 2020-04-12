@@ -5,7 +5,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
@@ -587,7 +586,8 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		},
 	}
 	adminMan := admin.New("node", "abc", &config.AdminUser{})
-	c := crud.Init(driver.New(false), adminMan)
+	c := crud.Init(false)
+	c.SetAdminManager(adminMan)
 	if err := c.SetConfig("", TestCases); err != nil {
 		t.Errorf("error in schmea update test file unable to set config of crud (%s)", err.Error())
 	}

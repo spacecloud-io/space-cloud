@@ -299,7 +299,7 @@ func (m *Module) CreateDatabaseIfNotExist(ctx context.Context, project, dbAlias 
 	defer m.RUnlock()
 
 	// Skip if project scope is disabled
-	if m.h.RemoveProjectScope {
+	if m.removeProjectScope {
 		return nil
 	}
 

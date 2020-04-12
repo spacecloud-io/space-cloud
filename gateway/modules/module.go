@@ -31,7 +31,9 @@ type Module struct {
 }
 
 func newModule(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module, driver *driver.Handler) *Module {
-	c := crud.Init(driver, adminMan)
+	c := crud.Init(removeProjectScope)
+	c.SetAdminManager(adminMan)
+
 	s := schema.Init(c, removeProjectScope)
 	c.SetSchema(s)
 

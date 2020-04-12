@@ -134,6 +134,8 @@ func (m *Modules) Delete(projectID string) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	delete(m.blocks, projectID)
+
 	// Remove config from global modules
 	_ = m.letsencrypt.DeleteProjectDomains(projectID)
 	m.routing.DeleteProjectRoutes(projectID)

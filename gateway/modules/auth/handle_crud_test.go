@@ -8,7 +8,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud/driver"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
@@ -61,7 +60,7 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"create": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(driver.New(false), nil), false)
+	s := schema.Init(crud.Init(false), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
@@ -129,7 +128,7 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(driver.New(false), nil), false)
+	s := schema.Init(crud.Init(false), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
@@ -188,7 +187,7 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"read": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(driver.New(false), nil), false)
+	s := schema.Init(crud.Init(false), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
@@ -247,7 +246,7 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"delete": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(driver.New(false), nil), false)
+	s := schema.Init(crud.Init(false), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
@@ -306,7 +305,7 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"update": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(driver.New(false), nil), false)
+	s := schema.Init(crud.Init(false), false)
 	_ = s.SetConfig(rule, project)
 	auth := Init("1", &crud.Module{}, false)
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
