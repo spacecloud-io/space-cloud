@@ -133,25 +133,3 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 		})
 	}
 }
-
-func TestModule_updateSCMetrics(t *testing.T) {
-	type args struct {
-		clusterID string
-		projectID string
-		set       map[string]interface{}
-		min       map[string]interface{}
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		// TODO: Add test cases.
-	}
-	m, _ := New("", "", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m.updateSCMetrics(tt.args.clusterID, tt.args.projectID, tt.args.set, tt.args.min)
-		})
-	}
-}

@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/segmentio/ksuid"
@@ -8,29 +9,75 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
+const (
+	eventingModule = "eventing"
+	fileModule     = "file"
+	databaseModule = "db"
+	functionModule = "function" // aka remote service
+	notAvailable   = "na"
+)
+
 func newMetrics() *metrics {
 	return &metrics{}
 }
 
+func getModuleName(key string) string {
+	return strings.Split(key, ":")[0]
+}
+
+func generateEventingKey(project, eventingType string) string {
+	return fmt.Sprintf("%s:%s:%s", eventingModule, project, eventingType)
+}
+
+func parseEventingKey(key string) (string, string, string) {
+	v := strings.Split(key, ":")
+	return v[0], v[1], v[2]
+}
+
+func generateFunctionKey(project, serviceName, functionName string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", functionModule, project, serviceName, functionName)
+}
+
+func parseFunctionKey(key string) (string, string, string, string) {
+	v := strings.Split(key, ":")
+	return v[0], v[1], v[2], v[3]
+}
+
+func generateDatabaseKey(project, dbAlias, tableName string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", databaseModule, project, dbAlias, tableName)
+}
+
+func parseDatabaseKey(key string) (string, string, string, string) {
+	v := strings.Split(key, ":")
+	return v[0], v[1], v[2], v[3]
+}
+
+func generateFileKey(project, storeType string) string {
+	return fmt.Sprintf("%s:%s:%s", fileModule, project, storeType)
+}
+
+func parseFileKey(key string) (string, string, string) {
+	v := strings.Split(key, ":")
+	return v[0], v[1], v[2]
+}
+
 func (m *Module) createFileDocuments(key string, metrics *metricOperations, t string) []interface{} {
 	docs := make([]interface{}, 0)
-
-	arr := strings.Split(key, ":")
-	module := "file"
+	module, projectName, storeType := parseFileKey(key)
 	if metrics.create > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], "na", module, utils.Create, metrics.create, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notAvailable, module, utils.Create, metrics.create, t))
 	}
 
 	if metrics.read > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], "na", module, utils.Read, metrics.read, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notAvailable, module, utils.Read, metrics.read, t))
 	}
 
 	if metrics.delete > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], "na", module, utils.Delete, metrics.delete, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notAvailable, module, utils.Delete, metrics.delete, t))
 	}
 
 	if metrics.list > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], "na", module, utils.List, metrics.list, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notAvailable, module, utils.List, metrics.list, t))
 	}
 
 	return docs
@@ -38,41 +85,40 @@ func (m *Module) createFileDocuments(key string, metrics *metricOperations, t st
 
 func (m *Module) createCrudDocuments(key string, value *metricOperations, t string) []interface{} {
 	docs := make([]interface{}, 0)
-	arr := strings.Split(key, ":")
-	module := "db"
+	module, projectName, dbAlias, tableName := parseDatabaseKey(key)
 	if value.create > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Create, value.create, t))
+		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, utils.Create, value.create, t))
 	}
 
 	if value.read > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Read, value.read, t))
+		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, utils.Read, value.read, t))
 	}
 
 	if value.update > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Update, value.update, t))
+		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, utils.Update, value.update, t))
 	}
 
 	if value.delete > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], module, utils.Delete, value.delete, t))
+		docs = append(docs, m.createDocument(projectName, dbAlias, tableName, module, utils.Delete, value.delete, t))
 	}
 
 	return docs
 }
 
 func (m *Module) createEventDocument(key string, count uint64, t string) []interface{} {
-	arr := strings.Split(key, ":")
+	module, projectName, eventingType := parseEventingKey(key)
 	docs := make([]interface{}, 0)
 	if count > 0 {
-		docs = append(docs, m.createDocument(arr[0], "na", "na", "eventing", utils.OperationType(arr[1]), count, t))
+		docs = append(docs, m.createDocument(projectName, notAvailable, notAvailable, module, utils.OperationType(eventingType), count, t))
 	}
 	return docs
 }
 
 func (m *Module) createFunctionDocument(key string, count uint64, t string) []interface{} {
-	arr := strings.Split(key, ":")
+	module, projectName, serviceName, functionName := parseFunctionKey(key)
 	docs := make([]interface{}, 0)
 	if count > 0 {
-		docs = append(docs, m.createDocument(arr[0], arr[1], arr[2], "function", "calls", count, t))
+		docs = append(docs, m.createDocument(projectName, serviceName, functionName, module, "calls", count, t))
 	}
 	return docs
 }

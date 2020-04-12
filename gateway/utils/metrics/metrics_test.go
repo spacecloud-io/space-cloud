@@ -1,8 +1,10 @@
 package metrics
 
 import (
-	"reflect"
+	"sync"
 	"testing"
+
+	api "github.com/spaceuptech/space-api-go"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
@@ -26,6 +28,26 @@ func TestNew(t *testing.T) {
 		{
 			name: "valid config provided",
 			args: args{
+				clusterID: "clusterID",
+				nodeID:    "nodeID",
+				adminMan:  &admin.Manager{},
+				syncMan:   &syncman.Manager{},
+			},
+			want: &Module{
+				lock:             sync.RWMutex{},
+				isProd:           false,
+				clusterID:        "clusterID",
+				nodeID:           "nodeID",
+				isMetricDisabled: false,
+				adminMan:         &admin.Manager{},
+				syncMan:          &syncman.Manager{},
+				sink:             api.New("spacecloud", "localhost:4123", false).DB("db"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid config provided metrics disabled",
+			args: args{
 				isMetricDisabled: true,
 			},
 			want:    new(Module),
@@ -39,9 +61,14 @@ func TestNew(t *testing.T) {
 				t.Errorf("New() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() got = %v, want %v", got, tt.want)
-			}
+			testFuncIsEqual(t, got.isProd, tt.want.isProd)
+			testFuncIsEqual(t, got.isMetricDisabled, tt.want.isMetricDisabled)
+			testFuncIsEqual(t, got.clusterID, tt.want.clusterID)
+			testFuncIsEqual(t, got.nodeID, tt.want.nodeID)
+			testFuncIsEqual(t, got.adminMan, tt.want.adminMan)
+			testFuncIsEqual(t, got.syncMan, tt.want.syncMan)
+			testFuncIsEqual(t, got.projects, tt.want.projects)
+			// isEqual(t, got.sink, tt.want.sink) unable to compare sink field
 		})
 	}
 }

@@ -26,27 +26,27 @@ func TestModule_createCrudDocuments(t *testing.T) {
 		{
 			name: "valid test case",
 			args: args{
-				key:   "project:dbAlias:tableName",
+				key:   generateDatabaseKey("project", "dbAlias", "tableName"),
 				value: &metricOperations{create: 100, update: 100, read: 100, delete: 100},
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": "db", "type": utils.Create, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": "db", "type": utils.Read, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": "db", "type": utils.Update, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": "db", "type": utils.Delete, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Create, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Read, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Update, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Delete, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
 			name: "valid test case read & update are zero",
 			args: args{
-				key:   "project:dbAlias:tableName",
+				key:   generateDatabaseKey("project", "dbAlias", "tableName"),
 				value: &metricOperations{create: 100, delete: 100},
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": "db", "type": utils.Create, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": "db", "type": utils.Delete, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Create, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": databaseModule, "type": utils.Delete, "sub_type": "tableName", "ts": mock.Anything, "count": uint64(100), "driver": "dbAlias", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 	}
@@ -119,18 +119,18 @@ func TestModule_createEventDocument(t *testing.T) {
 		{
 			name: "valid test case",
 			args: args{
-				key:   "project:event-name",
+				key:   generateEventingKey("project", "event-name"),
 				value: 100,
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": "eventing", "type": utils.OperationType("event-name"), "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "na", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": eventingModule, "type": utils.OperationType("event-name"), "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "na", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
 			name: "valid test case read & list are zero",
 			args: args{
-				key:   "project:local",
+				key:   generateEventingKey("project", "event-name"),
 				value: 0,
 				t:     mock.Anything,
 			},
@@ -179,27 +179,27 @@ func TestModule_createFileDocuments(t *testing.T) {
 		{
 			name: "valid test case",
 			args: args{
-				key:   "project:local:tableName",
+				key:   generateFileKey("project", "local"),
 				value: &metricOperations{create: 100, list: 100, read: 100, delete: 100},
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": "file", "type": utils.Create, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": "file", "type": utils.Read, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": "file", "type": utils.Delete, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": "file", "type": utils.List, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Create, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Read, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Delete, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.List, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
 			name: "valid test case read & list are zero",
 			args: args{
-				key:   "project:local",
+				key:   generateFileKey("project", "local"),
 				value: &metricOperations{create: 100, delete: 100},
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": "file", "type": utils.Create, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": "file", "type": utils.Delete, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Create, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Delete, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 	}
@@ -244,18 +244,18 @@ func TestModule_createFunctionDocument(t *testing.T) {
 		{
 			name: "valid test case",
 			args: args{
-				key:   "project:service:endpoint",
+				key:   generateFunctionKey("project", "service", "function"),
 				value: 100,
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": "function", "type": utils.OperationType("calls"), "sub_type": "endpoint", "ts": mock.Anything, "count": uint64(100), "driver": "service", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": functionModule, "type": utils.OperationType("calls"), "sub_type": "function", "ts": mock.Anything, "count": uint64(100), "driver": "service", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
 			name: "valid test case read & list are zero",
 			args: args{
-				key:   "project:local",
+				key:   generateFunctionKey("project", "service", "function"),
 				value: 0,
 				t:     mock.Anything,
 			},
@@ -281,7 +281,7 @@ func TestModule_createFunctionDocument(t *testing.T) {
 						continue
 					}
 					if !reflect.DeepEqual(gotValue, wantValue) {
-						t.Errorf("createFunctionDocument() got value = %v %T want = %v %T", gotValue, gotValue, wantValue, wantValue)
+						t.Errorf("createFunctionDocument() key %v got value = %v %T want = %v %T", key, gotValue, gotValue, wantValue, wantValue)
 					}
 				}
 			}
