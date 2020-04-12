@@ -120,7 +120,7 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 					ID:        serviceID,
 					Ports:     []model.Port{{Name: "http", Protocol: "http", Port: port}},
 					Resources: model.Resources{CPU: 250, Memory: 512},
-					Docker:    model.Docker{Image: dockerImage, Secret: dockerSecret, Cmd: []string{}},
+					Docker:    model.Docker{ImagePullPolicy: model.PullIfNotExists, Image: dockerImage, Secret: dockerSecret, Cmd: []string{}},
 					Runtime:   model.Image,
 					Secrets:   secrets,
 					Env:       map[string]string{},
