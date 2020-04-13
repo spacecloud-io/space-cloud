@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
@@ -93,7 +94,7 @@ func generateDBConfig() (*model.SpecObject, error) {
 		return nil, fmt.Errorf("Invalid choice")
 	}
 	conn := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Connection ", Default: connDefault}, &conn); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter Database Connection String ", Default: connDefault}, &conn); err != nil {
 		return nil, err
 	}
 	dbAlias := ""
@@ -110,9 +111,10 @@ func generateDBConfig() (*model.SpecObject, error) {
 			"id":      dbAlias + "-config",
 		},
 		Spec: map[string]interface{}{
-			"conn":    conn,
-			"enabled": true,
-			"type":    dbType,
+			"conn":      conn,
+			"enabled":   true,
+			"isPrimary": false,
+			"type":      dbType,
 		},
 	}
 
