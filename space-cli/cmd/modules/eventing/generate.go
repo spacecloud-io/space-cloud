@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
@@ -103,9 +104,9 @@ func generateEventingTrigger() (*model.SpecObject, error) {
 		return nil, err
 	}
 	operationType := ""
-	var dbType string
+	var dbAlias string
 	col := ""
-	var options interface{}
+	options := map[string]interface{}{}
 	switch source {
 	case "Database":
 
@@ -113,14 +114,14 @@ func generateEventingTrigger() (*model.SpecObject, error) {
 			return nil, err
 		}
 
-		if err := survey.AskOne(&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &dbType); err != nil {
+		if err := survey.AskOne(&survey.Input{Message: "Enter Database Alias "}, &dbAlias); err != nil {
 			return nil, err
 		}
 
 		if err := survey.AskOne(&survey.Input{Message: "Enter collection/table name"}, &col); err != nil {
 			return nil, err
 		}
-		options = map[string]interface{}{"db": dbType, "col": col}
+		options = map[string]interface{}{"db": dbAlias, "col": col}
 	case "File Storage":
 		if err := survey.AskOne(&survey.Select{Message: "Select trigger operation", Options: []string{"FILE_CREATE", "FILE_DELETE"}}, &operationType); err != nil {
 			return nil, err
@@ -138,8 +139,8 @@ func generateEventingTrigger() (*model.SpecObject, error) {
 	if err := survey.AskOne(&survey.Input{Message: "Do you want advanced settings? (Y / n) ?", Default: "n"}, &wantAdvancedSettings); err != nil {
 		return nil, err
 	}
-	retries := "3"
-	timeout := "5000"
+	retries := 3
+	timeout := 5000
 
 	if strings.ToLower(wantAdvancedSettings) == "y" {
 

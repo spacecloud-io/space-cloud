@@ -7,6 +7,16 @@ import (
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
+// GenerateSubCommands is the list of commands the project module exposes
+func GenerateSubCommands() []*cobra.Command {
+
+	var generateService = &cobra.Command{
+		Use:  "project",
+		RunE: actionGenerateProject,
+	}
+	return []*cobra.Command{generateService}
+}
+
 // GetSubCommands dis the list of commands the project module exposes
 func GetSubCommands() []*cobra.Command {
 
@@ -35,5 +45,20 @@ func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	if err := utils.PrintYaml(obj); err != nil {
 		return nil
 	}
+	return nil
+}
+
+func actionGenerateProject(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		_ = utils.LogError("incorrect number of arguments", nil)
+		return nil
+	}
+	projectFilePath := args[0]
+	project, err := generateProject()
+	if err != nil {
+		return nil
+	}
+
+	_ = utils.AppendConfigToDisk(project, projectFilePath)
 	return nil
 }
