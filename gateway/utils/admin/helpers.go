@@ -52,7 +52,7 @@ func (m *Manager) fetchPublicKeyRoutine() {
 
 func (m *Manager) fetchPublicKeyWithoutLock() error {
 	// Fire the http request
-	res, err := http.Get(fmt.Sprintf("http://localhost:4100/v1/public-key"))
+	res, err := http.Get(fmt.Sprintf("https://api.spaceuptech.com/v1/public-key"))
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (m *Manager) fetchQuotas() error {
 	data, _ := json.Marshal(map[string]string{"clusterId": m.config.ClusterID, "clusterKey": m.config.ClusterKey})
 
 	// Fire the request
-	res, err := http.Post("http://localhost:4100/v1/quotas", "application/json", bytes.NewBuffer(data))
+	res, err := http.Post("https://api.spaceuptech.com/v1/quotas", "application/json", bytes.NewBuffer(data))
 	if err != nil {
 		return err
 	}
