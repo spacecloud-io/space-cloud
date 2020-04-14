@@ -138,7 +138,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	objs, err = services.GetServices(projectName, "services", map[string]string{})
+	objs, err = services.GetServices(projectName, "service", map[string]string{})
 	if err != nil {
 		return nil
 	}
@@ -166,7 +166,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("15", "-ingress-routes", objs); err != nil {
+	if err := createConfigFile("15", "ingress-routes", objs); err != nil {
 		return nil
 	}
 
