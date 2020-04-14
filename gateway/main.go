@@ -263,7 +263,7 @@ func initMissionContol(version string) (string, error) {
 			}
 		}
 		fmt.Println("Downloading...")
-		err = utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
+		err = utils.DownloadFileFromURL("https://storage.googleapis.com/space-cloud/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
 			return "", err
 		}
