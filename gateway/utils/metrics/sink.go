@@ -10,6 +10,7 @@ import (
 
 const metricsUpdaterInterval = 5 * time.Minute
 
+// NOTE: test not written for below function
 func (m *Module) routineFlushMetricsToSink() {
 	ticker := time.NewTicker(metricsUpdaterInterval)
 
@@ -29,6 +30,7 @@ func (m *Module) routineFlushMetricsToSink() {
 	}
 }
 
+// NOTE: test not written for below function
 func (m *Module) flushMetrics(docs []interface{}) {
 	if len(docs) == 0 {
 		return

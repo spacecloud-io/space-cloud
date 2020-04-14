@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"fmt"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -17,7 +15,7 @@ func (m *Module) AddEventingType(project, eventingType string) {
 	if m.isMetricDisabled {
 		return
 	}
-	value, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s", "eventing", project, eventingType), newMetrics())
+	value, _ := m.projects.LoadOrStore(generateEventingKey(project, eventingType), newMetrics())
 	metrics := value.(*metrics)
 	atomic.AddUint64(&metrics.eventing, uint64(1))
 }
@@ -32,7 +30,7 @@ func (m *Module) AddFunctionOperation(project, service, function string) {
 		return
 	}
 
-	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s:%s", "function", project, service, function), newMetrics())
+	metricsTemp, _ := m.projects.LoadOrStore(generateFunctionKey(project, service, function), newMetrics())
 	metrics := metricsTemp.(*metrics)
 	atomic.AddUint64(&metrics.function, uint64(1))
 }
@@ -46,7 +44,7 @@ func (m *Module) AddDBOperation(project, dbType, col string, count int64, op uti
 		return
 	}
 
-	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s:%s", "db", project, dbType, col), newMetrics())
+	metricsTemp, _ := m.projects.LoadOrStore(generateDatabaseKey(project, dbType, col), newMetrics())
 	metrics := metricsTemp.(*metrics)
 
 	switch op {
@@ -74,7 +72,7 @@ func (m *Module) AddFileOperation(project, storeType string, op utils.OperationT
 		return
 	}
 
-	metricsTemp, _ := m.projects.LoadOrStore(fmt.Sprintf("%s:%s:%s", "file", project, storeType), newMetrics())
+	metricsTemp, _ := m.projects.LoadOrStore(generateFileKey(project, storeType), newMetrics())
 	metrics := metricsTemp.(*metrics)
 
 	switch op {
@@ -93,6 +91,7 @@ func (m *Module) AddFileOperation(project, storeType string, op utils.OperationT
 }
 
 // LoadMetrics loads the metrics
+// NOTE: test not written for below function
 func (m *Module) LoadMetrics() []interface{} {
 	m.lock.Lock()
 	defer m.lock.Unlock()
@@ -106,17 +105,16 @@ func (m *Module) LoadMetrics() []interface{} {
 	m.projects.Range(func(key, value interface{}) bool {
 
 		// Load the project and metrics object
-		v := strings.Split(key.(string), ":")
 		metrics := value.(*metrics)
-		switch v[0] {
-		case "eventing":
-			metricDocs = append(metricDocs, m.createEventDocument(strings.Join(v[1:], ":"), metrics.eventing, t)...)
-		case "file":
-			metricDocs = append(metricDocs, m.createFileDocuments(strings.Join(v[1:], ":"), &metrics.fileStore, t)...)
-		case "db":
-			metricDocs = append(metricDocs, m.createCrudDocuments(strings.Join(v[1:], ":"), &metrics.crud, t)...)
-		case "function":
-			metricDocs = append(metricDocs, m.createFunctionDocument(strings.Join(v[1:], ":"), metrics.function, t)...)
+		switch getModuleName(key.(string)) {
+		case eventingModule:
+			metricDocs = append(metricDocs, m.createEventDocument(key.(string), metrics.eventing, t)...)
+		case fileModule:
+			metricDocs = append(metricDocs, m.createFileDocuments(key.(string), &metrics.fileStore, t)...)
+		case databaseModule:
+			metricDocs = append(metricDocs, m.createCrudDocuments(key.(string), &metrics.crud, t)...)
+		case remoteServiceModule:
+			metricDocs = append(metricDocs, m.createFunctionDocument(key.(string), metrics.function, t)...)
 		}
 		// Delete the project
 		m.projects.Delete(key)

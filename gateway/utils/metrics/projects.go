@@ -93,6 +93,7 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 	return clusterID, projectID, set, min
 }
 
+// NOTE: test not written for below function
 func (m *Module) updateSCMetrics(clusterID, projectID string, set, min map[string]interface{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
