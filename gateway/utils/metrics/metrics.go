@@ -43,7 +43,7 @@ func New(clusterID, nodeID string, isMetricDisabled bool, adminMan *admin.Manage
 	}
 
 	// Initialise the sink
-	conn := api.New("spacecloud", "localhost:4123", false).DB("db")
+	conn := api.New("spacecloud", "api.spaceuptech.com", true).DB("db")
 
 	// Create a new metrics module
 	m := &Module{nodeID: nodeID, clusterID: clusterID, sink: conn, isMetricDisabled: isMetricDisabled, adminMan: adminMan, syncMan: syncMan, isProd: isProd}
