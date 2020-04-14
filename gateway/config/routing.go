@@ -3,10 +3,35 @@ package config
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 )
 
 // Routes describes the configuration for the routing module
 type Routes []*Route
+
+// Len return length of routes
+func (a Routes) Len() int { return len(a) }
+
+// Swap swaps two element of the array
+func (a Routes) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+// Less compares two elements of the array
+func (a Routes) Less(i, j int) bool {
+	arrayI := strings.Split(a[i].Source.URL, "/")
+	arrayJ := strings.Split(a[j].Source.URL, "/")
+
+	lenI := len(arrayI)
+	lenJ := len(arrayJ)
+
+	if arrayI[lenI-1] == "" {
+		lenI--
+	}
+	if arrayJ[lenJ-1] == "" {
+		lenJ--
+	}
+
+	return lenI > lenJ
+}
 
 // Route describes the parameters of a single route
 type Route struct {
