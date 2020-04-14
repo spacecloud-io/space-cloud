@@ -13,8 +13,8 @@ const (
 	eventingModule = "eventing"
 	fileModule     = "file"
 	databaseModule = "db"
-	functionModule = "function" // aka remote service
-	notAvailable   = "na"
+	functionModule = "remote-service" // aka remote service
+	notAvailable   = "notApplicable"
 )
 
 func newMetrics() *metrics {
@@ -29,7 +29,7 @@ func generateEventingKey(project, eventingType string) string {
 	return fmt.Sprintf("%s:%s:%s", eventingModule, project, eventingType)
 }
 
-func parseEventingKey(key string) (string, string, string) {
+func parseEventingKey(key string) (module, project, eventingType string) {
 	v := strings.Split(key, ":")
 	return v[0], v[1], v[2]
 }
@@ -38,7 +38,7 @@ func generateFunctionKey(project, serviceName, functionName string) string {
 	return fmt.Sprintf("%s:%s:%s:%s", functionModule, project, serviceName, functionName)
 }
 
-func parseFunctionKey(key string) (string, string, string, string) {
+func parseFunctionKey(key string) (module, project, remoteServiceName, endpointName string) {
 	v := strings.Split(key, ":")
 	return v[0], v[1], v[2], v[3]
 }
@@ -47,7 +47,7 @@ func generateDatabaseKey(project, dbAlias, tableName string) string {
 	return fmt.Sprintf("%s:%s:%s:%s", databaseModule, project, dbAlias, tableName)
 }
 
-func parseDatabaseKey(key string) (string, string, string, string) {
+func parseDatabaseKey(key string) (module, project, dbAlias, tableName string) {
 	v := strings.Split(key, ":")
 	return v[0], v[1], v[2], v[3]
 }
@@ -56,7 +56,7 @@ func generateFileKey(project, storeType string) string {
 	return fmt.Sprintf("%s:%s:%s", fileModule, project, storeType)
 }
 
-func parseFileKey(key string) (string, string, string) {
+func parseFileKey(key string) (module, project, fileStoreType string) {
 	v := strings.Split(key, ":")
 	return v[0], v[1], v[2]
 }

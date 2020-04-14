@@ -124,7 +124,7 @@ func TestModule_createEventDocument(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": eventingModule, "type": utils.OperationType("event-name"), "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "na", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": eventingModule, "type": utils.OperationType("event-name"), "sub_type": notAvailable, "ts": mock.Anything, "count": uint64(100), "driver": notAvailable, "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
@@ -184,10 +184,10 @@ func TestModule_createFileDocuments(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Create, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Read, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Delete, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.List, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Create, "sub_type": notAvailable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Read, "sub_type": notAvailable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Delete, "sub_type": notAvailable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.List, "sub_type": notAvailable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 		{
@@ -198,8 +198,8 @@ func TestModule_createFileDocuments(t *testing.T) {
 				t:     mock.Anything,
 			},
 			want: []interface{}{
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Create, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
-				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Delete, "sub_type": "na", "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Create, "sub_type": notAvailable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
+				map[string]interface{}{"project_id": "project", "module": fileModule, "type": utils.Delete, "sub_type": notAvailable, "ts": mock.Anything, "count": uint64(100), "driver": "local", "node_id": "nodeID", "cluster_id": "clusterID"},
 			},
 		},
 	}
