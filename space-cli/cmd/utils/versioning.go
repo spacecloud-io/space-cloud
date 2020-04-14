@@ -16,7 +16,7 @@ type scVersionDoc struct {
 // GetLatestVersion retrieves the latest Space Cloud version based on the current version
 func GetLatestVersion(version string) (string, error) {
 	// Create a db object
-	db := api.New("spacecloud", "localhost:4122", false).DB("db")
+	db := api.New("spacecloud", "api.spaceuptech.com", true).DB("db")
 
 	// Create a context
 	ctx := context.Background()

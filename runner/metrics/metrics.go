@@ -42,7 +42,7 @@ func New(isMetricDisabled bool, driverType model.DriverType) *Module {
 		isMetricsDisabled: isMetricDisabled,
 		clusterID:         os.Getenv("CLUSTER_ID"),
 		nodeID:            ksuid.New().String(),
-		sink:              api.New("projectmetrics", "localhost:4122", false).DB("postgres"),
+		sink:              api.New("spacecloud", "api.spaceuptech.com", true).DB("db"),
 		driverType:        string(driverType),
 	}
 	go m.routineMetrics()
