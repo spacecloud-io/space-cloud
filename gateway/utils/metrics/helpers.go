@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	eventingModule = "eventing"
-	fileModule     = "file"
-	databaseModule = "db"
-	functionModule = "remote-service" // aka remote service
-	notAvailable   = "notApplicable"
+	eventingModule      = "eventing"
+	fileModule          = "file"
+	databaseModule      = "db"
+	remoteServiceModule = "remote-service" // aka remote service
+	notApplicable       = "na"
 )
 
 func newMetrics() *metrics {
@@ -35,7 +35,7 @@ func parseEventingKey(key string) (module, project, eventingType string) {
 }
 
 func generateFunctionKey(project, serviceName, functionName string) string {
-	return fmt.Sprintf("%s:%s:%s:%s", functionModule, project, serviceName, functionName)
+	return fmt.Sprintf("%s:%s:%s:%s", remoteServiceModule, project, serviceName, functionName)
 }
 
 func parseFunctionKey(key string) (module, project, remoteServiceName, endpointName string) {
@@ -65,19 +65,19 @@ func (m *Module) createFileDocuments(key string, metrics *metricOperations, t st
 	docs := make([]interface{}, 0)
 	module, projectName, storeType := parseFileKey(key)
 	if metrics.create > 0 {
-		docs = append(docs, m.createDocument(projectName, storeType, notAvailable, module, utils.Create, metrics.create, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, utils.Create, metrics.create, t))
 	}
 
 	if metrics.read > 0 {
-		docs = append(docs, m.createDocument(projectName, storeType, notAvailable, module, utils.Read, metrics.read, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, utils.Read, metrics.read, t))
 	}
 
 	if metrics.delete > 0 {
-		docs = append(docs, m.createDocument(projectName, storeType, notAvailable, module, utils.Delete, metrics.delete, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, utils.Delete, metrics.delete, t))
 	}
 
 	if metrics.list > 0 {
-		docs = append(docs, m.createDocument(projectName, storeType, notAvailable, module, utils.List, metrics.list, t))
+		docs = append(docs, m.createDocument(projectName, storeType, notApplicable, module, utils.List, metrics.list, t))
 	}
 
 	return docs
@@ -109,7 +109,7 @@ func (m *Module) createEventDocument(key string, count uint64, t string) []inter
 	module, projectName, eventingType := parseEventingKey(key)
 	docs := make([]interface{}, 0)
 	if count > 0 {
-		docs = append(docs, m.createDocument(projectName, notAvailable, notAvailable, module, utils.OperationType(eventingType), count, t))
+		docs = append(docs, m.createDocument(projectName, notApplicable, notApplicable, module, utils.OperationType(eventingType), count, t))
 	}
 	return docs
 }

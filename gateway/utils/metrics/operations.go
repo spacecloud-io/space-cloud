@@ -113,7 +113,7 @@ func (m *Module) LoadMetrics() []interface{} {
 			metricDocs = append(metricDocs, m.createFileDocuments(key.(string), &metrics.fileStore, t)...)
 		case databaseModule:
 			metricDocs = append(metricDocs, m.createCrudDocuments(key.(string), &metrics.crud, t)...)
-		case functionModule:
+		case remoteServiceModule:
 			metricDocs = append(metricDocs, m.createFunctionDocument(key.(string), metrics.function, t)...)
 		}
 		// Delete the project

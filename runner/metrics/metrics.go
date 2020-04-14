@@ -17,6 +17,8 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
+const notApplicable = "na"
+
 // Module holds config of metrics
 type Module struct {
 	lock              sync.RWMutex
@@ -123,7 +125,7 @@ func (m *Module) loadMetrics() []interface{} {
 	m.projects.Range(func(key, value interface{}) bool {
 		metrics := value.(*metrics)
 		if metrics.serviceCall > 0 {
-			docs = append(docs, m.createDocument(key.(string), m.driverType, "notApplicable", "service", "apply", metrics.serviceCall, time.Now().String()))
+			docs = append(docs, m.createDocument(key.(string), m.driverType, notApplicable, "service", "apply", metrics.serviceCall, time.Now().String()))
 		}
 		// Delete the key from the map
 		m.projects.Delete(key)

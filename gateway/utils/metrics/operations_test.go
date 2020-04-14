@@ -59,7 +59,7 @@ func testFuncIsMetricOpEqual(t *testing.T, gotValue, wantValue interface{}, op u
 	switch module {
 	case eventingModule:
 		testFuncIsEqual(t, gotMetrics.eventing, wantMetrics.eventing)
-	case functionModule:
+	case remoteServiceModule:
 		testFuncIsEqual(t, gotMetrics.function, wantMetrics.function)
 	case fileModule:
 		switch op {
