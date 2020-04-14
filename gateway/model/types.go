@@ -16,6 +16,7 @@ type SchemaCrudInterface interface {
 	ValidateCreateOperation(dbType, col string, req *CreateRequest) error
 	ValidateUpdateOperation(dbType, col, op string, updateDoc, find map[string]interface{}) error
 	CrudPostProcess(ctx context.Context, dbAlias, col string, result interface{}) error
+	AdjustWhereClause(dbAlias string, dbType utils.DBType, col string, find map[string]interface{}) error
 }
 
 // CrudAuthInterface is an interface consisting of functions of crud module used by auth module
@@ -108,7 +109,7 @@ type ModulesInterface interface {
 	// SetProjectConfig sets the config all modules
 	SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing)
 	// SetGlobalConfig sets the auth secret and AESKey
-	SetGlobalConfig(projectID string, secrets map[string]string, aesKey string) error
+	SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error
 	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
 	SetCrudConfig(projectID string, crudConfig config.Crud) error
 	// SetServicesConfig sets the config of auth and functions modules

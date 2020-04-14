@@ -65,7 +65,7 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 		return err
 	}
 	_, ok := projectConfig.Modules.Crud[dbAlias]
-	if !ok {
+	if !ok && enabled {
 		return fmt.Errorf("unknown db (%s) provided while setting eventing config", dbAlias)
 	}
 	projectConfig.Modules.Eventing.DBAlias = dbAlias
@@ -76,13 +76,15 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 		return err
 	}
 
-	if err := s.applySchemas(ctx, project, dbAlias, projectConfig, config.CrudStub{
-		Collections: map[string]*config.TableRule{
-			utils.TableEventingLogs:   {Schema: utils.SchemaEventLogs},
-			utils.TableInvocationLogs: {Schema: utils.SchemaInvocationLogs},
-		},
-	}); err != nil {
-		return err
+	if enabled {
+		if err := s.applySchemas(ctx, project, dbAlias, projectConfig, config.CrudStub{
+			Collections: map[string]*config.TableRule{
+				utils.TableEventingLogs:   {Schema: utils.SchemaEventLogs},
+				utils.TableInvocationLogs: {Schema: utils.SchemaInvocationLogs},
+			},
+		}); err != nil {
+			return err
+		}
 	}
 
 	return s.setProject(ctx, projectConfig)

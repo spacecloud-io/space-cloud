@@ -20,7 +20,7 @@ func (s *Manager) SetUserManagement(ctx context.Context, project, provider strin
 	}
 	projectConfig.Modules.Auth[provider] = value
 
-	s.modules.SetUsermanConfig(project, config.Auth{"provider": value})
+	s.modules.SetUsermanConfig(project, projectConfig.Modules.Auth)
 
 	return s.setProject(ctx, projectConfig)
 }
