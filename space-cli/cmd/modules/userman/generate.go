@@ -2,6 +2,7 @@ package userman
 
 import (
 	"github.com/AlecAivazis/survey/v2"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
@@ -11,7 +12,7 @@ func generateUserManagement() (*model.SpecObject, error) {
 		return nil, err
 	}
 	provider := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Collection Name"}, &provider); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter Provider Name"}, &provider); err != nil {
 		return nil, err
 	}
 
@@ -24,7 +25,6 @@ func generateUserManagement() (*model.SpecObject, error) {
 		},
 		Spec: map[string]interface{}{
 			"enabled": true,
-			"authId":  provider,
 			"secret":  "",
 		},
 	}

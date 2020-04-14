@@ -1,9 +1,10 @@
 package ingress
 
 import (
-	"github.com/spaceuptech/space-cli/cmd/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
 // GenerateSubCommands is the list of commands the ingress module exposes
