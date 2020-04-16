@@ -54,7 +54,7 @@ var essentialFlags = []cli.Flag{
 		Name:   "cluster",
 		Usage:  "The cluster id to start space-cloud with",
 		EnvVar: "CLUSTER_ID",
-		Value:  "default-cluster",
+		Value:  ksuid.New().String(),
 	},
 	cli.StringFlag{
 		Name:   "advertise-addr",
