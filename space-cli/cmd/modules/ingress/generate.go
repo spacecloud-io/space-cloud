@@ -4,7 +4,10 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/segmentio/ksuid"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
 func generateIngressRouting() (*model.SpecObject, error) {
@@ -14,22 +17,16 @@ func generateIngressRouting() (*model.SpecObject, error) {
 		return nil, err
 	}
 
-	routeID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter route ID"}, &routeID); err != nil {
-		return nil, err
-	}
-
 	hosts := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter hosts by comma seperated value: "}, &hosts); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter hosts by comma separated value: "}, &hosts); err != nil {
 		return nil, err
 	}
 	host := strings.Split(hosts, ",")
 
-	methods := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter methods by comma seperated value: "}, &methods); err != nil {
+	methods := []string{}
+	if err := survey.AskOne(&survey.MultiSelect{Message: "Select Methods: ", Options: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE"}}, &methods); err != nil {
 		return nil, err
 	}
-	method := strings.Split(methods, ",")
 
 	url := ""
 	if err := survey.AskOne(&survey.Input{Message: "Enter url", Default: "/"}, &url); err != nil {
@@ -46,8 +43,7 @@ func generateIngressRouting() (*model.SpecObject, error) {
 		return nil, err
 	}
 	var target []interface{}
-	var t []string
-
+	totalWeight := 0
 	want := "y"
 	for {
 
@@ -66,14 +62,13 @@ func generateIngressRouting() (*model.SpecObject, error) {
 			return nil, err
 		}
 
-		weight := ""
+		weight := 0
 		if err := survey.AskOne(&survey.Input{Message: "Enter weight"}, &weight); err != nil {
 			return nil, err
 		}
-
-		t = []string{"host:" + host1, "port:" + port, "scheme:" + scheme, "weight:" + weight}
+		t := map[string]interface{}{"host": host1, "port": port, "schema": scheme, "type": "", "weight": weight, "version": ""}
 		target = append(target, t)
-
+		totalWeight += weight
 		if err := survey.AskOne(&survey.Input{Message: "Add another host?(Y/n)", Default: "n"}, &want); err != nil {
 			return nil, err
 		}
@@ -82,18 +77,23 @@ func generateIngressRouting() (*model.SpecObject, error) {
 		}
 
 	}
+	if totalWeight != 100 {
+		_ = utils.LogError("sum of weights of all targets should be 100", nil)
+		return nil, nil
+	}
 
 	v := &model.SpecObject{
 		API:  "/v1/config/projects/{project}/routing/ingress/{id}",
 		Type: "ingress-routes",
 		Meta: map[string]string{
 			"project": project,
-			"id":      routeID,
+			"id":      ksuid.New().String(),
 		},
 		Spec: map[string]interface{}{
 			"source": map[string]interface{}{
 				"hosts":      host,
-				"method":     method,
+				"method":     methods,
+				"port":       0,
 				"type":       routingType,
 				"url":        url,
 				"rewriteURL": rewriteURL,
