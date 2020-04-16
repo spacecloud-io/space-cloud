@@ -21,7 +21,6 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 		name  string
 		args  args
 		want  string
-		want1 string
 		want2 map[string]interface{}
 		want3 map[string]interface{}
 	}{
@@ -70,8 +69,7 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 					Enabled: true,
 				},
 			},
-			want:  "clusterID",
-			want1: "project",
+			want: "clusterID--project",
 			want2: map[string]interface{}{
 				"nodes":        1,
 				"os":           runtime.GOOS,
@@ -106,12 +104,9 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, got1, got2, got3 := m.generateMetricsRequest(tt.args.project, tt.args.ssl)
+			got, got2, got3 := m.generateMetricsRequest(tt.args.project, tt.args.ssl)
 			if got != tt.want {
 				t.Errorf("generateMetricsRequest() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("generateMetricsRequest() got1 = %v, want %v", got1, tt.want1)
 			}
 			for key, value := range tt.want2 {
 				if key == "last_updated" {

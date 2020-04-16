@@ -14,7 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL) (string, string, map[string]interface{}, map[string]interface{}) {
+func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL) (string, map[string]interface{}, map[string]interface{}) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -35,7 +35,8 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 
 	modules := project.Modules
 	set["project"] = project.ID
-	set["id"] = fmt.Sprintf("%s--%s", clusterID, projectID)
+	id := fmt.Sprintf("%s--%s", clusterID, projectID)
+	set["id"] = id
 	// crud info
 	set["crud"] = map[string]interface{}{"tables": map[string]interface{}{}}
 	set["databases"] = map[string][]string{"databases": {}}
@@ -91,14 +92,14 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 	// eventing info
 	set["total_events"] = len(modules.Eventing.Rules)
 
-	return clusterID, projectID, set, min
+	return id, set, min
 }
 
 // NOTE: test not written for below function
-func (m *Module) updateSCMetrics(clusterID, projectID string, set, min map[string]interface{}) {
+func (m *Module) updateSCMetrics(id string, set, min map[string]interface{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	result, err := m.sink.Upsert("config_metrics").Where(types.And(types.Cond("cluster_id", "==", clusterID), types.Cond("project", "==", projectID))).Set(set).Min(min).Apply(ctx)
+	result, err := m.sink.Upsert("config_metrics").Where(types.Cond("id", "==", id)).Set(set).Min(min).Apply(ctx)
 	if err != nil {
 		logrus.Errorf("error querying database got error")
 	}
