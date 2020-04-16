@@ -114,6 +114,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 
 			// Mark project as existing
 			doesProjectExists = true
+			project = p
 		}
 	}
 
