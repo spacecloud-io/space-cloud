@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -34,7 +35,7 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 
 	modules := project.Modules
 	set["project"] = project.ID
-
+	set["id"] = fmt.Sprintf("%s--%s", clusterID, projectID)
 	// crud info
 	set["crud"] = map[string]interface{}{"tables": map[string]interface{}{}}
 	set["databases"] = map[string][]string{"databases": {}}
@@ -97,7 +98,7 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 func (m *Module) updateSCMetrics(clusterID, projectID string, set, min map[string]interface{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	result, err := m.sink.Upsert("config_metrics").Where(types.And(types.Cond("id", "==", clusterID), types.Cond("project", "==", projectID))).Set(set).Min(min).Apply(ctx)
+	result, err := m.sink.Upsert("config_metrics").Where(types.And(types.Cond("cluster_id", "==", clusterID), types.Cond("project", "==", projectID))).Set(set).Min(min).Apply(ctx)
 	if err != nil {
 		logrus.Errorf("error querying database got error")
 	}
