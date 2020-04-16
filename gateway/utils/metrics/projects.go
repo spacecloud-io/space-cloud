@@ -29,14 +29,13 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 		"version":      utils.BuildVersion,
 		"distribution": "ce",
 		"last_updated": time.Now().UnixNano() / int64(time.Millisecond),
+		"project":      projectID,
+		"cluster_id":   clusterID,
 	}
 
 	set["ssl_enabled"] = ssl != nil && ssl.Enabled
 
 	modules := project.Modules
-	set["project"] = project.ID
-	id := fmt.Sprintf("%s--%s", clusterID, projectID)
-	set["id"] = id
 	// crud info
 	set["crud"] = map[string]interface{}{"tables": map[string]interface{}{}}
 	set["databases"] = map[string][]string{"databases": {}}
@@ -92,7 +91,7 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 	// eventing info
 	set["total_events"] = len(modules.Eventing.Rules)
 
-	return id, set, min
+	return fmt.Sprintf("%s--%s", clusterID, projectID), set, min
 }
 
 // NOTE: test not written for below function
