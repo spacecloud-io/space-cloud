@@ -159,9 +159,9 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 
 		// Read the file from file storage
 		status, file, err := fileStore.DownloadFile(ctx, projectID, token, path)
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
