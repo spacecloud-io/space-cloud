@@ -29,7 +29,8 @@ func TestManager_createToken(t *testing.T) {
 		{
 			name: "valid info provided",
 			fields: fields{
-				user: &config.AdminUser{Secret: "some-secret"},
+				user:   &config.AdminUser{Secret: "some-secret"},
+				config: &config.Admin{},
 			},
 			args:    args{tokenClaims: map[string]interface{}{"id": "admin", "role": "admin"}},
 			want:    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwicm9sZSI6ImFkbWluIn0.N4aa9nBNQHsvnWPUfzmKjMG3YD474ChIyOM5FEUuVm4",
@@ -80,7 +81,7 @@ func TestManager_parseToken(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	m := New("clusterID", &config.AdminUser{Secret: "some-secret"})
+	m := New("", "clusterID", &config.AdminUser{Secret: "some-secret"})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := m.parseToken(tt.args.token)
