@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"runtime"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL) (string, string, map[string]interface{}, map[string]interface{}) {
+func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL) (string, map[string]interface{}, map[string]interface{}) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -28,13 +29,13 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 		"version":      utils.BuildVersion,
 		"distribution": "ce",
 		"last_updated": time.Now().UnixNano() / int64(time.Millisecond),
+		"project":      projectID,
+		"cluster_id":   clusterID,
 	}
 
 	set["ssl_enabled"] = ssl != nil && ssl.Enabled
 
 	modules := project.Modules
-	set["project"] = project.ID
-
 	// crud info
 	set["crud"] = map[string]interface{}{"tables": map[string]interface{}{}}
 	set["databases"] = map[string][]string{"databases": {}}
@@ -90,14 +91,14 @@ func (m *Module) generateMetricsRequest(project *config.Project, ssl *config.SSL
 	// eventing info
 	set["total_events"] = len(modules.Eventing.Rules)
 
-	return clusterID, projectID, set, min
+	return fmt.Sprintf("%s--%s", clusterID, projectID), set, min
 }
 
 // NOTE: test not written for below function
-func (m *Module) updateSCMetrics(clusterID, projectID string, set, min map[string]interface{}) {
+func (m *Module) updateSCMetrics(id string, set, min map[string]interface{}) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	result, err := m.sink.Upsert("config_metrics").Where(types.And(types.Cond("id", "==", clusterID), types.Cond("project", "==", projectID))).Set(set).Min(min).Apply(ctx)
+	result, err := m.sink.Upsert("config_metrics").Where(types.Cond("id", "==", id)).Set(set).Min(min).Apply(ctx)
 	if err != nil {
 		logrus.Errorf("error querying database got error")
 	}
