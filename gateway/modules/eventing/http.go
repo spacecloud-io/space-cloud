@@ -87,7 +87,7 @@ func (s *Module) MakeInvocationHTTPRequest(ctx context.Context, client model.HTT
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		if err := s.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), err.Error()); err != nil {
+		if err := s.logInvocation(ctx, eventID, data, resp.StatusCode, string(responseBody), errors.New("invalid status code received").Error()); err != nil {
 			logrus.Errorf("eventing module couldn't log the invocation - %s", err.Error())
 			return err
 		}
