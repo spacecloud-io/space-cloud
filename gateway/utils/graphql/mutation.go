@@ -11,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]model.AllRequest, []interface{}, error) {
+func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]*model.AllRequest, []interface{}, error) {
 	if len(field.Directives) > 0 {
 		// Insert query function
 		if strings.HasPrefix(field.Name.Value, "insert_") {
@@ -32,7 +32,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 			}
 			result.Type = string(utils.Delete)
 			result.Col = col
-			return []model.AllRequest{*result}, nil, nil
+			return []*model.AllRequest{result}, nil, nil
 		}
 
 		// Update query function
@@ -45,7 +45,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 			}
 			result.Type = string(utils.Update)
 			result.Col = col
-			return []model.AllRequest{*result}, nil, nil
+			return []*model.AllRequest{result}, nil, nil
 
 		}
 	}
@@ -84,7 +84,7 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 	fieldDBMapping := map[string]string{}
 	fieldReturningDocsMapping := map[string][]interface{}{}
 
-	reqs := map[string][]model.AllRequest{}
+	reqs := map[string][]*model.AllRequest{}
 	queryResults := map[string]map[string]interface{}{}
 	results := map[string]interface{}{}
 
@@ -100,7 +100,7 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 
 		r, ok := reqs[dbAlias]
 		if !ok {
-			r = []model.AllRequest{}
+			r = []*model.AllRequest{}
 		}
 
 		// Generate a *model.AllRequest object for this given field
