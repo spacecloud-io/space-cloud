@@ -185,7 +185,7 @@ func (m *Module) getCrudRule(dbAlias, col string, query utils.OperationType) (*c
 			}
 		}
 	}
-	return nil, fmt.Errorf("no rule found for collection %s in database %s", col, dbAlias)
+	return nil, fmt.Errorf("no rule found for collection (%s) in database (%s)", col, dbAlias)
 }
 
 func (m *Module) getPrepareQueryRule(dbAlias, id string) (*config.Rule, error) {

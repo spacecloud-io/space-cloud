@@ -3,11 +3,9 @@ package auth
 import (
 	"encoding/base64"
 	"errors"
-	"strconv"
 	"sync"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -27,7 +25,7 @@ type Module struct {
 	sync.RWMutex
 	rules           config.Crud
 	nodeID          string
-	secrets         map[string]string
+	secrets         []*config.Secret
 	crud            model.CrudAuthInterface
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
@@ -44,7 +42,7 @@ func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) 
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secrets map[string]string, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secrets []*config.Secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -77,7 +75,7 @@ func (m *Module) SetConfig(project string, secrets map[string]string, encodedAES
 }
 
 // SetSecrets sets the secrets to be used for JWT authentication
-func (m *Module) SetSecrets(secrets map[string]string) {
+func (m *Module) SetSecrets(secrets []*config.Secret) {
 	m.Lock()
 	defer m.Unlock()
 	m.secrets = secrets
@@ -109,6 +107,13 @@ func (m *Module) SetFileStoreConfig(projectID string, fileStore *config.FileStor
 	defer m.Unlock()
 	m.project = projectID
 	m.fileRules = fileStore.Rules
+}
+
+// SetEventingConfig sets the eventing config
+func (m *Module) SetEventingConfig(securiyRules map[string]*config.Rule) {
+	m.Lock()
+	defer m.Unlock()
+	m.eventingRules = securiyRules
 }
 
 // SetCrudConfig sets the crud module config
@@ -147,7 +152,13 @@ func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(m.secrets[m.getGreatestSecretKey()]))
+
+	secret, err := m.getPrimarySecret()
+	if err != nil {
+		return "", err
+	}
+
+	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", err
 	}
@@ -182,7 +193,7 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 				return nil, ErrInvalidSigningMethod
 			}
 
-			return []byte(secret), nil
+			return []byte(secret.Secret), nil
 		})
 		if err != nil {
 			continue
@@ -209,18 +220,12 @@ func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 	m.makeHTTPRequest = function
 }
 
-func (m *Module) getGreatestSecretKey() string {
-	greatesKey := 0
-	for key := range m.secrets {
-		intKey, err := strconv.Atoi(key)
-		if err != nil {
-			logrus.Errorf("Couldn't convert secrets key %s to an integer - %s", key, err.Error())
-			continue
-		}
-		if intKey > greatesKey {
-			greatesKey = intKey
+func (m *Module) getPrimarySecret() (string, error) {
+	for _, s := range m.secrets {
+		if s.IsPrimary {
+			return s.Secret, nil
 		}
 	}
-	stringKey := strconv.Itoa(greatesKey)
-	return stringKey
+
+	return "", errors.New("no primary secret provided")
 }

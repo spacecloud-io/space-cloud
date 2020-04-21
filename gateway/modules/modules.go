@@ -39,10 +39,10 @@ func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, admin
 	a := auth.Init(nodeID, c, removeProjectScope)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
-	fn := functions.Init(a, syncMan)
-	f := filestore.Init(a)
+	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
+	f := filestore.Init(a, metrics.AddFileOperation)
 
-	e := eventing.New(a, c, s, adminMan, syncMan, f)
+	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
 	f.SetEventingModule(e)
 
 	c.SetHooks(&model.CrudHooks{
@@ -53,7 +53,7 @@ func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, admin
 		Stage:  e.HookStage,
 	}, metrics.AddDBOperation)
 
-	rt, err := realtime.Init(nodeID, e, a, c, metrics, syncMan)
+	rt, err := realtime.Init(nodeID, e, a, c, s, metrics, syncMan)
 	if err != nil {
 		return nil, err
 	}

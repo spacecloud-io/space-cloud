@@ -61,5 +61,5 @@ type AllRequest struct {
 
 // BatchRequest is the http body for a batch request
 type BatchRequest struct {
-	Requests []AllRequest `json:"reqs"`
+	Requests []*AllRequest `json:"reqs"`
 }

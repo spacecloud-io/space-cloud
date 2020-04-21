@@ -66,6 +66,12 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 	if err := crud.IsClientSafe(); err != nil {
 		return nil, err
 	}
+
+	// Adjust where clause
+	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+		return nil, err
+	}
+
 	if req.IsBatch {
 		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req}
 		dataLoader, ok := m.getLoader(fmt.Sprintf("%s-%s-%s", project, dbAlias, col))
@@ -74,6 +80,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, project, col string, req *mo
 		}
 		return dataLoader.Load(ctx, key)()
 	}
+
 	n, result, err := crud.Read(ctx, project, col, req)
 
 	// Process the response
@@ -108,6 +115,11 @@ func (m *Module) Update(ctx context.Context, dbAlias, project, col string, req *
 		return err
 	}
 
+	// Adjust where clause
+	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+		return err
+	}
+
 	// Invoke the update intent hook
 	intent, err := m.hooks.Update(ctx, dbAlias, col, req)
 	if err != nil {
@@ -138,6 +150,11 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	// Adjust where clause
+	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return err
 	}
 
@@ -220,9 +237,12 @@ func (m *Module) Batch(ctx context.Context, dbAlias, project string, req *model.
 	for _, r := range req.Requests {
 		switch r.Type {
 		case string(utils.Create):
-			if err := m.schema.ValidateCreateOperation(dbAlias, r.Col, &model.CreateRequest{Document: r.Document, Operation: r.Operation}); err != nil {
+			v := &model.CreateRequest{Document: r.Document, Operation: r.Operation}
+			if err := m.schema.ValidateCreateOperation(dbAlias, r.Col, v); err != nil {
 				return err
 			}
+			r.Document = v.Document
+			r.Operation = v.Operation
 		case string(utils.Update):
 			if err := m.schema.ValidateUpdateOperation(dbAlias, r.Col, r.Operation, r.Update, r.Find); err != nil {
 				return err
@@ -251,7 +271,7 @@ func (m *Module) Batch(ctx context.Context, dbAlias, project string, req *model.
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
 		for i, r := range req.Requests {
-			m.metricHook(m.project, dbAlias, r.Col, counts[i], utils.OperationType(r.Operation))
+			m.metricHook(m.project, dbAlias, r.Col, counts[i], utils.OperationType(r.Type))
 		}
 	}
 

@@ -63,6 +63,11 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 		return err
 	}
 
+	// Adjust where clause
+	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
+		return err
+	}
+
 	// Perform the update operation
 	n, err := crud.Update(ctx, project, col, req)
 
@@ -86,6 +91,11 @@ func (m *Module) InternalDelete(ctx context.Context, dbAlias, project, col strin
 	}
 
 	if err := crud.IsClientSafe(); err != nil {
+		return err
+	}
+
+	// Adjust where clause
+	if err := m.schema.AdjustWhereClause(dbAlias, crud.GetDBType(), col, req.Find); err != nil {
 		return err
 	}
 

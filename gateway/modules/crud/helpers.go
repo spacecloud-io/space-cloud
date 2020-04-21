@@ -23,6 +23,11 @@ func (m *Module) createBatch(project, dbAlias, col string, doc interface{}) (int
 		return 0, fmt.Errorf("unknown documents type %T", docType)
 	}
 
+	// Simply return if 0 docs are to be inserted
+	if docsInserted == 0 {
+		return 0, nil
+	}
+
 	ch, ok := m.batchMapTableToChan[project][dbAlias][col] // get channel for specified table
 	if !ok {
 		logrus.Errorf("error converting insert request to batch request unable to find channel for database %s & collection %s", dbAlias, col)

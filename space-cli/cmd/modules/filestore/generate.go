@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/AlecAivazis/survey/v2"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
@@ -13,11 +14,11 @@ func generateFilestoreRule() (*model.SpecObject, error) {
 		return nil, err
 	}
 	ID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Collection Name"}, &ID); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter Rule Name"}, &ID); err != nil {
 		return nil, err
 	}
 	prefix := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter DB Alias"}, &prefix); err != nil {
+	if err := survey.AskOne(&survey.Input{Message: "Enter Prefix", Default: "/"}, &prefix); err != nil {
 		return nil, err
 	}
 
@@ -54,18 +55,18 @@ func generateFilestoreConfig() (*model.SpecObject, error) {
 	}
 
 	storeType := ""
-	if err := survey.AskOne(&survey.Select{Message: "Enter Storetype", Options: []string{"Local", "AmazonS3", "GCPStorage"}}, &storeType); err != nil {
+	if err := survey.AskOne(&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &storeType); err != nil {
 		return nil, err
 	}
 	bucket := ""
 	endpoint := ""
 	conn := ""
 	switch storeType {
-	case "Local":
+	case "local":
 		if err := survey.AskOne(&survey.Input{Message: "Enter connection"}, &conn); err != nil {
 			return nil, err
 		}
-	case "AmazonS3":
+	case "amazon-s3":
 		if err := survey.AskOne(&survey.Input{Message: "Enter connection"}, &conn); err != nil {
 			return nil, err
 		}
@@ -75,7 +76,7 @@ func generateFilestoreConfig() (*model.SpecObject, error) {
 		if err := survey.AskOne(&survey.Input{Message: "Enter bucket"}, &bucket); err != nil {
 			return nil, err
 		}
-	case "GCPStorage":
+	case "gcp-storage":
 		if err := survey.AskOne(&survey.Input{Message: "Enter bucket"}, &bucket); err != nil {
 			return nil, err
 		}
@@ -84,7 +85,7 @@ func generateFilestoreConfig() (*model.SpecObject, error) {
 	}
 
 	v := &model.SpecObject{
-		API:  "/v1/external/projects/{project}/file-storage/config/{id}",
+		API:  "/v1/config/projects/{project}/file-storage/config/{id}",
 		Type: "filestore-config",
 		Meta: map[string]string{
 			"project": projectID,

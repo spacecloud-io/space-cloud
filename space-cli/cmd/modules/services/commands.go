@@ -45,7 +45,7 @@ func GetSubCommands() []*cobra.Command {
 func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.Use
+	commandName := "service-route"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -65,7 +65,7 @@ func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.Use
+	commandName := "secret"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -85,7 +85,7 @@ func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 func actionGetServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project := viper.GetString("project")
-	commandName := cmd.Use
+	commandName := "service"
 
 	params := map[string]string{}
 	switch len(args) {

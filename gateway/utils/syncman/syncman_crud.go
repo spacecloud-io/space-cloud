@@ -399,7 +399,7 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 		if !ok {
 			return nil, fmt.Errorf("specified dbAlias (%s) not present in config", dbAlias)
 		}
-		return []interface{}{dbConfig}, nil
+		return []interface{}{config.Crud{dbAlias: {Enabled: dbConfig.Enabled, Conn: dbConfig.Conn, Type: dbConfig.Type}}}, nil
 	}
 
 	services := []interface{}{}

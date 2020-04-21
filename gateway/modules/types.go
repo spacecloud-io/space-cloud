@@ -12,7 +12,7 @@ import (
 type RealtimeInterface interface {
 	RemoveClient(clientID string)
 	Subscribe(clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error)
-	Unsubscribe(clientID string, data *model.RealtimeRequest)
+	Unsubscribe(clientID string, data *model.RealtimeRequest) error
 
 	HandleRealtimeEvent(ctxRoot context.Context, eventDoc *model.CloudEventPayload) error
 	ProcessRealtimeRequests(eventDoc *model.CloudEventPayload) error

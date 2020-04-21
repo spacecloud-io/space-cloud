@@ -19,7 +19,8 @@ func GetLetsEncryptDomain(project, commandName string, params map[string]string)
 
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
-		meta := map[string]string{"project": project, "id": commandName}
+		meta := map[string]string{"project": project, "id": "letsencrypt"}
+		delete(item.(map[string]interface{}), "id")
 		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/letsencrypt/config/{id}", commandName, meta, item)
 		if err != nil {
 			return nil, err

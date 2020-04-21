@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ func GetRootCommand() *cobra.Command {
 
 	var rootCmd = &cobra.Command{
 		Use:     "space-cli",
-		Version: "0.16.0",
+		Version: "0.17.0",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			utils.SetLogLevel(viper.GetString("log-level"))
 		},
@@ -53,6 +53,6 @@ func GetRootCommand() *cobra.Command {
 	return rootCmd
 }
 
-func main() {
-	_ = GetRootCommand()
-}
+// func main() {
+// 	_ = GetRootCommand()
+// }

@@ -35,7 +35,7 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 			return
 		}
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
@@ -80,7 +80,7 @@ func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
@@ -112,7 +112,7 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
@@ -160,7 +160,7 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
@@ -194,7 +194,7 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		// get project id and dbType from url
@@ -235,7 +235,7 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
@@ -398,7 +398,7 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		col := vars["col"]
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		schema := modules.Schema()
@@ -435,7 +435,7 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 		// get project id and dbType from url
 		vars := mux.Vars(r)
@@ -481,7 +481,7 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
@@ -516,7 +516,7 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 		// get project id and dbAlias
 		vars := mux.Vars(r)
@@ -566,7 +566,7 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		projectID := vars["project"]
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		schema := modules.Schema()
@@ -602,7 +602,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
@@ -656,7 +656,7 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v); err != nil {

@@ -64,7 +64,11 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	if err != nil {
 		return err
 	}
-	projectConfig.Modules.Eventing.DBType = dbAlias
+	_, ok := projectConfig.Modules.Crud[dbAlias]
+	if !ok && enabled {
+		return fmt.Errorf("unknown db (%s) provided while setting eventing config", dbAlias)
+	}
+	projectConfig.Modules.Eventing.DBAlias = dbAlias
 	projectConfig.Modules.Eventing.Enabled = enabled
 
 	if err := s.modules.SetEventingConfig(project, &projectConfig.Modules.Eventing); err != nil {
@@ -72,13 +76,15 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 		return err
 	}
 
-	if err := s.applySchemas(ctx, project, dbAlias, projectConfig, config.CrudStub{
-		Collections: map[string]*config.TableRule{
-			utils.TableEventingLogs:   {Schema: utils.SchemaEventLogs},
-			utils.TableInvocationLogs: {Schema: utils.SchemaInvocationLogs},
-		},
-	}); err != nil {
-		return err
+	if enabled {
+		if err := s.applySchemas(ctx, project, dbAlias, projectConfig, config.CrudStub{
+			Collections: map[string]*config.TableRule{
+				utils.TableEventingLogs:   {Schema: utils.SchemaEventLogs},
+				utils.TableInvocationLogs: {Schema: utils.SchemaInvocationLogs},
+			},
+		}); err != nil {
+			return err
+		}
 	}
 
 	return s.setProject(ctx, projectConfig)
@@ -98,7 +104,7 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 		projectConfig.Modules.Eventing.Schemas[evType] = config.SchemaObject{Schema: schema, ID: evType}
 	} else {
 		projectConfig.Modules.Eventing.Schemas = map[string]config.SchemaObject{
-			evType: config.SchemaObject{Schema: schema, ID: evType},
+			evType: {Schema: schema, ID: evType},
 		}
 	}
 
