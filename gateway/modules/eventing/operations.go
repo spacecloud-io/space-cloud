@@ -2,8 +2,10 @@ package eventing
 
 import (
 	"context"
+	"strings"
+	"time"
 
-	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -23,37 +25,73 @@ func (m *Module) IsEnabled() bool {
 }
 
 // QueueEvent queues a new event
-func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) error {
+func (m *Module) QueueEvent(ctx context.Context, project, token string, req *model.QueueEventRequest) (interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	err := m.validate(ctx, project, token, req)
-	if err != nil {
-		return err
+	if err := m.validate(ctx, project, token, req); err != nil {
+		logrus.Errorf("error queueing event in eventing unable to validate - %s", err.Error())
+		return nil, err
 	}
 
-	return m.batchRequests(ctx, []*model.QueueEventRequest{req})
+	batchID := m.generateBatchID()
+
+	responseChan := make(chan interface{}, 1)
+	defer close(responseChan) // close channel
+
+	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
+	defer m.eventChanMap.Delete(batchID)
+
+	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
+		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
+		return nil, err
+	}
+
+	// if true then wait for event response
+	if req.IsSynchronous {
+		for {
+			select {
+			case <-ctx.Done():
+				// clear channel
+				return nil, ctx.Err()
+			case result := <-responseChan:
+				m.metricHook(m.project, req.Type)
+				return result, nil
+			}
+		}
+	}
+
+	m.metricHook(m.project, req.Type)
+	return nil, nil
 }
 
-// AddInternalRules adds triggers which are used for space cloud internally
-func (m *Module) AddInternalRules(eventingRules []config.EventingRule) {
+// SendEventResponse sends response to client via channel
+func (m *Module) SendEventResponse(batchID string, payload interface{}) {
+	// get channel from map
+	value, ok := m.eventChanMap.Load(batchID)
+	if !ok {
+		logrus.Warnf("Event source (%s) not accepting any responses", batchID)
+		return
+	}
+	result := value.(eventResponse)
+
+	// send response to client
+	result.response <- payload
+}
+
+// SetRealtimeTriggers adds triggers which are used for space cloud internally
+func (m *Module) SetRealtimeTriggers(eventingRules []config.EventingRule) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
+	for key := range m.config.InternalRules {
+		if strings.HasPrefix(key, "realtime") {
+			delete(m.config.InternalRules, key)
+		}
+	}
+
 	for _, incomingRule := range eventingRules {
-		isPresent := false
-		for _, storedRule := range m.config.InternalRules {
-
-			// Add the rule for the only if it doesn't already exist
-			if isRulesMatching(&storedRule, &incomingRule) {
-				isPresent = true
-				break
-			}
-		}
-
-		if !isPresent {
-			key := ksuid.New().String()
-			m.config.InternalRules[key] = incomingRule
-		}
+		key := strings.Join([]string{"realtime", incomingRule.Options["db"], incomingRule.Options["col"], incomingRule.Type}, "-")
+		m.config.InternalRules[key] = incomingRule
 	}
 }

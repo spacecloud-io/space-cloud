@@ -16,11 +16,13 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
+// ConsulStore is an object for storing consul information
 type ConsulStore struct {
 	consulClient                     *api.Client
 	nodeID, clusterID, advertiseAddr string
 }
 
+// NewConsulStore creates new consul store
 func NewConsulStore(nodeID, clusterID, advertiseAddr string) (*ConsulStore, error) {
 	client, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
@@ -30,6 +32,7 @@ func NewConsulStore(nodeID, clusterID, advertiseAddr string) (*ConsulStore, erro
 	return &ConsulStore{consulClient: client, nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr}, nil
 }
 
+// Register registers space cloud to the consul store
 func (s *ConsulStore) Register() {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(context.Background())
@@ -64,6 +67,46 @@ func (s *ConsulStore) Register() {
 	}()
 }
 
+// WatchProjects maintains consistency between all instances of sc
+func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
+	watchParams := map[string]interface{}{
+		"type":   "keyprefix",
+		"prefix": "sc/admin-config/" + s.clusterID,
+	}
+	p, err := watch.Parse(watchParams)
+	if err != nil {
+		return err
+	}
+
+	p.HybridHandler = func(val watch.BlockingParamVal, data interface{}) {
+		kvPairs := data.(api.KVPairs)
+		clusters := []*config.Admin{
+			{
+				ClusterID:  "",
+				ClusterKey: "",
+				Version:    0,
+			},
+		}
+
+		for _, kv := range kvPairs {
+			if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
+				log.Println("Sync manager: Could not parse project received -", err)
+				continue
+			}
+		}
+		cb(clusters)
+	}
+
+	go func() {
+		if err := p.Run(""); err != nil {
+			log.Println("Sync Manager: could not start watcher -", err)
+			os.Exit(-1)
+		}
+	}()
+	return nil
+}
+
+// WatchProjects maintains consistency between all instances of sc
 func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 	watchParams := map[string]interface{}{
 		"type":   "keyprefix",
@@ -102,6 +145,7 @@ func (s *ConsulStore) WatchProjects(cb func(projects []*config.Project)) error {
 	return nil
 }
 
+// WatchServices maintains consistency between all instances of sc
 func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 	watchParams := map[string]interface{}{
 		"type":   "keyprefix",
@@ -145,6 +189,7 @@ func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
+// SetProject sets the project of the consul store
 func (s *ConsulStore) SetProject(ctx context.Context, project *config.Project) error {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)
@@ -159,6 +204,21 @@ func (s *ConsulStore) SetProject(ctx context.Context, project *config.Project) e
 	return err
 }
 
+func (s *ConsulStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	data, _ := json.Marshal(cluster)
+
+	_, err := s.consulClient.KV().Put(&api.KVPair{
+		Key:   fmt.Sprintf("sc/admin-config/%s", s.clusterID),
+		Value: data,
+	}, opts)
+
+	return err
+}
+
+// DeleteProject deletes the project from the consul store
 func (s *ConsulStore) DeleteProject(ctx context.Context, projectID string) error {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)

@@ -33,6 +33,9 @@ space-cli/space-cli
 metric-proxy/vendor
 runner/vendor
 gateway/vendor
+space-cli/vendor
+
+space-cli/cmd/cmd
 
 raft-store
 publish.sh
@@ -55,3 +58,6 @@ yarn.lock
 
 #boltdatabase
 gateway/testbolt.db
+
+
+npm-debug.log

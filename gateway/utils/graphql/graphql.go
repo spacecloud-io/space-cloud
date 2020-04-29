@@ -44,7 +44,7 @@ func (graph *Module) GetProjectID() string {
 }
 
 // ExecGraphQLQuery executes the provided graphql query
-func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb callback) {
+func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLRequest, token string, cb model.GraphQLCallback) {
 
 	source := source.NewSource(&source.Source{
 		Body: []byte(req.Query),
@@ -57,13 +57,12 @@ func (graph *Module) ExecGraphQLQuery(ctx context.Context, req *model.GraphQLReq
 		return
 	}
 
-	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": ""}, newLoaderMap(), nil, createCallback(cb))
+	graph.execGraphQLDocument(ctx, doc, token, utils.M{"vars": req.Variables, "path": ""}, nil, createCallback(cb))
 }
 
-type callback func(op interface{}, err error)
 type dbCallback func(dbAlias, col string, op interface{}, err error)
 
-func createCallback(cb callback) callback {
+func createCallback(cb model.GraphQLCallback) model.GraphQLCallback {
 	var lock sync.Mutex
 	var isCalled bool
 
@@ -100,13 +99,13 @@ func createDBCallback(cb dbCallback) dbCallback {
 	}
 }
 
-func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, loader *loaderMap, schema schema.SchemaFields, cb callback) {
+func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, token string, store utils.M, schema model.Fields, cb model.GraphQLCallback) {
 	switch node.GetKind() {
 
 	case kinds.Document:
 		doc := node.(*ast.Document)
 		if len(doc.Definitions) > 0 {
-			graph.execGraphQLDocument(ctx, doc.Definitions[0], token, store, loader, nil, createCallback(cb))
+			graph.execGraphQLDocument(ctx, doc.Definitions[0], token, store, nil, createCallback(cb))
 			return
 		}
 		cb(nil, errors.New("No definitions provided"))
@@ -126,7 +125,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 				field := v.(*ast.Field)
 
-				graph.execGraphQLDocument(ctx, field, token, store, loader, nil, createCallback(func(result interface{}, err error) {
+				graph.execGraphQLDocument(ctx, field, token, store, nil, createCallback(func(result interface{}, err error) {
 					defer wg.Done()
 					if err != nil {
 						cb(nil, err)
@@ -160,7 +159,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			directive := field.Directives[0].Name.Value
 			kind := graph.getQueryKind(directive)
 			if kind == "read" {
-				graph.execReadRequest(ctx, field, token, store, loader, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
+				graph.execReadRequest(ctx, field, token, store, createDBCallback(func(dbAlias, col string, result interface{}, err error) {
 					if err != nil {
 						cb(nil, err)
 						return
@@ -169,7 +168,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 					// Load the schema
 					s, _ := graph.schema.GetSchema(dbAlias, col)
 
-					graph.processQueryResult(ctx, field, token, store, result, loader, s, cb)
+					graph.processQueryResult(ctx, field, token, store, result, s, cb)
 				}))
 				return
 			}
@@ -181,7 +180,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 						return
 					}
 
-					graph.processQueryResult(ctx, field, token, store, result, loader, nil, cb)
+					graph.processQueryResult(ctx, field, token, store, result, nil, cb)
 				}))
 				return
 			}
@@ -201,7 +200,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 					return
 				}
 				req := &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{linkedInfo.To: val}}
-				graph.processLinkedResult(ctx, field, fieldStruct, token, req, store, loader, cb)
+				graph.processLinkedResult(ctx, field, *fieldStruct, token, req, store, cb)
 				return
 			}
 		}
@@ -217,7 +216,7 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			return
 		}
 
-		graph.processQueryResult(ctx, field, token, store, currentValue, loader, schema, cb)
+		graph.processQueryResult(ctx, field, token, store, currentValue, schema, cb)
 		return
 
 	default:

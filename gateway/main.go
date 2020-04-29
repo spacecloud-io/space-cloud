@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/segmentio/ksuid"
 	"github.com/sirupsen/logrus"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
 	"github.com/spaceuptech/space-cloud/gateway/utils/server"
 )
 
@@ -22,11 +22,6 @@ const (
 )
 
 var essentialFlags = []cli.Flag{
-	cli.StringFlag{
-		Name:   "config-domain",
-		EnvVar: "CONFIG_DOMAIN",
-		Usage:  "Set mission control and config domain names",
-	},
 	cli.StringFlag{
 		Name:   "log-level",
 		EnvVar: "LOG_LEVEL",
@@ -51,11 +46,6 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "DEV",
 	},
 	cli.BoolFlag{
-		Name:   "disable-metrics",
-		Usage:  "Disable anonymous metric collection",
-		EnvVar: "DISABLE_METRICS",
-	},
-	cli.BoolFlag{
 		Name:   "profiler",
 		Usage:  "Enable profiler endpoints for profiling",
 		EnvVar: "PROFILER",
@@ -64,12 +54,13 @@ var essentialFlags = []cli.Flag{
 		Name:   "cluster",
 		Usage:  "The cluster id to start space-cloud with",
 		EnvVar: "CLUSTER_ID",
-		Value:  "default-cluster",
+		Value:  ksuid.New().String(),
 	},
 	cli.StringFlag{
 		Name:   "advertise-addr",
 		Usage:  "The address which will be broadcast to other space cloud instances",
 		EnvVar: "ADVERTISE_ADDR",
+		Value:  "localhost:4122",
 	},
 	cli.StringFlag{
 		Name:   "store-type",
@@ -82,6 +73,12 @@ var essentialFlags = []cli.Flag{
 		EnvVar: "PORT",
 		Value:  4122,
 	},
+	cli.StringFlag{
+		Name:   "restrict-hosts",
+		EnvVar: "RESTRICT_HOSTS",
+		Usage:  "Comma separated values of the hosts to restrict mission-control to",
+		Value:  "*",
+	},
 	cli.BoolFlag{
 		Name:   "remove-project-scope",
 		Usage:  "Removes the project level scope in the database and file storage modules",
@@ -91,11 +88,6 @@ var essentialFlags = []cli.Flag{
 		Name:   "runner-addr",
 		Usage:  "The address used to reach the runner",
 		EnvVar: "RUNNER_ADDR",
-	},
-	cli.StringFlag{
-		Name:   "artifact-addr",
-		Usage:  "The address used to reach the artifact server",
-		EnvVar: "ARTIFACT_ADDR",
 	},
 
 	// Flags for ssl
@@ -139,29 +131,9 @@ var essentialFlags = []cli.Flag{
 
 	// Flags for the metrics module
 	cli.BoolFlag{
-		Name:   "enable-metrics",
-		Usage:  "Enable the metrics module",
-		EnvVar: "ENABLE_METRICS",
-	},
-	cli.BoolFlag{
-		Name:   "disable-bandwidth",
-		Usage:  "disable the bandwidth measurement",
-		EnvVar: "DISABLE_BANDWIDTH",
-	},
-	cli.StringFlag{
-		Name:   "metrics-sink",
-		Usage:  "The sink to output metrics data to",
-		EnvVar: "METRICS_SINK",
-	},
-	cli.StringFlag{
-		Name:   "metrics-conn",
-		Usage:  "The connection string of the sink",
-		EnvVar: "METRICS_CONN",
-	},
-	cli.StringFlag{
-		Name:   "metrics-scope",
-		Usage:  "The database / topic to push the metrics to",
-		EnvVar: "METRICS_SCOPE",
+		Name:   "disable-metrics",
+		Usage:  "Disable anonymous metric collection",
+		EnvVar: "DISABLE_METRICS",
 	},
 }
 
@@ -196,8 +168,6 @@ func actionRun(c *cli.Context) error {
 	nodeID := c.String("id")
 	configPath := c.String("config")
 	isDev := c.Bool("dev")
-	disableMetrics := c.Bool("disable-metrics")
-	disableBandwidth := c.Bool("disable-bandwidth")
 	logLevel := c.String("log-level")
 	setLogLevel(logLevel)
 
@@ -206,7 +176,6 @@ func actionRun(c *cli.Context) error {
 
 	removeProjectScope := c.Bool("remove-project-scope")
 	runnerAddr := c.String("runner-addr")
-	artifactAddr := c.String("artifact-addr")
 
 	// Load flags related to ssl
 	sslEnable := c.Bool("ssl-enable")
@@ -221,25 +190,14 @@ func actionRun(c *cli.Context) error {
 	// Load flags related to clustering
 	clusterID := c.String("cluster")
 	storeType := c.String("store-type")
-	advertiseAddr := c.String("advice-addr")
+	advertiseAddr := c.String("advertise-addr")
 
 	// Load the flags for the metrics module
-	enableMetrics := c.Bool("enable-metrics")
-	metricsSink := c.String("metrics-sink")
-	metricsConn := c.String("metrics-conn")
-	metricsScope := c.String("metrics-scope")
-
-	configDomain := c.String("config-domain")
+	disableMetrics := c.Bool("disable-metrics")
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
 		nodeID = "auto-" + ksuid.New().String()
-	}
-
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr, removeProjectScope,
-		&metrics.Config{IsEnabled: enableMetrics, SinkType: metricsSink, SinkConn: metricsConn, Scope: metricsScope, DisableBandwidth: disableBandwidth})
-	if err != nil {
-		return err
 	}
 
 	// Load the configFile from path if provided
@@ -248,19 +206,24 @@ func actionRun(c *cli.Context) error {
 		conf = config.GenerateEmptyConfig()
 	}
 
+	// Override the admin config if provided
+	if adminUser == "" {
+		adminUser = "admin"
+	}
+	if adminPass == "" {
+		adminPass = "123"
+	}
+	if adminSecret == "" {
+		adminSecret = "some-secret"
+	}
+	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, removeProjectScope, disableMetrics, adminUserInfo)
+	if err != nil {
+		return err
+	}
+
 	// Save the config file path for future use
 	s.SetConfigFilePath(configPath)
-
-	// Override the admin config if provided
-	if adminUser != "" {
-		conf.Admin.Users[0].User = adminUser
-	}
-	if adminPass != "" {
-		conf.Admin.Users[0].Pass = adminPass
-	}
-	if adminSecret != "" {
-		conf.Admin.Secret = adminSecret
-	}
 
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
@@ -274,9 +237,11 @@ func actionRun(c *cli.Context) error {
 	}
 
 	// Configure all modules
-	s.SetConfig(conf, !isDev)
+	if err := s.SetConfig(conf, !isDev); err != nil {
+		return err
+	}
 
-	return s.Start(false, disableMetrics, staticPath, configDomain, port)
+	return s.Start(false, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
 }
 
 func actionInit(*cli.Context) error {
@@ -300,7 +265,7 @@ func initMissionContol(version string) (string, error) {
 			}
 		}
 		fmt.Println("Downloading...")
-		err = utils.DownloadFileFromURL("https://spaceuptech.com/downloads/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
+		err = utils.DownloadFileFromURL("https://storage.googleapis.com/space-cloud/mission-control/mission-control-v"+version+".zip", uiPath+".zip")
 		if err != nil {
 			return "", err
 		}

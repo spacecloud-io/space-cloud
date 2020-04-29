@@ -7,8 +7,9 @@ import (
 
 // Config is the object required to configure the runner
 type Config struct {
-	Port      string
-	ProxyPort string
+	Port             string
+	ProxyPort        string
+	IsMetricDisabled bool
 
 	// Configuration for the driver
 	Driver *driver.Config

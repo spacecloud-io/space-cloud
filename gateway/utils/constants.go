@@ -5,7 +5,7 @@ import (
 )
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.16.0"
+const BuildVersion = "0.17.0"
 
 const (
 	// One operation returns a single document from the database
@@ -40,8 +40,8 @@ const (
 	// Postgres is the type used for PostgresQL
 	Postgres DBType = "postgres"
 
-	// SqlServer is the type used for MsSQL
-	SqlServer DBType = "sqlserver"
+	// SQLServer is the type used for MsSQL
+	SQLServer DBType = "sqlserver"
 )
 
 // Broker is the type of broker used by Space Cloud
@@ -94,6 +94,9 @@ const (
 
 	// Read is the type used for query operation
 	Read OperationType = "read"
+
+	// List is the type used for file store list operation
+	List OperationType = "list"
 
 	// Update is the type used ofr update operations
 	Update OperationType = "update"
@@ -159,26 +162,26 @@ const (
 const InternalUserID string = "internal-sc-user"
 
 const (
-	// GQL_CONNECTION_KEEP_ALIVE send every 20 second to client over websocket
-	GQL_CONNECTION_KEEP_ALIVE string = "ka" // Server -> Client
-	// GQL_CONNECTION_INIT is used by graphql over websocket protocol
-	GQL_CONNECTION_INIT string = "connection_init" // Client -> Server
-	// GQL_CONNECTION_ACK is used by graphql over websocket protocol
-	GQL_CONNECTION_ACK string = "connection_ack" // Server -> Client
-	// GQL_CONNECTION_ERROR is used by graphql over websocket protocol
-	GQL_CONNECTION_ERROR string = "connection_error" // Server -> Client
-	// GQL_CONNECTION_TERMINATE is used by graphql over websocket protocol
-	GQL_CONNECTION_TERMINATE string = "connection_terminate" // Client -> Server
-	// GQL_START is used by graphql over websocket protocol
-	GQL_START string = "start" // Client -> Server
-	// GQL_DATA is used by graphql over websocket protocol
-	GQL_DATA string = "data" // Server -> Client
-	// GQL_ERROR is used by graphql over websocket protocol
-	GQL_ERROR string = "error" // Server -> Client
-	// GQL_COMPLETE is used by graphql over websocket protocol
-	GQL_COMPLETE string = "complete" // Server -> Client
-	// GQL_STOP is used by graphql over websocket protocol
-	GQL_STOP string = "stop" // Client -> Server
+	// GqlConnectionKeepAlive send every 20 second to client over websocket
+	GqlConnectionKeepAlive string = "ka" // Server -> Client
+	// GqlConnectionInit is used by graphql over websocket protocol
+	GqlConnectionInit string = "connection_init" // Client -> Server
+	// GqlConnectionAck is used by graphql over websocket protocol
+	GqlConnectionAck string = "connection_ack" // Server -> Client
+	// GqlConnectionError is used by graphql over websocket protocol
+	GqlConnectionError string = "connection_error" // Server -> Client
+	// GqlConnectionTerminate is used by graphql over websocket protocol
+	GqlConnectionTerminate string = "connection_terminate" // Client -> Server
+	// GqlStart is used by graphql over websocket protocol
+	GqlStart string = "start" // Client -> Server
+	// GqlData is used by graphql over websocket protocol
+	GqlData string = "data" // Server -> Client
+	// GqlError is used by graphql over websocket protocol
+	GqlError string = "error" // Server -> Client
+	// GqlComplete is used by graphql over websocket protocol
+	GqlComplete string = "complete" // Server -> Client
+	// GqlStop is used by graphql over websocket protocol
+	GqlStop string = "stop" // Client -> Server
 )
 
 // FieldType is the type for storing sql inspection information
@@ -196,6 +199,7 @@ type ForeignKeysType struct {
 	TableName      string `db:"TABLE_NAME"`
 	ColumnName     string `db:"COLUMN_NAME"`
 	ConstraintName string `db:"CONSTRAINT_NAME"`
+	DeleteRule     string `db:"DELETE_RULE"`
 	RefTableName   string `db:"REFERENCED_TABLE_NAME"`
 	RefColumnName  string `db:"REFERENCED_COLUMN_NAME"`
 }
@@ -252,6 +256,7 @@ const (
 	EventStatusCancelled string = "cancel"
 )
 
+// RequestKind specifies the kind of the request
 type RequestKind string
 
 const (
@@ -265,4 +270,5 @@ const (
 // SpaceCloudServiceName is the service name space cloud will register itself with in service discovery mechanisms
 const SpaceCloudServiceName string = "space-cloud"
 
-type MakeHttpRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
+// MakeHTTPRequest makes a http request
+type MakeHTTPRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error

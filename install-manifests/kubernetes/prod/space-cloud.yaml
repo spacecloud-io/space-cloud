@@ -163,7 +163,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner
+          image: spaceuptech/runner:0.17.0
           imagePullPolicy: Always # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
@@ -177,6 +177,10 @@ spec:
           ports:
             - containerPort: 4050
             - containerPort: 4055
+          resources:
+            requests:
+              memory: "1024Mi"
+              cpu: "500m"
 ---
 #############################################################################################
 ########################## Configure the istio side of the gateway  #########################
@@ -277,7 +281,7 @@ metadata:
   labels:
     app: gateway
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: gateway
@@ -291,9 +295,13 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway
+          image: spaceuptech/gateway:0.17.0
           imagePullPolicy: Always # IfNotPresent | Always
           env:
+            - name: "NODE_ID"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: "RUNNER_ADDR"
               value: "runner.space-cloud.svc.cluster.local:4050"
             - name: "ADMIN_USER"
@@ -317,3 +325,7 @@ spec:
           ports:
             - containerPort: 4122
             - containerPort: 4126
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"

@@ -3,66 +3,82 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleGraphQLRequest creates the graphql operation endpoint
-func HandleGraphQLRequest(p *projects.Projects) http.HandlerFunc {
+// HandleGraphQLRequest executes graphql queries
+func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		projectConfig, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			logrus.Errorf("Error handling graphql query execution unable to get project config of %s - %s", projectID, err.Error())
+			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		if projectConfig.ContextTimeGraphQL == 0 {
+			projectConfig.ContextTimeGraphQL = 10
+		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTimeGraphQL)*time.Second)
 		defer cancel()
 
-		vars := mux.Vars(r)
-		project := vars["project"]
+		graphql, err := modules.GraphQL(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Load the request from the body
+		req := model.GraphQLRequest{}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Get the path parameters
 		token := getRequestMetaData(r).token
 
-		// Load the request from the body
-		req := model.GraphQLRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		w.Header().Set("Content-Type", "application/json")
-
-		state, err := p.LoadProject(project)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		ch := make(chan struct{}, 1)
 
-		state.Graph.ExecGraphQLQuery(ctx, &req, token, func(op interface{}, err error) {
+		graphql.ExecGraphQLQuery(ctx, &req, token, func(op interface{}, err error) {
 			defer func() { ch <- struct{}{} }()
-
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
-				json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 				return
 			}
-
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
-			return
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
+			// return
 		})
 
 		select {
 		case <-ch:
 			return
-		case <-time.After(10 * time.Second):
+		case <-time.After(time.Duration(projectConfig.ContextTimeGraphQL) * time.Second):
+			log.Println("GraphQL Handler: Request timed out")
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
-			json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
 	}
+
 }

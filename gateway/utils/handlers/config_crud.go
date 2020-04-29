@@ -7,48 +7,52 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleGetCollections is an endpoint handler which return all the collection(table) names for specified data base
-func HandleGetCollections(adminMan *admin.Manager, projects *projects.Projects) http.HandlerFunc {
+// HandleGetAllTableNames is an endpoint handler which return all the collection(table) names for specified data base
+func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
+		crud, err := modules.DB(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		collections, err := state.Crud.GetCollections(ctx, projectID, dbAlias)
+		collections, err := crud.GetCollections(ctx, projectID, dbAlias)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -57,52 +61,53 @@ func HandleGetCollections(adminMan *admin.Manager, projects *projects.Projects) 
 			cols[i] = value.TableName
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"collections": cols})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: cols})
 	}
 }
 
-// HandleGetConnectionState gives the status of connection state of client
-func HandleGetConnectionState(adminMan *admin.Manager, projects *projects.Projects) http.HandlerFunc {
+// HandleGetDatabaseConnectionState gives the status of connection state of client
+func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
-		defer r.Body.Close()
-
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
+		defer utils.CloseTheCloser(r.Body)
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		connState := state.Crud.GetConnectionState(ctx, dbAlias)
+		crud, err := modules.DB(projectID)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		connState := crud.GetConnectionState(ctx, dbAlias)
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(map[string]bool{"status": connState})
+		_ = json.NewEncoder(w).Encode(model.Response{Result: connState})
 	}
 }
 
-// HandleDeleteCollection is an endpoint handler which deletes a table in specified database & removes it from config
-func HandleDeleteCollection(adminMan *admin.Manager, projects *projects.Projects, syncman *syncman.Manager) http.HandlerFunc {
+// HandleDeleteTable is an endpoint handler which deletes a table in specified database & removes it from config
+func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
@@ -111,48 +116,53 @@ func HandleDeleteCollection(adminMan *admin.Manager, projects *projects.Projects
 
 		defer utils.CloseTheCloser(r.Body)
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		if err := state.Crud.DeleteTable(ctx, projectID, dbAlias, col); err != nil {
+		crud, err := modules.DB(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		if err := crud.DeleteTable(ctx, projectID, dbAlias, col); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
 }
 
-// HandleDatabaseConnection is an endpoint handler which updates database config & connects to database
-func HandleDatabaseConnection(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+// HandleSetDatabaseConfig is an endpoint handler which updates database config & connects to database
+func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
@@ -162,43 +172,88 @@ func HandleDatabaseConnection(adminMan *admin.Manager, syncman *syncman.Manager)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
 		if err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
-// HandleRemoveDatabaseConfig is an endpoint handler which removes database config
-func HandleRemoveDatabaseConfig(adminMan *admin.Manager, projects *projects.Projects, syncman *syncman.Manager) http.HandlerFunc {
+// HandleGetDatabaseConfig returns handler to get Database Collection
+func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			logrus.Println("error1", err.Error())
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		// get project id and dbType from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			logrus.Println("error2", err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: dbConfig})
+	}
+}
+
+// HandleRemoveDatabaseConfig is an endpoint handler which removes database config
+func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		defer utils.CloseTheCloser(r.Body)
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
@@ -206,31 +261,35 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, projects *projects.Proj
 		projectID := vars["project"]
 
 		if err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		// return
 	}
 }
 
 // HandleModifySchema is an endpoint handler which updates the existing schema & updates the config
-func HandleModifySchema(adminMan *admin.Manager, projects *projects.Projects, syncman *syncman.Manager) http.HandlerFunc {
+func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
 		v := config.TableRule{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -239,52 +298,96 @@ func HandleModifySchema(adminMan *admin.Manager, projects *projects.Projects, sy
 		projectID := vars["project"]
 		col := vars["col"]
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		schema, err := modules.Schema(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-		if err := state.Schema.SchemaModifyAll(ctx, dbAlias, projectID, map[string]*config.TableRule{col: &v}); err != nil {
+		if err := schema.SchemaModifyAll(ctx, dbAlias, projectID, map[string]*config.TableRule{col: &v}); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		if err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, v.Schema); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
-// HandleCollectionRules is an endpoint handler which update database collection rules in config & creates collection if it doesn't exist
-func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+// HandleGetSchemas returns handler to get schema
+func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+		// get project id and dbType from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		colQuery, exists := r.URL.Query()["col"]
+		col := ""
+		if exists {
+			col = colQuery[0]
+		}
+		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
+	}
+}
+
+// HandleSetTableRules is an endpoint handler which update database collection rules in config & creates collection if it doesn't exist
+func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
 		v := config.TableRule{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
@@ -292,28 +395,76 @@ func HandleCollectionRules(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		col := vars["col"]
 
 		if err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		// return
+	}
+}
+
+// HandleGetTableRules returns handler to get collection rule
+func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		// get project id and dbAlias
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		col := ""
+		colQuery, exists := r.URL.Query()["col"]
+		if exists {
+			col = colQuery[0]
+		}
+
+		dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: dbConfig})
 	}
 }
 
 // HandleReloadSchema is an endpoint handler which return & sets the schemas of all collection in config
-func HandleReloadSchema(adminMan *admin.Manager, projects *projects.Projects, syncman *syncman.Manager) http.HandlerFunc {
+func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -321,80 +472,51 @@ func HandleReloadSchema(adminMan *admin.Manager, projects *projects.Projects, sy
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		schema, err := modules.Schema(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
-		colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, state.Schema)
+		colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, schema)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"collections": colResult})
-		return
+		_ = json.NewEncoder(w).Encode(model.Response{Result: colResult})
+		// return
 	}
 }
 
-// HandleCreateProject is an endpoint handler which adds a project configuration in config
-func HandleCreateProject(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+// HandleInspectCollectionSchema gets the schema for particular collection & update the database collection schema in config
+func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-
-		projectConfig := config.Project{}
-		json.NewDecoder(r.Body).Decode(&projectConfig)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
-		err, statusCode := syncman.CreateProjectConfig(ctx, &projectConfig)
-		if err != nil {
-			w.WriteHeader(statusCode)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{})
-		return
-	}
-}
-
-// HandleSchemaInspection gets the schema for particular collection & update the database collection schema in config
-func HandleSchemaInspection(adminMan *admin.Manager, projects *projects.Projects, syncman *syncman.Manager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-		defer r.Body.Close()
-
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
@@ -402,47 +524,52 @@ func HandleSchemaInspection(adminMan *admin.Manager, projects *projects.Projects
 		col := vars["col"]
 		projectID := vars["project"]
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
+		schema, err := modules.Schema(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		schema, err := state.Schema.SchemaInspection(ctx, dbAlias, projectID, col)
+		s, err := schema.SchemaInspection(ctx, dbAlias, projectID, col)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, schema); err != nil {
+		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"schema": schema})
-		return
+		_ = json.NewEncoder(w).Encode(model.Response{Result: s})
+		// return
 	}
 }
 
-// HandleModifySchema is an endpoint handler which updates the existing schema & updates the config
-func HandleModifyAllSchema(adminMan *admin.Manager, projects *projects.Projects, syncman *syncman.Manager) http.HandlerFunc {
+// HandleModifyAllSchema is an endpoint handler which updates the existing schema & updates the config
+func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
 		v := config.CrudStub{}
-		json.NewDecoder(r.Body).Decode(&v)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
@@ -450,26 +577,20 @@ func HandleModifyAllSchema(adminMan *admin.Manager, projects *projects.Projects,
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
 		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, state.Schema, v); err != nil {
+		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK) // http status codee
-		json.NewEncoder(w).Encode(map[string]interface{}{"statue": true})
-		return
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		// return
 	}
 }

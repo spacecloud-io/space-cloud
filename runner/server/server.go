@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/spaceuptech/space-cloud/runner/metrics"
+
 	"github.com/dgraph-io/badger"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -27,7 +29,7 @@ type Server struct {
 
 	// For internal use
 	auth     *auth.Module
-	driver   driver.Driver
+	driver   driver.Interface
 	debounce *utils.Debounce
 
 	// For autoscaler
@@ -44,13 +46,15 @@ func New(c *Config) (*Server, error) {
 	}
 	c.Driver.ProxyPort = uint32(proxyPort)
 
+	metric := metrics.New(c.IsMetricDisabled, c.Driver.DriverType)
+
 	// Initialise all modules
 	a, err := auth.New(c.Auth)
 	if err != nil {
 		return nil, err
 	}
 
-	d, err := driver.New(a, c.Driver)
+	d, err := driver.New(a, c.Driver, metric.AddServiceCall)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +116,7 @@ func (s *Server) Start() error {
 
 		// Start http server
 		corsObj := utils.CreateCorsObject()
-		logrus.Infof("Starting s proxy on port %s", s.config.ProxyPort)
+		logrus.Infof("Starting server proxy on port %s", s.config.ProxyPort)
 		if err := http.ListenAndServe(":"+s.config.ProxyPort, corsObj.Handler(router)); err != nil {
 			logrus.Fatalln("Proxy server failed:", err)
 		}
@@ -120,6 +124,6 @@ func (s *Server) Start() error {
 
 	// Start the http server
 	corsObj := utils.CreateCorsObject()
-	logrus.Infof("Starting s on port %s", s.config.Port)
+	logrus.Infof("Starting server on port %s", s.config.Port)
 	return http.ListenAndServe(":"+s.config.Port, corsObj.Handler(s.router))
 }

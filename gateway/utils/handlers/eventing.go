@@ -6,37 +6,100 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
+	"github.com/spaceuptech/space-cloud/gateway/modules"
+
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 )
 
-// HandleProcessEvent processes a transmitted event
-func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) http.HandlerFunc {
+// HandleEventResponse gets response for event
+func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
+	type request struct {
+		BatchID  string      `json:"batchID"`
+		Response interface{} `json:"response"`
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Get the path parameters
 		vars := mux.Vars(r)
-		project := vars["project"]
+		projectID := vars["project"]
 
-		eventDocs := []*model.EventDocument{}
-		json.NewDecoder(r.Body).Decode(&eventDocs)
-		defer r.Body.Close()
-
-		state, err := projects.LoadProject(project)
+		auth, err := modules.Auth(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Project id isn't present in the state"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
+		eventing, err := modules.Eventing(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		req := new(request)
+		_ = json.NewDecoder(r.Body).Decode(req)
+		defer utils.CloseTheCloser(r.Body)
+
 		// Return if the eventing module is not enabled
-		if !state.Eventing.IsEnabled() {
+		if !eventing.IsEnabled() {
+			logrus.Errorf("error handling process event response eventing feature isn't enabled")
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			return
+		}
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		if err := auth.IsTokenInternal(token); err != nil {
+			logrus.Errorf("error handling process event response token not valid - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Process the incoming events
+		eventing.SendEventResponse(req.BatchID, req.Response)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+	}
+}
+
+// HandleProcessEvent processes a transmitted event
+func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
+		eventing, err := modules.Eventing(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		eventDocs := []*model.EventDocument{}
+		_ = json.NewDecoder(r.Body).Decode(&eventDocs)
+		defer utils.CloseTheCloser(r.Body)
+
+		// Return if the eventing module is not enabled
+		if !eventing.IsEnabled() {
+			logrus.Errorf("error handling process event request eventing feature isn't enabled")
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
 			return
 		}
 
@@ -44,58 +107,70 @@ func HandleProcessEvent(adminMan *admin.Manager, projects *projects.Projects) ht
 		token := utils.GetTokenFromHeader(r)
 
 		if err := adminMan.IsTokenValid(token); err != nil {
+			logrus.Errorf("error handling process event request token not valid - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
 		// Process the incoming events
-		state.Eventing.ProcessTransmittedEvents(eventDocs)
+		eventing.ProcessTransmittedEvents(eventDocs)
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
-
 }
 
 // HandleQueueEvent creates a queue event endpoint
-func HandleQueueEvent(projects *projects.Projects) http.HandlerFunc {
+func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Load the params from the body
-		req := model.QueueEventRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		// Get the path parameters
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 
-		state, err := projects.LoadProject(projectID)
+		eventing, err := modules.Eventing(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Project id isn't present in the state"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+		// Load the params from the body
+		req := model.QueueEventRequest{}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Return if the eventing module is not enabled
-		if !state.Eventing.IsEnabled() {
+		if !eventing.IsEnabled() {
+			logrus.Errorf("error handling queue event request eventing feature isn't enabled")
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
 			return
 		}
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := state.Eventing.QueueEvent(ctx, projectID, token, &req); err != nil {
+		res, err := eventing.QueueEvent(ctx, projectID, token, &req)
+		if err != nil {
+			logrus.Errorf("error handling queue event request - %s", err.Error())
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{})
+		if res != nil {
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -15,6 +17,8 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 	if len(queries) == 0 {
 		return nil
 	}
+
+	logrus.Debugf("Executing sql raw query - %v", queries)
 
 	tx, err := s.client.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -53,15 +57,15 @@ func (s *SQL) GetConnectionState(ctx context.Context) bool {
 	return err == nil
 }
 
-// CreateProjectIfNotExist creates a schema / database
-func (s *SQL) CreateProjectIfNotExist(ctx context.Context, project string) error {
+// CreateDatabaseIfNotExist creates a schema / database
+func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, project string) error {
 	var sql string
 	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
 		sql = "create database if not exists " + project
 	case utils.Postgres:
 		sql = "create schema if not exists " + project
-	case utils.SqlServer:
+	case utils.SQLServer:
 		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + project + `')) 
 					BEGIN
     					EXEC ('CREATE SCHEMA [` + project + `] ')

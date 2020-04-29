@@ -57,6 +57,19 @@ func calcIndex(token, totalTokens, n int) int {
 	return token / bucketSize
 }
 
+// GetGatewayIndex returns the position of th current gateway instance
+func (s *Manager) GetGatewayIndex() int {
+	index := 0
+
+	for i, v := range s.services {
+		if v.id == s.nodeID {
+			index = i
+			break
+		}
+	}
+	return index
+}
+
 // getConfigWithoutLock returns the config present in the state
 func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error) {
 	// Iterate over all projects stored
@@ -72,4 +85,19 @@ func (s *Manager) getConfigWithoutLock(projectID string) (*config.Project, error
 	}
 
 	return nil, fmt.Errorf("given project (%s) is not present in state", projectID)
+}
+
+// GetNodeID returns node id assigned to sc
+func (s *Manager) GetNodeID() string {
+	return s.nodeID
+}
+
+// GetSpaceCloudURLFromID returns addr for corresponding nodeID
+func (s *Manager) GetSpaceCloudURLFromID(nodeID string) (string, error) {
+	for _, service := range s.services {
+		if nodeID == service.id {
+			return service.addr, nil
+		}
+	}
+	return "", fmt.Errorf("service with specified nodeID doesn't exists")
 }

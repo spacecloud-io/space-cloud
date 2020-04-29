@@ -1,8 +1,7 @@
 package admin
 
 import (
-	"errors"
-	"net/http"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -34,80 +33,24 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if m.admin.Operation.Mode == 0 && len(config) > 1 {
-		return errors.New("community edition can have a maximum of 1 dbs in a single project")
+	if len(config) > m.quotas.MaxDatabases {
+		return fmt.Errorf("plan needs to be upgraded to use more than %d databases", m.quotas.MaxDatabases)
 	}
 
 	return nil
 }
 
-// ValidateSyncOperation validates if an operation is permitted based on the mode
-func (m *Manager) ValidateSyncOperation(projects []string, project *config.Project) bool {
+// ValidateProjectSyncOperation validates if an operation is permitted based on the mode
+func (m *Manager) ValidateProjectSyncOperation(projects []string, projectID string) bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-
 	for _, p := range projects {
-		if p == project.ID {
+		if p == projectID {
 			return true
 		}
 	}
 
-	maxProjects := 1
-	if m.admin.Operation.Mode == 1 {
-		maxProjects = 3
-	} else if m.admin.Operation.Mode == 2 {
-		maxProjects = 5
-	}
-
-	if len(projects) < maxProjects {
-		return true
-	}
-
-	return false
-}
-
-// IsAdminOpAuthorised checks if the admin operation is authorised.
-// TODO add scope level restrictions as well
-func (m *Manager) IsAdminOpAuthorised(token, scope string) (int, error) {
-	m.lock.RLock()
-	defer m.lock.RUnlock()
-
-	if !m.isProd {
-		return http.StatusOK, nil
-	}
-
-	auth, err := m.parseToken(token)
-	if err != nil {
-		return http.StatusUnauthorized, err
-	}
-
-	user, p := auth["id"]
-	if !p {
-		return http.StatusUnauthorized, errors.New("Invalid Token")
-	}
-
-	if user == utils.InternalUserID {
-		return http.StatusOK, nil
-	}
-
-	for _, u := range m.admin.Users {
-		if u.User == user {
-
-			// Allow full access for scope name `all`
-			if _, p := u.Scopes["all"]; p {
-				return http.StatusOK, nil
-			}
-
-			// Check if scope is present
-			if _, p := u.Scopes[scope]; p {
-				return http.StatusOK, nil
-			}
-
-			break
-		}
-	}
-
-	return http.StatusForbidden, errors.New("You are not authorized to make this request")
+	return len(projects) < m.quotas.MaxProjects
 }
 
 // RefreshToken is used to create a new token based on an existing one
@@ -127,8 +70,24 @@ func (m *Manager) RefreshToken(token string) (string, error) {
 	return newToken, nil
 }
 
-func (m *Manager) reduceOpMode() {
+func (m *Manager) IsEnterpriseMode() bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	m.admin.Operation.Mode = 0
+
+	return m.isEnterpriseMode()
+}
+
+// GetQuotas gets number of projects & databases that can be created
+func (m *Manager) GetQuotas() map[string]interface{} {
+	return map[string]interface{}{"projects": m.quotas.MaxProjects, "databases": m.quotas.MaxDatabases}
+}
+
+// GetCredentials gets user name & pass
+func (m *Manager) GetCredentials() map[string]interface{} {
+	return map[string]interface{}{"user": m.user.User, "pass": m.user.Pass}
+}
+
+// GetClusterID returns the cluster id
+func (m *Manager) GetClusterID() string {
+	return m.clusterID
 }

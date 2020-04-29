@@ -13,10 +13,12 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
+// HandleRunnerRequests handles requests of the runner
 func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
+			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -38,6 +40,7 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 		token, err := admin.GetInternalAccessToken()
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to generate internal access token -%v", err)
+			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -46,6 +49,7 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := http.DefaultClient.Do(r)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
@@ -53,12 +57,12 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 		defer utils.CloseTheCloser(response.Body)
 
 		// Copy headers and status code
-		w.WriteHeader(response.StatusCode)
 		for k, v := range response.Header {
 			w.Header().Set(k, v[0])
 		}
 
 		// Copy the body
+		w.WriteHeader(response.StatusCode)
 		n, err := io.Copy(w, response.Body)
 		if err != nil {
 			logrus.Errorf("Failed to copy upstream (%s) response to downstream - %s", r.URL.String(), err.Error())
@@ -68,6 +72,7 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 	}
 }
 
+// GetRunnerAddr returns runner address
 func (s *Manager) GetRunnerAddr() string {
 	return s.runnerAddr
 }

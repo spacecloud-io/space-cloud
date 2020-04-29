@@ -1,13 +1,15 @@
 package syncman
 
 import (
-	"log"
 	"sync"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
+	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // Manager syncs the project config between folders
@@ -16,7 +18,6 @@ type Manager struct {
 
 	// Config related to cluster config
 	projectConfig *config.Config
-	projects      *model.ProjectCallbacks
 	configFile    string
 
 	// Configuration for cluster information
@@ -24,17 +25,20 @@ type Manager struct {
 	clusterID     string
 	advertiseAddr string
 	runnerAddr    string
-	artifactAddr  string
 	port          int
 
-	// Global servers
-	adminMan *admin.Manager
-
 	// Configuration for clustering
-
 	storeType string
 	store     Store
 	services  []*service
+
+	// For authentication
+	adminMan *admin.Manager
+
+	// Modules≤
+	modules     model.ModulesInterface
+	letsencrypt *letsencrypt.LetsEncrypt
+	routing     *routing.Routing
 }
 
 type service struct {
@@ -43,14 +47,15 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, artifactAddr: artifactAddr}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	switch storeType {
 	case "none":
+		m.services = []*service{{id: nodeID, addr: advertiseAddr}}
 		return m, nil
 	case "kube":
 		s, err := NewKubeStore(clusterID)
@@ -78,15 +83,8 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 	return m, nil
 }
 
-func (s *Manager) SetProjectCallbacks(projects *model.ProjectCallbacks) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	s.projects = projects
-}
-
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, port int) error {
+func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -95,12 +93,13 @@ func (s *Manager) Start(configFilePath string, port int) error {
 	s.configFile = configFilePath
 
 	// Write the config to file
-	config.StoreConfigToFile(s.projectConfig, s.configFile)
+	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 	if len(s.projectConfig.Projects) > 0 {
 		for _, p := range s.projectConfig.Projects {
-			if err := s.projects.StoreIgnoreError(p); err != nil {
-				log.Println("Load Project Error: ", err)
+			if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
+				logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
+				break
 			}
 		}
 	}
@@ -113,18 +112,13 @@ func (s *Manager) Start(configFilePath string, port int) error {
 
 			logrus.WithFields(logrus.Fields{"projects": projects}).Debugln("Updating projects")
 			s.projectConfig.Projects = projects
-			config.StoreConfigToFile(s.projectConfig, s.configFile)
+			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
 				for _, p := range s.projectConfig.Projects {
-
-					if ok := s.adminMan.ValidateSyncOperation(s.projects.ProjectIDs(), p); !ok {
-						log.Println("Cannot create new project. Upgrade your plan")
+					if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
+						logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
 						break
-					}
-
-					if err := s.projects.StoreIgnoreError(p); err != nil {
-						log.Println("Load Project Error: ", err)
 					}
 				}
 			}
@@ -142,28 +136,28 @@ func (s *Manager) Start(configFilePath string, port int) error {
 		}); err != nil {
 			return err
 		}
+
+		// Start routine to observe space cloud projects
+		if err := s.store.WatchAdminConfig(func(clusters []*config.Admin) {
+			s.lock.Lock()
+			defer s.lock.Unlock()
+			logrus.WithFields(logrus.Fields{"admin config": clusters}).Debugln("Updating admin config")
+			for _, cluster := range clusters {
+				if err := s.adminMan.SetConfig(cluster); err != nil {
+					logrus.Errorf("unable to apply admin config")
+					break
+				}
+				s.projectConfig.Admin = cluster
+				_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
+			}
+		}); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
 }
-
-// func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
-//	if !s.storeType {
-//		return errors.New("consul is not enabled")
-//	}
-//
-//	s.port = port
-//
-//	// Creating an HTTP server that serves via Connect
-//	server := &http.Server{
-//		Addr:      ":" + strconv.Itoa(s.port+2),
-//		TLSConfig: s.consulService.ServerTLSConfig(),
-//		Handler:   handler,
-//	}
-//
-//	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
-//	return server.ListenAndServeTLS("", "")
-// }
 
 // SetGlobalConfig sets the global config. This must be called before the Start command.
 func (s *Manager) SetGlobalConfig(c *config.Config) {
@@ -177,4 +171,11 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.projectConfig
+}
+
+// SetModules sets all the modules
+func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+	s.modules = modulesInterface
+	s.letsencrypt = letsEncrypt
+	s.routing = routing
 }

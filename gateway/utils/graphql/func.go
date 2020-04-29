@@ -11,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.Field, store utils.M, cb callback) {
+func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.Field, store utils.M, cb model.GraphQLCallback) {
 	serviceName := field.Directives[0].Name.Value
 
 	funcName, err := getFuncName(field)
@@ -43,23 +43,23 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 
 		result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, params)
 		cb(result, err)
-		return
+		// return
 	}()
 }
 
-func generateFuncCallRequest(field *ast.Field, store utils.M) (*model.FunctionsRequest, error) {
-	timeout, err := getFuncTimeout(field, store)
-	if err != nil {
-		return nil, err
-	}
+// func generateFuncCallRequest(field *ast.Field, store utils.M) (*model.FunctionsRequest, error) {
+// 	timeout, err := getFuncTimeout(field, store)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	params, err := getFuncParams(field, store)
-	if err != nil {
-		return nil, err
-	}
+// 	params, err := getFuncParams(field, store)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return &model.FunctionsRequest{Params: params, Timeout: timeout}, nil
-}
+// 	return &model.FunctionsRequest{Params: params, Timeout: timeout}, nil
+// }
 
 func getFuncName(field *ast.Field) (string, error) {
 	if len(field.Directives[0].Arguments) > 0 {

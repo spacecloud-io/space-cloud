@@ -9,12 +9,12 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/projects"
 )
 
-// HandleFunctionCall creates a Functions request endpoint
-func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
+// HandleFunctionCall creates a functions request endpoint
+func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the path parameters
@@ -23,18 +23,26 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 		service := vars["service"]
 		function := vars["func"]
 
-		// Load the params from the body
-		req := model.FunctionsRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		// Load the project state
-		state, err := projects.LoadProject(projectID)
+		auth, err := modules.Auth(projectID)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		functions, err := modules.Functions(projectID)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Load the params from the body
+		req := model.FunctionsRequest{}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
@@ -42,19 +50,23 @@ func HandleFunctionCall(projects *projects.Projects) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
 		defer cancel()
 
-		if _, err := state.Auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params); err != nil {
+		if _, err := auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params); err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusForbidden)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
-		result, err := state.Functions.CallWithContext(ctx, service, function, token, req.Params)
+		result, err := functions.CallWithContext(ctx, service, function, token, req.Params)
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
 	}
 }

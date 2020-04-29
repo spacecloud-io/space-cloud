@@ -6,17 +6,19 @@ import (
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 func loadEnvironmentVariable(c *Config) {
 	for _, p := range c.Projects {
-		if strings.HasPrefix(p.Secret, "$") {
-			tempString := strings.TrimPrefix(p.Secret, "$")
-			tempEnvVar, present := os.LookupEnv(tempString)
+		for i, secret := range p.Secrets {
+			if strings.HasPrefix(secret.Secret, "$") {
+				tempString := strings.TrimPrefix(secret.Secret, "$")
+				tempEnvVar, present := os.LookupEnv(tempString)
 
-			if present {
-				p.Secret = tempEnvVar
+				if present {
+					p.Secrets[i].Secret = tempEnvVar
+				}
 			}
 		}
 		if p.Modules != nil {

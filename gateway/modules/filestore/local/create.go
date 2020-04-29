@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // CreateFile creates a file in the path provided
@@ -28,13 +29,13 @@ func (l *Local) CreateFile(req *model.CreateFileRequest, file io.Reader) error {
 	}
 
 	f, err := os.Create(path + string(os.PathSeparator) + req.Name)
-	defer f.Close()
+	defer utils.CloseTheCloser(f)
 	if err != nil {
 		return err
 	}
 
 	w := bufio.NewWriter(f)
-	defer w.Flush()
+	defer func() { _ = w.Flush() }()
 
 	_, err = io.Copy(w, file)
 	return err

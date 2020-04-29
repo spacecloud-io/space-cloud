@@ -17,12 +17,14 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// KubeStore object for storing kube info
 type KubeStore struct {
 	kubeClient *kubernetes.Clientset
-	projectId  string
+	projectID  string
 	path       string
 }
 
+// NewKubeStore creates a new instance kube store
 func NewKubeStore() (*KubeStore, error) {
 	scProject := os.Getenv("LETSENCRYPT_SC_PROJECT")
 	if scProject == "" {
@@ -40,16 +42,17 @@ func NewKubeStore() (*KubeStore, error) {
 		return nil, err
 	}
 
-	return &KubeStore{kubeClient: kube, projectId: scProject, path: "certmagic"}, nil
+	return &KubeStore{kubeClient: kube, projectID: scProject, path: "certmagic"}, nil
 }
 
+// Store stores specified key & value in kube store
 func (s *KubeStore) Store(key string, value []byte) error {
 	key = s.makeKey(key)
-	_, err := s.kubeClient.CoreV1().Secrets(s.projectId).Get(key, metav1.GetOptions{})
+	_, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
 		logrus.Debugf("Creating secret (%s)", key)
-		_, err = s.kubeClient.CoreV1().Secrets(s.projectId).Create(s.generateSecretValue(key, value))
+		_, err = s.kubeClient.CoreV1().Secrets(s.projectID).Create(s.generateSecretValue(key, value))
 		if err != nil {
 			logrus.Errorf("error in kubernetes store of lets encrypt unable to create secret for key (%s) - %s", key, err.Error())
 		}
@@ -57,7 +60,7 @@ func (s *KubeStore) Store(key string, value []byte) error {
 	} else if err == nil {
 		// secret already exists...update it!
 		logrus.Debugf("Updating secret (%s)", key)
-		_, err = s.kubeClient.CoreV1().Secrets(s.projectId).Update(s.generateSecretValue(key, value))
+		_, err = s.kubeClient.CoreV1().Secrets(s.projectID).Update(s.generateSecretValue(key, value))
 		if err != nil {
 			logrus.Errorf("error in kubernetes store of lets encrypt unable to update secret for key (%s) - %s", key, err.Error())
 		}
@@ -67,9 +70,10 @@ func (s *KubeStore) Store(key string, value []byte) error {
 	return err
 }
 
+// Load loads specified key from kube store
 func (s *KubeStore) Load(key string) ([]byte, error) {
 	key = s.makeKey(key)
-	secret, err := s.kubeClient.CoreV1().Secrets(s.projectId).Get(key, metav1.GetOptions{})
+	secret, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("error in kubernetes store of lets encrypt unable to get secret for key (%s) - %s", key, err.Error())
 		return nil, err
@@ -77,9 +81,10 @@ func (s *KubeStore) Load(key string) ([]byte, error) {
 	return secret.Data["value"], nil
 }
 
+// Delete deletes specified key from kube store
 func (s *KubeStore) Delete(key string) error {
 	key = s.makeKey(key)
-	err := s.kubeClient.CoreV1().Secrets(s.projectId).Delete(key, &metav1.DeleteOptions{})
+	err := s.kubeClient.CoreV1().Secrets(s.projectID).Delete(key, &metav1.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) || err == nil {
 		return nil
 	}
@@ -87,9 +92,10 @@ func (s *KubeStore) Delete(key string) error {
 	return err
 }
 
+// Exists check if specified key exists in kube store
 func (s *KubeStore) Exists(key string) bool {
 	key = s.makeKey(key)
-	_, err := s.kubeClient.CoreV1().Secrets(s.projectId).Get(key, metav1.GetOptions{})
+	_, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
 	if err != nil {
 		logrus.Errorf("error in kubernetes store of lets encrypt unable to check secret if exists (%s) - %s", key, err.Error())
 		return false
@@ -97,9 +103,10 @@ func (s *KubeStore) Exists(key string) bool {
 	return true
 }
 
+// List return all key having prefix
 func (s *KubeStore) List(prefix string, recursive bool) ([]string, error) {
 	// List all secrets
-	kubeSecret, err := s.kubeClient.CoreV1().Secrets(s.projectId).List(metav1.ListOptions{LabelSelector: "app=letsencrypt"})
+	kubeSecret, err := s.kubeClient.CoreV1().Secrets(s.projectID).List(metav1.ListOptions{LabelSelector: "app=letsencrypt"})
 	if err != nil {
 		logrus.Errorf("error in kubernetes store of lets encrypt unable to list secrets - %s", err.Error())
 		return nil, err
@@ -116,9 +123,10 @@ func (s *KubeStore) List(prefix string, recursive bool) ([]string, error) {
 	return keys, nil
 }
 
+// Stat returns stat for specified key
 func (s *KubeStore) Stat(key string) (certmagic.KeyInfo, error) {
 	key = s.makeKey(key)
-	secret, err := s.kubeClient.CoreV1().Secrets(s.projectId).Get(key, metav1.GetOptions{})
+	secret, err := s.kubeClient.CoreV1().Secrets(s.projectID).Get(key, metav1.GetOptions{})
 	if err != nil {
 		return certmagic.KeyInfo{}, err
 	}
@@ -142,6 +150,7 @@ func (s *KubeStore) Stat(key string) (certmagic.KeyInfo, error) {
 	}, nil
 }
 
+// Lock implements a lock mechanism
 func (s *KubeStore) Lock(key string) error {
 	start := time.Now()
 	lockFile := s.lockFileName(key)
@@ -230,7 +239,7 @@ func (s *KubeStore) generateSecretValue(key string, value []byte) *v1.Secret {
 		Type: v1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      key,
-			Namespace: s.projectId,
+			Namespace: s.projectID,
 			Labels:    map[string]string{"app": "letsencrypt"},
 		},
 		Data: map[string][]byte{

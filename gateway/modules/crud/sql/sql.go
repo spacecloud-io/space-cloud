@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	_ "github.com/denisenkom/go-mssqldb" //Import for MsSQL
+	_ "github.com/denisenkom/go-mssqldb" // Import for MsSQL
 	_ "github.com/go-sql-driver/mysql"   // Import for MySQL
 	_ "github.com/lib/pq"                // Import for postgres
 
@@ -35,7 +35,7 @@ func Init(dbType utils.DBType, enabled, removeProjectScope bool, connection stri
 	case utils.MySQL:
 		s.dbType = "mysql"
 
-	case utils.SqlServer:
+	case utils.SQLServer:
 		s.dbType = "sqlserver"
 
 	default:
@@ -67,7 +67,7 @@ func (s *SQL) GetDBType() utils.DBType {
 	case "mysql":
 		return utils.MySQL
 	case "sqlserver":
-		return utils.SqlServer
+		return utils.SQLServer
 	}
 
 	return utils.MySQL

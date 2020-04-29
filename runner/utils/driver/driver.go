@@ -10,9 +10,55 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/utils/driver/istio"
 )
 
-// New creates a new instance of the driver module
-func New(auth *auth.Module, c *Config) (Driver, error) {
+// Config describes the configuration required by the driver module
+type Config struct {
+	DriverType     model.DriverType
+	ConfigFilePath string
+	IsInCluster    bool
+	ProxyPort      uint32
+	ArtifactAddr   string
+}
 
+// Interface is the interface of the modules which interact with the deployment targets
+type Interface interface {
+	CreateProject(ctx context.Context, project *model.Project) error
+	DeleteProject(ctx context.Context, projectID string) error
+	ApplyService(ctx context.Context, service *model.Service) error
+	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
+	DeleteService(ctx context.Context, projectID, serviceID, version string) error
+	AdjustScale(service *model.Service, activeReqs int32) error
+	WaitForService(service *model.Service) error
+	Type() model.DriverType
+
+	// Service routes
+	ApplyServiceRoutes(ctx context.Context, projectID, serviceID string, routes model.Routes) error
+	GetServiceRoutes(ctx context.Context, projectID string) (map[string]model.Routes, error)
+
+	// Secret methods!
+	CreateSecret(projectID string, secretObj *model.Secret) error
+	ListSecrets(projectID string) ([]*model.Secret, error)
+	DeleteSecret(projectID, secretName string) error
+	SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error
+	DeleteKey(projectID, secretName, secretKey string) error
+	SetFileSecretRootPath(projectID string, secretName, rootPath string) error
+}
+
+// Module holds config of driver package
+type Module struct {
+	driver     Interface
+	metricHook model.ServiceCallMetricHook
+}
+
+// New creates a new instance of the driver module
+func New(auth *auth.Module, c *Config, hook model.ServiceCallMetricHook) (*Module, error) {
+	d, err := initDriver(auth, c)
+	if err != nil {
+		return nil, err
+	}
+	return &Module{driver: d, metricHook: hook}, nil
+}
+
+func initDriver(auth *auth.Module, c *Config) (Interface, error) {
 	switch c.DriverType {
 	case model.TypeIstio:
 		// Generate the config file
@@ -33,34 +79,4 @@ func New(auth *auth.Module, c *Config) (Driver, error) {
 	default:
 		return nil, fmt.Errorf("invalid driver type (%s) provided", c.DriverType)
 	}
-}
-
-// Config describes the configuration required by the driver module
-type Config struct {
-	DriverType     model.DriverType
-	ConfigFilePath string
-	IsInCluster    bool
-	ProxyPort      uint32
-	ArtifactAddr   string
-}
-
-// Driver is the interface of the modules which interact with the deployment targets
-type Driver interface {
-	CreateProject(ctx context.Context, project *model.Project) error
-	DeleteProject(ctx context.Context, projectID string) error
-	ApplyService(ctx context.Context, service *model.Service) error
-	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
-	DeleteService(ctx context.Context, projectID, serviceID, version string) error
-	AdjustScale(service *model.Service, activeReqs int32) error
-	WaitForService(service *model.Service) error
-	Type() model.DriverType
-
-	// Secret methods!
-
-	CreateSecret(projectID string, secretObj *model.Secret) error
-	ListSecrets(projectID string) ([]*model.Secret, error)
-	DeleteSecret(projectID, secretName string) error
-	SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error
-	DeleteKey(projectID, secretName, secretKey string) error
-	SetFileSecretRootPath(projectId string, secretName, rootPath string) error
 }

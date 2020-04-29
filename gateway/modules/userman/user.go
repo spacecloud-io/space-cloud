@@ -3,26 +3,25 @@ package userman
 import (
 	"sync"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
+	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 // Module is responsible for user management
 type Module struct {
 	sync.RWMutex
 	methods map[string]*config.AuthStub
-	crud    *crud.Module
-	auth    *auth.Module
+	crud    model.CrudUserInterface
+	auth    model.AuthUserInterface
 }
 
 // Init creates a new instance of the user management object
-func Init(crud *crud.Module, auth *auth.Module) *Module {
+func Init(crud model.CrudUserInterface, auth model.AuthUserInterface) *Module {
 	return &Module{crud: crud, auth: auth}
 }
 
-// SetProjectLetsEncryptDomains set the config required by the user management module
+// SetConfig sets the config required by the user management module
 func (m *Module) SetConfig(auth config.Auth) {
 	m.Lock()
 	defer m.Unlock()

@@ -5,8 +5,6 @@ import (
 	"errors"
 	"math/rand"
 
-	"github.com/segmentio/ksuid"
-
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -23,15 +21,15 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 
 	// Create the meta information
 	token := rand.Intn(utils.MaxEventTokens)
-	batchID := ksuid.New().String()
+	batchID := m.generateBatchID()
 
 	rules := m.getMatchingRules(utils.EventFileCreate, map[string]string{})
 
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
-		eventDoc := m.generateQueueEventRequest(token, rule.Retries, rule.Name,
-			batchID, utils.EventStatusIntent, rule.URL, &model.QueueEventRequest{
+		eventDoc := m.generateQueueEventRequest(token, rule.ID,
+			batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 				Type: utils.EventFileCreate,
 				Payload: &model.FilePayload{
 					Meta: req.Meta,
@@ -46,8 +44,8 @@ func (m *Module) CreateFileIntentHook(ctx context.Context, req *model.CreateFile
 	}
 
 	// Persist the event intent
-	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
+	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 	}
 
@@ -65,15 +63,15 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	}
 
 	// Create a unique batch id and token
-	batchID := ksuid.New().String()
+	batchID := m.generateBatchID()
 	token := rand.Intn(utils.MaxEventTokens)
 
 	rules := m.getMatchingRules(utils.EventFileDelete, map[string]string{})
 	// Process the documents
 	eventDocs := make([]*model.EventDocument, 0)
 	for _, rule := range rules {
-		eventDoc := m.generateQueueEventRequest(token, rule.Retries, rule.Name,
-			batchID, utils.EventStatusIntent, rule.URL, &model.QueueEventRequest{
+		eventDoc := m.generateQueueEventRequest(token, rule.ID,
+			batchID, utils.EventStatusIntent, &model.QueueEventRequest{
 				Type: utils.EventFileDelete,
 				Payload: &model.FilePayload{
 					Path: path,
@@ -88,8 +86,8 @@ func (m *Module) DeleteFileIntentHook(ctx context.Context, path string, meta map
 	}
 
 	// Persist the event intent
-	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All}
-	if err := m.crud.InternalCreate(ctx, m.config.DBType, m.project, m.config.Col, createRequest); err != nil {
+	createRequest := &model.CreateRequest{Document: convertToArray(eventDocs), Operation: utils.All, IsBatch: true}
+	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
 		return nil, errors.New("eventing module couldn't log the request - " + err.Error())
 	}
 
