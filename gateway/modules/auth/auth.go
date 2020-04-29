@@ -1,14 +1,14 @@
 package auth
 
 import (
+	"encoding/base64"
 	"errors"
 	"sync"
 
 	"github.com/dgrijalva/jwt-go"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -16,7 +16,8 @@ import (
 var (
 	// ErrInvalidSigningMethod denotes a jwt signing method type not used by Space Cloud.
 	ErrInvalidSigningMethod = errors.New("invalid signing method type")
-	ErrTokenVerification    = errors.New("AUTH: JWT token could not be verified")
+	// ErrTokenVerification is thrown when a jwt token could not be verified
+	ErrTokenVerification = errors.New("AUTH: JWT token could not be verified")
 )
 
 // Module is responsible for authentication and authorisation
@@ -24,36 +25,24 @@ type Module struct {
 	sync.RWMutex
 	rules           config.Crud
 	nodeID          string
-	secret          string
-	crud            *crud.Module
+	secrets         []*config.Secret
+	crud            model.CrudAuthInterface
 	fileRules       []*config.FileRule
 	funcRules       *config.ServicesModule
 	eventingRules   map[string]*config.Rule
 	project         string
 	fileStoreType   string
-	schema          *schema.Schema
-	makeHttpRequest utils.MakeHttpRequest
-}
-
-// PostProcess is responsible for implementing force and remove rules
-type PostProcess struct {
-	postProcessAction []PostProcessAction
-}
-
-// PostProcessAction has action ->  force/remove and field,value depending on the Action.
-type PostProcessAction struct {
-	Action string
-	Field  string
-	Value  interface{}
+	makeHTTPRequest utils.MakeHTTPRequest
+	aesKey          []byte
 }
 
 // Init creates a new instance of the auth object
-func Init(nodeID string, crud *crud.Module, schema *schema.Schema, removeProjectScope bool) *Module {
-	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud, schema: schema}
+func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) *Module {
+	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud}
 }
 
 // SetConfig set the rules and secret key required by the auth block
-func (m *Module) SetConfig(project string, secret string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
+func (m *Module) SetConfig(project string, secrets []*config.Secret, encodedAESKey string, rules config.Crud, fileStore *config.FileStore, functions *config.ServicesModule, eventing *config.Eventing) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -63,7 +52,12 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 
 	m.project = project
 	m.rules = rules
-	m.secret = secret
+	m.secrets = secrets
+	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
 	if fileStore != nil && fileStore.Enabled {
 		m.fileRules = fileStore.Rules
 		m.fileStoreType = fileStore.StoreType
@@ -80,11 +74,54 @@ func (m *Module) SetConfig(project string, secret string, rules config.Crud, fil
 	return nil
 }
 
-// SetSecret sets the secret key to be used for JWT authentication
-func (m *Module) SetSecret(secret string) {
+// SetSecrets sets the secrets to be used for JWT authentication
+func (m *Module) SetSecrets(secrets []*config.Secret) {
 	m.Lock()
 	defer m.Unlock()
-	m.secret = secret
+	m.secrets = secrets
+}
+
+// SetAESKey sets the aeskey to be used for encryption
+func (m *Module) SetAESKey(encodedAESKey string) error {
+	m.Lock()
+	defer m.Unlock()
+	decodedAESKey, err := base64.StdEncoding.DecodeString(encodedAESKey)
+	if err != nil {
+		return err
+	}
+	m.aesKey = decodedAESKey
+	return nil
+}
+
+// SetServicesConfig sets the service module config
+func (m *Module) SetServicesConfig(projectID string, services *config.ServicesModule) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+	m.funcRules = services
+}
+
+// SetFileStoreConfig sets the file store module config
+func (m *Module) SetFileStoreConfig(projectID string, fileStore *config.FileStore) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+	m.fileRules = fileStore.Rules
+}
+
+// SetEventingConfig sets the eventing config
+func (m *Module) SetEventingConfig(securiyRules map[string]*config.Rule) {
+	m.Lock()
+	defer m.Unlock()
+	m.eventingRules = securiyRules
+}
+
+// SetCrudConfig sets the crud module config
+func (m *Module) SetCrudConfig(projectID string, crud config.Crud) {
+	m.Lock()
+	defer m.Unlock()
+	m.project = projectID
+	m.rules = crud
 }
 
 // GetInternalAccessToken returns the token that can be used internally by Space Cloud
@@ -105,7 +142,7 @@ func (m *Module) GetSCAccessToken() (string, error) {
 }
 
 // CreateToken generates a new JWT Token with the token claims
-func (m *Module) CreateToken(tokenClaims TokenClaims) (string, error) {
+func (m *Module) CreateToken(tokenClaims model.TokenClaims) (string, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -115,7 +152,13 @@ func (m *Module) CreateToken(tokenClaims TokenClaims) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(m.secret))
+
+	secret, err := m.getPrimarySecret()
+	if err != nil {
+		return "", err
+	}
+
+	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", err
 	}
@@ -142,35 +185,47 @@ func (m *Module) IsTokenInternal(token string) error {
 }
 
 func (m *Module) parseToken(token string) (TokenClaims, error) {
-	// Parse the JWT token
-	tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
-			return nil, ErrInvalidSigningMethod
+	for _, secret := range m.secrets {
+		// Parse the JWT token
+		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+			// Don't forget to validate the alg is what you expect:
+			if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+				return nil, ErrInvalidSigningMethod
+			}
+
+			return []byte(secret.Secret), nil
+		})
+		if err != nil {
+			continue
 		}
 
-		return []byte(m.secret), nil
-	})
-	if err != nil {
-		return nil, err
-	}
+		// Get the claims
+		if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
+			obj := make(TokenClaims, len(claims))
+			for key, val := range claims {
+				obj[key] = val
+			}
 
-	// Get the claims
-	if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
-		obj := make(TokenClaims, len(claims))
-		for key, val := range claims {
-			obj[key] = val
+			return obj, nil
 		}
-
-		return obj, nil
 	}
-
 	return nil, ErrTokenVerification
 }
 
-func (m *Module) SetMakeHttpRequest(function utils.MakeHttpRequest) {
+// SetMakeHTTPRequest sets the http request
+func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
 	m.Lock()
 	defer m.Unlock()
 
-	m.makeHttpRequest = function
+	m.makeHTTPRequest = function
+}
+
+func (m *Module) getPrimarySecret() (string, error) {
+	for _, s := range m.secrets {
+		if s.IsPrimary {
+			return s.Secret, nil
+		}
+	}
+
+	return "", errors.New("no primary secret provided")
 }

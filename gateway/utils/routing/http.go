@@ -23,7 +23,7 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 		host, url := getHostAndURL(request)
 
 		// Select a route based on host and url
-		route, err := r.selectRoute(host, url)
+		route, err := r.selectRoute(host, request.Method, url)
 		if err != nil {
 			writer.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
@@ -38,24 +38,28 @@ func (r *Routing) HandleRoutes() http.HandlerFunc {
 
 		// Proxy the request
 
-		// http: Request.RequestURI can't be set in client requests.
-		// http://golang.org/src/pkg/net/http/client.go
-		setRequest(request, route, url)
+		if err := setRequest(request, route, url); err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+			logrus.Errorf("Failed set request for route (%v) - %s", route, err.Error())
+			return
+		}
 
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := http.DefaultClient.Do(request)
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+			logrus.Errorf("Failed to make request for route (%v) - %s", route, err.Error())
 			return
 		}
 		defer utils.CloseTheCloser(response.Body)
 
 		// Copy headers and status code
-		writer.WriteHeader(response.StatusCode)
 		for k, v := range response.Header {
 			writer.Header().Set(k, v[0])
 		}
+		writer.WriteHeader(response.StatusCode)
 
 		// Copy the body
 		n, err := io.Copy(writer, response.Body)
@@ -82,14 +86,25 @@ func rewriteURL(url string, route *config.Route) string {
 	return url
 }
 
-func setRequest(request *http.Request, route *config.Route, url string) {
+func setRequest(request *http.Request, route *config.Route, url string) error {
+	// http: Request.RequestURI can't be set in client requests.
+	// http://golang.org/src/pkg/net/http/client.go
 	request.RequestURI = ""
 
 	// Change the request with the destination host, port and url
-	request.Host = route.Destination.Host
-	request.URL.Host = fmt.Sprintf("%s:%s", route.Destination.Host, route.Destination.Port)
+	target, err := route.SelectTarget(-1) // pass a -ve weight to randomly generate
+	if err != nil {
+		return err
+	}
+
+	request.Host = target.Host
+	request.URL.Host = fmt.Sprintf("%s:%d", target.Host, target.Port)
 	request.URL.Path = url
 
 	// Set the url scheme to http
-	request.URL.Scheme = "http"
+	if target.Scheme == "" {
+		target.Scheme = "http"
+	}
+	request.URL.Scheme = target.Scheme
+	return nil
 }

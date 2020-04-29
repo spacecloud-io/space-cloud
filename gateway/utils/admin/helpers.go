@@ -14,7 +14,7 @@ func (m *Manager) createToken(tokenClaims map[string]interface{}) (string, error
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(m.admin.Secret))
+	tokenString, err := token.SignedString([]byte(m.user.Secret))
 	if err != nil {
 		return "", err
 	}
@@ -30,7 +30,7 @@ func (m *Manager) parseToken(token string) (map[string]interface{}, error) {
 			return nil, errors.New("invalid signing method type")
 		}
 
-		return []byte(m.admin.Secret), nil
+		return []byte(m.user.Secret), nil
 	})
 	if err != nil {
 		return nil, err

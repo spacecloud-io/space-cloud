@@ -8,17 +8,20 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/userman"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // HandleProfile returns the handler for fetching single user profile
-func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
+func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		// Get the path parameters
 		vars := mux.Vars(r)
@@ -31,18 +34,22 @@ func HandleProfile(userManagement *userman.Module) http.HandlerFunc {
 
 		status, result, err := userManagement.Profile(ctx, token, dbAlias, projectID, id)
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]interface{}{"user": result})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"user": result})
 	}
 }
 
 // HandleProfiles returns the handler for fetching all user profiles
-func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
+func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -54,22 +61,26 @@ func HandleProfiles(userManagement *userman.Module) http.HandlerFunc {
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		status, result, err := userManagement.Profiles(ctx, token, dbAlias, projectID)
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		json.NewEncoder(w).Encode(result)
+		_ = json.NewEncoder(w).Encode(result)
 	}
 }
 
 // HandleEmailSignIn returns the handler for email sign in
-func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -81,23 +92,27 @@ func HandleEmailSignIn(userManagement *userman.Module) http.HandlerFunc {
 
 		// Load the request from the body
 		req := map[string]interface{}{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		status, result, err := userManagement.EmailSignIn(ctx, dbAlias, projectID, req["email"].(string), req["pass"].(string))
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		json.NewEncoder(w).Encode(result)
+		_ = json.NewEncoder(w).Encode(result)
 	}
 }
 
 // HandleEmailSignUp returns the handler for email sign up
-func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -109,23 +124,27 @@ func HandleEmailSignUp(userManagement *userman.Module) http.HandlerFunc {
 
 		// Load the request from the body
 		req := map[string]interface{}{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		status, result, err := userManagement.EmailSignUp(ctx, dbAlias, projectID, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		json.NewEncoder(w).Encode(result)
+		_ = json.NewEncoder(w).Encode(result)
 	}
 }
 
 // HandleEmailEditProfile returns the handler for edit profile
-func HandleEmailEditProfile(userManagement *userman.Module) http.HandlerFunc {
+func HandleEmailEditProfile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		userManagement := modules.User()
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
@@ -141,16 +160,17 @@ func HandleEmailEditProfile(userManagement *userman.Module) http.HandlerFunc {
 
 		// Load the request from the body
 		req := map[string]interface{}{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		status, result, err := userManagement.EmailEditProfile(ctx, token, dbAlias, projectID, id, req["email"].(string), req["name"].(string), req["pass"].(string))
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		json.NewEncoder(w).Encode(result)
+		_ = json.NewEncoder(w).Encode(result)
 	}
 }

@@ -12,7 +12,7 @@ import (
 
 // ReaderCounter is counter for io.Reader
 type ReaderCounter struct {
-	r io.ReadCloser
+	r     io.ReadCloser
 	count uint64
 }
 
@@ -34,6 +34,7 @@ func (counter *ReaderCounter) Count() uint64 {
 	return atomic.LoadUint64(&counter.count)
 }
 
+// Close gracefully closes the connection
 func (counter *ReaderCounter) Close() error {
 	return counter.r.Close()
 }
@@ -59,15 +60,18 @@ func (counter *ResponseWriterCounter) Write(buf []byte) (int, error) {
 	return n, err
 }
 
+// Header returns the header of the response writer
 func (counter *ResponseWriterCounter) Header() http.Header {
 	return counter.ResponseWriter.Header()
 }
 
+// WriteHeader returns the writeHeader of the response writer
 func (counter *ResponseWriterCounter) WriteHeader(statusCode int) {
 	counter.Header().Set("X-Runtime", fmt.Sprintf("%.6f", time.Since(counter.started).Seconds()))
 	counter.ResponseWriter.WriteHeader(statusCode)
 }
 
+// Hijack returns the hijack of the response writer
 func (counter *ResponseWriterCounter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return counter.ResponseWriter.(http.Hijacker).Hijack()
 }
@@ -77,6 +81,7 @@ func (counter *ResponseWriterCounter) Count() uint64 {
 	return atomic.LoadUint64(&counter.count)
 }
 
+// Started returns the started counter
 func (counter *ResponseWriterCounter) Started() time.Time {
 	return counter.started
 }

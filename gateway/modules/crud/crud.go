@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"sync"
+
+	"github.com/graph-gophers/dataloader"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -23,13 +26,22 @@ type Module struct {
 	block              Crud
 	dbType             string
 	alias              string
-	primaryDB          string
 	project            string
 	removeProjectScope bool
+	schema             model.SchemaCrudInterface
 
+	// batch operation
+	batchMapTableToChan batchMap // every table gets mapped to group of channels
+
+	dataLoader loader
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
+}
+
+type loader struct {
+	loaderMap      map[string]*dataloader.Loader
+	dataLoaderLock sync.Mutex
 }
 
 // Crud abstracts the implementation crud operations of databases
@@ -44,7 +56,7 @@ type Crud interface {
 	RawExec(ctx context.Context, project string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, project, col string) error
-	CreateProjectIfNotExist(ctx context.Context, project string) error
+	CreateDatabaseIfNotExist(ctx context.Context, project string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
@@ -54,7 +66,12 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init(removeProjectScope bool) *Module {
-	return &Module{removeProjectScope: removeProjectScope}
+	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+}
+
+// SetSchema sets the schema module
+func (m *Module) SetSchema(s model.SchemaCrudInterface) {
+	m.schema = s
 }
 
 // SetHooks sets the internal hooks
@@ -69,18 +86,18 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string)
 		return mgo.Init(enabled, connection)
 	case utils.EmbeddedDB:
 		return bolt.Init(enabled, connection)
-	case utils.MySQL, utils.Postgres, utils.SqlServer:
+	case utils.MySQL, utils.Postgres, utils.SQLServer:
 		return sql.Init(dbType, enabled, m.removeProjectScope, connection)
 	default:
 		return nil, utils.ErrInvalidParams
 	}
 }
 
-func (m *Module) getCrudBlock(dbType string) (Crud, error) {
-	if m.block != nil {
+func (m *Module) getCrudBlock(dbAlias string) (Crud, error) {
+	if m.block != nil && m.alias == dbAlias {
 		return m.block, nil
 	}
-	return nil, fmt.Errorf("crud module not initialized yet for %q", dbType)
+	return nil, fmt.Errorf("crud module not initialized yet for %q", dbAlias)
 }
 
 // SetConfig set the rules and secret key required by the crud block
@@ -92,12 +109,16 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		return errors.New("crud module cannot have more than 1 db")
 	}
 
+	m.closeBatchOperation()
 	m.project = project
 
 	// Close the previous database connection
 	if m.block != nil {
-		m.block.Close()
+		utils.CloseTheCloser(m.block)
 	}
+
+	// clear previous data loader
+	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 
 	// Create a new crud blocks
 	for k, v := range crud {
@@ -110,17 +131,19 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
 		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
 
+		if v.Enabled {
+			if err != nil {
+				logrus.Errorf("Error connecting to " + k + " : " + err.Error())
+				return err
+			}
+			logrus.Info("Successfully connected to " + k)
+		}
+
 		m.dbType = v.Type
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
-
-		if err != nil {
-			log.Println("Error connecting to " + k + " : " + err.Error())
-			return err
-		} else {
-			log.Println("Successfully connected to " + k)
-		}
 	}
+	m.initBatchOperation(project, crud)
 	return nil
 }
 

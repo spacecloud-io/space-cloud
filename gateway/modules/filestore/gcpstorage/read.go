@@ -17,9 +17,11 @@ import (
 
 // ListDir lists a directory in GCPStorage
 func (g *GCPStorage) ListDir(req *model.ListFilesRequest) ([]*model.ListFilesResponse, error) {
-	// path should always start with a backslash
-	path := utils.SingleLeadingTrailing(req.Path, "/")
-	// path will always end in single backslash
+	// path should not start with a backslash
+	path := strings.Trim(req.Path, "/") + "/"
+	if path == "/" {
+		path = ""
+	}
 
 	it := g.client.Bucket(g.bucket).Objects(context.TODO(), &storage.Query{
 		Prefix:    path,
@@ -66,7 +68,7 @@ func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rc.Close()
+	defer utils.CloseTheCloser(rc)
 
 	data, err := ioutil.ReadAll(rc)
 	if err != nil {
@@ -83,7 +85,7 @@ func (g *GCPStorage) ReadFile(path string) (*model.File, error) {
 	}
 
 	return &model.File{File: bufio.NewReader(tmpfile), Close: func() error {
-		defer os.Remove(tmpfile.Name())
+		defer func() { _ = os.Remove(tmpfile.Name()) }()
 		return tmpfile.Close()
 	}}, nil
 }

@@ -16,7 +16,6 @@ func TestStoreValue(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "succesful test",
 			args: args{
@@ -122,7 +121,7 @@ func TestStoreValue(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "convert create error",
+			name: "convert create error 1",
 			args: args{
 				key:   "a.b[a.e].d",
 				value: 4,
@@ -140,7 +139,7 @@ func TestStoreValue(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "convert create error",
+			name: "convert create error 2",
 			args: args{
 				key:   "a.b[a.e]",
 				value: 4,
@@ -228,7 +227,7 @@ func TestStoreValue(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "convert create error",
+			name: "convert create error 3",
 			args: args{
 				key:   "a.b.c.d",
 				value: 4,

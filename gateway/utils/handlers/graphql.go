@@ -8,36 +8,41 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
-// HandleGraphQLRequest creates the graphql operation endpoint
-func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
+// HandleGraphQLRequest executes graphql queries
+func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Create a context of execution
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		pid := graphql.GetProjectID()
+
+		projectConfig, err := syncMan.GetConfig(projectID)
+		if err != nil {
+			logrus.Errorf("Error handling graphql query execution unable to get project config of %s - %s", projectID, err.Error())
+			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		if projectConfig.ContextTimeGraphQL == 0 {
+			projectConfig.ContextTimeGraphQL = 10
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(projectConfig.ContextTimeGraphQL)*time.Second)
+		defer cancel()
+
+		graphql := modules.GraphQL()
 
 		// Load the request from the body
 		req := model.GraphQLRequest{}
-		json.NewDecoder(r.Body).Decode(&req)
-		defer r.Body.Close()
-
-		w.Header().Set("Content-Type", "application/json")
-
-		if projectID != pid {
-			// throw some error
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "project id doesn't match"})
-			return
-		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		defer utils.CloseTheCloser(r.Body)
 
 		// Get the path parameters
 		token := getRequestMetaData(r).token
@@ -48,22 +53,24 @@ func HandleGraphQLRequest(graphql *graphql.Module) http.HandlerFunc {
 			defer func() { ch <- struct{}{} }()
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
-				json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 				return
 			}
-
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
-			return
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
+			// return
 		})
 
 		select {
 		case <-ch:
 			return
-		case <-time.After(10 * time.Second):
+		case <-time.After(time.Duration(projectConfig.ContextTimeGraphQL) * time.Second):
 			log.Println("GraphQL Handler: Request timed out")
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
-			json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
 	}

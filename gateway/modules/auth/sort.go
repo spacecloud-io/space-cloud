@@ -14,7 +14,7 @@ func sortFileRule(rules []*config.FileRule) {
 	})
 	var splitKey int
 	for key, val := range rules {
-		if strings.Index(val.Prefix, "{") != -1 {
+		if strings.Contains(val.Prefix, "{") {
 			splitKey = key
 			break
 		}

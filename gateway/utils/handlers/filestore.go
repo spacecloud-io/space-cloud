@@ -15,23 +15,26 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-
-	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
+	"github.com/spaceuptech/space-cloud/gateway/modules"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Supported content types
 const (
-	contentTypeApplicationJSON = "application/json"
-	contentTypeEncodedForm     = "application/x-www-form-urlencoded"
-	contentTypeMultiPartForm   = "multipart/form-data"
+	// contentTypeApplicationJSON = "application/json"
+	contentTypeEncodedForm   = "application/x-www-form-urlencoded"
+	contentTypeMultiPartForm = "multipart/form-data"
 )
 
 // HandleCreateFile creates the create file or directory endpoint
-func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
+func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		fileStore := modules.File()
+
 		// Extract the path from the url
 		token, projectID, _ := getFileStoreMeta(r)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
@@ -44,13 +47,14 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 			err = r.ParseForm()
 		}
 		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Could not parse form: %s", err.Error())})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Could not parse form: %s", err.Error())})
 			return
 		}
 
 		v := map[string]interface{}{}
-		json.Unmarshal([]byte(r.FormValue("meta")), &v)
+		_ = json.Unmarshal([]byte(r.FormValue("meta")), &v)
 		path := r.FormValue("path")
 		fileType := r.FormValue("fileType")
 		var makeAll bool
@@ -59,8 +63,9 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 		if makeAllString != "" {
 			makeAll, err = strconv.ParseBool(makeAllString)
 			if err != nil {
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Incorrect value for makeAll"})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": "Incorrect value for makeAll"})
 				return
 			}
 		}
@@ -68,11 +73,12 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 		if fileType == "file" {
 			file, header, err := r.FormFile("file")
 			if err != nil {
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
 				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Incorrect value for file: %s", err)})
 				return
 			}
-			defer file.Close()
+			defer utils.CloseTheCloser(file)
 
 			// Read file name from form if exists
 			fileName := header.Filename
@@ -81,31 +87,36 @@ func HandleCreateFile(fileStore *filestore.Module) http.HandlerFunc {
 			}
 
 			status, err := fileStore.UploadFile(ctx, projectID, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
 			if err != nil {
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
-			json.NewEncoder(w).Encode(map[string]string{})
+			_ = json.NewEncoder(w).Encode(map[string]string{})
 		} else {
 			name := r.FormValue("name")
 			status, err := fileStore.CreateDir(ctx, projectID, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
 			if err != nil {
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
-			json.NewEncoder(w).Encode(map[string]string{})
+			_ = json.NewEncoder(w).Encode(map[string]string{})
 		}
 	}
 }
 
 // HandleRead creates read file and list directory endpoint
-func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
+func HandleRead(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		fileStore := modules.File()
+
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
@@ -116,21 +127,24 @@ func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
 			status, res, err := fileStore.ListFiles(ctx, projectID, token, &model.ListFilesRequest{Path: path, Type: mode})
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
 			if err != nil {
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
-			json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
 			return
 		} else if op == "exist" {
 			if err := fileStore.DoesExists(ctx, projectID, token, path); err != nil {
+				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusNotFound)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
 			}
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]string{})
+			_ = json.NewEncoder(w).Encode(map[string]string{})
 			return
 		}
 
@@ -138,22 +152,27 @@ func HandleRead(fileStore *filestore.Module) http.HandlerFunc {
 		status, file, err := fileStore.DownloadFile(ctx, projectID, token, path)
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		defer file.Close()
-		io.Copy(w, file.File)
+		defer func() { _ = file.Close() }()
+		_, _ = io.Copy(w, file.File)
 	}
 }
 
 // HandleDelete creates read file and list directory endpoint
-func HandleDelete(fileStore *filestore.Module) http.HandlerFunc {
+func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		fileStore := modules.File()
+
 		// Extract the path from the url
 		token, projectID, path := getFileStoreMeta(r)
-		defer r.Body.Close()
+		defer utils.CloseTheCloser(r.Body)
+
 		v := map[string]interface{}{}
-		json.NewDecoder(r.Body).Decode(&v)
+		_ = json.NewDecoder(r.Body).Decode(&v)
 		log.Println("v", v)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -161,12 +180,13 @@ func HandleDelete(fileStore *filestore.Module) http.HandlerFunc {
 
 		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
 		if err != nil {
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]string{})
+		_ = json.NewEncoder(w).Encode(map[string]string{})
 	}
 }
 

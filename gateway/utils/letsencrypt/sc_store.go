@@ -17,14 +17,16 @@ import (
 	"github.com/spaceuptech/space-api-go/types"
 )
 
-type storage struct {
+// Storage is the object for storing space cloud storage information
+type Storage struct {
 	sync.RWMutex
 	db         *db.DB
 	path       string // required for lock
 	collection string
 }
 
-func NewScStore() *storage {
+// NewScStore returns a new instance of space cloud storage
+func NewScStore() *Storage {
 	scProject := os.Getenv("LETSENCRYPT_SC_PROJECT")
 	scAddr := os.Getenv("LETSENCRYPT_SC_ADDR")
 	scDatabase := os.Getenv("LETSENCRYPT_SC_DATABASE")
@@ -42,10 +44,11 @@ func NewScStore() *storage {
 		scCollection = "certificates"
 	}
 
-	return &storage{db: apigo.New(scProject, scAddr, false).DB(scDatabase), collection: scCollection, path: "certmagic"}
+	return &Storage{db: apigo.New(scProject, scAddr, false).DB(scDatabase), collection: scCollection, path: "certmagic"}
 }
 
-func (s *storage) Store(key string, value []byte) error {
+// Store sets the key value in space cloud storage
+func (s *Storage) Store(key string, value []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -67,7 +70,8 @@ func (s *storage) Store(key string, value []byte) error {
 	return nil
 }
 
-func (s *storage) Load(key string) ([]byte, error) {
+// Load gets the value for specifed key
+func (s *Storage) Load(key string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -100,7 +104,8 @@ func (s *storage) Load(key string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(value.(string))
 }
 
-func (s *storage) Delete(key string) error {
+// Delete deletes specifed key from space cloud storage
+func (s *Storage) Delete(key string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -116,7 +121,8 @@ func (s *storage) Delete(key string) error {
 	return nil
 }
 
-func (s *storage) Exists(key string) bool {
+// Exists checks if key exists in space cloud storage
+func (s *Storage) Exists(key string) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -145,7 +151,8 @@ func (s *storage) Exists(key string) bool {
 	return false
 }
 
-func (s *storage) List(prefix string, recursive bool) ([]string, error) {
+// List returns all keys matching prefix
+func (s *Storage) List(prefix string, recursive bool) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -181,7 +188,8 @@ func (s *storage) List(prefix string, recursive bool) ([]string, error) {
 	return prefixArr, nil
 }
 
-func (s *storage) Stat(key string) (certmagic.KeyInfo, error) {
+// Stat get stats for a particular key
+func (s *Storage) Stat(key string) (certmagic.KeyInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -218,11 +226,12 @@ const staleLockDuration = 2 * time.Hour
 // to check the existence of a lock file
 const fileLockPollInterval = 1 * time.Second
 
+// StorageKeys is used to store certmagic keys
 var StorageKeys certmagic.KeyBuilder
 
 // Lock obtains a lock named by the given key. It blocks
 // until the lock can be obtained or an error is returned.
-func (s *storage) Lock(key string) error {
+func (s *Storage) Lock(key string) error {
 	start := time.Now()
 	lockFile := s.lockFileName(key)
 
@@ -268,27 +277,27 @@ func (s *storage) Lock(key string) error {
 }
 
 // Unlock releases the lock for name.
-func (s *storage) Unlock(key string) error {
+func (s *Storage) Unlock(key string) error {
 	return s.deleteLockFile(s.lockFileName(key))
 }
 
-func (s *storage) String() string {
+func (s *Storage) String() string {
 	return "storage:" + s.path
 }
 
-func (s *storage) lockFileName(key string) string {
+func (s *Storage) lockFileName(key string) string {
 	return filepath.Join(s.lockDir(), fmt.Sprintf("%s.lock", StorageKeys.Safe(key)))
 }
 
-func (s *storage) lockDir() string {
+func (s *Storage) lockDir() string {
 	return filepath.Join(s.path, "locks")
 }
 
-func (s *storage) fileLockIsStale(info certmagic.KeyInfo) bool {
+func (s *Storage) fileLockIsStale(info certmagic.KeyInfo) bool {
 	return time.Since(info.Modified) > staleLockDuration
 }
 
-func (s *storage) createLockFile(filename string) error {
+func (s *Storage) createLockFile(filename string) error {
 	exists := s.Exists(filename)
 	if exists {
 		return fmt.Errorf(lockFileExists)
@@ -301,7 +310,7 @@ func (s *storage) createLockFile(filename string) error {
 	return err
 }
 
-func (s *storage) deleteLockFile(keyPath string) error {
+func (s *Storage) deleteLockFile(keyPath string) error {
 	err := s.Delete(keyPath)
 	if err != nil {
 		logrus.Errorf("error while deleting lock file in lets encrypt - %v", err)

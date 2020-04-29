@@ -10,11 +10,10 @@ import (
 	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]model.AllRequest, []interface{}, error) {
+func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]*model.AllRequest, []interface{}, error) {
 	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
 		return nil, nil, err
@@ -44,7 +43,7 @@ func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, tok
 	return reqs, returningDocs, nil
 }
 
-func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema.SchemaFields) {
+func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields model.Fields) {
 	// FieldIDs is the array of fields for which an unique id needs to be generated. These will only be done for those
 	// fields which have the type ID.
 	// FieldDates is the array of fields for which the current time needs to be set.
@@ -53,7 +52,7 @@ func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields schema
 	fieldDefaults := make(map[string]interface{})
 
 	for fieldName, fieldSchema := range schemaFields {
-		if fieldSchema.Kind == schema.TypeID {
+		if fieldSchema.Kind == model.TypeID {
 			fieldIDs = append(fieldIDs, fieldName)
 		}
 
@@ -95,15 +94,15 @@ func copyDoc(doc map[string]interface{}) map[string]interface{} {
 	return newDoc
 }
 
-func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string) ([]model.AllRequest, []interface{}, error) {
-	createRequests := make([]model.AllRequest, 0)
-	afterRequests := make([]model.AllRequest, 0)
+func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string) ([]*model.AllRequest, []interface{}, error) {
+	createRequests := make([]*model.AllRequest, 0)
+	afterRequests := make([]*model.AllRequest, 0)
 
 	// Check if we can the schema for this collection
 	schemaFields, p := graph.schema.GetSchema(dbAlias, col)
 	if !p {
 		// Return the docs as is if no schema is available
-		return []model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil
+		return []*model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil
 	}
 
 	returningDocs := make([]interface{}, len(docs))
@@ -199,7 +198,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 		}
 		returningDocs[i] = newDoc
 	}
-	createRequests = append(createRequests, model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs})
+	createRequests = append(createRequests, &model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs})
 	return append(createRequests, afterRequests...), returningDocs, nil
 }
 

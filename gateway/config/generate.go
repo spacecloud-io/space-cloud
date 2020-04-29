@@ -26,18 +26,11 @@ type input struct {
 
 // GenerateEmptyConfig creates an empty config file
 func GenerateEmptyConfig() *Config {
+
 	return &Config{
 		SSL:      &SSL{Enabled: false},
-		Admin:    generateAdmin(),
+		Admin:    new(Admin),
 		Projects: []*Project{},
-	}
-}
-
-func generateAdmin() *Admin {
-	return &Admin{
-		Secret:    "some-secret",
-		Operation: OperationConfig{Mode: 0},
-		Users:     []AdminUser{{User: "admin", Pass: "123", Scopes: ProjectScope{"all": []string{"all"}}}},
 	}
 }
 

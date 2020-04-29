@@ -163,7 +163,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner
+          image: spaceuptech/runner:0.17.0
           imagePullPolicy: Always # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
@@ -293,9 +293,13 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway
+          image: spaceuptech/gateway:0.17.0
           imagePullPolicy: Always # IfNotPresent | Always
           env:
+            - name: "NODE_ID"
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: "RUNNER_ADDR"
               value: "runner.space-cloud.svc.cluster.local:4050"
             - name: "ADMIN_USER"

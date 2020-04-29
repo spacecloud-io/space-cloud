@@ -1,17 +1,26 @@
 package schema
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/segmentio/ksuid"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (s *Schema) SchemaValidator(col string, collectionFields SchemaFields, doc map[string]interface{}) (map[string]interface{}, error) {
+// SchemaValidator function validates the schema which it gets from module
+func (s *Schema) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+
+	for schemaKey := range doc {
+		if _, p := collectionFields[schemaKey]; !p {
+			return nil, errors.New("The field " + schemaKey + " is not present in schema of " + col)
+		}
+	}
 
 	mutatedDoc := map[string]interface{}{}
 	for fieldKey, fieldValue := range collectionFields {
@@ -30,7 +39,7 @@ func (s *Schema) SchemaValidator(col string, collectionFields SchemaFields, doc 
 			ok = true
 		}
 
-		if fieldValue.Kind == TypeID && !ok {
+		if fieldValue.Kind == model.TypeID && !ok {
 			value = ksuid.New().String()
 			ok = true
 		}
@@ -100,17 +109,16 @@ func (s *Schema) ValidateCreateOperation(dbAlias, col string, req *model.CreateR
 
 	return nil
 }
-func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFieldType) (interface{}, error) {
-
+func (s *Schema) checkType(col string, value interface{}, fieldValue *model.FieldType) (interface{}, error) {
 	switch v := value.(type) {
 	case int:
 		// TODO: int64
 		switch fieldValue.Kind {
-		case typeDateTime:
+		case model.TypeDateTime:
 			return time.Unix(int64(v)/1000, 0), nil
-		case typeInteger:
+		case model.TypeInteger:
 			return value, nil
-		case typeFloat:
+		case model.TypeFloat:
 			return float64(v), nil
 		default:
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Integer", fieldValue.FieldName, col, fieldValue.Kind)
@@ -118,13 +126,13 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFiel
 
 	case string:
 		switch fieldValue.Kind {
-		case typeDateTime:
+		case model.TypeDateTime:
 			unitTimeInRFC3339, err := time.Parse(time.RFC3339, v)
 			if err != nil {
 				return nil, fmt.Errorf("invalid datetime format recieved for field %s in collection %s - use RFC3339 fromat", fieldValue.FieldName, col)
 			}
 			return unitTimeInRFC3339, nil
-		case TypeID, typeString:
+		case model.TypeID, model.TypeString:
 			return value, nil
 		default:
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got String", fieldValue.FieldName, col, fieldValue.Kind)
@@ -132,29 +140,40 @@ func (s *Schema) checkType(col string, value interface{}, fieldValue *SchemaFiel
 
 	case float32, float64:
 		switch fieldValue.Kind {
-		case typeDateTime:
+		case model.TypeDateTime:
 			return time.Unix(int64(v.(float64))/1000, 0), nil
-		case typeFloat:
+		case model.TypeFloat:
 			return value, nil
-		case typeInteger:
+		case model.TypeInteger:
 			return int64(value.(float64)), nil
 		default:
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Float", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 	case bool:
 		switch fieldValue.Kind {
-		case typeBoolean:
+		case model.TypeBoolean:
 			return value, nil
 		default:
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s - wanted %s got Bool", fieldValue.FieldName, col, fieldValue.Kind)
 		}
 
+	case time.Time, *time.Time:
+		return v, nil
+
 	case map[string]interface{}:
-		if fieldValue.Kind != typeObject {
+		if fieldValue.Kind == model.TypeJSON {
+			data, err := json.Marshal(value)
+			if err != nil {
+				logrus.Errorf("error checking type in schema module unable to marshal data for field having type json")
+				return nil, err
+			}
+			return string(data), nil
+		}
+		if fieldValue.Kind != model.TypeObject {
 			return nil, fmt.Errorf("invalid type received for field %s in collection %s", fieldValue.FieldName, col)
 		}
 
-		return s.SchemaValidator(col, fieldValue.nestedObject, v)
+		return s.SchemaValidator(col, fieldValue.NestedObject, v)
 
 	case []interface{}:
 		if !fieldValue.IsList {

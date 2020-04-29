@@ -29,7 +29,7 @@ func (g *GCPStorage) GetStoreType() utils.FileStoreType {
 	return utils.GCPStorage
 }
 
-// Gracefully close the GCPStorage module
+// Close gracefully close the GCPStorage module
 func (g *GCPStorage) Close() error {
-	return g.Close()
+	return g.client.Close()
 }

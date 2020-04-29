@@ -6,36 +6,53 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
+func getServiceUniqueID(projectID, serviceID, version string) string {
+	return fmt.Sprintf("%s:%s:%s", projectID, serviceID, version)
+}
 func getServiceUniqueName(project, service, version string) string {
 	return fmt.Sprintf("%s-%s-%s", project, service, version)
 }
 
-func getServiceAccountName(service *model.Service) string {
-	return fmt.Sprintf("%s-%s", service.ProjectID, service.ID)
+func getServiceAccountName(serviceID string) string {
+	return serviceID
 }
 
-func getDeploymentName(service *model.Service) string {
-	return fmt.Sprintf("%s-%s", service.ID, service.Version)
+func getDeploymentName(serviceID, version string) string {
+	return fmt.Sprintf("%s-%s", serviceID, version)
 }
 
 func getServiceName(serviceID string) string {
 	return serviceID
 }
 
+func getServiceDomainName(projectID, serviceID string) string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", serviceID, projectID)
+}
+func getInternalServiceName(serviceID, version string) string {
+	return fmt.Sprintf("%s-%s-internal", serviceID, version)
+}
+
+func getInternalServiceDomain(projectID, serviceID, version string) string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", getInternalServiceName(serviceID, version), projectID)
+}
+
 func getVirtualServiceName(serviceID string) string {
 	return serviceID
 }
 
-func getDestRuleName(serviceID string) string {
+func getGeneralDestRuleName(serviceID string) string {
 	return serviceID
 }
-
-func getAuthorizationPolicyName(service *model.Service) string {
-	return fmt.Sprintf("auth-%s-%s", service.ProjectID, service.ID)
+func getInternalDestRuleName(serviceID, version string) string {
+	return fmt.Sprintf("%s-%s", serviceID, version)
 }
 
-func getSidecarName(serviceID string) string {
-	return serviceID
+func getAuthorizationPolicyName(projectID, serviceID, version string) string {
+	return fmt.Sprintf("auth-%s-%s-%s", projectID, serviceID, version)
+}
+
+func getSidecarName(serviceID, version string) string {
+	return fmt.Sprintf("%s-%s", serviceID, version)
 }
 
 func getGeneratedByAnnotationName() string {

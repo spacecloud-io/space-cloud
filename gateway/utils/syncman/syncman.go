@@ -4,8 +4,12 @@ import (
 	"sync"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
+	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
+	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // Manager syncs the project config between folders
@@ -15,14 +19,12 @@ type Manager struct {
 	// Config related to cluster config
 	projectConfig *config.Config
 	configFile    string
-	cb            func(*config.Config) error
 
 	// Configuration for cluster information
 	nodeID        string
 	clusterID     string
 	advertiseAddr string
 	runnerAddr    string
-	artifactAddr  string
 	port          int
 
 	// Configuration for clustering
@@ -32,6 +34,11 @@ type Manager struct {
 
 	// For authentication
 	adminMan *admin.Manager
+
+	// Modules
+	modules     model.ModulesInterface
+	letsencrypt *letsencrypt.LetsEncrypt
+	routing     *routing.Routing
 }
 
 type service struct {
@@ -40,14 +47,15 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan, artifactAddr: artifactAddr}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	switch storeType {
 	case "none":
+		m.services = []*service{{id: nodeID, addr: advertiseAddr}}
 		return m, nil
 	case "kube":
 		s, err := NewKubeStore(clusterID)
@@ -76,22 +84,22 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, artifactAddr s
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, port int) error {
+func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	// Set the callback
-	s.cb = cb
+	s.modules.SetProjectConfig(projectConfig, s.letsencrypt, s.routing)
 	s.port = port
 
 	s.configFile = configFilePath
 
 	// Write the config to file
-	config.StoreConfigToFile(s.projectConfig, s.configFile)
+	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 	if len(s.projectConfig.Projects) > 0 {
-		cb(s.projectConfig)
+		s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 	}
 
 	if s.storeType != "none" {
@@ -99,13 +107,13 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 		if err := s.store.WatchProjects(func(projects []*config.Project) {
 			s.lock.Lock()
 			defer s.lock.Unlock()
-			
+
 			logrus.WithFields(logrus.Fields{"projects": projects}).Debugln("Updating projects")
 			s.projectConfig.Projects = projects
-			config.StoreConfigToFile(s.projectConfig, s.configFile)
+			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
 
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
-				s.cb(s.projectConfig)
+				s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
 			}
 		}); err != nil {
 			return err
@@ -126,24 +134,6 @@ func (s *Manager) Start(configFilePath string, cb func(*config.Config) error, po
 	return nil
 }
 
-// func (s *Manager) StartConnectServer(port int, handler http.Handler) error {
-//	if !s.storeType {
-//		return errors.New("consul is not enabled")
-//	}
-//
-//	s.port = port
-//
-//	// Creating an HTTP server that serves via Connect
-//	server := &http.Server{
-//		Addr:      ":" + strconv.Itoa(s.port+2),
-//		TLSConfig: s.consulService.ServerTLSConfig(),
-//		Handler:   handler,
-//	}
-//
-//	fmt.Println("Starting https server (consul connect) on port: " + strconv.Itoa(s.port+2))
-//	return server.ListenAndServeTLS("", "")
-// }
-
 // SetGlobalConfig sets the global config. This must be called before the Start command.
 func (s *Manager) SetGlobalConfig(c *config.Config) {
 	s.lock.Lock()
@@ -156,4 +146,11 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	return s.projectConfig
+}
+
+// SetModules sets all the modules
+func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+	s.modules = modulesInterface
+	s.letsencrypt = letsEncrypt
+	s.routing = routing
 }

@@ -8,15 +8,14 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-
-	"go.etcd.io/bbolt"
+	// "go.etcd.io/bbolt"
 )
 
 func TestBolt_Delete(t *testing.T) {
 	type fields struct {
 		enabled    bool
 		connection string
-		client     *bbolt.DB
+		// client     *bbolt.DB
 	}
 	type args struct {
 		ctx     context.Context
@@ -111,7 +110,7 @@ func TestBolt_Delete(t *testing.T) {
 			}
 		})
 	}
-	b.client.Close()
+	utils.CloseTheCloser(b.client)
 	if err := os.Remove("delete.db"); err != nil {
 		t.Error("error removing database file")
 	}

@@ -1,6 +1,7 @@
 package filestore
 
 import (
+	"context"
 	"io"
 	"sync"
 
@@ -8,7 +9,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore/amazons3"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore/gcpstorage"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore/local"
@@ -17,15 +17,16 @@ import (
 // Module is responsible for managing the file storage module
 type Module struct {
 	sync.RWMutex
-	store    FileStore
-	enabled  bool
-	auth     *auth.Module
-	eventing model.EventingModule
+	store       FileStore
+	enabled     bool
+	auth        model.AuthFilestoreInterface
+	eventing    model.EventingModule
+	metricsHook model.MetricFileHook
 }
 
 // Init creates a new instance of the file store object
-func Init(auth *auth.Module) *Module {
-	return &Module{enabled: false, store: nil, auth: auth}
+func Init(auth model.AuthFilestoreInterface, hook model.MetricFileHook) *Module {
+	return &Module{enabled: false, store: nil, auth: auth, metricsHook: hook}
 }
 
 // SetEventingModule sets the eventing module
@@ -45,6 +46,7 @@ type FileStore interface {
 	DeleteFile(path string) error
 
 	DoesExists(path string) error
+	GetState(ctx context.Context) error
 
 	GetStoreType() utils.FileStoreType
 	Close() error

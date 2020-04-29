@@ -2,6 +2,7 @@ package routing
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -11,7 +12,7 @@ import (
 type routeMapping map[string]config.Routes // The key here is the project name
 
 func (r routeMapping) addProjectRoutes(project string, routes config.Routes) {
-	sortRoutes(routes) // This will sort the array in place
+	sort.Stable(routes) // This will sort the array in place
 	r[project] = routes
 }
 
@@ -19,13 +20,18 @@ func (r routeMapping) deleteProjectRoutes(project string) {
 	delete(r, project)
 }
 
-func (r routeMapping) selectRoute(host, url string) (*config.Route, error) {
+func (r routeMapping) selectRoute(host, method, url string) (*config.Route, error) {
 	// Iterate over each project
 	for _, routes := range r {
 		// Iterate over each route of the project
 		for _, route := range routes {
 			// Skip if the hosts isn't present in the rule and hosts doesn't contain `*`
 			if !utils.StringExists(route.Source.Hosts, host) && !utils.StringExists(route.Source.Hosts, "*") {
+				continue
+			}
+
+			// Skip if the method doesn't match
+			if len(route.Source.Methods) > 0 && !utils.StringExists(route.Source.Methods, "*") && !utils.StringExists(route.Source.Methods, method) {
 				continue
 			}
 
@@ -45,12 +51,12 @@ func (r routeMapping) selectRoute(host, url string) (*config.Route, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("route not found for provided host (%s) and url (%s)", host, url)
+	return nil, fmt.Errorf("route not found for provided host (%s), method (%s) and url (%s)", host, method, url)
 }
 
-func (r *Routing) selectRoute(host, url string) (*config.Route, error) {
+func (r *Routing) selectRoute(host, method, url string) (*config.Route, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	return r.routes.selectRoute(host, url)
+	return r.routes.selectRoute(host, method, url)
 }

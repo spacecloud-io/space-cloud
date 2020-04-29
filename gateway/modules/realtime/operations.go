@@ -2,6 +2,7 @@ package realtime
 
 import (
 	"context"
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -13,12 +14,18 @@ import (
 )
 
 // Subscribe performs the realtime subscribe operation.
-func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.RealtimeRequest, sendFeed SendFeed) ([]*model.FeedData, error) {
+func (m *Module) Subscribe(clientID string, data *model.RealtimeRequest, sendFeed model.SendFeed) ([]*model.FeedData, error) {
+	// Create a 20 second context to process request
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
 
-	readReq := &model.ReadRequest{Find: data.Where, Operation: utils.All}
+	if data.Group == "" || data.DBType == "" || data.Where == nil {
+		return nil, errors.New("invalid request parameters provided")
+	}
+	readReq := model.ReadRequest{Find: data.Where, Operation: utils.All}
 
 	// Check if the user is authorised to make the request
-	actions, _, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, readReq)
+	actions, _, err := m.auth.IsReadOpAuthorised(ctx, data.Project, data.DBType, data.Group, data.Token, &readReq)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +38,7 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result, err := m.crud.Read(ctx2, data.DBType, data.Project, data.Group, readReq)
+	result, err := m.crud.Read(ctx2, data.DBType, data.Project, data.Group, &readReq)
 	if err != nil {
 		return nil, err
 	}
@@ -43,11 +50,15 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 	if ok {
 		timeStamp := time.Now().Unix()
 		for _, row := range array {
+			// Get the appropriate find object
+			find, _ := m.schema.CheckIfEventingIsPossible(data.DBType, data.Group, row.(map[string]interface{}), false)
+
+			// Create the feed data object
 			feedData = append(feedData, &model.FeedData{
 				Group:     data.Group,
 				Type:      utils.RealtimeInitial,
 				TimeStamp: timeStamp,
-				Find:      data.Where,
+				Find:      find,
 				DBType:    data.DBType,
 				Payload:   row,
 				QueryID:   data.ID,
@@ -57,12 +68,13 @@ func (m *Module) Subscribe(ctx context.Context, clientID string, data *model.Rea
 
 	// Add the live query
 	m.AddLiveQuery(data.ID, data.Project, data.DBType, data.Group, clientID, data.Where, actions, sendFeed)
+
 	return feedData, nil
 }
 
 // Unsubscribe performs the realtime unsubscribe operation.
-func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) {
-	m.RemoveLiveQuery(data.DBType, data.Group, clientID, data.ID)
+func (m *Module) Unsubscribe(clientID string, data *model.RealtimeRequest) error {
+	return m.RemoveLiveQuery(data.DBType, data.Group, clientID, data.ID)
 }
 
 // HandleRealtimeEvent handles an incoming realtime event from the eventing module

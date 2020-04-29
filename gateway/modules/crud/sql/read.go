@@ -8,6 +8,7 @@ import (
 
 	"github.com/doug-martin/goqu/v8"
 	"github.com/doug-martin/goqu/v8/exp"
+	"github.com/sirupsen/logrus"
 
 	_ "github.com/denisenkom/go-mssqldb"                // Import for MsSQL
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres" // Dialect for postfres
@@ -21,7 +22,7 @@ import (
 // generateReadQuery makes a query for read operation
 func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dbType := s.dbType
-	if dbType == string(utils.SqlServer) {
+	if dbType == string(utils.SQLServer) {
 		dbType = string(utils.Postgres)
 	}
 
@@ -103,7 +104,7 @@ func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (st
 
 	}
 
-	if s.dbType == string(utils.SqlServer) {
+	if s.dbType == string(utils.SQLServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
 	return sqlString, args, nil
@@ -119,6 +120,8 @@ func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequ
 	if err != nil {
 		return 0, nil, err
 	}
+
+	logrus.Debugf("Executing sql read query: %s - %v", sqlString, args)
 
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
