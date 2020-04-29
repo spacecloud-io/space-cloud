@@ -202,9 +202,12 @@ func (m *Module) Batch(ctx context.Context, dbAlias, project string, req *model.
 	for _, r := range req.Requests {
 		switch r.Type {
 		case string(utils.Create):
-			if err := m.schema.ValidateCreateOperation(dbAlias, r.Col, &model.CreateRequest{Document: r.Document, Operation: r.Operation}); err != nil {
+			v := &model.CreateRequest{Document: r.Document, Operation: r.Operation}
+			if err := m.schema.ValidateCreateOperation(dbAlias, r.Col, v); err != nil {
 				return err
 			}
+			r.Document = v.Document
+			r.Operation = v.Operation
 		case string(utils.Update):
 			if err := m.schema.ValidateUpdateOperation(dbAlias, r.Col, r.Operation, r.Update, r.Find); err != nil {
 				return err

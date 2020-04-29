@@ -13,7 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]model.AllRequest, []interface{}, error) {
+func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]*model.AllRequest, []interface{}, error) {
 	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
 		return nil, nil, err
@@ -94,15 +94,15 @@ func copyDoc(doc map[string]interface{}) map[string]interface{} {
 	return newDoc
 }
 
-func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string) ([]model.AllRequest, []interface{}, error) {
-	createRequests := make([]model.AllRequest, 0)
-	afterRequests := make([]model.AllRequest, 0)
+func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string) ([]*model.AllRequest, []interface{}, error) {
+	createRequests := make([]*model.AllRequest, 0)
+	afterRequests := make([]*model.AllRequest, 0)
 
 	// Check if we can the schema for this collection
 	schemaFields, p := graph.schema.GetSchema(dbAlias, col)
 	if !p {
 		// Return the docs as is if no schema is available
-		return []model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil
+		return []*model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil
 	}
 
 	returningDocs := make([]interface{}, len(docs))
@@ -198,7 +198,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 		}
 		returningDocs[i] = newDoc
 	}
-	createRequests = append(createRequests, model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs})
+	createRequests = append(createRequests, &model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs})
 	return append(createRequests, afterRequests...), returningDocs, nil
 }
 
