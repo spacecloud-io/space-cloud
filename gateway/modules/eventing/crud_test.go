@@ -939,13 +939,13 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		{
 			name: "eventing is not enabled",
 			m:    &Module{config: &config.Eventing{Enabled: false}},
-			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []model.AllRequest{model.AllRequest{Col: "col"}}}},
+			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Col: "col"}}}},
 			want: &model.EventIntent{Invalid: true},
 		},
 		{
 			name: "r.type default case",
 			m:    &Module{config: &config.Eventing{Enabled: true}},
-			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []model.AllRequest{model.AllRequest{Type: "default", Col: "col"}}}},
+			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "default", Col: "col"}}}},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetNodeID",
@@ -957,7 +957,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		{
 			name: "error creating internal",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []model.AllRequest{model.AllRequest{Type: "create", Col: "col", Document: map[string]interface{}{"key": "value"}, Operation: "one"}}}},
+			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "create", Col: "col", Document: map[string]interface{}{"key": "value"}, Operation: "one"}}}},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetNodeID",
@@ -983,7 +983,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		{
 			name: "r.type create case",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []model.AllRequest{model.AllRequest{Type: "create", Col: "col", Document: map[string]interface{}{"key": "value"}, Operation: "one"}}}},
+			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "create", Col: "col", Document: map[string]interface{}{"key": "value"}, Operation: "one"}}}},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetNodeID",
@@ -1009,7 +1009,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		{
 			name: "r.type update case where not ok",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "not update", Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []model.AllRequest{model.AllRequest{Type: "update", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
+			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "update", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetNodeID",
@@ -1021,7 +1021,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		{
 			name: "r.type update case",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBUpdate, Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []model.AllRequest{model.AllRequest{Type: "update", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
+			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "update", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetNodeID",
@@ -1047,7 +1047,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		{
 			name: "r.type delete case",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBDelete, Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []model.AllRequest{model.AllRequest{Type: "delete", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
+			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "delete", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
 				mockArgs{
 					method:         "GetNodeID",
