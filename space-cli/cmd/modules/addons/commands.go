@@ -95,6 +95,10 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Database type not provided as an arguement", nil)
 		return nil
 	}
+	project := viper.GetString("project")
+	if project == "" {
+		return utils.LogError(`Please provide project id through "--project" flag`, nil)
+	}
 	dbtype := args[0]
 	username := viper.GetString("username")
 	if username == "" {
@@ -116,8 +120,7 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	}
 	alias := viper.GetString("alias")
 	version := viper.GetString("version")
-
-	_ = addDatabase(dbtype, username, password, alias, version)
+	_ = addDatabase(dbtype, username, password, alias, version, project)
 	return nil
 }
 

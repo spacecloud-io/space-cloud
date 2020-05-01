@@ -3,17 +3,42 @@ package addons
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/sirupsen/logrus"
 	"github.com/txn2/txeh"
+
+	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/modules/database"
+	"github.com/spaceuptech/space-cli/cmd/modules/operations"
+	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
-func addDatabase(dbtype, username, password, alias, version string) error {
+type loadEnvResponse struct {
+	Quotas struct {
+		MaxDatabases int `json:"maxDatabases"`
+		MaxProjects  int `json:"maxProjects"`
+	} `json:"quotas"`
+}
+
+func addDatabase(dbtype, username, password, alias, version, project string) error {
 	ctx := context.Background()
+	resp := new(loadEnvResponse)
+	err := utils.Get(http.MethodGet, "/v1/config/env", map[string]string{}, resp)
+	if err != nil {
+		return utils.LogError(`Cannot fetch quotas from gateway, Is gateway running ?`, err)
+	}
+	dbConfig, err := database.GetDbConfig(project, "db-config", map[string]string{})
+	if err != nil {
+		return utils.LogError(`Cannot fetch database config from gateway`, err)
+	}
+	if (len(dbConfig) + 1) > resp.Quotas.MaxDatabases {
+		return utils.LogError(fmt.Sprintf(`Cannot add database in project "%s", max database limit reached. upgrade you plan`, project), err)
+	}
 
 	// Prepare the docker image name name
 	dockerImage := fmt.Sprintf("%s:%s", dbtype, version)
@@ -105,8 +130,43 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	if err := hosts.Save(); err != nil {
 		return utils.LogError("Could not save hosts file after updating add on containers", err)
 	}
+	logrus.Println("data", info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
 
+	connDefault := ""
+	switch dbtype {
+	case "postgres":
+		connDefault = fmt.Sprintf("postgres://postgres:mysecretpassword@%s:5432/postgres?sslmode=disable", hostName)
+	case "sqlserver":
+		connDefault = fmt.Sprintf("Data Source=%s,1433;Initial Catalog=master;User ID=yourID;Password=yourPassword@#;", hostName)
+	case "embedded":
+		connDefault = "Data.db"
+	case "mongo":
+		connDefault = "mongodb://localhost:27017"
+	case "mysql":
+		connDefault = fmt.Sprintf("root:my-secret-pw@tcp(%s:3306)/", hostName)
+	default:
+		return fmt.Errorf("invalid database provided, supported databases postgres,sqlserver,embedded,mongo,mysql")
+	}
+	account, err := utils.GetSelectedAccount()
+	if err != nil {
+		return utils.LogError("Unable to fetch account information", err)
+	}
+	login, err := utils.Login(account)
+	if err != nil {
+		return utils.LogError("Unable to login", err)
+	}
+	v := &model.SpecObject{
+		API:  "/v1/config/projects/{project}/database/{dbAlias}/config/{id}",
+		Type: "db-config",
+		Meta: map[string]string{"project": project, "dbAlias": alias, "id": "database-config"},
+		Spec: map[string]interface{}{"conn": connDefault, "type": dbtype, "enabled": true},
+	}
+	logrus.Println(connDefault, dbtype, username, password, alias, version, project)
 	utils.LogInfo(fmt.Sprintf("Started database (%s) with alias (%s)", dbtype, alias))
+	if err := operations.ApplySpec(login.Token, account, v); err != nil {
+		utils.LogInfo(`Unable to set database config, try configuring database from mission control`)
+		return nil
+	}
 	return nil
 }
 
