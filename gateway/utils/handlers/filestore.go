@@ -166,7 +166,7 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		utils.SendResponse(w, status, map[string]string{})
+		_ = utils.SendResponse(w, status, map[string]string{})
 	}
 }
 
