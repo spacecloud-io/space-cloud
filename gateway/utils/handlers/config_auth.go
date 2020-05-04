@@ -27,9 +27,7 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		defer utils.CloseTheCloser(r.Body)
 
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -42,16 +40,12 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		// Sync the config
 		if err := syncMan.SetUserManagement(ctx, projectID, provider, value); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// Give a positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -63,9 +57,7 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -81,12 +73,9 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 		providers, err := syncMan.GetUserManagement(ctx, projectID, providerID)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: providers})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: providers})
 	}
 }

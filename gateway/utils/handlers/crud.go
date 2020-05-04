@@ -40,9 +40,7 @@ func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 		// Check if the user is authenticated
 		status, err := auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -51,16 +49,12 @@ func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 		if err != nil {
 
 			// Send http response
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]string{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -91,18 +85,14 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 		// Check if the user is authenticated
 		actions, status, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
 		// Perform the read operation
 		result, err := crud.Read(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -110,9 +100,7 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 		_ = auth.PostProcessMethod(actions, result)
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"result": result})
 	}
 }
 
@@ -137,9 +125,7 @@ func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 
 		status, err := auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -148,16 +134,12 @@ func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 		if err != nil {
 
 			// Send http response
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -182,9 +164,7 @@ func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 
 		status, err := auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -192,16 +172,12 @@ func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 		err = crud.Delete(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
 			// Send http response
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -226,25 +202,19 @@ func HandleCrudAggregate(modules *modules.Modules) http.HandlerFunc {
 
 		status, err := auth.IsAggregateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
 		// Perform the aggregate operation
 		result, err := crud.Aggregate(ctx, meta.dbType, meta.projectID, meta.col, &req)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"result": result})
 	}
 }
 
@@ -309,9 +279,7 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 			// Send error response
 			if err != nil {
 				// Send http response
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(status)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = utils.SendErrorResponse(w, status, err.Error())
 				return
 			}
 		}
@@ -319,15 +287,11 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 		// Perform the batch operation
 		err := crud.Batch(ctx, meta.dbType, meta.projectID, &txRequest)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }

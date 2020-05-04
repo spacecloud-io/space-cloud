@@ -25,7 +25,7 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 		projectConfig, err := syncMan.GetConfig(projectID)
 		if err != nil {
 			logrus.Errorf("Error handling graphql query execution unable to get project config of %s - %s", projectID, err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -57,9 +57,7 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 				_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": op})
+			_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"data": op})
 			// return
 		})
 

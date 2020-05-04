@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
@@ -20,14 +19,10 @@ func HandleGetQuotas(adminMan *admin.Manager) http.HandlerFunc {
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(model.Response{Result: adminMan.GetQuotas()})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: adminMan.GetQuotas()})
 	}
 }
 
@@ -40,13 +35,9 @@ func HandleGetCredentials(adminMan *admin.Manager) http.HandlerFunc {
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(model.Response{Result: adminMan.GetCredentials()})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: adminMan.GetCredentials()})
 	}
 }
