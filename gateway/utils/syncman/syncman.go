@@ -47,10 +47,10 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, configFile: configFile, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	switch storeType {
@@ -84,13 +84,12 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
+func (s *Manager) Start(projectConfig *config.Config, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
 	s.port = port
-	s.configFile = configFilePath
 
 	// Write the config to file
 	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)

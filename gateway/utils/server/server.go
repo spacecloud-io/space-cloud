@@ -34,11 +34,11 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeProjectScope bool, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, removeProjectScope bool, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
 
 	// Create the fundamental modules
 	adminMan := admin.New("", clusterID, adminUserInfo)
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile, adminMan)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, removeP
 func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHosts []string) error {
 
 	// Start the sync manager
-	if err := s.syncMan.Start(s.configFilePath, s.syncMan.GetGlobalConfig(), port); err != nil {
+	if err := s.syncMan.Start(s.syncMan.GetGlobalConfig(), port); err != nil {
 		return err
 	}
 
@@ -123,9 +123,4 @@ func (s *Server) SetConfig(c *config.Config, isProd bool) error {
 	s.syncMan.SetGlobalConfig(c)
 	s.adminMan.SetEnv(isProd)
 	return s.adminMan.SetConfig(c.Admin)
-}
-
-// SetConfigFilePath sets the config file path
-func (s *Server) SetConfigFilePath(configFilePath string) {
-	s.configFilePath = configFilePath
 }
