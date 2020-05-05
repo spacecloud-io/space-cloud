@@ -10,6 +10,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
@@ -36,6 +37,25 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 		want1   []interface{}
 		wantErr bool
 	}{
+		{
+			name:   "msyql: valid set find on json",
+			fields: fields{dbType: "mysql"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$set",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
+					Find: map[string]interface{}{
+						"Obj2": map[string]interface{}{"$contains": map[string]interface{}{"obj1": "value1"}},
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=? WHERE json_contains(Obj2,?)",
+			want1:   []interface{}{"1", `{"obj1":"value1"}`},
+			wantErr: false,
+		},
 		{
 			name:   "sql: valid $set query",
 			fields: fields{dbType: "mysql"},
@@ -289,7 +309,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 				},
 			},
 			want: "",
-			//want1:   []interface{}{},
+			// want1:   []interface{}{},
 			wantErr: true,
 		},
 		{
@@ -441,6 +461,25 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			want: "",
 
 			wantErr: true,
+		},
+		{
+			name:   "postgres: valid set find on json",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$set",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
+					Find: map[string]interface{}{
+						"Obj2": map[string]interface{}{"$contains": map[string]interface{}{"obj1": "value1"}},
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=$1 WHERE Obj2 @> $2",
+			want1:   []interface{}{"1", `{"obj1":"value1"}`},
+			wantErr: false,
 		},
 		{
 			name:   "postgres: valid set",
