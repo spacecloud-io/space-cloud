@@ -9,11 +9,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestSQL_generateReadQuery(t *testing.T) {
-	//temp := "one"
+	// temp := "one"
 	type fields struct {
 		enabled            bool
 		connection         string
@@ -199,7 +200,15 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			want1:   []interface{}{},
 			wantErr: false,
 		},
-		//postgres
+		{
+			name:    "Select JSON",
+			fields:  fields{dbType: "mysql"},
+			args:    args{project: "test", col: "table", req: &model.ReadRequest{Find: map[string]interface{}{"Obj1": map[string]interface{}{"$contains": map[string]interface{}{"obj1": "value1"}}}}},
+			want:    []string{"SELECT * FROM test.table WHERE json_contains(Obj1,?)"},
+			want1:   []interface{}{`{"obj1":"value1"}`},
+			wantErr: false,
+		},
+		// postgres
 		{
 			name:    "String1 = ?",
 			fields:  fields{dbType: "postgres"},
@@ -352,8 +361,16 @@ func TestSQL_generateReadQuery(t *testing.T) {
 			want1:   []interface{}{int64(1)},
 			wantErr: false,
 		},
+		{
+			name:    "Select JSON",
+			fields:  fields{dbType: "postgres"},
+			args:    args{project: "test", col: "table", req: &model.ReadRequest{Find: map[string]interface{}{"Obj1": map[string]interface{}{"$contains": map[string]interface{}{"obj1": "value1"}}}}},
+			want:    []string{"SELECT * FROM test.table WHERE Obj1 @> $1"},
+			want1:   []interface{}{`{"obj1":"value1"}`},
+			wantErr: false,
+		},
 
-		//sqlserver
+		// sqlserver
 		{
 			name:    "String1 = ?",
 			fields:  fields{dbType: "sqlserver"},

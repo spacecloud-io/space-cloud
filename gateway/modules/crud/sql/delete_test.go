@@ -9,6 +9,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
@@ -34,6 +35,30 @@ func TestSQL_generateDeleteQuery(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
+		{
+			name:   "Successfull Test json in where clause",
+			fields: fields{dbType: "mysql"},
+			args: args{
+				project: "projectName",
+				col:     "fooTable",
+				req:     &model.DeleteRequest{Find: map[string]interface{}{"Obj1": map[string]interface{}{"$contains": map[string]interface{}{"obj1": "value1"}}}},
+			},
+			want:    "DELETE FROM projectName.fooTable WHERE json_contains(Obj1,?)",
+			want1:   []interface{}{`{"obj1":"value1"}`},
+			wantErr: false,
+		},
+		{
+			name:   "Successfull Test",
+			fields: fields{dbType: "mysql"},
+			args: args{
+				project: "projectName",
+				col:     "fooTable",
+				req:     &model.DeleteRequest{Find: map[string]interface{}{"String1": "1"}},
+			},
+			want:    "DELETE FROM projectName.fooTable WHERE (String1 = ?)",
+			want1:   []interface{}{"1"},
+			wantErr: false,
+		},
 		{
 			name:   "Successfull Test",
 			fields: fields{dbType: "mysql"},
@@ -299,7 +324,19 @@ func TestSQL_generateDeleteQuery(t *testing.T) {
 			want1:   []interface{}{},
 			wantErr: false,
 		},
-		//postgres
+		// postgres
+		{
+			name:   "Successfull Test",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				project: "projectName",
+				col:     "fooTable",
+				req:     &model.DeleteRequest{Find: map[string]interface{}{"Obj1": map[string]interface{}{"$contains": map[string]interface{}{"obj1": "value1"}}}},
+			},
+			want:    "DELETE FROM projectName.fooTable WHERE Obj1 @> $1",
+			want1:   []interface{}{`{"obj1":"value1"}`},
+			wantErr: false,
+		},
 		{
 			name:   "Successfull Test",
 			fields: fields{dbType: "postgres"},
