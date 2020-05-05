@@ -53,12 +53,10 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 			defer func() { ch <- struct{}{} }()
 			if err != nil {
 				errMes := map[string]interface{}{"message": err.Error()}
-				w.Header().Set("Content-Type", "application/json")
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+				_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
 				return
 			}
 			_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"data": op})
-			// return
 		})
 
 		select {
@@ -67,8 +65,7 @@ func HandleGraphQLRequest(modules *modules.Modules, syncMan *syncman.Manager) ht
 		case <-time.After(time.Duration(projectConfig.ContextTimeGraphQL) * time.Second):
 			log.Println("GraphQL Handler: Request timed out")
 			errMes := map[string]interface{}{"message": "GraphQL Handler: Request timed out"}
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"errors": []interface{}{errMes}})
+			_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"errors": []interface{}{errMes}})
 			return
 		}
 	}

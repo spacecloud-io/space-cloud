@@ -136,6 +136,7 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 		status, file, err := fileStore.DownloadFile(ctx, projectID, token, path)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, status, err.Error())
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 		defer func() { _ = file.Close() }()

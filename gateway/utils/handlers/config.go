@@ -289,7 +289,7 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 
 		// Throw error if request was of incorrect type
 		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Config was of invalid type - "+err.Error())
 			return
 		}
 

@@ -53,6 +53,5 @@ func SendResponse(w http.ResponseWriter, status int, body interface{}) error {
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	err := json.NewEncoder(w).Encode(body)
-	return err
+	return json.NewEncoder(w).Encode(body)
 }

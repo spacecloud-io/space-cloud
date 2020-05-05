@@ -107,7 +107,5 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		}
 
 		_ = utils.SendOkayResponse(w)
-		// return
-
 	}
 }

@@ -1,7 +1,7 @@
 module github.com/spaceuptech/space-cloud/gateway
 
 require (
-	cloud.google.com/go/storage v1.0.0
+	cloud.google.com/go/storage v1.6.0
 	github.com/armon/go-metrics v0.0.0-20190430140413-ec5e00d3c878 // indirect
 	github.com/aws/aws-sdk-go v1.23.0
 	github.com/coreos/bbolt v1.3.3 // indirect
@@ -17,8 +17,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gogo/protobuf v1.3.1 // indirect
-	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
-	github.com/google/go-cmp v0.3.1
+	github.com/google/go-cmp v0.4.0
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
@@ -34,11 +33,11 @@ require (
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.9 // indirect
-	github.com/kr/pty v1.1.4 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/segmentio/ksuid v1.0.2
@@ -57,18 +56,15 @@ require (
 	go.mongodb.org/mongo-driver v1.1.1
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4
-	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a
-	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
-	golang.org/x/tools v0.0.0-20191217033636-bbbf87ae2631 // indirect
-	google.golang.org/api v0.14.0
-	google.golang.org/appengine v1.6.5 // indirect
-	gopkg.in/AlecAivazis/survey.v1 v1.8.5
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	golang.org/x/net v0.0.0-20200222125558-5a598a2470a0
+	google.golang.org/api v0.18.0
+	gopkg.in/AlecAivazis/survey.v1 v1.8.8
+	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v2 v2.2.7
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
-	k8s.io/client-go v0.17.2
-	k8s.io/utils v0.0.0-20191217005138-9e5e9d854fcc // indirect
+	k8s.io/client-go v11.0.0+incompatible
+	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66 // indirect
 
 )
 
