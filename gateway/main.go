@@ -218,12 +218,10 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, removeProjectScope, disableMetrics, adminUserInfo)
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configPath, removeProjectScope, disableMetrics, adminUserInfo)
 	if err != nil {
 		return err
 	}
-	// Save the config file path for future use
-	s.SetConfigFilePath(configPath)
 
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
