@@ -55,7 +55,14 @@ func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string)
 						logrus.Errorf("error marshalling data $contains data (%s)", err.Error())
 						break
 					}
-					array = append(array, goqu.L(fmt.Sprintf("%s @> ?", k), string(data)))
+					switch s.dbType {
+					case string(utils.MySQL):
+						array = append(array, goqu.L(fmt.Sprintf("json_contains(%s,?)", k), string(data)))
+					case string(utils.Postgres):
+						array = append(array, goqu.L(fmt.Sprintf("%s @> ?", k), string(data)))
+					default:
+						logrus.Errorf("_contains not supported for database (%s)", s.dbType)
+					}
 				case "$gt":
 					array = append(array, goqu.I(k).Gt(v2))
 

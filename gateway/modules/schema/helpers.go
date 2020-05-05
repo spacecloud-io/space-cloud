@@ -36,10 +36,14 @@ func getSQLType(dbType, typename string) (string, error) {
 	case model.TypeInteger:
 		return "bigint", nil
 	case model.TypeJSON:
-		if dbType != string(utils.Postgres) {
+		switch dbType {
+		case string(utils.Postgres):
+			return "jsonb", nil
+		case string(utils.MySQL):
+			return "json", nil
+		default:
 			return "", fmt.Errorf("jsonb not supported for database %s", dbType)
 		}
-		return "jsonb", nil
 	default:
 		return "", fmt.Errorf("%s type not allowed", typename)
 	}
