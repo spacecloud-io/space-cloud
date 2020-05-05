@@ -2,21 +2,21 @@ module github.com/spaceuptech/space-cloud/gateway
 
 require (
 	cloud.google.com/go/storage v1.6.0
-	github.com/armon/go-metrics v0.0.0-20190430140413-ec5e00d3c878 // indirect
-	github.com/aws/aws-sdk-go v1.23.0
+	github.com/armon/go-metrics v0.3.3 // indirect
+	github.com/aws/aws-sdk-go v1.30.20
 	github.com/coreos/bbolt v1.3.3 // indirect
-	github.com/coreos/etcd v3.3.17+incompatible
+	github.com/coreos/etcd v3.3.20+incompatible
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
-	github.com/denisenkom/go-mssqldb v0.0.0-20191001013358-cfbb681360f0
+	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/denisenkom/go-mssqldb v0.0.0-20200428022330-06a60b6afbbc
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/doug-martin/goqu/v8 v8.1.0
+	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/fatih/structs v1.1.0
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-sql-driver/mysql v1.4.1
-	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/go-sql-driver/mysql v1.5.0
 	github.com/google/go-cmp v0.4.0
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.3
@@ -32,7 +32,6 @@ require (
 	github.com/hashicorp/memberlist v0.1.5 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
-	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
@@ -45,7 +44,7 @@ require (
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spaceuptech/space-api-go v0.17.3
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/urfave/cli v1.22.1
@@ -60,9 +59,9 @@ require (
 	google.golang.org/api v0.18.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/yaml.v2 v2.2.7
-	k8s.io/api v0.17.2
-	k8s.io/apimachinery v0.17.2
+	gopkg.in/yaml.v2 v2.2.8
+	k8s.io/api v0.18.2
+	k8s.io/apimachinery v0.18.2
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66 // indirect
 
