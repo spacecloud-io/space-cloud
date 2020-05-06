@@ -33,7 +33,9 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-
+		if req.Timeout == 0 {
+			req.Timeout = 10 // set default context to 10 second
+		}
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
 		defer cancel()
 

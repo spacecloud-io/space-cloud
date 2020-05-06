@@ -152,9 +152,6 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
-		data, _ := json.MarshalIndent(v, "", " ")
-		logrus.Println("data", string(data))
-		logrus.Println("url", r.URL.Path)
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")

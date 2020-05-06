@@ -42,6 +42,10 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('version')"), nil)
 			}
+			err = viper.BindPFlag("auto-apply", cmd.Flags().Lookup("auto-apply"))
+			if err != nil {
+				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('auto-apply')"), nil)
+			}
 		},
 		RunE: ActionAddDatabase,
 	}
@@ -50,6 +54,7 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("password", "P", "", "provide the password")
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
+	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in gateway config")
 
 	var removeCmd = &cobra.Command{
 		Use:   "remove",
@@ -95,10 +100,6 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Database type not provided as an arguement", nil)
 		return nil
 	}
-	project := viper.GetString("project")
-	if project == "" {
-		return utils.LogError(`Please provide project id through "--project" flag`, nil)
-	}
 	dbtype := args[0]
 	username := viper.GetString("username")
 	if username == "" {
@@ -120,7 +121,7 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	}
 	alias := viper.GetString("alias")
 	version := viper.GetString("version")
-	_ = addDatabase(dbtype, username, password, alias, version, project)
+	_ = addDatabase(dbtype, username, password, alias, version)
 	return nil
 }
 
