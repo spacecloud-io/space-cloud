@@ -22,7 +22,7 @@ func LogError(message, module, segment string, err error) error {
 	return errors.New(message)
 }
 
-// LogWarning logs the warning message in the proper format
+// LogWarn logs the warning message in the proper format
 func LogWarn(message, module, segment string) {
 	logrus.WithFields(logrus.Fields{"module": module, "segment": segment}).Warnln(message)
 }

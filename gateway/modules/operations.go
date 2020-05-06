@@ -39,7 +39,9 @@ func (m *Modules) SetProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt
 		}
 
 		logrus.Debugln("Setting config of functions module")
-		m.functions.SetConfig(p.ID, p.Modules.Services)
+		if err := m.functions.SetConfig(p.ID, p.Modules.Services); err != nil {
+			logrus.Errorf("error setting remote services module config - %s", err.Error())
+		}
 
 		logrus.Debugln("Setting config of user management module")
 		m.user.SetConfig(p.Modules.Auth)
@@ -107,8 +109,7 @@ func (m *Modules) SetServicesConfig(projectID string, services *config.ServicesM
 	m.auth.SetServicesConfig(projectID, services)
 
 	logrus.Debugln("Setting config of remote services module")
-	m.functions.SetConfig(projectID, services)
-	return nil
+	return m.functions.SetConfig(projectID, services)
 }
 
 // SetFileStoreConfig sets the config of auth and filestore modules
