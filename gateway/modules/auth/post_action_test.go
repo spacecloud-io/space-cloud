@@ -177,9 +177,9 @@ func TestPostProcessMethod(t *testing.T) {
 	_ = auth.SetConfig(project, []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range authMatchQuery {
 		if test.testName == "invalid key in encryption" || test.testName == "invalid key in decryption" {
-			auth.aesKey = stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g")
+			auth.aesKey = base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g")
 		} else {
-			auth.aesKey = stringToByteArray("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
+			auth.aesKey = base64DecodeString("Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=")
 		}
 		t.Run(test.testName, func(t *testing.T) {
 			err := (auth).PostProcessMethod(test.postProcess, test.result)

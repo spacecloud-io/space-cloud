@@ -59,6 +59,7 @@ type AuthFilestoreInterface interface {
 // AuthFunctionInterface is an interface consisting of functions of auth module used by Function module
 type AuthFunctionInterface interface {
 	GetSCAccessToken() (string, error)
+	Encrypt(value string) (string, error)
 }
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module
