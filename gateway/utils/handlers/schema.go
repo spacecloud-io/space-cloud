@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"time"
 
@@ -25,9 +24,7 @@ func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, modules *mod
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -42,14 +39,10 @@ func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, modules *mod
 		schema := modules.Schema()
 		schemas, err := schema.GetCollectionSchema(ctx, projectID, dbAlias)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.WriteHeader(http.StatusOK) // http status codee
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(model.Response{Result: schemas})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: schemas})
 	}
 }

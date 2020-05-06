@@ -24,9 +24,7 @@ func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 
 		defer utils.CloseTheCloser(r.Body)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion, "plan": "open", "quotas": adminMan.GetQuotas()})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion, "plan": "space-cloud-open", "quotas": adminMan.GetQuotas(), "clusterId": ""})
 	}
 }
 
@@ -48,9 +46,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		// Check if the request is authorised
 		status, token, err := adminMan.Login(req.User, req.Key)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 
@@ -58,9 +54,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		// if endpoint is called by cli don't insert deployments config in projects
 		cli, ok := r.URL.Query()["cli"]
 		if ok && cli[0] == "true" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
+			_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"token": token, "projects": c.Projects})
 			return
 		}
 
@@ -68,9 +62,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			adminToken, err := adminMan.GetInternalAccessToken()
 			if err != nil {
 				logrus.Errorf("error while loading projects handlers unable to generate internal access token - %s", err.Error())
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
@@ -78,18 +70,14 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 				services, err := getServices(syncMan, project.ID, adminToken)
 				if err != nil {
 					logrus.Errorf("error in admin login of handler unable to set deployments - %s", err.Error())
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusInternalServerError)
-					_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 					return
 				}
 				project.Modules.Deployments.Services = services
 				secrets, err := getSecrets(syncMan, project.ID, adminToken)
 				if err != nil {
 					logrus.Errorf("error in admin login of handler unable to set secrets - %s", err.Error())
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusInternalServerError)
-					_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 					return
 				}
 				project.Modules.Secrets = secrets
@@ -97,9 +85,7 @@ func HandleAdminLogin(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			syncMan.SetGlobalConfig(c)
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"token": token, "projects": c.Projects})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"token": token, "projects": c.Projects})
 	}
 }
 
@@ -171,15 +157,11 @@ func HandleRefreshToken(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		newToken, err := adminMan.RefreshToken(token)
 		if err != nil {
 			logrus.Errorf("Error while refreshing token handleRefreshToken - %s ", err.Error())
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"token": newToken})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"token": newToken})
 	}
 }
 
@@ -194,9 +176,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -207,9 +187,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 			adminToken, err := adminMan.GetInternalAccessToken()
 			if err != nil {
 				logrus.Errorf("error while loading projects handlers unable to generate internal access token - %s", err.Error())
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
@@ -217,18 +195,14 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 				services, err := getServices(syncMan, project.ID, adminToken)
 				if err != nil {
 					logrus.Errorf("error in admin login of handler unable to set deployments - %s", err.Error())
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusInternalServerError)
-					_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 					return
 				}
 				project.Modules.Deployments.Services = services
 				secrets, err := getSecrets(syncMan, project.ID, adminToken)
 				if err != nil {
 					logrus.Errorf("error in admin login of handler unable to set secrets - %s", err.Error())
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusInternalServerError)
-					_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 					return
 				}
 				project.Modules.Secrets = secrets
@@ -237,9 +211,7 @@ func HandleLoadProjects(adminMan *admin.Manager, syncMan *syncman.Manager, confi
 		}
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: c.Projects})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: c.Projects})
 	}
 }
 
@@ -252,9 +224,7 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -263,15 +233,11 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 
 		project, err := syncMan.GetProjectConfig(projectID)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: project})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: project})
 	}
 }
 
@@ -292,9 +258,7 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -303,15 +267,11 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 
 		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(statusCode)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, statusCode, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -329,17 +289,13 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 
 		// Throw error if request was of incorrect type
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "Config was of invalid type - " + err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Config was of invalid type - "+err.Error())
 			return
 		}
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -347,16 +303,12 @@ func HandleStoreProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager,
 
 		// Sync the config
 		if err := syncMan.SetProjectConfig(ctx, c); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -367,8 +319,6 @@ func HandleDeleteProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager
 		defer utils.CloseTheCloser(r.Body)
 
 		// Give negative acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"error": "Operation not supported"})
+		_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "Operation not supported")
 	}
 }
