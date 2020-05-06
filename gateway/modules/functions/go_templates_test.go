@@ -5,8 +5,6 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/segmentio/ksuid"
-
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -84,7 +82,7 @@ variables:
     cluster_id: "{{ index . "cluster" }}"
   set:
     session_id: ""
-    cluster_key: "abc"
+    cluster_key: "{{ generateId }}"
 `,
 				params: map[string]interface{}{"cluster": "cluster 1"},
 				claims: auth.TokenClaims{"id": "1"},
@@ -94,7 +92,7 @@ variables:
 				"query": "mutation { update_clusters(where: $where, set: $set) @db { status error }",
 				"variables": map[string]interface{}{
 					"where": map[string]interface{}{"owner_id": "1", "cluster_id": "cluster 1"},
-					"set":   map[string]interface{}{"session_id": "", "cluster_key": "abc"},
+					"set":   map[string]interface{}{"session_id": "", "cluster_key": "generated id"},
 				},
 			},
 		},
@@ -111,7 +109,7 @@ variables:
 		},
 		"set": {
 			"session_id": "",
-			"cluster_key": "abc"
+			"cluster_key": "{{ generateId }}"
 		}
 	}
 }
@@ -124,7 +122,7 @@ variables:
 				"query": "mutation { update_clusters(where: $where, set: $set) @db { status error }",
 				"variables": map[string]interface{}{
 					"where": map[string]interface{}{"owner_id": "1", "cluster_id": "cluster 1"},
-					"set":   map[string]interface{}{"session_id": "", "cluster_key": "abc"},
+					"set":   map[string]interface{}{"session_id": "", "cluster_key": "generated id"},
 				},
 			},
 		},
@@ -133,7 +131,7 @@ variables:
 		t.Run(tt.name, func(t *testing.T) {
 			tmpl, err := template.New(tt.name).Funcs(template.FuncMap{
 				"hash":       utils.HashString,
-				"generateId": func() string { return ksuid.New().String() },
+				"generateId": func() string { return "generated id" },
 				"add":        func(a, b int) int { return a + b },
 			}).Parse(tt.args.tmpl)
 			if err != nil {
