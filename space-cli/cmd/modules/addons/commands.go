@@ -1,8 +1,6 @@
 package addons
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -28,23 +26,23 @@ func Commands() []*cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := viper.BindPFlag("username", cmd.Flags().Lookup("username"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('username')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('username')", nil)
 			}
 			err = viper.BindPFlag("password", cmd.Flags().Lookup("password"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('password')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('password')", nil)
 			}
 			err = viper.BindPFlag("alias", cmd.Flags().Lookup("alias"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('alias')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('alias')", nil)
 			}
 			err = viper.BindPFlag("version", cmd.Flags().Lookup("version"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('version')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('version')", nil)
 			}
 			err = viper.BindPFlag("auto-apply", cmd.Flags().Lookup("auto-apply"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('auto-apply')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('auto-apply')", nil)
 			}
 		},
 		RunE: ActionAddDatabase,
