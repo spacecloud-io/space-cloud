@@ -3,7 +3,6 @@ package addons
 import (
 	"context"
 	"fmt"
-	"math"
 	"net/http"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/txn2/txeh"
 
@@ -149,8 +147,6 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 
 	if autoApply {
 		connDefault := ""
-		duration := 15
-		logrus.Println("host", hostName)
 		switch dbtype {
 		case "postgres":
 			connDefault = fmt.Sprintf("postgres://postgres:mysecretpassword@%s:5432/postgres?sslmode=disable", hostName)
@@ -158,18 +154,9 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 			connDefault = fmt.Sprintf("mongodb://%s:27017", hostName)
 		case "mysql":
 			connDefault = fmt.Sprintf("root:my-secret-pw@tcp(%s:3306)/", hostName)
-			duration = 220
 		default:
 			return fmt.Errorf("invalid database provided, supported databases postgres,sqlserver,embedded,mongo,mysql")
 		}
-
-		// NOTE : we cannot connect to the docker container instantly after creation. wait for some time before making database connection
-		s := spinner.New(spinner.CharSets[11], 100*time.Millisecond) // Build our new spinner
-		s.Suffix = fmt.Sprintf("    Waiting for container (%s) to start, it might take about %d minute", dbtype, int(math.Ceil(float64(duration)/60.0)))
-		_ = s.Color("green")
-		s.Start()
-		time.Sleep(time.Duration(duration) * time.Second) // Run for some time to simulate work// Start the spinner
-		s.Stop()
 
 		account, err := utils.GetSelectedAccount()
 		if err != nil {
@@ -186,13 +173,39 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 			Meta: map[string]string{"project": project, "dbAlias": alias, "id": "database-config"},
 			Spec: map[string]interface{}{"conn": connDefault, "type": dbtype, "enabled": true},
 		}
-		if err := operations.ApplySpec(login.Token, account, v); err != nil {
-			utils.LogInfo(`Unable to set database config, try configuring database from mission control`)
-			return nil
-		}
+		keepSettingConfig(login.Token, dbtype, account, v)
+
 	}
 	utils.LogInfo(fmt.Sprintf("Started database (%s) with alias (%s) & hostname (%s)", dbtype, alias, hostName))
 	return nil
+}
+
+func keepSettingConfig(token, dbType string, account *model.Account, v *model.SpecObject) {
+	timeout := time.After(5 * time.Minute) // 5 is the maximum time required as mysql may take upto 5 minutes
+	ticker := time.Tick(10 * time.Second)
+
+	// NOTE : we cannot connect to the docker container instantly after creation. wait for some time before making database connection
+	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond) // Build our new spinner
+	s.Suffix = fmt.Sprintf("    Waiting for container (%s) to start", dbType)
+	_ = s.Color("green")
+	s.Start()
+	for {
+		select {
+		// Got a timeout! fail with a timeout error
+		case <-timeout:
+			utils.LogInfo(`Unable to set database config, try configuring database from mission control`)
+			s.Stop()
+			return
+			// Got a tick, we should check on checkSomething()
+		case <-ticker:
+			if err := operations.ApplySpec(token, account, v); err != nil {
+				utils.LogDebug("Could'nt set database config", nil)
+				continue
+			}
+			s.Stop()
+			return
+		}
+	}
 }
 
 func removeDatabase(alias string) error {
