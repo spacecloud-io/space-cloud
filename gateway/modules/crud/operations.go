@@ -208,7 +208,7 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id str
 	}
 
 	// Fire the query and return the result
-	_, b, err := crud.RawQuery(ctx, project, args)
+	_, b, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
 	return b, err
 }
 
