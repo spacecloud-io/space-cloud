@@ -182,8 +182,8 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 
 func keepSettingConfig(token, dbType string, account *model.Account, v *model.SpecObject) {
 	timeout := time.After(5 * time.Minute) // 5 is the maximum time required as mysql may take upto 5 minutes
-	ticker := time.Tick(10 * time.Second)
-
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
 	// NOTE : we cannot connect to the docker container instantly after creation. wait for some time before making database connection
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond) // Build our new spinner
 	s.Suffix = fmt.Sprintf("    Waiting for container (%s) to start", dbType)
@@ -197,7 +197,7 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 			s.Stop()
 			return
 			// Got a tick, we should check on checkSomething()
-		case <-ticker:
+		case <-ticker.C:
 			if err := operations.ApplySpec(token, account, v); err != nil {
 				utils.LogDebug("Could'nt set database config", nil)
 				continue
