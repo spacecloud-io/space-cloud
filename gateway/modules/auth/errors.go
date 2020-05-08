@@ -17,11 +17,11 @@ var ErrIncorrectRuleFieldType = errors.New("auth: Incorrect rule field type")
 var ErrIncorrectMatch = errors.New("auth: The two fields do not match")
 
 //Formaterror check whether error is provided in config.Rule
-func formaterror(rule *config.Rule, err error) error {
+func formatError(rule *config.Rule, err error) error {
 	if rule.Name == "" {
 		rule.Name = "no name"
 	}
-	logrus.Errorf("Rule {%s} of type {%s} field", rule.Name, rule.Rule)
+	logrus.Errorf("Rule (%s) of type (%s) failed", rule.Name, rule.Rule)
 
 	if rule.Error == "" {
 		return err
