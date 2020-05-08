@@ -123,6 +123,10 @@ func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequ
 
 	logrus.Debugf("Executing sql read query: %s - %v", sqlString, args)
 
+	return s.readexec(ctx, sqlString, args, req.Operation, executor)
+}
+
+func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor) (int64, interface{}, error) {
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return 0, nil, err
@@ -142,7 +146,7 @@ func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequ
 		rowTypes, _ = rows.ColumnTypes()
 	}
 
-	switch req.Operation {
+	switch operation {
 	case utils.Count:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {

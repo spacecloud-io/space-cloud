@@ -88,6 +88,110 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 	return s.setProject(ctx, projectConfig)
 }
 
+// GetPreparedQuery gets preparedQuery from config
+func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id string) ([]interface{}, error) {
+	// Acquire a lock
+	type response struct {
+		ID        string   `json:"id"`
+		SQL       string   `json:"sql"`
+		Arguments []string `json:"arguments" yaml:"arguments"`
+	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+
+	if dbAlias != "" {
+		databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
+		if !ok {
+			return nil, fmt.Errorf("specified database (%s) not present in config", dbAlias)
+		}
+
+		if id != "" {
+			preparedQuery, ok := databaseConfig.PreparedQueries[id]
+			if !ok {
+				return nil, fmt.Errorf("Prepared Queries for id (%s) not present in config for dbAlias (%s) )", id, dbAlias)
+			}
+			return []interface{}{&response{ID: id, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments}}, nil
+		}
+		preparedQuery := databaseConfig.PreparedQueries
+		var coll []interface{} = make([]interface{}, 0)
+		for key, value := range preparedQuery {
+			coll = append(coll, &response{ID: key, SQL: value.SQL, Arguments: value.Arguments})
+		}
+		return coll, nil
+	}
+	databases := projectConfig.Modules.Crud
+	var coll []interface{} = make([]interface{}, 0)
+	for _, dbInfo := range databases {
+		for key, value := range dbInfo.PreparedQueries {
+			coll = append(coll, &response{ID: key, SQL: value.SQL, Arguments: value.Arguments})
+		}
+	}
+	return coll, nil
+}
+
+// SetPreparedQueries sets database preparedqueries
+func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id string, v *config.PreparedQuery) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	v.ID = id
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+
+	// update database PreparedQueries
+	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
+	if !ok {
+		return fmt.Errorf("specified database (%s) not present in config", dbAlias)
+	}
+
+	if databaseConfig.PreparedQueries == nil {
+		databaseConfig.PreparedQueries = make(map[string]*config.PreparedQuery, 1)
+	}
+	databaseConfig.PreparedQueries[id] = v
+
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		logrus.Errorf("error setting crud config - %s", err.Error())
+		return err
+	}
+
+	return s.setProject(ctx, projectConfig)
+}
+
+// RemovePreparedQueries removes the database PreparedQueries
+func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, id string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+
+	databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
+	if !ok {
+		return fmt.Errorf("specified database (%s) not present in config", dbAlias)
+	}
+
+	// update database reparedQueries
+	delete(databaseConfig.PreparedQueries, id)
+
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		logrus.Errorf("error setting crud config - %s", err.Error())
+		return err
+	}
+
+	return s.setProject(ctx, projectConfig)
+}
+
 // SetModifySchema modifies the schema of table
 func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, schema string) error {
 	// Acquire a lock
