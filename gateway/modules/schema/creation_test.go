@@ -999,7 +999,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col2 timestamp );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
+			want:    []string{"CREATE TABLE test.table1 (col2 datetimeoffset );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -1012,7 +1012,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col2 timestamp );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			want:    []string{"CREATE TABLE test.table1 (col2 datetimeoffset );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
 			wantErr: false,
 		},
 		{
@@ -1168,7 +1168,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeFloat}}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 timestamp NULL"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 datetimeoffset"},
 			wantErr: false,
 		},
 		{
@@ -1207,7 +1207,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID}}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 timestamp NULL"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 datetimeoffset"},
 			wantErr: false,
 		},
 		{
