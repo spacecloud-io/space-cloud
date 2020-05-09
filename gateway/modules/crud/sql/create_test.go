@@ -9,16 +9,16 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestSQL_generateCreateQuery(t *testing.T) {
 	type fields struct {
-		enabled            bool
-		connection         string
-		client             *sqlx.DB
-		dbType             string
-		removeProjectScope bool
+		enabled    bool
+		connection string
+		client     *sqlx.DB
+		dbType     string
 	}
 	type args struct {
 		project string
@@ -43,7 +43,7 @@ func TestSQL_generateCreateQuery(t *testing.T) {
 					Operation: "one",
 					Document:  map[string]interface{}{"string1": "1", "string2": "2", "string3": "3"}},
 			},
-			want:    "INSERT INTO foo.footable1 (string1, string2, string3) VALUES (?, ?, ?)",
+			want:    "INSERT INTO footable1 (string1, string2, string3) VALUES (?, ?, ?)",
 			want1:   []interface{}{"1", "2", "3"},
 			wantErr: false,
 		},
@@ -57,7 +57,7 @@ func TestSQL_generateCreateQuery(t *testing.T) {
 					Document:  []interface{}{map[string]interface{}{"string1": "1", "string2": "2"}, map[string]interface{}{"string1": "1", "string2": "2"}, map[string]interface{}{"string1": "1", "string2": "2"}},
 				},
 			},
-			want:    "INSERT INTO foo.footable1 (string1, string2) VALUES (?, ?), (?, ?), (?, ?)",
+			want:    "INSERT INTO footable1 (string1, string2) VALUES (?, ?), (?, ?), (?, ?)",
 			want1:   []interface{}{"1", "2", "1", "2", "1", "2"},
 			wantErr: false,
 		},
@@ -92,7 +92,7 @@ func TestSQL_generateCreateQuery(t *testing.T) {
 					Operation: "one",
 					Document:  map[string]interface{}{}},
 			},
-			want:    "INSERT INTO foo.footable1 DEFAULT VALUES",
+			want:    "INSERT INTO footable1 DEFAULT VALUES",
 			want1:   []interface{}{},
 			wantErr: false,
 		},
@@ -127,7 +127,7 @@ func TestSQL_generateCreateQuery(t *testing.T) {
 					Operation: "all",
 					Document:  []interface{}{map[string]interface{}{"string1": "1", "string2": "2"}, map[string]interface{}{"string1": "1", "string2": "2"}, map[string]interface{}{"string1": "1", "string2": "2"}}},
 			},
-			want:    "INSERT INTO foo.footable1 (string1, string2) VALUES (?, ?), (?, ?), (?, ?)",
+			want:    "INSERT INTO footable1 (string1, string2) VALUES (?, ?), (?, ?), (?, ?)",
 			want1:   []interface{}{"1", "2", "1", "2", "1", "2"},
 			wantErr: false,
 		},
@@ -331,11 +331,11 @@ func TestSQL_generateCreateQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &SQL{
-				enabled:            tt.fields.enabled,
-				connection:         tt.fields.connection,
-				client:             tt.fields.client,
-				dbType:             tt.fields.dbType,
-				removeProjectScope: tt.fields.removeProjectScope,
+				enabled:    tt.fields.enabled,
+				connection: tt.fields.connection,
+				client:     tt.fields.client,
+				dbType:     tt.fields.dbType,
+				name:       tt.args.project,
 			}
 			got, got1, err := s.generateCreateQuery(tt.args.project, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {

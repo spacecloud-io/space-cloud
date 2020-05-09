@@ -12,11 +12,10 @@ import (
 
 func TestSchema_generateCreationQueries(t *testing.T) {
 	type fields struct {
-		SchemaDoc          model.Type
-		crud               model.CrudSchemaInterface
-		project            string
-		config             config.Crud
-		removeProjectScope bool
+		SchemaDoc model.Type
+		crud      model.CrudSchemaInterface
+		project   string
+		config    config.Crud
 	}
 	type args struct {
 		ctx           context.Context
@@ -54,7 +53,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 json NOT NULL );"},
+			want:    []string{"CREATE TABLE table1 (col1 json NOT NULL );"},
 			wantErr: false,
 		},
 		{
@@ -67,7 +66,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 bigint NOT NULL );", "ALTER TABLE test.table1 ALTER col1 SET DEFAULT 543"},
+			want:    []string{"CREATE TABLE table1 (col1 bigint NOT NULL );", "ALTER TABLE table1 ALTER col1 SET DEFAULT 543"},
 			wantErr: false,
 		},
 		{
@@ -80,7 +79,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 float NOT NULL );", "ALTER TABLE test.table1 ALTER col1 SET DEFAULT 5.2"},
+			want:    []string{"CREATE TABLE table1 (col1 float NOT NULL );", "ALTER TABLE table1 ALTER col1 SET DEFAULT 5.2"},
 			wantErr: false,
 		},
 		{
@@ -93,7 +92,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 text NOT NULL );", "ALTER TABLE test.table1 ALTER col1 SET DEFAULT 'string'"},
+			want:    []string{"CREATE TABLE table1 (col1 text NOT NULL );", "ALTER TABLE table1 ALTER col1 SET DEFAULT 'string'"},
 			wantErr: false,
 		},
 		{
@@ -106,7 +105,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 boolean NOT NULL );", "ALTER TABLE test.table1 ALTER col1 SET DEFAULT true"},
+			want:    []string{"CREATE TABLE table1 (col1 boolean NOT NULL );", "ALTER TABLE table1 ALTER col1 SET DEFAULT true"},
 			wantErr: false,
 		},
 		{
@@ -119,7 +118,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeBoolean, IsDefault: true, Default: true}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ALTER col1 DROP DEFAULT"},
+			want:    []string{"ALTER TABLE table1 ALTER col1 DROP DEFAULT"},
 			wantErr: false,
 		},
 		{
@@ -133,7 +132,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			},
 			isSort:  true,
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)", "ALTER TABLE test.table1 ADD col2 text"},
+			want:    []string{"ALTER TABLE table1 ADD col1 varchar(50)", "ALTER TABLE table1 ADD col2 text"},
 			wantErr: false,
 		},
 		{
@@ -146,7 +145,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 bigint );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			want:    []string{"CREATE TABLE table1 (col1 bigint );", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -159,7 +158,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col2 datetime );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id)"},
+			want:    []string{"CREATE TABLE table1 (col2 datetime );", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -172,7 +171,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col2 datetime );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			want:    []string{"CREATE TABLE table1 (col2 datetime );", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES table2 (id) ON DELETE CASCADE"},
 			wantErr: false,
 		},
 		{
@@ -185,7 +184,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}, "table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE test.table1 DROP INDEX c_table1_col1", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id) ON DELETE CASCADE"},
+			want:    []string{"ALTER TABLE table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE table1 DROP INDEX c_table1_col1", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id) ON DELETE CASCADE"},
 			wantErr: false,
 		},
 		{
@@ -198,7 +197,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}, "table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id", OnDelete: "CASCADE"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE test.table1 DROP INDEX c_table1_col1", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			want:    []string{"ALTER TABLE table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE table1 DROP INDEX c_table1_col1", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -211,7 +210,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 boolean );", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			want:    []string{"CREATE TABLE table1 (col1 boolean );", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -224,7 +223,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col3 varchar(50) PRIMARY KEY NOT NULL );"},
+			want:    []string{"CREATE TABLE table1 (col3 varchar(50) PRIMARY KEY NOT NULL );"},
 			wantErr: false,
 		},
 		{
@@ -237,7 +236,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col3": &model.FieldType{FieldName: "col3", Kind: model.TypeInteger, IsFieldTypeRequired: true, IsPrimary: true}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP PRIMARY KEY", "ALTER TABLE test.table1 DROP COLUMN col3", "ALTER TABLE test.table1 ADD col3 varchar(50)", "ALTER TABLE test.table1 MODIFY col3 varchar(50) NOT NULL", "ALTER TABLE test.table1 ADD PRIMARY KEY (col3)"},
+			want:    []string{"ALTER TABLE table1 DROP PRIMARY KEY", "ALTER TABLE table1 DROP COLUMN col3", "ALTER TABLE table1 ADD col3 varchar(50)", "ALTER TABLE table1 MODIFY col3 varchar(50) NOT NULL", "ALTER TABLE table1 ADD PRIMARY KEY (col3)"},
 			wantErr: false,
 		},
 		{
@@ -250,7 +249,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1"},
 			wantErr: false,
 		},
 		{
@@ -263,7 +262,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 MODIFY col1 varchar(50) NOT NULL"},
+			want:    []string{"ALTER TABLE table1 MODIFY col1 varchar(50) NOT NULL"},
 			wantErr: false,
 		},
 		{
@@ -276,7 +275,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsFieldTypeRequired: true}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 MODIFY col1 varchar(50) NULL"},
+			want:    []string{"ALTER TABLE table1 MODIFY col1 varchar(50) NULL"},
 			wantErr: false,
 		},
 		{
@@ -289,7 +288,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 json"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 json"},
 			wantErr: false,
 		},
 		{
@@ -302,7 +301,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 bigint"},
 			wantErr: false,
 		},
 		{
@@ -315,7 +314,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeJSON}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 text"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 text"},
 			wantErr: false,
 		},
 		{
@@ -328,7 +327,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 text"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 text"},
 			wantErr: false,
 		},
 		{
@@ -341,7 +340,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeString}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 bigint"},
 			wantErr: false,
 		},
 		{
@@ -354,7 +353,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 float"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 float"},
 			wantErr: false,
 		},
 		{
@@ -367,7 +366,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeFloat}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 bigint"},
 			wantErr: false,
 		},
 		{
@@ -380,7 +379,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeFloat}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 datetime"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 datetime"},
 			wantErr: false,
 		},
 		{
@@ -393,7 +392,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 float"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 float"},
 			wantErr: false,
 		},
 		{
@@ -406,7 +405,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 varchar(50)"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 varchar(50)"},
 			wantErr: false,
 		},
 		{
@@ -419,7 +418,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 datetime"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 datetime"},
 			wantErr: false,
 		},
 		{
@@ -471,7 +470,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsPrimary: false}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 MODIFY col1 varchar(50) NOT NULL", "ALTER TABLE test.table1 ADD PRIMARY KEY (col1)"},
+			want:    []string{"ALTER TABLE table1 MODIFY col1 varchar(50) NOT NULL", "ALTER TABLE table1 ADD PRIMARY KEY (col1)"},
 			wantErr: false,
 		},
 		{
@@ -484,7 +483,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsFieldTypeRequired: true, IsPrimary: true}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 MODIFY col1 varchar(50) NULL", "ALTER TABLE test.table1 DROP PRIMARY KEY"},
+			want:    []string{"ALTER TABLE table1 MODIFY col1 varchar(50) NULL", "ALTER TABLE table1 DROP PRIMARY KEY"},
 			wantErr: false,
 		},
 		{
@@ -497,7 +496,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsForeign: false}}, "table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			want:    []string{"ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -510,7 +509,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsForeign: false}}, "table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint", "ALTER TABLE test.table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES test.table2 (id)"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 bigint", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -523,7 +522,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE test.table1 DROP INDEX c_table1_col1"},
+			want:    []string{"ALTER TABLE table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE table1 DROP INDEX c_table1_col1"},
 			wantErr: false,
 		},
 		{
@@ -536,7 +535,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsForeign: true, JointTable: &model.TableProperties{Table: "table2", To: "id"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE test.table1 DROP INDEX c_table1_col1", "ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 bigint"},
+			want:    []string{"ALTER TABLE table1 DROP FOREIGN KEY c_table1_col1", "ALTER TABLE table1 DROP INDEX c_table1_col1", "ALTER TABLE table1 DROP COLUMN col1", "ALTER TABLE table1 ADD col1 bigint"},
 			wantErr: false,
 		},
 		{
@@ -549,7 +548,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1"},
+			want:    []string{"ALTER TABLE table1 DROP COLUMN col1"},
 			wantErr: false,
 		},
 		{
@@ -562,7 +561,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsLinked: true, LinkedTable: &model.TableProperties{Table: "table2", To: "id"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)"},
+			want:    []string{"ALTER TABLE table1 ADD col1 varchar(50)"},
 			wantErr: false,
 		},
 		{
@@ -623,7 +622,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeString}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (col1 varchar(50) );"},
+			want:    []string{"CREATE TABLE table1 (col1 varchar(50) );"},
 			wantErr: false,
 		},
 		{
@@ -698,7 +697,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 MODIFY col1 bigint NOT NULL", "CREATE INDEX index__table1__ ON test.table1 (col1 asc)"},
+			want:    []string{"ALTER TABLE table1 MODIFY col1 bigint NOT NULL", "CREATE INDEX index__table1__ ON table1 (col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -711,7 +710,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col2 bigint", "DROP INDEX index__table1__i1 ON test.table1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
+			want:    []string{"ALTER TABLE table1 ADD col2 bigint", "DROP INDEX index__table1__i1 ON table1", "CREATE INDEX index__table1__i1 ON table1 (col1 asc, col2 asc)"},
 			wantErr: false,
 		},
 		{
@@ -724,7 +723,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col2 bigint", "CREATE INDEX index__table1__i2 ON test.table1 (col2 asc)"},
+			want:    []string{"ALTER TABLE table1 ADD col2 bigint", "CREATE INDEX index__table1__i2 ON table1 (col2 asc)"},
 			wantErr: false,
 		},
 		{
@@ -737,7 +736,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 MODIFY col1 bigint NOT NULL", "CREATE UNIQUE INDEX index__table1__ ON test.table1 (col1 asc)"},
+			want:    []string{"ALTER TABLE table1 MODIFY col1 bigint NOT NULL", "CREATE UNIQUE INDEX index__table1__ ON table1 (col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -750,7 +749,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col2 bigint", "DROP INDEX index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
+			want:    []string{"ALTER TABLE table1 ADD col2 bigint", "DROP INDEX index__table1__i1 ON table1", "CREATE UNIQUE INDEX index__table1__i1 ON table1 (col1 asc, col2 asc)"},
 			wantErr: false,
 		},
 		{
@@ -763,7 +762,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col2 bigint", "CREATE UNIQUE INDEX index__table1__i2 ON test.table1 (col2 asc)"},
+			want:    []string{"ALTER TABLE table1 ADD col2 bigint", "CREATE UNIQUE INDEX index__table1__i2 ON table1 (col2 asc)"},
 			wantErr: false,
 		},
 		{
@@ -776,7 +775,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"DROP INDEX index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col1 asc)"},
+			want:    []string{"DROP INDEX index__table1__i1 ON table1", "CREATE UNIQUE INDEX index__table1__i1 ON table1 (col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -789,7 +788,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"DROP INDEX index__table1__i1 ON test.table1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc)"},
+			want:    []string{"DROP INDEX index__table1__i1 ON table1", "CREATE INDEX index__table1__i1 ON table1 (col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -802,7 +801,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &model.FieldType{FieldName: "col2", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"DROP INDEX index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col2 asc, col1 asc)"},
+			want:    []string{"DROP INDEX index__table1__i1 ON table1", "CREATE UNIQUE INDEX index__table1__i1 ON table1 (col2 asc, col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -815,7 +814,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &model.FieldType{FieldName: "col2", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"DROP INDEX index__table1__i1 ON test.table1", "CREATE INDEX index__table1__i1 ON test.table1 (col2 asc, col1 asc)"},
+			want:    []string{"DROP INDEX index__table1__i1 ON table1", "CREATE INDEX index__table1__i1 ON table1 (col2 asc, col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -828,7 +827,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &model.FieldType{FieldName: "col2", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE UNIQUE INDEX index__table1__i2 ON test.table1 (col2 asc, col1 asc)", "DROP INDEX index__table1__i1 ON test.table1"},
+			want:    []string{"CREATE UNIQUE INDEX index__table1__i2 ON table1 (col2 asc, col1 asc)", "DROP INDEX index__table1__i1 ON table1"},
 			wantErr: false,
 		},
 		{
@@ -841,7 +840,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "asc"}}, "col2": &model.FieldType{FieldName: "col2", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 2}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE INDEX index__table1__i2 ON test.table1 (col2 asc, col1 asc)", "DROP INDEX index__table1__i1 ON test.table1"},
+			want:    []string{"CREATE INDEX index__table1__i2 ON table1 (col2 asc, col1 asc)", "DROP INDEX index__table1__i1 ON table1"},
 			wantErr: false,
 		},
 		{
@@ -854,7 +853,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "desc"}}, "col2": &model.FieldType{FieldName: "col2", Kind: model.TypeInteger, IsIndex: true, IsUnique: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 2, Sort: "asc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"DROP INDEX index__table1__i1 ON test.table1", "CREATE UNIQUE INDEX index__table1__i1 ON test.table1 (col2 desc, col1 asc)"},
+			want:    []string{"DROP INDEX index__table1__i1 ON table1", "CREATE UNIQUE INDEX index__table1__i1 ON table1 (col2 desc, col1 asc)"},
 			wantErr: false,
 		},
 		{
@@ -867,7 +866,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 1, Sort: "desc"}}, "col2": &model.FieldType{FieldName: "col2", Kind: model.TypeInteger, IsIndex: true, IndexInfo: &model.TableProperties{Group: "i1", Order: 2, Sort: "desc"}}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"DROP INDEX index__table1__i1 ON test.table1", "CREATE INDEX index__table1__i1 ON test.table1 (col1 asc, col2 asc)"},
+			want:    []string{"DROP INDEX index__table1__i1 ON table1", "CREATE INDEX index__table1__i1 ON table1 (col1 asc, col2 asc)"},
 			wantErr: false,
 		},
 		{
@@ -2478,11 +2477,10 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Schema{
-				SchemaDoc:          tt.fields.SchemaDoc,
-				crud:               tt.fields.crud,
-				project:            tt.fields.project,
-				config:             tt.fields.config,
-				removeProjectScope: tt.fields.removeProjectScope,
+				SchemaDoc: tt.fields.SchemaDoc,
+				crud:      tt.fields.crud,
+				project:   tt.fields.project,
+				config:    tt.fields.config,
 			}
 			got, err := s.generateCreationQueries(tt.args.ctx, tt.args.dbAlias, tt.args.tableName, tt.args.project, tt.args.parsedSchema, tt.args.currentSchema)
 			if (err != nil) != tt.wantErr {

@@ -85,7 +85,7 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, name s
 	case utils.Mongo:
 		return mgo.Init(enabled, connection, name)
 	case utils.EmbeddedDB:
-		return bolt.Init(enabled, connection, name)
+		return bolt.Init(enabled, connection)
 	case utils.MySQL, utils.Postgres, utils.SQLServer:
 		c, err := sql.Init(dbType, enabled, connection, name)
 		if err == nil && enabled {

@@ -177,7 +177,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 					batchedQueries = append(batchedQueries, queries...)
 				}
 				// make changes according to the changes in directives
-				queries := c.modifyColumn()
+				queries := c.modifyColumn(dbType)
 				batchedQueries = append(batchedQueries, queries...)
 			}
 		}

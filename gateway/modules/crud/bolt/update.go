@@ -20,7 +20,7 @@ func (b *Bolt) Update(ctx context.Context, project, col string, req *model.Updat
 	case utils.One, utils.All, utils.Upsert:
 		if err := b.client.Update(func(tx *bbolt.Tx) error {
 			// Assume bucket exists and has keys
-			bucket := tx.Bucket([]byte(b.bucketName))
+			bucket := tx.Bucket([]byte(project))
 			c := bucket.Cursor()
 
 			// get all keys matching the prefix

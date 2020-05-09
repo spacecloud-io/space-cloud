@@ -6,15 +6,16 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"go.etcd.io/bbolt"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // GetCollections returns collection / tables name of specified database
 func (b *Bolt) GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error) {
 	keys := make(map[string]bool)
 	err := b.client.View(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(b.bucketName))
+		b := tx.Bucket([]byte(project))
 		if b == nil {
 			return nil
 		}
@@ -41,7 +42,7 @@ func (b *Bolt) GetCollections(ctx context.Context, project string) ([]utils.Data
 // DeleteCollection deletes collection / tables name of specified database
 func (b *Bolt) DeleteCollection(ctx context.Context, project, col string) error {
 	err := b.client.Update(func(tx *bbolt.Tx) error {
-		b := tx.Bucket([]byte(b.bucketName))
+		b := tx.Bucket([]byte(project))
 
 		if b == nil {
 			return nil

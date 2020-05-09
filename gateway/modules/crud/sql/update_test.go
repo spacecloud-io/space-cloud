@@ -16,11 +16,10 @@ import (
 
 func TestSQL_generateUpdateQuery(t *testing.T) {
 	type fields struct {
-		enabled            bool
-		connection         string
-		client             *sqlx.DB
-		dbType             string
-		removeProjectScope bool
+		enabled    bool
+		connection string
+		client     *sqlx.DB
+		dbType     string
 	}
 	type args struct {
 		ctx     context.Context
@@ -52,7 +51,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=? WHERE json_contains(Obj2,?)",
+			want:    "UPDATE col SET String1=? WHERE json_contains(Obj2,?)",
 			want1:   []interface{}{"1", `{"obj1":"value1"}`},
 			wantErr: false,
 		},
@@ -71,7 +70,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=? WHERE (FindString1 = ?)",
+			want:    "UPDATE col SET String1=? WHERE (FindString1 = ?)",
 			want1:   []interface{}{"1", "1"},
 			wantErr: false,
 		},
@@ -108,7 +107,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE (today = ?)",
+			want:    "UPDATE col SET String1=CURRENT_TIMESTAMP WHERE (today = ?)",
 			want1:   []interface{}{"1"},
 			wantErr: false,
 		},
@@ -175,7 +174,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1*? WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=String1*? WHERE (op1 = ?)",
 			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
@@ -194,7 +193,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=GREATEST(String1,?) WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=GREATEST(String1,?) WHERE (op1 = ?)",
 			want1:   []interface{}{int64(6132), int64(121)},
 			wantErr: false,
 		},
@@ -213,7 +212,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
 			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
@@ -232,7 +231,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
 			want1:   []interface{}{float64(-6.54), int64(1)},
 			wantErr: false,
 		},
@@ -251,7 +250,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
 			want1:   []interface{}{int64(18), int64(1)},
 			wantErr: false,
 		},
@@ -289,7 +288,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=CURRENT_DATE WHERE (today = ?)",
+			want:    "UPDATE col SET String1=CURRENT_DATE WHERE (today = ?)",
 			want1:   []interface{}{"1"},
 			wantErr: false,
 		},
@@ -344,7 +343,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1+? WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=String1+? WHERE (op1 = ?)",
 			want1:   []interface{}{int64(18446), int64(67)},
 			wantErr: false,
 		},
@@ -1334,11 +1333,11 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &SQL{
-				enabled:            tt.fields.enabled,
-				connection:         tt.fields.connection,
-				client:             tt.fields.client,
-				dbType:             tt.fields.dbType,
-				removeProjectScope: tt.fields.removeProjectScope,
+				enabled:    tt.fields.enabled,
+				connection: tt.fields.connection,
+				client:     tt.fields.client,
+				dbType:     tt.fields.dbType,
+				name:       tt.args.project,
 			}
 			got, got1, err := s.generateUpdateQuery(tt.args.ctx, tt.args.project, tt.args.col, &tt.args.req, tt.args.op)
 			if (err != nil) != tt.wantErr {

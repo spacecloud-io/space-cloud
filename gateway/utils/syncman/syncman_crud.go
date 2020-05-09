@@ -86,6 +86,8 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 
 	return s.setProject(ctx, projectConfig)
 }
+
+// GetLogicalDatabaseName gets logical database name for provided db alias
 func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias string) (string, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
