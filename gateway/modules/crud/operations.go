@@ -177,6 +177,41 @@ func (m *Module) Delete(ctx context.Context, dbAlias, project, col string, req *
 	return err
 }
 
+// ExecPreparedQuery executes PreparedQueries request
+func (m *Module) ExecPreparedQuery(ctx context.Context, project, dbAlias, id string, req *model.PreparedQueryRequest) (interface{}, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	crud, err := m.getCrudBlock(dbAlias)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := crud.IsClientSafe(); err != nil {
+		return nil, err
+	}
+
+	// Check if prepared query exists
+	preparedQuery, p := m.queries[getPreparedQueryKey(dbAlias, id)]
+	if !p {
+		return nil, fmt.Errorf("Prepared Query for given id (%s) does not exist", id)
+	}
+
+	// Load the arguments
+	var args []interface{}
+	for i := 0; i < len(preparedQuery.Arguments); i++ {
+		arg, err := utils.LoadValue(preparedQuery.Arguments[i], req.Params)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+	}
+
+	// Fire the query and return the result
+	_, b, err := crud.RawQuery(ctx, preparedQuery.SQL, args)
+	return b, err
+}
+
 // Aggregate performs an aggregation defined via the pipeline
 func (m *Module) Aggregate(ctx context.Context, dbAlias, project, col string, req *model.AggregateRequest) (interface{}, error) {
 	m.RLock()
@@ -328,4 +363,12 @@ func (m *Module) DeleteTable(ctx context.Context, project, dbAlias, col string) 
 	}
 
 	return crud.DeleteCollection(ctx, project, col)
+}
+
+// IsPreparedQueryPresent checks if id exist
+func (m *Module) IsPreparedQueryPresent(dbAlias, id string) bool {
+	m.RLock()
+	defer m.RUnlock()
+	_, p := m.queries[getPreparedQueryKey(dbAlias, id)]
+	return p
 }

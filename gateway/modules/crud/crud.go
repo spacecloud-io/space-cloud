@@ -27,9 +27,8 @@ type Module struct {
 	dbType  string
 	alias   string
 	project string
-	// removeProjectScope bool
-	schema model.SchemaCrudInterface
-
+	schema  model.SchemaCrudInterface
+	queries map[string]*config.PreparedQuery
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
 
@@ -54,6 +53,7 @@ type Crud interface {
 	Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
 	RawExec(ctx context.Context, query string) error
+	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, project, col string) error
 	CreateDatabaseIfNotExist(ctx context.Context, name string) error
@@ -121,6 +121,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	m.closeBatchOperation()
 	m.project = project
 
+	// Reset all existing prepared query
+	m.queries = map[string]*config.PreparedQuery{}
+
 	// Close the previous database connection
 	if m.block != nil {
 		utils.CloseTheCloser(m.block)
@@ -151,6 +154,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.dbType = v.Type
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
+
+		// Add the prepared queries in this db
+		for id, query := range v.PreparedQueries {
+			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
+		}
 	}
 	m.initBatchOperation(project, crud)
 	return nil
