@@ -133,8 +133,8 @@ func (m *mockSchemaEventingInterface) SchemaValidator(col string, collectionFiel
 	return nil, c.Error(1)
 }
 
-func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error {
-	c := m.Called(ctx, dbAlias, project, tables)
+func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
+	c := m.Called(ctx, dbAlias, logicalDBName, tables)
 	return c.Error(0)
 }
 

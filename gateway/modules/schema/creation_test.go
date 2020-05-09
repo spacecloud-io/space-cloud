@@ -27,13 +27,13 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		currentSchema model.Collection
 	}
 
-	crudPostgres := crud.Init(false)
+	crudPostgres := crud.Init()
 	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
 
-	crudMySQL := crud.Init(false)
+	crudMySQL := crud.Init()
 	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
 
-	crudSQLServer := crud.Init(false)
+	crudSQLServer := crud.Init()
 	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
 
 	tests := []struct {

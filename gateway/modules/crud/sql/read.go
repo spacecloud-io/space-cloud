@@ -27,7 +27,7 @@ func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (st
 	}
 
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(project, col)).Prepared(true)
+	query := dialect.From(s.getDBName(col)).Prepared(true)
 	var tarr []string
 	if req.Find != nil {
 		// Get the where clause from query object

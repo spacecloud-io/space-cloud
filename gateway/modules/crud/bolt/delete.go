@@ -20,7 +20,7 @@ func (b *Bolt) Delete(ctx context.Context, project, col string, req *model.Delet
 	case utils.One, utils.All:
 		if err := b.client.Update(func(tx *bbolt.Tx) error {
 			// Assume bucket exists and has keys
-			bucket := tx.Bucket([]byte(project))
+			bucket := tx.Bucket([]byte(b.bucketName))
 			c := bucket.Cursor()
 
 			// get all keys matching the prefix

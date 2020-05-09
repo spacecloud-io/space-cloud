@@ -60,11 +60,11 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"create": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -130,11 +130,11 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -191,11 +191,11 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"read": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -252,11 +252,11 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"delete": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -313,11 +313,11 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"update": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}

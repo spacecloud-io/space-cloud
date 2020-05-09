@@ -7,7 +7,7 @@ import (
 
 // RawExec performs an operation for schema creation
 // NOTE: not to be exposed externally
-func (b *Bolt) RawExec(ctx context.Context, project string) error {
+func (b *Bolt) RawExec(ctx context.Context, query string) error {
 	return fmt.Errorf("error raw exec cannot be performed over selected database")
 }
 

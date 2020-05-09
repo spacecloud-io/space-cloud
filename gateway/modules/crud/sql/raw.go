@@ -58,17 +58,17 @@ func (s *SQL) GetConnectionState(ctx context.Context) bool {
 }
 
 // CreateDatabaseIfNotExist creates a schema / database
-func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, project string) error {
+func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, name string) error {
 	var sql string
 	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
-		sql = "create database if not exists " + project
+		sql = "create database if not exists " + name
 	case utils.Postgres:
-		sql = "create schema if not exists " + project
+		sql = "create schema if not exists " + name
 	case utils.SQLServer:
-		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + project + `')) 
+		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + name + `')) 
 					BEGIN
-    					EXEC ('CREATE SCHEMA [` + project + `] ')
+    					EXEC ('CREATE SCHEMA [` + name + `] ')
 					END`
 	default:
 		return fmt.Errorf("invalid db type (%s) provided", s.dbType)

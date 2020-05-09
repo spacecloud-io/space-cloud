@@ -10,7 +10,7 @@ import (
 // Create inserts a document (or multiple when op is "all") into the database
 func (m *Mongo) Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error) {
 	// Create a collection object
-	collection := m.client.Database(project).Collection(col)
+	collection := m.client.Database(m.dbName).Collection(col)
 
 	switch req.Operation {
 	case utils.One:

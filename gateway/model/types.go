@@ -29,7 +29,7 @@ type SchemaEventingInterface interface {
 	CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool)
 	Parser(crud config.Crud) (Type, error)
 	SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
-	SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error
+	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
 }
 
 // CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
@@ -83,7 +83,6 @@ type CrudRealtimeInterface interface {
 type CrudSchemaInterface interface {
 	GetDBType(dbAlias string) (string, error)
 	// CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error
-	CreateDatabaseIfNotExist(ctx context.Context, project, dbAlias string) error
 	RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error
 	DescribeTable(ctx context.Context, dbAlias, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
 }

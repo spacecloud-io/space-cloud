@@ -12,15 +12,15 @@ import (
 // DescribeTable return a description of sql table & foreign keys in table
 // NOTE: not to be exposed externally
 func (s *SQL) DescribeTable(ctx context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error) {
-	fields, err := s.getDescribeDetails(ctx, project, col)
+	fields, err := s.getDescribeDetails(ctx, s.name, col)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	foreignKeys, err := s.getForeignKeyDetails(ctx, project, col)
+	foreignKeys, err := s.getForeignKeyDetails(ctx, s.name, col)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	index, err := s.getIndexDetails(ctx, project, col)
+	index, err := s.getIndexDetails(ctx, s.name, col)
 	if err != nil {
 		return nil, nil, nil, err
 	}

@@ -23,12 +23,12 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	block              Crud
-	dbType             string
-	alias              string
-	project            string
-	removeProjectScope bool
-	schema             model.SchemaCrudInterface
+	block   Crud
+	dbType  string
+	alias   string
+	project string
+	// removeProjectScope bool
+	schema model.SchemaCrudInterface
 
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
@@ -53,10 +53,10 @@ type Crud interface {
 	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
 	Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error)
 	DescribeTable(ctc context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
-	RawExec(ctx context.Context, project string) error
+	RawExec(ctx context.Context, query string) error
 	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
 	DeleteCollection(ctx context.Context, project, col string) error
-	CreateDatabaseIfNotExist(ctx context.Context, project string) error
+	CreateDatabaseIfNotExist(ctx context.Context, name string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
@@ -65,8 +65,8 @@ type Crud interface {
 }
 
 // Init create a new instance of the Module object
-func Init(removeProjectScope bool) *Module {
-	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+func Init() *Module {
+	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 // SetSchema sets the schema module
@@ -80,14 +80,23 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 	m.metricHook = metricHook
 }
 
-func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
+func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, name string) (Crud, error) {
 	switch dbType {
 	case utils.Mongo:
-		return mgo.Init(enabled, connection)
+		return mgo.Init(enabled, connection, name)
 	case utils.EmbeddedDB:
-		return bolt.Init(enabled, connection)
+		return bolt.Init(enabled, connection, name)
 	case utils.MySQL, utils.Postgres, utils.SQLServer:
-		return sql.Init(dbType, enabled, m.removeProjectScope, connection)
+		c, err := sql.Init(dbType, enabled, connection, name)
+		if err == nil && enabled {
+			if err := c.CreateDatabaseIfNotExist(context.Background(), name); err != nil {
+				return nil, err
+			}
+		}
+		if dbType == utils.MySQL {
+			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, name), name)
+		}
+		return c, err
 	default:
 		return nil, utils.ErrInvalidParams
 	}
@@ -129,7 +138,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
-		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
+		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn, v.Name)
 
 		if v.Enabled {
 			if err != nil {

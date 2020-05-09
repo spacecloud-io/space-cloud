@@ -135,7 +135,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 		dbType = string(utils.Postgres)
 	}
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(project, col)).Prepared(true)
+	query := dialect.From(s.getDBName(col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object

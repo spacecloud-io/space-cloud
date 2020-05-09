@@ -39,7 +39,7 @@ func (s *SQL) generateDeleteQuery(project, col string, req *model.DeleteRequest)
 	}
 
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(project, col)).Prepared(true)
+	query := dialect.From(s.getDBName(col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object
@@ -61,7 +61,7 @@ func (s *SQL) generateDeleteQuery(project, col string, req *model.DeleteRequest)
 
 // DeleteCollection drops a table
 func (s *SQL) DeleteCollection(ctx context.Context, project, col string) error {
-	query := "DROP TABLE " + project + "." + col
+	query := "DROP TABLE " + s.getDBName(col)
 	_, err := s.client.ExecContext(ctx, query, []interface{}{}...)
 	return err
 }

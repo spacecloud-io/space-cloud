@@ -40,7 +40,7 @@ func (s *SQL) generateCreateQuery(project, col string, req *model.CreateRequest)
 	}
 
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(project, col)).Prepared(true)
+	query := dialect.From(s.getDBName(col)).Prepared(true)
 
 	var insert []interface{}
 	if req.Operation == "one" {

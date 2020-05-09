@@ -37,7 +37,7 @@ type Module struct {
 }
 
 // Init creates a new instance of the auth object
-func Init(nodeID string, crud model.CrudAuthInterface, removeProjectScope bool) *Module {
+func Init(nodeID string, crud model.CrudAuthInterface) *Module {
 	return &Module{nodeID: nodeID, rules: make(config.Crud), crud: crud}
 }
 

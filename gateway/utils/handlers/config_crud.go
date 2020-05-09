@@ -241,9 +241,13 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-
+		logicalDBName, err := syncman.GetLogicalDatabaseName(ctx, projectID, dbAlias)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		schema := modules.Schema()
-		if err := schema.SchemaModifyAll(ctx, dbAlias, projectID, map[string]*config.TableRule{col: &v}); err != nil {
+		if err := schema.SchemaModifyAll(ctx, dbAlias, logicalDBName, map[string]*config.TableRule{col: &v}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -418,9 +422,13 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		dbAlias := vars["dbAlias"]
 		col := vars["col"]
 		projectID := vars["project"]
-
+		logicalDBName, err := syncman.GetLogicalDatabaseName(ctx, projectID, dbAlias)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		schema := modules.Schema()
-		s, err := schema.SchemaInspection(ctx, dbAlias, projectID, col)
+		s, err := schema.SchemaInspection(ctx, dbAlias, logicalDBName, col)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

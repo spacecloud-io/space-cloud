@@ -14,15 +14,14 @@ import (
 )
 
 type creationModule struct {
-	dbAlias, project, TableName, ColumnName, columnType string
-	currentIndexMap                                     map[string]*indexStruct
-	currentColumnInfo, realColumnInfo                   *model.FieldType
-	schemaModule                                        *Schema
-	removeProjectScope                                  bool
+	dbAlias, logicalDBName, TableName, ColumnName, columnType string
+	currentIndexMap                                           map[string]*indexStruct
+	currentColumnInfo, realColumnInfo                         *model.FieldType
+	schemaModule                                              *Schema
 }
 
 // SchemaCreation creates or alters tables of sql
-func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project string, parsedSchema model.Type) error {
+func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, logicalDBName string, parsedSchema model.Type) error {
 	dbType, err := s.crud.GetDBType(dbAlias)
 	if err != nil {
 		return err
@@ -33,23 +32,19 @@ func (s *Schema) SchemaCreation(ctx context.Context, dbAlias, tableName, project
 		return nil
 	}
 
-	if err := s.crud.CreateDatabaseIfNotExist(ctx, project, dbAlias); err != nil {
-		return err
-	}
-
-	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, project, tableName)
+	currentSchema, err := s.Inspector(ctx, dbAlias, dbType, logicalDBName, tableName)
 	if err != nil {
 		logrus.Debugln("Schema Inspector Error", err)
 	}
 
-	queries, err := s.generateCreationQueries(ctx, dbAlias, tableName, project, parsedSchema, currentSchema)
+	queries, err := s.generateCreationQueries(ctx, dbAlias, tableName, logicalDBName, parsedSchema, currentSchema)
 	if err != nil {
 		return err
 	}
 	return s.crud.RawBatch(ctx, dbAlias, queries)
 }
 
-func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName, project string, parsedSchema model.Type, currentSchema model.Collection) ([]string, error) {
+func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName, logicalDBName string, parsedSchema model.Type, currentSchema model.Collection) ([]string, error) {
 	dbType, err := s.crud.GetDBType(dbAlias)
 	if err != nil {
 		return nil, err
@@ -77,7 +72,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 	currentTableInfo, ok := currentSchema[realTableName]
 	if !ok {
 		// create table with primary key
-		query, err := addNewTable(project, dbType, realTableName, realTableInfo, s.removeProjectScope)
+		query, err := s.addNewTable(logicalDBName, dbType, dbAlias, realTableName, realTableInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -118,16 +113,15 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			if !ok || realField.IsLinked {
 				// remove field from current table
 				c := creationModule{
-					dbAlias:            dbAlias,
-					project:            project,
-					TableName:          currentColName,
-					ColumnName:         currentFieldKey,
-					currentColumnInfo:  currentFieldStruct,
-					currentIndexMap:    currentIndexMap,
-					removeProjectScope: s.removeProjectScope,
-					schemaModule:       s,
+					dbAlias:           dbAlias,
+					logicalDBName:     logicalDBName,
+					TableName:         currentColName,
+					ColumnName:        currentFieldKey,
+					currentColumnInfo: currentFieldStruct,
+					currentIndexMap:   currentIndexMap,
+					schemaModule:      s,
 				}
-				batchedQueries = append(batchedQueries, c.removeColumn()...)
+				batchedQueries = append(batchedQueries, c.removeColumn(dbType)...)
 			}
 		}
 	}
@@ -144,7 +138,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		// Create the joint table first
 		if realColumnInfo.IsForeign {
 			if _, p := currentSchema[realColumnInfo.JointTable.Table]; !p {
-				if err := s.SchemaCreation(ctx, dbAlias, realColumnInfo.JointTable.Table, project, parsedSchema); err != nil {
+				if err := s.SchemaCreation(ctx, dbAlias, realColumnInfo.JointTable.Table, logicalDBName, parsedSchema); err != nil {
 					return nil, err
 				}
 			}
@@ -156,16 +150,15 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 			return nil, err
 		}
 		c := creationModule{
-			dbAlias:            dbAlias,
-			project:            project,
-			TableName:          realTableName,
-			ColumnName:         realColumnName,
-			columnType:         columnType,
-			currentColumnInfo:  currentColumnInfo,
-			realColumnInfo:     realColumnInfo,
-			currentIndexMap:    currentIndexMap,
-			schemaModule:       s,
-			removeProjectScope: s.removeProjectScope,
+			dbAlias:           dbAlias,
+			logicalDBName:     logicalDBName,
+			TableName:         realTableName,
+			ColumnName:        realColumnName,
+			columnType:        columnType,
+			currentColumnInfo: currentColumnInfo,
+			realColumnInfo:    realColumnInfo,
+			currentIndexMap:   currentIndexMap,
+			schemaModule:      s,
 		}
 
 		if !ok || currentColumnInfo.IsLinked {
@@ -192,17 +185,17 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 
 	for indexName, fields := range realIndexMap {
 		if _, ok := currentIndexMap[indexName]; !ok {
-			batchedQueries = append(batchedQueries, addIndex(dbType, project, tableName, indexName, fields.IsIndexUnique, s.removeProjectScope, fields.IndexMap))
+			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexMap))
 			continue
 		}
 		if !reflect.DeepEqual(fields.IndexMap, currentIndexMap[indexName].IndexMap) {
-			batchedQueries = append(batchedQueries, removeIndex(dbType, project, tableName, indexName, s.removeProjectScope))
-			batchedQueries = append(batchedQueries, addIndex(dbType, project, tableName, indexName, fields.IsIndexUnique, s.removeProjectScope, fields.IndexMap))
+			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, indexName))
+			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexMap))
 		}
 	}
 	for indexName := range currentIndexMap {
 		if _, ok := realIndexMap[indexName]; !ok {
-			batchedQueries = append(batchedQueries, removeIndex(dbType, project, tableName, indexName, s.removeProjectScope))
+			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, indexName))
 		}
 	}
 
@@ -210,7 +203,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 }
 
 // SchemaModifyAll modifies all the tables provided
-func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error {
+func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -227,7 +220,7 @@ func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, project string, t
 		if info.Schema == "" {
 			continue
 		}
-		if err := s.SchemaCreation(ctx, dbAlias, tableName, project, parsedSchema); err != nil {
+		if err := s.SchemaCreation(ctx, dbAlias, tableName, logicalDBName, parsedSchema); err != nil {
 			return err
 		}
 	}

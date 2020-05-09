@@ -296,28 +296,6 @@ func (m *Module) GetCollections(ctx context.Context, project, dbAlias string) ([
 	return crud.GetCollections(ctx, project)
 }
 
-// CreateDatabaseIfNotExist creates a database if not exist which has same name of project
-func (m *Module) CreateDatabaseIfNotExist(ctx context.Context, project, dbAlias string) error {
-	m.RLock()
-	defer m.RUnlock()
-
-	// Skip if project scope is disabled
-	if m.removeProjectScope {
-		return nil
-	}
-
-	crud, err := m.getCrudBlock(dbAlias)
-	if err != nil {
-		return err
-	}
-
-	if err := crud.IsClientSafe(); err != nil {
-		return err
-	}
-
-	return crud.CreateDatabaseIfNotExist(ctx, project)
-}
-
 // GetConnectionState gets the current state of client
 func (m *Module) GetConnectionState(ctx context.Context, dbAlias string) bool {
 	m.RLock()
