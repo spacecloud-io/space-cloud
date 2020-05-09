@@ -111,3 +111,39 @@ func TestMatchBool(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchdate(t *testing.T) {
+	var testCases = []struct {
+		name          string
+		err           error
+		isErrExpected bool
+		rule          *config.Rule
+		args          map[string]interface{}
+	}{
+		{name: "Match date ==", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "date", F1: "2019-11-25", F2: "2019-11-25"}},
+		{name: "Match date <=", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "<=", Type: "date", F1: "2019-11-25", F2: "2019-11-25"}},
+		{name: "Match date >=", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: ">=", Type: "date", F1: "2019-11-25", F2: "2019-11-25"}},
+		{name: "Match date <", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "<", Type: "date", F1: "2019-10-25", F2: "2019-11-25"}},
+		{name: "Match date >", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: ">", Type: "date", F1: "2019-11-25", F2: "2019-10-25"}},
+		{name: "Match date !=", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "date", F1: "2019-11-25", F2: "2018-11-25"}},
+		{name: "Match date args", isErrExpected: false, args: map[string]interface{}{"time": "2019-11-25"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "date", F1: "args.time", F2: "2018-11-25"}},
+		{name: "Match date rc3339", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "date", F1: "2018-11-25T15:04:05Z", F2: "2018-11-25T15:04:05Z"}},
+		{name: "Match date utils.now()", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "date", F1: "utils.now()", F2: "2019-11-25"}},
+		{name: "Match Number loaded from state !=", isErrExpected: false, args: map[string]interface{}{"time1": "2019-11-25", "time2": "2019-11-25"}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "number", F1: "args.time1", F2: "args.time2"}},
+		{name: "Error Match Number eval is not provided", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "", Type: "number", F1: "2018-11-25", F2: "2018-11-25"}},
+		{name: "Error Match number !=(single field F2)", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F2: "2018-11-25"}},
+		{name: "Error Match number !=(single field F1)", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: "2018-11-25"}},
+		{name: "Error Match number != field does not exist", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: "2018-11-25", F2: "args.num1"}},
+		{name: "Error Match number != field is of incorrect type", isErrExpected: true, args: map[string]interface{}{"num1": "wrong type"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: "2018-11-25", F2: "args.num1"}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			gotErr := matchdate(testCase.rule, map[string]interface{}{"args": testCase.args})
+			if (gotErr != nil) != testCase.isErrExpected {
+				t.Errorf("name %v -got %v wanted %v", testCase.name, gotErr, testCase.isErrExpected)
+			}
+
+		})
+	}
+}

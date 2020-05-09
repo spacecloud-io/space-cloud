@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // Adjust loads value from state if referenced
@@ -39,7 +40,7 @@ func Adjust(obj interface{}, state map[string]interface{}) interface{} {
 
 // LoadStringIfExists loads a value if its present else returns the same
 func LoadStringIfExists(value string, state map[string]interface{}) (string, error) {
-	if !strings.HasPrefix(value, "args.") {
+	if !strings.HasPrefix(value, "args.") && !strings.HasPrefix(value, "utils.") {
 		return value, nil
 	}
 	temp, err := LoadValue(value, state)
@@ -88,6 +89,9 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			default:
 				return nil, fmt.Errorf("invalid type found for length")
 			}
+		}
+		if strings.HasPrefix(function, "now") {
+			return time.Now().UTC().Format("2006-01-02"), nil
 		}
 
 		return nil, errors.New("Invalid utils operation")

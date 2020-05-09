@@ -141,6 +141,9 @@ func match(rule *config.Rule, args map[string]interface{}) error {
 
 	case "bool":
 		return matchBool(rule, args)
+
+	case "date":
+		return matchdate(rule, args)
 	}
 
 	return ErrIncorrectMatch

@@ -3,6 +3,7 @@ package auth
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -216,4 +217,76 @@ func matchBool(rule *config.Rule, args map[string]interface{}) error {
 		return ErrIncorrectMatch
 	}
 	return ErrIncorrectRuleFieldType
+}
+
+func matchdate(rule *config.Rule, args map[string]interface{}) error {
+	f1String, ok := rule.F1.(string)
+	if !ok {
+		return ErrIncorrectRuleFieldType
+	}
+
+	f1String, err := utils.LoadStringIfExists(f1String, args)
+	if err != nil {
+		return err
+	}
+
+	f2String, ok := rule.F2.(string)
+	if !ok {
+		return ErrIncorrectRuleFieldType
+	}
+
+	f2String, err = utils.LoadStringIfExists(f2String, args)
+	if err != nil {
+		return err
+	}
+
+	var f1 time.Time
+	var f2 time.Time
+
+	f1, err = time.Parse(time.RFC3339, f1String)
+	if err != nil {
+		f1, err = time.Parse("2006-01-02", f1String)
+		if err != nil {
+			return err
+		}
+	}
+	f2, err = time.Parse(time.RFC3339, f2String)
+	if err != nil {
+		f2, err = time.Parse("2006-01-02", f2String)
+		if err != nil {
+			return err
+		}
+	}
+	switch rule.Eval {
+	case "==":
+		if f1.Equal(f2) {
+			return nil
+		}
+
+	case "<=":
+		if f1.Before(f2) || f1.Equal(f2) {
+			return nil
+		}
+
+	case ">=":
+		if f1.After(f2) || f1.Equal(f2) {
+			return nil
+		}
+
+	case "<":
+		if f1.Before(f2) {
+			return nil
+		}
+
+	case ">":
+		if f1.After(f2) {
+			return nil
+		}
+
+	case "!=":
+		if !f1.Equal(f2) {
+			return nil
+		}
+	}
+	return fmt.Errorf("")
 }
