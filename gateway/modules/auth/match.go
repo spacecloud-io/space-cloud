@@ -68,7 +68,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 
 	default:
 
-		return nil, formatError(rule, fmt.Errorf("invalid rule type (%s) provided", ErrIncorrectMatch))
+		return nil, formatError(rule, fmt.Errorf("invalid rule type (%s) provided", rule.Rule))
 	}
 }
 
@@ -146,7 +146,7 @@ func match(rule *config.Rule, args map[string]interface{}) error {
 		return formatError(rule, matchBool(rule, args))
 	}
 
-	return formatError(rule, ErrIncorrectMatch)
+	return formatError(rule, fmt.Errorf("invalid variable data type (%s) provided", rule.Type))
 }
 
 func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {

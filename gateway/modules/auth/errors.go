@@ -18,6 +18,9 @@ var ErrIncorrectMatch = errors.New("auth: The two fields do not match")
 
 //Formaterror check whether error is provided in config.Rule
 func formatError(rule *config.Rule, err error) error {
+	if err == nil {
+		return nil
+	}
 	if rule.Name == "" {
 		rule.Name = "no name"
 	}
