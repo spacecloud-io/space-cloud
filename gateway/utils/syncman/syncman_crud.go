@@ -47,15 +47,14 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 	if err != nil {
 		return err
 	}
-
-	// update database config
 	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type}
+		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, DBName: v.DBName}
 	} else {
 		coll.Conn = v.Conn
 		coll.Enabled = v.Enabled
 		coll.Type = v.Type
+		// coll.Name = v.Name// TODO CHECK IF THIS IS REQUIRED
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
@@ -86,6 +85,21 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 	}
 
 	return s.setProject(ctx, projectConfig)
+}
+
+// GetLogicalDatabaseName gets logical database name for provided db alias
+func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias string) (string, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return "", err
+	}
+	collection, ok := projectConfig.Modules.Crud[dbAlias]
+	if !ok {
+		return "", errors.New("specified database not present in config")
+	}
+	return collection.DBName, nil
 }
 
 // GetPreparedQuery gets preparedQuery from config
@@ -281,7 +295,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 		if colName == "default" {
 			continue
 		}
-		result, err := schemaArg.SchemaInspection(ctx, dbAlias, project, colName)
+		result, err := schemaArg.SchemaInspection(ctx, dbAlias, collectionConfig.DBName, colName)
 		if err != nil {
 			return nil, err
 		}
@@ -360,7 +374,7 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 		return errors.New("specified database not present in config")
 	}
 
-	if err := s.modules.GetSchemaModuleForSyncMan().SchemaModifyAll(ctx, dbAlias, project, v.Collections); err != nil {
+	if err := s.modules.GetSchemaModuleForSyncMan().SchemaModifyAll(ctx, dbAlias, collection.DBName, v.Collections); err != nil {
 		return err
 	}
 
