@@ -58,17 +58,17 @@ func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, re
 		switch r.Type {
 		case string(utils.Create):
 			t := model.CreateRequest{Operation: r.Operation, Document: r.Document}
-			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Create(ctx, dbAlias, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Create(ctx, dbAlias, r.Col, &t)
 
 		case string(utils.Delete):
 
 			t := model.DeleteRequest{Operation: r.Operation, Find: r.Find}
-			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Delete(ctx, dbAlias, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Delete(ctx, dbAlias, r.Col, &t)
 
 		case string(utils.Update):
 
 			t := model.UpdateRequest{Operation: r.Operation, Find: r.Find, Update: r.Update}
-			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Update(ctx, dbAlias, graph.project, r.Col, &t)
+			return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Update(ctx, dbAlias, r.Col, &t)
 
 		default:
 			return map[string]interface{}{"error": "Wrong Operation"}, nil
@@ -76,7 +76,7 @@ func (graph *Module) execAllReq(ctx context.Context, dbAlias, project string, re
 		}
 
 	}
-	return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Batch(ctx, dbAlias, graph.project, req)
+	return map[string]interface{}{"status": 200, "error": nil}, graph.crud.Batch(ctx, dbAlias, req)
 }
 
 func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token string, store utils.M, cb model.GraphQLCallback) {

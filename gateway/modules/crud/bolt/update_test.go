@@ -49,9 +49,8 @@ func TestBolt_Update(t *testing.T) {
 				connection: "update.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.UpdateRequest{
 					Find: map[string]interface{}{
 						"_id": "1",
@@ -105,9 +104,8 @@ func TestBolt_Update(t *testing.T) {
 				connection: "update.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.UpdateRequest{
 					Find: map[string]interface{}{
 						"isPrimary": true,
@@ -141,9 +139,8 @@ func TestBolt_Update(t *testing.T) {
 				connection: "update.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.UpdateRequest{
 					Find: map[string]interface{}{
 						"team": "new",
@@ -179,9 +176,8 @@ func TestBolt_Update(t *testing.T) {
 				connection: "update.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.UpdateRequest{
 					Find: map[string]interface{}{
 						"isPrimary": true,
@@ -197,7 +193,7 @@ func TestBolt_Update(t *testing.T) {
 		},
 	}
 
-	b, err := Init(true, "update.db")
+	b, err := Init(true, "update.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
@@ -208,7 +204,7 @@ func TestBolt_Update(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := b.Update(tt.args.ctx, tt.args.project, tt.args.col, tt.args.req)
+			got, err := b.Update(tt.args.ctx, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Update() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -220,7 +216,7 @@ func TestBolt_Update(t *testing.T) {
 			if tt.args.req.Operation == utils.Upsert {
 				tt.args.req.Operation = utils.All
 			}
-			readCount, readResult, err := b.Read(tt.args.ctx, tt.args.project, tt.args.col, &model.ReadRequest{Operation: tt.args.req.Operation, Find: tt.args.req.Find})
+			readCount, readResult, err := b.Read(tt.args.ctx, tt.args.col, &model.ReadRequest{Operation: tt.args.req.Operation, Find: tt.args.req.Find})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return

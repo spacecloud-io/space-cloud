@@ -51,7 +51,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the PreparedQuery operation
-		result, err := crud.ExecPreparedQuery(ctx, project, dbAlias, id, &req)
+		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -96,7 +96,7 @@ func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the write operation
-		err = crud.Create(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		err = crud.Create(ctx, meta.dbType, meta.col, &req)
 		if err != nil {
 
 			// Send http response
@@ -141,7 +141,7 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the read operation
-		result, err := crud.Read(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		result, err := crud.Read(ctx, meta.dbType, meta.col, &req)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -181,7 +181,7 @@ func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the update operation
-		err = crud.Update(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		err = crud.Update(ctx, meta.dbType, meta.col, &req)
 		if err != nil {
 
 			// Send http response
@@ -220,7 +220,7 @@ func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the delete operation
-		err = crud.Delete(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		err = crud.Delete(ctx, meta.dbType, meta.col, &req)
 		if err != nil {
 			// Send http response
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -258,7 +258,7 @@ func HandleCrudAggregate(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the aggregate operation
-		result, err := crud.Aggregate(ctx, meta.dbType, meta.projectID, meta.col, &req)
+		result, err := crud.Aggregate(ctx, meta.dbType, meta.col, &req)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -336,7 +336,7 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the batch operation
-		err := crud.Batch(ctx, meta.dbType, meta.projectID, &txRequest)
+		err := crud.Batch(ctx, meta.dbType, &txRequest)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

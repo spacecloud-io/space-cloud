@@ -38,9 +38,8 @@ func TestBolt_Delete(t *testing.T) {
 				connection: "delete.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.DeleteRequest{
 					Find: map[string]interface{}{
 						"_id": "1",
@@ -57,9 +56,8 @@ func TestBolt_Delete(t *testing.T) {
 				connection: "delete.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.DeleteRequest{
 					Find: map[string]interface{}{
 						"isPrimary": true,
@@ -76,9 +74,8 @@ func TestBolt_Delete(t *testing.T) {
 				connection: "delete.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.DeleteRequest{
 					Find: map[string]interface{}{
 						"isPrimary": true,
@@ -89,7 +86,7 @@ func TestBolt_Delete(t *testing.T) {
 		},
 	}
 
-	b, err := Init(true, "delete.db")
+	b, err := Init(true, "delete.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
@@ -100,7 +97,7 @@ func TestBolt_Delete(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := b.Delete(tt.args.ctx, tt.args.project, tt.args.col, tt.args.req)
+			got, err := b.Delete(tt.args.ctx, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return

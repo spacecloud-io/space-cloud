@@ -524,7 +524,7 @@ func TestSQL_generateReadQuery(t *testing.T) {
 				dbType:     tt.fields.dbType,
 				name:       tt.args.project,
 			}
-			got, got1, err := s.generateReadQuery(tt.args.project, tt.args.col, tt.args.req)
+			got, got1, err := s.generateReadQuery(tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SQL.generateReadQuery() error = %v, wantErr %v", err, tt.wantErr)
 				return

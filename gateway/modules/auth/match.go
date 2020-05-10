@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -92,7 +93,7 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 	req := &model.ReadRequest{Find: rule.Find, Operation: utils.All}
 
 	// Execute the read request
-	data, err := crud.Read(ctx, rule.DB, project, rule.Col, req)
+	data, err := crud.Read(ctx, rule.DB, rule.Col, req)
 	if err != nil {
 		return nil, err
 	}

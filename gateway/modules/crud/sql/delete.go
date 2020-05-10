@@ -16,8 +16,8 @@ import (
 )
 
 // Delete removes the document(s) from the database which match the condition
-func (s *SQL) Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error) {
-	sqlString, args, err := s.generateDeleteQuery(project, col, req)
+func (s *SQL) Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error) {
+	sqlString, args, err := s.generateDeleteQuery(col, req)
 	if err != nil {
 		return 0, err
 	}
@@ -30,7 +30,7 @@ func (s *SQL) Delete(ctx context.Context, project, col string, req *model.Delete
 }
 
 // genrateDeleteQuery makes query for delete operation
-func (s *SQL) generateDeleteQuery(project, col string, req *model.DeleteRequest) (string, []interface{}, error) {
+func (s *SQL) generateDeleteQuery(col string, req *model.DeleteRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 
 	dbType := s.dbType
@@ -60,7 +60,7 @@ func (s *SQL) generateDeleteQuery(project, col string, req *model.DeleteRequest)
 }
 
 // DeleteCollection drops a table
-func (s *SQL) DeleteCollection(ctx context.Context, project, col string) error {
+func (s *SQL) DeleteCollection(ctx context.Context, col string) error {
 	query := "DROP TABLE " + s.getDBName(col)
 	_, err := s.client.ExecContext(ctx, query, []interface{}{}...)
 	return err
