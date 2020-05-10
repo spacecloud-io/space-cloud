@@ -35,11 +35,10 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 		defer cancel()
 
 		vars := mux.Vars(r)
-		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
 
 		crud := modules.DB()
-		collections, err := crud.GetCollections(ctx, projectID, dbAlias)
+		collections, err := crud.GetCollections(ctx, dbAlias)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -106,7 +105,7 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 		col := vars["col"]
 
 		crud := modules.DB()
-		if err := crud.DeleteTable(ctx, projectID, dbAlias, col); err != nil {
+		if err := crud.DeleteTable(ctx, dbAlias, col); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}

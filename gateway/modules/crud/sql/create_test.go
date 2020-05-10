@@ -337,7 +337,7 @@ func TestSQL_generateCreateQuery(t *testing.T) {
 				dbType:     tt.fields.dbType,
 				name:       tt.args.project,
 			}
-			got, got1, err := s.generateCreateQuery(tt.args.project, tt.args.col, tt.args.req)
+			got, got1, err := s.generateCreateQuery(tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SQL.generateCreateQuery() error = %v, wantErr %v", err, tt.wantErr)
 				return

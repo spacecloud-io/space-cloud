@@ -9,7 +9,7 @@ import (
 )
 
 // Aggregate performs a mongo db pipeline aggregation
-func (m *Mongo) Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error) {
+func (m *Mongo) Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error) {
 	collection := m.client.Database(m.dbName).Collection(col)
 
 	switch req.Operation {

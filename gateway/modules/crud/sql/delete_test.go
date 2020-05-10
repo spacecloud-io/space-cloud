@@ -478,7 +478,7 @@ func TestSQL_generateDeleteQuery(t *testing.T) {
 				dbType:     tt.fields.dbType,
 				name:       tt.args.project,
 			}
-			got, got1, err := s.generateDeleteQuery(tt.args.project, tt.args.col, tt.args.req)
+			got, got1, err := s.generateDeleteQuery(tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SQL.generateDeleteQuery() error = %v, wantErr %v", err, tt.wantErr)
 				return

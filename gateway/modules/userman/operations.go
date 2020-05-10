@@ -43,7 +43,7 @@ func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string
 	}
 
 	// Perform database read operation
-	res, err := m.crud.Read(ctx, dbAlias, project, "users", req)
+	res, err := m.crud.Read(ctx, dbAlias, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -73,7 +73,7 @@ func (m *Module) Profiles(ctx context.Context, token, dbAlias, project string) (
 		return status, nil, err
 	}
 
-	res, err := m.crud.Read(ctx, dbAlias, project, "users", req)
+	res, err := m.crud.Read(ctx, dbAlias, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -101,7 +101,7 @@ func (m *Module) EmailSignIn(ctx context.Context, dbAlias, project, email, passw
 	// Create read request
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
 
-	user, err := m.crud.Read(ctx, dbAlias, project, "users", readReq)
+	user, err := m.crud.Read(ctx, dbAlias, "users", readReq)
 	if err != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
 	}
@@ -155,7 +155,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 
 	// Create read request
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
-	_, err = m.crud.Read(ctx, dbAlias, project, "users", readReq)
+	_, err = m.crud.Read(ctx, dbAlias, "users", readReq)
 	if err == nil {
 		return http.StatusConflict, nil, errors.New("User with provided email already exists")
 	}
@@ -177,7 +177,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 		req["id"] = id.String()
 	}
 	createReq := &model.CreateRequest{Operation: utils.One, Document: req}
-	err = m.crud.Create(ctx, dbAlias, project, "users", createReq)
+	err = m.crud.Create(ctx, dbAlias, "users", createReq)
 	if err != nil {
 		log.Println("Err: ", err)
 		return http.StatusInternalServerError, nil, errors.New("Failed to create user account")
@@ -246,13 +246,13 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbAlias, project, 
 		return status, nil, err
 	}
 
-	err = m.crud.Update(ctx, dbAlias, project, "users", req)
+	err = m.crud.Update(ctx, dbAlias, "users", req)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
 	readReq := &model.ReadRequest{Find: map[string]interface{}{idString: id}, Operation: utils.One}
-	user, err1 := m.crud.Read(ctx, dbAlias, project, "users", readReq)
+	user, err1 := m.crud.Read(ctx, dbAlias, "users", readReq)
 	if err1 != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
 	}

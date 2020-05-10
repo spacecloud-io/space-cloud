@@ -20,7 +20,7 @@ import (
 )
 
 // generateReadQuery makes a query for read operation
-func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (string, []interface{}, error) {
+func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dbType := s.dbType
 	if dbType == string(utils.SQLServer) {
 		dbType = string(utils.Postgres)
@@ -111,12 +111,12 @@ func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (st
 }
 
 // Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error) {
-	return s.read(ctx, project, col, req, s.client)
+func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
+	return s.read(ctx, col, req, s.client)
 }
 
-func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequest, executor executor) (int64, interface{}, error) {
-	sqlString, args, err := s.generateReadQuery(project, col, req)
+func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, error) {
+	sqlString, args, err := s.generateReadQuery(col, req)
 	if err != nil {
 		return 0, nil, err
 	}

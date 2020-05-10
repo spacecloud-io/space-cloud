@@ -49,7 +49,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 	}
 	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
-		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, Name: v.Name}
+		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, DBName: v.DBName}
 	} else {
 		coll.Conn = v.Conn
 		coll.Enabled = v.Enabled
@@ -99,7 +99,7 @@ func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias s
 	if !ok {
 		return "", errors.New("specified database not present in config")
 	}
-	return collection.Name, nil
+	return collection.DBName, nil
 }
 
 // GetPreparedQuery gets preparedQuery from config
@@ -295,7 +295,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 		if colName == "default" {
 			continue
 		}
-		result, err := schemaArg.SchemaInspection(ctx, dbAlias, collectionConfig.Name, colName)
+		result, err := schemaArg.SchemaInspection(ctx, dbAlias, collectionConfig.DBName, colName)
 		if err != nil {
 			return nil, err
 		}
@@ -374,7 +374,7 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 		return errors.New("specified database not present in config")
 	}
 
-	if err := s.modules.GetSchemaModuleForSyncMan().SchemaModifyAll(ctx, dbAlias, collection.Name, v.Collections); err != nil {
+	if err := s.modules.GetSchemaModuleForSyncMan().SchemaModifyAll(ctx, dbAlias, collection.DBName, v.Collections); err != nil {
 		return err
 	}
 

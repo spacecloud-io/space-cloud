@@ -17,8 +17,8 @@ import (
 )
 
 // Create inserts a document (or multiple when op is "all") into the database
-func (s *SQL) Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error) {
-	sqlQuery, args, err := s.generateCreateQuery(project, col, req)
+func (s *SQL) Create(ctx context.Context, col string, req *model.CreateRequest) (int64, error) {
+	sqlQuery, args, err := s.generateCreateQuery(col, req)
 	if err != nil {
 		return 0, err
 	}
@@ -32,7 +32,7 @@ func (s *SQL) Create(ctx context.Context, project, col string, req *model.Create
 }
 
 // generateCreateQuery makes query for create operation
-func (s *SQL) generateCreateQuery(project, col string, req *model.CreateRequest) (string, []interface{}, error) {
+func (s *SQL) generateCreateQuery(col string, req *model.CreateRequest) (string, []interface{}, error) {
 	// Generate a prepared query builder
 	dbType := s.dbType
 	if dbType == string(utils.SQLServer) {
