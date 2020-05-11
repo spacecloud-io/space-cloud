@@ -247,14 +247,14 @@ func matchdate(rule *config.Rule, args map[string]interface{}) error {
 	if err != nil {
 		f1, err = time.Parse("2006-01-02", f1String)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid date format (%s) provided", f1String)
 		}
 	}
 	f2, err = time.Parse(time.RFC3339, f2String)
 	if err != nil {
 		f2, err = time.Parse("2006-01-02", f2String)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid date format (%s) provided", f2String)
 		}
 	}
 	switch rule.Eval {
@@ -288,5 +288,5 @@ func matchdate(rule *config.Rule, args map[string]interface{}) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("")
+	return ErrIncorrectMatch
 }
