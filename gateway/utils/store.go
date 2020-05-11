@@ -61,7 +61,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		return nil, errors.New("Invalid key")
 	}
 
-	tempArray := splitVariable(key)
+	tempArray := splitVariable(key, '.')
 	length := len(tempArray) - 1
 
 	if length == 0 {
@@ -72,6 +72,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		function := tempArray[1]
 		pre := strings.IndexRune(function, '(')
 		post := strings.IndexRune(function, ')')
+		params := splitVariable(function[pre+1:len(function)-1], ',')
 		if strings.HasPrefix(function, "exists") {
 			_, err := LoadValue(function[pre+1:post], state)
 			return err == nil, nil
@@ -91,7 +92,79 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			}
 		}
 		if strings.HasPrefix(function, "now") {
-			return time.Now().UTC().Format("2006-01-02"), nil
+			return time.Now().UTC().Format(time.RFC3339), nil
+		}
+		if strings.HasPrefix(function, "addDuration") {
+			params0 := strings.ReplaceAll(params[0], " ", "")
+			params0 = strings.Trim(params0, "'")
+			params1 := strings.ReplaceAll(params[1], " ", "")
+			params1 = strings.Trim(params1, "'")
+
+			if strings.HasPrefix(params0, "utils") {
+				temp, err := LoadStringIfExists(params0, state)
+				if err != nil {
+					return "", err
+				}
+				params0 = temp
+			}
+
+			paresedtime, err := time.ParseDuration(params1)
+			if err != nil {
+				return "", err
+			}
+
+			param0 := time.Now().UTC()
+			param0, err = time.Parse(time.RFC3339, params0)
+			if err != nil {
+				param0, err = time.Parse("2006-01-02", params0)
+				if err != nil {
+					return nil, fmt.Errorf("invalid date format (%s) provided", params0)
+				}
+			}
+			paramadd := param0.Add(paresedtime)
+			return paramadd.Format(time.RFC3339), nil
+		}
+		if strings.HasPrefix(function, "roundUpDate") {
+			params0 := strings.ReplaceAll(params[0], " ", "")
+			params0 = strings.Trim(params0, "'")
+			params1 := strings.ReplaceAll(params[1], " ", "")
+			params1 = strings.Trim(params1, "'")
+
+			if strings.HasPrefix(params0, "utils") {
+				temp, err := LoadStringIfExists(params0, state)
+				if err != nil {
+					return "", err
+				}
+				params0 = temp
+			}
+
+			var param0 time.Time
+			param0, err := time.Parse(time.RFC3339, params0)
+			if err != nil {
+				param0, err = time.Parse("2006-01-02", params0)
+				if err != nil {
+					return nil, fmt.Errorf("invalid date format (%s) provided", params0)
+				}
+			}
+
+			var timeDate time.Time
+			switch params1 {
+			case "year":
+				timeDate = time.Date(param0.Year(), 1, 1, 0, 0, 0, 0, param0.Location())
+			case "month":
+				timeDate = time.Date(param0.Year(), param0.Month(), 1, 0, 0, 0, 0, param0.Location())
+			case "day":
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), 0, 0, 0, 0, param0.Location())
+			case "hour":
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), 0, 0, 0, param0.Location())
+			case "minute":
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), 0, 0, param0.Location())
+			case "second":
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), param0.Second(), 0, param0.Location())
+			default:
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), param0.Second(), param0.Nanosecond(), param0.Location())
+			}
+			return timeDate.Format(time.RFC3339), nil
 		}
 
 		return nil, errors.New("Invalid utils operation")
@@ -236,7 +309,7 @@ func convert(key string, obj map[string]interface{}) (map[string]interface{}, er
 	return conv, nil
 }
 
-func splitVariable(key string) []string {
+func splitVariable(key string, delimiter rune) []string {
 	var inBracket1 int
 	var inBracket2 int
 
@@ -255,7 +328,7 @@ func splitVariable(key string) []string {
 		if c == ')' {
 			inBracket2--
 		}
-		if c == '.' && inBracket1 == 0 && inBracket2 == 0 {
+		if c == delimiter && inBracket1 == 0 && inBracket2 == 0 {
 			sub := key[lastIndex:i]
 			array = append(array, sub)
 			lastIndex = i + 1
@@ -270,7 +343,7 @@ func splitVariable(key string) []string {
 
 // StoreValue  -- stores a value in the provided state
 func StoreValue(key string, value interface{}, state map[string]interface{}) error {
-	keyArray := splitVariable(key)
+	keyArray := splitVariable(key, '.')
 	length := len(keyArray) - 1
 	if length == 0 {
 		// return errors.New(ErrorInvalidVariable)
