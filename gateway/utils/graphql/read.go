@@ -146,8 +146,8 @@ func extractSelectionSet(field *ast.Field) map[string]int32 {
 }
 
 func extractAggregate(v *ast.Field) (map[string]map[string]string, bool) {
-	aggregateMap := make(map[string]map[string]string, 0)
-	functionMap := make(map[string]string, 0)
+	aggregateMap := make(map[string]map[string]string)
+	functionMap := make(map[string]string)
 	isAggregatePossible := true
 	for _, selection := range v.SelectionSet.Selections {
 		field := selection.(*ast.Field)
