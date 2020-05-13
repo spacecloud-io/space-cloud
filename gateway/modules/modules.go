@@ -33,6 +33,8 @@ type Modules struct {
 func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
 
 	c := crud.Init(removeProjectScope)
+	c.SetGetSecrets(syncMan.GetSecrets)
+
 	s := schema.Init(c, removeProjectScope)
 	c.SetSchema(s)
 

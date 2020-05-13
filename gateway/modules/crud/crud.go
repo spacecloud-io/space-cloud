@@ -37,6 +37,9 @@ type Module struct {
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
+
+	// fuction to get secrets from runner
+	getSecrets utils.GetSecrets
 }
 
 type loader struct {
@@ -128,6 +131,15 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			v.Type = k
 		}
 
+		// check if connection string starts with secrets
+		s := strings.Split(v.Conn, ".")
+		if s[0] == "secrets" {
+			v.Conn, err = m.getSecrets(project, s[1], s[2])
+			if err != nil {
+				return err
+			}
+		}
+
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
 		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
 
@@ -154,4 +166,12 @@ func (m *Module) GetDBType(dbAlias string) (string, error) {
 		return "", fmt.Errorf("db (%s) not found", dbAlias)
 	}
 	return m.dbType, nil
+}
+
+// SetGetSecrets sets the GetSecrets function
+func (m *Module) SetGetSecrets(function utils.GetSecrets) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.getSecrets = function
 }
