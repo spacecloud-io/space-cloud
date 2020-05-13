@@ -59,7 +59,8 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	}
 
 	go func() {
-		req.IsBatch = true
+		//  batch operation cannot be performed with aggregation
+		req.IsBatch = !(len(req.Aggregate) == 1)
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbAlias, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
@@ -107,6 +108,11 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 		return nil, false, err
 	}
 
+	readRequest.GroupBy, err = extractGroupByClause(field.Arguments, store)
+	if err != nil {
+		return nil, false, err
+	}
+
 	var hasOptions bool
 	readRequest.Options, hasOptions, err = generateOptions(field.Arguments, store)
 	if err != nil {
@@ -117,7 +123,75 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 		readRequest.Operation = utils.Distinct
 	}
 
+	selectionSet := extractSelectionSet(field)
+	aggregate, isAggregatePossible := extractAggregate(field)
+	if len(aggregate) > 0 && !isAggregatePossible {
+		return nil, false, utils.LogError(`GraphQL query with aggregation cannot contain fields with links or directives`, nil)
+	}
+	readRequest.Options.Select = selectionSet
+	readRequest.Aggregate = aggregate
 	return &readRequest, hasOptions, nil
+}
+
+func extractSelectionSet(field *ast.Field) map[string]int32 {
+	selectMap := map[string]int32{}
+	for _, selection := range field.SelectionSet.Selections {
+		v := selection.(*ast.Field)
+		if v.Name.Value == utils.GraphQLAggregate {
+			continue
+		}
+		selectMap[v.Name.Value] = 0
+	}
+	return selectMap
+}
+
+func extractAggregate(v *ast.Field) (map[string]map[string]string, bool) {
+	aggregateMap := make(map[string]map[string]string, 0)
+	functionMap := make(map[string]string, 0)
+	isAggregatePossible := true
+	for _, selection := range v.SelectionSet.Selections {
+		field := selection.(*ast.Field)
+		if field.Name.Value != utils.GraphQLAggregate {
+			// check for fields with links(by checking selection set)
+			if field.SelectionSet != nil && len(field.SelectionSet.Selections) > 0 {
+				isAggregatePossible = false
+			}
+			// check for fields with directives
+			if len(field.Directives) > 0 {
+				isAggregatePossible = false
+			}
+			continue
+		}
+		// get function name
+		for _, selection := range field.SelectionSet.Selections {
+			functionField := selection.(*ast.Field)
+			// get column name
+			for _, selection := range functionField.SelectionSet.Selections {
+				columnField := selection.(*ast.Field)
+				functionMap[functionField.Name.Value] = columnField.Name.Value
+				aggregateMap[field.Name.Value] = functionMap
+			}
+		}
+	}
+	return aggregateMap, isAggregatePossible
+}
+
+func extractGroupByClause(args []*ast.Argument, store utils.M) ([]interface{}, error) {
+	for _, v := range args {
+		switch v.Name.Value {
+		case utils.GraphQLGroupByArgument:
+			temp, err := utils.ParseGraphqlValue(v.Value, store)
+			if err != nil {
+				return nil, err
+			}
+			if obj, ok := temp.([]interface{}); ok {
+				return obj, nil
+			}
+			return nil, utils.LogError(fmt.Sprintf(`GraphQL "%s" argument is of type %v, but it should be of type array ([])`, utils.GraphQLGroupByArgument, reflect.TypeOf(temp)), nil)
+		}
+	}
+
+	return make([]interface{}, 0), nil
 }
 
 // ExtractWhereClause return the where arg of graphql schema

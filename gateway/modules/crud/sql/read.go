@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/doug-martin/goqu/v8"
@@ -35,7 +36,6 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 	}
 
 	selArray := []interface{}{}
-
 	if req.Options != nil {
 		// Check if the select clause exists
 		if req.Options.Select != nil {
@@ -71,7 +71,6 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 			query = query.Order(orderBys...)
 		}
 	}
-
 	switch req.Operation {
 	case utils.Count:
 		query = query.Select(goqu.COUNT("*"))
@@ -81,8 +80,32 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 			return "", nil, utils.ErrInvalidParams
 		}
 		query = query.SelectDistinct(*distinct)
-	case utils.One, utils.All:
+	case utils.One:
 		query = query.Select(selArray...)
+	case utils.All:
+		for aggregate, m := range req.Aggregate {
+			for function, column := range m {
+				asColumnName := fmt.Sprintf("%s%s%s%s%s", aggregate, utils.AggregateAsColumnSeparator, function, utils.AggregateAsColumnSeparator, column)
+				switch function {
+				case "sum":
+					selArray = append(selArray, goqu.SUM(column).As(asColumnName))
+				case "max":
+					selArray = append(selArray, goqu.MAX(column).As(asColumnName))
+				case "min":
+					selArray = append(selArray, goqu.MIN(column).As(asColumnName))
+				case "avg":
+					selArray = append(selArray, goqu.AVG(column).As(asColumnName))
+				case "count":
+					selArray = append(selArray, goqu.COUNT(column).As(asColumnName))
+				default:
+					return "", nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), nil)
+				}
+			}
+		}
+		query = query.Select(selArray...)
+		if len(req.GroupBy) > 0 {
+			query = query.GroupBy(req.GroupBy...)
+		}
 	}
 
 	// Generate the sql string and arguments
@@ -123,10 +146,10 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 
 	logrus.Debugf("Executing sql read query: %s - %v", sqlString, args)
 
-	return s.readexec(ctx, sqlString, args, req.Operation, executor)
+	return s.readexec(ctx, sqlString, args, req.Operation, executor, len(req.Aggregate) == 1)
 }
 
-func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor) (int64, interface{}, error) {
+func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor, isAggregate bool) (int64, interface{}, error) {
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return 0, nil, err
@@ -200,10 +223,19 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 			if err != nil {
 				return 0, nil, err
 			}
-
 			switch s.GetDBType() {
 			case utils.MySQL, utils.Postgres:
 				mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
+			}
+			if isAggregate {
+				for columnName, value := range mapping {
+					v := strings.Split(columnName, utils.AggregateAsColumnSeparator)
+					if len(v) == 3 {
+						a := map[string]map[string]interface{}{v[1]: {v[2]: value}}
+						delete(mapping, columnName)
+						mapping[v[0]] = a
+					}
+				}
 			}
 
 			array = append(array, mapping)

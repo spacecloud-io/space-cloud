@@ -184,6 +184,10 @@ const (
 	GqlStop string = "stop" // Client -> Server
 )
 
+const GraphQLGroupByArgument = "group"
+const GraphQLAggregate = "aggregate"
+const AggregateAsColumnSeparator = "__"
+
 // FieldType is the type for storing sql inspection information
 type FieldType struct {
 	FieldName    string `db:"Field"`
