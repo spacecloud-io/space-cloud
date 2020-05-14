@@ -26,7 +26,8 @@ func (m *Module) IsEventingOpAuthorised(ctx context.Context, project, token stri
 		return errors.New("invalid project details provided")
 	}
 
-	auth, err := m.parseToken(token)
+	var auth map[string]interface{}
+	auth, err = m.parseToken(token)
 	if err != nil {
 		return err
 	}
