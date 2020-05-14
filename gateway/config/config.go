@@ -28,7 +28,7 @@ type Secret struct {
 type Admin struct {
 	ClusterID  string `json:"clusterId" yaml:"clusterId"`
 	ClusterKey string `json:"clusterKey" yaml:"clusterKey"`
-	Version    int    `json:"version" yaml:"version"`
+	License    string `json:"license" yaml:"license"`
 }
 
 // AdminUser holds the user credentials and scope

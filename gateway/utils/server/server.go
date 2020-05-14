@@ -34,15 +34,17 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, removeProjectScope bool, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, removeProjectScope bool, disableMetrics, isDev bool, adminUserInfo *config.AdminUser) (*Server, error) {
 
 	// Create the fundamental modules
-	adminMan := admin.New("", clusterID, adminUserInfo)
+	adminMan := admin.New(nodeID, clusterID, isDev, adminUserInfo)
 	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile, adminMan)
 	if err != nil {
 		return nil, err
 	}
-	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, adminMan.LoadEnv())
+	adminMan.SetSyncMan(syncMan)
+
+	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, isDev)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +120,11 @@ func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHos
 }
 
 // SetConfig sets the config
-func (s *Server) SetConfig(c *config.Config, isProd bool) error {
+func (s *Server) SetConfig(c *config.Config) error {
 	s.ssl = c.SSL
 	s.syncMan.SetGlobalConfig(c)
-	s.adminMan.SetEnv(isProd)
-	return s.adminMan.SetConfig(c.Admin)
+	if err := s.adminMan.SetConfig(c.Admin, true); err != nil {
+		return err
+	}
+	return nil
 }

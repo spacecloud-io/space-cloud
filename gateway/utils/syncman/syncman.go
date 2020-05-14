@@ -1,12 +1,16 @@
 package syncman
 
 import (
+	"context"
+	"encoding/json"
+	"reflect"
 	"sync"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
@@ -86,8 +90,6 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile str
 // Start begins the sync manager operations
 func (s *Manager) Start(projectConfig *config.Config, port int) error {
 	// Save the ports
-	s.lock.Lock()
-	defer s.lock.Unlock()
 
 	s.port = port
 
@@ -104,6 +106,23 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 	}
 
 	if s.storeType != "none" {
+		// Fetch initial version of admin config. This must be called before watch admin config callback is invoked
+		adminConfig, err := s.store.GetAdminConfig(context.Background())
+		if err != nil {
+			return utils.LogError("Unable to fetch initial copy of admin config", err)
+		}
+		utils.LogDebug("Successfully loaded initial copy of config file", nil)
+		_ = s.adminMan.SetConfig(adminConfig, true)
+
+		// Now lets store the config as well
+		if s.checkIfLeaderGateway(s.nodeID) {
+			s.projectConfig.Admin = s.adminMan.GetConfig()
+			if err := s.store.SetAdminConfig(context.Background(), s.projectConfig.Admin); err != nil {
+				return utils.LogError("Unable to save initial license copy", err)
+			}
+			utils.LogDebug("Successfully stored initial copy of config file", nil)
+		}
+
 		// Start routine to observe active space-cloud services
 		if err := s.store.WatchProjects(func(projects []*config.Project) {
 			s.lock.Lock()
@@ -129,7 +148,9 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 		if err := s.store.WatchServices(func(services scServices) {
 			s.lock.Lock()
 			defer s.lock.Unlock()
-			logrus.WithFields(logrus.Fields{"services": services}).Debugln("Updating services")
+
+			data, _ := json.Marshal(services)
+			logrus.WithFields(logrus.Fields{"services": string(data)}).Debugln("Updating services")
 
 			s.services = services
 		}); err != nil {
@@ -138,23 +159,31 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 
 		// Start routine to observe space cloud projects
 		if err := s.store.WatchAdminConfig(func(clusters []*config.Admin) {
+			if len(clusters) == 0 {
+				return
+			}
+			cluster := clusters[0]
+
+			if reflect.DeepEqual(cluster, s.adminMan.GetConfig()) {
+				return
+			}
+
 			s.lock.Lock()
-			defer s.lock.Unlock()
+			s.projectConfig.Admin = cluster
+			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
+			s.lock.Unlock()
+
 			logrus.WithFields(logrus.Fields{"admin config": clusters}).Debugln("Updating admin config")
-			for _, cluster := range clusters {
-				if err := s.adminMan.SetConfig(cluster); err != nil {
-					logrus.Errorf("unable to apply admin config")
-					break
-				}
-				s.projectConfig.Admin = cluster
-				_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
+			if err := s.adminMan.SetConfig(cluster, false); err != nil {
+				_ = utils.LogError("Unable to apply admin config", err)
+				return
 			}
 		}); err != nil {
 			return err
 		}
-
 	}
 
+	utils.LogDebug("Exiting syncman start", nil)
 	return nil
 }
 

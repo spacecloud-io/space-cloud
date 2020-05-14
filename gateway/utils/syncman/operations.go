@@ -193,13 +193,11 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 	return s.store.SetProject(ctx, project)
 }
 
-func (s *Manager) setAdminConfig(ctx context.Context, cluster *config.Admin) error {
+func (s *Manager) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if err := s.adminMan.SetConfig(cluster); err != nil {
-		return err
-	}
+	utils.LogDebug("Storing the admin config", map[string]interface{}{"cluster": cluster})
 
 	s.projectConfig.Admin = cluster
 

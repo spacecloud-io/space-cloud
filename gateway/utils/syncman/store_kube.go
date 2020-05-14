@@ -3,8 +3,10 @@ package syncman
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -18,6 +20,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // KubeStore is an object for storing kubestore information
@@ -96,7 +99,7 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 			{
 				ClusterID:  "",
 				ClusterKey: "",
-				Version:    0,
+				License:    "",
 			},
 		}
 
@@ -122,7 +125,7 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 func (s *KubeStore) WatchProjects(cb func(projects []*config.Project)) error {
 	go func() {
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
-			options.LabelSelector = fmt.Sprintf("clusterId=%s", s.clusterID)
+			options.LabelSelector = fmt.Sprintf("kind=project,clusterId=%s", s.clusterID)
 		}
 		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 0, informers.WithTweakListOptions(options)).Core().V1().ConfigMaps().Informer()
 		stopper := make(chan struct{})
@@ -167,6 +170,7 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 		logrus.Debugf("Pod (%s) isn't running yet. Current status - %s", id, pod.Status.Phase)
 		for index, service := range services {
 			if service.id == id {
+				utils.LogDebug("Removing service", map[string]interface{}{"id": id})
 				services[index] = services[len(services)-1]
 				services = services[:len(services)-1]
 				break
@@ -175,11 +179,12 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 		return services
 	}
 
-	addr := pod.Status.PodIP + ":4122"
+	addr := fmt.Sprintf("%s.gateway.%s.svc.cluster.local:4122", id, pod.Namespace)
 
 	doesExist := false
 	for _, service := range services {
 		if service.id == id {
+			utils.LogDebug("Updating service", map[string]interface{}{"id": id, "addr": addr})
 			doesExist = true
 			service.addr = addr
 			break
@@ -188,6 +193,7 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 
 	// add service if it doesn't exist
 	if !doesExist {
+		utils.LogDebug("Adding service", map[string]interface{}{"id": id, "addr": addr})
 		services = append(services, &service{id: id, addr: addr})
 	}
 	return services
@@ -207,9 +213,9 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				newService := onAddOrUpdateServices(obj, services)
-				sort.Stable(newService)
-				cb(newService)
+				services = onAddOrUpdateServices(obj, services)
+				sort.Stable(services)
+				cb(services)
 			},
 			DeleteFunc: func(obj interface{}) {
 				pod := obj.(*v1.Pod)
@@ -217,6 +223,7 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 				for index, service := range services {
 					if service.id == id {
 						// remove service
+						utils.LogDebug("Removing service", map[string]interface{}{"id": id})
 						services[index] = services[len(services)-1]
 						services = services[:len(services)-1]
 						break
@@ -226,9 +233,9 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 				cb(services)
 			},
 			UpdateFunc: func(old, obj interface{}) {
-				newService := onAddOrUpdateServices(obj, services)
-				sort.Stable(newService)
-				cb(newService)
+				services = onAddOrUpdateServices(obj, services)
+				sort.Stable(services)
+				cb(services)
 			},
 		})
 
@@ -255,6 +262,7 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 			ObjectMeta: v12.ObjectMeta{
 				Name: name,
 				Labels: map[string]string{
+					"kind":      "project",
 					"projectId": project.ID,
 					"clusterId": s.clusterID,
 				},
@@ -284,6 +292,37 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 	return err
 }
 
+func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
+	name := fmt.Sprintf("sc-admin-config-%s", s.clusterID)
+
+	for i := 0; i < 3; i++ {
+		configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
+		if kubeErrors.IsNotFound(err) {
+			return new(config.Admin), nil
+		} else if err != nil {
+			_ = utils.LogError("Unable to fetch admin config", err)
+
+			// Sleep for 5 seconds then try again
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		clusterJSONString, ok := configMap.Data["cluster"]
+		if !ok {
+			return nil, utils.LogError("Admin config data is corrupted", errors.New("key not found in config map"))
+		}
+
+		cluster := new(config.Admin)
+		if err := json.Unmarshal([]byte(clusterJSONString), cluster); err != nil {
+			return nil, utils.LogError("Admin config data is corrupted", err)
+		}
+
+		return cluster, nil
+	}
+
+	return nil, errors.New("admin config could not be fetched")
+}
+
 // SetProject sets the project of the kube store
 func (s *KubeStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
 	clusterJSONString, err := json.Marshal(cluster)
@@ -292,7 +331,7 @@ func (s *KubeStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) e
 		return err
 	}
 
-	name := fmt.Sprintf("sc/admin-config/%s", s.clusterID)
+	name := fmt.Sprintf("sc-admin-config-%s", s.clusterID)
 	configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		configMap := &v1.ConfigMap{

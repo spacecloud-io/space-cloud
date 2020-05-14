@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
@@ -15,55 +13,60 @@ import (
 )
 
 // HandleUpgrade returns the handler to load the projects via a REST endpoint
-func HandleUpgrade(manager *syncman.Manager) http.HandlerFunc {
+func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerFunc {
 	type request struct {
-		UserName   string `json:"userName"`
-		Key        string `json:"key"`
 		ClusterID  string `json:"clusterId"`
 		ClusterKey string `json:"clusterKey"`
-		Version    int    `json:"version"`
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer utils.CloseTheCloser(r.Body)
+
+		token := utils.GetTokenFromHeader(r)
+		if err := admin.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
 		req := new(request)
 		_ = json.NewDecoder(r.Body).Decode(req)
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-		clusterType, err := manager.ConvertToEnterprise(ctx, req.UserName, req.Key, req.ClusterID, req.ClusterKey, req.Version)
+
+		err := manager.ConvertToEnterprise(ctx, token, req.ClusterID, req.ClusterKey)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
 		}
-
+		utils.LogDebug(`Successfully upgraded gateway to enterprise`, nil)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: clusterType})
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
 	}
 }
 
 // HandleUpgrade returns the handler to load the projects via a REST endpoint
-func HandleVersionUpgrade(adminMan *admin.Manager, manager *syncman.Manager) http.HandlerFunc {
-	type request struct {
-		Version int `json:"version"`
-	}
+func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		logrus.Println("version upgrade endpoint called")
+
 		defer utils.CloseTheCloser(r.Body)
-		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
+
+		token := utils.GetTokenFromHeader(r)
+		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
+
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-		req := new(request)
-		_ = json.NewDecoder(r.Body).Decode(req)
-		if err := manager.VersionUpgrade(ctx, req.Version); err != nil {
+
+		if err := syncMan.RenewLicense(ctx, token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
 			return
@@ -71,6 +74,6 @@ func HandleVersionUpgrade(adminMan *admin.Manager, manager *syncman.Manager) htt
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = json.NewEncoder(w).Encode(model.Response{})
 	}
 }

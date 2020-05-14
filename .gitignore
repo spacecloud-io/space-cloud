@@ -52,7 +52,7 @@ gateway/scripts
 metric-proxy/scripts
 docker-build.sh
 
-
+scripts/*
 #IDEs
 
 yarn.lock

@@ -46,7 +46,7 @@ func HandleGetCredentials(adminMan *admin.Manager) http.HandlerFunc {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status codee
+		w.WriteHeader(http.StatusOK) // http status code
 		_ = json.NewEncoder(w).Encode(model.Response{Result: adminMan.GetCredentials()})
 	}
 }
