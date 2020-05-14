@@ -190,9 +190,6 @@ const GraphQLGroupByArgument = "group"
 // GraphQLAggregate is used by graphql aggregate clause
 const GraphQLAggregate = "aggregate"
 
-// AggregateAsColumnSeparator is a column name separator
-const AggregateAsColumnSeparator = "__"
-
 // FieldType is the type for storing sql inspection information
 type FieldType struct {
 	FieldName    string `db:"Field"`

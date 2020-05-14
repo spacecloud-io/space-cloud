@@ -83,9 +83,9 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 	case utils.One:
 		query = query.Select(selArray...)
 	case utils.All:
-		for aggregate, m := range req.Aggregate {
-			for function, column := range m {
-				asColumnName := fmt.Sprintf("%s%s%s%s%s", aggregate, utils.AggregateAsColumnSeparator, function, utils.AggregateAsColumnSeparator, column)
+		for function, colArray := range req.Aggregate {
+			for _, column := range colArray {
+				asColumnName := generateAggregateAsColumnName(function, column)
 				switch function {
 				case "sum":
 					selArray = append(selArray, goqu.SUM(column).As(asColumnName))
@@ -96,7 +96,7 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 				case "avg":
 					selArray = append(selArray, goqu.AVG(column).As(asColumnName))
 				case "count":
-					selArray = append(selArray, goqu.COUNT(column).As(asColumnName))
+					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
 				default:
 					return "", nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), nil)
 				}
@@ -132,6 +132,17 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 	}
 	return sqlString, args, nil
 }
+func generateAggregateAsColumnName(function, column string) string {
+	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
+}
+
+func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
+	v := strings.Split(asColumnName, "__")
+	if len(v) != 3 {
+		return "", "", false
+	}
+	return v[1], v[2], true
+}
 
 // Read query document(s) from the database
 func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
@@ -146,7 +157,7 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 
 	logrus.Debugf("Executing sql read query: %s - %v", sqlString, args)
 
-	return s.readexec(ctx, sqlString, args, req.Operation, executor, len(req.Aggregate) == 1)
+	return s.readexec(ctx, sqlString, args, req.Operation, executor, len(req.Aggregate) > 0)
 }
 
 func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor, isAggregate bool) (int64, interface{}, error) {
@@ -228,13 +239,24 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 				mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 			}
 			if isAggregate {
-				for columnName, value := range mapping {
-					v := strings.Split(columnName, utils.AggregateAsColumnSeparator)
-					if len(v) == 3 {
-						a := map[string]map[string]interface{}{v[1]: {v[2]: value}}
-						delete(mapping, columnName)
-						mapping[v[0]] = a
+				funcMap := map[string]map[string]interface{}{}
+				for asColumnName, value := range mapping {
+					functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+					if isAggregateColumn {
+						delete(mapping, asColumnName)
+						// check if function name already exists
+						funcValue, ok := funcMap[functionName]
+						if !ok {
+							// set new function
+							funcMap[functionName] = map[string]interface{}{columnName: value}
+							continue
+						}
+						// add new column to existing function
+						funcValue[columnName] = value
 					}
+				}
+				if len(funcMap) > 0 {
+					mapping[utils.GraphQLAggregate] = funcMap
 				}
 			}
 

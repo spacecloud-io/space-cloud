@@ -50,7 +50,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		cb("", "", nil, err)
 		return
 	}
-
+	req.Options.Select = graph.extractSelectionSet(field, dbAlias, col)
 	// Check if read op is authorised
 	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
 	if err != nil {
@@ -60,7 +60,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 
 	go func() {
 		//  batch operation cannot be performed with aggregation
-		req.IsBatch = !(len(req.Aggregate) == 1)
+		req.IsBatch = !(len(req.Aggregate) > 0)
 		req.Options.HasOptions = hasOptions
 		result, err := graph.crud.Read(ctx, dbAlias, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
@@ -113,6 +113,11 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 		return nil, false, err
 	}
 
+	readRequest.Aggregate, err = extractAggregate(field)
+	if err != nil {
+		return nil, false, err
+	}
+
 	var hasOptions bool
 	readRequest.Options, hasOptions, err = generateOptions(field.Arguments, store)
 	if err != nil {
@@ -123,21 +128,21 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 		readRequest.Operation = utils.Distinct
 	}
 
-	selectionSet := extractSelectionSet(field)
-	aggregate, isAggregatePossible := extractAggregate(field)
-	if len(aggregate) > 0 && !isAggregatePossible {
-		return nil, false, utils.LogError(`GraphQL query with aggregation cannot contain fields with links or directives`, nil)
-	}
-	readRequest.Options.Select = selectionSet
-	readRequest.Aggregate = aggregate
 	return &readRequest, hasOptions, nil
 }
 
-func extractSelectionSet(field *ast.Field) map[string]int32 {
+func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) map[string]int32 {
 	selectMap := map[string]int32{}
 	for _, selection := range field.SelectionSet.Selections {
 		v := selection.(*ast.Field)
-		if v.Name.Value == utils.GraphQLAggregate {
+		// skip aggregate field & fields with directives
+		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 {
+			continue
+		}
+		// skip linked fields
+		schemaFields, _ := graph.schema.GetSchema(dbAlias, col)
+		fieldStruct, p := schemaFields[v.Name.Value]
+		if p && fieldStruct.IsLinked {
 			continue
 		}
 		selectMap[v.Name.Value] = 0
@@ -145,35 +150,35 @@ func extractSelectionSet(field *ast.Field) map[string]int32 {
 	return selectMap
 }
 
-func extractAggregate(v *ast.Field) (map[string]map[string]string, bool) {
-	aggregateMap := make(map[string]map[string]string)
-	functionMap := make(map[string]string)
-	isAggregatePossible := true
+func extractAggregate(v *ast.Field) (map[string][]string, error) {
+	functionMap := make(map[string][]string)
+	isSingleAggregate := false
 	for _, selection := range v.SelectionSet.Selections {
 		field := selection.(*ast.Field)
-		if field.Name.Value != utils.GraphQLAggregate {
-			// check for fields with links(by checking selection set)
-			if field.SelectionSet != nil && len(field.SelectionSet.Selections) > 0 {
-				isAggregatePossible = false
-			}
-			// check for fields with directives
-			if len(field.Directives) > 0 {
-				isAggregatePossible = false
-			}
+		if field.Name.Value != utils.GraphQLAggregate || field.SelectionSet == nil {
 			continue
 		}
+		if isSingleAggregate {
+			return nil, utils.LogError(`GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field`, nil)
+		}
+		isSingleAggregate = true
 		// get function name
 		for _, selection := range field.SelectionSet.Selections {
 			functionField := selection.(*ast.Field)
+			_, ok := functionMap[functionField.Name.Value]
+			if ok {
+				return nil, utils.LogError(fmt.Sprintf(`GraphQL aggregate field cannot have same (%s) functions, specify all columns in single function field`, functionField.Name.Value), nil)
+			}
+			colArray := make([]string, 0)
 			// get column name
 			for _, selection := range functionField.SelectionSet.Selections {
 				columnField := selection.(*ast.Field)
-				functionMap[functionField.Name.Value] = columnField.Name.Value
-				aggregateMap[field.Name.Value] = functionMap
+				colArray = append(colArray, columnField.Name.Value)
 			}
+			functionMap[functionField.Name.Value] = colArray
 		}
 	}
-	return aggregateMap, isAggregatePossible
+	return functionMap, nil
 }
 
 func extractGroupByClause(args []*ast.Argument, store utils.M) ([]interface{}, error) {
