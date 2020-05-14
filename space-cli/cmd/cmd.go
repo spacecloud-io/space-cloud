@@ -18,7 +18,7 @@ func GetRootCommand() *cobra.Command {
 
 	var rootCmd = &cobra.Command{
 		Use:     "space-cli",
-		Version: "0.17.0",
+		Version: version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			utils.SetLogLevel(viper.GetString("log-level"))
 		},
