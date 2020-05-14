@@ -30,15 +30,14 @@ type Modules struct {
 }
 
 // New creates a new modules instance
-func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
+func New(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
 
-	c := crud.Init(removeProjectScope)
+	c := crud.Init()
 	c.SetGetSecrets(syncMan.GetSecrets)
-
-	s := schema.Init(c, removeProjectScope)
+	s := schema.Init(c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c, removeProjectScope)
+	a := auth.Init(nodeID, c)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
 	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)

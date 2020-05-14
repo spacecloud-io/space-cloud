@@ -136,8 +136,13 @@ func Commands() []*cobra.Command {
 		Short: "Resumes the space-cloud docker environment",
 		RunE:  actionStart,
 	}
+	var stop = &cobra.Command{
+		Use:   "stop",
+		Short: "Stops the space-cloud docker environment",
+		RunE:  actionStop,
+	}
 
-	return []*cobra.Command{setup, upgrade, destroy, apply, start}
+	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}
 
 }
 
@@ -181,5 +186,10 @@ func actionApply(cmd *cobra.Command, args []string) error {
 
 func actionStart(cmd *cobra.Command, args []string) error {
 	_ = DockerStart()
+	return nil
+}
+
+func actionStop(cmd *cobra.Command, args []string) error {
+	_ = DockerStop()
 	return nil
 }

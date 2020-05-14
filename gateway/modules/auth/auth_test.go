@@ -21,7 +21,7 @@ func TestCreateToken(t *testing.T) {
 		{testName: "Test Case-Invalid Token", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", object: map[string]interface{}{"id": "internal-scuser"}},
 		{testName: "Invalid Test Case-Empty Object", IsTokenInvalid: true, IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, wantThis: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
-	authModule := Init("1", &crud.Module{}, false)
+	authModule := Init("1", &crud.Module{})
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecrets(test.secretKeys)
@@ -46,7 +46,7 @@ func TestIsTokenInternal(t *testing.T) {
 		{testName: "Unsuccessful Test-Signature is Invalid", IsErrExpected: true, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.MKIZkrXy6nUMu5ejqiYKl7EOU1TxEoKTOww-eoQm6Lw"},
 		{testName: "Successful Test Case", IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw"},
 	}
-	authModule := Init("1", &crud.Module{}, false)
+	authModule := Init("1", &crud.Module{})
 	for _, test := range authCreateToken {
 		t.Run(test.testName, func(t *testing.T) {
 			authModule.SetSecrets(test.secretKeys)
@@ -75,7 +75,7 @@ func TestParseToken(t *testing.T) {
 		{name: "Test should fail as invalid secret key-invalid signature", IsErrExpected: true, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mysecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc"},
 	}
 
-	authModule := Init("1", &crud.Module{}, false)
+	authModule := Init("1", &crud.Module{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			if err := authModule.SetConfig("default", test.secretKeys, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); err != nil {
