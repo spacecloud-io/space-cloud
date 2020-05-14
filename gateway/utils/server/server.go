@@ -31,7 +31,7 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, removeProjectScope bool, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
 
 	// Create the fundamental modules
 	adminMan := admin.New(clusterID, adminUserInfo)
@@ -53,7 +53,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile str
 	// Initialise the routing module
 	r := routing.New()
 
-	modules, err := modules.New(nodeID, removeProjectScope, syncMan, adminMan, m)
+	modules, err := modules.New(nodeID, syncMan, adminMan, m)
 	if err != nil {
 		return nil, err
 	}

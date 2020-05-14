@@ -12,14 +12,13 @@ import (
 
 func TestBolt_GetCollections(t *testing.T) {
 
-	b, err := Init(true, "bolt.db")
+	b, err := Init(true, "bolt.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
 
 	type args struct {
-		ctx     context.Context
-		project string
+		ctx context.Context
 	}
 	tests := []struct {
 		name    string
@@ -29,26 +28,20 @@ func TestBolt_GetCollections(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "invalid project",
-			b:    b,
-			args: args{ctx: context.Background(), project: "not-gateway"},
-			want: []utils.DatabaseCollections{},
-		},
-		{
 			name: "get collection occurs",
 			b:    b,
-			args: args{ctx: context.Background(), project: "gateway"},
-			want: []utils.DatabaseCollections{{TableName: "project"}},
+			args: args{ctx: context.Background()},
+			want: []utils.DatabaseCollections{{TableName: "project_details"}},
 		},
 	}
 
 	if err := createDatabaseWithTestData(b); err != nil {
-		log.Fatal("error test data cannot be created for executing collections test", err, " kavish")
+		log.Fatal("error test data cannot be created for executing collections test", err)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.b.GetCollections(tt.args.ctx, tt.args.project)
+			got, err := tt.b.GetCollections(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Bolt.GetCollections() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -66,15 +59,14 @@ func TestBolt_GetCollections(t *testing.T) {
 
 func TestBolt_DeleteCollection(t *testing.T) {
 
-	b, err := Init(true, "delete.db")
+	b, err := Init(true, "delete.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
 
 	type args struct {
-		ctx     context.Context
-		project string
-		col     string
+		ctx context.Context
+		col string
 	}
 	tests := []struct {
 		name    string
@@ -83,18 +75,13 @@ func TestBolt_DeleteCollection(t *testing.T) {
 		want    []utils.DatabaseCollections
 	}{
 		{
-			name: "invalid project",
-			args: args{ctx: context.Background(), project: "not-gateway", col: "project"},
-			want: []utils.DatabaseCollections{},
-		},
-		{
 			name: "delete collection doesn't take place",
-			args: args{ctx: context.Background(), project: "gateway", col: "invalid"},
-			want: []utils.DatabaseCollections{{TableName: "project"}},
+			args: args{ctx: context.Background(), col: "invalid"},
+			want: []utils.DatabaseCollections{{TableName: "project_details"}},
 		},
 		{
 			name: "delete collection takes place",
-			args: args{ctx: context.Background(), project: "gateway", col: "project"},
+			args: args{ctx: context.Background(), col: "project_details"},
 			want: []utils.DatabaseCollections{},
 		},
 	}
@@ -105,10 +92,10 @@ func TestBolt_DeleteCollection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := b.DeleteCollection(tt.args.ctx, tt.args.project, tt.args.col); (err != nil) != tt.wantErr {
+			if err := b.DeleteCollection(tt.args.ctx, tt.args.col); (err != nil) != tt.wantErr {
 				t.Errorf("Bolt.DeleteCollection() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			got, err := b.GetCollections(tt.args.ctx, tt.args.project)
+			got, err := b.GetCollections(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Bolt.DeleteCollection() error = %v, wantErr %v", err, tt.wantErr)
 				return

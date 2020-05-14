@@ -372,7 +372,7 @@ func TestModule_HookStage(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Find: map[string]interface{}{"key1": "value1"}, Operation: utils.One}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Find: map[string]interface{}{"key1": "value1"}, Operation: utils.One}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
 				mockArgs{
@@ -415,7 +415,7 @@ func TestModule_HookStage(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Find: map[string]interface{}{"key1": "value1"}, Operation: utils.One}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Find: map[string]interface{}{"key1": "value1"}, Operation: utils.One}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
 				mockArgs{

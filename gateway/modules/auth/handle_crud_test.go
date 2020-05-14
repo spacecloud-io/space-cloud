@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestIsCreateOpAuthorised(t *testing.T) {
@@ -60,11 +61,11 @@ func TestIsCreateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"create": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -130,11 +131,11 @@ func TestIsAggregateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"aggr": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -191,11 +192,11 @@ func TestIsReadOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"read": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -252,11 +253,11 @@ func TestIsDeleteOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"delete": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -313,11 +314,11 @@ func TestIsUpdateOpAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"tweet": {Rules: map[string]*config.Rule{"update": {Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -371,11 +372,11 @@ func TestIsPreparedQueryAuthorised(t *testing.T) {
 	}
 	project := "project"
 	rule := config.Crud{"mongo": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"tweet": {Rule: &config.Rule{Rule: "allow", Eval: "Eval", Type: "Type", DB: "mongo", Col: "tweet", Find: map[string]interface{}{"findstring1": "inteface1", "findstring2": "interface2"}}}}}}
-	s := schema.Init(crud.Init(false), false)
+	s := schema.Init(crud.Init())
 	if err := s.SetConfig(rule, project); err != nil {
 		t.Errorf("error setting config of schema - %s", err.Error())
 	}
-	auth := Init("1", &crud.Module{}, false)
+	auth := Init("1", &crud.Module{})
 	if er := auth.SetConfig(project, []*config.Secret{}, "", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{}); er != nil {
 		t.Errorf("error setting config of auth module  - %s", er.Error())
 	}
@@ -471,6 +472,70 @@ func Test_getPrepareQueryRule(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Module.getPrepareQueryRule() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModule_getCrudRule(t *testing.T) {
+	type fields struct {
+		rules map[string]*config.TableRule
+	}
+	type args struct {
+		dbAlias string
+		col     string
+		query   utils.OperationType
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *config.Rule
+		wantErr bool
+	}{
+		{
+			name:   "valid col",
+			fields: fields{rules: map[string]*config.TableRule{"col": {Rules: map[string]*config.Rule{"op": {Type: "allow"}}}}},
+			args:   args{query: "op", dbAlias: "db", col: "col"},
+			want:   &config.Rule{Type: "allow"},
+		},
+		{
+			name:   "valid default - wrong op",
+			fields: fields{rules: map[string]*config.TableRule{"col": {Rules: map[string]*config.Rule{}}, "default": {Rules: map[string]*config.Rule{"op": {Type: "default"}}}}},
+			args:   args{query: "op", dbAlias: "db", col: "col"},
+			want:   &config.Rule{Type: "default"},
+		},
+		{
+			name:    "wrong db",
+			fields:  fields{rules: map[string]*config.TableRule{"col": {Rules: map[string]*config.Rule{"op": {Type: "allow"}}}}},
+			args:    args{query: "op", dbAlias: "db-bad", col: "col"},
+			wantErr: true,
+		},
+		{
+			name:    "wrong col",
+			fields:  fields{rules: map[string]*config.TableRule{"col": {Rules: map[string]*config.Rule{"op": {Type: "allow"}}}}},
+			args:    args{query: "op", dbAlias: "db", col: "col-bad"},
+			wantErr: true,
+		},
+		{
+			name:    "invalid default - wrong op",
+			fields:  fields{rules: map[string]*config.TableRule{"col": {Rules: map[string]*config.Rule{}}, "default": {Rules: map[string]*config.Rule{"op": {Type: "default"}}}}},
+			args:    args{query: "op-bad", dbAlias: "db", col: "col"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &Module{
+				rules: map[string]*config.CrudStub{"db": {Collections: tt.fields.rules}},
+			}
+			got, err := m.getCrudRule(tt.args.dbAlias, tt.args.col, tt.args.query)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getCrudRule() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getCrudRule() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -69,6 +69,7 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 // CrudStub holds the config at the database level
 type CrudStub struct {
 	Type            string                    `json:"type,omitempty" yaml:"type"` // database type
+	DBName          string                    `json:"name,omitempty" yaml:"name"` // name of the logical database or schema name according to the database type
 	Conn            string                    `json:"conn,omitempty" yaml:"conn"`
 	Collections     map[string]*TableRule     `json:"collections,omitempty" yaml:"collections"` // The key here is table name
 	PreparedQueries map[string]*PreparedQuery `json:"preparedQueries,omitempty" yaml:"preparedQueries"`
