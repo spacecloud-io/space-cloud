@@ -145,6 +145,7 @@ type FileStore struct {
 	Conn      string      `json:"conn" yaml:"conn"`
 	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
 	Bucket    string      `json:"bucket" yaml:"bucket"`
+	Secret    string      `json:"secret" yaml:"secret"`
 	Rules     []*FileRule `json:"rules,omitempty" yaml:"rules"`
 }
 

@@ -2,7 +2,11 @@ package filestore
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -65,6 +69,14 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 		}
 	}
 
+	// set fileStore secret for aws and gcp
+	connection := strings.Split(conf.Conn, ".")
+	if connection[0] == "secrets" {
+		if err := setFileSecret(utils.FileStoreType(conf.StoreType), connection[2], conf.Secret); err != nil {
+			return err
+		}
+	}
+
 	// Disable the module if file store is not enabled
 	if conf == nil || !conf.Enabled {
 		m.enabled = false
@@ -82,6 +94,33 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	m.store = s
 	m.enabled = true
 	return nil
+}
+
+func setFileSecret(fileStoreType utils.FileStoreType, key, value string) error {
+	switch fileStoreType {
+	case utils.AmazonS3:
+		if _, err := os.Stat("./aws/credentials"); os.IsNotExist(err) {
+			err = os.MkdirAll("./aws/credentials", 0755)
+			if err != nil {
+				return err
+			}
+		}
+
+		if _, err := os.Stat("./aws/credentials/credentials.txt"); os.IsNotExist(err) {
+			return ioutil.WriteFile("./aws/credentials/credentials.txt", []byte(value), 0755)
+		}
+
+		return nil
+	case utils.GCPStorage:
+		if err := os.Setenv(key, value); err != nil {
+			return err
+		}
+		// just for testing
+		fmt.Println("evn set: ", os.Getenv(key))
+		return nil
+	default:
+		return utils.ErrInvalidParams
+	}
 }
 
 // IsEnabled checks if the file store module is enabled
