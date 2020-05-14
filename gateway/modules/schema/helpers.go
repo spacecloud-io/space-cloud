@@ -22,10 +22,14 @@ func getSQLType(dbType, typename string) (string, error) {
 		}
 		return "text", nil
 	case model.TypeDateTime:
-		if dbType == string(utils.MySQL) {
+		switch dbType {
+		case string(utils.MySQL):
 			return "datetime", nil
+		case string(utils.SQLServer):
+			return "datetimeoffset", nil
+		default:
+			return "timestamp", nil
 		}
-		return "timestamp", nil
 	case model.TypeBoolean:
 		if dbType == string(utils.SQLServer) {
 			return "bit", nil
