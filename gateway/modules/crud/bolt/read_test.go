@@ -17,13 +17,11 @@ func TestBolt_Read(t *testing.T) {
 	type fields struct {
 		enabled    bool
 		connection string
-		// client     *bbolt.DB
 	}
 	type args struct {
-		ctx     context.Context
-		project string
-		col     string
-		req     *model.ReadRequest
+		ctx context.Context
+		col string
+		req *model.ReadRequest
 	}
 	tests := []struct {
 		name    string
@@ -51,9 +49,8 @@ func TestBolt_Read(t *testing.T) {
 				connection: "read.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.ReadRequest{
 					Find: map[string]interface{}{
 						"_id": "1",
@@ -99,9 +96,8 @@ func TestBolt_Read(t *testing.T) {
 				connection: "read.db",
 			},
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.ReadRequest{
 					Find: map[string]interface{}{
 						"isPrimary": true,
@@ -112,18 +108,18 @@ func TestBolt_Read(t *testing.T) {
 		},
 	}
 
-	b, err := Init(true, "read.db")
+	b, err := Init(true, "read.db", "bucketName")
 	if err != nil {
 		t.Fatal("error initializing database")
 	}
 
 	if err := createDatabaseWithTestData(b); err != nil {
-		log.Fatal("error test data cannot be created for executing read test", err, "sharad")
+		log.Fatal("error test data cannot be created for executing read test", err)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := b.Read(tt.args.ctx, tt.args.project, tt.args.col, tt.args.req)
+			got, got1, err := b.Read(tt.args.ctx, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 				return

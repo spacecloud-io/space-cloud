@@ -49,7 +49,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339)}}, errors.New("some error")},
 				},
 			},
@@ -67,7 +67,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{"payload", nil}},
 				},
 			},
@@ -85,7 +85,7 @@ func TestModule_processStagedEvents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				mockArgs{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "db", "event_logs", &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusStaged, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{ID: "eventDocID", Timestamp: time.Now().Format(time.RFC3339)}}, nil},
 				},
 			},

@@ -20,14 +20,14 @@ import (
 )
 
 // generateReadQuery makes a query for read operation
-func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (string, []interface{}, error) {
+func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []interface{}, error) {
 	dbType := s.dbType
 	if dbType == string(utils.SQLServer) {
 		dbType = string(utils.Postgres)
 	}
 
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(project, col)).Prepared(true)
+	query := dialect.From(s.getDBName(col)).Prepared(true)
 	var tarr []string
 	if req.Find != nil {
 		// Get the where clause from query object
@@ -111,18 +111,22 @@ func (s *SQL) generateReadQuery(project, col string, req *model.ReadRequest) (st
 }
 
 // Read query document(s) from the database
-func (s *SQL) Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error) {
-	return s.read(ctx, project, col, req, s.client)
+func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
+	return s.read(ctx, col, req, s.client)
 }
 
-func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequest, executor executor) (int64, interface{}, error) {
-	sqlString, args, err := s.generateReadQuery(project, col, req)
+func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, executor executor) (int64, interface{}, error) {
+	sqlString, args, err := s.generateReadQuery(col, req)
 	if err != nil {
 		return 0, nil, err
 	}
 
 	logrus.Debugf("Executing sql read query: %s - %v", sqlString, args)
 
+	return s.readexec(ctx, sqlString, args, req.Operation, executor)
+}
+
+func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor) (int64, interface{}, error) {
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return 0, nil, err
@@ -142,7 +146,7 @@ func (s *SQL) read(ctx context.Context, project, col string, req *model.ReadRequ
 		rowTypes, _ = rows.ColumnTypes()
 	}
 
-	switch req.Operation {
+	switch operation {
 	case utils.Count:
 		mapping := make(map[string]interface{})
 		if !rows.Next() {

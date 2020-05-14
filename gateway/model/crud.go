@@ -38,6 +38,11 @@ type DeleteRequest struct {
 	Operation string                 `json:"op"`
 }
 
+// PreparedQueryRequest is the http body received for a PreparedQuery request
+type PreparedQueryRequest struct {
+	Params map[string]interface{} `json:"params"`
+}
+
 // AggregateRequest is the http body received for an aggregate request
 type AggregateRequest struct {
 	Pipeline  interface{} `json:"pipe"`
