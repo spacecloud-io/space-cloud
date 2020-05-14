@@ -100,24 +100,21 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			params1 := strings.TrimSpace(params[1])
 			params1 = strings.Trim(params1, "'")
 
-			temp, err := LoadStringIfExists(params0, state)
+			params0, err := LoadStringIfExists(params0, state)
 			if err != nil {
 				return "", err
 			}
-			params0 = temp
 
 			paresedtime, err := time.ParseDuration(params1)
 			if err != nil {
 				return "", err
 			}
 
-			param0 := time.Now().UTC()
-			param0, err = CheckParse(params0)
+			param0, err := CheckParse(params0)
 			if err != nil {
 				return "", err
 			}
-			paramadd := param0.Add(paresedtime)
-			return paramadd.Format(time.RFC3339), nil
+			return param0.Add(paresedtime).Format(time.RFC3339), nil
 		}
 		if strings.HasPrefix(function, "roundUpDate") {
 			params0 := strings.TrimSpace(params[0])
@@ -125,14 +122,12 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			params1 := strings.TrimSpace(params[1])
 			params1 = strings.Trim(params1, "'")
 
-			temp, err := LoadStringIfExists(params0, state)
+			params0, err := LoadStringIfExists(params0, state)
 			if err != nil {
 				return "", err
 			}
-			params0 = temp
 
-			param0 := time.Now().UTC()
-			param0, err = CheckParse(params0)
+			param0, err := CheckParse(params0)
 			if err != nil {
 				return "", err
 			}
@@ -152,7 +147,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			case "second":
 				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), param0.Second(), 0, param0.Location())
 			default:
-				return nil, errors.New("Invalid parameter")
+				return nil, fmt.Errorf("invalid parameter (%s) provided in `utils.roundUp`", params1)
 			}
 			return timeDate.Format(time.RFC3339), nil
 		}
