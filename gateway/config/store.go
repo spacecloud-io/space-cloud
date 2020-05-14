@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 // StoreConfigToFile stores the config file to disk

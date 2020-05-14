@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 
 	"github.com/spaceuptech/space-cli/cmd/modules/services"
 	"github.com/spaceuptech/space-cli/cmd/utils"

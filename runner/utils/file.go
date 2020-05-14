@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/ghodss/yaml"
 	"github.com/spaceuptech/space-cloud/runner/model"
-	"gopkg.in/yaml.v2"
 )
 
 // AppendConfigToDisk creates a yml file or appends to existing
