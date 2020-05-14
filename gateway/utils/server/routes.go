@@ -19,8 +19,8 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodGet).Path("/v1/config/quotas").HandlerFunc(handlers.HandleGetQuotas(s.adminMan))
 	router.Methods(http.MethodGet).Path("/v1/config/credentials").HandlerFunc(handlers.HandleGetCredentials(s.adminMan))
 
-	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/version/upgrade").HandlerFunc(handlers.HandleVersionUpgrade(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/renew-license").HandlerFunc(handlers.HandleRenewLicense(s.adminMan, s.syncMan))
 
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))

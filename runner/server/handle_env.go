@@ -22,6 +22,7 @@ func (s *Server) handleGetClusterType() http.HandlerFunc {
 			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
 			return
 		}
+		logrus.Println("driver", s.driver.Type())
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: s.driver.Type()})
 	}

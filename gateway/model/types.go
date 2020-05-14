@@ -10,6 +10,11 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
+type SyncManAdminInterface interface {
+	PingLeader() error
+	SetAdminConfig(ctx context.Context, cluster *config.Admin) error
+}
+
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
 type SchemaCrudInterface interface {
 	SetConfig(conf config.Crud, project string) error

@@ -70,11 +70,11 @@ func (m *Manager) RefreshToken(token string) (string, error) {
 	return newToken, nil
 }
 
-func (m *Manager) IsEnterpriseMode() bool {
+func (m *Manager) IsRegistered() bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return m.isEnterpriseMode()
+	return m.isRegistered()
 }
 
 // GetQuotas gets number of projects & databases that can be created
@@ -90,4 +90,11 @@ func (m *Manager) GetCredentials() map[string]interface{} {
 // GetClusterID returns the cluster id
 func (m *Manager) GetClusterID() string {
 	return m.clusterID
+}
+func (m *Manager) GetSessionID() string {
+	return m.sessionID
+}
+
+func (m *Manager) GetEnterpriseClusterID() string {
+	return m.config.ClusterID
 }

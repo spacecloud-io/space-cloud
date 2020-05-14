@@ -26,7 +26,8 @@ func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion})
+		isProd, plan, quotas := adminMan.LoadEnv()
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"isProd": isProd, "plan": plan, "quotas": quotas, "version": utils.BuildVersion, "clusterId": adminMan.GetEnterpriseClusterID()})
 	}
 }
 

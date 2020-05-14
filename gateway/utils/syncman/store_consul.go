@@ -22,6 +22,10 @@ type ConsulStore struct {
 	nodeID, clusterID, advertiseAddr string
 }
 
+func (s *ConsulStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
+	panic("implement me")
+}
+
 // NewConsulStore creates new consul store
 func NewConsulStore(nodeID, clusterID, advertiseAddr string) (*ConsulStore, error) {
 	client, err := api.NewClient(api.DefaultConfig())
@@ -84,7 +88,7 @@ func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
 			{
 				ClusterID:  "",
 				ClusterKey: "",
-				Version:    0,
+				License:    "",
 			},
 		}
 
