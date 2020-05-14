@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spf13/viper"
 )
 
 // GetProjectsNamesFromArray returns the array of projects names
@@ -32,4 +33,13 @@ func GetProjectsFromSC() ([]*model.Projects, error) {
 	}
 
 	return res.Projects, nil
+}
+
+//GetProjectID checks if project is specified in flags
+func GetProjectID() (string, bool) {
+	projectID := viper.GetString("project")
+	if projectID == "" {
+		return "", false
+	}
+	return projectID, true
 }

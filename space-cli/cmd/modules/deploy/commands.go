@@ -42,7 +42,11 @@ func Commands() []*cobra.Command {
 }
 
 func actionDeploy(cmd *cobra.Command, args []string) error {
-	projectID := viper.GetString("project")
+	projectID, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	dockerFilePath := viper.GetString("docker-file")
 	serviceFilePath := viper.GetString("service-file")
 	prepare := viper.GetBool("prepare")
