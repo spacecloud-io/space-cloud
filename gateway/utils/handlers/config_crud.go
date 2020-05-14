@@ -35,11 +35,10 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 		defer cancel()
 
 		vars := mux.Vars(r)
-		projectID := vars["project"]
 		dbAlias := vars["dbAlias"]
 
 		crud := modules.DB()
-		collections, err := crud.GetCollections(ctx, projectID, dbAlias)
+		collections, err := crud.GetCollections(ctx, dbAlias)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -106,7 +105,7 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 		col := vars["col"]
 
 		crud := modules.DB()
-		if err := crud.DeleteTable(ctx, projectID, dbAlias, col); err != nil {
+		if err := crud.DeleteTable(ctx, dbAlias, col); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -216,6 +215,123 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 	}
 }
 
+// HandleGetPreparedQuery returns handler to get PreparedQuery
+func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		// get project id and dbType from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := ""
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		idQuery, exists := r.URL.Query()["id"]
+		id := ""
+		if exists {
+			id = idQuery[0]
+		}
+		result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
+	}
+}
+
+// HandleSetPreparedQueries is an endpoint handler which updates database PreparedQueries
+func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		v := config.PreparedQuery{}
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		project := vars["project"]
+		id := vars["id"]
+
+		if err := syncman.SetPreparedQueries(ctx, project, dbAlias, id, &v); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) // http status codee
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+	}
+}
+
+// HandleRemovePreparedQueries is an endpoint handler which removes database PreparedQueries
+func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		defer utils.CloseTheCloser(r.Body)
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		project := vars["project"]
+		id := vars["id"]
+
+		if err := syncman.RemovePreparedQueries(ctx, project, dbAlias, id); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK) // http status codee
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+	}
+}
+
 // HandleModifySchema is an endpoint handler which updates the existing schema & updates the config
 func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -241,9 +357,13 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-
+		logicalDBName, err := syncman.GetLogicalDatabaseName(ctx, projectID, dbAlias)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		schema := modules.Schema()
-		if err := schema.SchemaModifyAll(ctx, dbAlias, projectID, map[string]*config.TableRule{col: &v}); err != nil {
+		if err := schema.SchemaModifyAll(ctx, dbAlias, logicalDBName, map[string]*config.TableRule{col: &v}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -418,9 +538,13 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		dbAlias := vars["dbAlias"]
 		col := vars["col"]
 		projectID := vars["project"]
-
+		logicalDBName, err := syncman.GetLogicalDatabaseName(ctx, projectID, dbAlias)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		schema := modules.Schema()
-		s, err := schema.SchemaInspection(ctx, dbAlias, projectID, col)
+		s, err := schema.SchemaInspection(ctx, dbAlias, logicalDBName, col)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

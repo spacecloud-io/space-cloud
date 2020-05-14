@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // Adjust loads value from state if referenced
@@ -39,7 +40,7 @@ func Adjust(obj interface{}, state map[string]interface{}) interface{} {
 
 // LoadStringIfExists loads a value if its present else returns the same
 func LoadStringIfExists(value string, state map[string]interface{}) (string, error) {
-	if !strings.HasPrefix(value, "args.") {
+	if !strings.HasPrefix(value, "args.") && !strings.HasPrefix(value, "utils.") {
 		return value, nil
 	}
 	temp, err := LoadValue(value, state)
@@ -60,7 +61,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		return nil, errors.New("Invalid key")
 	}
 
-	tempArray := splitVariable(key)
+	tempArray := splitVariable(key, '.')
 	length := len(tempArray) - 1
 
 	if length == 0 {
@@ -71,6 +72,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 		function := tempArray[1]
 		pre := strings.IndexRune(function, '(')
 		post := strings.IndexRune(function, ')')
+		params := splitVariable(function[pre+1:len(function)-1], ',')
 		if strings.HasPrefix(function, "exists") {
 			_, err := LoadValue(function[pre+1:post], state)
 			return err == nil, nil
@@ -88,6 +90,66 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			default:
 				return nil, fmt.Errorf("invalid type found for length")
 			}
+		}
+		if strings.HasPrefix(function, "now") {
+			return time.Now().UTC().Format(time.RFC3339), nil
+		}
+		if strings.HasPrefix(function, "addDuration") {
+			params0 := strings.TrimSpace(params[0])
+			params0 = strings.Trim(params0, "'")
+			params1 := strings.TrimSpace(params[1])
+			params1 = strings.Trim(params1, "'")
+
+			params0, err := LoadStringIfExists(params0, state)
+			if err != nil {
+				return "", err
+			}
+
+			paresedtime, err := time.ParseDuration(params1)
+			if err != nil {
+				return "", err
+			}
+
+			param0, err := CheckParse(params0)
+			if err != nil {
+				return "", err
+			}
+			return param0.Add(paresedtime).Format(time.RFC3339), nil
+		}
+		if strings.HasPrefix(function, "roundUpDate") {
+			params0 := strings.TrimSpace(params[0])
+			params0 = strings.Trim(params0, "'")
+			params1 := strings.TrimSpace(params[1])
+			params1 = strings.Trim(params1, "'")
+
+			params0, err := LoadStringIfExists(params0, state)
+			if err != nil {
+				return "", err
+			}
+
+			param0, err := CheckParse(params0)
+			if err != nil {
+				return "", err
+			}
+
+			var timeDate time.Time
+			switch params1 {
+			case "year":
+				timeDate = time.Date(param0.Year(), time.January, 1, 0, 0, 0, 0, param0.Location())
+			case "month":
+				timeDate = time.Date(param0.Year(), param0.Month(), 1, 0, 0, 0, 0, param0.Location())
+			case "day":
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), 0, 0, 0, 0, param0.Location())
+			case "hour":
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), 0, 0, 0, param0.Location())
+			case "minute":
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), 0, 0, param0.Location())
+			case "second":
+				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), param0.Second(), 0, param0.Location())
+			default:
+				return nil, fmt.Errorf("invalid parameter (%s) provided in `utils.roundUp`", params1)
+			}
+			return timeDate.Format(time.RFC3339), nil
 		}
 
 		return nil, errors.New("Invalid utils operation")
@@ -232,7 +294,7 @@ func convert(key string, obj map[string]interface{}) (map[string]interface{}, er
 	return conv, nil
 }
 
-func splitVariable(key string) []string {
+func splitVariable(key string, delimiter rune) []string {
 	var inBracket1 int
 	var inBracket2 int
 
@@ -251,7 +313,7 @@ func splitVariable(key string) []string {
 		if c == ')' {
 			inBracket2--
 		}
-		if c == '.' && inBracket1 == 0 && inBracket2 == 0 {
+		if c == delimiter && inBracket1 == 0 && inBracket2 == 0 {
 			sub := key[lastIndex:i]
 			array = append(array, sub)
 			lastIndex = i + 1
@@ -266,7 +328,7 @@ func splitVariable(key string) []string {
 
 // StoreValue  -- stores a value in the provided state
 func StoreValue(key string, value interface{}, state map[string]interface{}) error {
-	keyArray := splitVariable(key)
+	keyArray := splitVariable(key, '.')
 	length := len(keyArray) - 1
 	if length == 0 {
 		// return errors.New(ErrorInvalidVariable)

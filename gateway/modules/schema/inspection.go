@@ -33,7 +33,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 
 // Inspector generates schema
 func (s *Schema) Inspector(ctx context.Context, dbAlias, dbType, project, col string) (model.Collection, error) {
-	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbAlias, project, col)
+	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbAlias, col)
 
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *model.FieldTyp
 		fieldDetails.Kind = model.TypeInteger
 	case "float", "double":
 		fieldDetails.Kind = model.TypeFloat
-	case "date", "time", "datetime", "timestamp":
+	case "date", "time", "datetime", "timestamp", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
 	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = model.TypeBoolean
@@ -168,7 +168,7 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *model.Field
 		fieldDetails.Kind = model.TypeInteger
 	case "float", "double", "real":
 		fieldDetails.Kind = model.TypeFloat
-	case "date", "time", "datetime", "timestamp", "interval":
+	case "date", "time", "datetime", "timestamp", "interval", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
 	case "boolean":
 		fieldDetails.Kind = model.TypeBoolean
