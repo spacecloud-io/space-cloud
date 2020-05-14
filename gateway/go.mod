@@ -64,7 +64,7 @@ require (
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.5
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	gopkg.in/yaml.v2 v2.2.7
+	gopkg.in/yaml.v2 v2.2.7 // indirect
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v0.17.2
