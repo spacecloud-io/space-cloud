@@ -54,7 +54,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("1", "project", obj); err != nil {
+	if err := createConfigFile("01", "project", obj); err != nil {
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("2", "db-config", objs); err != nil {
+	if err := createConfigFile("02", "db-config", objs); err != nil {
 		return nil
 	}
 
@@ -70,7 +70,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("3", "db-rules", objs); err != nil {
+	if err := createConfigFile("03", "db-rules", objs); err != nil {
 		return nil
 	}
 
@@ -78,7 +78,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("4", "db-schema", objs); err != nil {
+	if err := createConfigFile("04", "db-schema", objs); err != nil {
 		return nil
 	}
 
@@ -86,7 +86,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("5", "filestore-config", obj); err != nil {
+	if err := createConfigFile("05", "filestore-config", obj); err != nil {
 		return nil
 	}
 
@@ -94,7 +94,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("6", "filestore-rule", objs); err != nil {
+	if err := createConfigFile("06", "filestore-rule", objs); err != nil {
 		return nil
 	}
 
@@ -102,7 +102,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("7", "eventing-config", obj); err != nil {
+	if err := createConfigFile("07", "eventing-config", obj); err != nil {
 		return nil
 	}
 
@@ -110,7 +110,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("8", "eventing-triggers", objs); err != nil {
+	if err := createConfigFile("08", "eventing-triggers", objs); err != nil {
 		return nil
 	}
 
@@ -118,7 +118,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("9", "eventing-rule", objs); err != nil {
+	if err := createConfigFile("09", "eventing-rule", objs); err != nil {
 		return nil
 	}
 
