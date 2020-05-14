@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -35,6 +36,11 @@ func getSubCommands() []*cobra.Command {
 
 func getAllProjects(cmd *cobra.Command, args []string) error {
 	projectName := viper.GetString("project")
+	projectName, check := getProjectID(projectName)
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 
 	if len(args) == 0 {
 		_ = utils.LogError("Directory not specified as an arguement to store config files", nil)
@@ -203,4 +209,28 @@ func createConfigFile(pos, commandName string, objs []*model.SpecObject) error {
 		return err
 	}
 	return nil
+}
+
+func getProjectID(project string) (string, bool) {
+	var params map[string]string
+	if project == "" {
+		project = "*" // for getting all projects
+		value, ok := params["id"]
+		if ok {
+			project = value
+		}
+	} else {
+		return project, true
+	}
+	url := fmt.Sprintf("/v1/config/projects/%s", project)
+	// Get the spec from the server
+	payload := new(model.Response)
+	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
+		return "", false
+	}
+	for _, item := range payload.Result {
+		projectObj := item.(map[string]interface{})
+		project = projectObj["id"].(string)
+	}
+	return project, true
 }
