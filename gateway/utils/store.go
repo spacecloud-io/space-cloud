@@ -227,7 +227,7 @@ func convert(key string, obj map[string]interface{}) (map[string]interface{}, er
 	}
 	conv, ok := tempObj.(map[string]interface{})
 	if !ok {
-		return nil, errors.New("Incorrect type")
+		return nil, fmt.Errorf("could not convert value at key (%s) of type (%s) to object", key, reflect.TypeOf(tempObj))
 	}
 	return conv, nil
 }
