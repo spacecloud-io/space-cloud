@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/txn2/txeh"
 
@@ -39,7 +40,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 		resp := new(loadEnvResponse)
 		err := utils.Get(http.MethodGet, "/v1/config/env", map[string]string{}, resp)
 		if err != nil {
-			return utils.LogError(`Cannot fetch quotas from gateway, Is gateway running ?`, err)
+			return utils.LogError(`Cannot fetch quotas. Is Space Cloud running?`, err)
 		}
 
 		// fetch current db config
@@ -49,8 +50,8 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 		}
 
 		// check if database can be added
-		if (len(dbConfig) + 1) > resp.Quotas.MaxDatabases {
-			return utils.LogError(fmt.Sprintf(`Cannot add database in project "%s", max database limit reached. upgrade you plan`, project), err)
+		if len(dbConfig) >= resp.Quotas.MaxDatabases {
+			return utils.LogError(fmt.Sprintf("Cannot add database in project (%s), max database limit reached. upgrade you plan", project), err)
 		}
 	}
 
@@ -145,26 +146,24 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 		return utils.LogError("Could not save hosts file after updating add on containers", err)
 	}
 
+	utils.LogInfo(fmt.Sprintf("Started database (%s) with alias (%s) & hostname (%s)", dbtype, alias, hostName))
+
 	if autoApply {
 		connDefault := ""
 		switch dbtype {
 		case "postgres":
-			connDefault = fmt.Sprintf("postgres://postgres:mysecretpassword@%s:5432/postgres?sslmode=disable", hostName)
+			connDefault = fmt.Sprintf("postgres://%s:%s@%s:5432/postgres?sslmode=disable", username, password, hostName)
 		case "mongo":
 			connDefault = fmt.Sprintf("mongodb://%s:27017", hostName)
 		case "mysql":
-			connDefault = fmt.Sprintf("root:my-secret-pw@tcp(%s:3306)/", hostName)
+			connDefault = fmt.Sprintf("root:%s@tcp(%s:3306)/", password, hostName)
 		default:
 			return fmt.Errorf("invalid database provided, supported databases postgres,sqlserver,embedded,mongo,mysql")
 		}
 
-		account, err := utils.GetSelectedAccount()
+		account, token, err := utils.GetApplySpecEssentials()
 		if err != nil {
-			return utils.LogError("Unable to fetch account information", err)
-		}
-		login, err := utils.Login(account)
-		if err != nil {
-			return utils.LogError("Unable to login", err)
+			return utils.LogError("Couldn't get account details or login token", err)
 		}
 
 		v := &model.SpecObject{
@@ -173,10 +172,9 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 			Meta: map[string]string{"project": project, "dbAlias": alias, "id": "database-config"},
 			Spec: map[string]interface{}{"conn": connDefault, "type": dbtype, "enabled": true},
 		}
-		keepSettingConfig(login.Token, dbtype, account, v)
+		keepSettingConfig(token, dbtype, account, v)
 
 	}
-	utils.LogInfo(fmt.Sprintf("Started database (%s) with alias (%s) & hostname (%s)", dbtype, alias, hostName))
 	return nil
 }
 
@@ -189,20 +187,20 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 	s.Suffix = fmt.Sprintf("    Waiting for container (%s) to start", dbType)
 	_ = s.Color("green")
 	s.Start()
+	defer s.Stop()
 	for {
 		select {
 		// Got a timeout! fail with a timeout error
 		case <-timeout:
-			utils.LogInfo(`Unable to set database config, try configuring database from mission control`)
-			s.Stop()
+			logrus.Warningln(`Unable to set database config, try configuring database from mission control`)
 			return
 			// Got a tick, we should check on checkSomething()
 		case <-ticker.C:
 			if err := operations.ApplySpec(token, account, v); err != nil {
-				utils.LogDebug("Could'nt set database config", nil)
+				logrus.Warningln("Unable to add database to Space Cloud config", nil)
 				continue
 			}
-			s.Stop()
+			utils.LogInfo("Successfully added database to Space Cloud config.")
 			return
 		}
 	}

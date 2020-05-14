@@ -52,7 +52,7 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("password", "P", "", "provide the password")
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
-	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in gateway config")
+	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
 
 	var removeCmd = &cobra.Command{
 		Use:   "remove",
