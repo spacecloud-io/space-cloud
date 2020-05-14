@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -240,22 +240,14 @@ func matchdate(rule *config.Rule, args map[string]interface{}) error {
 		return err
 	}
 
-	var f1 time.Time
-	var f2 time.Time
-
-	f1, err = time.Parse(time.RFC3339, f1String)
+	f1, err := utils.CheckParse(f1String)
 	if err != nil {
-		f1, err = time.Parse("2006-01-02", f1String)
-		if err != nil {
-			return fmt.Errorf("invalid date format (%s) provided", f1String)
-		}
+		return err
 	}
-	f2, err = time.Parse(time.RFC3339, f2String)
+
+	f2, err := utils.CheckParse(f2String)
 	if err != nil {
-		f2, err = time.Parse("2006-01-02", f2String)
-		if err != nil {
-			return fmt.Errorf("invalid date format (%s) provided", f2String)
-		}
+		return err
 	}
 	switch rule.Eval {
 	case "==":
@@ -288,5 +280,5 @@ func matchdate(rule *config.Rule, args map[string]interface{}) error {
 			return nil
 		}
 	}
-	return ErrIncorrectMatch
+	return errors.New("date match failed")
 }

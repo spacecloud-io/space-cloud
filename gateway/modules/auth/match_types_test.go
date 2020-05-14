@@ -135,10 +135,10 @@ func TestMatchdate(t *testing.T) {
 		{name: "Error Match number !=(single field F1)", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: "2018-11-25"}},
 		{name: "Error Match number != field does not exist", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: "2018-11-25", F2: "args.num1"}},
 		{name: "Error Match number != field is of incorrect type", isErrExpected: true, args: map[string]interface{}{"num1": "wrong type"}, rule: &config.Rule{Rule: "Rule", Eval: "!=", Type: "number", F1: "2018-11-25", F2: "args.num1"}},
-		{name: "Match date utils.addDuration()", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: ">=", Type: "date", F1: "utils.roundUpDate('utils.now()', 'year')", F2: "2019-11-25"}},
-		{name: "Match date utils.addDuration() with default param1", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "date", F1: "utils.roundUpDate('2019-11-25', '')", F2: "2019-11-25"}},
-		{name: "Match date utils.addDuration()", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: ">=", Type: "date", F1: "utils.addDuration('utils.now()', '2h')", F2: "2019-11-25"}},
-		{name: "Match date utils.addDuration() with default param1", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "date", F1: "utils.addDuration('2019-11-25', '0h')", F2: "2019-11-25"}},
+		{name: "Match date utils.roundUpDate()", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "date", F1: "utils.roundUpDate('2019-11-25', 'year')", F2: "2019-01-01"}},
+		{name: "Match date utils.roundUpDate() with default param1", isErrExpected: true, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "date", F1: "utils.roundUpDate('2019-11-25', '')", F2: "2019-11-25"}},
+		{name: "Match date utils.addDuration() with param1=25h", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: ">=", Type: "date", F1: "utils.addDuration('2019-11-24', '25h')", F2: "2019-11-25"}},
+		{name: "Match date utils.addDuration()", isErrExpected: false, args: map[string]interface{}{}, rule: &config.Rule{Rule: "Rule", Eval: "==", Type: "date", F1: "utils.addDuration('2019-11-25', '0h')", F2: "2019-11-25"}},
 	}
 
 	for _, testCase := range testCases {

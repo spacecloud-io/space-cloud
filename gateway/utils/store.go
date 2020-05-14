@@ -95,18 +95,16 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			return time.Now().UTC().Format(time.RFC3339), nil
 		}
 		if strings.HasPrefix(function, "addDuration") {
-			params0 := strings.ReplaceAll(params[0], " ", "")
+			params0 := strings.TrimSpace(params[0])
 			params0 = strings.Trim(params0, "'")
-			params1 := strings.ReplaceAll(params[1], " ", "")
+			params1 := strings.TrimSpace(params[1])
 			params1 = strings.Trim(params1, "'")
 
-			if strings.HasPrefix(params0, "utils") {
-				temp, err := LoadStringIfExists(params0, state)
-				if err != nil {
-					return "", err
-				}
-				params0 = temp
+			temp, err := LoadStringIfExists(params0, state)
+			if err != nil {
+				return "", err
 			}
+			params0 = temp
 
 			paresedtime, err := time.ParseDuration(params1)
 			if err != nil {
@@ -114,43 +112,35 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			}
 
 			param0 := time.Now().UTC()
-			param0, err = time.Parse(time.RFC3339, params0)
+			param0, err = CheckParse(params0)
 			if err != nil {
-				param0, err = time.Parse("2006-01-02", params0)
-				if err != nil {
-					return nil, fmt.Errorf("invalid date format (%s) provided", params0)
-				}
+				return "", err
 			}
 			paramadd := param0.Add(paresedtime)
 			return paramadd.Format(time.RFC3339), nil
 		}
 		if strings.HasPrefix(function, "roundUpDate") {
-			params0 := strings.ReplaceAll(params[0], " ", "")
+			params0 := strings.TrimSpace(params[0])
 			params0 = strings.Trim(params0, "'")
-			params1 := strings.ReplaceAll(params[1], " ", "")
+			params1 := strings.TrimSpace(params[1])
 			params1 = strings.Trim(params1, "'")
 
-			if strings.HasPrefix(params0, "utils") {
-				temp, err := LoadStringIfExists(params0, state)
-				if err != nil {
-					return "", err
-				}
-				params0 = temp
-			}
-
-			var param0 time.Time
-			param0, err := time.Parse(time.RFC3339, params0)
+			temp, err := LoadStringIfExists(params0, state)
 			if err != nil {
-				param0, err = time.Parse("2006-01-02", params0)
-				if err != nil {
-					return nil, fmt.Errorf("invalid date format (%s) provided", params0)
-				}
+				return "", err
+			}
+			params0 = temp
+
+			param0 := time.Now().UTC()
+			param0, err = CheckParse(params0)
+			if err != nil {
+				return "", err
 			}
 
 			var timeDate time.Time
 			switch params1 {
 			case "year":
-				timeDate = time.Date(param0.Year(), 1, 1, 0, 0, 0, 0, param0.Location())
+				timeDate = time.Date(param0.Year(), time.January, 1, 0, 0, 0, 0, param0.Location())
 			case "month":
 				timeDate = time.Date(param0.Year(), param0.Month(), 1, 0, 0, 0, 0, param0.Location())
 			case "day":
@@ -162,7 +152,7 @@ func LoadValue(key string, state map[string]interface{}) (interface{}, error) {
 			case "second":
 				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), param0.Second(), 0, param0.Location())
 			default:
-				timeDate = time.Date(param0.Year(), param0.Month(), param0.Day(), param0.Hour(), param0.Minute(), param0.Second(), param0.Nanosecond(), param0.Location())
+				return nil, errors.New("Invalid parameter")
 			}
 			return timeDate.Format(time.RFC3339), nil
 		}
