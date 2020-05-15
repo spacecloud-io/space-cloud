@@ -138,7 +138,7 @@ func generateAggregateAsColumnName(function, column string) string {
 
 func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
 	v := strings.Split(asColumnName, "__")
-	if len(v) != 3 {
+	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
 		return "", "", false
 	}
 	return v[1], v[2], true

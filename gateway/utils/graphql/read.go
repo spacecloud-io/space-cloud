@@ -133,41 +133,47 @@ func generateReadRequest(field *ast.Field, store utils.M) (*model.ReadRequest, b
 
 func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) map[string]int32 {
 	selectMap := map[string]int32{}
+	schemaFields, _ := graph.schema.GetSchema(dbAlias, col)
+	if field.SelectionSet == nil {
+		return nil
+	}
 	for _, selection := range field.SelectionSet.Selections {
 		v := selection.(*ast.Field)
 		// skip aggregate field & fields with directives
-		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 {
+		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 || schemaFields == nil {
 			continue
 		}
 		// skip linked fields
-		schemaFields, _ := graph.schema.GetSchema(dbAlias, col)
 		fieldStruct, p := schemaFields[v.Name.Value]
 		if p && fieldStruct.IsLinked {
 			continue
 		}
-		selectMap[v.Name.Value] = 0
+		selectMap[v.Name.Value] = 1
 	}
 	return selectMap
 }
 
 func extractAggregate(v *ast.Field) (map[string][]string, error) {
 	functionMap := make(map[string][]string)
-	isSingleAggregate := false
+	aggregateFound := false
+	if v.SelectionSet == nil {
+		return nil, nil
+	}
 	for _, selection := range v.SelectionSet.Selections {
 		field := selection.(*ast.Field)
 		if field.Name.Value != utils.GraphQLAggregate || field.SelectionSet == nil {
 			continue
 		}
-		if isSingleAggregate {
-			return nil, utils.LogError(`GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field`, nil)
+		if aggregateFound {
+			return nil, utils.LogError("GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", nil)
 		}
-		isSingleAggregate = true
+		aggregateFound = true
 		// get function name
 		for _, selection := range field.SelectionSet.Selections {
 			functionField := selection.(*ast.Field)
 			_, ok := functionMap[functionField.Name.Value]
 			if ok {
-				return nil, utils.LogError(fmt.Sprintf(`GraphQL aggregate field cannot have same (%s) functions, specify all columns in single function field`, functionField.Name.Value), nil)
+				return nil, utils.LogError(fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), nil)
 			}
 			colArray := make([]string, 0)
 			// get column name
@@ -192,7 +198,7 @@ func extractGroupByClause(args []*ast.Argument, store utils.M) ([]interface{}, e
 			if obj, ok := temp.([]interface{}); ok {
 				return obj, nil
 			}
-			return nil, utils.LogError(fmt.Sprintf(`GraphQL "%s" argument is of type %v, but it should be of type array ([])`, utils.GraphQLGroupByArgument, reflect.TypeOf(temp)), nil)
+			return nil, utils.LogError(fmt.Sprintf("GraphQL (%s) argument is of type %v, but it should be of type array ([])", utils.GraphQLGroupByArgument, reflect.TypeOf(temp)), nil)
 		}
 	}
 
