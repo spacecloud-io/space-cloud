@@ -1,8 +1,6 @@
 package addons
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -28,19 +26,23 @@ func Commands() []*cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			err := viper.BindPFlag("username", cmd.Flags().Lookup("username"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('username')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('username')", nil)
 			}
 			err = viper.BindPFlag("password", cmd.Flags().Lookup("password"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('password')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('password')", nil)
 			}
 			err = viper.BindPFlag("alias", cmd.Flags().Lookup("alias"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('alias')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('alias')", nil)
 			}
 			err = viper.BindPFlag("version", cmd.Flags().Lookup("version"))
 			if err != nil {
-				_ = utils.LogError(fmt.Sprintf("Unable to bind the flag ('version')"), nil)
+				_ = utils.LogError("Unable to bind the flag ('version')", nil)
+			}
+			err = viper.BindPFlag("auto-apply", cmd.Flags().Lookup("auto-apply"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('auto-apply')", nil)
 			}
 		},
 		RunE: ActionAddDatabase,
@@ -50,6 +52,7 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("password", "P", "", "provide the password")
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
+	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
 
 	var removeCmd = &cobra.Command{
 		Use:   "remove",
@@ -124,7 +127,6 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	}
 	alias := viper.GetString("alias")
 	version := viper.GetString("version")
-
 	_ = addDatabase(dbtype, username, password, alias, version)
 	return nil
 }
