@@ -3,7 +3,6 @@ package auth
 import (
 	"github.com/spaceuptech/space-cli/cmd/utils"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // GetSubCommands is the list of commands the auth module exposes
@@ -17,7 +16,11 @@ func GetSubCommands() []*cobra.Command {
 
 func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	commandName := cmd.Use
 
 	params := map[string]string{}
