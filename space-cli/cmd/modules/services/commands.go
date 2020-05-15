@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
@@ -44,7 +43,11 @@ func GetSubCommands() []*cobra.Command {
 
 func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	commandName := "service-route"
 
 	params := map[string]string{}
@@ -64,7 +67,11 @@ func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 
 func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	commandName := "secret"
 
 	params := map[string]string{}
@@ -84,7 +91,11 @@ func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 
 func actionGetServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	commandName := "service"
 
 	params := map[string]string{}
