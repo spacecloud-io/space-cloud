@@ -23,7 +23,43 @@ func Test_generateInspection(t *testing.T) {
 		want    model.Collection
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		// TODO TEST CASES REMAINING FOR
+		// Detecting external index & normal index
+		// Detecting external foreign keys & normal index
+		{
+			name: "identify varchar with any size",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: "col1", FieldType: "varchar(5550)", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			wantErr: false,
+		},
+		{
+			name: "foreign keys with constraint name not matching gateways convention name",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
+				fields: []utils.FieldType{{FieldName: "col1", FieldType: "varchar(5550)", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignkeys: []utils.ForeignKeysType{{
+					TableName:      "table1",
+					ColumnName:     "col1",
+					ConstraintName: "some-random-name",
+					DeleteRule:     "NO_ACTION",
+					RefTableName:   "table2",
+					RefColumnName:  "id",
+				}},
+			},
+			want: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsForeign: true, IsFieldTypeRequired: true, Kind: model.TypeID, IsPrimary: true, JointTable: &model.TableProperties{
+				To:             "id",
+				Table:          "table2",
+				OnDelete:       "NO_ACTION",
+				ConstraintName: "some-random-name",
+			}}}},
+			wantErr: false,
+		},
 		{
 			name: "primary-!null-ID",
 			args: args{
@@ -222,6 +258,28 @@ func Test_generateInspection(t *testing.T) {
 			wantErr: true,
 		},
 		// sql server
+		{
+			name: "identify type id with any size in varchar",
+			args: args{
+				dbType:      "sqlserver",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: "col1", FieldType: "varchar(5520)", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			wantErr: false,
+		},
+		{
+			name: "sqlserver type string",
+			args: args{
+				dbType:      "sqlserver",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: "col1", FieldType: "varchar(-1)", FieldNull: "NO", FieldKey: "PRI"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: model.TypeString, IsPrimary: true}}},
+			wantErr: false,
+		},
 		{
 			name: "primary-!null-ID",
 			args: args{
