@@ -4,5 +4,4 @@ package model
 type UsageQuotas struct {
 	MaxProjects  int `json:"maxProjects"`
 	MaxDatabases int `json:"maxDatabases"`
-	Version      int `json:"version,omitempty"`
 }

@@ -9,6 +9,8 @@ type CreateRequest struct {
 
 // ReadRequest is the http body received for a read request
 type ReadRequest struct {
+	GroupBy   []interface{}          `json:"group"`
+	Aggregate map[string][]string    `json:"aggregate"`
 	Find      map[string]interface{} `json:"find"`
 	Operation string                 `json:"op"`
 	Options   *ReadOptions           `json:"options"`

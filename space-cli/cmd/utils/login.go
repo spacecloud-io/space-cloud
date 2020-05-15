@@ -7,11 +7,12 @@ import (
 	"net/http"
 
 	"github.com/AlecAivazis/survey/v2"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
 // Login logs the user in
-func Login(selectedAccount *model.Account) (*model.LoginResponse, error) {
+func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 	requestBody, err := json.Marshal(map[string]string{
 		"user": selectedAccount.UserName,
 		"key":  selectedAccount.Key,
@@ -57,7 +58,7 @@ func LoginStart(userName, key, url string) error {
 		Key:       key,
 		ServerURL: url,
 	}
-	_, err := Login(&account)
+	_, err := login(&account)
 	if err != nil {
 		_ = LogError(fmt.Sprintf("error in login start unable to login - %v", err), nil)
 		return err
@@ -75,4 +76,17 @@ func LoginStart(userName, key, url string) error {
 	}
 	fmt.Printf("Login Successful\n")
 	return nil
+}
+
+// LoginWithSelectedAccount returns selected account & login token
+func LoginWithSelectedAccount() (*model.Account, string, error) {
+	account, err := getSelectedAccount()
+	if err != nil {
+		return nil, "", err
+	}
+	login, err := login(account)
+	if err != nil {
+		return nil, "", err
+	}
+	return account, login.Token, nil
 }
