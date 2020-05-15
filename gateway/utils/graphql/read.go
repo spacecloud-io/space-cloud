@@ -26,7 +26,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 			req.Options = &model.ReadOptions{}
 		}
 		req.Options.HasOptions = false
-		result, err := graph.crud.Read(ctx, dbAlias, graph.project, col, req)
+		result, err := graph.crud.Read(ctx, dbAlias, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
 
 		cb(dbAlias, col, result, err)
@@ -61,9 +61,38 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	go func() {
 		req.IsBatch = true
 		req.Options.HasOptions = hasOptions
-		result, err := graph.crud.Read(ctx, dbAlias, graph.project, col, req)
+		result, err := graph.crud.Read(ctx, dbAlias, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbAlias, col, result, err)
+	}()
+}
+
+func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Field, token string, store utils.M, cb dbCallback) {
+	dbAlias, err := graph.GetDBAlias(field)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	id := field.Name.Value
+
+	params, err := getFuncParams(field, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+	req := model.PreparedQueryRequest{Params: params}
+	// Check if PreparedQuery op is authorised
+	actions, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	go func() {
+		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req)
+		_ = graph.auth.PostProcessMethod(actions, result)
+		cb(dbAlias, id, result, err)
 	}()
 }
 

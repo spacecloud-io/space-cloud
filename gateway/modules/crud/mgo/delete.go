@@ -11,8 +11,8 @@ import (
 )
 
 // Delete removes the document(s) from the database which match the condition
-func (m *Mongo) Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error) {
-	collection := m.client.Database(project).Collection(col)
+func (m *Mongo) Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error) {
+	collection := m.client.Database(m.dbName).Collection(col)
 
 	switch req.Operation {
 	case utils.One:
@@ -37,6 +37,6 @@ func (m *Mongo) Delete(ctx context.Context, project, col string, req *model.Dele
 }
 
 // DeleteCollection removes a collection from database`
-func (m Mongo) DeleteCollection(ctx context.Context, project, col string) error {
-	return m.client.Database(project).Collection(col, &options.CollectionOptions{}).Drop(ctx)
+func (m Mongo) DeleteCollection(ctx context.Context, col string) error {
+	return m.client.Database(m.dbName).Collection(col, &options.CollectionOptions{}).Drop(ctx)
 }

@@ -80,14 +80,22 @@ func Commands() []*cobra.Command {
 
 // ActionAddRegistry adds a registry add on
 func ActionAddRegistry(cmd *cobra.Command, args []string) error {
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	_ = addRegistry(project)
 	return nil
 }
 
 // ActionRemoveRegistry removes a registry add on
 func ActionRemoveRegistry(cmd *cobra.Command, args []string) error {
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	_ = removeRegistry(project)
 	return nil
 }
