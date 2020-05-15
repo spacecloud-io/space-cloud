@@ -50,7 +50,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return nil, m.matchFunc(ctx, rule, m.makeHTTPRequest, args)
 
 	case "query":
-		return m.matchQuery(ctx, project, rule, m.crud, args)
+		return m.matchQuery(ctx, project, rule, m.crud, args, auth)
 
 	case "force":
 		return m.matchForce(ctx, project, rule, args, auth)
@@ -85,7 +85,7 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 	return MakeHTTPRequest(ctx, "POST", rule.URL, token, scToken, obj, &result)
 }
 
-func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args map[string]interface{}) (*model.PostProcess, error) {
+func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	// Adjust the find object to load any variables referenced from state
 	rule.Find = utils.Adjust(rule.Find, args).(map[string]interface{})
 
@@ -101,7 +101,7 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 	if err != nil {
 		return nil, err
 	}
-	return m.matchRule(ctx, project, rule.Clause, args, nil)
+	return m.matchRule(ctx, project, rule.Clause, args, auth)
 }
 
 func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
@@ -142,6 +142,9 @@ func match(rule *config.Rule, args map[string]interface{}) error {
 
 	case "bool":
 		return matchBool(rule, args)
+
+	case "date":
+		return matchdate(rule, args)
 	}
 
 	return ErrIncorrectMatch

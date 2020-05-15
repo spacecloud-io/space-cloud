@@ -178,10 +178,10 @@ func (m *Module) getCrudRule(dbAlias, col string, query utils.OperationType) (*c
 			if rule, p3 := collection.Rules[string(query)]; p3 {
 				return rule, nil
 			}
-		}
-		if defaultCol, p2 := dbRules.Collections["default"]; p2 {
-			if rule, p3 := defaultCol.Rules[string(query)]; p3 {
-				return rule, nil
+			if defaultCol, p := dbRules.Collections["default"]; p {
+				if rule, p := defaultCol.Rules[string(query)]; p {
+					return rule, nil
+				}
 			}
 		}
 	}
