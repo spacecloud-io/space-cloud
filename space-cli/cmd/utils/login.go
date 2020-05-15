@@ -78,8 +78,8 @@ func LoginStart(userName, key, url string) error {
 	return nil
 }
 
-// GetApplySpecEssentials returns selected account & login token
-func GetApplySpecEssentials() (*model.Account, string, error) {
+// LoginWithSelectedAccount returns selected account & login token
+func LoginWithSelectedAccount() (*model.Account, string, error) {
 	account, err := getSelectedAccount()
 	if err != nil {
 		return nil, "", err

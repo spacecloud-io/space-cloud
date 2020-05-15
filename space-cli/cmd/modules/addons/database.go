@@ -161,7 +161,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 			return fmt.Errorf("invalid database provided, supported databases postgres,sqlserver,embedded,mongo,mysql")
 		}
 
-		account, token, err := utils.GetApplySpecEssentials()
+		account, token, err := utils.LoginWithSelectedAccount()
 		if err != nil {
 			return utils.LogError("Couldn't get account details or login token", err)
 		}

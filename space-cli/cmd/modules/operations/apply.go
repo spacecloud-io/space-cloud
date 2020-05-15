@@ -50,7 +50,7 @@ func Apply(applyName string) error {
 			return utils.LogError(fmt.Sprintf("Unable to fetch config files from %s", dirName), err)
 		}
 
-		account, token, err := utils.GetApplySpecEssentials()
+		account, token, err := utils.LoginWithSelectedAccount()
 		if err != nil {
 			return utils.LogError("Couldn't get account details or login token", err)
 		}
@@ -83,7 +83,7 @@ func Apply(applyName string) error {
 		return nil
 	}
 
-	account, token, err := utils.GetApplySpecEssentials()
+	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
 		return utils.LogError("Couldn't get account details or login token", err)
 	}

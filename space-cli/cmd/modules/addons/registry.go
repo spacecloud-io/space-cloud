@@ -82,7 +82,7 @@ func addRegistry(projectID string) error {
 	}
 	specObj[0].Spec.(map[string]interface{})["dockerRegistry"] = "localhost:5000"
 
-	account, token, err := utils.GetApplySpecEssentials()
+	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
 		return utils.LogError("Couldn't get account details or login token", err)
 	}
@@ -142,7 +142,7 @@ func removeRegistry(projectID string) error {
 	}
 	specObj[0].Spec.(map[string]interface{})["dockerRegistry"] = ""
 
-	account, token, err := utils.GetApplySpecEssentials()
+	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
 		return utils.LogError("Couldn't get account details or login token", err)
 	}

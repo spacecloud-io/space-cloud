@@ -10,7 +10,7 @@ import (
 
 // Get gets spec object
 func Get(method, url string, params map[string]string, vPtr interface{}) error {
-	account, token, err := GetApplySpecEssentials()
+	account, token, err := LoginWithSelectedAccount()
 	if err != nil {
 		return LogError("Couldn't get account details or login token", err)
 	}
