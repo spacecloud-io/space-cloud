@@ -50,7 +50,12 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		cb("", "", nil, err)
 		return
 	}
-	req.Options.Select = graph.extractSelectionSet(field, dbAlias, col)
+
+	selectionSet := graph.extractSelectionSet(field, dbAlias, col)
+	if len(selectionSet) > 0 {
+		req.Options.Select = selectionSet
+	}
+
 	// Check if read op is authorised
 	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
 	if err != nil {
@@ -140,13 +145,15 @@ func (graph *Module) extractSelectionSet(field *ast.Field, dbAlias, col string) 
 	for _, selection := range field.SelectionSet.Selections {
 		v := selection.(*ast.Field)
 		// skip aggregate field & fields with directives
-		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 || schemaFields == nil {
+		if v.Name.Value == utils.GraphQLAggregate || len(v.Directives) > 0 {
 			continue
 		}
-		// skip linked fields
-		fieldStruct, p := schemaFields[v.Name.Value]
-		if p && fieldStruct.IsLinked {
-			continue
+		if schemaFields != nil {
+			// skip linked fields
+			fieldStruct, p := schemaFields[v.Name.Value]
+			if p && fieldStruct.IsLinked {
+				continue
+			}
 		}
 		selectMap[v.Name.Value] = 1
 	}
