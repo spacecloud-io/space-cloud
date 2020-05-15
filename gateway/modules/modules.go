@@ -42,6 +42,7 @@ func New(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metri
 
 	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
+	f.SetGetSecrets(syncMan.GetSecrets)
 
 	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
 	f.SetEventingModule(e)

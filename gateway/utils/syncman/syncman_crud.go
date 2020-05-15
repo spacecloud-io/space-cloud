@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/spaceuptech/space-cloud/gateway/utils"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -499,7 +501,15 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) 
 	return []interface{}{coll}, nil
 }
 
-// GetSecrets creates the config for the project
+type result struct {
+	Result []*secret `json:"result,omitempty"`
+}
+
+type secret struct {
+	Data map[string]string `json:"data,omitempty"`
+}
+
+// GetSecrets gets secrets from runner
 // This function should be called only from setConfig method of any module
 func (s *Manager) GetSecrets(project, secretName, key string) (string, error) {
 
@@ -509,26 +519,15 @@ func (s *Manager) GetSecrets(project, secretName, key string) (string, error) {
 	// Generate internal access token
 	token, err := s.adminMan.GetInternalAccessToken()
 	if err != nil {
-		return "", err
+		return "", utils.LogError("cannot get internal access token", err)
 	}
 
 	// makes http request to get secrets from runner
-	var vPtr map[string]interface{}
+	var vPtr result
 	url := fmt.Sprintf("http://%s/v1/runner/%s/secrets?id=%s", s.runnerAddr, project, secretName)
 	if err := s.MakeHTTPRequest(ctx, "GET", url, token, "", map[string]interface{}{}, &vPtr); err != nil {
 		return "", err
 	}
 
-	v := vPtr["result"].([]interface{})
-	value := ""
-	for _, item := range v {
-		specs := item.(map[string]interface{})
-		data := specs["data"].(map[string]interface{})
-
-		if _, ok := data[key]; ok {
-			value = data[key].(string)
-		}
-	}
-
-	return value, nil
+	return vPtr.Result[0].Data[key], nil
 }

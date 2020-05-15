@@ -2,7 +2,11 @@ package filestore
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -22,6 +26,9 @@ type Module struct {
 	auth        model.AuthFilestoreInterface
 	eventing    model.EventingModule
 	metricsHook model.MetricFileHook
+
+	// function to get secrets from runner
+	getSecrets utils.GetSecrets
 }
 
 // Init creates a new instance of the file store object
@@ -53,7 +60,7 @@ type FileStore interface {
 }
 
 // SetConfig set the rules and secret key required by the filestore block
-func (m *Module) SetConfig(conf *config.FileStore) error {
+func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 	m.Lock()
 	defer m.Unlock()
 
@@ -74,6 +81,19 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 		return nil
 	}
 
+	// create aws and gcp file secret
+	secretName, secretKey, isSecretExists := splitConnectionString(conf.Secret)
+	if isSecretExists {
+		value, err := m.getSecrets(project, secretName, secretKey)
+		if err != nil {
+			return utils.LogError("cannot get secrets from runner", err)
+		}
+
+		if err := setFileSecret(utils.FileStoreType(conf.StoreType), secretKey, value); err != nil {
+			return utils.LogError("cannot set fileStore secrets", err)
+		}
+	}
+
 	// Create a new crud blocks
 	s, err := initBlock(utils.FileStoreType(conf.StoreType), conf.Conn, conf.Endpoint, conf.Bucket)
 	if err != nil {
@@ -82,6 +102,50 @@ func (m *Module) SetConfig(conf *config.FileStore) error {
 	m.store = s
 	m.enabled = true
 	return nil
+}
+
+func setFileSecret(fileStoreType utils.FileStoreType, key, value string) error {
+	switch fileStoreType {
+	case utils.AmazonS3:
+		if err := createSecretFile("aws", value); err != nil {
+			return utils.LogError("aws secret file was not created", err)
+		}
+	case utils.GCPStorage:
+		if err := createSecretFile("gcp", value); err != nil {
+			return utils.LogError("gcp secret file was not created", err)
+		}
+		fmt.Println("file secret was set")
+		if err := os.Setenv(key, value); err != nil {
+			return utils.LogError("gcp env variable not set", err)
+		}
+	default:
+		return utils.ErrInvalidParams
+	}
+	return nil
+}
+
+func createSecretFile(fileStoreType, value string) error {
+	if _, err := os.Stat(fmt.Sprintf("./%s/credentials", fileStoreType)); os.IsNotExist(err) {
+		err = os.MkdirAll(fmt.Sprintf("./%s/credentials", fileStoreType), 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	if _, err := os.Stat(fmt.Sprintf("./%s/credentials/credentials.txt", fileStoreType)); os.IsNotExist(err) {
+		return ioutil.WriteFile(fmt.Sprintf("./%s/credentials/credentials.txt", fileStoreType), []byte(value), 0755)
+	}
+
+	return nil
+}
+
+// splitConnectionString splits the connection string
+func splitConnectionString(connection string) (string, string, bool) {
+	s := strings.Split(connection, ".")
+	if s[0] == "secrets" {
+		return s[1], s[2], true
+	}
+	return "", "", false
 }
 
 // IsEnabled checks if the file store module is enabled
@@ -102,4 +166,12 @@ func initBlock(fileStoreType utils.FileStoreType, connection, endpoint, bucket s
 	default:
 		return nil, utils.ErrInvalidParams
 	}
+}
+
+// SetGetSecrets sets the GetSecrets function
+func (m *Module) SetGetSecrets(function utils.GetSecrets) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.getSecrets = function
 }

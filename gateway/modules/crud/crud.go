@@ -38,7 +38,7 @@ type Module struct {
 	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
 
-	// fuction to get secrets from runner
+	// function to get secrets from runner
 	getSecrets utils.GetSecrets
 }
 
@@ -147,11 +147,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 
 		// check if connection string starts with secrets
-		s := strings.Split(v.Conn, ".")
-		if s[0] == "secrets" {
-			v.Conn, err = m.getSecrets(project, s[1], s[2])
+		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
+		if isSecretExists {
+			v.Conn, err = m.getSecrets(project, secretName, secretKey)
 			if err != nil {
-				return err
+				return utils.LogError("cannot get secrets from runner", err)
 			}
 		}
 
@@ -177,6 +177,15 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	}
 	m.initBatchOperation(project, crud)
 	return nil
+}
+
+// splitConnectionString splits the connection string
+func splitConnectionString(connection string) (string, string, bool) {
+	s := strings.Split(connection, ".")
+	if s[0] == "secrets" {
+		return s[1], s[2], true
+	}
+	return "", "", false
 }
 
 // GetDBType returns the type of the db for the alias provided

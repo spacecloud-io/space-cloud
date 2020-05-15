@@ -45,7 +45,7 @@ func (m *Modules) SetProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt
 		m.user.SetConfig(p.Modules.Auth)
 
 		logrus.Debugln("Setting config of file storage module")
-		if err := m.file.SetConfig(p.Modules.FileStore); err != nil {
+		if err := m.file.SetConfig(p.ID, p.Modules.FileStore); err != nil {
 			logrus.Errorf("error setting filestore module config - %s", err.Error())
 		}
 
@@ -117,7 +117,7 @@ func (m *Modules) SetFileStoreConfig(projectID string, fileStore *config.FileSto
 	m.auth.SetFileStoreConfig(projectID, fileStore)
 
 	logrus.Debugln("Setting config of file storage module")
-	if err := m.file.SetConfig(fileStore); err != nil {
+	if err := m.file.SetConfig(projectID, fileStore); err != nil {
 		logrus.Errorf("error setting filestore module config - %s", err.Error())
 		return err
 	}
