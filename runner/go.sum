@@ -198,7 +198,6 @@ github.com/sirupsen/logrus v1.4.2 h1:SPIRibHv4MatM3XXNO2BJeFLZwZ2LvZgfQ5+UNI2im4
 github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6MwdIuYE2rE=
 github.com/spaceuptech/space-api-go v0.17.0 h1:PUD6JmmUGQRQyQunoKcDRg//K5JSSNxL32V6yi4AwSI=
 github.com/spaceuptech/space-api-go v0.17.0/go.mod h1:+7VTNWQICAbh9Lm2uTTeKXgRPnxF/l7wsrc6XX4LSSg=
-github.com/spaceuptech/space-cli v0.0.0-20190721153730-40ccd297f6de h1:n+vLOzZa92N5/cU4hjT8pusSS/VHYjME+M6bEwSXkxs=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.2.2 h1:5jhuqJyZCZf2JRofRvN/nIFgIWNzPa3/Vz8mYylgbWc=
 github.com/spf13/afero v1.2.2/go.mod h1:9ZxEEn6pIJ8Rxe320qSDBk6AsU0r9pR7Q4OcevTdifk=
