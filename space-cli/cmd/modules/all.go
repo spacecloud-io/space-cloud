@@ -138,11 +138,11 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	objs, err = services.GetServicesSecrets(projectName, "services-secrets", map[string]string{})
+	objs, err = services.GetServicesSecrets(projectName, "secret", map[string]string{})
 	if err != nil {
 		return err
 	}
-	if err = createConfigFile("12", "services-secrets", objs); err != nil {
+	if err = createConfigFile("12", "secrets", objs); err != nil {
 		return err
 	}
 
@@ -154,11 +154,11 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	objs, err = services.GetServicesRoutes(projectName, "services-routes", map[string]string{})
+	objs, err = services.GetServicesRoutes(projectName, "service-route", map[string]string{})
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("14", "services-routes", objs); err != nil {
+	if err := createConfigFile("14", "service-routes", objs); err != nil {
 		return nil
 	}
 
