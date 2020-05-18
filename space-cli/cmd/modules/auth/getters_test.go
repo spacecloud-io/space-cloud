@@ -118,19 +118,6 @@ func TestGetAuthProviders(t *testing.T) {
 				}
 				t.Errorf("GetAuthProviders() = %v, want %v", got, tt.want)
 			}
-			// for {
-			// 	i := 0
-			// 	t.Errorf("i=%v and len=%v", i, len(got))
-			// 	for i < len(got) {
-			// 		if cmp.Equal(*got[i], tt.want) {
-			// 			t.Errorf("for if")
-			// 			i = i + 1
-			// 			return
-			// 		}
-			// 	}
-			// 	t.Errorf("GetAuthProviders() = %v, want %v", got, tt.want)
-			// 	return
-			// }
 		})
 	}
 }
