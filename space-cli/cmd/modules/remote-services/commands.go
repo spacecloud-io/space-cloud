@@ -33,7 +33,7 @@ func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "remote-service"
 
 	params := map[string]string{}
 	if len(args) != 0 {

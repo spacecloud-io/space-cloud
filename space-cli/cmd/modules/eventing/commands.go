@@ -41,17 +41,17 @@ func GetSubCommands() []*cobra.Command {
 	}
 
 	var getconfig = &cobra.Command{
-		Use:  "eventing-config",
+		Use:  "eventing-configs",
 		RunE: actionGetEventingConfig,
 	}
 
 	var getschema = &cobra.Command{
-		Use:  "eventing-schema",
+		Use:  "eventing-schemas",
 		RunE: actionGetEventingSchema,
 	}
 
 	var getrule = &cobra.Command{
-		Use:  "eventing-rule",
+		Use:  "eventing-rules",
 		RunE: actionGetEventingSecurityRule,
 	}
 
@@ -65,7 +65,7 @@ func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "eventing-trigger"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -88,7 +88,7 @@ func actionGetEventingConfig(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "eventing-config"
 
 	params := map[string]string{}
 	obj, err := GetEventingConfig(project, commandName, params)
@@ -109,7 +109,7 @@ func actionGetEventingSchema(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "eventing-schema"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -133,7 +133,7 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "eventing-rule"
 
 	params := map[string]string{}
 	if len(args) != 0 {

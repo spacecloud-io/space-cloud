@@ -35,7 +35,7 @@ func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "ingress-route"
 
 	params := map[string]string{}
 	if len(args) != 0 {

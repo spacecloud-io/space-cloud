@@ -21,7 +21,7 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getproject = &cobra.Command{
-		Use:  "project",
+		Use:  "projects",
 		RunE: actionGetProjectConfig,
 	}
 
@@ -31,7 +31,7 @@ func GetSubCommands() []*cobra.Command {
 func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and cmd parameters
 	project := viper.GetString("project")
-	commandName := cmd.Use
+	commandName := "project"
 
 	params := map[string]string{}
 	if len(args) != 0 {
