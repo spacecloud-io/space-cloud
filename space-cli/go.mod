@@ -27,5 +27,5 @@ require (
 	github.com/urfave/cli v1.22.2
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	gopkg.in/yaml.v2 v2.2.7
-	gotest.tools v2.2.0+incompatible // indirect
+	gotest.tools v2.2.0+incompatible
 )

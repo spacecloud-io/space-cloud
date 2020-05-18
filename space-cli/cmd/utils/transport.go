@@ -79,5 +79,5 @@ func (m *MocketAuthProviders) Get(method, url string, params map[string]string, 
 	c := m.Called(method, url, params, vPtr)
 	a, _ := json.Marshal(c[1])
 	_ = json.Unmarshal(a, vPtr)
-	return nil
+	return c.Error(0)
 }
