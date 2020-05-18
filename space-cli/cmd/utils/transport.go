@@ -22,24 +22,20 @@ func init() {
 	Client = &def{}
 }
 
+// Get gets spec object
 func (d *def) Get(method, url string, params map[string]string, vPtr interface{}) error {
-	account, err := GetSelectedAccount()
+	account, token, err := LoginWithSelectedAccount()
 	if err != nil {
-		return err
+		return LogError("Couldn't get account details or login token", err)
 	}
-	login, err := Login(account)
-	if err != nil {
-		return err
-	}
-
 	url = fmt.Sprintf("%s%s", account.ServerURL, url)
 
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return err
 	}
-	if login.Token != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", login.Token))
+	if token != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 	q := req.URL.Query()
 	for k, v := range params {
@@ -71,10 +67,12 @@ func (d *def) Get(method, url string, params map[string]string, vPtr interface{}
 	return nil
 }
 
+//MocketAuthProviders used during test
 type MocketAuthProviders struct {
 	mock.Mock
 }
 
+// Get gets spec object during test
 func (m *MocketAuthProviders) Get(method, url string, params map[string]string, vPtr interface{}) error {
 	c := m.Called(method, url, params, vPtr)
 	a, _ := json.Marshal(c[1])
