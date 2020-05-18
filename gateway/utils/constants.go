@@ -184,6 +184,12 @@ const (
 	GqlStop string = "stop" // Client -> Server
 )
 
+// GraphQLGroupByArgument is used by graphql group clause
+const GraphQLGroupByArgument = "group"
+
+// GraphQLAggregate is used by graphql aggregate clause
+const GraphQLAggregate = "aggregate"
+
 // FieldType is the type for storing sql inspection information
 type FieldType struct {
 	FieldName    string `db:"Field"`

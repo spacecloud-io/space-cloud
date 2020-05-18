@@ -24,7 +24,7 @@ func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 
 		defer utils.CloseTheCloser(r.Body)
 
-		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion, "plan": "space-cloud-open", "quotas": adminMan.GetQuotas(), "clusterId": ""})
 	}
 }
 

@@ -3,6 +3,7 @@ package schema
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/sirupsen/logrus"
@@ -121,6 +122,9 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 					currentIndexMap:   currentIndexMap,
 					schemaModule:      s,
 				}
+				if c.currentColumnInfo.IsPrimary {
+					return nil, utils.LogError(fmt.Sprintf(`Field ("%s"") with primary key cannot be removed, Delete the table to change primary key`, c.ColumnName), nil)
+				}
 				batchedQueries = append(batchedQueries, c.removeColumn(dbType)...)
 			}
 		}
@@ -172,9 +176,16 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		} else {
 			if !realColumnInfo.IsLinked {
 				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind {
+					// As we are making sure that tables can only be created with primary key, this condition will occur if primary key is removed from a field
+					if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
+						return nil, utils.LogError(fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil)
+					}
 					// for changing the type of column, drop the column then add new column
 					queries := c.modifyColumnType(dbType)
 					batchedQueries = append(batchedQueries, queries...)
+				}
+				if c.currentColumnInfo.IsPrimary && (!c.realColumnInfo.IsPrimary || c.realColumnInfo.IsForeign || !c.realColumnInfo.IsFieldTypeRequired || c.realColumnInfo.IsDefault) {
+					return nil, utils.LogError(fmt.Sprintf(`Mutation is not allowed on field ("%s") with primary key, Delete the table to change primary key`, c.ColumnName), nil)
 				}
 				// make changes according to the changes in directives
 				queries := c.modifyColumn(dbType)
@@ -183,23 +194,32 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 		}
 	}
 
+	for indexName, currentFields := range currentIndexMap {
+		if _, ok := realIndexMap[indexName]; !ok {
+			logrus.Println("current index", currentFields, "a", realIndexMap)
+			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, currentFields.IndexName))
+		}
+	}
+
 	for indexName, fields := range realIndexMap {
 		if _, ok := currentIndexMap[indexName]; !ok {
 			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexMap))
 			continue
 		}
-		if !reflect.DeepEqual(fields.IndexMap, currentIndexMap[indexName].IndexMap) {
-			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, indexName))
+		if !reflect.DeepEqual(fields.IndexMap, cleanIndexMap(currentIndexMap[indexName].IndexMap)) {
+			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, currentIndexMap[indexName].IndexName))
 			batchedQueries = append(batchedQueries, s.addIndex(dbType, dbAlias, logicalDBName, tableName, indexName, fields.IsIndexUnique, fields.IndexMap))
-		}
-	}
-	for indexName := range currentIndexMap {
-		if _, ok := realIndexMap[indexName]; !ok {
-			batchedQueries = append(batchedQueries, s.removeIndex(dbType, dbAlias, logicalDBName, tableName, indexName))
 		}
 	}
 
 	return batchedQueries, nil
+}
+
+func cleanIndexMap(v []*model.FieldType) []*model.FieldType {
+	for _, fieldType := range v {
+		fieldType.IndexInfo.ConstraintName = ""
+	}
+	return v
 }
 
 // SchemaModifyAll modifies all the tables provided

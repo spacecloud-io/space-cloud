@@ -48,7 +48,7 @@ func (s *SQL) RawExec(ctx context.Context, query string) error {
 
 // RawQuery query document(s) from the database
 func (s *SQL) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
-	return s.readexec(ctx, query, args, utils.All, s.client)
+	return s.readexec(ctx, query, args, utils.All, s.client, false)
 }
 
 // GetConnectionState : Function to get connection state
