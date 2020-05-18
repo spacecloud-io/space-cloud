@@ -14,7 +14,7 @@ func GetAuthProviders(project, commandName string, params map[string]string) ([]
 
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := utils.Client.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

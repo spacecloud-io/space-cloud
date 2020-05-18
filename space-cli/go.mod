@@ -22,6 +22,7 @@ require (
 	github.com/spaceuptech/space-cloud/gateway v0.0.0-20200220130157-1246a52c7148 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
+	github.com/stretchr/testify v1.4.0
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
