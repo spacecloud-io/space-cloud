@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/doug-martin/goqu/v8"
@@ -35,7 +36,6 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 	}
 
 	selArray := []interface{}{}
-
 	if req.Options != nil {
 		// Check if the select clause exists
 		if req.Options.Select != nil {
@@ -71,7 +71,6 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 			query = query.Order(orderBys...)
 		}
 	}
-
 	switch req.Operation {
 	case utils.Count:
 		query = query.Select(goqu.COUNT("*"))
@@ -81,8 +80,32 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 			return "", nil, utils.ErrInvalidParams
 		}
 		query = query.SelectDistinct(*distinct)
-	case utils.One, utils.All:
+	case utils.One:
 		query = query.Select(selArray...)
+	case utils.All:
+		for function, colArray := range req.Aggregate {
+			for _, column := range colArray {
+				asColumnName := generateAggregateAsColumnName(function, column)
+				switch function {
+				case "sum":
+					selArray = append(selArray, goqu.SUM(column).As(asColumnName))
+				case "max":
+					selArray = append(selArray, goqu.MAX(column).As(asColumnName))
+				case "min":
+					selArray = append(selArray, goqu.MIN(column).As(asColumnName))
+				case "avg":
+					selArray = append(selArray, goqu.AVG(column).As(asColumnName))
+				case "count":
+					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
+				default:
+					return "", nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), nil)
+				}
+			}
+		}
+		query = query.Select(selArray...)
+		if len(req.GroupBy) > 0 {
+			query = query.GroupBy(req.GroupBy...)
+		}
 	}
 
 	// Generate the sql string and arguments
@@ -109,6 +132,17 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 	}
 	return sqlString, args, nil
 }
+func generateAggregateAsColumnName(function, column string) string {
+	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
+}
+
+func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
+	v := strings.Split(asColumnName, "__")
+	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
+		return "", "", false
+	}
+	return v[1], v[2], true
+}
 
 // Read query document(s) from the database
 func (s *SQL) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
@@ -123,10 +157,10 @@ func (s *SQL) read(ctx context.Context, col string, req *model.ReadRequest, exec
 
 	logrus.Debugf("Executing sql read query: %s - %v", sqlString, args)
 
-	return s.readexec(ctx, sqlString, args, req.Operation, executor)
+	return s.readexec(ctx, sqlString, args, req.Operation, executor, len(req.Aggregate) > 0)
 }
 
-func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor) (int64, interface{}, error) {
+func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}, operation string, executor executor, isAggregate bool) (int64, interface{}, error) {
 	stmt, err := executor.PreparexContext(ctx, sqlString)
 	if err != nil {
 		return 0, nil, err
@@ -200,10 +234,30 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 			if err != nil {
 				return 0, nil, err
 			}
-
 			switch s.GetDBType() {
 			case utils.MySQL, utils.Postgres:
 				mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
+			}
+			if isAggregate {
+				funcMap := map[string]map[string]interface{}{}
+				for asColumnName, value := range mapping {
+					functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+					if isAggregateColumn {
+						delete(mapping, asColumnName)
+						// check if function name already exists
+						funcValue, ok := funcMap[functionName]
+						if !ok {
+							// set new function
+							funcMap[functionName] = map[string]interface{}{columnName: value}
+							continue
+						}
+						// add new column to existing function
+						funcValue[columnName] = value
+					}
+				}
+				if len(funcMap) > 0 {
+					mapping[utils.GraphQLAggregate] = funcMap
+				}
 			}
 
 			array = append(array, mapping)

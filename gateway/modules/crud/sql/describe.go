@@ -3,8 +3,6 @@ package sql
 import (
 	"context"
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
@@ -228,14 +226,6 @@ func (s *SQL) getIndexDetails(ctx context.Context, project, col string) ([]utils
 		}
 
 		result = append(result, *indexKey)
-	}
-	for i, value := range result {
-		s := strings.Split(value.IndexName, "__")
-		if len(s) != 3 {
-			return nil, fmt.Errorf("invalid index name (%s) found", value.IndexName)
-		}
-		result[i].IndexName = s[2]
-		fmt.Println(s, value.IndexName)
 	}
 	return result, nil
 }

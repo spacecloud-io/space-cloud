@@ -82,16 +82,12 @@ func addRegistry(projectID string) error {
 	}
 	specObj[0].Spec.(map[string]interface{})["dockerRegistry"] = "localhost:5000"
 
-	account, err := utils.GetSelectedAccount()
+	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
-		return err
-	}
-	login, err := utils.Login(account)
-	if err != nil {
-		return err
+		return utils.LogError("Couldn't get account details or login token", err)
 	}
 
-	if err := operations.ApplySpec(login.Token, account, specObj[0]); err != nil {
+	if err := operations.ApplySpec(token, account, specObj[0]); err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to update project (%s) with docker registry url", projectID), err)
 	}
 
@@ -146,16 +142,12 @@ func removeRegistry(projectID string) error {
 	}
 	specObj[0].Spec.(map[string]interface{})["dockerRegistry"] = ""
 
-	account, err := utils.GetSelectedAccount()
+	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
-		return err
-	}
-	login, err := utils.Login(account)
-	if err != nil {
-		return err
+		return utils.LogError("Couldn't get account details or login token", err)
 	}
 
-	if err := operations.ApplySpec(login.Token, account, specObj[0]); err != nil {
+	if err := operations.ApplySpec(token, account, specObj[0]); err != nil {
 		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url", projectID), err)
 	}
 

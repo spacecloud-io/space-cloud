@@ -245,7 +245,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								}
 							}
 						}
-
+						fieldTypeStuct.JointTable.ConstraintName = getConstraintName(collectionName, fieldTypeStuct.FieldName)
 					default:
 						return nil, fmt.Errorf("unknow directive (%s) provided for field (%s)", directive.Name.Value, fieldTypeStuct.FieldName)
 					}
