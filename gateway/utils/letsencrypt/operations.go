@@ -36,6 +36,10 @@ func (l *LetsEncrypt) SetProjectDomains(project string, c config.LetsEncrypt) er
 		return nil
 	}
 
+	if c.Email != "" {
+		l.client.Email = c.Email
+	}
+
 	l.domains.setProjectDomains(project, c.WhitelistedDomains)
 	return l.client.ManageSync(l.domains.getUniqueDomains())
 }

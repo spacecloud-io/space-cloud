@@ -210,4 +210,5 @@ type SchemaObject struct {
 type LetsEncrypt struct {
 	ID                 string   `json:"id,omitempty" yaml:"id,omitempty"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
+	Email              string   `json:"email" yaml:"email"`
 }
