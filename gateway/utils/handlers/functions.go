@@ -33,28 +33,24 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-
+		if req.Timeout == 0 {
+			req.Timeout = 10 // set default context to 10 second
+		}
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
 		defer cancel()
 
 		_, err := auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		result, err := functions.CallWithContext(ctx, service, function, token, req.Params)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"result": result})
 	}
 }

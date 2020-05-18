@@ -50,13 +50,9 @@ func Apply(applyName string) error {
 			return utils.LogError(fmt.Sprintf("Unable to fetch config files from %s", dirName), err)
 		}
 
-		account, err := utils.GetSelectedAccount()
+		account, token, err := utils.LoginWithSelectedAccount()
 		if err != nil {
-			return utils.LogError("Unable to fetch account information", err)
-		}
-		login, err := utils.Login(account)
-		if err != nil {
-			return utils.LogError("Unable to login", err)
+			return utils.LogError("Couldn't get account details or login token", err)
 		}
 
 		fileNames := alphabetic{}
@@ -78,7 +74,7 @@ func Apply(applyName string) error {
 
 				// Apply all spec
 				for _, spec := range specs {
-					if err := ApplySpec(login.Token, account, spec); err != nil {
+					if err := ApplySpec(token, account, spec); err != nil {
 						return err
 					}
 				}
@@ -87,13 +83,9 @@ func Apply(applyName string) error {
 		return nil
 	}
 
-	account, err := utils.GetSelectedAccount()
+	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
-		return utils.LogError("Unable to fetch account information", err)
-	}
-	login, err := utils.Login(account)
-	if err != nil {
-		return utils.LogError("Unable to login", err)
+		return utils.LogError("Couldn't get account details or login token", err)
 	}
 
 	specs, err := utils.ReadSpecObjectsFromFile(applyName)
@@ -103,7 +95,7 @@ func Apply(applyName string) error {
 
 	// Apply all spec
 	for _, spec := range specs {
-		if err := ApplySpec(login.Token, account, spec); err != nil {
+		if err := ApplySpec(token, account, spec); err != nil {
 			return err
 		}
 	}

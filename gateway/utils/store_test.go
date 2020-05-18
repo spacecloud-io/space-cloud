@@ -3,6 +3,7 @@ package utils
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestStoreValue(t *testing.T) {
@@ -272,7 +273,8 @@ func TestStoreValue(t *testing.T) {
 
 func Test_splitVariable(t *testing.T) {
 	type args struct {
-		key string
+		key       string
+		delimiter rune
 	}
 	tests := []struct {
 		name string
@@ -283,49 +285,55 @@ func Test_splitVariable(t *testing.T) {
 		{
 			name: "successful test",
 			args: args{
-				key: "(op1).[op2]",
+				key:       "(op1).[op2]",
+				delimiter: '.',
 			},
 			want: []string{"(op1)", "[op2]"},
 		},
 		{
 			name: "test",
 			args: args{
-				key: "(op1].(op2]",
+				key:       "(op1].(op2]",
+				delimiter: '.',
 			},
 			want: []string{"(op1].(op2]"},
 		},
 		{
 			name: "3op",
 			args: args{
-				key: "args.abc[args.abc]",
+				key:       "args.abc[args.abc]",
+				delimiter: '.',
 			},
 			want: []string{"args", "abc[args.abc]"},
 		},
 		{
 			name: "3op",
 			args: args{
-				key: "args.abc[args.abc].abc",
+				key:       "args.abc[args.abc].abc",
+				delimiter: '.',
 			},
 			want: []string{"args", "abc[args.abc]", "abc"},
 		},
 		{
 			name: "3op",
 			args: args{
-				key: "utils.exist(args.abc)",
+				key:       "utils.exist(args.abc)",
+				delimiter: '.',
 			},
 			want: []string{"utils", "exist(args.abc)"},
 		},
 		{
 			name: "3op",
 			args: args{
-				key: "utils.exists(args.abc[args.abc].abc)",
+				key:       "utils.exists(args.abc[args.abc].abc)",
+				delimiter: '.',
 			},
 			want: []string{"utils", "exists(args.abc[args.abc].abc)"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := splitVariable(tt.args.key); !reflect.DeepEqual(got, tt.want) {
+			if got := splitVariable(tt.args.key, tt.args.delimiter); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("splitVariable() = %v, want %v", got, tt.want)
 			}
 		})
@@ -877,6 +885,33 @@ func TestLoadValue(t *testing.T) {
 			},
 			//want:    true,
 			wantErr: true,
+		},
+		{
+			name: "utils.addDuration testing",
+			args: args{
+				key:   "utils.addDuration('utils.now()', '0h')",
+				state: map[string]interface{}{},
+			},
+			want:    time.Now().UTC().Format(time.RFC3339),
+			wantErr: false,
+		},
+		{
+			name: "utils.addDuration testing",
+			args: args{
+				key:   "utils.addDuration('2020-01-01T00:00:00Z', '4h')",
+				state: map[string]interface{}{},
+			},
+			want:    "2020-01-01T04:00:00Z",
+			wantErr: false,
+		},
+		{
+			name: "utils.roundUpDate testing",
+			args: args{
+				key:   "utils.roundUpDate('2020-03-25', 'month')",
+				state: map[string]interface{}{},
+			},
+			want:    "2020-03-01T00:00:00Z",
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

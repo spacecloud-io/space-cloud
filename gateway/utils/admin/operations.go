@@ -2,6 +2,7 @@ package admin
 
 import (
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -58,8 +59,8 @@ func (m *Manager) RefreshToken(token string) (string, error) {
 }
 
 // GetQuotas gets number of projects & databases that can be created
-func (m *Manager) GetQuotas() map[string]interface{} {
-	return map[string]interface{}{"projects": m.quotas.MaxProjects, "databases": m.quotas.MaxDatabases}
+func (m *Manager) GetQuotas() *model.UsageQuotas {
+	return &m.quotas
 }
 
 // GetCredentials gets user name & pass

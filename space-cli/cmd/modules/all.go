@@ -7,7 +7,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/modules/auth"
@@ -34,7 +35,11 @@ func getSubCommands() []*cobra.Command {
 }
 
 func getAllProjects(cmd *cobra.Command, args []string) error {
-	projectName := viper.GetString("project")
+	projectName, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 
 	if len(args) == 0 {
 		_ = utils.LogError("Directory not specified as an arguement to store config files", nil)

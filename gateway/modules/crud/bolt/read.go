@@ -13,7 +13,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (b *Bolt) Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error) {
+func (b *Bolt) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
 
 	switch req.Operation {
 	case utils.All, utils.One:
@@ -21,7 +21,7 @@ func (b *Bolt) Read(ctx context.Context, project, col string, req *model.ReadReq
 		results := []interface{}{}
 		if err := b.client.View(func(tx *bbolt.Tx) error {
 			// Assume bucket exists and has keys
-			bucket := tx.Bucket([]byte(project))
+			bucket := tx.Bucket([]byte(b.bucketName))
 			if bucket == nil {
 				return nil
 			}
@@ -60,7 +60,7 @@ func (b *Bolt) Read(ctx context.Context, project, col string, req *model.ReadReq
 		var count int64
 		err := b.client.View(func(tx *bbolt.Tx) error {
 			// Assume bucket exists and has keys
-			bucket := tx.Bucket([]byte(project))
+			bucket := tx.Bucket([]byte(b.bucketName))
 			if bucket == nil {
 				return nil
 			}

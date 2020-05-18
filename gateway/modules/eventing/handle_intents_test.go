@@ -47,7 +47,7 @@ func TestModule_processIntents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "dbtype", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{}, errors.New("some error")},
 				},
 			},
@@ -65,7 +65,7 @@ func TestModule_processIntents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "dbtype", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{"key"}, nil},
 				},
 			},
@@ -83,7 +83,7 @@ func TestModule_processIntents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "dbtype", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{EventTimestamp: time.Now().Format(time.RFC1123), ID: "id"}}, nil},
 				},
 			},
@@ -101,7 +101,7 @@ func TestModule_processIntents(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
+					args:           []interface{}{mock.Anything, "dbtype", utils.TableEventingLogs, &model.ReadRequest{Operation: utils.All, Find: map[string]interface{}{"status": utils.EventStatusIntent, "token": map[string]interface{}{"$gte": 1, "$lte": 100}}}},
 					paramsReturned: []interface{}{[]interface{}{&model.EventDocument{EventTimestamp: time.Now().Format(time.RFC3339), ID: "id"}}, nil},
 				},
 			},
@@ -163,7 +163,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
 				{
@@ -180,7 +180,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
 				{
@@ -197,7 +197,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
 				{
@@ -214,7 +214,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
 				{
@@ -255,7 +255,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
 			},
@@ -267,7 +267,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
 				{
@@ -284,7 +284,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
 				{
@@ -325,7 +325,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
 				{
@@ -342,7 +342,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
 				{
@@ -359,7 +359,7 @@ func TestModule_processIntent(t *testing.T) {
 			crudMockArgs: []mockArgs{
 				{
 					method:         "Read",
-					args:           []interface{}{mock.Anything, "db", "abc", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
+					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Operation: utils.One, Find: map[string]interface{}{}}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
 				{
