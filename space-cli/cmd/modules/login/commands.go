@@ -35,12 +35,6 @@ func Commands() []*cobra.Command {
 		_ = utils.LogError("Unable to bind flag ('username') to environment variables", nil)
 	}
 
-	loginCommands.Flags().StringP("id", "", "None", "Accepts the id for login")
-	err = viper.BindEnv("id", "ID")
-	if err != nil {
-		_ = utils.LogError("Unable to bind flag ('id') to environment variables", nil)
-	}
-
 	loginCommands.Flags().StringP("key", "", "None", "Accepts the access key to be verified during login")
 	err = viper.BindEnv("key", "KEY")
 	if err != nil {
@@ -58,10 +52,9 @@ func Commands() []*cobra.Command {
 
 func actionLogin(cmd *cobra.Command, args []string) error {
 	userName := viper.GetString("username")
-	ID := viper.GetString("id")
 	key := viper.GetString("key")
 	url := viper.GetString("url")
 
-	_ = utils.LoginStart(userName, ID, key, url)
+	_ = utils.LoginStart(userName, key, url)
 	return nil
 }

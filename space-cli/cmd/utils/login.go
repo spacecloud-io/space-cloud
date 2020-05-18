@@ -40,16 +40,12 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 }
 
 // LoginStart take info of the user
-func LoginStart(userName, ID, key, url string) error {
+func LoginStart(userName, key, url string) error {
 	if userName == "None" {
 		if err := survey.AskOne(&survey.Input{Message: "Enter username:"}, &userName); err != nil {
 			_ = LogError(fmt.Sprintf("error in login start unable to get username - %v", err), nil)
 			return err
 		}
-	}
-
-	if ID == "None" {
-		ID = userName
 	}
 
 	if key == "None" {
@@ -69,7 +65,7 @@ func LoginStart(userName, ID, key, url string) error {
 		return err
 	}
 	account = model.Account{
-		ID:        ID,
+		ID:        userName,
 		UserName:  userName,
 		Key:       key,
 		ServerURL: url,
