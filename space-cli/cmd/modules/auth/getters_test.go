@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils/transport"
 )
@@ -102,11 +101,9 @@ func TestGetAuthProviders(t *testing.T) {
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
 				t.Errorf("GetAuthProviders() len= %v, want %v", len(got), len(tt.want))
 			} else if len(got) != 0 {
-				for i, v := range got {
-					if cmp.Equal(*v, *tt.want[i]) {
-						t.Errorf("GetAuthProviders() = %v, want %v", got, tt.want)
-						return
-					}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("GetAuthProviders() = %v, want %v", got, tt.want)
+					return
 				}
 			}
 		})
