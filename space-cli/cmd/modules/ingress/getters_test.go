@@ -1,16 +1,15 @@
-package auth
+package ingress
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils/transport"
 )
 
-func TestGetAuthProviders(t *testing.T) {
+func TestGetIngressRoutes(t *testing.T) {
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -33,18 +32,22 @@ func TestGetAuthProviders(t *testing.T) {
 			name: "Successful test",
 			args: args{
 				project:     "myproject",
-				commandName: "auth-providers",
+				commandName: "ingress-routes",
 				params:      map[string]string{},
 			},
 			transportMockArgs: []mockArgs{
 				{
 					method: "Get",
-					args:   []interface{}{"GET", "/v1/config/projects/myproject/user-management/provider", map[string]string{}, new(model.Response)},
+					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"id":      "local-admin",
-							"enabled": true,
-							"secret":  "hello",
+							"id": "local-admin",
+							"source": map[string]interface{}{
+								"url": "/v1/config/projects/myproject/routing/ingress",
+							},
+							"targets": map[string]interface{}{
+								"version": "v0.18.0",
+							},
 						},
 						},
 					}},
@@ -52,10 +55,10 @@ func TestGetAuthProviders(t *testing.T) {
 			},
 			want: []*model.SpecObject{
 				{
-					API:  "/v1/config/projects/{project}/user-management/provider/{id}",
-					Type: "auth-providers",
-					Meta: map[string]string{"id": "local-admin", "project": "myproject"},
-					Spec: map[string]interface{}{"enabled": true, "secret": "hello"},
+					API:  "/v1/config/projects/{project}/routing/ingress/{id}",
+					Type: "ingress-routes",
+					Meta: map[string]string{"project": "myproject", "id": "local-admin"},
+					Spec: map[string]interface{}{"source": map[string]interface{}{"url": "/v1/config/projects/myproject/routing/ingress"}, "targets": map[string]interface{}{"version": "v0.18.0"}},
 				},
 			},
 			wantErr: false,
@@ -64,18 +67,22 @@ func TestGetAuthProviders(t *testing.T) {
 			name: "Get function returns Error",
 			args: args{
 				project:     "myproject",
-				commandName: "auth-providers",
+				commandName: "ingress-routes",
 				params:      map[string]string{},
 			},
 			transportMockArgs: []mockArgs{
 				{
 					method: "Get",
-					args:   []interface{}{"GET", "/v1/config/projects/myproject/user-management/provider", map[string]string{}, new(model.Response)},
+					args:   []interface{}{"GET", "/v1/config/projects/myproject/routing/ingress", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"id":      "local-admin",
-							"snabled": true,
-							"secret":  "hello",
+							"id": "local-admin",
+							"source": map[string]interface{}{
+								"url": "/v1/config/projects/myproject/routing/ingress",
+							},
+							"targets": map[string]interface{}{
+								"version": "v0.18.0",
+							},
 						},
 						},
 					}},
@@ -94,19 +101,16 @@ func TestGetAuthProviders(t *testing.T) {
 			}
 
 			transport.Client = &mockSchema
-			got, err := GetAuthProviders(tt.args.project, tt.args.commandName, tt.args.params)
+			got, err := GetIngressRoutes(tt.args.project, tt.args.commandName, tt.args.params)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetAuthProviders() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetIngressRoutes() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetAuthProviders() len= %v, want %v", len(got), len(tt.want))
+				t.Errorf("GetIngressRoutes() = %v, want %v", got, tt.want)
 			} else if len(got) != 0 {
-				for i, v := range got {
-					if cmp.Equal(*v, *tt.want[i]) {
-						t.Errorf("GetAuthProviders() = %v, want %v", got, tt.want)
-						return
-					}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("GetIngressRoutes() = %v, want %v", got, tt.want)
 				}
 			}
 		})

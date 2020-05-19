@@ -1,4 +1,4 @@
-package auth
+package letsencrypt
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/spaceuptech/space-cli/cmd/utils/transport"
 )
 
-func TestGetAuthProviders(t *testing.T) {
+func TestGetLetsEncryptDomain(t *testing.T) {
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -33,18 +33,20 @@ func TestGetAuthProviders(t *testing.T) {
 			name: "Successful test",
 			args: args{
 				project:     "myproject",
-				commandName: "auth-providers",
+				commandName: "letsencrypt",
 				params:      map[string]string{},
 			},
 			transportMockArgs: []mockArgs{
 				{
 					method: "Get",
-					args:   []interface{}{"GET", "/v1/config/projects/myproject/user-management/provider", map[string]string{}, new(model.Response)},
+					args:   []interface{}{"GET", "/v1/config/projects/myproject/letsencrypt/config", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"id":      "local-admin",
-							"enabled": true,
-							"secret":  "hello",
+							"aesKey":             "mongodb",
+							"id":                 "local-admin",
+							"name":               "abcd",
+							"dockerRegistry":     "space-cloud",
+							"ContextTimeGraphQL": 10,
 						},
 						},
 					}},
@@ -52,10 +54,10 @@ func TestGetAuthProviders(t *testing.T) {
 			},
 			want: []*model.SpecObject{
 				{
-					API:  "/v1/config/projects/{project}/user-management/provider/{id}",
-					Type: "auth-providers",
-					Meta: map[string]string{"id": "local-admin", "project": "myproject"},
-					Spec: map[string]interface{}{"enabled": true, "secret": "hello"},
+					API:  "/v1/config/projects/{project}/letsencrypt/config/{id}",
+					Type: "letsencrypt",
+					Meta: map[string]string{"project": "myproject", "id": "letsencrypt"},
+					Spec: map[string]interface{}{"aesKey": "mongodb", "id": "local-admin", "name": "abcd", "dockerRegistry": "space-cloud", "ContextTimeGraphQL": 10},
 				},
 			},
 			wantErr: false,
@@ -64,18 +66,20 @@ func TestGetAuthProviders(t *testing.T) {
 			name: "Get function returns Error",
 			args: args{
 				project:     "myproject",
-				commandName: "auth-providers",
+				commandName: "letsencrypt",
 				params:      map[string]string{},
 			},
 			transportMockArgs: []mockArgs{
 				{
 					method: "Get",
-					args:   []interface{}{"GET", "/v1/config/projects/myproject/user-management/provider", map[string]string{}, new(model.Response)},
+					args:   []interface{}{"GET", "/v1/config/projects/myproject/letsencrypt/config", map[string]string{}, new(model.Response)},
 					paramsReturned: []interface{}{fmt.Errorf("cannot unmarshal"), model.Response{
 						Result: []interface{}{map[string]interface{}{
-							"id":      "local-admin",
-							"snabled": true,
-							"secret":  "hello",
+							"aesKey":             "mongodb",
+							"id":                 "local-admin",
+							"name":               "abcd",
+							"dockerRegistry":     "space-cloud",
+							"ContextTimeGraphQL": 10,
 						},
 						},
 					}},
@@ -94,17 +98,17 @@ func TestGetAuthProviders(t *testing.T) {
 			}
 
 			transport.Client = &mockSchema
-			got, err := GetAuthProviders(tt.args.project, tt.args.commandName, tt.args.params)
+			got, err := GetLetsEncryptDomain(tt.args.project, tt.args.commandName, tt.args.params)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetAuthProviders() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetLetsEncryptDomain() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetAuthProviders() len= %v, want %v", len(got), len(tt.want))
+				t.Errorf("GetLetsEncryptDomain() len= %v, want %v", len(got), len(tt.want))
 			} else if len(got) != 0 {
 				for i, v := range got {
 					if cmp.Equal(*v, *tt.want[i]) {
-						t.Errorf("GetAuthProviders() = %v, want %v", got, tt.want)
+						t.Errorf("GetLetsEncryptDomain() = %v, want %v", got, tt.want)
 						return
 					}
 				}

@@ -1,11 +1,13 @@
-package utils
+package transport
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/spaceuptech/space-cli/cmd/utils"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -24,9 +26,9 @@ func init() {
 
 // Get gets spec object
 func (d *def) Get(method, url string, params map[string]string, vPtr interface{}) error {
-	account, token, err := LoginWithSelectedAccount()
+	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
-		return LogError("Couldn't get account details or login token", err)
+		return utils.LogError("Couldn't get account details or login token", err)
 	}
 	url = fmt.Sprintf("%s%s", account.ServerURL, url)
 
@@ -56,7 +58,7 @@ func (d *def) Get(method, url string, params map[string]string, vPtr interface{}
 		if err := json.Unmarshal(data, &respBody); err != nil {
 			return err
 		}
-		_ = LogError(fmt.Sprintf("error while getting service got http status code %s - %s", resp.Status, respBody["error"]), nil)
+		_ = utils.LogError(fmt.Sprintf("error while getting service got http status code %s - %s", resp.Status, respBody["error"]), nil)
 		return fmt.Errorf("received invalid status code (%d)", resp.StatusCode)
 	}
 
@@ -65,6 +67,11 @@ func (d *def) Get(method, url string, params map[string]string, vPtr interface{}
 	}
 
 	return nil
+}
+
+// CloseTheCloser closes the closer
+func CloseTheCloser(c io.Closer) {
+	_ = c.Close()
 }
 
 //MocketAuthProviders used during test
