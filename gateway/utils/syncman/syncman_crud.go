@@ -523,7 +523,7 @@ func (s *Manager) GetSecrets(project, secretName, key string) (string, error) {
 	// Generate internal access token
 	token, err := s.adminMan.GetInternalAccessToken()
 	if err != nil {
-		return "", utils.LogError("cannot get internal access token", err)
+		return "", utils.LogError("cannot get internal access token", "syncman", "GetSecrets", err)
 	}
 
 	// makes http request to get secrets from runner

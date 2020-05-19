@@ -86,10 +86,10 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 	if isSecretExists {
 		value, err := m.getSecrets(project, secretName, secretKey)
 		if err != nil {
-			return utils.LogError("cannot get secrets from runner", err)
+			return utils.LogError("cannot get secrets from runner", "filestore", "setConfig", err)
 		}
 		if err := setFileSecret(utils.FileStoreType(conf.StoreType), secretKey, value); err != nil {
-			return utils.LogError("cannot set fileStore secrets", err)
+			return utils.LogError("cannot set fileStore secrets", "filestore", "setConfig", err)
 		}
 	}
 

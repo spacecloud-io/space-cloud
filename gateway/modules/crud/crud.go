@@ -151,7 +151,7 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if isSecretExists {
 			v.Conn, err = m.getSecrets(project, secretName, secretKey)
 			if err != nil {
-				return utils.LogError("cannot get secrets from runner", err)
+				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
 			}
 		}
 
