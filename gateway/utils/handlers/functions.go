@@ -39,13 +39,13 @@ func HandleFunctionCall(modules *modules.Modules) http.HandlerFunc {
 		ctx, cancel := context.WithTimeout(r.Context(), time.Duration(req.Timeout)*time.Second)
 		defer cancel()
 
-		_, err := auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params)
+		claims, err := auth.IsFuncCallAuthorised(ctx, projectID, service, function, token, req.Params)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
-		result, err := functions.CallWithContext(ctx, service, function, token, req.Params)
+		result, err := functions.CallWithContext(ctx, service, function, token, claims, req.Params)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return

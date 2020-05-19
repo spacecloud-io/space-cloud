@@ -35,7 +35,6 @@ require (
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/mholt/certmagic v0.9.1
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v1.2.0
@@ -57,13 +56,13 @@ require (
 	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4
 	golang.org/x/net v0.0.0-20200222125558-5a598a2470a0
 	google.golang.org/api v0.18.0
-	gopkg.in/AlecAivazis/survey.v1 v1.8.8
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/yaml.v2 v2.2.8
-	k8s.io/api v0.17.3
-	k8s.io/apimachinery v0.17.3
-	k8s.io/client-go v0.17.3
-	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66 // indirect
+	gopkg.in/AlecAivazis/survey.v1 v1.8.5
+	gopkg.in/yaml.v2 v2.2.7
+	gopkg.in/yaml.v3 v3.0.0-20200504163728-5308cda29e3d
+	k8s.io/api v0.17.2
+	k8s.io/apimachinery v0.17.2
+	k8s.io/client-go v0.17.2
+	k8s.io/utils v0.0.0-20191217005138-9e5e9d854fcc // indirect
 
 )
 

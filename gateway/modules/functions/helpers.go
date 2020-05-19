@@ -11,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (m *Module) handleCall(ctx context.Context, service, endpoint, token string, params interface{}) (interface{}, error) {
+func (m *Module) handleCall(ctx context.Context, service, endpoint, token string, auth, params interface{}) (interface{}, error) {
 
 	// Load the service rule
 	s := m.loadService(service)
@@ -28,9 +28,21 @@ func (m *Module) handleCall(ctx context.Context, service, endpoint, token string
 
 	url := s.URL + path
 
-	method := s.Endpoints[endpoint].Method
-	if method == "" {
-		method = "POST"
+	e := s.Endpoints[endpoint]
+
+	// Set the default method
+	if e.Method == "" {
+		e.Method = "POST"
+	}
+
+	// Overwrite the token if provided
+	if e.Token != "" {
+		token = e.Token
+	}
+
+	params, err = m.adjustBody(service, endpoint, e, auth, params)
+	if err != nil {
+		return nil, err
 	}
 
 	scToken, err := m.auth.GetSCAccessToken()
@@ -39,11 +51,27 @@ func (m *Module) handleCall(ctx context.Context, service, endpoint, token string
 	}
 
 	var res interface{}
-	if err := m.manager.MakeHTTPRequest(ctx, method, url, token, scToken, params, &res); err != nil {
+	if err := m.manager.MakeHTTPRequest(ctx, e.Method, url, token, scToken, params, &res); err != nil {
 		return nil, err
 	}
 
 	return res, nil
+}
+
+func (m *Module) adjustBody(serviceID, endpointID string, endpoint config.Endpoint, auth, params interface{}) (interface{}, error) {
+	// Set the default endpoint kind
+	if endpoint.Kind == "" {
+		endpoint.Kind = config.EndpointKindSimple
+	}
+
+	switch endpoint.Kind {
+	case config.EndpointKindSimple:
+		return params, nil
+	case config.EndpointKindTransform:
+		return goTemplate(m.templates[getGoTemplateKey(serviceID, endpointID)], endpoint.OpFormat, auth, params)
+	default:
+		return nil, utils.LogError(fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), module, segmentCall, nil)
+	}
 }
 
 func adjustPath(path string, params interface{}) (string, error) {
@@ -89,4 +117,8 @@ func (m *Module) loadService(service string) *config.Service {
 	}
 
 	return m.config.Services[service]
+}
+
+func getGoTemplateKey(serviceID, endpointID string) string {
+	return fmt.Sprintf("%s---%s", serviceID, endpointID)
 }
