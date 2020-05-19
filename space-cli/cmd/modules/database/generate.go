@@ -7,11 +7,12 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils/input"
 )
 
 func generateDBRule() (*model.SpecObject, error) {
 	projectID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
 		return nil, err
 	}
 	ID := ""

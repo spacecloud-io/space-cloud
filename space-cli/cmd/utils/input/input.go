@@ -7,10 +7,10 @@ type inputInterface interface {
 }
 
 // Input struct for parameter
-type Input struct{}
+type input struct{}
 
 // AskOne calls survey.AskOne
-func (i *Input) AskOne(p survey.Prompt, respone interface{}, opts ...survey.AskOpt) error {
+func (i *input) AskOne(p survey.Prompt, respone interface{}, opts ...survey.AskOpt) error {
 	if err := survey.AskOne(p, respone, opts...); err != nil {
 		return err
 	}
@@ -19,3 +19,7 @@ func (i *Input) AskOne(p survey.Prompt, respone interface{}, opts ...survey.AskO
 
 // Survey package for survey.Askone
 var Survey inputInterface
+
+func init() {
+	Survey = &input{}
+}
