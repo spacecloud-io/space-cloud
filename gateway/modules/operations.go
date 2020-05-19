@@ -2,6 +2,7 @@ package modules
 
 import (
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
@@ -36,17 +37,26 @@ func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt
 	if err := m.auth.SetConfig(p.ID, p.Secrets, p.AESKey, p.Modules.Crud, p.Modules.FileStore, p.Modules.Services, &p.Modules.Eventing); err != nil {
 		logrus.Errorf("error setting auth module config - %s", err.Error())
 	}
-
 	logrus.Debugln("Setting config of functions module")
-	m.functions.SetConfig(p.ID, p.Modules.Services)
+	if err := m.functions.SetConfig(p.ID, p.Modules.Services); err != nil {
+		logrus.Errorf("error setting remote services module config - %s", err.Error())
+	}
+
+	// logrus.Debugln("Setting config of functions module")
+	// m.functions.SetConfig(p.ID, p.Modules.Services)
 
 	logrus.Debugln("Setting config of user management module")
 	m.user.SetConfig(p.Modules.Auth)
 
 	logrus.Debugln("Setting config of file storage module")
-	if err := m.file.SetConfig(p.Modules.FileStore); err != nil {
+	if err := m.file.SetConfig(p.ID, p.Modules.FileStore); err != nil {
 		logrus.Errorf("error setting filestore module config - %s", err.Error())
 	}
+
+	// logrus.Debugln("Setting config of file storage module")
+	// if err := m.file.SetConfig(p.Modules.FileStore); err != nil {
+	// 	logrus.Errorf("error setting filestore module config - %s", err.Error())
+	// }
 
 	logrus.Debugln("Setting config of eventing module")
 	if err := m.eventing.SetConfig(p.ID, &p.Modules.Eventing); err != nil {
@@ -105,8 +115,7 @@ func (m *Module) SetServicesConfig(projectID string, services *config.ServicesMo
 	m.auth.SetServicesConfig(projectID, services)
 
 	logrus.Debugln("Setting config of remote services module")
-	m.functions.SetConfig(projectID, services)
-	return nil
+	return m.functions.SetConfig(projectID, services)
 }
 
 // SetFileStoreConfig sets the config of auth and filestore modules
@@ -115,7 +124,7 @@ func (m *Module) SetFileStoreConfig(projectID string, fileStore *config.FileStor
 	m.auth.SetFileStoreConfig(projectID, fileStore)
 
 	logrus.Debugln("Setting config of file storage module")
-	if err := m.file.SetConfig(fileStore); err != nil {
+	if err := m.file.SetConfig(projectID, fileStore); err != nil {
 		logrus.Errorf("error setting filestore module config - %s", err.Error())
 		return err
 	}

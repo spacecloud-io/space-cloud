@@ -79,11 +79,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Comma separated values of the hosts to restrict mission-control to",
 		Value:  "*",
 	},
-	cli.BoolFlag{
-		Name:   "remove-project-scope",
-		Usage:  "Removes the project level scope in the database and file storage modules",
-		EnvVar: "REMOVE_PROJECT_SCOPE",
-	},
 	cli.StringFlag{
 		Name:   "runner-addr",
 		Usage:  "The address used to reach the runner",
@@ -174,7 +169,6 @@ func actionRun(c *cli.Context) error {
 	// Load flag related to the port
 	port := c.Int("port")
 
-	removeProjectScope := c.Bool("remove-project-scope")
 	runnerAddr := c.String("runner-addr")
 
 	// Load flags related to ssl

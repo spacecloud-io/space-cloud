@@ -2,7 +2,6 @@ package letsencrypt
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
@@ -30,7 +29,11 @@ func GetSubCommands() []*cobra.Command {
 
 func actionGetLetsEncrypt(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
 	commandName := cmd.Use
 
 	params := map[string]string{}

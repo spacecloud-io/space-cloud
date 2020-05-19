@@ -26,7 +26,7 @@ type SchemaCrudInterface interface {
 
 // CrudAuthInterface is an interface consisting of functions of crud module used by auth module
 type CrudAuthInterface interface {
-	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
 }
 
 // SchemaEventingInterface is an interface consisting of functions of schema module used by eventing module
@@ -34,14 +34,14 @@ type SchemaEventingInterface interface {
 	CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool)
 	Parser(crud config.Crud) (Type, error)
 	SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
-	SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error
+	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
 }
 
 // CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
 type CrudEventingInterface interface {
 	InternalCreate(ctx context.Context, dbAlias, project, col string, req *CreateRequest, isIgnoreMetrics bool) error
 	InternalUpdate(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
-	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
 }
 
 // AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
@@ -64,6 +64,7 @@ type AuthFilestoreInterface interface {
 // AuthFunctionInterface is an interface consisting of functions of auth module used by Function module
 type AuthFunctionInterface interface {
 	GetSCAccessToken() (string, error)
+	Encrypt(value string) (string, error)
 }
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module
@@ -81,24 +82,23 @@ type AuthRealtimeInterface interface {
 
 // CrudRealtimeInterface is an interface consisting of functions of crud module used by RealTime module
 type CrudRealtimeInterface interface {
-	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
 }
 
 // CrudSchemaInterface is an interface consisting of functions of crud module used by Schema module
 type CrudSchemaInterface interface {
 	GetDBType(dbAlias string) (string, error)
 	// CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error
-	CreateDatabaseIfNotExist(ctx context.Context, project, dbAlias string) error
 	RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error
-	DescribeTable(ctx context.Context, dbAlias, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
+	DescribeTable(ctx context.Context, dbAlias, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
 }
 
 // CrudUserInterface is an interface consisting of functions of crud module used by User module
 type CrudUserInterface interface {
 	GetDBType(dbAlias string) (string, error)
-	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
-	Create(ctx context.Context, dbAlias, project, col string, req *CreateRequest) error
-	Update(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
+	Create(ctx context.Context, dbAlias, col string, req *CreateRequest) error
+	Update(ctx context.Context, dbAlias, col string, req *UpdateRequest) error
 }
 
 // AuthUserInterface is an interface consisting of functions of auth module used by User module

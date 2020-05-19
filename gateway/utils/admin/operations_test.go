@@ -116,12 +116,12 @@ func TestManager_GetQuotas(t *testing.T) {
 	tests := []struct {
 		name   string
 		fields fields
-		want   map[string]interface{}
+		want   *model.UsageQuotas
 	}{
 		{
 			name:   "Valid case",
-			fields: fields{quotas: model.UsageQuotas{MaxDatabases: 3, MaxProjects: 3}},
-			want:   map[string]interface{}{"projects": 3, "databases": 3},
+			fields: fields{quotas: model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1}},
+			want:   &model.UsageQuotas{MaxProjects: 1, MaxDatabases: 1},
 		},
 	}
 	for _, tt := range tests {

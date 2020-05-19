@@ -32,7 +32,8 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		return
 	}
 
-	if _, err := graph.auth.IsFuncCallAuthorised(ctx, graph.project, serviceName, funcName, token, params); err != nil {
+	auth, err := graph.auth.IsFuncCallAuthorised(ctx, graph.project, serviceName, funcName, token, params)
+	if err != nil {
 		cb(nil, err)
 		return
 	}
@@ -41,7 +42,7 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		ctx2, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
 
-		result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, params)
+		result, err := graph.functions.CallWithContext(ctx2, serviceName, funcName, token, auth, params)
 		cb(result, err)
 		// return
 	}()

@@ -586,13 +586,13 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 		},
 	}
 	adminMan := admin.New("node", "abc", &config.AdminUser{})
-	c := crud.Init(false)
+	c := crud.Init()
 	c.SetAdminManager(adminMan)
 	if err := c.SetConfig("", TestCases); err != nil {
 		t.Errorf("error in schmea update test file unable to set config of crud (%s)", err.Error())
 	}
 
-	s := Init(c, false)
+	s := Init(c)
 	if err := s.parseSchema(TestCases); err != nil {
 		t.Errorf("error parsing schema :: %v", err)
 	}

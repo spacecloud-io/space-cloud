@@ -83,12 +83,12 @@ func (new *a) Parser(crud config.Crud) (model.Type, error) {
 func (new *a) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
 	return nil, nil
 }
-func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error {
+func (new *a) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
 	return nil
 }
 
 func TestModule_validate(t *testing.T) {
-	authModule := auth.Init("1", &crud.Module{}, false)
+	authModule := auth.Init("1", &crud.Module{})
 	err := authModule.SetConfig("project", []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, "", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{SecurityRules: map[string]*config.Rule{"event": &config.Rule{Rule: "authenticated"}}})
 	if err != nil {
 		t.Fatalf("error setting config (%s)", err.Error())

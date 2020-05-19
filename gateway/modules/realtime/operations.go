@@ -44,7 +44,7 @@ func (m *Module) DoRealtimeSubscribe(ctx context.Context, clientID string, data 
 	ctx2, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	result, err := m.crud.Read(ctx2, data.DBType, data.Project, data.Group, readReq)
+	result, err := m.crud.Read(ctx2, data.DBType, data.Group, &readReq)
 	if err != nil {
 		return nil, err
 	}

@@ -15,12 +15,13 @@ import (
 type Mongo struct {
 	enabled    bool
 	connection string
+	dbName     string
 	client     *mongo.Client
 }
 
 // Init initialises a new mongo instance
-func Init(enabled bool, connection string) (mongoStub *Mongo, err error) {
-	mongoStub = &Mongo{enabled: enabled, connection: connection, client: nil}
+func Init(enabled bool, connection, dbName string) (mongoStub *Mongo, err error) {
+	mongoStub = &Mongo{dbName: dbName, enabled: enabled, connection: connection, client: nil}
 
 	if mongoStub.enabled {
 		err = mongoStub.connect()

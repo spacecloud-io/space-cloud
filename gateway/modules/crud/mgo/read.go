@@ -13,8 +13,8 @@ import (
 )
 
 // Read querys document(s) from the database
-func (m *Mongo) Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error) {
-	collection := m.client.Database(project).Collection(col)
+func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error) {
+	collection := m.client.Database(m.dbName).Collection(col)
 
 	switch req.Operation {
 	case utils.Count:
