@@ -7,29 +7,35 @@ import (
 )
 
 // LogError logs the error in the proper format
-func LogError(message string, err error) error {
-
-	// Log with error if provided
+func LogError(message, module, segment string, err error) error {
+	// Prepare the fields
+	entry := logrus.WithFields(logrus.Fields{"module": module, "segment": segment})
 	if err != nil {
-		logrus.WithField("error", err.Error()).Errorln(message)
-	} else {
-		logrus.Errorln(message)
+		entry = entry.WithError(err)
 	}
+
+	// Log the error
+	entry.Errorln(message)
 
 	// Return the error message
 	return errors.New(message)
 }
 
-// LogInfo logs te info message in the proper format
-func LogInfo(message string) {
-	logrus.Infoln(message)
+// LogWarn logs the warning message in the proper format
+func LogWarn(message, module, segment string) {
+	logrus.WithFields(logrus.Fields{"module": module, "segment": segment}).Warnln(message)
+}
+
+// LogInfo logs the info message in the proper format
+func LogInfo(message, module, segment string) {
+	logrus.WithFields(logrus.Fields{"module": module, "segment": segment}).Infoln(message)
 }
 
 // LogDebug logs the debug message in proper format
-func LogDebug(message string, extraFields map[string]interface{}) {
+func LogDebug(message, module, segment string, extraFields map[string]interface{}) {
+	entry := logrus.WithFields(logrus.Fields{"module": module, "segment": segment})
 	if extraFields != nil {
-		logrus.WithFields(extraFields).Debugln(message)
-		return
+		entry = entry.WithFields(extraFields)
 	}
-	logrus.Debugln(message)
+	entry.Debugln(message)
 }

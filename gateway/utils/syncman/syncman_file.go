@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
@@ -23,6 +24,7 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 	projectConfig.Modules.FileStore.Conn = value.Conn
 	projectConfig.Modules.FileStore.Endpoint = value.Endpoint
 	projectConfig.Modules.FileStore.Bucket = value.Bucket
+	projectConfig.Modules.FileStore.Secret = value.Secret
 
 	if err := s.modules.SetFileStoreConfig(project, projectConfig.Modules.FileStore); err != nil {
 		logrus.Errorf("error setting file store config - %s", err.Error())

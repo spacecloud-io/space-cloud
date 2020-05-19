@@ -105,6 +105,7 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 		"ADMIN_PASS=" + key,
 		"ADMIN_SECRET=" + secret,
 		"DEV=" + devMode,
+		"GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/credentials.json",
 	}
 
 	envs = append(envs, environmentVariables...)
