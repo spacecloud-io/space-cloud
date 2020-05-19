@@ -23,7 +23,9 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 		}
 		return map[string]interface{}{}, errors.New("invalid project details provided")
 	}
-	auth, err := m.parseToken(token)
+
+	var auth map[string]interface{}
+	auth, err = m.parseToken(token)
 	if err != nil {
 		return nil, err
 	}

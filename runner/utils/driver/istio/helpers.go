@@ -139,7 +139,7 @@ func (i *Istio) prepareContainers(service *model.Service, token string, listOfSe
 			Resources: *generateResourceRequirements(&model.Resources{CPU: 20, Memory: 50}),
 
 			// Docker related
-			Image:           "spaceuptech/metric-proxy:latest", // TODO: Lets use the version tag here to make sure we pull the latest image
+			Image:           "spaceuptech/metric-proxy:0.2.0",
 			Command:         []string{"./app"},
 			Args:            []string{"start"},
 			ImagePullPolicy: v1.PullIfNotPresent,
