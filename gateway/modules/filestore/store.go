@@ -88,7 +88,6 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 		if err != nil {
 			return utils.LogError("cannot get secrets from runner", err)
 		}
-
 		if err := setFileSecret(utils.FileStoreType(conf.StoreType), secretKey, value); err != nil {
 			return utils.LogError("cannot set fileStore secrets", err)
 		}
@@ -107,36 +106,22 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 func setFileSecret(fileStoreType utils.FileStoreType, key, value string) error {
 	switch fileStoreType {
 	case utils.AmazonS3:
-		if err := createSecretFile("aws", value); err != nil {
-			return utils.LogError("aws secret file was not created", err)
-		}
-	case utils.GCPStorage:
-		if err := createSecretFile("gcp", value); err != nil {
-			return utils.LogError("gcp secret file was not created", err)
-		}
-		fmt.Println("file secret was set")
-		if err := os.Setenv(key, value); err != nil {
-			return utils.LogError("gcp env variable not set", err)
-		}
-	default:
-		return utils.ErrInvalidParams
-	}
-	return nil
-}
-
-func createSecretFile(fileStoreType, value string) error {
-	if _, err := os.Stat(fmt.Sprintf("./%s/credentials", fileStoreType)); os.IsNotExist(err) {
-		err = os.MkdirAll(fmt.Sprintf("./%s/credentials", fileStoreType), 0755)
+		path := fmt.Sprintf("%s/.aws/", os.ExpandEnv("$HOME"))
+		err := os.MkdirAll(path, 0755)
 		if err != nil {
 			return err
 		}
+		return ioutil.WriteFile(fmt.Sprintf("%s/credentials", path), []byte(value), 0755)
+	case utils.GCPStorage:
+		path := fmt.Sprintf("%s/.gcp/", os.ExpandEnv("$HOME"))
+		err := os.MkdirAll(path, 0755)
+		if err != nil {
+			return err
+		}
+		return ioutil.WriteFile(fmt.Sprintf("%s/credentials.json", path), []byte(value), 0755)
+	default:
+		return utils.ErrInvalidParams
 	}
-
-	if _, err := os.Stat(fmt.Sprintf("./%s/credentials/credentials.txt", fileStoreType)); os.IsNotExist(err) {
-		return ioutil.WriteFile(fmt.Sprintf("./%s/credentials/credentials.txt", fileStoreType), []byte(value), 0755)
-	}
-
-	return nil
 }
 
 // splitConnectionString splits the connection string
