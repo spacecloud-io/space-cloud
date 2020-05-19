@@ -111,6 +111,8 @@ type Rule struct {
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
 	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
+	Name    string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Error   string                 `json:"error,omitempty" yaml:"error,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -168,6 +170,7 @@ type FileStore struct {
 	Conn      string      `json:"conn" yaml:"conn"`
 	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
 	Bucket    string      `json:"bucket" yaml:"bucket"`
+	Secret    string      `json:"secret" yaml:"secret"`
 	Rules     []*FileRule `json:"rules,omitempty" yaml:"rules"`
 }
 

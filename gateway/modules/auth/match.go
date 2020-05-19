@@ -18,7 +18,7 @@ import (
 
 func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
 	if project != m.project {
-		return nil, errors.New("invalid project details provided")
+		return nil, formatError(rule, errors.New("invalid project details provided"))
 	}
 
 	if rule.Rule == "allow" || rule.Rule == "authenticated" {
@@ -33,7 +33,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 
 	switch rule.Rule {
 	case "deny":
-		return nil, errors.New("the operation being performed is denied")
+		return nil, formatError(rule, errors.New("the operation being performed is denied"))
 
 	case "match":
 		return nil, match(rule, args)
@@ -66,7 +66,8 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 		return matchHash(rule, args)
 
 	default:
-		return nil, ErrIncorrectMatch
+
+		return nil, formatError(rule, fmt.Errorf("invalid rule type (%s) provided", rule.Rule))
 	}
 }
 
@@ -76,11 +77,11 @@ func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPReque
 
 	scToken, err := m.GetSCAccessToken()
 	if err != nil {
-		return err
+		return formatError(rule, err)
 	}
 
 	var result interface{}
-	return MakeHTTPRequest(ctx, "POST", rule.URL, token, scToken, obj, &result)
+	return formatError(rule, MakeHTTPRequest(ctx, "POST", rule.URL, token, scToken, obj, &result))
 }
 
 func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Rule, crud model.CrudAuthInterface, args, auth map[string]interface{}) (*model.PostProcess, error) {
@@ -93,11 +94,11 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 	// Execute the read request
 	data, err := crud.Read(ctx, rule.DB, rule.Col, req)
 	if err != nil {
-		return nil, err
+		return nil, formatError(rule, err)
 	}
 	err = utils.StoreValue("args.result", data, args)
 	if err != nil {
-		return nil, err
+		return nil, formatError(rule, err)
 	}
 	return m.matchRule(ctx, project, rule.Clause, args, auth)
 }
@@ -108,7 +109,7 @@ func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Ru
 		postProcess, err := m.matchRule(ctx, projectID, r, args, auth)
 		// if err is not nil then return error without checking the other clauses.
 		if err != nil {
-			return &model.PostProcess{}, err
+			return &model.PostProcess{}, formatError(rule, err)
 		}
 		if postProcess != nil {
 			completeAction.PostProcessAction = append(completeAction.PostProcessAction, postProcess.PostProcessAction...)
@@ -127,16 +128,16 @@ func (m *Module) matchOr(ctx context.Context, projectID string, rule *config.Rul
 		}
 	}
 	// if condition is not satisfied -> return empty model.PostProcess and error
-	return nil, ErrIncorrectMatch
+	return nil, formatError(rule, ErrIncorrectMatch)
 }
 
 func match(rule *config.Rule, args map[string]interface{}) error {
 	switch rule.Type {
 	case "string":
-		return matchString(rule, args)
+		return formatError(rule, matchString(rule, args))
 
 	case "number":
-		return matchNumber(rule, args)
+		return formatError(rule, matchNumber(rule, args))
 
 	case "bool":
 		return matchBool(rule, args)
@@ -145,7 +146,7 @@ func match(rule *config.Rule, args map[string]interface{}) error {
 		return matchdate(rule, args)
 	}
 
-	return ErrIncorrectMatch
+	return formatError(rule, fmt.Errorf("invalid variable data type (%s) provided", rule.Type))
 }
 
 func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {
@@ -169,9 +170,9 @@ func (m *Module) matchForce(ctx context.Context, projectID string, rule *config.
 		return &model.PostProcess{PostProcessAction: []model.PostProcessAction{addToStruct}}, nil
 	} else if strings.HasPrefix(rule.Field, "args") {
 		err := utils.StoreValue(rule.Field, value, args)
-		return nil, err
+		return nil, formatError(rule, err)
 	} else {
-		return nil, ErrIncorrectRuleFieldType
+		return nil, formatError(rule, ErrIncorrectRuleFieldType)
 	}
 }
 
@@ -192,10 +193,10 @@ func (m *Module) matchRemove(ctx context.Context, projectID string, rule *config
 		} else if strings.HasPrefix(field, "args") {
 			// Since it depends on the request itself, delete the field from args
 			if err := utils.DeleteValue(field, args); err != nil {
-				return nil, err
+				return nil, formatError(rule, err)
 			}
 		} else {
-			return nil, ErrIncorrectRuleFieldType
+			return nil, formatError(rule, ErrIncorrectRuleFieldType)
 		}
 	}
 	return actions, nil
@@ -211,11 +212,11 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 			loadedValue, err := utils.LoadValue(field, args)
 			if err != nil {
 				logrus.Errorln("error loading value in matchEncrypt: ", err)
-				return nil, err
+				return nil, formatError(rule, err)
 			}
 			stringValue, ok := loadedValue.(string)
 			if !ok {
-				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+				return nil, formatError(rule, fmt.Errorf("Value should be of type string and not %T", loadedValue))
 			}
 			encryptedValue, err := utils.Encrypt(m.aesKey, stringValue)
 			if err != nil {
@@ -224,10 +225,10 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 
 			if err = utils.StoreValue(field, encryptedValue, args); err != nil {
 				logrus.Errorln("error storing value in matchEncrypt: ", err)
-				return nil, err
+				return nil, formatError(rule, err)
 			}
 		} else {
-			return nil, fmt.Errorf("invalid field (%s) provided", field)
+			return nil, formatError(rule, fmt.Errorf("invalid field (%s) provided", field))
 		}
 	}
 	return actions, nil
@@ -243,29 +244,29 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 			loadedValue, err := utils.LoadValue(field, args)
 			if err != nil {
 				logrus.Errorln("error loading value in matchDecrypt: ", err)
-				return nil, err
+				return nil, formatError(rule, err)
 			}
 			stringValue, ok := loadedValue.(string)
 			if !ok {
-				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+				return nil, formatError(rule, fmt.Errorf("Value should be of type string and not %T", loadedValue))
 			}
 			decodedValue, err := base64.StdEncoding.DecodeString(stringValue)
 			if err != nil {
-				return nil, err
+				return nil, formatError(rule, err)
 			}
 			decrypted := make([]byte, len(decodedValue))
 			err1 := decryptAESCFB(decrypted, decodedValue, m.aesKey, m.aesKey[:aes.BlockSize])
 			if err1 != nil {
 				logrus.Errorln("error decrypting value in matchDecrypt: ", err1)
-				return nil, err1
+				return nil, formatError(rule, err1)
 			}
 			er := utils.StoreValue(field, string(decrypted), args)
 			if er != nil {
 				logrus.Errorln("error storing value in matchDecrypt: ", er)
-				return nil, er
+				return nil, formatError(rule, er)
 			}
 		} else {
-			return nil, fmt.Errorf("invalid field (%s) provided", field)
+			return nil, formatError(rule, fmt.Errorf("invalid field (%s) provided", field))
 		}
 	}
 	return actions, nil
@@ -291,20 +292,20 @@ func matchHash(rule *config.Rule, args map[string]interface{}) (*model.PostProce
 			loadedValue, err := utils.LoadValue(field, args)
 			if err != nil {
 				logrus.Errorln("error loading value in matchHash: ", err)
-				return nil, err
+				return nil, formatError(rule, err)
 			}
 			stringValue, ok := loadedValue.(string)
 			if !ok {
-				return nil, fmt.Errorf("Value should be of type string and not %T", loadedValue)
+				return nil, formatError(rule, fmt.Errorf("Value should be of type string and not %T", loadedValue))
 			}
 			hashed := utils.HashString(stringValue)
 			er := utils.StoreValue(field, hashed, args)
 			if er != nil {
 				logrus.Errorln("error storing value in matchHash: ", er)
-				return nil, er
+				return nil, formatError(rule, er)
 			}
 		} else {
-			return nil, fmt.Errorf("invalid field (%s) provided", field)
+			return nil, formatError(rule, fmt.Errorf("invalid field (%s) provided", field))
 		}
 	}
 	return actions, nil

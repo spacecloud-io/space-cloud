@@ -37,6 +37,9 @@ type Module struct {
 	// Variables to store the hooks
 	hooks      *model.CrudHooks
 	metricHook model.MetricCrudHook
+
+	// function to get secrets from runner
+	getSecrets utils.GetSecrets
 }
 
 type loader struct {
@@ -143,6 +146,15 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			v.Type = k
 		}
 
+		// check if connection string starts with secrets
+		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
+		if isSecretExists {
+			v.Conn, err = m.getSecrets(project, secretName, secretKey)
+			if err != nil {
+				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
+			}
+		}
+
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
 		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn, v.DBName)
 
@@ -167,6 +179,15 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	return nil
 }
 
+// splitConnectionString splits the connection string
+func splitConnectionString(connection string) (string, string, bool) {
+	s := strings.Split(connection, ".")
+	if s[0] == "secrets" {
+		return s[1], s[2], true
+	}
+	return "", "", false
+}
+
 // GetDBType returns the type of the db for the alias provided
 func (m *Module) GetDBType(dbAlias string) (string, error) {
 	dbAlias = strings.TrimPrefix(dbAlias, "sql-")
@@ -174,4 +195,12 @@ func (m *Module) GetDBType(dbAlias string) (string, error) {
 		return "", fmt.Errorf("db (%s) not found", dbAlias)
 	}
 	return m.dbType, nil
+}
+
+// SetGetSecrets sets the GetSecrets function
+func (m *Module) SetGetSecrets(function utils.GetSecrets) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.getSecrets = function
 }
