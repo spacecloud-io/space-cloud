@@ -40,6 +40,7 @@ type (
 		DBType                 string
 		Group, Sort            string
 		Order                  int
+		ConstraintName         string
 	}
 )
 

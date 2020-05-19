@@ -9,8 +9,8 @@ import (
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
-// GetSelectedAccount gets the account information of the selected account
-func GetSelectedAccount() (*model.Account, error) {
+// getSelectedAccount gets the account information of the selected account
+func getSelectedAccount() (*model.Account, error) {
 	filePath := getAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {

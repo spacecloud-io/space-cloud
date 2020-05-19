@@ -9,6 +9,8 @@ type CreateRequest struct {
 
 // ReadRequest is the http body received for a read request
 type ReadRequest struct {
+	GroupBy   []interface{}          `json:"group"`
+	Aggregate map[string][]string    `json:"aggregate"`
 	Find      map[string]interface{} `json:"find"`
 	Operation string                 `json:"op"`
 	Options   *ReadOptions           `json:"options"`
@@ -36,6 +38,11 @@ type UpdateRequest struct {
 type DeleteRequest struct {
 	Find      map[string]interface{} `json:"find"`
 	Operation string                 `json:"op"`
+}
+
+// PreparedQueryRequest is the http body received for a PreparedQuery request
+type PreparedQueryRequest struct {
+	Params map[string]interface{} `json:"params"`
 }
 
 // AggregateRequest is the http body received for an aggregate request

@@ -137,7 +137,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 				// make sures metric get collected for following read request
 				req.Req.IsBatch = false // NOTE: DO NOT REMOVE THIS
 				// Execute the query
-				res, err := m.Read(ctx, dbAlias, m.project, req.Col, &req.Req)
+				res, err := m.Read(ctx, dbAlias, req.Col, &req.Req)
 				if err != nil {
 
 					// Cancel the context and add the error response to the result
@@ -166,7 +166,7 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 
 	// Fire the merged request
 
-	res, err := m.Read(ctx, dbAlias, m.project, col, &req)
+	res, err := m.Read(ctx, dbAlias, col, &req)
 	if err != nil {
 		holder.fillErrorMessage(err)
 	} else {

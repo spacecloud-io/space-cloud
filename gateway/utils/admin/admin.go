@@ -25,7 +25,7 @@ func New(clusterID string, adminUserInfo *config.AdminUser) *Manager {
 	m := new(Manager)
 	m.config = new(config.Admin)
 	m.user = adminUserInfo
-	m.quotas = model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1, Version: 0}
+	m.quotas = model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1}
 	m.clusterID = clusterID
 	return m
 }

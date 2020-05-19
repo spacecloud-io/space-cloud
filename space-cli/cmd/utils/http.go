@@ -10,23 +10,18 @@ import (
 
 // Get gets spec object
 func Get(method, url string, params map[string]string, vPtr interface{}) error {
-	account, err := GetSelectedAccount()
+	account, token, err := LoginWithSelectedAccount()
 	if err != nil {
-		return err
+		return LogError("Couldn't get account details or login token", err)
 	}
-	login, err := Login(account)
-	if err != nil {
-		return err
-	}
-
 	url = fmt.Sprintf("%s%s", account.ServerURL, url)
 
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return err
 	}
-	if login.Token != "" {
-		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", login.Token))
+	if token != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 	q := req.URL.Query()
 	for k, v := range params {

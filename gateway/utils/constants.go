@@ -184,6 +184,12 @@ const (
 	GqlStop string = "stop" // Client -> Server
 )
 
+// GraphQLGroupByArgument is used by graphql group clause
+const GraphQLGroupByArgument = "group"
+
+// GraphQLAggregate is used by graphql aggregate clause
+const GraphQLAggregate = "aggregate"
+
 // FieldType is the type for storing sql inspection information
 type FieldType struct {
 	FieldName    string `db:"Field"`
@@ -272,3 +278,6 @@ const SpaceCloudServiceName string = "space-cloud"
 
 // MakeHTTPRequest makes a http request
 type MakeHTTPRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
+
+// GetSecrets gets fileStore and database secrets from runner
+type GetSecrets func(project, secretName, key string) (string, error)
