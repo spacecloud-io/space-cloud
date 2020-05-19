@@ -13,34 +13,33 @@ import (
 
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
-	Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error)
-	Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error)
-	Update(ctx context.Context, project, col string, req *model.UpdateRequest) (int64, error)
-	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error)
-	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
-	Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error)
-	DescribeTable(ctc context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
-	RawExec(ctx context.Context, project string) error
-	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
-	DeleteCollection(ctx context.Context, project, col string) error
-	CreateDatabaseIfNotExist(ctx context.Context, project string) error
+	Create(ctx context.Context, col string, req *model.CreateRequest) (int64, error)
+	Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error)
+	Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error)
+	Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error)
+	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
+	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
+	DescribeTable(ctc context.Context, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
+	RawExec(ctx context.Context, query string) error
+	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
+	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
+	DeleteCollection(ctx context.Context, col string) error
+	CreateDatabaseIfNotExist(ctx context.Context, name string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
 	Close() error
-	GetConnectionState(ctx context.Context) bool
 }
 
 // Handler is the object managing the database connections
 type Handler struct {
-	lock               sync.Mutex
-	drivers            map[string]*stub
-	RemoveProjectScope bool
+	lock    sync.Mutex
+	drivers map[string]*stub
 }
 
 // New creates a new driver handler
-func New(removeProjectScope bool) *Handler {
-	return &Handler{drivers: map[string]*stub{}, RemoveProjectScope: removeProjectScope}
+func New() *Handler {
+	return &Handler{drivers: map[string]*stub{}}
 }
 
 // InitBlock creates and returns a new crud object. If the driver already exists, it returns that instead
@@ -90,13 +89,13 @@ func (h *Handler) addBlock(dbType utils.DBType, enabled bool, connection string)
 
 	switch dbType {
 	case utils.Mongo:
-		c, err = mgo.Init(enabled, connection)
+		c, err = mgo.Init(enabled, connection, "")
 
 	case utils.EmbeddedDB:
-		c, err = bolt.Init(enabled, connection)
+		c, err = bolt.Init(enabled, connection, "")
 
 	case utils.MySQL, utils.Postgres, utils.SQLServer:
-		c, err = sql.Init(dbType, enabled, h.RemoveProjectScope, connection)
+		c, err = sql.Init(dbType, enabled, connection, "")
 
 	default:
 		c, err = nil, utils.ErrInvalidParams

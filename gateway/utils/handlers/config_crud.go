@@ -36,15 +36,14 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
 
 		crud, err := modules.DB(projectID)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		collections, err := crud.GetCollections(ctx, projectID, dbAlias)
+		collections, err := crud.GetCollections(ctx, dbAlias)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -118,13 +117,10 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 
 		crud, err := modules.DB(projectID)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		crud := modules.DB()
 		if err := crud.DeleteTable(ctx, dbAlias, col); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -382,7 +378,12 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		schema := modules.Schema()
+		schema, err := modules.Schema(projectID)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
 		if err := schema.SchemaModifyAll(ctx, dbAlias, logicalDBName, map[string]*config.TableRule{col: &v}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -571,7 +572,11 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		schema := modules.Schema()
+		schema, err := modules.Schema(projectID)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		s, err := schema.SchemaInspection(ctx, dbAlias, logicalDBName, col)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())

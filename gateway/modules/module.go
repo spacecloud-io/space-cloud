@@ -30,14 +30,14 @@ type Module struct {
 	schema    *schema.Schema
 }
 
-func newModule(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module, driver *driver.Handler) *Module {
-	c := crud.Init(removeProjectScope)
+func newModule(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module, driver *driver.Handler) *Module {
+	c := crud.Init()
 	c.SetAdminManager(adminMan)
 
-	s := schema.Init(c, removeProjectScope)
+	s := schema.Init(c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c, removeProjectScope)
+	a := auth.Init(nodeID, c)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
 	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)

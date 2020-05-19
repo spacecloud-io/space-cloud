@@ -461,7 +461,7 @@ func TestModule_getSpaceCloudIDFromBatchID(t *testing.T) {
 }
 
 func TestModule_generateBatchID(t *testing.T) {
-	admin := admin.New("nodeID", "clusterID", &config.AdminUser{})
+	admin := admin.New("nodeID", "clusterID", true, &config.AdminUser{})
 	syncman, _ := syncman.New("nodeID", "clusterID", "advertiseAddr", "storeType", "runnerAddr", "", admin)
 	tests := []struct {
 		name string

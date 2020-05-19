@@ -39,7 +39,7 @@ func New(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metri
 		syncMan:  syncMan,
 		adminMan: adminMan,
 		metrics:  metrics,
-		driver:   driver.New(removeProjectScope),
+		driver:   driver.New(),
 	}, nil
 }
 
@@ -160,7 +160,7 @@ func (m *Modules) newModule(projectID string) (*Module, error) {
 		return nil, errors.New("upgrade your plan to create new project")
 	}
 
-	module := newModule(m.nodeID, m.removeProjectScope, m.syncMan, m.adminMan, m.metrics, m.driver)
+	module := newModule(m.nodeID, m.syncMan, m.adminMan, m.metrics, m.driver)
 	m.blocks[projectID] = module
 	return module, nil
 }

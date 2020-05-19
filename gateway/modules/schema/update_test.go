@@ -585,7 +585,7 @@ func TestSchema_ValidateUpdateOperation(t *testing.T) {
 			},
 		},
 	}
-	adminMan := admin.New("node", "abc", &config.AdminUser{})
+	adminMan := admin.New("node", "abc", true, &config.AdminUser{})
 	c := crud.Init()
 	c.SetAdminManager(adminMan)
 	if err := c.SetConfig("", TestCases); err != nil {

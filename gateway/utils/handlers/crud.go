@@ -22,9 +22,6 @@ type requestMetaData struct {
 func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		auth := modules.Auth()
-		crud := modules.DB()
-
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
@@ -36,6 +33,16 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		id := vars["id"]
 		token := utils.GetTokenFromHeader(r)
 
+		auth, err := modules.Auth(project)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		crud, err := modules.DB(project)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		// Load the request from the body
 		req := model.PreparedQueryRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&req)
@@ -406,8 +413,7 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the batch operation
-		err := crud.Batch(ctx, meta.dbType, &txRequest)
-		if err != nil {
+		if err := crud.Batch(ctx, meta.dbType, &txRequest); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}

@@ -25,22 +25,22 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 		parsedSchema  model.Type
 		currentSchema model.Collection
 	}
-	adminMan := admin.New("", "", &config.AdminUser{})
-	crudPostgres := crud.Init(false)
+	adminMan := admin.New("nodeID", "clusterID", true, &config.AdminUser{})
+	crudPostgres := crud.Init()
 	crudPostgres.SetAdminManager(adminMan)
 	err := crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize postgres", err)
 	}
 
-	crudMySQL := crud.Init(false)
+	crudMySQL := crud.Init()
 	crudMySQL.SetAdminManager(adminMan)
 	err = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
 	if err != nil {
 		t.Fatal("unable to initialize my sql", err)
 
 	}
-	crudSQLServer := crud.Init(false)
+	crudSQLServer := crud.Init()
 	crudSQLServer.SetAdminManager(adminMan)
 	err = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
 	if err != nil {

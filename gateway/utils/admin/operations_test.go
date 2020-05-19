@@ -90,7 +90,7 @@ func TestManager_GetInternalAccessToken(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	m := New("", "", &config.AdminUser{})
+	m := New("", "", true, &config.AdminUser{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := m.GetInternalAccessToken()
@@ -203,7 +203,7 @@ func TestManager_RefreshToken(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	m := New("", "", &config.AdminUser{Secret: "some-secret"})
+	m := New("", "", true, &config.AdminUser{Secret: "some-secret"})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := m.RefreshToken(tt.args.token)
@@ -253,7 +253,8 @@ func TestManager_ValidateSyncOperation(t *testing.T) {
 			want: false,
 		},
 	}
-	m := New("", "clusterID", &config.AdminUser{})
+
+	m := New("nodeID", "clusterID", true, &config.AdminUser{})
 	m.quotas = model.UsageQuotas{MaxProjects: 1, MaxDatabases: 1}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -24,8 +24,6 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	project string
-	schema  model.SchemaCrudInterface
 
 	block   Crud
 	dbType  string

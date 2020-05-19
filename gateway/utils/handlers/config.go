@@ -23,7 +23,7 @@ func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer utils.CloseTheCloser(r.Body)
-
+		isProd, plan, quotas := adminMan.LoadEnv()
 		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": isProd, "plan": plan, "quotas": quotas, "version": utils.BuildVersion, "clusterId": adminMan.GetEnterpriseClusterID()})
 	}
 }

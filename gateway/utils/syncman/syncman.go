@@ -109,18 +109,18 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 		// Fetch initial version of admin config. This must be called before watch admin config callback is invoked
 		adminConfig, err := s.store.GetAdminConfig(context.Background())
 		if err != nil {
-			return utils.LogError("Unable to fetch initial copy of admin config", err)
+			return utils.LogError("Unable to fetch initial copy of admin config", "syncman", "Start", err)
 		}
-		utils.LogDebug("Successfully loaded initial copy of config file", nil)
+		utils.LogDebug("Successfully loaded initial copy of config file", "syncman", "Start", nil)
 		_ = s.adminMan.SetConfig(adminConfig, true)
 
 		// Now lets store the config as well
 		if s.checkIfLeaderGateway(s.nodeID) {
 			s.projectConfig.Admin = s.adminMan.GetConfig()
 			if err := s.store.SetAdminConfig(context.Background(), s.projectConfig.Admin); err != nil {
-				return utils.LogError("Unable to save initial license copy", err)
+				return utils.LogError("Unable to save initial license copy", "syncman", "Start", err)
 			}
-			utils.LogDebug("Successfully stored initial copy of config file", nil)
+			utils.LogDebug("Successfully stored initial copy of config file", "syncman", "Start", nil)
 		}
 
 		// Start routine to observe active space-cloud services
@@ -175,7 +175,7 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 
 			logrus.WithFields(logrus.Fields{"admin config": clusters}).Debugln("Updating admin config")
 			if err := s.adminMan.SetConfig(cluster, false); err != nil {
-				_ = utils.LogError("Unable to apply admin config", err)
+				_ = utils.LogError("Unable to apply admin config", "syncman", "Start", err)
 				return
 			}
 		}); err != nil {
@@ -183,7 +183,7 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 		}
 	}
 
-	utils.LogDebug("Exiting syncman start", nil)
+	utils.LogDebug("Exiting syncman start", "syncman", "Start", nil)
 	return nil
 }
 

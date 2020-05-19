@@ -197,7 +197,7 @@ func (s *Manager) SetAdminConfig(ctx context.Context, cluster *config.Admin) err
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	utils.LogDebug("Storing the admin config", map[string]interface{}{"cluster": cluster})
+	utils.LogDebug("Storing the admin config", "syncman", "SetAdminConfig", map[string]interface{}{"cluster": cluster})
 
 	s.projectConfig.Admin = cluster
 

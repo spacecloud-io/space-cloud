@@ -21,7 +21,7 @@ func StoreConfigToFile(conf *Config, path string) error {
 	} else if strings.HasSuffix(path, ".json") {
 		data, err = json.Marshal(conf)
 	} else {
-		return utils.LogError(fmt.Sprintf("Invalid config file type (%s) provided", path), nil)
+		return utils.LogError(fmt.Sprintf("Invalid config file type (%s) provided", path), "config", "StoreConfigToFile", nil)
 	}
 
 	// Check if error occured while marshaling

@@ -25,7 +25,7 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 		token := utils.GetTokenFromHeader(r)
 		if err := admin.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -39,10 +39,10 @@ func HandleUpgrade(admin *admin.Manager, manager *syncman.Manager) http.HandlerF
 		err := manager.ConvertToEnterprise(ctx, token, req.ClusterID, req.ClusterKey)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		utils.LogDebug(`Successfully upgraded gateway to enterprise`, nil)
+		utils.LogDebug(`Successfully upgraded gateway to enterprise`, "syncman", "startOperation", nil)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
@@ -58,7 +58,7 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		token := utils.GetTokenFromHeader(r)
 		if err := adminMan.IsTokenValid(token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -68,7 +68,7 @@ func HandleRenewLicense(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		if err := syncMan.RenewLicense(ctx, token); err != nil {
 			w.Header().Set("Content-Type", "application/json")
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 

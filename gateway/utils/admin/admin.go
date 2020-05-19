@@ -60,13 +60,13 @@ func (m *Manager) startOperation(license string, isInitialCall bool) error {
 
 	// Fetch the public key
 	if err := m.fetchPublicKeyWithoutLock(); err != nil {
-		return utils.LogError("Unable to fetch public key", err)
+		return utils.LogError("Unable to fetch public key", "admin", "startOperation", err)
 	}
 
 	// Parse the license
 	licenseObj, err := m.decryptLicense(license)
 	if err != nil {
-		return utils.LogError("Unable to decrypt license key", err)
+		return utils.LogError("Unable to decrypt license key", "admin", "startOperation", err)
 	}
 
 	// We have a problem if our session id does not match with the license's session id
@@ -76,7 +76,7 @@ func (m *Manager) startOperation(license string, isInitialCall bool) error {
 		if !isInitialCall {
 
 			// Reset quotas and admin config to defaults
-			_ = utils.LogError("Invalid license file provided. Did you change the license key yourself?", errors.New("session id mismatch while setting admin config"))
+			_ = utils.LogError("Invalid license file provided. Did you change the license key yourself?", "admin", "startOperation", errors.New("session id mismatch while setting admin config"))
 			m.resetQuotas()
 			return nil
 		}
@@ -118,19 +118,19 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 		} else {
 			if !isInitialCall {
 				// The followers will attempt to ping the leader. If ping fails they will reset the license.
-				utils.LogDebug("Pinging the leader now.", nil)
+				utils.LogDebug("Pinging the leader now.", "admin", "SetConfig", nil)
 				if err := m.syncMan.PingLeader(); err != nil {
-					_ = utils.LogError("Unable to ping the leader now.", err)
+					_ = utils.LogError("Unable to ping the leader now.", "admin", "SetConfig", err)
 					m.resetQuotas()
 					return err
 				}
-				utils.LogDebug("Successfully contacted the leader.", nil)
+				utils.LogDebug("Successfully contacted the leader.", "admin", "SetConfig", nil)
 			}
 			return m.setQuotas(config.License)
 		}
 	}
 
-	utils.LogInfo("Gateway running in open source mode")
+	utils.LogInfo("Gateway running in open source mode", "admin", "SetConfig")
 	// Reset quotas defaults
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
