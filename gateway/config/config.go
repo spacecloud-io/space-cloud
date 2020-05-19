@@ -141,10 +141,25 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Method string `json:"method" yaml:"method"`
-	Path   string `json:"path" yaml:"path"`
-	Rule   *Rule  `json:"rule" yaml:"rule"`
+	Kind     EndpointKind `json:"kind" yaml:"kind"`
+	Tmpl     string       `json:"template,omitempty" yaml:"template,omitempty"`
+	OpFormat string       `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+	Token    string       `json:"token,omitempty" yaml:"token,omitempty"`
+	Method   string       `json:"method" yaml:"method"`
+	Path     string       `json:"path" yaml:"path"`
+	Rule     *Rule        `json:"rule" yaml:"rule"`
 }
+
+// EndpointKind descriped the type of endpoint
+type EndpointKind string
+
+const (
+	// EndpointKindSimple describes a simple or straight forward web-hook call
+	EndpointKindSimple EndpointKind = "simple"
+
+	// EndpointKindTransform describes a payload transformation using go templates
+	EndpointKindTransform EndpointKind = "transform-go"
+)
 
 // FileStore holds the config for the file store module
 type FileStore struct {
