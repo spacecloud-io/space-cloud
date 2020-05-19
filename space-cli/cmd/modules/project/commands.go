@@ -21,11 +21,16 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getproject = &cobra.Command{
+		Use:  "project",
+		RunE: actionGetProjectConfig,
+	}
+
+	var getprojects = &cobra.Command{
 		Use:  "projects",
 		RunE: actionGetProjectConfig,
 	}
 
-	return []*cobra.Command{getproject}
+	return []*cobra.Command{getproject, getprojects}
 }
 
 func actionGetProjectConfig(cmd *cobra.Command, args []string) error {

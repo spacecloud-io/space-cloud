@@ -20,12 +20,17 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the ingress module exposes
 func GetSubCommands() []*cobra.Command {
 
+	var getroute = &cobra.Command{
+		Use:  "ingress-route",
+		RunE: actionGetIngressRoutes,
+	}
+
 	var getroutes = &cobra.Command{
 		Use:  "ingress-routes",
 		RunE: actionGetIngressRoutes,
 	}
 
-	return []*cobra.Command{getroutes}
+	return []*cobra.Command{getroute, getroutes}
 }
 
 func actionGetIngressRoutes(cmd *cobra.Command, args []string) error {

@@ -29,21 +29,36 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getrule = &cobra.Command{
-		Use:  "db-rules",
+		Use:  "db-rule",
 		RunE: actionGetDbRules,
 	}
 
 	var getconfig = &cobra.Command{
-		Use:  "db-configs",
+		Use:  "db-config",
 		RunE: actionGetDbConfig,
 	}
 
 	var getschema = &cobra.Command{
+		Use:  "db-schema",
+		RunE: actionGetDbSchema,
+	}
+
+	var getrules = &cobra.Command{
+		Use:  "db-rules",
+		RunE: actionGetDbRules,
+	}
+
+	var getconfigs = &cobra.Command{
+		Use:  "db-configs",
+		RunE: actionGetDbConfig,
+	}
+
+	var getschemas = &cobra.Command{
 		Use:  "db-schemas",
 		RunE: actionGetDbSchema,
 	}
 
-	return []*cobra.Command{getrule, getconfig, getschema}
+	return []*cobra.Command{getrule, getconfig, getschema, getrules, getconfigs, getschemas}
 }
 
 func actionGetDbRules(cmd *cobra.Command, args []string) error {

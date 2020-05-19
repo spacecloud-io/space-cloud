@@ -26,16 +26,26 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getFileStoreRule = &cobra.Command{
-		Use:  "filestore-rules",
+		Use:  "filestore-rule",
 		RunE: actionGetFileStoreRule,
 	}
 
 	var getFileStoreConfig = &cobra.Command{
+		Use:  "filestore-config",
+		RunE: actionGetFileStoreConfig,
+	}
+
+	var getFileStoreRules = &cobra.Command{
+		Use:  "filestore-rules",
+		RunE: actionGetFileStoreRule,
+	}
+
+	var getFileStoreConfigs = &cobra.Command{
 		Use:  "filestore-configs",
 		RunE: actionGetFileStoreConfig,
 	}
 
-	return []*cobra.Command{getFileStoreRule, getFileStoreConfig}
+	return []*cobra.Command{getFileStoreRule, getFileStoreConfig, getFileStoreRules, getFileStoreConfigs}
 }
 
 func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {

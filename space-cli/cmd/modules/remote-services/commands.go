@@ -20,10 +20,15 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getService = &cobra.Command{
+		Use:  "remote-service",
+		RunE: actionGetRemoteServices,
+	}
+
+	var getServices = &cobra.Command{
 		Use:  "remote-services",
 		RunE: actionGetRemoteServices,
 	}
-	return []*cobra.Command{getService}
+	return []*cobra.Command{getService, getServices}
 }
 
 func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
