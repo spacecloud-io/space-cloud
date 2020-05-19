@@ -10,20 +10,13 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-// type fields struct {
-// 	enabled    bool
-// 	connection string
-// 	// client     *bbolt.DB
-// }
 type args struct {
-	ctx     context.Context
-	project string
-	col     string
-	req     *model.CreateRequest
+	ctx context.Context
+	col string
+	req *model.CreateRequest
 }
 type creatTestData struct {
-	name string
-	//fields  fields
+	name    string
 	args    args
 	want    int64
 	wantErr bool
@@ -34,14 +27,9 @@ func generateCreateTestCases() []creatTestData {
 		{
 			name: "insert single document",
 			want: 1,
-			// fields: fields{
-			// 	enabled:    true,
-			// 	connection: "embedded.db",
-			// },
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.CreateRequest{
 					Document: map[string]interface{}{
 						"_id":           "1",
@@ -60,14 +48,9 @@ func generateCreateTestCases() []creatTestData {
 		{
 			name: "insert multiple document",
 			want: 3,
-			// fields: fields{
-			// 	enabled:    true,
-			// 	connection: "embedded.db",
-			// },
 			args: args{
-				ctx:     context.Background(),
-				project: "gateway",
-				col:     "project",
+				ctx: context.Background(),
+				col: "project_details",
 				req: &model.CreateRequest{
 					Document: []interface{}{
 						map[string]interface{}{
@@ -111,7 +94,7 @@ func generateCreateTestCases() []creatTestData {
 
 func createDatabaseWithTestData(b *Bolt) error {
 	for _, tt := range generateCreateTestCases() {
-		got, err := b.Create(tt.args.ctx, tt.args.project, tt.args.col, tt.args.req)
+		got, err := b.Create(tt.args.ctx, tt.args.col, tt.args.req)
 		if (err != nil) != tt.wantErr {
 			return fmt.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
 		}

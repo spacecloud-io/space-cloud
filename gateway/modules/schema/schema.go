@@ -19,17 +19,16 @@ import (
 
 // Schema data stucture for schema package
 type Schema struct {
-	lock               sync.RWMutex
-	SchemaDoc          model.Type
-	crud               model.CrudSchemaInterface
-	project            string
-	config             config.Crud
-	removeProjectScope bool
+	lock      sync.RWMutex
+	SchemaDoc model.Type
+	crud      model.CrudSchemaInterface
+	project   string
+	config    config.Crud
 }
 
 // Init creates a new instance of the schema object
-func Init(crud model.CrudSchemaInterface, removeProjectScope bool) *Schema {
-	return &Schema{SchemaDoc: model.Type{}, crud: crud, removeProjectScope: removeProjectScope}
+func Init(crud model.CrudSchemaInterface) *Schema {
+	return &Schema{SchemaDoc: model.Type{}, crud: crud}
 }
 
 // SetConfig modifies the tables according to the schema on save
@@ -246,7 +245,7 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 								}
 							}
 						}
-
+						fieldTypeStuct.JointTable.ConstraintName = getConstraintName(collectionName, fieldTypeStuct.FieldName)
 					default:
 						return nil, fmt.Errorf("unknow directive (%s) provided for field (%s)", directive.Name.Value, fieldTypeStuct.FieldName)
 					}

@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -31,7 +30,7 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -42,7 +41,7 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		project := new(model.Project)
 		if err := json.NewDecoder(r.Body).Decode(project); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -51,11 +50,11 @@ func (s *Server) handleCreateProject() http.HandlerFunc {
 		// Apply the service config
 		if err := s.driver.CreateProject(ctx, project); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -72,7 +71,7 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -81,11 +80,11 @@ func (s *Server) handleDeleteProject() http.HandlerFunc {
 		// Apply the service config
 		if err := s.driver.DeleteProject(ctx, projectID); err != nil {
 			logrus.Errorf("Failed to create project - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -102,7 +101,7 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -115,7 +114,7 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		service := new(model.Service)
 		if err := json.NewDecoder(r.Body).Decode(service); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
@@ -128,11 +127,11 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 		// Apply the service config
 		if err := s.driver.ApplyService(ctx, service); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -149,7 +148,7 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -160,11 +159,11 @@ func (s *Server) HandleDeleteService() http.HandlerFunc {
 
 		if err := s.driver.DeleteService(ctx, projectID, serviceID, version); err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -181,7 +180,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -193,7 +192,7 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 		services, err := s.driver.GetServices(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -249,7 +248,7 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -262,18 +261,18 @@ func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 			// 7 will ensure that there will not be any index out of range error
 			if len(arr) != 7 || arr[3] != req.Data.Meta.Service.ProjectID || arr[4] != req.Data.Meta.Service.Version {
 				logrus.Errorf("error applying service path verification failed")
-				utils.SendErrorResponse(w, r, http.StatusInternalServerError, errors.New("error applying service path verification failed"))
+				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "error applying service path verification failed")
 				return
 			}
 			// Apply the service config
 			if err := s.driver.ApplyService(ctx, req.Data.Meta.Service); err != nil {
 				logrus.Errorf("Failed to apply service - %s", err.Error())
-				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -293,7 +292,7 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to set service routes - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -307,11 +306,11 @@ func (s *Server) HandleServiceRoutingRequest() http.HandlerFunc {
 		err = s.driver.ApplyServiceRoutes(ctx, projectID, serviceID, req.Routes)
 		if err != nil {
 			logrus.Errorf("Failed to apply service routing rules - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -329,7 +328,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to get service routes - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -340,7 +339,7 @@ func (s *Server) HandleGetServiceRoutingRequest() http.HandlerFunc {
 		serviceRoutes, err := s.driver.GetServiceRoutes(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("Failed to get service routing rules - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -412,7 +411,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s", project, service), func() error {
 			return s.driver.WaitForService(&model.Service{ProjectID: project, ID: service, Version: ogVersion})
 		}); err != nil {
-			utils.SendErrorResponse(w, r, http.StatusServiceUnavailable, err)
+			_ = utils.SendErrorResponse(w, http.StatusServiceUnavailable, err.Error())
 			return
 		}
 
@@ -422,7 +421,7 @@ func (s *Server) handleProxy() http.HandlerFunc {
 			var err error
 			res, err = http.DefaultClient.Do(r)
 			if err != nil {
-				utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 

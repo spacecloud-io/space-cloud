@@ -194,7 +194,7 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 				Operation: utils.One,
 			}
 
-			result, err := m.crud.Read(ctx, dbEvent.DBType, m.project, dbEvent.Col, req)
+			result, err := m.crud.Read(ctx, dbEvent.DBType, dbEvent.Col, req)
 			if err != nil {
 				log.Println("Eventing Staging Error:", err)
 				continue

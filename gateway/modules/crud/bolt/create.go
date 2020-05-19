@@ -12,7 +12,7 @@ import (
 )
 
 // Create inserts a document (or multiple when op is "all") into the database
-func (b *Bolt) Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error) {
+func (b *Bolt) Create(ctx context.Context, col string, req *model.CreateRequest) (int64, error) {
 	objs := []interface{}{}
 	switch req.Operation {
 	case utils.All, utils.One:
@@ -39,7 +39,7 @@ func (b *Bolt) Create(ctx context.Context, project, col string, req *model.Creat
 					return fmt.Errorf("error creating _id not found in create request")
 				}
 				// check if specified already exists in database
-				count, _, err := b.Read(ctx, project, col, &model.ReadRequest{
+				count, _, err := b.Read(ctx, col, &model.ReadRequest{
 					Find: map[string]interface{}{
 						"_id": id,
 					},
@@ -52,7 +52,7 @@ func (b *Bolt) Create(ctx context.Context, project, col string, req *model.Creat
 					return fmt.Errorf("error inserting into bboltdb data already exists - %v", count)
 				}
 
-				b, err := tx.CreateBucketIfNotExists([]byte(project))
+				b, err := tx.CreateBucketIfNotExists([]byte(b.bucketName))
 				if err != nil {
 					return fmt.Errorf("error creating bucket in bboltdb while inserting- %v", err)
 				}
