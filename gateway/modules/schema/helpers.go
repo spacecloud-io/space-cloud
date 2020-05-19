@@ -298,7 +298,7 @@ func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string,
 		query += " ,"
 	}
 	if !doesPrimaryKeyExists {
-		return "", utils.LogError(`Primary key not found, make sure there is a primary key on a field with type "ID"'`, nil)
+		return "", utils.LogError("Primary key not found, make sure there is a primary key on a field with type (ID)", "schema", "addNewTable", nil)
 	}
 	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
 }

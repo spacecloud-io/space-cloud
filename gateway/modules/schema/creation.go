@@ -123,7 +123,7 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 					schemaModule:      s,
 				}
 				if c.currentColumnInfo.IsPrimary {
-					return nil, utils.LogError(fmt.Sprintf(`Field ("%s"") with primary key cannot be removed, Delete the table to change primary key`, c.ColumnName), nil)
+					return nil, utils.LogError(fmt.Sprintf("Field (%s) with primary key cannot be removed, Delete the table to change primary key", c.ColumnName), "schema", "generateCreationQueries", nil)
 				}
 				batchedQueries = append(batchedQueries, c.removeColumn(dbType)...)
 			}
@@ -178,14 +178,14 @@ func (s *Schema) generateCreationQueries(ctx context.Context, dbAlias, tableName
 				if c.realColumnInfo.Kind != c.currentColumnInfo.Kind {
 					// As we are making sure that tables can only be created with primary key, this condition will occur if primary key is removed from a field
 					if !c.realColumnInfo.IsPrimary && c.currentColumnInfo.IsPrimary {
-						return nil, utils.LogError(fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), nil)
+						return nil, utils.LogError(fmt.Sprintf(`Cannot change type of field ("%s") primary key exists, Delete the table to change primary key`, c.ColumnName), "schema", "generateCreationQueries", nil)
 					}
 					// for changing the type of column, drop the column then add new column
 					queries := c.modifyColumnType(dbType)
 					batchedQueries = append(batchedQueries, queries...)
 				}
 				if c.currentColumnInfo.IsPrimary && (!c.realColumnInfo.IsPrimary || c.realColumnInfo.IsForeign || !c.realColumnInfo.IsFieldTypeRequired || c.realColumnInfo.IsDefault) {
-					return nil, utils.LogError(fmt.Sprintf(`Mutation is not allowed on field ("%s") with primary key, Delete the table to change primary key`, c.ColumnName), nil)
+					return nil, utils.LogError(fmt.Sprintf(`Mutation is not allowed on field ("%s") with primary key, Delete the table to change primary key`, c.ColumnName), "schema", "generateCreationQueries", nil)
 				}
 				// make changes according to the changes in directives
 				queries := c.modifyColumn(dbType)

@@ -111,6 +111,8 @@ type Rule struct {
 	Field   string                 `json:"field,omitempty" yaml:"field,omitempty"`
 	Value   interface{}            `json:"value,omitempty" yaml:"value,omitempty"`
 	Clause  *Rule                  `json:"clause,omitempty" yaml:"clause,omitempty"`
+	Name    string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Error   string                 `json:"error,omitempty" yaml:"error,omitempty"`
 }
 
 // Auth holds the mapping of the sign in method
@@ -141,10 +143,25 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Method string `json:"method" yaml:"method"`
-	Path   string `json:"path" yaml:"path"`
-	Rule   *Rule  `json:"rule" yaml:"rule"`
+	Kind     EndpointKind `json:"kind" yaml:"kind"`
+	Tmpl     string       `json:"template,omitempty" yaml:"template,omitempty"`
+	OpFormat string       `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+	Token    string       `json:"token,omitempty" yaml:"token,omitempty"`
+	Method   string       `json:"method" yaml:"method"`
+	Path     string       `json:"path" yaml:"path"`
+	Rule     *Rule        `json:"rule" yaml:"rule"`
 }
+
+// EndpointKind descriped the type of endpoint
+type EndpointKind string
+
+const (
+	// EndpointKindSimple describes a simple or straight forward web-hook call
+	EndpointKindSimple EndpointKind = "simple"
+
+	// EndpointKindTransform describes a payload transformation using go templates
+	EndpointKindTransform EndpointKind = "transform-go"
+)
 
 // FileStore holds the config for the file store module
 type FileStore struct {
@@ -153,6 +170,7 @@ type FileStore struct {
 	Conn      string      `json:"conn" yaml:"conn"`
 	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
 	Bucket    string      `json:"bucket" yaml:"bucket"`
+	Secret    string      `json:"secret" yaml:"secret"`
 	Rules     []*FileRule `json:"rules,omitempty" yaml:"rules"`
 }
 
