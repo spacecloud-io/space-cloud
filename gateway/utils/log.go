@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/sirupsen/logrus"
 )
@@ -39,20 +38,4 @@ func LogDebug(message, module, segment string, extraFields map[string]interface{
 		entry = entry.WithFields(extraFields)
 	}
 	entry.Debugln(message)
-}
-
-// SetLogLevel sets a single verbosity level for log messages.
-func SetLogLevel(loglevel string) {
-	switch loglevel {
-	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
-	case "info":
-		logrus.SetLevel(logrus.InfoLevel)
-	case "error":
-		logrus.SetLevel(logrus.ErrorLevel)
-	default:
-		_ = LogError(fmt.Sprintf("Invalid log level (%s) provided", loglevel), "utils", "set-log-level", nil)
-		LogInfo("Defaulting to `info` level", "utils", "set-log-level")
-		logrus.SetLevel(logrus.InfoLevel)
-	}
 }
