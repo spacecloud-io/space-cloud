@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-//CheckParse checks if the string can be parsed or not
+// CheckParse checks if the string can be parsed or not
 func CheckParse(s string) (time.Time, error) {
 	var value time.Time
 	var err error

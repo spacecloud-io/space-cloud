@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -220,13 +218,12 @@ func (m *Module) matchEncrypt(rule *config.Rule, args map[string]interface{}) (*
 			if !ok {
 				return nil, formatError(rule, fmt.Errorf("Value should be of type string and not %T", loadedValue))
 			}
-			encrypted := make([]byte, len(stringValue))
-			if err = encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize]); err != nil {
-				logrus.Errorln("error encrypting value in matchEncrypt: ", err)
-				return nil, formatError(rule, err)
+			encryptedValue, err := utils.Encrypt(m.aesKey, stringValue)
+			if err != nil {
+				return nil, utils.LogError("Unable to encrypt string", "auth", "match", err)
 			}
 
-			if err = utils.StoreValue(field, base64.StdEncoding.EncodeToString(encrypted), args); err != nil {
+			if err = utils.StoreValue(field, encryptedValue, args); err != nil {
 				logrus.Errorln("error storing value in matchEncrypt: ", err)
 				return nil, formatError(rule, err)
 			}
@@ -275,16 +272,6 @@ func (m *Module) matchDecrypt(rule *config.Rule, args map[string]interface{}) (*
 	return actions, nil
 }
 
-func encryptAESCFB(dst, src, key, iv []byte) error {
-	aesBlockEncrypter, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		return err
-	}
-	aesEncrypter := cipher.NewCFBEncrypter(aesBlockEncrypter, iv)
-	aesEncrypter.XORKeyStream(dst, src)
-	return nil
-}
-
 func decryptAESCFB(dst, src, key, iv []byte) error {
 	aesBlockDecrypter, err := aes.NewCipher([]byte(key))
 	if err != nil {
@@ -311,9 +298,7 @@ func matchHash(rule *config.Rule, args map[string]interface{}) (*model.PostProce
 			if !ok {
 				return nil, formatError(rule, fmt.Errorf("Value should be of type string and not %T", loadedValue))
 			}
-			h := sha256.New()
-			_, _ = h.Write([]byte(stringValue))
-			hashed := hex.EncodeToString(h.Sum(nil))
+			hashed := utils.HashString(stringValue)
 			er := utils.StoreValue(field, hashed, args)
 			if er != nil {
 				logrus.Errorln("error storing value in matchHash: ", er)
