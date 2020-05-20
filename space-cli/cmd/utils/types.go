@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"encoding/json"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/stretchr/testify/mock"
 )
@@ -11,7 +13,9 @@ type MockInputInterface struct {
 }
 
 // AskOne is the mock method for MockInputInterface
-func (m *MockInputInterface) AskOne(p survey.Prompt, respone interface{}, opts ...survey.AskOpt) error {
-	c := m.Called(p, respone, opts)
+func (m *MockInputInterface) AskOne(p survey.Prompt, response interface{}, opts ...survey.AskOpt) error {
+	c := m.Called(p, response, opts)
+	a, _ := json.Marshal(c.Get(1))
+	_ = json.Unmarshal(a, response)
 	return c.Error(0)
 }
