@@ -57,7 +57,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("1", "project", obj); err != nil {
+	if err := createConfigFile("1", "projects", obj); err != nil {
 		return nil
 	}
 
@@ -65,7 +65,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("2", "db-config", objs); err != nil {
+	if err := createConfigFile("2", "db-configs", objs); err != nil {
 		return nil
 	}
 
@@ -81,7 +81,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("4", "db-schema", objs); err != nil {
+	if err := createConfigFile("4", "db-schemas", objs); err != nil {
 		return nil
 	}
 
@@ -89,7 +89,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("5", "filestore-config", obj); err != nil {
+	if err := createConfigFile("5", "filestore-configs", obj); err != nil {
 		return nil
 	}
 
@@ -97,7 +97,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("6", "filestore-rule", objs); err != nil {
+	if err := createConfigFile("6", "filestore-rules", objs); err != nil {
 		return nil
 	}
 
@@ -105,7 +105,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("7", "eventing-config", obj); err != nil {
+	if err := createConfigFile("7", "eventing-configs", obj); err != nil {
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("9", "eventing-rule", objs); err != nil {
+	if err := createConfigFile("9", "eventing-rules", objs); err != nil {
 		return nil
 	}
 
@@ -129,7 +129,7 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return nil
 	}
-	if err := createConfigFile("10", "eventing-schema", objs); err != nil {
+	if err := createConfigFile("10", "eventing-schemas", objs); err != nil {
 		return nil
 	}
 
