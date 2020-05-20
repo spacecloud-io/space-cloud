@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils/file"
 )
 
 // AppendConfigToDisk creates a yml file or appends to existing
@@ -79,8 +80,8 @@ func ReadSpecObjectsFromFile(fileName string) ([]*model.SpecObject, error) {
 
 // CreateDirIfNotExist creates a directory if it doesn't already exists
 func CreateDirIfNotExist(dir string) error {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err = os.MkdirAll(dir, 0755)
+	if _, err := file.File.Stat(dir); file.File.IsNotExist(err) {
+		err = file.File.MkdirAll(dir, 0755)
 		if err != nil {
 			return err
 		}
@@ -121,7 +122,7 @@ func generateYamlFile(credential *model.Credential) error {
 	}
 
 	fileName := getAccountConfigPath()
-	err = ioutil.WriteFile(fileName, d, 0644)
+	err = file.File.WriteFile(fileName, d, 0644)
 	if err != nil {
 		return err
 	}
