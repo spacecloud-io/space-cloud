@@ -29,7 +29,7 @@ func Test_getSelectedAccount(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte("accounts:\n- id: local-admin\n  username: local-admin\n  key: 81WZUGRTtHbG\n  serverurl: http://localhost:4122\nselectedAccount: local-admin"), nil},
 				},
 			},
@@ -46,7 +46,7 @@ func Test_getSelectedAccount(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte("wrong content"), nil},
 				},
 			},
@@ -58,7 +58,7 @@ func Test_getSelectedAccount(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte("ok content"), fmt.Errorf("error reading file")},
 				},
 			},
@@ -118,17 +118,17 @@ func TestStoreCredentials(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte("accounts:\n- id: local-admin\n  username: local-admin\n  key: 81WZUGRTtHbG\n  serverurl: http://localhost:4122\nselectedAccount: local-admin"), nil},
 				},
 				{
 					method:         "Stat",
-					args:           []interface{}{"/home/abhi/.space-cloud"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{nil, nil},
 				},
 				{
 					method:         "IsNotExist",
-					args:           []interface{}{nil},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{false},
 				},
 				{
@@ -150,17 +150,17 @@ func TestStoreCredentials(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte("accounts:\n- id: local-admin\n  username: local-admin\n  key: 81WZUGRTtHbG\n  serverurl: http://localhost:4122\nselectedAccount: local-admin"), nil},
 				},
 				{
 					method:         "Stat",
-					args:           []interface{}{"/home/abhi/.space-cloud"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{nil, fmt.Errorf("some_%s", "error")},
 				},
 				{
 					method:         "IsNotExist",
-					args:           []interface{}{fmt.Errorf("some_%s", "error")},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{false},
 				},
 				{
@@ -182,17 +182,17 @@ func TestStoreCredentials(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte("accounts:\n- id: local-admin\n  username: local-admin\n  key: 81WZUGRTtHbG\n  serverurl: http://localhost:4122\nselectedAccount: local-admin"), nil},
 				},
 				{
 					method:         "Stat",
-					args:           []interface{}{"/home/abhi/.space-cloud"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{nil, nil},
 				},
 				{
 					method:         "IsNotExist",
-					args:           []interface{}{nil},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{false},
 				},
 				{
@@ -215,17 +215,17 @@ func TestStoreCredentials(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte("accounts:\n- id: local-admin\n  username: local-admin\n  key: 81WZUGRTtHbG\n  serverurl: http://localhost:4122\nselectedAccount: local-admin"), nil},
 				},
 				{
 					method:         "Stat",
-					args:           []interface{}{"/home/abhi/.space-cloud"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{nil, fmt.Errorf("some_%s", "error")},
 				},
 				{
 					method:         "IsNotExist",
-					args:           []interface{}{fmt.Errorf("some_%s", "error")},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{false},
 				},
 				{
@@ -247,7 +247,7 @@ func TestStoreCredentials(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte("wrong con"), nil},
 				},
 			},
@@ -264,17 +264,17 @@ func TestStoreCredentials(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte(""), fmt.Errorf("%s file does not exists", "accounts.yaml")},
 				},
 				{
 					method:         "Stat",
-					args:           []interface{}{"/home/abhi/.space-cloud"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{nil, fmt.Errorf("some_%s", "error")},
 				},
 				{
 					method:         "IsNotExist",
-					args:           []interface{}{fmt.Errorf("some_%s", "error")},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{false},
 				},
 				{
@@ -296,17 +296,17 @@ func TestStoreCredentials(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					args:           []interface{}{"/home/abhi/.space-cloud/accounts.yaml"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{[]byte(""), fmt.Errorf("%s file does not exists", "accounts.yaml")},
 				},
 				{
 					method:         "Stat",
-					args:           []interface{}{"/home/abhi/.space-cloud"},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{nil, fmt.Errorf("some_%s", "error")},
 				},
 				{
 					method:         "IsNotExist",
-					args:           []interface{}{fmt.Errorf("some_%s", "error")},
+					args:           []interface{}{},
 					paramsReturned: []interface{}{true},
 				},
 				{
