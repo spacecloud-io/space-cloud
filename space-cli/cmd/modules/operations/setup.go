@@ -57,7 +57,7 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 		id = randomdata.SillyName() + "-" + ksuid.New().String()
 	}
 	if key == "" {
-		key = generateRandomString(100)
+		key = generateRandomString(32)
 	}
 	if config == "" {
 		config = utils.GetSpaceCloudConfigFilePath()
