@@ -34,7 +34,7 @@ func actionGetLetsEncrypt(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "letsencrypt"
 
 	params := map[string]string{}
 	obj, err := GetLetsEncryptDomain(project, commandName, params)

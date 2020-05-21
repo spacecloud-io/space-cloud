@@ -25,13 +25,18 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetProjectConfig,
 	}
 
-	return []*cobra.Command{getproject}
+	var getprojects = &cobra.Command{
+		Use:  "projects",
+		RunE: actionGetProjectConfig,
+	}
+
+	return []*cobra.Command{getproject, getprojects}
 }
 
 func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and cmd parameters
 	project := viper.GetString("project")
-	commandName := cmd.Use
+	commandName := "project"
 
 	params := map[string]string{}
 	if len(args) != 0 {
