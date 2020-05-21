@@ -30,7 +30,7 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getrule = &cobra.Command{
-		Use:  "db-rules",
+		Use:  "db-rule",
 		RunE: actionGetDbRules,
 	}
 
@@ -44,7 +44,22 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetDbSchema,
 	}
 
-	return []*cobra.Command{getrule, getconfig, getschema}
+	var getrules = &cobra.Command{
+		Use:  "db-rules",
+		RunE: actionGetDbRules,
+	}
+
+	var getconfigs = &cobra.Command{
+		Use:  "db-configs",
+		RunE: actionGetDbConfig,
+	}
+
+	var getschemas = &cobra.Command{
+		Use:  "db-schemas",
+		RunE: actionGetDbSchema,
+	}
+
+	return []*cobra.Command{getrule, getconfig, getschema, getrules, getconfigs, getschemas}
 }
 
 func actionGetDbRules(cmd *cobra.Command, args []string) error {
@@ -54,7 +69,7 @@ func actionGetDbRules(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "db-rule"
 
 	params := map[string]string{}
 	switch len(args) {
@@ -82,7 +97,7 @@ func actionGetDbConfig(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "db-config"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -106,7 +121,7 @@ func actionGetDbSchema(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "db-schema"
 
 	params := map[string]string{}
 	switch len(args) {
