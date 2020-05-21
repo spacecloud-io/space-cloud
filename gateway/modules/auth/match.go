@@ -100,7 +100,9 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 	if err != nil {
 		return nil, formatError(rule, err)
 	}
-	return m.matchRule(ctx, project, rule.Clause, args, auth)
+
+	postProcess, err := m.matchRule(ctx, project, rule.Clause, args, nil)
+	return postProcess, formatError(rule, err)
 }
 
 func (m *Module) matchAnd(ctx context.Context, projectID string, rule *config.Rule, args, auth map[string]interface{}) (*model.PostProcess, error) {

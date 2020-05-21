@@ -57,8 +57,6 @@ require (
 	golang.org/x/net v0.0.0-20200222125558-5a598a2470a0
 	google.golang.org/api v0.18.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.5
-	gopkg.in/yaml.v2 v2.2.7
-	gopkg.in/yaml.v3 v3.0.0-20200504163728-5308cda29e3d
 	k8s.io/api v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v0.17.2

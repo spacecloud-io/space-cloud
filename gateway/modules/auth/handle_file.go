@@ -29,7 +29,8 @@ func (m *Module) IsFileOpAuthorised(ctx context.Context, project, token, path st
 		return nil, errors.New("invalid project details provided")
 	}
 
-	auth, err := m.parseToken(token)
+	var auth map[string]interface{}
+	auth, err = m.parseToken(token)
 	if err != nil {
 		return nil, err
 	}

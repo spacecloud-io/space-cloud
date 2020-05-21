@@ -10,11 +10,11 @@
     •
     <a href="https://docs.spaceuptech.com/">Docs</a>
     •
-    <a href="https://discord.gg/ypXEEBr">Support</a>
+    <a href="https://discord.gg/RkGjW93">Support</a>
   </strong>
 </p>
 <p align="center">
-    <a href="https://discord.gg/ypXEEBr"><img src="https://img.shields.io/badge/chat-discord-brightgreen.svg?logo=discord&%20style=flat"></a>
+    <a href="https://discord.gg/RkGjW93"><img src="https://img.shields.io/badge/chat-discord-brightgreen.svg?logo=discord&%20style=flat"></a>
     <br/>
     <a href="https://goreportcard.com/report/github.com/spaceuptech/space-cloud">
     <img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/spaceuptech/space-cloud">

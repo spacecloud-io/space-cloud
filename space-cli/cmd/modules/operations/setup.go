@@ -9,12 +9,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Pallinder/go-randomdata"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/segmentio/ksuid"
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
@@ -52,10 +54,10 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 		username = "local-admin"
 	}
 	if id == "" {
-		id = username
+		id = randomdata.SillyName() + "-" + ksuid.New().String()
 	}
 	if key == "" {
-		key = generateRandomString(12)
+		key = generateRandomString(32)
 	}
 	if config == "" {
 		config = utils.GetSpaceCloudConfigFilePath()
@@ -106,6 +108,7 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 		"ADMIN_SECRET=" + secret,
 		"DEV=" + devMode,
 		"GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/credentials.json",
+		"CLUSTER_ID=" + id,
 	}
 
 	envs = append(envs, environmentVariables...)
@@ -175,6 +178,7 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 				"HOME_SECRETS_PATH=" + utils.GetTempSecretsDir(),
 				"HOSTS_FILE_PATH=" + utils.GetSpaceCloudHostsFilePath(),
 				"ROUTING_FILE_PATH=" + "/routing-config.json",
+				"CLUSTER_ID=" + id,
 			},
 			mount: []mount.Mount{
 				{
@@ -275,7 +279,7 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 	}
 
 	fmt.Println()
-	utils.LogInfo(fmt.Sprintf("Space Cloud (id: \"%s\") has been successfully setup! 👍", selectedAccount.ID))
+	utils.LogInfo(fmt.Sprintf("Space Cloud (cluster id: \"%s\") has been successfully setup! 👍", selectedAccount.ID))
 	utils.LogInfo(fmt.Sprintf("You can visit mission control at %s/mission-control 💻", selectedAccount.ServerURL))
 	utils.LogInfo(fmt.Sprintf("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key))
 

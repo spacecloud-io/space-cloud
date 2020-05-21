@@ -2,12 +2,72 @@ package schema
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 )
+
+func TestSchema_SchemaCreation(t *testing.T) {
+	type fields struct {
+		lock      sync.RWMutex
+		SchemaDoc model.Type
+		crud      model.CrudSchemaInterface
+		project   string
+		config    config.Crud
+	}
+	type args struct {
+		ctx           context.Context
+		dbAlias       string
+		tableName     string
+		project       string
+		logicalDBName string
+		parsedSchema  model.Type
+	}
+	crudPostgres := crud.Init()
+	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
+
+	crudMySQL := crud.Init()
+	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
+
+	crudSQLServer := crud.Init()
+	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		//TODO: Add test cases.
+		{
+			name: "checking schema creation without RawBatch",
+			args: args{
+				dbAlias:      "mysql",
+				tableName:    "table1",
+				project:      "test",
+				parsedSchema: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeID}}}},
+			},
+			fields:  fields{crud: crudMySQL, project: "test"},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Schema{
+				lock:      tt.fields.lock,
+				SchemaDoc: tt.fields.SchemaDoc,
+				crud:      tt.fields.crud,
+				project:   tt.fields.project,
+				config:    tt.fields.config,
+			}
+			if err := s.SchemaCreation(tt.args.ctx, tt.args.dbAlias, tt.args.tableName, tt.args.logicalDBName, tt.args.parsedSchema); (err != nil) != tt.wantErr {
+				t.Errorf("Schema.SchemaCreation() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
 
 func TestSchema_generateCreationQueries(t *testing.T) {
 	type fields struct {
