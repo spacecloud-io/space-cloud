@@ -181,7 +181,6 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
-
 	crud, err := m.getCrudBlock(dbAlias)
 	if err != nil {
 		return nil, err
@@ -200,7 +199,7 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 	// Load the arguments
 	var args []interface{}
 	for i := 0; i < len(preparedQuery.Arguments); i++ {
-		arg, err := utils.LoadValue(preparedQuery.Arguments[i], req.Params)
+		arg, err := utils.LoadValue(preparedQuery.Arguments[i], map[string]interface{}{"args": req.Params})
 		if err != nil {
 			return nil, err
 		}
