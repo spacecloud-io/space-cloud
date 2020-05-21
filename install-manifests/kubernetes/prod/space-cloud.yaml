@@ -163,8 +163,8 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner:0.17.0
-          imagePullPolicy: Always # IfNotPresent | Always
+          image: spaceuptech/runner:0.17.1
+          imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
               value: "debug"
@@ -204,10 +204,10 @@ metadata:
   namespace: space-cloud
 spec:
   targets:
-  - name: gateway
+    - name: gateway
   peers:
-  - mtls:
-      mode: PERMISSIVE
+    - mtls:
+        mode: PERMISSIVE
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
@@ -253,6 +253,37 @@ spec:
 #############################################################################################
 ################## Create the service and deployment objects for the gateway  ###############
 #############################################################################################
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sc-gateway
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: gateway
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - sc-gateway
+  http:
+    - route:
+        - destination:
+            port:
+              number: 4122
+            host: gateway.space-cloud.svc.cluster.local
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -262,19 +293,19 @@ metadata:
     app: gateway
     service: gateway
 spec:
-  type: LoadBalancer
+  clusterIP: None
   ports:
-    - port: 80
-      targetPort: 4122
+    - targetPort: 4122
+      port: 4122
       name: http
-    - port: 443
-      targetPort: 4126
+    - targetPort: 4126
+      port: 4126
       name: https
   selector:
     app: gateway
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: gateway
   namespace: space-cloud
@@ -282,6 +313,7 @@ metadata:
     app: gateway
 spec:
   replicas: 3
+  serviceName: gateway
   selector:
     matchLabels:
       app: gateway
@@ -295,8 +327,8 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway:0.17.0
-          imagePullPolicy: Always # IfNotPresent | Always
+          image: spaceuptech/gateway:0.17.1
+          imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "NODE_ID"
               valueFrom:
@@ -317,7 +349,7 @@ spec:
             - name: "LETSENCRYPT_STORE"
               value: "kube"
             - name: "DEV"
-              value: "false" # Turn this to true for development mode
+              value: "true" # Turn this to false for production mode
             - name: "SSL_ENABLE"
               value: "true"
             - name: "CLUSTER_ID"
