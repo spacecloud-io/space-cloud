@@ -26,7 +26,7 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getFileStoreRule = &cobra.Command{
-		Use:  "filestore-rules",
+		Use:  "filestore-rule",
 		RunE: actionGetFileStoreRule,
 	}
 
@@ -35,7 +35,17 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetFileStoreConfig,
 	}
 
-	return []*cobra.Command{getFileStoreRule, getFileStoreConfig}
+	var getFileStoreRules = &cobra.Command{
+		Use:  "filestore-rules",
+		RunE: actionGetFileStoreRule,
+	}
+
+	var getFileStoreConfigs = &cobra.Command{
+		Use:  "filestore-configs",
+		RunE: actionGetFileStoreConfig,
+	}
+
+	return []*cobra.Command{getFileStoreRule, getFileStoreConfig, getFileStoreRules, getFileStoreConfigs}
 }
 
 func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
@@ -45,7 +55,7 @@ func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "filestore-config"
 
 	params := map[string]string{}
 	obj, err := GetFileStoreConfig(project, commandName, params)
@@ -66,7 +76,7 @@ func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Project not specified in flag", nil)
 		return nil
 	}
-	commandName := cmd.Use
+	commandName := "filestore-rule"
 
 	params := map[string]string{}
 	if len(args) != 0 {
