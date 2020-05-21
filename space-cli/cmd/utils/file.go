@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -24,21 +23,21 @@ func AppendConfigToDisk(specObj *model.SpecObject, filename string) error {
 
 	// Check if file exists. We need to ammend the file if it does.
 	if FileExists(filename) {
-		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
+		f, err := file.File.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			return err
 		}
 
 		defer func() {
-			_ = f.Close()
+			_ = file.File.Close(f)
 		}()
 
-		_, err = f.Write(append([]byte("---\n"), data...))
+		_, err = file.File.Write(f, append([]byte("---\n"), data...))
 		return err
 	}
 
 	// Create a new file with out specs
-	return ioutil.WriteFile(filename, data, 0755)
+	return file.File.WriteFile(filename, data, 0755)
 }
 
 // ReadSpecObjectsFromFile returns the spec objects present in the file
@@ -46,7 +45,7 @@ func ReadSpecObjectsFromFile(fileName string) ([]*model.SpecObject, error) {
 	var specs []*model.SpecObject
 
 	// Read the file first
-	data, err := ioutil.ReadFile(fileName)
+	data, err := file.File.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +90,8 @@ func CreateDirIfNotExist(dir string) error {
 
 // CreateFileIfNotExist creates a file with the provided content if it doesn't already exists
 func CreateFileIfNotExist(path, content string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return ioutil.WriteFile(path, []byte(content), 0755)
+	if _, err := file.File.Stat(path); file.File.IsNotExist(err) {
+		return file.File.WriteFile(path, []byte(content), 0755)
 	}
 	return nil
 }
@@ -104,8 +103,8 @@ func CreateConfigFile(path string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return ioutil.WriteFile(path, b, 0755)
+	if _, err := file.File.Stat(path); file.File.IsNotExist(err) {
+		return file.File.WriteFile(path, b, 0755)
 	}
 	return nil
 }
@@ -132,11 +131,11 @@ func generateYamlFile(credential *model.Credential) error {
 
 // FileExists checks if the file exists
 func FileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
+	info, err := file.File.Stat(filename)
+	if file.File.IsNotExist(err) {
 		return false
 	}
-	return !info.IsDir()
+	return !file.File.IsDir(info)
 }
 
 // UnmarshalYAML converts to map[string]interface{} instead of map[interface{}]interface{}.

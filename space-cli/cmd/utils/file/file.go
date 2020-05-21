@@ -11,6 +11,10 @@ type file interface {
 	Stat(name string) (os.FileInfo, error)
 	IsNotExist(err error) bool
 	MkdirAll(path string, perm os.FileMode) error
+	OpenFile(name string, flag int, perm os.FileMode) (*os.File, error)
+	Close(f *os.File) error
+	Write(f *os.File, b []byte) (n int, err error)
+	IsDir(f os.FileInfo) bool
 }
 
 type def struct{}
@@ -45,4 +49,24 @@ func (d *def) IsNotExist(err error) bool {
 // MkdirAll is used to create a directory
 func (d *def) MkdirAll(path string, perm os.FileMode) error {
 	return os.MkdirAll(path, perm)
+}
+
+// OpenFile is used to open a file
+func (d *def) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
+	return os.OpenFile(name, flag, perm)
+}
+
+// Close is used to close the file
+func (d *def) Close(f *os.File) error {
+	return f.Close()
+}
+
+// Write is use to write to a file
+func (d *def) Write(f *os.File, b []byte) (n int, err error) {
+	return f.Write(b)
+}
+
+// IsDir is use to check if path is directory
+func (d *def) IsDir(f os.FileInfo) bool {
+	return f.IsDir()
 }

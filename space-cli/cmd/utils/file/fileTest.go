@@ -26,7 +26,8 @@ func (m *Mocket) WriteFile(filename string, data []byte, perm os.FileMode) error
 // Stat is used to check if directory exits during test
 func (m *Mocket) Stat(name string) (os.FileInfo, error) {
 	c := m.Called()
-	return nil, c.Error(1)
+	var x os.FileInfo
+	return x, c.Error(1)
 }
 
 // IsNotExist is used to check if directory exits during test
@@ -39,4 +40,28 @@ func (m *Mocket) IsNotExist(err error) bool {
 func (m *Mocket) MkdirAll(path string, perm os.FileMode) error {
 	c := m.Called()
 	return c.Error(0)
+}
+
+// OpenFile is used to create a directory during test
+func (m *Mocket) OpenFile(name string, flag int, perm os.FileMode) (*os.File, error) {
+	c := m.Called()
+	return &os.File{}, c.Error(1)
+}
+
+// Close is used to close the file during test
+func (m *Mocket) Close(f *os.File) error {
+	c := m.Called()
+	return c.Error(0)
+}
+
+// Write is use to write to a file during test
+func (m *Mocket) Write(f *os.File, b []byte) (n int, err error) {
+	c := m.Called()
+	return c.Int(0), c.Error(1)
+}
+
+// IsDir is use to check if path is directory during test
+func (m *Mocket) IsDir(f os.FileInfo) bool {
+	c := m.Called()
+	return c.Bool(0)
 }
