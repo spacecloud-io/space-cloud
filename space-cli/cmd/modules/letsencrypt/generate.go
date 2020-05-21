@@ -5,17 +5,18 @@ import (
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils/input"
 )
 
 func generateLetsEncryptDomain() (*model.SpecObject, error) {
 	whiteListedDomains := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &whiteListedDomains); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &whiteListedDomains); err != nil {
 		return nil, err
 	}
 
 	whiteListedDomain := strings.Split(strings.TrimSuffix(whiteListedDomains, ","), ",")
 	project := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter project: "}, &project); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter project: "}, &project); err != nil {
 		return nil, err
 	}
 
