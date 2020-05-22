@@ -127,7 +127,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			Auth:        map[string]*config.AuthStub{},
 			Crud:        map[string]*config.CrudStub{},
 			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}, Email: ""},
 		}
 		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
