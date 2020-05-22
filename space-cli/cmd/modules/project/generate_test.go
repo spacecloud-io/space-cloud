@@ -110,45 +110,45 @@ func Test_generateProject(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		// {
-		// 	name: "no error surveying anyting",
-		// 	surveyMockArgs: []mockArgs{
-		// 		{
-		// 			method:         "AskOne",
-		// 			args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
-		// 			paramsReturned: []interface{}{nil, "project"},
-		// 		},
-		// 		{
-		// 			method:         "AskOne",
-		// 			args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &someString, mock.Anything},
-		// 			paramsReturned: []interface{}{nil, "projectName"},
-		// 		},
-		// 		{
-		// 			method:         "AskOne",
-		// 			args:           []interface{}{&survey.Input{Message: "Enter AES Key: "}, &someString, mock.Anything},
-		// 			paramsReturned: []interface{}{nil, "key"},
-		// 		},
-		// 		{
-		// 			method:         "AskOne",
-		// 			args:           []interface{}{&survey.Input{Message: "Enter Graphql Query Timeout: ", Default: "10"}, &contextTime, mock.Anything},
-		// 			paramsReturned: []interface{}{nil, 15},
-		// 		},
-		// 	},
-		// 	want: &model.SpecObject{
-		// 		API:  "/v1/config/projects/{project}",
-		// 		Type: "project",
-		// 		Meta: map[string]string{
-		// 			"project": "project",
-		// 		},
-		// 		Spec: map[string]interface{}{
-		// 			"id":                 "project",
-		// 			"aesKey":             "key",
-		// 			"name":               "projectName",
-		// 			"secrets":            []map[string]interface{}{{"isPrimary": true, "secret": ksuid.New().String()}},
-		// 			"contextTimeGraphQL": 15,
-		// 		},
-		// 	},
-		// },
+		{
+			name: "no error surveying anyting",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &someString, mock.Anything},
+					paramsReturned: []interface{}{nil, "projectName"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter AES Key: "}, &someString, mock.Anything},
+					paramsReturned: []interface{}{nil, "key"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Graphql Query Timeout: ", Default: "10"}, &contextTime, mock.Anything},
+					paramsReturned: []interface{}{nil, 15},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/config/projects/{project}",
+				Type: "project",
+				Meta: map[string]string{
+					"project": "project",
+				},
+				Spec: map[string]interface{}{
+					"id":                 "project",
+					"aesKey":             "key",
+					"name":               "projectName",
+					"secrets":            "",
+					"contextTimeGraphQL": 15,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -166,6 +166,11 @@ func Test_generateProject(t *testing.T) {
 				t.Errorf("generateProject() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
+			if got != nil {
+				got.Spec.(map[string]interface{})["secrets"] = ""
+			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("generateProject() = %v, want %v", got, tt.want)
 			}
