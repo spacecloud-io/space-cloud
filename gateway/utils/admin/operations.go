@@ -34,7 +34,15 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if len(config) > m.quotas.MaxDatabases {
+	// Only count the length of enabled databases
+	var length int
+	for _, c := range config {
+		if c.Enabled {
+			length++
+		}
+	}
+
+	if length > m.quotas.MaxDatabases {
 		return fmt.Errorf("plan needs to be upgraded to use more than %d databases", m.quotas.MaxDatabases)
 	}
 
