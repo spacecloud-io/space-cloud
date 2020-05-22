@@ -33,6 +33,7 @@ type Module struct {
 func newModule(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module, driver *driver.Handler) *Module {
 	c := crud.Init()
 	c.SetAdminManager(adminMan)
+	c.SetGetSecrets(syncMan.GetSecrets)
 
 	s := schema.Init(c)
 	c.SetSchema(s)
@@ -42,6 +43,7 @@ func newModule(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager,
 
 	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
+	f.SetGetSecrets(syncMan.GetSecrets)
 
 	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
 	f.SetEventingModule(e)
