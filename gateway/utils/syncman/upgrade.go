@@ -60,7 +60,7 @@ func (s *Manager) ConvertToEnterprise(ctx context.Context, token, clusterID, clu
 		"params":  &map[string]interface{}{"sessionId": s.adminMan.GetSessionID(), "clusterId": clusterID, "clusterKey": clusterKey},
 		"timeout": 10,
 	}
-	if err := s.MakeHTTPRequest(ctx, http.MethodPost, "http://35.188.208.249/v1/api/spacecloud/services/backend/fetch_license", "", "", body, upgradeResponse); err != nil {
+	if err := s.MakeHTTPRequest(ctx, http.MethodPost, "https://api.spaceuptech.com/v1/api/spacecloud/services/backend/fetch_license", "", "", body, upgradeResponse); err != nil {
 		return err
 	}
 
