@@ -114,6 +114,8 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 			username = "postgres"
 		case "mysql":
 			username = "root"
+		case "sqlserver":
+			username = "sa"
 		}
 	}
 	password := viper.GetString("password")
@@ -123,6 +125,8 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 			password = "mysecretpassword"
 		case "mysql":
 			password = "my-secret-pw"
+		case "sqlserver":
+			password = "yourStrong(!)Password"
 		}
 	}
 	alias := viper.GetString("alias")
