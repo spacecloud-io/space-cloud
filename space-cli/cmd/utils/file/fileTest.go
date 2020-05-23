@@ -1,6 +1,10 @@
 package file
 
 import (
+	"bytes"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/stretchr/testify/mock"
@@ -64,4 +68,11 @@ func (m *Mocket) Write(f *os.File, b []byte) (n int, err error) {
 func (m *Mocket) IsDir(f os.FileInfo) bool {
 	c := m.Called()
 	return c.Bool(0)
+}
+
+// Post makes http post request during testing
+func (m *Mocket) Post(url, contentType string, body io.Reader) (resp *http.Response, err error) {
+	c := m.Called()
+	r := ioutil.NopCloser(bytes.NewReader([]byte("")))
+	return &http.Response{StatusCode: c.Int(0), Body: r}, c.Error(1)
 }

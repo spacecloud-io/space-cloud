@@ -1,7 +1,9 @@
 package file
 
 import (
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 )
 
@@ -15,6 +17,7 @@ type file interface {
 	Close(f *os.File) error
 	Write(f *os.File, b []byte) (n int, err error)
 	IsDir(f os.FileInfo) bool
+	Post(url, contentType string, body io.Reader) (resp *http.Response, err error)
 }
 
 type def struct{}
@@ -69,4 +72,9 @@ func (d *def) Write(f *os.File, b []byte) (n int, err error) {
 // IsDir is use to check if path is directory
 func (d *def) IsDir(f os.FileInfo) bool {
 	return f.IsDir()
+}
+
+// Post makes http post request
+func (d *def) Post(url, contentType string, body io.Reader) (resp *http.Response, err error) {
+	return http.Post(url, contentType, body)
 }
