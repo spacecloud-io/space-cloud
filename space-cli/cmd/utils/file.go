@@ -140,7 +140,7 @@ func generateYamlFile(credential *model.Credential) error {
 		return err
 	}
 
-	fileName := getAccountConfigPath()
+	fileName := GetAccountConfigPath()
 	err = ioutil.WriteFile(fileName, d, 0644)
 	if err != nil {
 		return err

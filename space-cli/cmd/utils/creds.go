@@ -11,7 +11,7 @@ import (
 
 // getSelectedAccount gets the account information of the selected account
 func getSelectedAccount() (*model.Account, error) {
-	filePath := getAccountConfigPath()
+	filePath := GetAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		logrus.Errorf("error getting credential unable to read accounts config file - %s", err.Error())
@@ -35,7 +35,7 @@ func getSelectedAccount() (*model.Account, error) {
 
 // StoreCredentials stores the credential in the accounts config file
 func StoreCredentials(account *model.Account) error {
-	yamlFile, err := ioutil.ReadFile(getAccountConfigPath())
+	yamlFile, err := ioutil.ReadFile(GetAccountConfigPath())
 	if err != nil {
 		// accounts.yaml file doesn't exist create new one
 		credential := model.Credential{

@@ -47,6 +47,7 @@ func getHomeDirectory() string {
 	return os.Getenv("HOME")
 }
 
-func getAccountConfigPath() string {
+// GetAccountConfigPath get the path to account config yaml file
+func GetAccountConfigPath() string {
 	return fmt.Sprintf("%s/accounts.yaml", GetSpaceCloudDirectory())
 }

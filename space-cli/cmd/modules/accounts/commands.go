@@ -8,7 +8,7 @@ import (
 )
 
 // Commands are the set of account commands for space-cli
-func Commands() []*cobra.Commans {
+func Commands() []*cobra.Command {
 
 	var accountsCmd = &cobra.Command{
 		Use:   "accounts",

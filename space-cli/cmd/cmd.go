@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/cmd/modules"
+	"github.com/spaceuptech/space-cli/cmd/modules/accounts"
 	"github.com/spaceuptech/space-cli/cmd/modules/addons"
 	"github.com/spaceuptech/space-cli/cmd/modules/deploy"
 	"github.com/spaceuptech/space-cli/cmd/modules/login"

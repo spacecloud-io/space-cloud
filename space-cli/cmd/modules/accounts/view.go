@@ -11,10 +11,11 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
 func listAccounts(accountID string, showKeys bool) error {
-	filePath := getAccountConfigPath()
+	filePath := utils.GetAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		logrus.Errorf("error getting credential unable to read accounts config file - %s", err.Error())
