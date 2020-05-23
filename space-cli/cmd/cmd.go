@@ -49,6 +49,7 @@ func GetRootCommand() *cobra.Command {
 	rootCmd.AddCommand(deploy.Commands()...)
 	rootCmd.AddCommand(operations.Commands()...)
 	rootCmd.AddCommand(login.Commands()...)
+	rootCmd.AddCommand(accounts.Commands()...)
 	return rootCmd
 }
 
