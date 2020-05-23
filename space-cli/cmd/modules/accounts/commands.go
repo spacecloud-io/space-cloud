@@ -12,7 +12,7 @@ func Commands() []*cobra.Command {
 
 	var accountsCmd = &cobra.Command{
 		Use:   "accounts",
-		Short: "CRUD operations for space-cloud accounts",
+		Short: "Operations for space-cloud accounts",
 	}
 
 	var viewAccountsCommand = &cobra.Command{
