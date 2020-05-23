@@ -7,7 +7,9 @@ import (
 
 func Test_getHomeDirectory(t *testing.T) {
 
-	os.Setenv("HOME", "/home")
+	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
@@ -29,7 +31,9 @@ func Test_getHomeDirectory(t *testing.T) {
 
 func TestGetSpaceCloudHostsFilePath(t *testing.T) {
 
-	os.Setenv("HOME", "/home")
+	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
@@ -51,7 +55,9 @@ func TestGetSpaceCloudHostsFilePath(t *testing.T) {
 
 func TestGetSpaceCloudRoutingConfigPath(t *testing.T) {
 
-	os.Setenv("HOME", "/home")
+	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
@@ -73,7 +79,9 @@ func TestGetSpaceCloudRoutingConfigPath(t *testing.T) {
 
 func TestGetSecretsDir(t *testing.T) {
 
-	os.Setenv("HOME", "/home")
+	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
@@ -95,7 +103,9 @@ func TestGetSecretsDir(t *testing.T) {
 
 func TestGetTempSecretsDir(t *testing.T) {
 
-	os.Setenv("HOME", "/home")
+	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
@@ -117,7 +127,9 @@ func TestGetTempSecretsDir(t *testing.T) {
 
 func TestGetSpaceCloudConfigFilePath(t *testing.T) {
 
-	os.Setenv("HOME", "/home")
+	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
