@@ -19,16 +19,27 @@ func GetServicesRoutes(project, commandName string, params map[string]string) ([
 		return nil, err
 	}
 
+	services := map[string][]interface{}{}
 	var objs []*model.SpecObject
 	for _, item := range payload.Result {
 		spec := item.(map[string]interface{})
-		meta := map[string]string{"project": project, "id": spec["id"].(string)}
+		id := spec["id"].(string)
+
+		if _, p := services[id]; !p {
+			services[id] = []interface{}{}
+		}
 
 		// Delete the unwanted keys from spec
 		delete(spec, "id")
 		delete(spec, "project")
 		delete(spec, "version")
 
+		services[id] = append(services[id], spec)
+	}
+
+	for id, routes := range services {
+		meta := map[string]string{"project": project, "id": id}
+		spec := map[string]interface{}{"routes": routes}
 		// Printing the object on the screen
 		s, err := utils.CreateSpecObject("/v1/runner/{project}/service-routes/{id}", commandName, meta, spec)
 		if err != nil {
