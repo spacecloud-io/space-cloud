@@ -2,6 +2,9 @@ package schema
 
 // CheckIfEventingIsPossible checks if eventing is possible
 func (s *Schema) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
 	// Struct to track counts
 	type trackCols struct {
 		want int

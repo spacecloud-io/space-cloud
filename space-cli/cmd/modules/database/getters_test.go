@@ -135,10 +135,11 @@ func TestGetDbRule(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetDbRule() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetDbRule() = %v, want %v", got, tt.want)
+				t.Errorf("GetDbRule() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetDbRule() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -239,10 +240,11 @@ func TestGetDbConfig(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetDbConfig() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetDbConfig() = %v, want %v", got, tt.want)
+				t.Errorf("GetDbConfig() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetDbConfig() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -363,10 +365,11 @@ func TestGetDbSchema(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetDbSchema() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetDbSchema() = %v, want %v", got, tt.want)
+				t.Errorf("GetDbSchema() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetDbSchema() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})

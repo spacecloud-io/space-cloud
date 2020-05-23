@@ -100,10 +100,10 @@ func TestGetAuthProviders(t *testing.T) {
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
 				t.Errorf("GetAuthProviders() len= %v, want %v", len(got), len(tt.want))
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetAuthProviders() = %v, want %v", got, tt.want)
-					return
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetAuthProviders() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})

@@ -103,10 +103,11 @@ func TestGetFileStoreConfig(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetFileStoreConfig() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetFileStoreConfig() = %v, want %v", got, tt.want)
+				t.Errorf("GetFileStoreConfig() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetFileStoreConfig() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -209,10 +210,11 @@ func TestGetFileStoreRule(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetFileStoreRule() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetFileStoreRule() = %v, want %v", got, tt.want)
+				t.Errorf("GetFileStoreRule() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetFileStoreRule() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})

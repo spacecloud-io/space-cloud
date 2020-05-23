@@ -103,10 +103,11 @@ func TestGetRemoteServices(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetRemoteServices() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetRemoteServices() = %v, want %v", got, tt.want)
+				t.Errorf("GetRemoteServices() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetRemoteServices() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})

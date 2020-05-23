@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils/transport"
 )
@@ -57,7 +56,7 @@ func TestGetLetsEncryptDomain(t *testing.T) {
 					API:  "/v1/config/projects/{project}/letsencrypt/config/{id}",
 					Type: "letsencrypt",
 					Meta: map[string]string{"project": "myproject", "id": "letsencrypt"},
-					Spec: map[string]interface{}{"aesKey": "mongodb", "id": "local-admin", "name": "abcd", "dockerRegistry": "space-cloud", "ContextTimeGraphQL": 10},
+					Spec: map[string]interface{}{"aesKey": "mongodb", "name": "abcd", "dockerRegistry": "space-cloud", "ContextTimeGraphQL": float64(10)},
 				},
 			},
 			wantErr: false,
@@ -105,12 +104,10 @@ func TestGetLetsEncryptDomain(t *testing.T) {
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
 				t.Errorf("GetLetsEncryptDomain() len= %v, want %v", len(got), len(tt.want))
-			} else if len(got) != 0 {
-				for i, v := range got {
-					if cmp.Equal(*v, *tt.want[i]) {
-						t.Errorf("GetLetsEncryptDomain() = %v, want %v", got, tt.want)
-						return
-					}
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetLetsEncryptDomain() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})

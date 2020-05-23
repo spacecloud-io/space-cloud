@@ -47,9 +47,6 @@ func TestGetEventingTrigger(t *testing.T) {
 							"timeout": 10,
 							"id":      "local-admin",
 							"url":     "/v1/config/projects/myproject/eventing/triggers",
-							"options": map[string]string{
-								"and": "if",
-							},
 						},
 						},
 					}},
@@ -59,8 +56,8 @@ func TestGetEventingTrigger(t *testing.T) {
 				{
 					API:  "/v1/config/projects/{project}/eventing/triggers/{id}",
 					Type: "eventing-triggers",
-					Meta: map[string]string{"project": "myproject", "id": "local-admin"},
-					Spec: map[string]interface{}{"type": "mongodb", "retries": 2, "timeout": 10, "url": "/v1/config/projects/myproject/eventing/triggers", "options": map[string]string{"and": "if"}},
+					Meta: map[string]string{"id": "local-admin", "project": "myproject"},
+					Spec: map[string]interface{}{"type": "mongodb", "retries": float64(2), "timeout": float64(10), "url": "/v1/config/projects/myproject/eventing/triggers"},
 				},
 			},
 			wantErr: false,
@@ -111,12 +108,10 @@ func TestGetEventingTrigger(t *testing.T) {
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
 				t.Errorf("GetEventingTrigger() len= %v, want %v", len(got), len(tt.want))
-			} else if len(got) != 0 {
-				for i, v := range got {
-					if cmp.Equal(*v, *tt.want[i]) {
-						t.Errorf("GetEventingTrigger() = %v, want %v", got, tt.want)
-						return
-					}
+			}
+			for i, v := range got {
+				if !cmp.Equal(v, tt.want[i]) {
+					t.Errorf("GetEventingTrigger() v = %v want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -170,7 +165,7 @@ func TestGetEventingConfig(t *testing.T) {
 					API:  "/v1/config/projects/{project}/eventing/config/{id}",
 					Type: "eventing-config",
 					Meta: map[string]string{"project": "myproject", "id": "eventing-config"},
-					Spec: map[string]interface{}{"aesKey": "mongodb", "id": "local-admin", "name": "abcd", "dockerRegistry": "space-cloud", "ContextTimeGraphQL": 10},
+					Spec: map[string]interface{}{"aesKey": "mongodb", "id": "local-admin", "name": "abcd", "dockerRegistry": "space-cloud", "ContextTimeGraphQL": float64(10)},
 				},
 			},
 			wantErr: false,
@@ -218,12 +213,10 @@ func TestGetEventingConfig(t *testing.T) {
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
 				t.Errorf("GetEventingConfig() len= %v, want %v", len(got), len(tt.want))
-			} else if len(got) != 0 {
-				for i, v := range got {
-					if cmp.Equal(*v, *tt.want[i]) {
-						t.Errorf("GetEventingConfig() = %v, want %v", got, tt.want)
-						return
-					}
+			}
+			for i, v := range got {
+				if !cmp.Equal(*v, *tt.want[i]) {
+					t.Errorf("GetEventingConfig() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -318,10 +311,11 @@ func TestGetEventingSchema(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetEventingSchema() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetEventingSchema() = %v, want %v", got, tt.want)
+				t.Errorf("GetEventingSchema() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetEventingSchema() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -418,10 +412,11 @@ func TestGetEventingSecurityRule(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetEventingSecurityRule() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetEventingSecurityRule() = %v, want %v", got, tt.want)
+				t.Errorf("GetEventingSecurityRule() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetEventingSecurityRule() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})

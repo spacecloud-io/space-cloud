@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils/transport"
 )
@@ -59,7 +58,7 @@ func TestGetProjectConfig(t *testing.T) {
 					Type: "project",
 					Meta: map[string]string{"project": "local-admin"},
 					Spec: map[string]interface{}{"aesKey": "local-admin",
-						"contextTimeGraphQL": 10,
+						"contextTimeGraphQL": float64(10),
 						"DockerRegistry":     "gateway",
 						"secrets":            "abcd",
 						"name":               "space-cloud",
@@ -96,7 +95,7 @@ func TestGetProjectConfig(t *testing.T) {
 					Type: "project",
 					Meta: map[string]string{"project": "local-admin"},
 					Spec: map[string]interface{}{"aesKey": "local-admin",
-						"contextTimeGraphQL": 10,
+						"contextTimeGraphQL": float64(10),
 						"name":               "space-cloud",
 						"id":                 "local-admin"},
 				},
@@ -131,7 +130,7 @@ func TestGetProjectConfig(t *testing.T) {
 					Type: "project",
 					Meta: map[string]string{"project": "local-admin"},
 					Spec: map[string]interface{}{"aesKey": "local-admin",
-						"contextTimeGraphQL": 10,
+						"contextTimeGraphQL": float64(10),
 						"name":               "space-cloud",
 						"id":                 "local-admin"},
 				},
@@ -180,12 +179,10 @@ func TestGetProjectConfig(t *testing.T) {
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
 				t.Errorf("GetProjectConfig() len= %v, want %v", len(got), len(tt.want))
-			} else if len(got) != 0 {
-				for i, v := range got {
-					if cmp.Equal(*v, *tt.want[i]) {
-						t.Errorf("GetProjectConfig() = %v, want %v", got, tt.want)
-						return
-					}
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetProjectConfig() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})

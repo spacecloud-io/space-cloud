@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils/transport"
 )
@@ -96,10 +95,11 @@ func TestGetServicesRoutes(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetServicesRoutes() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetServicesRoutes() = %v, want %v", got, tt.want)
+				t.Errorf("GetServicesRoutes() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetServicesRoutes() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -192,10 +192,11 @@ func TestGetServicesSecrets(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
-				t.Errorf("GetServicesSecrets() = %v, want %v", got, tt.want)
-			} else if len(got) != 0 {
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("GetServicesSecrets() = %v, want %v", got, tt.want)
+				t.Errorf("GetServicesSecrets() len= %v, want %v", len(got), len(tt.want))
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetServicesSecrets() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})
@@ -244,9 +245,9 @@ func TestGetServices(t *testing.T) {
 			},
 			want: []*model.SpecObject{
 				{
-					API:  "/v1/config/projects/{project}/user-management/provider/{id}",
+					API:  "/v1/runner/{project}/services/{serviceId}/{version}",
 					Type: "service",
-					Meta: map[string]string{"project": "myproject", "version": "v0.18.0", "serviceID": "admin"},
+					Meta: map[string]string{"project": "myproject", "version": "v0.18.0", "serviceId": "local-admin"},
 					Spec: map[string]interface{}{"serviceID": "admin"},
 				},
 			},
@@ -316,12 +317,10 @@ func TestGetServices(t *testing.T) {
 			}
 			if !reflect.DeepEqual(len(got), len(tt.want)) {
 				t.Errorf("GetServices() len= %v, want %v", len(got), len(tt.want))
-			} else if len(got) != 0 {
-				for i, v := range got {
-					if cmp.Equal(*v, *tt.want[i]) {
-						t.Errorf("GetServices() = %v, want %v", got, tt.want)
-						return
-					}
+			}
+			for i, v := range got {
+				if !reflect.DeepEqual(v, tt.want[i]) {
+					t.Errorf("GetServices() v = %v, want %v", v, tt.want[i])
 				}
 			}
 		})

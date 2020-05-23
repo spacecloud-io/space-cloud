@@ -256,11 +256,33 @@ func TestParseSchema(t *testing.T) {
 							FieldName: "spec",
 							Kind:      model.TypeJSON,
 						},
+						"createdAt": &model.FieldType{
+							FieldName:   "createdAt",
+							Kind:        model.TypeDateTime,
+							IsCreatedAt: true,
+						},
+						"updatedAt": &model.FieldType{
+							FieldName:   "updatedAt",
+							Kind:        model.TypeDateTime,
+							IsUpdatedAt: true,
+						},
 						"first_name": &model.FieldType{
 							FieldName:           "first_name",
 							IsFieldTypeRequired: true,
 							Kind:                model.TypeID,
 							IsIndex:             true,
+							IndexInfo: &model.TableProperties{
+								Group: "user_name",
+								Order: 1,
+								Sort:  "asc",
+							},
+						},
+						"name": &model.FieldType{
+							FieldName:           "name",
+							IsFieldTypeRequired: true,
+							Kind:                model.TypeID,
+							IsIndex:             true,
+							IsUnique:            true,
 							IndexInfo: &model.TableProperties{
 								Group: "user_name",
 								Order: 1,
@@ -304,8 +326,11 @@ func TestParseSchema(t *testing.T) {
 						 ID : ID @primary
 						 age: Float
 						 spec: JSON
+						 createdAt:DateTime@createdAt
+						 updatedAt:DateTime@updatedAt
 						 role: ID! @default(value: "user")
 						 first_name: ID! @index(group: "user_name", order: 1, sort: "asc")
+						 name: ID! @unique(group: "user_name", order: 1)
 						 customer_id: ID! @foreign(table: "customer", field: "id", onDelete: "cascade")
 						 order_dates: [DateTime] @link(table: "order", field: "order_date", from: "id", to: "customer_id")
 						}`,
@@ -325,7 +350,7 @@ func TestParseSchema(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(r, testCase.schema) {
-				t.Errorf("parser()=got return value-%v,expected schema-%v", r["mongo"]["tweet"]["order_dates"].LinkedTable, testCase.schema["mongo"]["tweet"]["order_dates"].LinkedTable)
+				t.Errorf("parser()=got return value-%v,expected schema-%v", r, testCase.schema)
 			}
 		})
 	}

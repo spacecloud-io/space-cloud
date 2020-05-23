@@ -3,7 +3,8 @@ package schema
 import (
 	"context"
 	"encoding/json"
-	"sync"
+	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -20,12 +21,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 	if err != nil {
 		logrus.Errorf("err=%v", err)
 	}
+	var v interface{}
+	err = json.Unmarshal(b, &v)
+	if err != nil {
+		logrus.Errorf("err=%v", err)
+	}
 	type fields struct {
-		lock      sync.RWMutex
 		SchemaDoc model.Type
-		crud      model.CrudSchemaInterface
-		project   string
-		config    config.Crud
 	}
 	type args struct {
 		ctx     context.Context
@@ -45,6 +47,7 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
+		want    interface{}
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -55,7 +58,8 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  []interface{}{},
 			},
-			fields:  fields{crud: crudMySQL, project: "test"},
+			fields:  fields{},
+			want:    []interface{}{},
 			wantErr: true,
 		},
 		{
@@ -65,7 +69,8 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  []interface{}{},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{}}},
+			want:    []interface{}{},
 			wantErr: false,
 		},
 		{
@@ -75,7 +80,8 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  []interface{}{},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
+			want:    []interface{}{},
 			wantErr: false,
 		},
 		{
@@ -85,7 +91,8 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  []interface{}{map[string]interface{}{}},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
+			want:    []interface{}{map[string]interface{}{}},
 			wantErr: false,
 		},
 		{
@@ -95,7 +102,8 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  map[string]interface{}{"col2": b},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
+			want:    map[string]interface{}{"col2": v},
 			wantErr: false,
 		},
 		{
@@ -105,7 +113,8 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  map[string]interface{}{"col2": "mock"},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
+			want:    map[string]interface{}{"col2": "mock"},
 			wantErr: true,
 		},
 		{
@@ -115,7 +124,8 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  map[string]interface{}{"col2": []byte("mock")},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
+			want:    map[string]interface{}{"col2": []byte("mock")},
 			wantErr: true,
 		},
 		{
@@ -123,9 +133,10 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 			args: args{
 				dbAlias: "mysql",
 				col:     "table1",
-				result:  []interface{}{map[string]interface{}{"col2": time.Now()}},
+				result:  []interface{}{map[string]interface{}{"col2": time.Now().Round(time.Second)}},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    []interface{}{map[string]interface{}{"col2": time.Now().Round(time.Second).UTC().Format(time.RFC3339)}},
 			wantErr: false,
 		},
 		{
@@ -135,33 +146,38 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  []interface{}{map[string]interface{}{"col2": primitive.DateTime(1)}},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    []interface{}{map[string]interface{}{"col2": primitive.DateTime(1).Time().UTC().Format(time.RFC3339)}},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Schema{
-				lock:      tt.fields.lock,
 				SchemaDoc: tt.fields.SchemaDoc,
-				crud:      tt.fields.crud,
-				project:   tt.fields.project,
-				config:    tt.fields.config,
 			}
-			if err := s.CrudPostProcess(tt.args.ctx, tt.args.dbAlias, tt.args.col, tt.args.result); (err != nil) != tt.wantErr {
+			err := s.CrudPostProcess(tt.args.ctx, tt.args.dbAlias, tt.args.col, tt.args.result)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Schema.CrudPostProcess() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(tt.args.result, tt.want) {
+				t.Errorf("Schema.CrudPostProcess() tt.args.result = %v, tt.want %v", tt.args.result, tt.want)
 			}
 		})
 	}
 }
 
+func returntime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		fmt.Printf("invalid string format of datetime (%s)", s)
+		return time.Now()
+	}
+	return t
+}
 func TestSchema_AdjustWhereClause(t *testing.T) {
 	type fields struct {
-		lock      sync.RWMutex
 		SchemaDoc model.Type
-		crud      model.CrudSchemaInterface
-		project   string
-		config    config.Crud
 	}
 	type args struct {
 		dbAlias string
@@ -181,6 +197,7 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
+		want    map[string]interface{}
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -192,7 +209,8 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			wantErr: false,
 		},
 		{
@@ -203,7 +221,8 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			},
-			fields:  fields{crud: crudMySQL, project: "test"},
+			fields:  fields{},
+			want:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			wantErr: false,
 		},
 		{
@@ -214,7 +233,8 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{}}},
+			want:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			wantErr: false,
 		},
 		{
@@ -225,7 +245,8 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{}}}},
+			want:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			wantErr: false,
 		},
 		{
@@ -236,7 +257,8 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": "2014-11-12T11:45:26.371Z"},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    map[string]interface{}{"col2": returntime("2014-11-12T11:45:26.371Z")},
 			wantErr: false,
 		},
 		{
@@ -247,7 +269,8 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": "2014-11-12"},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    map[string]interface{}{"col2": "2014-11-12"},
 			wantErr: true,
 		},
 		{
@@ -258,7 +281,8 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": map[string]interface{}{"time": "2014-11-12T11:45:26.371Z"}},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    map[string]interface{}{"col2": map[string]interface{}{"time": returntime("2014-11-12T11:45:26.371Z")}},
 			wantErr: false,
 		},
 		{
@@ -267,9 +291,10 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbAlias: "mysql",
 				dbType:  "mongo",
 				col:     "table1",
-				find:    map[string]interface{}{"col2": map[string]interface{}{"time": time.Now()}},
+				find:    map[string]interface{}{"col2": map[string]interface{}{"time": time.Now().Round(time.Second)}},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    map[string]interface{}{"col2": map[string]interface{}{"time": time.Now().Round(time.Second)}},
 			wantErr: false,
 		},
 		{
@@ -280,7 +305,8 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": map[string]interface{}{"time": "string"}},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    map[string]interface{}{"col2": map[string]interface{}{"time": "string"}},
 			wantErr: true,
 		},
 		{
@@ -289,9 +315,10 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				dbAlias: "mysql",
 				dbType:  "mongo",
 				col:     "table1",
-				find:    map[string]interface{}{"col2": time.Now()},
+				find:    map[string]interface{}{"col2": time.Now().Round(time.Second)},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    map[string]interface{}{"col2": time.Now().Round(time.Second)},
 			wantErr: false,
 		},
 		{
@@ -302,21 +329,22 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 				col:     "table1",
 				find:    map[string]interface{}{"col2": 10},
 			},
-			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}, crud: crudMySQL, project: "test"},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
+			want:    map[string]interface{}{"col2": 10},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &Schema{
-				lock:      tt.fields.lock,
 				SchemaDoc: tt.fields.SchemaDoc,
-				crud:      tt.fields.crud,
-				project:   tt.fields.project,
-				config:    tt.fields.config,
 			}
-			if err := s.AdjustWhereClause(tt.args.dbAlias, tt.args.dbType, tt.args.col, tt.args.find); (err != nil) != tt.wantErr {
+			err := s.AdjustWhereClause(tt.args.dbAlias, tt.args.dbType, tt.args.col, tt.args.find)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Schema.AdjustWhereClause() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(tt.want, tt.args.find) {
+				t.Errorf("Schema.AdjustWhereClause() find = %v, want %v", tt.args.find, tt.want)
 			}
 		})
 	}
