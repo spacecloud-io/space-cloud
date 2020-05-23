@@ -42,6 +42,9 @@ func TestGetServicesRoutes(t *testing.T) {
 					paramsReturned: []interface{}{nil, model.Response{
 						Result: []interface{}{map[string]interface{}{
 							"id": "local-admin",
+							"source": map[string]interface{}{
+								"url": "/v1/runner/myproject/service-routes",
+							},
 						},
 						},
 					}},
@@ -52,7 +55,7 @@ func TestGetServicesRoutes(t *testing.T) {
 					API:  "/v1/runner/{project}/service-routes/{id}",
 					Type: "services-routes",
 					Meta: map[string]string{"project": "myproject", "id": "local-admin"},
-					Spec: map[string]interface{}{},
+					Spec: map[string]interface{}{"routes": []interface{}{map[string]interface{}{"source": map[string]interface{}{"url": "/v1/runner/myproject/service-routes"}}}},
 				},
 			},
 			wantErr: false,
