@@ -7,7 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils/file"
@@ -56,7 +56,7 @@ func ReadSpecObjectsFromFile(fileName string) ([]*model.SpecObject, error) {
 	}
 
 	// Split the files into independent objects
-	dataStrings := strings.Split(string(data), "---")
+	dataStrings := makeSpecString(string(data))
 	for _, dataString := range dataStrings {
 
 		// Skip if string is too small to be a spec object
@@ -75,6 +75,26 @@ func ReadSpecObjectsFromFile(fileName string) ([]*model.SpecObject, error) {
 	}
 
 	return specs, nil
+}
+
+func makeSpecString(raw string) []string {
+	lines := strings.Split(strings.Replace(raw, "\r\n", "\n", -1), "\n")
+	var finalArray []string
+	var tempArray []string
+	for _, line := range lines {
+		if line == "---" {
+			finalArray = append(finalArray, strings.Join(tempArray, "\n"))
+			tempArray = make([]string, 0)
+			continue
+		}
+		tempArray = append(tempArray, line)
+	}
+
+	if len(tempArray) > 0 {
+		finalArray = append(finalArray, strings.Join(tempArray, "\n"))
+	}
+
+	return finalArray
 }
 
 // CreateDirIfNotExist creates a directory if it doesn't already exists

@@ -3,8 +3,8 @@ package utils
 import (
 	"github.com/spaceuptech/space-cli/cmd/utils/file"
 
+	"github.com/ghodss/yaml"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 )

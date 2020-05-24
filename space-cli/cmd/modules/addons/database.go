@@ -57,7 +57,9 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 
 	// Prepare the docker image name name
 	dockerImage := fmt.Sprintf("%s:%s", dbtype, version)
-
+	if dbtype == "sqlserver" {
+		dockerImage = fmt.Sprintf("%s:%s", "mcr.microsoft.com/mssql/server", version)
+	}
 	// Set alias if not provided
 	if alias == "" {
 		alias = dbtype
@@ -78,6 +80,8 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 			return utils.LogError("Cannot set username or password with Mongo", nil)
 		}
 		env = []string{}
+	case "sqlserver":
+		env = []string{"ACCEPT_EULA=Y", fmt.Sprintf("SA_PASSWORD=%s", password)}
 	default:
 		return utils.LogError(fmt.Sprintf("Invalid database type (%s) provided", dbtype), nil)
 	}
@@ -157,6 +161,8 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 			connDefault = fmt.Sprintf("mongodb://%s:27017", hostName)
 		case "mysql":
 			connDefault = fmt.Sprintf("root:%s@tcp(%s:3306)/", password, hostName)
+		case "sqlserver":
+			connDefault = fmt.Sprintf("Data Source=%s,1433;Initial Catalog=master;User ID=%s;Password=%s;", hostName, username, password)
 		default:
 			return fmt.Errorf("invalid database provided, supported databases postgres,sqlserver,embedded,mongo,mysql")
 		}

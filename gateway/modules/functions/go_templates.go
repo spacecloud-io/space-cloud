@@ -7,8 +7,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ghodss/yaml"
 	"github.com/segmentio/ksuid"
-	"gopkg.in/yaml.v3"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
