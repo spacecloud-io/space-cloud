@@ -1,30 +1,19 @@
 package accounts
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/ghodss/yaml"
 	"github.com/olekukonko/tablewriter"
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
 func listAccounts(accountID string, showKeys bool) error {
-	filePath := utils.GetAccountConfigPath()
-	yamlFile, err := ioutil.ReadFile(filePath)
+	credential, err := utils.GetCredentials()
 	if err != nil {
-		logrus.Errorf("error getting credential unable to read accounts config file - %s", err.Error())
-		return err
-	}
-
-	credential := new(model.Credential)
-	if err := yaml.Unmarshal(yamlFile, credential); err != nil {
-		logrus.Errorf("error getting credential unable to unmarshal accounts config file - %s", err.Error())
 		return err
 	}
 

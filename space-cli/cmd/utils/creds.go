@@ -11,16 +11,9 @@ import (
 
 // getSelectedAccount gets the account information of the selected account
 func getSelectedAccount() (*model.Account, error) {
-	filePath := GetAccountConfigPath()
-	yamlFile, err := file.File.ReadFile(filePath)
-	if err != nil {
-		logrus.Errorf("error getting credential unable to read accounts config file - %s", err.Error())
-		return nil, err
-	}
 
-	credential := new(model.Credential)
-	if err := yaml.Unmarshal(yamlFile, credential); err != nil {
-		logrus.Errorf("error getting credential unable to unmarshal accounts config file - %s", err.Error())
+	credential, err := GetCredentials()
+	if err != nil {
 		return nil, err
 	}
 
@@ -72,4 +65,21 @@ func StoreCredentials(account *model.Account) error {
 		return err
 	}
 	return nil
+}
+
+// GetCredentials get all the stored credentials
+func GetCredentials() (*model.Credential, error) {
+	filePath := GetAccountConfigPath()
+	yamlFile, err := file.File.ReadFile(filePath)
+	if err != nil {
+		logrus.Errorf("error getting credential unable to read accounts config file - %s", err.Error())
+		return nil, err
+	}
+
+	credential := new(model.Credential)
+	if err := yaml.Unmarshal(yamlFile, credential); err != nil {
+		logrus.Errorf("error getting credential unable to unmarshal accounts config file - %s", err.Error())
+		return nil, err
+	}
+	return credential, nil
 }
