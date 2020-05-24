@@ -27,9 +27,16 @@ func Commands() []*cobra.Command {
 		RunE: actionViewAccount,
 	}
 
+	var setAccountCommand = &cobra.Command{
+		Use:   "set",
+		Short: "set the given account as the selected account",
+		RunE:  actionSetAccount,
+	}
+
 	viewAccountsCommand.Flags().BoolP("show-keys", "", false, "shows the keys of the accounts")
 
 	accountsCmd.AddCommand(viewAccountsCommand)
+	accountsCmd.AddCommand(setAccountCommand)
 
 	return []*cobra.Command{accountsCmd}
 }
@@ -44,6 +51,21 @@ func actionViewAccount(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := listAccounts(accountID, showKeys); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func actionSetAccount(cmd *cobra.Command, args []string) error {
+
+	if len(args) == 0 {
+		_ = utils.LogError("Account ID not specified to be set as selected account", nil)
+		return nil
+	}
+
+	accountID := args[0]
+	if err := setAccount(accountID); err != nil {
 		return err
 	}
 
