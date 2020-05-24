@@ -15,7 +15,7 @@ func setAccount(accountID string) error {
 			exists = true
 		}
 	}
-	if exists == false {
+	if !exists {
 		_ = utils.LogError("No account exists with the given account ID", nil)
 		return nil
 	}
