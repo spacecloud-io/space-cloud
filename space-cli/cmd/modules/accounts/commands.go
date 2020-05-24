@@ -33,10 +33,17 @@ func Commands() []*cobra.Command {
 		RunE:  actionSetAccount,
 	}
 
+	var deleteAccountCommand = &cobra.Command{
+		Use:   "delete",
+		Short: "deletes the given account",
+		RunE:  actionDeleteAccount,
+	}
+
 	viewAccountsCommand.Flags().BoolP("show-keys", "", false, "shows the keys of the accounts")
 
 	accountsCmd.AddCommand(viewAccountsCommand)
 	accountsCmd.AddCommand(setAccountCommand)
+	accountsCmd.AddCommand(deleteAccountCommand)
 
 	return []*cobra.Command{accountsCmd}
 }
@@ -66,6 +73,21 @@ func actionSetAccount(cmd *cobra.Command, args []string) error {
 
 	accountID := args[0]
 	if err := setAccount(accountID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func actionDeleteAccount(cmd *cobra.Command, args []string) error {
+
+	if len(args) == 0 {
+		_ = utils.LogError("Account ID not specified to be deleted", nil)
+		return nil
+	}
+
+	accountID := args[0]
+	if err := deleteAccount(accountID); err != nil {
 		return err
 	}
 
