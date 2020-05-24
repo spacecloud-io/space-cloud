@@ -1,25 +1,37 @@
 package accounts
 
 import (
+	"strings"
+
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
-func setAccount(accountID string) error {
+func setAccount(prefix string) error {
 	credential, err := utils.GetCredentials()
 	if err != nil {
 		return err
 	}
 	exists := false
-	for _, v := range credential.Accounts {
-		if v.ID == accountID {
-			exists = true
+	accountIDOptions := []string{}
+	if prefix != "" {
+		for _, v := range credential.Accounts {
+			accountIDOptions = append(accountIDOptions, v.ID)
+			if strings.HasPrefix(v.ID, prefix) {
+				prefix = v.ID
+				exists = true
+			}
 		}
 	}
 	if !exists {
-		_ = utils.LogError("No account exists with the given account ID", nil)
-		return nil
+		if prefix != "" {
+			utils.LogInfo("Warning! No account found for prefix provided, showing all")
+		}
+		if err := survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: accountIDOptions}, &prefix); err != nil {
+			return err
+		}
 	}
-	credential.SelectedAccount = accountID
+	credential.SelectedAccount = prefix
 
 	return nil
 }

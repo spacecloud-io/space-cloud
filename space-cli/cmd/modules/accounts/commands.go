@@ -66,13 +66,12 @@ func actionViewAccount(cmd *cobra.Command, args []string) error {
 
 func actionSetAccount(cmd *cobra.Command, args []string) error {
 
-	if len(args) == 0 {
-		_ = utils.LogError("Account ID not specified to be set as selected account", nil)
-		return nil
+	prefix := ""
+	if len(args) > 0 {
+		prefix = args[0]
 	}
 
-	accountID := args[0]
-	if err := setAccount(accountID); err != nil {
+	if err := setAccount(prefix); err != nil {
 		return err
 	}
 
