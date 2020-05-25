@@ -14,9 +14,9 @@ func setAccount(prefix string) error {
 	}
 	exists := false
 	accountIDOptions := []string{}
-	if prefix != "" {
-		for _, v := range credential.Accounts {
-			accountIDOptions = append(accountIDOptions, v.ID)
+	for _, v := range credential.Accounts {
+		accountIDOptions = append(accountIDOptions, v.ID)
+		if prefix != "" {
 			if strings.HasPrefix(v.ID, prefix) {
 				prefix = v.ID
 				exists = true
