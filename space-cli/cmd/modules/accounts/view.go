@@ -43,5 +43,7 @@ func listAccounts(accountID string, showKeys bool) error {
 		}
 	}
 
+	table.Render()
+
 	return nil
 }

@@ -32,6 +32,10 @@ func setAccount(prefix string) error {
 		}
 	}
 	credential.SelectedAccount = prefix
+	if err := utils.GenerateYamlFile(credential); err != nil {
+		_ = utils.LogError("Could not update yaml file while setting selected account", nil)
+		return nil
+	}
 
 	return nil
 }
