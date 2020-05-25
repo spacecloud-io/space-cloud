@@ -121,6 +121,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 		"DEV=" + devMode,
 		"GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/credentials.json",
 		"CLUSTER_ID=" + id,
+		"PORT=" + portHTTPValue,
 	}
 
 	envs = append(envs, environmentVariables...)
@@ -168,8 +169,8 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 				nat.Port(portHTTPSValue): struct{}{},
 			},
 			portMapping: nat.PortMap{
-				nat.Port(portHTTPValue): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPValue}},
-				nat.Port(portHTTPValue): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPSValue}},
+				nat.Port(portHTTPValue):  []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPValue}},
+				nat.Port(portHTTPSValue): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: portHTTPSValue}},
 			},
 			mount: mounts,
 		},
@@ -314,16 +315,15 @@ func getNetworkName(id string) string {
 
 func checkPortAvailability(port, s string) (string, error) {
 	ln, err := net.Listen("tcp", ":"+port)
-
 	if err != nil {
 		utils.LogInfo(fmt.Sprintf("The port %s is current busy", port))
-		port := ""
 		if err := survey.AskOne(&survey.Input{Message: fmt.Sprintf("Enter %s port", s)}, &port); err != nil {
 			return "", utils.LogError("error getting port", err)
 		}
 		if port == "" {
 			return "", utils.LogError("Invalid port", err)
 		}
+		return checkPortAvailability(port, s)
 	}
 	_ = ln.Close()
 	return port, nil
