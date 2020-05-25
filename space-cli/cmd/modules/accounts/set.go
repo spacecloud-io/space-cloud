@@ -15,9 +15,11 @@ func setAccount(prefix string) error {
 	}
 	accountIDOptions := []string{}
 	for _, v := range credential.Accounts {
+		v.ID = strings.ToLower(v.ID)
 		accountIDOptions = append(accountIDOptions, v.ID)
 	}
 
+	prefix = strings.ToLower(prefix)
 	filteredAccountIDOptions, exists := filterAccounts(credential.Accounts, prefix)
 
 	if exists {
