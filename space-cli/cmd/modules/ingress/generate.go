@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/segmentio/ksuid"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
@@ -87,7 +88,7 @@ func generateIngressRouting() (*model.SpecObject, error) {
 		Type: "ingress-routes",
 		Meta: map[string]string{
 			"project": project,
-			"id":      "ingress-config",
+			"id":      ksuid.New().String(),
 		},
 		Spec: map[string]interface{}{
 			"source": map[string]interface{}{

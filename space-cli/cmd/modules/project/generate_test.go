@@ -13,7 +13,9 @@ import (
 )
 
 func Test_generateProject(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
+	// contextTime stores graphql query timeout, initialized as 0 in consistency with code
 	contextTime := 0
 	type mockArgs struct {
 		method         string
@@ -31,8 +33,8 @@ func Test_generateProject(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -42,7 +44,7 @@ func Test_generateProject(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 			},
@@ -52,13 +54,13 @@ func Test_generateProject(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), "projectName"},
+					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "projectName"},
 				},
 			},
 			wantErr: true,
@@ -68,18 +70,18 @@ func Test_generateProject(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "projectName"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter AES Key: "}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), "key"},
+					args:           []interface{}{&survey.Input{Message: "Enter AES Key: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "key"},
 				},
 			},
 			wantErr: true,
@@ -89,43 +91,43 @@ func Test_generateProject(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "projectName"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter AES Key: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter AES Key: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Graphql Query Timeout: ", Default: "10"}, &contextTime, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), "key"},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "key"},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anyting",
+			name: "spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project Name: ", Default: "project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "projectName"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter AES Key: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter AES Key: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "key"},
 				},
 				{
@@ -144,7 +146,7 @@ func Test_generateProject(t *testing.T) {
 					"id":                 "project",
 					"aesKey":             "key",
 					"name":               "projectName",
-					"secrets":            "",
+					"secrets":            []map[string]interface{}{{"isPrimary": true, "secret": "ksuid string"}},
 					"contextTimeGraphQL": 15,
 				},
 			},
@@ -168,7 +170,7 @@ func Test_generateProject(t *testing.T) {
 			}
 
 			if got != nil {
-				got.Spec.(map[string]interface{})["secrets"] = ""
+				got.Spec.(map[string]interface{})["secrets"] = []map[string]interface{}{{"isPrimary": true, "secret": "ksuid string"}}
 			}
 
 			if !reflect.DeepEqual(got, tt.want) {

@@ -13,7 +13,8 @@ import (
 )
 
 func Test_generateUserManagement(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -30,8 +31,8 @@ func Test_generateUserManagement(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -41,32 +42,37 @@ func Test_generateUserManagement(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "provider"},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/config/projects/{project}/user-management/provider/{id}",
 				Type: "auth-providers",
 				Meta: map[string]string{
-					"project": "",
-					"id":      "",
+					"project": "project",
+					"id":      "provider",
 				},
 				Spec: map[string]interface{}{
 					"enabled": true,

@@ -13,10 +13,12 @@ import (
 )
 
 func Test_generateIngressRouting(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	hosts := ""
 	methods := []string{}
 	weight := 0
+	// want stores the yes/no answer for adding another host, initialized with y to add first host
 	want := "y"
 	type mockArgs struct {
 		method         string
@@ -34,8 +36,8 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -45,13 +47,13 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -61,18 +63,18 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.MultiSelect{Message: "Select Methods: ", Options: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "CONNECT", "TRACE"}}, &methods, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -82,12 +84,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -97,8 +99,8 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -108,12 +110,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -123,13 +125,13 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -139,12 +141,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -154,18 +156,18 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -175,12 +177,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -190,23 +192,23 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter host"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter host"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -216,12 +218,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -231,28 +233,28 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter host"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter host"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -262,12 +264,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -277,33 +279,33 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter host"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter host"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -313,12 +315,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -328,38 +330,38 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter host"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter host"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter weight"}, &weight, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -369,12 +371,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -384,32 +386,32 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter host"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter host"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -420,7 +422,7 @@ func Test_generateIngressRouting(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Add another host?(Y/n)", Default: "n"}, &want, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -430,12 +432,12 @@ func Test_generateIngressRouting(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter hosts by comma separated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -445,32 +447,32 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter host"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter host"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -486,11 +488,11 @@ func Test_generateIngressRouting(t *testing.T) {
 			},
 		},
 		{
-			name: "no error",
+			name: "spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
@@ -505,32 +507,32 @@ func Test_generateIngressRouting(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter url", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "url"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rewriteURL"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "rewriteURL"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select routing type", Options: []string{"prefix", "exact"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "prefix"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter host"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter host"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "host1"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter port", Default: "8080"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "8000"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter scheme", Options: []string{"HTTP", "HTTPS"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "HTTP"},
 				},
 				{
@@ -581,6 +583,11 @@ func Test_generateIngressRouting(t *testing.T) {
 				t.Errorf("generateIngressRouting() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
+			if got != nil {
+				got.Meta["id"] = "ingress-config"
+			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("generateIngressRouting() = %v, want %v", got, tt.want)
 			}

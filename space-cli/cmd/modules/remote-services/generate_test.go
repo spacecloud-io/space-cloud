@@ -13,7 +13,9 @@ import (
 )
 
 func Test_generateService(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
+	// want stores the yes/no answer for adding another endpoint, initialized with y to add first endpoint
 	want := "y"
 	type mockArgs struct {
 		method         string
@@ -31,8 +33,8 @@ func Test_generateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -42,13 +44,13 @@ func Test_generateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -58,18 +60,18 @@ func Test_generateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -79,23 +81,23 @@ func Test_generateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -105,28 +107,28 @@ func Test_generateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Endpoint Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Endpoint Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -136,33 +138,33 @@ func Test_generateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Endpoint Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Endpoint Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select Method: ", Options: []string{"POST", "PUT", "GET", "DELETE"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select Method: ", Options: []string{"POST", "PUT", "GET", "DELETE"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -172,74 +174,74 @@ func Test_generateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Endpoint Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Endpoint Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select Method: ", Options: []string{"POST", "PUT", "GET", "DELETE"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select Method: ", Options: []string{"POST", "PUT", "GET", "DELETE"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter URL Path:", Default: "/"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter URL Path:", Default: "/"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, &want, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Name: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "service"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Service URL: ", Help: "e.g -> http://localhost:8090"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "url"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Endpoint Name: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Endpoint Name: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "endpointName"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select Method: ", Options: []string{"POST", "PUT", "GET", "DELETE"}}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Select{Message: "Select Method: ", Options: []string{"POST", "PUT", "GET", "DELETE"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "POST"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter URL Path:", Default: "/"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter URL Path:", Default: "/"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "/"},
 				},
 				{
 					method:         "AskOne",
@@ -251,12 +253,12 @@ func Test_generateService(t *testing.T) {
 				API:  "/v1/config/projects/{project}/remote-service/service/{id}",
 				Type: "remote-services",
 				Meta: map[string]string{
-					"id":      "",
-					"project": "",
+					"id":      "service",
+					"project": "project",
 				},
 				Spec: map[string]interface{}{
-					"url":       "",
-					"endpoints": []interface{}{map[string]interface{}{"endpointName": map[string]interface{}{"method": "", "path": ""}}},
+					"url":       "url",
+					"endpoints": []interface{}{map[string]interface{}{"endpointName": map[string]interface{}{"method": "POST", "path": "/"}}},
 				},
 			},
 		},

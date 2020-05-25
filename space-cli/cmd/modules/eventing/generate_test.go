@@ -13,7 +13,8 @@ import (
 )
 
 func Test_generateEventingRule(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -30,8 +31,8 @@ func Test_generateEventingRule(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -41,37 +42,37 @@ func Test_generateEventingRule(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "eventing rule spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "ruleType"},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/config/projects/{project}/eventing/rules/{id}",
 				Type: "eventing-rule",
 				Meta: map[string]string{
-					"id":      "",
-					"project": "",
+					"id":      "ruleType",
+					"project": "project",
 				},
 				Spec: map[string]interface{}{
 					"rule": "allow",
@@ -105,7 +106,8 @@ func Test_generateEventingRule(t *testing.T) {
 }
 
 func Test_generateEventingSchema(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -122,8 +124,8 @@ func Test_generateEventingSchema(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -133,13 +135,13 @@ func Test_generateEventingSchema(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -149,50 +151,50 @@ func Test_generateEventingSchema(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rule type"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter rule type"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "eventing schema spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter rule type"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter rule type"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "ruleType"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "schema"},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/config/projects/{project}/eventing/schema/{id}",
 				Type: "eventing-schema",
 				Meta: map[string]string{
-					"id":      "",
-					"project": "",
+					"id":      "ruleType",
+					"project": "project",
 				},
 				Spec: map[string]interface{}{
-					"schema": "",
+					"schema": "schema",
 				},
 			},
 		},
@@ -223,7 +225,8 @@ func Test_generateEventingSchema(t *testing.T) {
 }
 
 func Test_generateEventingConfig(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -240,8 +243,8 @@ func Test_generateEventingConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -251,40 +254,40 @@ func Test_generateEventingConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "eventing config spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "db"},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/config/projects/{project}/eventing/config/{id}",
 				Type: "eventing-config",
 				Meta: map[string]string{
-					"project": "",
+					"project": "project",
 					"id":      "eventing-config",
 				},
 				Spec: map[string]interface{}{
-					"dbAlias": "",
+					"dbAlias": "db",
 					"enabled": true,
 				},
 			},
@@ -316,7 +319,8 @@ func Test_generateEventingConfig(t *testing.T) {
 }
 
 func Test_generateEventingTrigger(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -333,8 +337,8 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -344,13 +348,13 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -360,18 +364,18 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -381,23 +385,23 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "File Storage"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Select{Message: "Select trigger operation", Options: []string{"FILE_CREATE", "FILE_DELETE"}}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -407,23 +411,23 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Custom"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter trigger type"}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -433,23 +437,23 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Database"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Select{Message: "Select trigger operation", Options: []string{"DB_INSERT", "DB_UPDATE", "DB_DELETE"}}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -459,17 +463,17 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Database"},
 				},
 				{
@@ -480,7 +484,7 @@ func Test_generateEventingTrigger(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Database Alias "}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -490,17 +494,17 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Database"},
 				},
 				{
@@ -516,7 +520,7 @@ func Test_generateEventingTrigger(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter collection/table name"}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -526,17 +530,17 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Database"},
 				},
 				{
@@ -557,7 +561,7 @@ func Test_generateEventingTrigger(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -567,17 +571,17 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Database"},
 				},
 				{
@@ -603,7 +607,7 @@ func Test_generateEventingTrigger(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -613,17 +617,17 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Database"},
 				},
 				{
@@ -654,7 +658,7 @@ func Test_generateEventingTrigger(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Retries count", Default: "3"}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -664,17 +668,17 @@ func Test_generateEventingTrigger(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Database"},
 				},
 				{
@@ -710,48 +714,48 @@ func Test_generateEventingTrigger(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Timeout", Default: "5000"}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything when advanced settings true with database source",
+			name: "spec object created when advanced settings true with database source",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter project"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "trigger name"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "trigger"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Database"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Select{Message: "Select trigger operation", Options: []string{"DB_INSERT", "DB_UPDATE", "DB_DELETE"}}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "DB_INSERT"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Database Alias "}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "db"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter collection/table name"}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "col"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "webhook url"}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "url"},
 				},
 				{
 					method:         "AskOne",
@@ -773,15 +777,115 @@ func Test_generateEventingTrigger(t *testing.T) {
 				API:  "/v1/config/projects/{project}/eventing/triggers/{id}",
 				Type: "eventing-triggers",
 				Meta: map[string]string{
-					"project": "",
-					"id":      "",
+					"project": "project",
+					"id":      "trigger",
 				},
 				Spec: map[string]interface{}{
-					"type":    "",
-					"url":     "",
+					"type":    "DB_INSERT",
+					"url":     "url",
 					"retries": 3,
 					"timeout": 5000,
-					"options": map[string]interface{}{"db": "", "col": ""},
+					"options": map[string]interface{}{"db": "db", "col": "col"},
+				},
+			},
+		},
+		{
+			name: "spec object created with file storage source",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "trigger"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "File Storage"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select trigger operation", Options: []string{"FILE_CREATE", "FILE_DELETE"}}, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil, "FILE_CREATE"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "webhook url"}, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil, "url"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Do you want advanced settings? (Y / n) ?", Default: "n"}, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil, "n"},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/config/projects/{project}/eventing/triggers/{id}",
+				Type: "eventing-triggers",
+				Meta: map[string]string{
+					"project": "project",
+					"id":      "trigger",
+				},
+				Spec: map[string]interface{}{
+					"type":    "FILE_CREATE",
+					"url":     "url",
+					"retries": 3,
+					"timeout": 5000,
+					"options": map[string]interface{}{},
+				},
+			},
+		},
+		{
+			name: "spec object created with custom source",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter project"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "trigger name"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "trigger"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Select source ", Options: []string{"Database", "File Storage", "Custom"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "Custom"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter trigger type"}, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil, "custom"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "webhook url"}, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil, "url"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Do you want advanced settings? (Y / n) ?", Default: "n"}, mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil, "n"},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/config/projects/{project}/eventing/triggers/{id}",
+				Type: "eventing-triggers",
+				Meta: map[string]string{
+					"project": "project",
+					"id":      "trigger",
+				},
+				Spec: map[string]interface{}{
+					"type":    "custom",
+					"url":     "url",
+					"retries": 3,
+					"timeout": 5000,
+					"options": map[string]interface{}{},
 				},
 			},
 		},

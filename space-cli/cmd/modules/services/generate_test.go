@@ -13,7 +13,9 @@ import (
 )
 
 func TestGenerateService(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
+	// initialized with N to to pass into test case where want is used again
 	want := "N"
 	notAutoDockerImage := "not-auto"
 	var port int32
@@ -39,8 +41,8 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -51,8 +53,8 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -63,13 +65,13 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -80,18 +82,18 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, &port, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -102,12 +104,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -118,7 +120,7 @@ func TestGenerateService(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, &notAutoDockerImage, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -129,12 +131,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -151,12 +153,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -171,8 +173,8 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -183,12 +185,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -203,13 +205,13 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "Y"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Docker Secret"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Docker Secret"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -220,12 +222,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -240,13 +242,13 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Do you want to add other secrets (Y / N) ?", Default: "N"}, &want, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -257,12 +259,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -277,7 +279,7 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
 				{
@@ -287,8 +289,8 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -299,12 +301,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -319,7 +321,7 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
 				{
@@ -329,13 +331,13 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "filesecret1,filesecret2"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -346,12 +348,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -366,7 +368,7 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
 				{
@@ -376,12 +378,12 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "filesecret1,filesecret2"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "notInt-90"},
 				},
 			},
@@ -393,12 +395,12 @@ func TestGenerateService(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
@@ -413,7 +415,7 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
 				{
@@ -423,44 +425,44 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "filesecret1,filesecret2"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "10-notInt"},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error case",
+			name: "spec object created",
 			args: args{projectID: "projectID", dockerImage: notAutoDockerImage},
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Service ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "service"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Service Version", Default: "v1"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "v1"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "8080"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Docker Image Name"}, &notAutoDockerImage, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "image"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "N"},
 				},
 				{
@@ -470,7 +472,7 @@ func TestGenerateService(t *testing.T) {
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "10-90"},
 				},
 			},
@@ -478,19 +480,19 @@ func TestGenerateService(t *testing.T) {
 				API:  "/v1/runner/{project}/services/{id}/{version}",
 				Type: "service",
 				Meta: map[string]string{
-					"id":      "",
+					"id":      "service",
 					"project": "projectID",
-					"version": "",
+					"version": "v1",
 				},
 				Spec: &model.Service{
 					Labels: map[string]string{},
 					Scale:  model.ScaleConfig{Replicas: int32(10), MinReplicas: int32(10), MaxReplicas: int32(90), Concurrency: 50, Mode: "parallel"},
 					Tasks: []model.Task{
 						{
-							ID:        "",
+							ID:        "service",
 							Ports:     []model.Port{{Name: "http", Protocol: "http", Port: port}},
 							Resources: model.Resources{CPU: 250, Memory: 512},
-							Docker:    model.Docker{ImagePullPolicy: model.PullIfNotExists, Image: "", Secret: "", Cmd: []string{}},
+							Docker:    model.Docker{ImagePullPolicy: model.PullIfNotExists, Image: "image", Secret: "", Cmd: []string{}},
 							Runtime:   model.Image,
 							Secrets:   []string{},
 							Env:       map[string]string{},

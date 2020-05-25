@@ -13,7 +13,8 @@ import (
 )
 
 func Test_generateLetsEncryptDomain(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -30,8 +31,24 @@ func Test_generateLetsEncryptDomain(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying email id",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, ""},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -41,40 +58,51 @@ func Test_generateLetsEncryptDomain(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Email ID: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, ""},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter White Listed Domain by comma seperated value: "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "domain1,domain2"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Email ID: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "email@somemail.com"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter project: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/config/projects/{project}/letsencrypt/config/{id}",
 				Type: "letsencrypt",
 				Meta: map[string]string{
-					"project": "",
+					"project": "project",
 					"id":      "letsencrypt-config",
 				},
 				Spec: map[string]interface{}{
 					"domains": []string{"domain1", "domain2"},
+					"email":   "email@somemail.com",
 				},
 			},
 		},

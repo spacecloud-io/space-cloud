@@ -3,15 +3,15 @@ package input
 import "github.com/AlecAivazis/survey/v2"
 
 type inputInterface interface {
-	AskOne(p survey.Prompt, respone interface{}, opts ...survey.AskOpt) error
+	AskOne(p survey.Prompt, respone interface{}) error
 }
 
 // Input struct for parameter
 type input struct{}
 
 // AskOne calls survey.AskOne
-func (i *input) AskOne(p survey.Prompt, respone interface{}, opts ...survey.AskOpt) error {
-	if err := survey.AskOne(p, respone, opts...); err != nil {
+func (i *input) AskOne(p survey.Prompt, respone interface{}) error {
+	if err := survey.AskOne(p, respone); err != nil {
 		return err
 	}
 	return nil

@@ -13,7 +13,8 @@ import (
 )
 
 func Test_generateFilestoreRule(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -30,8 +31,8 @@ func Test_generateFilestoreRule(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -41,13 +42,13 @@ func Test_generateFilestoreRule(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Rule Name"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Rule Name"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -57,50 +58,50 @@ func Test_generateFilestoreRule(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Rule Name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Rule Name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Prefix", Default: "/"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Prefix", Default: "/"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "file store rule spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Rule Name"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Rule Name"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "rule"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Prefix", Default: "/"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Prefix", Default: "/"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "/"},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/config/projects/{project}/file-storage/rules/{id}",
 				Type: "filestore-rule",
 				Meta: map[string]string{
-					"id":      "",
-					"project": "",
+					"id":      "rule",
+					"project": "project",
 				},
 				Spec: map[string]interface{}{
-					"prefix": "",
+					"prefix": "/",
 					"rule": map[string]interface{}{
 						"create": map[string]interface{}{
 							"rule": "allow",
@@ -142,7 +143,8 @@ func Test_generateFilestoreRule(t *testing.T) {
 }
 
 func Test_generateFilestoreConfig(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -159,8 +161,8 @@ func Test_generateFilestoreConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -170,13 +172,13 @@ func Test_generateFilestoreConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -186,12 +188,12 @@ func Test_generateFilestoreConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "default"},
 				},
 			},
@@ -202,18 +204,18 @@ func Test_generateFilestoreConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "local"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -223,18 +225,18 @@ func Test_generateFilestoreConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "amazon-s3"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -244,23 +246,23 @@ func Test_generateFilestoreConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "amazon-s3"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter connection"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter connection"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -270,82 +272,162 @@ func Test_generateFilestoreConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "amazon-s3"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter connection"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter connection"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter endpoint"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter endpoint"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "error surveying bucket with storetype gcp-storage",
+			name: "file store config spec object created with storetype amazon-s3",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, "gcp-storage"},
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "amazon-s3"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "no error surveying anything",
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter connection"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "connection-string"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, "local"},
+					args:           []interface{}{&survey.Input{Message: "Enter endpoint"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "www.some-endpoint/"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "bucket"},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/config/projects/{project}/file-storage/config/{id}",
 				Type: "filestore-config",
 				Meta: map[string]string{
-					"project": "",
+					"project": "project",
+					"id":      "filestore-config",
+				},
+				Spec: map[string]interface{}{
+					"bucket":    "bucket",
+					"conn":      "connection-string",
+					"enabled":   true,
+					"endpoint":  "www.some-endpoint/",
+					"storeType": "amazon-s3",
+				},
+			},
+		},
+		{
+			name: "error surveying bucket with storetype gcp-storage",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, ""},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "gcp-storage"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "file store config spec object created with store type gcp",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "gcp-storage"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "bucket"},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/config/projects/{project}/file-storage/config/{id}",
+				Type: "filestore-config",
+				Meta: map[string]string{
+					"project": "project",
+					"id":      "filestore-config",
+				},
+				Spec: map[string]interface{}{
+					"bucket":    "bucket",
+					"conn":      "",
+					"enabled":   true,
+					"endpoint":  "",
+					"storeType": "gcp-storage",
+				},
+			},
+		},
+		{
+			name: "file store config spec object created with store type local",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "local"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "connection-string"},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/config/projects/{project}/file-storage/config/{id}",
+				Type: "filestore-config",
+				Meta: map[string]string{
+					"project": "project",
 					"id":      "filestore-config",
 				},
 				Spec: map[string]interface{}{
 					"bucket":    "",
-					"conn":      "",
+					"conn":      "connection-string",
 					"enabled":   true,
 					"endpoint":  "",
 					"storeType": "local",

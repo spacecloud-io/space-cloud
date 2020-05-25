@@ -13,7 +13,8 @@ import (
 )
 
 func Test_generateDBRule(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -26,48 +27,12 @@ func Test_generateDBRule(t *testing.T) {
 		wantErr        bool
 	}{
 		{
-			name: "no error while surveying anything",
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
-				},
-			},
-			want: &model.SpecObject{
-				API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules",
-				Type: "db-rules",
-				Meta: map[string]string{
-					"dbAlias": "",
-					"col":     "",
-					"project": "",
-				},
-				Spec: map[string]interface{}{
-					"isRealtimeEnabled": false,
-					"rules": map[string]interface{}{
-						"create": map[string]interface{}{
-							"rule": "allow",
-						},
-						"delete": map[string]interface{}{
-							"rule": "allow",
-						},
-						"read": map[string]interface{}{
-							"rule": "allow",
-						},
-						"update": map[string]interface{}{
-							"rule": "allow",
-						},
-					},
-				},
-			},
-		},
-		{
 			name: "error while surveying project ID",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -77,13 +42,13 @@ func Test_generateDBRule(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -93,18 +58,18 @@ func Test_generateDBRule(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Collection Name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Collection Name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -114,48 +79,48 @@ func Test_generateDBRule(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Collection Name"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Collection Name"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter DB Alias"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error while surveying realtime enabled bool",
+			name: "db rule spec object generated",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Collection Name"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Collection Name"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "col"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter DB Alias"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "db"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "y"},
 				},
 			},
@@ -163,9 +128,9 @@ func Test_generateDBRule(t *testing.T) {
 				API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules",
 				Type: "db-rules",
 				Meta: map[string]string{
-					"dbAlias": "",
-					"col":     "",
-					"project": "",
+					"dbAlias": "db",
+					"col":     "col",
+					"project": "project",
 				},
 				Spec: map[string]interface{}{
 					"isRealtimeEnabled": true,
@@ -213,7 +178,8 @@ func Test_generateDBRule(t *testing.T) {
 }
 
 func Test_generateDBConfig(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -230,8 +196,8 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -241,13 +207,13 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -257,18 +223,18 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "postgres"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -278,12 +244,12 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "postgres"},
 				},
 				{
@@ -294,28 +260,28 @@ func Test_generateDBConfig(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "db config spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "postgres"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Database Connection String ", Default: "postgres://postgres:mysecretpassword@localhost:5432/postgres?sslmode=disable"}, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					paramsReturned: []interface{}{nil, "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"},
 				},
 				{
 					method:         "AskOne",
@@ -328,11 +294,11 @@ func Test_generateDBConfig(t *testing.T) {
 				Type: "db-config",
 				Meta: map[string]string{
 					"dbAlias": "dbAlias",
-					"project": "",
+					"project": "project",
 					"id":      "dbAlias" + "-config",
 				},
 				Spec: map[string]interface{}{
-					"conn":      "",
+					"conn":      "postgres://postgres:password@localhost:5432/postgres?sslmode=disable",
 					"enabled":   true,
 					"isPrimary": false,
 					"type":      "postgres",
@@ -344,12 +310,12 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "default"},
 				},
 			},
@@ -360,18 +326,18 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "sqlserver"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -381,18 +347,18 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "embedded"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -402,18 +368,18 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "mongo"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -423,18 +389,18 @@ func Test_generateDBConfig(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project ID"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, "mysql"},
 				},
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -466,7 +432,8 @@ func Test_generateDBConfig(t *testing.T) {
 }
 
 func Test_generateDBSchema(t *testing.T) {
-	someString := ""
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
 	type mockArgs struct {
 		method         string
 		args           []interface{}
@@ -483,8 +450,8 @@ func Test_generateDBSchema(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -494,13 +461,13 @@ func Test_generateDBSchema(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -510,18 +477,18 @@ func Test_generateDBSchema(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Collection "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Collection "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
@@ -531,61 +498,61 @@ func Test_generateDBSchema(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Project "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Collection "}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter Collection "}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter DB Alias"}, &someString, mock.Anything},
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias"}, &surveyReturnValue, mock.Anything},
 					paramsReturned: []interface{}{nil, ""},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{mock.Anything, &someString, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error"), ""},
+					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "no error surveying anything",
+			name: "db schema spec object created",
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Project "}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Project "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Collection "}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Collection "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "col"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter DB Alias"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "db"},
 				},
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Input{Message: "Enter Schema"}, &someString, mock.Anything},
-					paramsReturned: []interface{}{nil, ""},
+					args:           []interface{}{&survey.Input{Message: "Enter Schema"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "schema"},
 				},
 			},
 			want: &model.SpecObject{
 				API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate",
 				Type: "db-schema",
 				Meta: map[string]string{
-					"dbAlias": "",
-					"project": "",
-					"col":     "",
+					"dbAlias": "db",
+					"project": "project",
+					"col":     "col",
 				},
 				Spec: map[string]interface{}{
-					"schema": "",
+					"schema": "schema",
 				},
 			},
 		},

@@ -14,6 +14,11 @@ func generateLetsEncryptDomain() (*model.SpecObject, error) {
 		return nil, err
 	}
 
+	email := ""
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Email ID: "}, &email); err != nil {
+		return nil, err
+	}
+
 	whiteListedDomain := strings.Split(strings.TrimSuffix(whiteListedDomains, ","), ",")
 	project := ""
 	if err := input.Survey.AskOne(&survey.Input{Message: "Enter project: "}, &project); err != nil {
@@ -29,6 +34,7 @@ func generateLetsEncryptDomain() (*model.SpecObject, error) {
 		},
 		Spec: map[string]interface{}{
 			"domains": whiteListedDomain,
+			"email":   email,
 		},
 	}
 
