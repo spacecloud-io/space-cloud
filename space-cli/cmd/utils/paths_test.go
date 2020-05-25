@@ -46,7 +46,7 @@ func TestGetSpaceCloudHostsFilePath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSpaceCloudHostsFilePath(); got != tt.want {
+			if got := GetSpaceCloudHostsFilePath("default"); got != tt.want {
 				t.Errorf("GetSpaceCloudHostsFilePath() = %v, want %v", got, tt.want)
 			}
 		})
@@ -94,7 +94,7 @@ func TestGetSecretsDir(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSecretsDir(); got != tt.want {
+			if got := GetSecretsDir("default"); got != tt.want {
 				t.Errorf("GetSecretsDir() = %v, want %v", got, tt.want)
 			}
 		})
@@ -118,7 +118,7 @@ func TestGetTempSecretsDir(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetTempSecretsDir(); got != tt.want {
+			if got := GetTempSecretsDir("default"); got != tt.want {
 				t.Errorf("GetTempSecretsDir() = %v, want %v", got, tt.want)
 			}
 		})
@@ -142,7 +142,7 @@ func TestGetSpaceCloudConfigFilePath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSpaceCloudConfigFilePath(); got != tt.want {
+			if got := GetSpaceCloudConfigFilePath("default"); got != tt.want {
 				t.Errorf("GetSpaceCloudConfigFilePath() = %v, want %v", got, tt.want)
 			}
 		})

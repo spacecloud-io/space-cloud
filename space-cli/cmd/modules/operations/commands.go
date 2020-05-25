@@ -57,6 +57,11 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('e')", nil)
 			}
+
+			err = viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
 		},
 		RunE: actionSetup,
 	}
@@ -115,6 +120,12 @@ func Commands() []*cobra.Command {
 
 	setup.Flags().StringSliceP("env", "e", []string{}, "Environment variables to be provided to gateway")
 
+	setup.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	err = viper.BindEnv("cluster-id", "CLUSTER_ID1")
+	if err != nil {
+		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	}
+
 	var upgrade = &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade development environment",
@@ -157,8 +168,9 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	portHTTPS := viper.GetInt64("port-https")
 	volumes := viper.GetStringSlice("volume")
 	environmentVariables := viper.GetStringSlice("env")
+	clusterID := viper.GetString("cluster-id")
 
-	_ = Setup(id, userName, key, config, version, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
+	_ = Setup(id, userName, key, config, version, secret, clusterID, local, portHTTP, portHTTPS, volumes, environmentVariables)
 	return nil
 }
 

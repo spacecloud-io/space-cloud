@@ -12,8 +12,11 @@ func GetSpaceCloudDirectory() string {
 }
 
 // GetSpaceCloudHostsFilePath returns the path of the hosts files used in space cloud
-func GetSpaceCloudHostsFilePath() string {
-	return fmt.Sprintf("%s/hosts", GetSpaceCloudDirectory())
+func GetSpaceCloudHostsFilePath(id string) string {
+	if id == "default" {
+		return fmt.Sprintf("%s/hosts", GetSpaceCloudDirectory())
+	}
+	return fmt.Sprintf("%s/%s/hosts", GetSpaceCloudDirectory(), id)
 }
 
 // GetSpaceCloudRoutingConfigPath returns the path of the file storing the service routing config
@@ -22,18 +25,27 @@ func GetSpaceCloudRoutingConfigPath() string {
 }
 
 // GetSpaceCloudConfigFilePath returns the path of the file storing the config
-func GetSpaceCloudConfigFilePath() string {
-	return fmt.Sprintf("%s/config.yaml", GetSpaceCloudDirectory())
+func GetSpaceCloudConfigFilePath(id string) string {
+	if id == "default" {
+		return fmt.Sprintf("%s/config.yaml", GetSpaceCloudDirectory())
+	}
+	return fmt.Sprintf("%s/%s/config.yaml", GetSpaceCloudDirectory(), id)
 }
 
 // GetSecretsDir returns the path of the directory storing all the secrets
-func GetSecretsDir() string {
-	return fmt.Sprintf("%s/secrets", GetSpaceCloudDirectory())
+func GetSecretsDir(id string) string {
+	if id == "default" {
+		return fmt.Sprintf("%s/secrets", GetSpaceCloudDirectory())
+	}
+	return fmt.Sprintf("%s/%s/secrets", GetSpaceCloudDirectory(), id)
 }
 
 // GetTempSecretsDir gets the path of the directory storing all the temp secrets
-func GetTempSecretsDir() string {
-	return fmt.Sprintf("%s/secrets/temp-secrets", GetSpaceCloudDirectory())
+func GetTempSecretsDir(id string) string {
+	if id == "default" {
+		return fmt.Sprintf("%s/secrets/temp-secrets", GetSpaceCloudDirectory())
+	}
+	return fmt.Sprintf("%s/%s/secrets/temp-secrets", GetSpaceCloudDirectory(), id)
 }
 
 func getHomeDirectory() string {

@@ -48,13 +48,13 @@ func Destroy() error {
 	}
 
 	// Remove secrets directory
-	if err := os.RemoveAll(utils.GetSecretsDir()); err != nil {
+	if err := os.RemoveAll(utils.GetSecretsDir("default")); err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to remove secrets directory - %s", err.Error()), nil)
 		return err
 	}
 
 	// Remove host file
-	if err := os.RemoveAll(utils.GetSpaceCloudHostsFilePath()); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudHostsFilePath("default")); err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to remove host file - %s", err.Error()), nil)
 		return err
 	}
@@ -66,7 +66,7 @@ func Destroy() error {
 	}
 
 	// Remove the config file
-	if err := os.RemoveAll(utils.GetSpaceCloudConfigFilePath()); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudConfigFilePath("default")); err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to remove config file file - %s", err.Error()), nil)
 		return err
 	}

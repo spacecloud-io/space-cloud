@@ -29,7 +29,7 @@ func DockerStart() error {
 	}
 
 	// Get the hosts file
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(), WriteFilePath: utils.GetSpaceCloudHostsFilePath()})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath("default"), WriteFilePath: utils.GetSpaceCloudHostsFilePath("default")})
 	if err != nil {
 		return utils.LogError("Unable to open hosts file", err)
 	}
