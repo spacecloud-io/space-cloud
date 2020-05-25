@@ -16,7 +16,7 @@ func deleteAccount(accountID string) error {
 		}
 	}
 
-	if err := utils.GenerateYamlFile(credential); err != nil {
+	if err := utils.GenerateAccountsFile(credential); err != nil {
 		_ = utils.LogError("Could not update yaml file while deleting selected account", nil)
 		return nil
 	}

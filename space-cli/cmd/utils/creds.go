@@ -35,7 +35,7 @@ func StoreCredentials(account *model.Account) error {
 			Accounts:        []*model.Account{account},
 			SelectedAccount: account.ID,
 		}
-		if err := GenerateYamlFile(&credential); err != nil {
+		if err := GenerateAccountsFile(&credential); err != nil {
 			logrus.Errorf("error in checking credentials unable to create accounts yaml file - %v", err)
 			return err
 		}
@@ -50,7 +50,7 @@ func StoreCredentials(account *model.Account) error {
 		if val.ID == account.ID {
 			val.ID, val.UserName, val.Key, val.ServerURL = account.ID, account.UserName, account.Key, account.ServerURL
 			credential.SelectedAccount = account.ID
-			if err := GenerateYamlFile(credential); err != nil {
+			if err := GenerateAccountsFile(credential); err != nil {
 				logrus.Errorf("error in checking credentials unable to update accounts yaml file - %v", err)
 				return err
 			}
@@ -60,7 +60,7 @@ func StoreCredentials(account *model.Account) error {
 	// add new account to already existing accounts.yaml file
 	credential.Accounts = append(credential.Accounts, account)
 	credential.SelectedAccount = account.ID
-	if err := GenerateYamlFile(credential); err != nil {
+	if err := GenerateAccountsFile(credential); err != nil {
 		logrus.Errorf("error in checking credentials unable to update accounts yaml file - %v", err)
 		return err
 	}
