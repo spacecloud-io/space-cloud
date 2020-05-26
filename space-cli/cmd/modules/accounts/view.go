@@ -17,12 +17,17 @@ func listAccounts(accountID string, showKeys bool) error {
 		return err
 	}
 
-	var accounts []*model.Account
+	accounts := []*model.Account{}
 	if accountID != "" {
 		for _, v := range credential.Accounts {
 			if v.ID == accountID {
 				accounts = append(accounts, v)
+				break
 			}
+		}
+		if len(accounts) == 0 {
+			utils.LogInfo("No account found for account ID provided")
+			return nil
 		}
 	} else {
 		accounts = append(accounts, credential.Accounts...)

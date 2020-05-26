@@ -13,10 +13,10 @@ func setAccount(prefix string) error {
 	if err != nil {
 		return err
 	}
+
 	accountIDOptions := []string{}
 	for _, v := range credential.Accounts {
-		v.ID = strings.ToLower(v.ID)
-		accountIDOptions = append(accountIDOptions, v.ID)
+		accountIDOptions = append(accountIDOptions, strings.ToLower(v.ID))
 	}
 
 	prefix = strings.ToLower(prefix)
@@ -38,8 +38,7 @@ func setAccount(prefix string) error {
 	credential.SelectedAccount = prefix
 
 	if err := utils.GenerateAccountsFile(credential); err != nil {
-		_ = utils.LogError("Could not update yaml file while setting selected account", nil)
-		return nil
+		return utils.LogError("Could not update yaml file while setting selected account", nil)
 	}
 
 	return nil
@@ -49,7 +48,7 @@ func filterAccounts(accounts []*model.Account, prefix string) ([]string, bool) {
 	filteredAccountOptions := []string{}
 	exists := false
 	for _, account := range accounts {
-		if prefix != "" && strings.HasPrefix(account.ID, prefix) {
+		if prefix != "" && strings.HasPrefix(strings.ToLower(account.ID), prefix) {
 			filteredAccountOptions = append(filteredAccountOptions, account.ID)
 			exists = true
 		}

@@ -57,11 +57,7 @@ func actionViewAccount(cmd *cobra.Command, args []string) error {
 		accountID = args[0]
 	}
 
-	if err := listAccounts(accountID, showKeys); err != nil {
-		return err
-	}
-
-	return nil
+	return listAccounts(accountID, showKeys)
 }
 
 func actionSetAccount(cmd *cobra.Command, args []string) error {
@@ -71,24 +67,15 @@ func actionSetAccount(cmd *cobra.Command, args []string) error {
 		prefix = args[0]
 	}
 
-	if err := setAccount(prefix); err != nil {
-		return err
-	}
-
-	return nil
+	return setAccount(prefix)
 }
 
 func actionDeleteAccount(cmd *cobra.Command, args []string) error {
 
 	if len(args) == 0 {
-		_ = utils.LogError("Account ID not specified to be deleted", nil)
-		return nil
+		return utils.LogError("Account ID not specified to be deleted", nil)
 	}
-
 	accountID := args[0]
-	if err := deleteAccount(accountID); err != nil {
-		return err
-	}
 
-	return nil
+	return deleteAccount(accountID)
 }
