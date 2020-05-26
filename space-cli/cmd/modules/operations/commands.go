@@ -134,8 +134,20 @@ func Commands() []*cobra.Command {
 	var destroy = &cobra.Command{
 		Use:   "destroy",
 		Short: "clean development environment & remove secrets",
-		RunE:  actionDestroy,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
+		},
+		RunE: actionDestroy,
 	}
+	destroy.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	err = viper.BindEnv("cluster-id", "CLUSTER_ID1")
+	if err != nil {
+		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	}
+
 	var apply = &cobra.Command{
 		Use:   "apply",
 		Short: "deploys service",
@@ -180,7 +192,8 @@ func actionUpgrade(cmd *cobra.Command, args []string) error {
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {
-	_ = Destroy()
+	clusterID := viper.GetString("cluster-id")
+	_ = Destroy(clusterID)
 	return nil
 }
 

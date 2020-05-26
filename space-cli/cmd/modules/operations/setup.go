@@ -41,8 +41,6 @@ func generateRandomString(length int) string {
 // Setup initializes development environment
 func Setup(id, username, key, config, version, secret, clusterID string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
-	const ContainerGateway string = "space-cloud-gateway"
-	const ContainerRunner string = "space-cloud-runner"
 
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
 	_ = utils.CreateDirIfNotExist(utils.GetSecretsDir(clusterID))
@@ -161,7 +159,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 		{
 			name:           "gateway",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", version),
-			containerName:  getContainerName(ContainerGateway, clusterID),
+			containerName:  getNetworkName(clusterID) + "-gateway",
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           envs,
 			exposedPorts: nat.PortSet{
@@ -179,7 +177,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 			// runner
 			name:           "runner",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
-			containerName:  getContainerName(ContainerRunner, clusterID),
+			containerName:  getNetworkName(clusterID) + "-runner",
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
 				"DEV=" + devMode,
@@ -297,13 +295,6 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 	utils.LogInfo(fmt.Sprintf("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key))
 
 	return nil
-}
-
-func getContainerName(containerName string, id string) string {
-	if id == "default" {
-		return containerName
-	}
-	return containerName + "-" + id
 }
 
 func getNetworkName(id string) string {
