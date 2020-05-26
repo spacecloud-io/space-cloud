@@ -183,7 +183,7 @@ func Test_generateEventingSchema(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{mock.Anything, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "schema"},
+					paramsReturned: []interface{}{nil, "type col {id : ID @primary}"},
 				},
 			},
 			want: &model.SpecObject{
@@ -194,7 +194,7 @@ func Test_generateEventingSchema(t *testing.T) {
 					"project": "project",
 				},
 				Spec: map[string]interface{}{
-					"schema": "schema",
+					"schema": "type col {id : ID @primary}",
 				},
 			},
 		},

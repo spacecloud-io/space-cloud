@@ -540,7 +540,7 @@ func Test_generateDBSchema(t *testing.T) {
 				{
 					method:         "AskOne",
 					args:           []interface{}{&survey.Input{Message: "Enter Schema"}, &surveyReturnValue, mock.Anything},
-					paramsReturned: []interface{}{nil, "schema"},
+					paramsReturned: []interface{}{nil, "type col {id : ID @primary}"},
 				},
 			},
 			want: &model.SpecObject{
@@ -552,7 +552,7 @@ func Test_generateDBSchema(t *testing.T) {
 					"col":     "col",
 				},
 				Spec: map[string]interface{}{
-					"schema": "schema",
+					"schema": "type col {id : ID @primary}",
 				},
 			},
 		},
