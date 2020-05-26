@@ -27,8 +27,8 @@ func Commands() []*cobra.Command {
 			}
 
 		},
-		RunE:         actionLogin,
-		SilenceUsage: true,
+		RunE:          actionLogin,
+		SilenceErrors: true,
 	}
 	loginCommands.Flags().StringP("username", "", "None", "Accepts the username for login")
 	err := viper.BindEnv("username", "USER_NAME")

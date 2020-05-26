@@ -29,8 +29,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('prepare')", err)
 			}
 		},
-		RunE:         actionDeploy,
-		SilenceUsage: true,
+		RunE:          actionDeploy,
+		SilenceErrors: true,
 	}
 
 	commandDeploy.Flags().StringP("project", "", "", "The project to deploy the service to.")

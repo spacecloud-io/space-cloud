@@ -16,9 +16,9 @@ import (
 // FetchGetSubCommands fetches all the generatesubcommands from different modules
 func FetchGetSubCommands() *cobra.Command {
 	var getCmd = &cobra.Command{
-		Use:          "get",
-		Short:        "",
-		SilenceUsage: true,
+		Use:           "get",
+		Short:         "",
+		SilenceErrors: true,
 	}
 	getCmd.AddCommand(auth.GetSubCommands()...)
 	getCmd.AddCommand(database.GetSubCommands()...)

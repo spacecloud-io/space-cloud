@@ -58,8 +58,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('e')", nil)
 			}
 		},
-		RunE:         actionSetup,
-		SilenceUsage: true,
+		RunE:          actionSetup,
+		SilenceErrors: true,
 	}
 
 	setup.Flags().StringP("id", "", "", "The unique id for the cluster")
@@ -117,34 +117,34 @@ func Commands() []*cobra.Command {
 	setup.Flags().StringSliceP("env", "e", []string{}, "Environment variables to be provided to gateway")
 
 	var upgrade = &cobra.Command{
-		Use:          "upgrade",
-		Short:        "Upgrade development environment",
-		RunE:         actionUpgrade,
-		SilenceUsage: true,
+		Use:           "upgrade",
+		Short:         "Upgrade development environment",
+		RunE:          actionUpgrade,
+		SilenceErrors: true,
 	}
 	var destroy = &cobra.Command{
-		Use:          "destroy",
-		Short:        "clean development environment & remove secrets",
-		RunE:         actionDestroy,
-		SilenceUsage: true,
+		Use:           "destroy",
+		Short:         "clean development environment & remove secrets",
+		RunE:          actionDestroy,
+		SilenceErrors: true,
 	}
 	var apply = &cobra.Command{
-		Use:          "apply",
-		Short:        "deploys service",
-		RunE:         actionApply,
-		SilenceUsage: true,
+		Use:           "apply",
+		Short:         "deploys service",
+		RunE:          actionApply,
+		SilenceErrors: true,
 	}
 	var start = &cobra.Command{
-		Use:          "start",
-		Short:        "Resumes the space-cloud docker environment",
-		RunE:         actionStart,
-		SilenceUsage: true,
+		Use:           "start",
+		Short:         "Resumes the space-cloud docker environment",
+		RunE:          actionStart,
+		SilenceErrors: true,
 	}
 	var stop = &cobra.Command{
-		Use:          "stop",
-		Short:        "Stops the space-cloud docker environment",
-		RunE:         actionStop,
-		SilenceUsage: true,
+		Use:           "stop",
+		Short:         "Stops the space-cloud docker environment",
+		RunE:          actionStop,
+		SilenceErrors: true,
 	}
 
 	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}

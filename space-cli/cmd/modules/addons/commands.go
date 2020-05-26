@@ -10,9 +10,9 @@ import (
 // Commands is the list of commands the addon module exposes
 func Commands() []*cobra.Command {
 	var addCmd = &cobra.Command{
-		Use:          "add",
-		Short:        "Add a add-on to the environment",
-		SilenceUsage: true,
+		Use:           "add",
+		Short:         "Add a add-on to the environment",
+		SilenceErrors: true,
 	}
 
 	var addRegistryCmd = &cobra.Command{
@@ -56,9 +56,9 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
 
 	var removeCmd = &cobra.Command{
-		Use:          "remove",
-		Short:        "Remove a add-on from the environment",
-		SilenceUsage: true,
+		Use:           "remove",
+		Short:         "Remove a add-on from the environment",
+		SilenceErrors: true,
 	}
 
 	var removeRegistryCmd = &cobra.Command{
