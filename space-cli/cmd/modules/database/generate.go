@@ -7,23 +7,24 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils/input"
 )
 
 func generateDBRule() (*model.SpecObject, error) {
 	projectID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
 		return nil, err
 	}
 	ID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Collection Name"}, &ID); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Collection Name"}, &ID); err != nil {
 		return nil, err
 	}
 	dbAlias := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter DB Alias"}, &dbAlias); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter DB Alias"}, &dbAlias); err != nil {
 		return nil, err
 	}
 	wantRealtimeEnabled := ""
-	if err := survey.AskOne(&survey.Input{Message: "Is Realtime enabled (Y / n) ?", Default: "n"}, &wantRealtimeEnabled); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Is Realtime enabled (Y / n) ?", Default: "n"}, &wantRealtimeEnabled); err != nil {
 		return nil, err
 	}
 
@@ -64,12 +65,12 @@ func generateDBRule() (*model.SpecObject, error) {
 
 func generateDBConfig() (*model.SpecObject, error) {
 	projectID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
 		return nil, err
 	}
 
 	var dbType string
-	if err := survey.AskOne(&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &dbType); err != nil {
+	if err := input.Survey.AskOne(&survey.Select{Message: "Select database choice ", Options: []string{"mongo", "mysql", "postgres", "sqlserver", "embedded"}}, &dbType); err != nil {
 		return nil, err
 	}
 
@@ -94,11 +95,11 @@ func generateDBConfig() (*model.SpecObject, error) {
 		return nil, fmt.Errorf("Invalid choice")
 	}
 	conn := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Database Connection String ", Default: connDefault}, &conn); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Database Connection String ", Default: connDefault}, &conn); err != nil {
 		return nil, err
 	}
 	dbAlias := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter DB Alias", Default: dbType}, &dbAlias); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter DB Alias", Default: dbType}, &dbAlias); err != nil {
 		return nil, err
 	}
 
@@ -123,19 +124,19 @@ func generateDBConfig() (*model.SpecObject, error) {
 
 func generateDBSchema() (*model.SpecObject, error) {
 	project := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project "}, &project); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project "}, &project); err != nil {
 		return nil, err
 	}
 	col := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Collection "}, &col); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Collection "}, &col); err != nil {
 		return nil, err
 	}
 	dbAlias := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter DB Alias"}, &dbAlias); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter DB Alias"}, &dbAlias); err != nil {
 		return nil, err
 	}
 	schema := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Schema"}, &schema); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Schema"}, &schema); err != nil {
 		return nil, err
 	}
 
