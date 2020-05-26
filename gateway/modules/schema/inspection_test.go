@@ -61,6 +61,20 @@ func Test_generateInspection(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "IndexKeys-!null-ID",
+			args: args{
+				dbType: "mysql",
+				col:    "table1",
+				fields: []utils.FieldType{{FieldName: "col1", FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
+				indexkeys: []utils.IndexType{{
+					TableName:  "table1",
+					ColumnName: "col1",
+				}},
+			},
+			want:    model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true, IsIndex: true, IndexInfo: &model.TableProperties{}}}},
+			wantErr: false,
+		},
+		{
 			name: "primary-!null-ID",
 			args: args{
 				dbType:      "mysql",
