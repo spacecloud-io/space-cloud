@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"strconv"
@@ -15,7 +16,7 @@ import (
 
 // AdjustScale adjusts the number of instances based on the number of active requests. It tries to make sure that
 // no instance has more than the desired concurrency level. We simply change the number of replicas in the deployment
-func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
+func (i *Istio) AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error {
 	// We will process a single adjust scale request for a given service at any given time. We might miss out on some updates,
 	// but the adjust scale routine will eventually make sure we reach the desired scale
 	ns := service.ProjectID
@@ -28,7 +29,7 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 	defer i.adjustScaleLock.Delete(uniqueName)
 
 	logrus.Debugf("Adjusting scale of service (%s:%s:%s): Active reqs - %d", ns, service.ID, service.Version, activeReqs)
-	deployment, err := i.cache.getDeployment(ns, getDeploymentName(service.ID, service.Version))
+	deployment, err := i.cache.getDeployment(ctx, ns, getDeploymentName(service.ID, service.Version))
 	if err != nil {
 		return err
 	}
@@ -60,7 +61,7 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 
 	// Update the replica count
 	deployment.Spec.Replicas = &replicaCount
-	if err := i.applyDeployment(ns, deployment); err != nil {
+	if err := i.applyDeployment(ctx, ns, deployment); err != nil {
 		logrus.Errorf("Could not adjust scale: %s", err.Error())
 		return err
 	}
@@ -71,19 +72,19 @@ func (i *Istio) AdjustScale(service *model.Service, activeReqs int32) error {
 
 // WaitForService adjusts scales, up the service to scale up the number of nodes from zero to one
 // TODO: Do one watch per service. Right now its possible to have multiple watches for the same service
-func (i *Istio) WaitForService(service *model.Service) error {
+func (i *Istio) WaitForService(ctx context.Context, service *model.Service) error {
 	ns := service.ProjectID
 	logrus.Debugf("Scaling up service (%s:%s:%s) from zero", ns, service.ID, service.Version)
 
 	// Scale up the service
-	if err := i.AdjustScale(service, 1); err != nil {
+	if err := i.AdjustScale(ctx, service, 1); err != nil {
 		return err
 	}
 
 	timeout := int64(5 * 60)
 	labels := fmt.Sprintf("app=%s,version=%s", service.ID, service.Version)
 	logrus.Debugf("Watching for service (%s:%s:%s) to scale up and enter ready state", ns, service.ID, service.Version)
-	watcher, err := i.kube.AppsV1().Deployments(ns).Watch(metav1.ListOptions{Watch: true, LabelSelector: labels, TimeoutSeconds: &timeout})
+	watcher, err := i.kube.AppsV1().Deployments(ns).Watch(ctx, metav1.ListOptions{Watch: true, LabelSelector: labels, TimeoutSeconds: &timeout})
 	if err != nil {
 		return err
 	}

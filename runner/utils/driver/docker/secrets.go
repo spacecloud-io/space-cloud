@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,7 +13,7 @@ import (
 )
 
 // CreateSecret create a file for every secret & update the secret if already exists and has same type
-func (d *Docker) CreateSecret(projectID string, secretObj *model.Secret) error {
+func (d *Docker) CreateSecret(_ context.Context, projectID string, secretObj *model.Secret) error {
 	// create folder for project
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
 
@@ -45,7 +46,7 @@ func (d *Docker) CreateSecret(projectID string, secretObj *model.Secret) error {
 }
 
 // ListSecrets list all the secrets of the project
-func (d *Docker) ListSecrets(projectID string) ([]*model.Secret, error) {
+func (d *Docker) ListSecrets(_ context.Context, projectID string) ([]*model.Secret, error) {
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
 	files, err := ioutil.ReadDir(projectPath)
 	if err != nil {
@@ -82,12 +83,12 @@ func (d *Docker) ListSecrets(projectID string) ([]*model.Secret, error) {
 }
 
 // DeleteSecret deletes the docker secret
-func (d *Docker) DeleteSecret(projectID, secretName string) error {
+func (d *Docker) DeleteSecret(_ context.Context, projectID, secretName string) error {
 	return os.RemoveAll(fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName))
 }
 
 // SetFileSecretRootPath sets the file secret root path
-func (d *Docker) SetFileSecretRootPath(projectID string, secretName, rootPath string) error {
+func (d *Docker) SetFileSecretRootPath(_ context.Context, projectID string, secretName, rootPath string) error {
 	if secretName == "" || rootPath == "" {
 		logrus.Errorf("Empty key/value provided. Key not set")
 		return fmt.Errorf("key/value not provided; got (%s,%s)", secretName, rootPath)
@@ -113,7 +114,7 @@ func (d *Docker) SetFileSecretRootPath(projectID string, secretName, rootPath st
 }
 
 // SetKey sets the secret key for docker file
-func (d *Docker) SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
+func (d *Docker) SetKey(_ context.Context, projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -135,7 +136,7 @@ func (d *Docker) SetKey(projectID, secretName, secretKey string, secretObj *mode
 }
 
 // DeleteKey deletes the secret key for docker file
-func (d *Docker) DeleteKey(projectID, secretName, secretKey string) error {
+func (d *Docker) DeleteKey(_ context.Context, projectID, secretName, secretKey string) error {
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s/%s.json", d.secretPath, projectID, secretName)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
