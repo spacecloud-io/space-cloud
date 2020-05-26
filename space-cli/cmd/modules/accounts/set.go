@@ -17,21 +17,21 @@ func setAccount(prefix string) error {
 
 	accountIDOptions := []string{}
 	for _, v := range credential.Accounts {
-		accountIDOptions = append(accountIDOptions, strings.ToLower(v.ID))
+		accountIDOptions = append(accountIDOptions, v.ID)
 	}
 
 	prefix = strings.ToLower(prefix)
 	filteredAccountIDOptions, exists := filterAccounts(credential.Accounts, prefix)
 
 	if exists {
-		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: filteredAccountIDOptions}, &prefix); err != nil {
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: filteredAccountIDOptions, Default: filteredAccountIDOptions[0]}, &prefix); err != nil {
 			return err
 		}
 	} else {
 		if prefix != "" {
 			utils.LogInfo("Warning! No account found for prefix provided, showing all")
 		}
-		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: accountIDOptions}, &prefix); err != nil {
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: accountIDOptions, Default: accountIDOptions[0]}, &prefix); err != nil {
 			return err
 		}
 	}

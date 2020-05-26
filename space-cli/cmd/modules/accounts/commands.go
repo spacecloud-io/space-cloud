@@ -52,12 +52,12 @@ func actionViewAccount(cmd *cobra.Command, args []string) error {
 
 	showKeys := viper.GetBool("show-keys")
 
-	accountID := ""
+	prefix := ""
 	if len(args) > 0 {
-		accountID = args[0]
+		prefix = args[0]
 	}
 
-	return listAccounts(accountID, showKeys)
+	return listAccounts(prefix, showKeys)
 }
 
 func actionSetAccount(cmd *cobra.Command, args []string) error {

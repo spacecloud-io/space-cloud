@@ -36,6 +36,17 @@ func Test_listAccounts(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "could fetch stored credentials but has no accounts stored",
+			args: args{accountID: "accountID", showKeys: false},
+			schemaMockArgs: []mockArgs{
+				{
+					method:         "ReadFile",
+					args:           []interface{}{},
+					paramsReturned: []interface{}{[]byte(""), nil},
+				},
+			},
+		},
+		{
 			name: "account ID not specified and showKeys false",
 			args: args{accountID: "", showKeys: false},
 			schemaMockArgs: []mockArgs{

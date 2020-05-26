@@ -62,7 +62,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin"}}, &singleMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin"}, Default: "local-admin"}, &singleMatchCase},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
@@ -92,7 +92,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin"}}, &singleMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin"}, Default: "local-admin"}, &singleMatchCase},
 					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
@@ -122,7 +122,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin"}}, &singleMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin"}, Default: "local-admin"}, &singleMatchCase},
 					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
@@ -139,7 +139,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &multipleMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &multipleMatchCase},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
 				},
 			},
@@ -169,7 +169,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &multipleMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &multipleMatchCase},
 					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
@@ -199,7 +199,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &multipleMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &multipleMatchCase},
 					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
@@ -216,7 +216,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &noMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &noMatchCase},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local-admin"},
 				},
 			},
@@ -246,7 +246,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &noMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &noMatchCase},
 					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
@@ -276,7 +276,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &noMatchCase},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &noMatchCase},
 					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
@@ -293,7 +293,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &emptyPrefix},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &emptyPrefix},
 					paramsReturned: []interface{}{errors.New("unable to call AskOne"), "local-admin"},
 				},
 			},
@@ -323,7 +323,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &emptyPrefix},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &emptyPrefix},
 					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
@@ -353,7 +353,7 @@ func Test_setAccount(t *testing.T) {
 			surveyMockArgs: []mockArgs{
 				{
 					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}}, &emptyPrefix},
+					args:           []interface{}{&survey.Select{Message: "Choose the account ID to be set: ", Options: []string{"local-admin", "last-admin"}, Default: "local-admin"}, &emptyPrefix},
 					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},

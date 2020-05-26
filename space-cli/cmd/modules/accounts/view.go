@@ -11,26 +11,21 @@ import (
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
-func listAccounts(accountID string, showKeys bool) error {
+func listAccounts(prefix string, showKeys bool) error {
 	credential, err := utils.GetCredentials()
 	if err != nil {
 		return err
 	}
+	if len(credential.Accounts) == 0 {
+		utils.LogInfo("No account found for prefix provided")
+		return nil
+	}
 
 	accounts := []*model.Account{}
-	if accountID != "" {
-		for _, v := range credential.Accounts {
-			if v.ID == accountID {
-				accounts = append(accounts, v)
-				break
-			}
+	for _, v := range credential.Accounts {
+		if strings.HasPrefix(strings.ToLower(v.ID), strings.ToLower(prefix)) {
+			accounts = append(accounts, v)
 		}
-		if len(accounts) == 0 {
-			utils.LogInfo("No account found for account ID provided")
-			return nil
-		}
-	} else {
-		accounts = append(accounts, credential.Accounts...)
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
