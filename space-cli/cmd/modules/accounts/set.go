@@ -6,6 +6,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cli/cmd/utils/input"
 )
 
 func setAccount(prefix string) error {
@@ -23,14 +24,14 @@ func setAccount(prefix string) error {
 	filteredAccountIDOptions, exists := filterAccounts(credential.Accounts, prefix)
 
 	if exists {
-		if err := survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: filteredAccountIDOptions}, &prefix); err != nil {
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: filteredAccountIDOptions}, &prefix); err != nil {
 			return err
 		}
 	} else {
 		if prefix != "" {
 			utils.LogInfo("Warning! No account found for prefix provided, showing all")
 		}
-		if err := survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: accountIDOptions}, &prefix); err != nil {
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: accountIDOptions}, &prefix); err != nil {
 			return err
 		}
 	}

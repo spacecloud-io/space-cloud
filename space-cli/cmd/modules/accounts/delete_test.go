@@ -118,6 +118,8 @@ func Test_deleteAccount(t *testing.T) {
 			if err := deleteAccount(tt.args.accountID); (err != nil) != tt.wantErr {
 				t.Errorf("deleteAccount() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
+			mockSchema.AssertExpectations(t)
 		})
 	}
 }

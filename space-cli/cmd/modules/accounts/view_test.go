@@ -105,6 +105,8 @@ func Test_listAccounts(t *testing.T) {
 			if err := listAccounts(tt.args.accountID, tt.args.showKeys); (err != nil) != tt.wantErr {
 				t.Errorf("listAccounts() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
+			mockSchema.AssertExpectations(t)
 		})
 	}
 }
