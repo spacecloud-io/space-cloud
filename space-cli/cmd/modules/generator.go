@@ -17,8 +17,9 @@ import (
 // FetchGenerateSubCommands fetches all the generatesubcommands from different modules
 func FetchGenerateSubCommands() *cobra.Command {
 	var generateCmd = &cobra.Command{
-		Use:   "generate",
-		Short: "",
+		Use:          "generate",
+		Short:        "",
+		SilenceUsage: true,
 	}
 	generateCmd.AddCommand(database.GenerateSubCommands()...)
 	generateCmd.AddCommand(eventing.GenerateSubCommands()...)
