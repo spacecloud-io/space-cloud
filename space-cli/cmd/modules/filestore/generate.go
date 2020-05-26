@@ -6,19 +6,20 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils/input"
 )
 
 func generateFilestoreRule() (*model.SpecObject, error) {
 	projectID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
 		return nil, err
 	}
 	ID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Rule Name"}, &ID); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Rule Name"}, &ID); err != nil {
 		return nil, err
 	}
 	prefix := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Prefix", Default: "/"}, &prefix); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Prefix", Default: "/"}, &prefix); err != nil {
 		return nil, err
 	}
 
@@ -50,12 +51,12 @@ func generateFilestoreRule() (*model.SpecObject, error) {
 
 func generateFilestoreConfig() (*model.SpecObject, error) {
 	projectID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
 		return nil, err
 	}
 
 	storeType := ""
-	if err := survey.AskOne(&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &storeType); err != nil {
+	if err := input.Survey.AskOne(&survey.Select{Message: "Enter Storetype", Options: []string{"local", "amazon-s3", "gcp-storage"}}, &storeType); err != nil {
 		return nil, err
 	}
 	bucket := ""
@@ -63,21 +64,21 @@ func generateFilestoreConfig() (*model.SpecObject, error) {
 	conn := ""
 	switch storeType {
 	case "local":
-		if err := survey.AskOne(&survey.Input{Message: "Enter connection"}, &conn); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter connection"}, &conn); err != nil {
 			return nil, err
 		}
 	case "amazon-s3":
-		if err := survey.AskOne(&survey.Input{Message: "Enter connection"}, &conn); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter connection"}, &conn); err != nil {
 			return nil, err
 		}
-		if err := survey.AskOne(&survey.Input{Message: "Enter endpoint"}, &endpoint); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter endpoint"}, &endpoint); err != nil {
 			return nil, err
 		}
-		if err := survey.AskOne(&survey.Input{Message: "Enter bucket"}, &bucket); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter bucket"}, &bucket); err != nil {
 			return nil, err
 		}
 	case "gcp-storage":
-		if err := survey.AskOne(&survey.Input{Message: "Enter bucket"}, &bucket); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter bucket"}, &bucket); err != nil {
 			return nil, err
 		}
 	default:
