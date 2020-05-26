@@ -58,7 +58,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('e')", nil)
 			}
 		},
-		RunE: actionSetup,
+		RunE:          actionSetup,
+		SilenceErrors: true,
 	}
 
 	setup.Flags().StringP("id", "", "", "The unique id for the cluster")
@@ -116,29 +117,34 @@ func Commands() []*cobra.Command {
 	setup.Flags().StringSliceP("env", "e", []string{}, "Environment variables to be provided to gateway")
 
 	var upgrade = &cobra.Command{
-		Use:   "upgrade",
-		Short: "Upgrade development environment",
-		RunE:  actionUpgrade,
+		Use:           "upgrade",
+		Short:         "Upgrade development environment",
+		RunE:          actionUpgrade,
+		SilenceErrors: true,
 	}
 	var destroy = &cobra.Command{
-		Use:   "destroy",
-		Short: "clean development environment & remove secrets",
-		RunE:  actionDestroy,
+		Use:           "destroy",
+		Short:         "clean development environment & remove secrets",
+		RunE:          actionDestroy,
+		SilenceErrors: true,
 	}
 	var apply = &cobra.Command{
-		Use:   "apply",
-		Short: "deploys service",
-		RunE:  actionApply,
+		Use:           "apply",
+		Short:         "deploys service",
+		RunE:          actionApply,
+		SilenceErrors: true,
 	}
 	var start = &cobra.Command{
-		Use:   "start",
-		Short: "Resumes the space-cloud docker environment",
-		RunE:  actionStart,
+		Use:           "start",
+		Short:         "Resumes the space-cloud docker environment",
+		RunE:          actionStart,
+		SilenceErrors: true,
 	}
 	var stop = &cobra.Command{
-		Use:   "stop",
-		Short: "Stops the space-cloud docker environment",
-		RunE:  actionStop,
+		Use:           "stop",
+		Short:         "Stops the space-cloud docker environment",
+		RunE:          actionStop,
+		SilenceErrors: true,
 	}
 
 	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}
@@ -158,37 +164,30 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	volumes := viper.GetStringSlice("volume")
 	environmentVariables := viper.GetStringSlice("env")
 
-	_ = Setup(id, userName, key, config, version, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
-	return nil
+	return Setup(id, userName, key, config, version, secret, local, portHTTP, portHTTPS, volumes, environmentVariables)
 }
 
 func actionUpgrade(cmd *cobra.Command, args []string) error {
-	_ = Upgrade()
-	return nil
+	return Upgrade()
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {
-	_ = Destroy()
-	return nil
+	return Destroy()
 }
 
 func actionApply(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("error while applying service incorrect number of arguments provided", nil)
-		return nil
+		return utils.LogError("error while applying service incorrect number of arguments provided", nil)
 	}
 
 	dirName := args[0]
-	_ = Apply(dirName)
-	return nil
+	return Apply(dirName)
 }
 
 func actionStart(cmd *cobra.Command, args []string) error {
-	_ = DockerStart()
-	return nil
+	return DockerStart()
 }
 
 func actionStop(cmd *cobra.Command, args []string) error {
-	_ = DockerStop()
-	return nil
+	return DockerStop()
 }
