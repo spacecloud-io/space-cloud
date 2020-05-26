@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"io/ioutil"
+	"github.com/spaceuptech/space-cli/cmd/utils/file"
 
 	"github.com/ghodss/yaml"
 	"github.com/sirupsen/logrus"
@@ -12,7 +12,7 @@ import (
 // getSelectedAccount gets the account information of the selected account
 func getSelectedAccount() (*model.Account, error) {
 	filePath := getAccountConfigPath()
-	yamlFile, err := ioutil.ReadFile(filePath)
+	yamlFile, err := file.File.ReadFile(filePath)
 	if err != nil {
 		logrus.Errorf("error getting credential unable to read accounts config file - %s", err.Error())
 		return nil, err
@@ -35,7 +35,7 @@ func getSelectedAccount() (*model.Account, error) {
 
 // StoreCredentials stores the credential in the accounts config file
 func StoreCredentials(account *model.Account) error {
-	yamlFile, err := ioutil.ReadFile(getAccountConfigPath())
+	yamlFile, err := file.File.ReadFile(getAccountConfigPath())
 	if err != nil {
 		// accounts.yaml file doesn't exist create new one
 		credential := model.Credential{

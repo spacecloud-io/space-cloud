@@ -10,33 +10,34 @@ import (
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/modules/project"
 	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cli/cmd/utils/input"
 )
 
 // GenerateService creates a service struct
 func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	if projectID == "" {
-		if err := survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID"}, &projectID); err != nil {
 			return nil, err
 		}
 	}
 
 	serviceID := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Service ID"}, &serviceID); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Service ID"}, &serviceID); err != nil {
 		return nil, err
 	}
 
 	serviceVersion := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Service Version", Default: "v1"}, &serviceVersion); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Service Version", Default: "v1"}, &serviceVersion); err != nil {
 		return nil, err
 	}
 
 	var port int32
-	if err := survey.AskOne(&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Service Port", Default: "8080"}, &port); err != nil {
 		return nil, err
 	}
 
 	if dockerImage != "auto" {
-		if err := survey.AskOne(&survey.Input{Message: "Enter Docker Image Name"}, &dockerImage); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Docker Image Name"}, &dockerImage); err != nil {
 			return nil, err
 		}
 	}
@@ -61,20 +62,20 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	dockerSecret := ""
 	fileEnvSecret := ""
 	secrets := []string{}
-	if err := survey.AskOne(&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &want); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Are you using private docker registry (Y / N) ?", Default: "N"}, &want); err != nil {
 		return nil, err
 	}
 	if want == "Y" {
-		if err := survey.AskOne(&survey.Input{Message: "Enter Docker Secret"}, &dockerSecret); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter Docker Secret"}, &dockerSecret); err != nil {
 			return nil, err
 		}
 	}
 
-	if err := survey.AskOne(&survey.Input{Message: "Do you want to add other secrets (Y / N) ?", Default: "N"}, &want); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Do you want to add other secrets (Y / N) ?", Default: "N"}, &want); err != nil {
 		return nil, err
 	}
 	if want == "Y" {
-		if err := survey.AskOne(&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &fileEnvSecret); err != nil {
+		if err := input.Survey.AskOne(&survey.Input{Message: "Enter File & Environment Secret (CSV)"}, &fileEnvSecret); err != nil {
 			return nil, err
 		}
 		if fileEnvSecret != "" {
@@ -83,7 +84,7 @@ func GenerateService(projectID, dockerImage string) (*model.SpecObject, error) {
 	}
 
 	replicaRange := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &replicaRange); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Replica Range", Default: "1-100"}, &replicaRange); err != nil {
 		return nil, err
 	}
 	replicaMin, replicaMax := 1, 100

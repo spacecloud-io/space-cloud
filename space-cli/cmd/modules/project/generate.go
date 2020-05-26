@@ -6,11 +6,12 @@ import (
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cli/cmd/utils/input"
 )
 
 func generateProject() (*model.SpecObject, error) {
 	project := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project ID: "}, &project); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project ID: "}, &project); err != nil {
 		return nil, err
 	}
 	if project == "" {
@@ -18,17 +19,17 @@ func generateProject() (*model.SpecObject, error) {
 		return nil, nil
 	}
 	projectName := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project Name: ", Default: project}, &projectName); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project Name: ", Default: project}, &projectName); err != nil {
 		return nil, err
 	}
 
 	key := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter AES Key: "}, &key); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter AES Key: "}, &key); err != nil {
 		return nil, err
 	}
 
 	contextTime := 0
-	if err := survey.AskOne(&survey.Input{Message: "Enter Graphql Query Timeout: ", Default: "10"}, &contextTime); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Graphql Query Timeout: ", Default: "10"}, &contextTime); err != nil {
 		return nil, err
 	}
 	v := &model.SpecObject{

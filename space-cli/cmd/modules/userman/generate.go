@@ -4,15 +4,16 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils/input"
 )
 
 func generateUserManagement() (*model.SpecObject, error) {
 	project := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Project"}, &project); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Project"}, &project); err != nil {
 		return nil, err
 	}
 	provider := ""
-	if err := survey.AskOne(&survey.Input{Message: "Enter Provider Name"}, &provider); err != nil {
+	if err := input.Survey.AskOne(&survey.Input{Message: "Enter Provider Name"}, &provider); err != nil {
 		return nil, err
 	}
 
