@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
@@ -46,7 +47,7 @@ func (c *cache) setDeployment(ns, name string, deployment *v1.Deployment) error 
 	})
 }
 
-func (c *cache) getDeployment(ns, name string) (*v1.Deployment, error) {
+func (c *cache) getDeployment(ctx context.Context, ns, name string) (*v1.Deployment, error) {
 	deployment := new(v1.Deployment)
 	var foundInCache bool
 	var err error
@@ -83,7 +84,7 @@ func (c *cache) getDeployment(ns, name string) (*v1.Deployment, error) {
 	// Query kubernetes if the deployment wasn't found in the cache. Also, update the cache with the deployment received.
 	if !foundInCache {
 		logrus.Debugf("Service (%s) not found in cache... Querying kubernetes", name)
-		deployment, err = c.kube.AppsV1().Deployments(ns).Get(name, metav1.GetOptions{})
+		deployment, err = c.kube.AppsV1().Deployments(ns).Get(ctx, name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

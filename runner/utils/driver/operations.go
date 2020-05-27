@@ -36,13 +36,13 @@ func (m *Module) DeleteService(ctx context.Context, projectID, serviceID, versio
 }
 
 // AdjustScale adjust's scale
-func (m *Module) AdjustScale(service *model.Service, activeReqs int32) error {
-	return m.driver.AdjustScale(service, activeReqs)
+func (m *Module) AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error {
+	return m.driver.AdjustScale(ctx, service, activeReqs)
 }
 
 // WaitForService waits for service
-func (m *Module) WaitForService(service *model.Service) error {
-	return m.driver.WaitForService(service)
+func (m *Module) WaitForService(ctx context.Context, service *model.Service) error {
+	return m.driver.WaitForService(ctx, service)
 }
 
 // Type gets driver type
@@ -61,31 +61,31 @@ func (m *Module) GetServiceRoutes(ctx context.Context, projectID string) (map[st
 }
 
 // CreateSecret create's secret
-func (m *Module) CreateSecret(projectID string, secretObj *model.Secret) error {
-	return m.driver.CreateSecret(projectID, secretObj)
+func (m *Module) CreateSecret(ctx context.Context, projectID string, secretObj *model.Secret) error {
+	return m.driver.CreateSecret(ctx, projectID, secretObj)
 }
 
 // ListSecrets list's secrets
-func (m *Module) ListSecrets(projectID string) ([]*model.Secret, error) {
-	return m.driver.ListSecrets(projectID)
+func (m *Module) ListSecrets(ctx context.Context, projectID string) ([]*model.Secret, error) {
+	return m.driver.ListSecrets(ctx, projectID)
 }
 
 // DeleteSecret delete's secret
-func (m *Module) DeleteSecret(projectID, secretName string) error {
-	return m.driver.DeleteSecret(projectID, secretName)
+func (m *Module) DeleteSecret(ctx context.Context, projectID, secretName string) error {
+	return m.driver.DeleteSecret(ctx, projectID, secretName)
 }
 
 // SetKey set's key for secret
-func (m *Module) SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
-	return m.driver.SetKey(projectID, secretName, secretKey, secretObj)
+func (m *Module) SetKey(ctx context.Context, projectID, secretName, secretKey string, secretObj *model.SecretValue) error {
+	return m.driver.SetKey(ctx, projectID, secretName, secretKey, secretObj)
 }
 
 // DeleteKey delete's key of secret
-func (m *Module) DeleteKey(projectID, secretName, secretKey string) error {
-	return m.driver.DeleteKey(projectID, secretName, secretKey)
+func (m *Module) DeleteKey(ctx context.Context, projectID, secretName, secretKey string) error {
+	return m.driver.DeleteKey(ctx, projectID, secretName, secretKey)
 }
 
 // SetFileSecretRootPath set's file secret root path
-func (m *Module) SetFileSecretRootPath(projectID string, secretName, rootPath string) error {
-	return m.driver.SetFileSecretRootPath(projectID, secretName, rootPath)
+func (m *Module) SetFileSecretRootPath(ctx context.Context, projectID string, secretName, rootPath string) error {
+	return m.driver.SetFileSecretRootPath(ctx, projectID, secretName, rootPath)
 }
