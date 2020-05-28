@@ -23,13 +23,13 @@ func Test_deleteAccount(t *testing.T) {
 		wantErr        bool
 	}{
 		{
-			name: "could not fetch stored credentials",
+			name: "couldn't fetch stored credentials",
 			args: args{accountID: "accountID"},
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
 					args:           []interface{}{},
-					paramsReturned: []interface{}{[]byte{}, errors.New("could not read yaml file")},
+					paramsReturned: []interface{}{[]byte{}, errors.New("couldn't read accounts.yaml file")},
 				},
 			},
 			wantErr: true,
@@ -42,24 +42,11 @@ func Test_deleteAccount(t *testing.T) {
 					method:         "ReadFile",
 					paramsReturned: []interface{}{[]byte("accounts:\n- id: local-admin\n  username: local-admin\n  key: 81WZUGRTtHbG\n  serverurl: http://localhost:4122\nselectedAccount: local-admin"), nil},
 				},
-				{
-					method:         "Stat",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{nil, nil},
-				},
-				{
-					method:         "IsNotExist",
-					args:           []interface{}{},
-					paramsReturned: []interface{}{false},
-				},
-				{
-					method:         "WriteFile",
-					paramsReturned: []interface{}{nil},
-				},
 			},
+			wantErr: true,
 		},
 		{
-			name: "accountID provided matches an existing account but can not update yaml file",
+			name: "accountID provided matches an existing account but can not update accounts.yaml file",
 			args: args{accountID: "local-admin"},
 			schemaMockArgs: []mockArgs{
 				{
@@ -68,7 +55,7 @@ func Test_deleteAccount(t *testing.T) {
 				},
 				{
 					method:         "Stat",
-					paramsReturned: []interface{}{nil, errors.New("could not get file info")},
+					paramsReturned: []interface{}{nil, errors.New("couldn't get file info")},
 				},
 				{
 					method:         "IsNotExist",
@@ -76,13 +63,13 @@ func Test_deleteAccount(t *testing.T) {
 				},
 				{
 					method:         "MkdirAll",
-					paramsReturned: []interface{}{errors.New("could not make directory")},
+					paramsReturned: []interface{}{errors.New("couldn't make directory")},
 				},
 			},
 			wantErr: true,
 		},
 		{
-			name: "accountID provided matches an existing account and yaml file updated",
+			name: "accountID provided matches an existing account and updated accounts.yaml file successfully",
 			args: args{accountID: "local-admin"},
 			schemaMockArgs: []mockArgs{
 				{

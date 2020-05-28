@@ -15,23 +15,23 @@ func setAccount(prefix string) error {
 		return err
 	}
 
-	accountIDOptions := []string{}
+	accountIDs := []string{}
 	for _, v := range credential.Accounts {
-		accountIDOptions = append(accountIDOptions, v.ID)
+		accountIDs = append(accountIDs, v.ID)
 	}
 
 	prefix = strings.ToLower(prefix)
-	filteredAccountIDOptions, exists := filterAccounts(credential.Accounts, prefix)
+	filteredAccountIDs, doesAccountExists := filterAccounts(credential.Accounts, prefix)
 
-	if exists {
-		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: filteredAccountIDOptions, Default: filteredAccountIDOptions[0]}, &prefix); err != nil {
+	if doesAccountExists {
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: filteredAccountIDs, Default: filteredAccountIDs[0]}, &prefix); err != nil {
 			return err
 		}
 	} else {
 		if prefix != "" {
 			utils.LogInfo("Warning! No account found for prefix provided, showing all")
 		}
-		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: accountIDOptions, Default: accountIDOptions[0]}, &prefix); err != nil {
+		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID to be set: ", Options: accountIDs, Default: accountIDs[0]}, &prefix); err != nil {
 			return err
 		}
 	}
@@ -39,21 +39,21 @@ func setAccount(prefix string) error {
 	credential.SelectedAccount = prefix
 
 	if err := utils.GenerateAccountsFile(credential); err != nil {
-		return utils.LogError("Could not update yaml file while setting selected account", nil)
+		return utils.LogError("Couldn't update accounts.yaml file", err)
 	}
 
 	return nil
 }
 
 func filterAccounts(accounts []*model.Account, prefix string) ([]string, bool) {
-	filteredAccountOptions := []string{}
-	exists := false
+	filteredAccountIDs := []string{}
+	doesAccountExists := false
 	for _, account := range accounts {
 		if prefix != "" && strings.HasPrefix(strings.ToLower(account.ID), prefix) {
-			filteredAccountOptions = append(filteredAccountOptions, account.ID)
-			exists = true
+			filteredAccountIDs = append(filteredAccountIDs, account.ID)
+			doesAccountExists = true
 		}
 	}
 
-	return filteredAccountOptions, exists
+	return filteredAccountIDs, doesAccountExists
 }

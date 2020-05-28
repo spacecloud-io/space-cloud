@@ -73,9 +73,8 @@ func actionSetAccount(cmd *cobra.Command, args []string) error {
 func actionDeleteAccount(cmd *cobra.Command, args []string) error {
 
 	if len(args) == 0 {
-		return utils.LogError("Account ID not specified to be deleted", nil)
+		return utils.LogError("Account ID to be deleted not provided in args", nil)
 	}
-	accountID := args[0]
 
-	return deleteAccount(accountID)
+	return deleteAccount(args[0])
 }

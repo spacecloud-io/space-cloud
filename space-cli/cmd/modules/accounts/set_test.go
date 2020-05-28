@@ -11,13 +11,13 @@ import (
 )
 
 func Test_setAccount(t *testing.T) {
-	// singleMatchCase stores the value returned from survey when prefix mathes one account ID
+	// singleMatchCase stores the value returned from the survey when prefix matches one account ID
 	// initialized with "lo" to be consistent with test case
 	singleMatchCase := "lo"
-	// multipleMatchCase stores the value returned from survey when prefix mathes multiple account IDs
+	// multipleMatchCase stores the value returned from the survey when prefix matches multiple account IDs
 	// initialized with "l" to be consistent with test case
 	multipleMatchCase := "l"
-	// noMatchCase stores the value returned from survey when prefix mathes no account ID
+	// noMatchCase stores the value returned from the survey when prefix matches no account ID
 	// initialized with "a" to be consistent with test case
 	noMatchCase := "a"
 	// emptyPrefix stores the value returned from survey when prefix is empty
@@ -45,7 +45,7 @@ func Test_setAccount(t *testing.T) {
 			schemaMockArgs: []mockArgs{
 				{
 					method:         "ReadFile",
-					paramsReturned: []interface{}{[]byte{}, errors.New("could not read yaml file")},
+					paramsReturned: []interface{}{[]byte{}, errors.New("couldn't read accounts.yaml file")},
 				},
 			},
 			wantErr: true,
@@ -69,7 +69,7 @@ func Test_setAccount(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "prefix matches one account and option surveyed successfully but yaml file not updated",
+			name: "prefix matches one account ID and options surveyed successfully but could not update accouts.yaml file",
 			args: args{prefix: "lo"},
 			schemaMockArgs: []mockArgs{
 				{
