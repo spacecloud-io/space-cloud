@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/spf13/viper"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -15,6 +17,8 @@ import (
 func DockerStop() error {
 
 	ctx := context.Background()
+
+	clusterID := viper.GetString("cluster-id")
 
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -35,7 +39,7 @@ func DockerStop() error {
 		}
 	}
 
-	argsSC := filters.Arg("label", "app=space-cloud")
+	argsSC := filters.Arg("label", fmt.Sprintf("clusterID=%s-space-cloud", clusterID))
 	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsSC), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
@@ -48,7 +52,7 @@ func DockerStop() error {
 		}
 	}
 
-	argsAddOns := filters.Arg("label", "app=addon")
+	argsAddOns := filters.Arg("name", fmt.Sprintf("%s--addon", getNetworkName(clusterID)))
 	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsAddOns), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)

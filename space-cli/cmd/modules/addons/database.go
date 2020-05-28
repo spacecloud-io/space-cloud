@@ -32,6 +32,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	ctx := context.Background()
 	autoApply := viper.GetBool("auto-apply")
 	project := viper.GetString("project")
+	clusterID := viper.GetString("cluster-id")
 	if autoApply {
 		if project == "" {
 			return utils.LogError(`Please provide project id through "--project" flag`, nil)
@@ -93,7 +94,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	}
 
 	// Check if a database container already exist
-	filterArgs := filters.Arg("label", "app=space-cloud")
+	filterArgs := filters.Arg("label", fmt.Sprintf("clusterID=%s-space-cloud", clusterID))
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
 	if err != nil {
 		return utils.LogError("Unable to check if database already exists", err)
@@ -110,12 +111,12 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 
 	// Create the database
 	containerRes, err := docker.ContainerCreate(ctx, &container.Config{
-		Labels: map[string]string{"app": "addon", "service": "db", "name": alias},
+		Labels: map[string]string{"app": "addon", "service": "db", "name": alias, "clusterID": fmt.Sprintf("%s-addons-database-%s", clusterID, alias)},
 		Image:  dockerImage,
 		Env:    env,
 	}, &container.HostConfig{
-		NetworkMode: "space-cloud",
-	}, nil, fmt.Sprintf("space-cloud--addon--db--%s", alias))
+		NetworkMode: container.NetworkMode(getNetworkName(clusterID)),
+	}, nil, getDatabaseContainerName(clusterID, alias))
 	if err != nil {
 		return utils.LogError("Unable to create local docker database", err)
 	}
@@ -126,7 +127,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	}
 
 	// Get the hosts file
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath("default"), WriteFilePath: utils.GetSpaceCloudHostsFilePath("default")})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterID), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterID)})
 	if err != nil {
 		return utils.LogError("Unable to open hosts file", err)
 	}
@@ -143,7 +144,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	hosts.RemoveHost(hostName)
 
 	// Add it back with the new ip address
-	hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
+	hosts.AddHost(info.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress, hostName)
 
 	// Save the hosts file
 	if err := hosts.Save(); err != nil {
@@ -213,6 +214,8 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 }
 
 func removeDatabase(alias string) error {
+	clusterID := viper.GetString("cluster-id")
+
 	ctx := context.Background()
 
 	// Create a docker client
@@ -222,7 +225,7 @@ func removeDatabase(alias string) error {
 	}
 
 	// Check if a database container already exist
-	filterArgs := filters.Arg("name", fmt.Sprintf("space-cloud--addon--db--%s", alias))
+	filterArgs := filters.Arg("label", fmt.Sprintf("clusterID=%s-addons-database-%s", clusterID, alias))
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
 	if err != nil {
 		return utils.LogError("Unable to check if database already exists", err)
@@ -233,7 +236,7 @@ func removeDatabase(alias string) error {
 	}
 
 	// Get the hosts file
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath("default"), WriteFilePath: utils.GetSpaceCloudHostsFilePath("default")})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterID), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterID)})
 	if err != nil {
 		return utils.LogError("Unable to open hosts file", err)
 	}
@@ -258,4 +261,18 @@ func removeDatabase(alias string) error {
 	utils.LogInfo(fmt.Sprintf("Removed database (%s)", alias))
 
 	return nil
+}
+
+func getNetworkName(id string) string {
+	if id == "default" {
+		return "space-cloud"
+	}
+	return fmt.Sprintf("space-cloud-%s", id)
+}
+
+func getDatabaseContainerName(id, alias string) string {
+	if id == "default" {
+		return fmt.Sprintf("space-cloud--addon--db--%s", alias)
+	}
+	return fmt.Sprintf("space-cloud-%s--addon--db--%s", id, alias)
 }

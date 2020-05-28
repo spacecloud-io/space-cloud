@@ -129,8 +129,20 @@ func Commands() []*cobra.Command {
 	var upgrade = &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade development environment",
-		RunE:  actionUpgrade,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
+		},
+		RunE: actionUpgrade,
 	}
+	upgrade.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	err = viper.BindEnv("cluster-id", "CLUSTER_ID1")
+	if err != nil {
+		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	}
+
 	var destroy = &cobra.Command{
 		Use:   "destroy",
 		Short: "clean development environment & remove secrets",
@@ -156,14 +168,36 @@ func Commands() []*cobra.Command {
 	var start = &cobra.Command{
 		Use:   "start",
 		Short: "Resumes the space-cloud docker environment",
-		RunE:  actionStart,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
+		},
+		RunE: actionStart,
 	}
+	start.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	err = viper.BindEnv("cluster-id", "CLUSTER_ID1")
+	if err != nil {
+		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	}
+
 	var stop = &cobra.Command{
 		Use:   "stop",
 		Short: "Stops the space-cloud docker environment",
-		RunE:  actionStop,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
+		},
+		RunE: actionStop,
 	}
-
+	stop.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	err = viper.BindEnv("cluster-id", "CLUSTER_ID1")
+	if err != nil {
+		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	}
 	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}
 
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/spf13/viper"
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cli/cmd/utils"
@@ -18,8 +19,6 @@ import (
 
 // Upgrade upgrades the environment which has been setup
 func Upgrade() error {
-	const ContainerGateway string = "space-cloud-gateway"
-	const ContainerRunner string = "space-cloud-runner"
 
 	// Getting current version
 	result := make(map[string]interface{})
@@ -39,6 +38,8 @@ func Upgrade() error {
 		return nil
 	}
 
+	clusterID := viper.GetString("cluster-id")
+
 	// Creating docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -47,7 +48,7 @@ func Upgrade() error {
 	}
 
 	// Get all containers containing < space-cloud > in their name
-	args := filters.Arg("label", "app=space-cloud")
+	args := filters.Arg("label", fmt.Sprintf("clusterID=%s-space-cloud", clusterID))
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		return utils.LogError("Unable to get Space Cloud container details. Is Docker running?", err)
@@ -57,6 +58,8 @@ func Upgrade() error {
 	var gatewayMounts []mount.Mount
 	var gatewayPorts nat.PortMap
 	var gatewayEnvs []string
+	var Labels map[string]string
+	var gatewayExposedPorts nat.PortSet
 
 	// Parameters for runner
 	var runnerEnvs []string
@@ -74,6 +77,9 @@ func Upgrade() error {
 			gatewayEnvs = containerInspect.Config.Env
 			gatewayMounts = containerInspect.HostConfig.Mounts
 			gatewayPorts = containerInspect.HostConfig.PortBindings
+			Labels = containerInspect.Config.Labels
+			gatewayExposedPorts = containerInspect.Config.ExposedPorts
+
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), err)
 			}
@@ -85,6 +91,8 @@ func Upgrade() error {
 				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), err)
 			}
 		}
+		fmt.Println("container: ", containerInfo.Names[0])
+		fmt.Println("--------")
 	}
 
 	containersToCreate := []struct {
@@ -98,22 +106,19 @@ func Upgrade() error {
 	}{
 		{
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", latestVersion),
-			containerName:  ContainerGateway,
-			dnsName:        "gateway.space-cloud.svc.cluster.local",
+			containerName:  getNetworkName(clusterID) + "-gateway",
+			dnsName:        "gateway." + getNetworkName(clusterID) + ".svc.cluster.local",
 			envs:           gatewayEnvs,
-			exposedPorts: nat.PortSet{
-				"4122": struct{}{},
-				"4126": struct{}{},
-			},
-			portMapping: gatewayPorts,
-			mount:       gatewayMounts,
+			exposedPorts:   gatewayExposedPorts,
+			portMapping:    gatewayPorts,
+			mount:          gatewayMounts,
 		},
 
 		{
 			// runner
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", latestVersion),
-			containerName:  ContainerRunner,
-			dnsName:        "runner.space-cloud.svc.cluster.local",
+			containerName:  getNetworkName(clusterID) + "-runner",
+			dnsName:        "runner." + getNetworkName(clusterID) + ".svc.cluster.local",
 			envs:           runnerEnvs,
 			mount:          runnerMounts,
 		},
@@ -125,7 +130,7 @@ func Upgrade() error {
 		return utils.LogError("Unable to initialize docker client", err)
 	}
 
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath("default"), WriteFilePath: utils.GetSpaceCloudHostsFilePath("default")})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterID), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterID)})
 	if err != nil {
 		return utils.LogError("Unable to load host file", err)
 	}
@@ -138,13 +143,14 @@ func Upgrade() error {
 		}
 
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
+			Labels:       Labels,
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
 			Env:          c.envs,
 		}, &container.HostConfig{
 			Mounts:       c.mount,
 			PortBindings: c.portMapping,
-			NetworkMode:  "space-cloud",
+			NetworkMode:  container.NetworkMode(getNetworkName(clusterID)),
 		}, nil, c.containerName)
 		if err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), err)
@@ -162,7 +168,7 @@ func Upgrade() error {
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(c.dnsName)
 		// Add it back with the new ip address
-		ip := data.NetworkSettings.Networks["space-cloud"].IPAddress
+		ip := data.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress
 
 		hosts.AddHost(ip, c.dnsName)
 	}

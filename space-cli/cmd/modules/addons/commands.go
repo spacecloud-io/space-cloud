@@ -17,8 +17,15 @@ func Commands() []*cobra.Command {
 	var addRegistryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "Add a docker registry",
-		RunE:  ActionAddRegistry,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
+		},
+		RunE: ActionAddRegistry,
 	}
+	addRegistryCmd.Flags().StringP("cluster-id", "", "default", "provide the cluster-id")
 
 	var addDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -44,6 +51,10 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('auto-apply')", nil)
 			}
+			err = viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
 		},
 		RunE: ActionAddDatabase,
 	}
@@ -53,6 +64,7 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
+	addDatabaseCmd.Flags().StringP("cluster-id", "", "default", "provide the cluster-id")
 
 	var removeCmd = &cobra.Command{
 		Use:   "remove",
@@ -62,14 +74,29 @@ func Commands() []*cobra.Command {
 	var removeRegistryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "Remove a docker registry",
-		RunE:  ActionRemoveRegistry,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
+		},
+		RunE: ActionRemoveRegistry,
 	}
+	removeRegistryCmd.Flags().StringP("cluster-id", "", "default", "provide the cluster-id")
 
 	var removeDatabaseCmd = &cobra.Command{
 		Use:   "database",
 		Short: "Remove a database",
-		RunE:  ActionRemoveDatabase,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			}
+		},
+		RunE: ActionRemoveDatabase,
 	}
+	removeDatabaseCmd.Flags().StringP("cluster-id", "", "default", "provide the cluster-id")
+
 	addCmd.AddCommand(addRegistryCmd)
 	addCmd.AddCommand(addDatabaseCmd)
 	removeCmd.AddCommand(removeRegistryCmd)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/spf13/viper"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -22,6 +24,7 @@ func ActionStart(_ *cli.Context) error {
 func DockerStart() error {
 	ctx := context.Background()
 
+	clusterID := viper.GetString("cluster-id")
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -29,13 +32,13 @@ func DockerStart() error {
 	}
 
 	// Get the hosts file
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath("default"), WriteFilePath: utils.GetSpaceCloudHostsFilePath("default")})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterID), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterID)})
 	if err != nil {
 		return utils.LogError("Unable to open hosts file", err)
 	}
 
 	// Start the add ons first
-	argsAddOns := filters.Arg("label", "app=addon")
+	argsAddOns := filters.Arg("name", fmt.Sprintf("%s--addon", getNetworkName(clusterID)))
 	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsAddOns), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
@@ -58,7 +61,7 @@ func DockerStart() error {
 		hosts.RemoveHost(hostName)
 
 		// Add it back with the new ip address
-		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
+		hosts.AddHost(info.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress, hostName)
 	}
 
 	// Save the hosts file before continuing
@@ -68,7 +71,7 @@ func DockerStart() error {
 
 	// Second step is to start the gateway and runner. We'll need the runner's ip address in the next step
 	var runnerIP string
-	argsSC := filters.Arg("label", "app=space-cloud")
+	argsSC := filters.Arg("label", fmt.Sprintf("clusterID=%s-space-cloud", clusterID))
 	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsSC), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
@@ -88,16 +91,16 @@ func DockerStart() error {
 
 		// Set the runner ip with the current service is the runner
 		name := info.Config.Labels["service"]
-		hostName := fmt.Sprintf("%s.space-cloud.svc.cluster.local", name)
+		hostName := fmt.Sprintf("%s.%s.svc.cluster.local", name, getNetworkName(clusterID))
 		if name == "runner" {
-			runnerIP = info.NetworkSettings.Networks["space-cloud"].IPAddress
+			runnerIP = info.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress
 		}
 
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(hostName)
 
 		// Add it back with the new ip address
-		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, hostName)
+		hosts.AddHost(info.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress, hostName)
 	}
 
 	// Check if the ip address is set

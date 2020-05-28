@@ -65,7 +65,6 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 	}
 	if !strings.Contains(config, ".yaml") {
 		return fmt.Errorf("full path not provided for config file")
-
 	}
 	if version == "" {
 		utils.LogInfo("Fetching latest Space Cloud Version")
@@ -111,8 +110,8 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 	}
 
 	envs := []string{
-		"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
-		"RUNNER_ADDR=runner.space-cloud.svc.cluster.local:4050",
+		//"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
+		"RUNNER_ADDR=runner." + getNetworkName(clusterID) + ".svc.cluster.local:4050",
 		"ADMIN_USER=" + username,
 		"ADMIN_PASS=" + key,
 		"ADMIN_SECRET=" + secret,
@@ -160,7 +159,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 			name:           "gateway",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", version),
 			containerName:  getNetworkName(clusterID) + "-gateway",
-			dnsName:        "gateway.space-cloud.svc.cluster.local",
+			dnsName:        "gateway." + getNetworkName(clusterID) + ".svc.cluster.local",
 			envs:           envs,
 			exposedPorts: nat.PortSet{
 				nat.Port(portHTTPValue):  struct{}{},
@@ -178,10 +177,10 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 			name:           "runner",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
 			containerName:  getNetworkName(clusterID) + "-runner",
-			dnsName:        "runner.space-cloud.svc.cluster.local",
+			dnsName:        "runner." + getNetworkName(clusterID) + ".svc.cluster.local",
 			envs: []string{
 				"DEV=" + devMode,
-				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122", // TODO Change the default value in runner it starts with http
+				"ARTIFACT_ADDR=store." + getNetworkName(clusterID) + ".svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
 				"DRIVER=docker",
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
@@ -190,6 +189,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 				"HOSTS_FILE_PATH=" + utils.GetSpaceCloudHostsFilePath(clusterID),
 				"ROUTING_FILE_PATH=" + "/routing-config.json",
 				"CLUSTER_ID=" + id,
+				"PORT=4050",
 			},
 			mount: []mount.Mount{
 				{
@@ -257,7 +257,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 
 		// create container with specified defaults
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
-			Labels:       map[string]string{"app": "space-cloud", "service": c.name, "clusterID": clusterID},
+			Labels:       map[string]string{"app": "space-cloud", "service": c.name, "clusterID": fmt.Sprintf("%s-space-cloud", clusterID)},
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
 			Env:          c.envs,
