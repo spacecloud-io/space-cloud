@@ -200,7 +200,7 @@ func Test_generateInspection(t *testing.T) {
 			wantErr: false,
 		},
 		// There is a bug in code, inspection cannot detect @createdAt,@updatedAt directives
-		// What other special directives do we have ?
+		// TODO: What other special directives do we have ?
 		// {
 		// 	name: "MySQL field col1 which is not null with type DateTime having directive @createdAt",
 		// 	args: args{
@@ -294,10 +294,10 @@ func Test_generateInspection(t *testing.T) {
 			args: args{
 				dbType:      "mysql",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`}},
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeDateTime, Default: `"{"id":"zerfvnex","name":"john"}"`}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeJSON, Default: `{"id":"zerfvnex","name":"john"}`}}},
 			wantErr: false,
 		},
 		{
@@ -1228,64 +1228,16 @@ func Test_generateInspection(t *testing.T) {
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
 			wantErr: false,
 		},
-		{
-			name: "foreign keys with constraint name not matching gateways convention name",
-			args: args{
-				dbType: "mysql",
-				col:    "table1",
-				fields: []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(5550)", FieldNull: "NO", FieldKey: "PRI"}},
-				foreignkeys: []utils.ForeignKeysType{{
-					TableName:      "table1",
-					ColumnName:     firstColumn,
-					ConstraintName: "some-random-name",
-					DeleteRule:     "NO_ACTION",
-					RefTableName:   "table2",
-					RefColumnName:  "id",
-				}},
-			},
-			want: model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsForeign: true, IsFieldTypeRequired: true, Kind: model.TypeID, IsPrimary: true, JointTable: &model.TableProperties{
-				To:             "id",
-				Table:          "table2",
-				OnDelete:       "NO_ACTION",
-				ConstraintName: "some-random-name",
-			}}}},
-			wantErr: false,
-		},
-		{
-			name: "IndexKeys-!null-ID",
-			args: args{
-				dbType: "mysql",
-				col:    "table1",
-				fields: []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldKey: "PRI"}},
-				indexkeys: []utils.IndexType{{
-					TableName:  "table1",
-					ColumnName: firstColumn,
-				}},
-			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true, IsIndex: true, IndexInfo: &model.TableProperties{}}}},
-			wantErr: false,
-		},
 		// postgres
 		{
-			name: "JSON with not null",
+			name: "Postgres field col1 with type ID which is not null having default value INDIA",
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "jsonb", FieldNull: "NO"}},
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "character varying", FieldNull: "NO", FieldDefault: "'INDIA'::text"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "JSON"}}},
-			wantErr: false,
-		},
-		{
-			name: "Postgres field col1 with type Float which is not null having default value 9.8",
-			args: args{
-				dbType:      "postgres",
-				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "9.8"}},
-				foreignkeys: []utils.ForeignKeysType{},
-			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "Float", IsDefault: true, Default: "9.8"}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeID, IsDefault: true, Default: "\"INDIA\""}}},
 			wantErr: false,
 		},
 		{
@@ -1296,7 +1248,29 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO", FieldDefault: "'INDIA'::text"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"INDIA\""}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeString, IsDefault: true, Default: "\"INDIA\""}}},
+			wantErr: false,
+		},
+		{
+			name: "Postgres field col1 with type Integer which is not null having default value 100",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldDefault: "100"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeInteger, IsDefault: true, Default: "100"}}},
+			wantErr: false,
+		},
+		{
+			name: "Postgres field col1 with type Float which is not null having default value 9.8",
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "9.8"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeFloat, IsDefault: true, Default: "9.8"}}},
 			wantErr: false,
 		},
 		{
@@ -1307,117 +1281,116 @@ func Test_generateInspection(t *testing.T) {
 				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "true"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "Boolean", IsDefault: true, Default: "true"}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeBoolean, IsDefault: true, Default: "true"}}},
 			wantErr: false,
 		},
 		{
-			name: "Postgres field col1 with type ID which is not null having primary key constraint",
+			name: "Postgres field col1 with type DateTime which is not null having default value 2020-05-30T00:42:05+00:00",
 			args: args{
 				dbType:      "postgres",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "character varying", FieldNull: "NO", FieldKey: "PRI"}},
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "timestamp", FieldNull: "NO", FieldDefault: "'2020-05-30T00:42:05+00:00'::datetime"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeDateTime, IsDefault: true, Default: "\"2020-05-30T00:42:05+00:00\""}}},
 			wantErr: false,
 		},
 		{
-			name: "Postgres field col1 with type Integer which is not null",
+			name: "Postgres field col1 with type Unsupported type",
 			args: args{
-				dbType:      "postgres",
-				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
-				foreignkeys: []utils.ForeignKeysType{},
-			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "Integer"}}},
-			wantErr: false,
-		},
-		{
-			name: "Postgres field col1 with type String which is not null",
-			args: args{
-				dbType:      "postgres",
-				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
-				foreignkeys: []utils.ForeignKeysType{},
-			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "String"}}},
-			wantErr: false,
-		},
-		{
-			name: "Postgres field col1 with type Boolean which is not null",
-			args: args{
-				dbType:      "postgres",
-				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
-				foreignkeys: []utils.ForeignKeysType{},
-			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "Boolean"}}},
-			wantErr: false,
-		},
-		{
-			name: "Postgres field col1 with type Float which is not null having foreign key constraint",
-			args: args{
-				dbType:      "postgres",
-				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2"}},
-			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "Float", IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2"}}}},
-			wantErr: false,
-		},
-		{
-			name: "Postgres field col1 with type DateTime which is not null having foreign key constraint",
-			args: args{
-				dbType:      "postgres",
-				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2"}},
-			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "DateTime", IsForeign: true, JointTable: &model.TableProperties{To: "col2", Table: "table2"}}}},
-			wantErr: false,
-		},
-		{
-			name: "Postgres field col1 with Unsupported type which is not null having foreign key constraint",
-			args: args{
-				dbType:      "postgres",
-				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "wrongType", FieldNull: "NO", FieldKey: "MUL"}},
-				foreignkeys: []utils.ForeignKeysType{utils.ForeignKeysType{TableName: "table1", ColumnName: firstColumn, RefTableName: "table2", RefColumnName: "col2"}},
+				dbType: "postgres",
+				col:    "table1",
+				fields: []utils.FieldType{{FieldName: firstColumn, FieldType: "some-type", FieldNull: "NO", FieldDefault: "'2020-05-30T00:42:05+00:00'::datetime"}},
 			},
 			wantErr: true,
 		},
+		{
+			name: `Postgres field col1 which is not null with type JSON having default value {"id":"zerfvnex","name":"john"}`,
+			args: args{
+				dbType:      "postgres",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "jsonb", FieldNull: "NO", FieldDefault: `{"id":"zerfvnex","name":"john"}`}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeJSON, Default: `{"id":"zerfvnex","name":"john"}`}}},
+			wantErr: false,
+		},
 		// sql server
 		{
-			name: "SQL-Server field col1 with type ID which is not null having primary key constraint",
+			name: "SQL-Server field col1 which is not null with type ID having default value INDIA",
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(5520)", FieldNull: "NO", FieldKey: "PRI"}},
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO", FieldDefault: "((INDIA))"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "ID", IsPrimary: true}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeID, Default: "\"INDIA\""}}},
 			wantErr: false,
 		},
 		{
-			name: "SQL-Server field col1 with type String which is not null having primary key constraint",
+			name: "SQL-Server field col1 which is not null with type String having default value INDIA",
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(-1)", FieldNull: "NO", FieldKey: "PRI"}},
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(-1)", FieldNull: "NO", FieldDefault: "((INDIA))"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: model.TypeString, IsPrimary: true}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeString, Default: "\"INDIA\""}}},
 			wantErr: false,
 		},
 		{
-			name: "SQL-Server field col1 with type String which is not null having default value INDIA",
+			name: "SQL-Server field col1 which is not null with type Boolean having default value true",
 			args: args{
 				dbType:      "sqlserver",
 				col:         "table1",
-				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO", FieldDefault: "((INDIA))"}},
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "((1))"}},
 				foreignkeys: []utils.ForeignKeysType{},
 			},
-			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, Kind: "String", IsDefault: true, Default: "\"INDIA\""}}},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeBoolean, Default: "true"}}},
+			wantErr: false,
+		},
+		{
+			name: "SQL-Server field col1 which is not null with type Boolean having default value false",
+			args: args{
+				dbType:      "sqlserver",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO", FieldDefault: "((0))"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeBoolean, Default: "false"}}},
+			wantErr: false,
+		},
+		{
+			name: "SQL-Server field col1 which is not null with type Integer having default value 100",
+			args: args{
+				dbType:      "sqlserver",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO", FieldDefault: "((100))"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeInteger, Default: "100"}}},
+			wantErr: false,
+		},
+		{
+			name: "SQL-Server field col1 which is not null with type Float having default value 9.8",
+			args: args{
+				dbType:      "sqlserver",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO", FieldDefault: "((9.8))"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeFloat, Default: "9.8"}}},
+			wantErr: false,
+		},
+		{
+			name: "SQL-Server field col1 which is not null with type DateTime having default value 2020-05-30T00:42:05+00:00",
+			args: args{
+				dbType:      "sqlserver",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO", FieldDefault: "((2020-05-30T00:42:05+00:00))"}},
+				foreignkeys: []utils.ForeignKeysType{},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsDefault: true, Kind: model.TypeDateTime, Default: "\"2020-05-30T00:42:05+00:00\""}}},
 			wantErr: false,
 		},
 	}
