@@ -11,6 +11,7 @@ import (
 
 func Test_generateInspection(t *testing.T) {
 	var firstColumn = "column1"
+	var secondColumn = "column2"
 	type args struct {
 		dbType      string
 		col         string
@@ -394,7 +395,342 @@ func Test_generateInspection(t *testing.T) {
 			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}}}},
 			wantErr: false,
 		},
-
+		{
+			name: "MySQL field col1 with type ID, col2 with type Integer which is not null having multiple unique index constraint created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type String, col2 with type String which is not null having multiple unique index constraint created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Integer, col2 with type Integer which is not null having multiple unique index constraint created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Float, col2 with type Float which is not null having multiple unique index constraint created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Boolean, col2 with type Boolean which is not null having multiple unique index constraint created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type DateTime, col2 with type DateTime which is not null having multiple unique index constraint created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type JSON, col2 with type JSON which is not null having multiple unique index constraint created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: getIndexName("table1", "index1"), Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: getIndexName("table1", "index1"), Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "index1", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "index1", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: getIndexName("table1", "index1")}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type ID which is not null having single unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type String which is not null having single unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Integer which is not null having single unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Float which is not null having single unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Boolean which is not null having single unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type DateTime which is not null having single unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type JSON which is not null having single unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys:   []utils.IndexType{{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"}},
+			},
+			want:    model.Collection{"table1": model.Fields{firstColumn: &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}}}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type ID, col2 with type Integer which is not null having multiple unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "varchar(50)", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "varchar(50)", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeID, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type String, col2 with type String which is not null having multiple unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "text", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "text", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeString, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Integer, col2 with type Integer which is not null having multiple unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "bigint", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "bigint", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeInteger, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Float, col2 with type Float which is not null having multiple unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "float", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "float", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeFloat, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type Boolean, col2 with type Boolean which is not null having multiple unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "boolean", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "boolean", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeBoolean, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type DateTime, col2 with type DateTime which is not null having multiple unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "datetime", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "datetime", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeDateTime, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+			}},
+			wantErr: false,
+		},
+		{
+			name: "MySQL field col1 with type JSON, col2 with type JSON which is not null having multiple unique index constraint not created through space cloud",
+			args: args{
+				dbType:      "mysql",
+				col:         "table1",
+				fields:      []utils.FieldType{{FieldName: firstColumn, FieldType: "json", FieldNull: "NO"}, {FieldName: secondColumn, FieldType: "json", FieldNull: "NO"}},
+				foreignkeys: []utils.ForeignKeysType{},
+				indexkeys: []utils.IndexType{
+					{TableName: "table1", ColumnName: firstColumn, IndexName: "custom-index", Order: 1, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+					{TableName: "table1", ColumnName: secondColumn, IndexName: "custom-index", Order: 2, Sort: model.DefaultIndexSort, IsUnique: "yes"},
+				},
+			},
+			want: model.Collection{"table1": model.Fields{
+				firstColumn:  &model.FieldType{FieldName: firstColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 1, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+				secondColumn: &model.FieldType{FieldName: secondColumn, IsFieldTypeRequired: true, IsUnique: true, IsIndex: true, Kind: model.TypeJSON, IndexInfo: &model.TableProperties{Group: "custom-index", Order: 2, Sort: model.DefaultIndexSort, ConstraintName: "custom-index"}},
+			}},
+			wantErr: false,
+		},
 		{
 			name: "identify varchar with any size",
 			args: args{
