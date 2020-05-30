@@ -355,6 +355,39 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 	return s.setProject(ctx, projectConfig)
 }
 
+// RemoveSchemaInspection inspects the schema
+func (s *Manager) RemoveSchemaInspection(ctx context.Context, project, dbAlias, col, schema string) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+
+	// update schema in config
+	collection, ok := projectConfig.Modules.Crud[dbAlias]
+	if !ok {
+		return errors.New("specified database not present in config")
+	}
+
+	if collection.Collections == nil {
+		collection.Collections = map[string]*config.TableRule{}
+	}
+	_, ok = collection.Collections[col]
+	if ok {
+		delete(collection.Collections, col)
+	}
+
+	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
+		logrus.Errorf("error setting crud config - %s", err.Error())
+		return err
+	}
+
+	return s.setProject(ctx, projectConfig)
+}
+
 // SetModifyAllSchema modifies schema of all tables
 func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, v config.CrudStub) error {
 	// Acquire a lock

@@ -549,8 +549,51 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-
 		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: s})
+		// return
+	}
+}
+
+// HandleInspectUntrackedCollectionSchema gets the schema for particular collection & removed the collection from the database collection schema in config
+func HandleInspectUntrackedCollectionSchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+		defer utils.CloseTheCloser(r.Body)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		// Create a context of execution
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		col := vars["col"]
+		projectID := vars["project"]
+		logicalDBName, err := syncman.GetLogicalDatabaseName(ctx, projectID, dbAlias)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		schema := modules.Schema()
+		s, err := schema.SchemaInspection(ctx, dbAlias, logicalDBName, col)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if err := syncman.RemoveSchemaInspection(ctx, projectID, dbAlias, col, s); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
