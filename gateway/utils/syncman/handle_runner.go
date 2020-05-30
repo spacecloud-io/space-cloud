@@ -1,6 +1,7 @@
 package syncman
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
@@ -70,4 +72,43 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 // GetRunnerAddr returns runner address
 func (s *Manager) GetRunnerAddr() string {
 	return s.runnerAddr
+}
+
+// GetRunnerType returns runner type
+func (s *Manager) GetRunnerType(admin *admin.Manager) (string, error) {
+	if s.runnerAddr == "" {
+		return "none", nil
+	}
+
+	token, err := admin.GetInternalAccessToken()
+	if err != nil {
+		logrus.Errorf("error handling forwarding runner request failed to generate internal access token -%v", err)
+		return "", err
+	}
+
+	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/cluster-type", s.runnerAddr), nil)
+	if err != nil {
+		logrus.Errorf("error while getting runnerType in handler unable to create http request - %v", err)
+		return "", err
+	}
+	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+
+	httpRes, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		logrus.Errorf("error while getting runnerType in handler unable to execute http request - %v", err)
+		return "", err
+	}
+
+	data := new(model.Response)
+	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
+		logrus.Errorf("error while getting runnerType in handler unable to decode response body -%v", err)
+		return "", err
+	}
+
+	if httpRes.StatusCode != http.StatusOK {
+		logrus.Errorf("error while getting runnerType in handler got http request -%v", httpRes.StatusCode)
+		return "", fmt.Errorf("error while getting runnerType in handler got http request -%v -%v", httpRes.StatusCode, data.Error)
+	}
+
+	return data.Result.(string), err
 }

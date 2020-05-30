@@ -355,8 +355,8 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 	return s.setProject(ctx, projectConfig)
 }
 
-// RemoveSchemaInspection inspects the schema
-func (s *Manager) RemoveSchemaInspection(ctx context.Context, project, dbAlias, col, schema string) error {
+// RemoveSchemaInspection removed the collection from the database collection schema in config
+func (s *Manager) RemoveSchemaInspection(ctx context.Context, project, dbAlias, col string) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -375,10 +375,8 @@ func (s *Manager) RemoveSchemaInspection(ctx context.Context, project, dbAlias, 
 	if collection.Collections == nil {
 		collection.Collections = map[string]*config.TableRule{}
 	}
-	_, ok = collection.Collections[col]
-	if ok {
-		delete(collection.Collections, col)
-	}
+
+	delete(collection.Collections, col)
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
 		logrus.Errorf("error setting crud config - %s", err.Error())

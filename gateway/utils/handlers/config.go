@@ -19,12 +19,17 @@ import (
 )
 
 // HandleLoadEnv returns the handler to load the projects via a REST endpoint
-func HandleLoadEnv(adminMan *admin.Manager) http.HandlerFunc {
+func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		defer utils.CloseTheCloser(r.Body)
+		result, err := syncMan.GetRunnerType(adminMan)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 
-		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion, "plan": "space-cloud-open", "quotas": adminMan.GetQuotas(), "clusterId": ""})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion, "plan": "space-cloud-open", "quotas": adminMan.GetQuotas(), "clusterId": "", "runner": result})
 	}
 }
 
