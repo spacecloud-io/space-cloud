@@ -1,13 +1,13 @@
 package syncman
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -74,8 +74,10 @@ func (s *Manager) GetRunnerAddr() string {
 	return s.runnerAddr
 }
 
-// GetRunnerType returns runner type
-func (s *Manager) GetRunnerType(admin *admin.Manager) (string, error) {
+// GetClusterType returns cluster type
+func (s *Manager) GetClusterType(admin *admin.Manager) (string, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	if s.runnerAddr == "" {
 		return "none", nil
 	}
@@ -86,28 +88,15 @@ func (s *Manager) GetRunnerType(admin *admin.Manager) (string, error) {
 		return "", err
 	}
 
-	httpReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://%s/v1/runner/cluster-type", s.runnerAddr), nil)
-	if err != nil {
-		logrus.Errorf("error while getting runnerType in handler unable to create http request - %v", err)
-		return "", err
-	}
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-
-	httpRes, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		logrus.Errorf("error while getting runnerType in handler unable to execute http request - %v", err)
-		return "", err
-	}
-
 	data := new(model.Response)
-	if err = json.NewDecoder(httpRes.Body).Decode(&data); err != nil {
-		logrus.Errorf("error while getting runnerType in handler unable to decode response body -%v", err)
-		return "", err
-	}
 
-	if httpRes.StatusCode != http.StatusOK {
-		logrus.Errorf("error while getting runnerType in handler got http request -%v", httpRes.StatusCode)
-		return "", fmt.Errorf("error while getting runnerType in handler got http request -%v -%v", httpRes.StatusCode, data.Error)
+	type favContextKey string
+	var k favContextKey
+	ctx := context.WithValue(context.Background(), k, "Go")
+
+	err = s.MakeHTTPRequest(ctx, http.MethodGet, fmt.Sprintf("http://%s/v1/runner/cluster-type", s.runnerAddr), token, "", map[string]interface{}{}, &data)
+	if err != nil {
+		return "", err
 	}
 
 	return data.Result.(string), err

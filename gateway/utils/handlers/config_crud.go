@@ -588,7 +588,6 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		}
 
 		_ = utils.SendOkayResponse(w)
-		// return
 	}
 }
 

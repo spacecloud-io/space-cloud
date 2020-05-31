@@ -373,7 +373,7 @@ func (s *Manager) RemoveSchemaInspection(ctx context.Context, project, dbAlias, 
 	}
 
 	if collection.Collections == nil {
-		collection.Collections = map[string]*config.TableRule{}
+		return nil
 	}
 
 	delete(collection.Collections, col)
