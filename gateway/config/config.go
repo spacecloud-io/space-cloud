@@ -7,6 +7,11 @@ type Config struct {
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 }
 
+type GlobalConfig struct {
+	Email         string `json:"email" yaml:"email"`
+	EnableMetrics bool   `json:"enableMetrics" yaml:"enableMetrics"`
+}
+
 // Project holds the project level configuration
 type Project struct {
 	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
@@ -228,5 +233,4 @@ type SchemaObject struct {
 type LetsEncrypt struct {
 	ID                 string   `json:"id,omitempty" yaml:"id,omitempty"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
-	Email              string   `json:"email" yaml:"email"`
 }

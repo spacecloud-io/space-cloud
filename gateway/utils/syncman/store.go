@@ -10,6 +10,7 @@ import (
 type Store interface {
 	WatchProjects(cb func(projects []*config.Project)) error
 	WatchServices(cb func(projects scServices)) error
+	WatchGlobalConfig(cb func(projects []*config.GlobalConfig)) error
 
 	Register()
 
