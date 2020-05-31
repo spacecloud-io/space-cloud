@@ -213,7 +213,7 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 	}
 }
 
-func removeDatabase(alias string) error {
+func removeDatabase(alias, project string) error {
 	clusterID := viper.GetString("cluster-id")
 
 	ctx := context.Background()
@@ -233,6 +233,10 @@ func removeDatabase(alias string) error {
 	if len(containers) == 0 {
 		utils.LogInfo(fmt.Sprintf("Database (%s) not found.", alias))
 		return nil
+	}
+
+	if err := deleteDatabaseConfig(project, alias); err != nil {
+		return err
 	}
 
 	// Get the hosts file
@@ -275,4 +279,34 @@ func getDatabaseContainerName(id, alias string) string {
 		return fmt.Sprintf("space-cloud--addon--db--%s", alias)
 	}
 	return fmt.Sprintf("space-cloud-%s--addon--db--%s", id, alias)
+}
+
+func deleteDatabaseConfig(projectID, dbAlias string) error {
+	account, token, err := utils.LoginWithSelectedAccount()
+	if err != nil {
+		return utils.LogError("Couldn't get account details or login token", err)
+	}
+	url := fmt.Sprintf("%s/v1/config/projects/%s/database/%s/config/database-config", account.ServerURL, projectID, dbAlias)
+
+	fmt.Println("url: ", url)
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+	if token != "" {
+		req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer utils.CloseTheCloser(resp.Body)
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("received invalid status code (%d)", resp.StatusCode)
+	}
+
+	return nil
 }

@@ -168,6 +168,6 @@ func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Database Alias not provided as an argument", nil)
 		return nil
 	}
-	_ = removeDatabase(args[0])
+	_ = removeDatabase(args[0], args[1])
 	return nil
 }
