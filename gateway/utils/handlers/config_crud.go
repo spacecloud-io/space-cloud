@@ -559,7 +559,7 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 	}
 }
 
-// HandleUntrackCollectionSchema gets the schema for particular collection & removed the collection from the database collection schema in config
+// HandleUntrackCollectionSchema removes the collection from the database config
 func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -587,7 +587,7 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: nil})
+		_ = utils.SendOkayResponse(w)
 		// return
 	}
 }
