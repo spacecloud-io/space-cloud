@@ -57,7 +57,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile str
 	case "Local":
 		// m.services = []*service{{id: nodeID, addr: advertiseAddr}}
 		// return m, nil
-		s, err := NewLocalStore()
+		s, err := NewLocalStore(nodeID, advertiseAddr)
 		if err != nil {
 			return nil, err
 		}
