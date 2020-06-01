@@ -150,6 +150,42 @@ func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
+// WatchGlobalConfig maintains consistency between all instances of sc
+func (s *ConsulStore) WatchGlobalConfig(cb func(projects *config.GlobalConfig)) error {
+	watchParams := map[string]interface{}{
+		"type":   "keyprefix",
+		"prefix": "sc/projects/" + s.clusterID,
+	}
+	p, err := watch.Parse(watchParams)
+	if err != nil {
+		return err
+	}
+
+	p.HybridHandler = func(val watch.BlockingParamVal, data interface{}) {
+		kvPairs := data.(api.KVPairs)
+		globalConfig := new(config.GlobalConfig)
+		for _, kv := range kvPairs {
+			a := strings.Split(kv.Key, "/")
+			if a[2] != s.clusterID {
+				continue
+			}
+			if err := json.Unmarshal(kv.Value, globalConfig); err != nil {
+				log.Println("Sync manager: Could not parse project received -", err)
+				continue
+			}
+		}
+		cb(globalConfig)
+	}
+
+	go func() {
+		if err := p.Run(""); err != nil {
+			log.Println("Sync Manager: could not start watcher -", err)
+			os.Exit(-1)
+		}
+	}()
+	return nil
+}
+
 // SetProject sets the project of the consul store
 func (s *ConsulStore) SetProject(ctx context.Context, project *config.Project) error {
 	opts := &api.WriteOptions{}

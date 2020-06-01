@@ -141,23 +141,6 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	return services
 }
 
-func onAddOrUpdateGlobalConfig(obj interface{}, projects map[string]*config.GlobalConfig) map[string]*config.GlobalConfig {
-	configMap := obj.(*v1.ConfigMap)
-	projectJSONString, ok := configMap.Data["GlobalConfig"]
-	if !ok {
-		logrus.Errorf("error watching projects in kube store unable to find field GlobalConfig in config map")
-		return nil
-	}
-
-	v := new(config.GlobalConfig)
-	if err := json.Unmarshal([]byte(projectJSONString), v); err != nil {
-		logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
-		return nil
-	}
-	projects[v.ID] = v
-	return projects
-}
-
 // WatchServices maintains consistency over all services
 func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	go func() {
@@ -205,8 +188,26 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
-// WatchGlobalConfig maintains consistency over all services
-func (s *KubeStore) WatchGlobalConfig(cb func(projects []*config.GlobalConfig)) error {
+func onAddOrUpdateGlobalConfig(obj interface{}, projects *config.GlobalConfig) *config.GlobalConfig {
+	configMap := obj.(*v1.ConfigMap)
+	globalConfigJSONString, ok := configMap.Data["GlobalConfig"]
+	if !ok {
+		logrus.Errorf("error watching projects in kube store unable to find field GlobalConfig in config map")
+		return nil
+	}
+
+	v := new(config.GlobalConfig)
+	if err := json.Unmarshal([]byte(globalConfigJSONString), v); err != nil {
+		logrus.Errorf("error while watching globalConfig in kube store unable to unmarshal data - %v", err)
+		return nil
+	}
+	projects.Email = v.Email
+	projects.EnableMetrics = v.EnableMetrics
+	return projects
+}
+
+// WatchGlobalConfig maintains consistency over all projects
+func (s *KubeStore) WatchGlobalConfig(cb func(projects *config.GlobalConfig)) error {
 	go func() {
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
 			options.LabelSelector = fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
@@ -216,25 +217,14 @@ func (s *KubeStore) WatchGlobalConfig(cb func(projects []*config.GlobalConfig)) 
 		defer close(stopper)
 		defer runtime.HandleCrash()
 
-		projectMap := map[string]*config.GlobalConfig{}
+		globalConfig := new(config.GlobalConfig)
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				cb(s.getProjects(onAddOrUpdateGlobalConfig(obj, projectMap)))
-			},
-			DeleteFunc: func(obj interface{}) {
-				configMap := obj.(*v1.ConfigMap)
-				projectID, ok := configMap.Data["id"]
-				if !ok {
-					logrus.Errorf("error watching project in kube store unable to find project id in config map")
-					return
-				}
-				delete(projectMap, projectID)
-				cb(s.getProjects(projectMap))
-
+				cb(onAddOrUpdateGlobalConfig(obj, globalConfig))
 			},
 			UpdateFunc: func(old, obj interface{}) {
-				cb(s.getProjects(onAddOrUpdateProjects(obj, projectMap)))
+				cb(onAddOrUpdateGlobalConfig(obj, globalConfig))
 			},
 		})
 

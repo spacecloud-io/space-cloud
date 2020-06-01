@@ -32,6 +32,7 @@ type trackedItemMeta struct {
 	modRevision    int64
 	service        *service
 	project        *config.Project
+	globalConfig   *config.GlobalConfig
 }
 
 // NewETCDStore creates new etcd store
@@ -293,6 +294,86 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 		}
 	}()
 
+	return nil
+}
+
+// WatchGlobalConfig maintains consistency between all instances of sc
+func (s *ETCDStore) WatchGlobalConfig(cb func(projects *config.GlobalConfig)) error {
+	//idxID := 3
+	itemsMeta := new(trackedItemMeta)
+
+	// Query all KVs with prefix
+	res, err := s.etcdClient.Get(context.Background(), fmt.Sprintf("sc/projects/%s", s.clusterID), clientv3.WithPrefix())
+	if err != nil {
+		return err
+	}
+
+	for _, kv := range res.Kvs {
+		// Get the id of the item
+		//id := strings.Split(string(kv.Key), "/")[idxID]
+		globalConfig := new(config.GlobalConfig)
+		if err := json.Unmarshal(kv.Value, globalConfig); err != nil {
+			log.Println("Sync manager: Could not parse project received -", err)
+			continue
+		}
+		// Store the item
+		itemsMeta.createRevision = kv.CreateRevision
+		itemsMeta.modRevision = kv.ModRevision
+		itemsMeta.globalConfig = globalConfig
+
+	}
+	cb(itemsMeta.globalConfig)
+
+	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/projects/%s", s.clusterID), clientv3.WithPrefix())
+
+	go func() {
+		for watchResponse := range ch {
+
+			for _, event := range watchResponse.Events {
+				if watchResponse.Err() != nil {
+					log.Fatal(watchResponse.Err())
+				}
+				kv := event.Kv
+				a := strings.Split(string(kv.Key), "/")
+				// id := a[idxID]
+				if a[2] != s.clusterID {
+					continue
+				}
+
+				switch event.Type {
+				case mvccpb.PUT:
+					globalConfig := new(config.GlobalConfig)
+					if err := json.Unmarshal(kv.Value, globalConfig); err != nil {
+						log.Println("Sync manager: Could not parse project received -", err)
+						continue
+					}
+					// meta, p := itemsMeta[id]
+					// if !p {
+					// AddStateless node if doesn't already exists
+					//itemsMeta[id] = &trackedItemMeta{createRevision: event.Kv.CreateRevision, modRevision: event.Kv.ModRevision, project: project}
+					itemsMeta.createRevision = kv.CreateRevision
+					itemsMeta.modRevision = kv.ModRevision
+					itemsMeta.globalConfig = globalConfig
+					cb(itemsMeta.globalConfig)
+					//}
+
+					// Ignore if incoming create revision is smaller
+					if event.Kv.CreateRevision < itemsMeta.createRevision {
+						break
+					}
+
+					// Update if incoming create revision or mod revision is greater
+					if event.Kv.CreateRevision > itemsMeta.createRevision || event.Kv.ModRevision > itemsMeta.modRevision {
+						itemsMeta.createRevision = event.Kv.CreateRevision
+						itemsMeta.modRevision = event.Kv.ModRevision
+						itemsMeta.globalConfig = globalConfig
+						//itemsMeta[id] = meta
+						cb(itemsMeta.globalConfig)
+					}
+				}
+			}
+		}
+	}()
 	return nil
 }
 
