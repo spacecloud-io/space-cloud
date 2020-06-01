@@ -2,11 +2,13 @@ package config
 
 // Config holds the entire configuration
 type Config struct {
-	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
-	SSL      *SSL       `json:"ssl" yaml:"ssl"`
-	Admin    *Admin     `json:"admin" yaml:"admin"`
+	Projects     []*Project   `json:"projects" yaml:"projects"` // The key here is the project id
+	GlobalConfig GlobalConfig `json:"globalConfig" yaml:"globalConfig"`
+	SSL          *SSL         `json:"ssl" yaml:"ssl"`
+	Admin        *Admin       `json:"admin" yaml:"admin"`
 }
 
+// GlobalConfig holds the entire global configuration
 type GlobalConfig struct {
 	Email         string `json:"email" yaml:"email"`
 	EnableMetrics bool   `json:"enableMetrics" yaml:"enableMetrics"`

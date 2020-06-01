@@ -54,9 +54,15 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile str
 
 	// Initialise the consul client if enabled
 	switch storeType {
-	case "none":
-		m.services = []*service{{id: nodeID, addr: advertiseAddr}}
-		return m, nil
+	case "Local":
+		// m.services = []*service{{id: nodeID, addr: advertiseAddr}}
+		// return m, nil
+		s, err := NewLocalStore()
+		if err != nil {
+			return nil, err
+		}
+		m.store = s
+		m.store.Register()
 	case "kube":
 		s, err := NewKubeStore(clusterID)
 		if err != nil {
