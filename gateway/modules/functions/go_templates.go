@@ -3,7 +3,6 @@ package functions
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 	"text/template"
 
@@ -15,12 +14,7 @@ import (
 
 func goTemplate(tmpl *template.Template, format string, claims, params interface{}) (interface{}, error) {
 	// Prepare the object
-	object, ok := params.(map[string]interface{})
-	if !ok {
-		return nil, utils.LogError("Params is of invalid type", module, segmentGoTemplate, fmt.Errorf("wanted - map, got - %s", reflect.TypeOf(params)))
-	}
-	object["auth"] = claims
-
+	object := map[string]interface{}{"body": params, "auth": claims}
 	var b strings.Builder
 	if err := tmpl.Execute(&b, object); err != nil {
 		return nil, utils.LogError("Unable to execute golang template", module, segmentCall, err)
