@@ -18,6 +18,8 @@ func (s *Server) routes() {
 
 	s.router.HandleFunc("/v1/runner/socket", s.handleWebsocketRequest())
 
+	s.router.Methods(http.MethodGet).Path("/v1/runner/cluster-type").HandlerFunc(s.handleGetClusterType())
+
 	// secret routes
 	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{id}").HandlerFunc(s.handleApplySecret())
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/secrets").HandlerFunc(s.handleListSecrets())
