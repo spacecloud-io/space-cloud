@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -84,17 +85,15 @@ func (s *Manager) GetClusterType(admin *admin.Manager) (string, error) {
 
 	token, err := admin.GetInternalAccessToken()
 	if err != nil {
-		logrus.Errorf("error handling forwarding runner request failed to generate internal access token -%v", err)
+		logrus.Errorf("GetClusterType failed to generate internal access token -%v", err)
 		return "", err
 	}
 
 	data := new(model.Response)
 
-	type favContextKey string
-	var k favContextKey
-	ctx := context.WithValue(context.Background(), k, "Go")
-
-	err = s.MakeHTTPRequest(ctx, http.MethodGet, fmt.Sprintf("http://%s/v1/runner/cluster-type", s.runnerAddr), token, "", map[string]interface{}{}, &data)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err = s.MakeHTTPRequest(ctx, http.MethodGet, fmt.Sprintf("http://%s/v1/runner/cluster-type", s.runnerAddr), token, "", map[string]interface{}{}, data)
 	if err != nil {
 		return "", err
 	}
