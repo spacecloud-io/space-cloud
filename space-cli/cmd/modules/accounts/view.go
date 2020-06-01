@@ -17,7 +17,7 @@ func listAccounts(prefix string, showKeys bool) error {
 		return err
 	}
 	if len(credential.Accounts) == 0 {
-		utils.LogInfo("No account found for prefix provided")
+		utils.LogInfo("No accounts found. Try adding an account using `space-cli login`")
 		return nil
 	}
 
