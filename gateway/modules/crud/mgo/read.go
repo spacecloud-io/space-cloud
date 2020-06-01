@@ -2,6 +2,7 @@ package mgo
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -68,6 +69,42 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 				findOptions = findOptions.SetSort(generateSortOptions(req.Options.Sort))
 			}
 		}
+
+		pipeline := make([]bson.M, 0)
+		for function, colArray := range req.Aggregate {
+			for _, column := range colArray {
+				switch function {
+				case "sum":
+					matchStage := getMatchStage(req.Find)
+					if matchStage != nil {
+						pipeline = append(pipeline, matchStage)
+					}
+					groupStage := getGroupByStage(req.GroupBy)
+					groupStage["total"] = bson.M{
+						"$sum": fmt.Sprintf("$%s", column),
+					}
+					pipeline = append(pipeline, groupStage)
+				default:
+					return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), "mgo", "Read", nil)
+				}
+			}
+		}
+
+		// hardCodeQuery := []bson.M{
+		// 	{
+		// 		"$match": bson.M{
+		// 			"trainer_id": "1",
+		// 		},
+		// 	},
+		// 	{
+		// 		"$group": bson.M{
+		// 			"_id": "$id",
+		// 			"total": bson.M{
+		// 				"$sum": "$power",
+		// 			},
+		// 		},
+		// 	},
+		// }
 
 		results := []interface{}{}
 		cur, err := collection.Find(ctx, req.Find, findOptions)
@@ -140,4 +177,29 @@ func generateSortOptions(array []string) bson.D {
 	}
 
 	return sort
+}
+
+func getMatchStage(find map[string]interface{}) bson.M {
+	if len(find) > 0 {
+		matchStage := bson.M{
+			"$match": find,
+		}
+		return matchStage
+	}
+	return nil
+}
+
+func getGroupByStage(groupBy []interface{}) bson.M {
+	if len(groupBy) > 0 {
+		groupStage := bson.M{}
+		groupByMap := make(map[string]interface{})
+		for _, val := range groupBy {
+			groupByMap[fmt.Sprintf("%v", val)] = val
+		}
+		groupStage = bson.M{
+			"$group": groupByMap,
+		}
+		return groupStage
+	}
+	return bson.M{}
 }
