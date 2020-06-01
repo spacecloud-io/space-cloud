@@ -37,6 +37,15 @@ func Test_goTemplate(t *testing.T) {
 			want: map[string]interface{}{"foo": "bar"},
 		},
 		{
+			name: "valid - use params",
+			args: args{
+				tmpl:   `{"foo": "{{index . "abc"}}"}`,
+				params: map[string]interface{}{"abc": "bar"},
+				format: "string",
+			},
+			want: `{"foo": "bar"}`,
+		},
+		{
 			name: "valid - use params (nested objects)",
 			args: args{
 				tmpl:   `{"foo": "{{index . "a" "b"}}"}`,
