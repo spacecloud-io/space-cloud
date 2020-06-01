@@ -74,7 +74,10 @@ func (s *LocalStore) SetProject(ctx context.Context, project *config.Project) er
 		s.store.Projects = append(s.store.Projects, project)
 	}
 
-	config.StoreConfigToFile(s.store, s.configPath)
+	err := config.StoreConfigToFile(s.store, s.configPath)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -87,6 +90,9 @@ func (s *LocalStore) DeleteProject(ctx context.Context, projectID string) error 
 			break
 		}
 	}
-	config.StoreConfigToFile(s.store, s.configPath)
+	err := config.StoreConfigToFile(s.store, s.configPath)
+	if err != nil {
+		return err
+	}
 	return nil
 }
