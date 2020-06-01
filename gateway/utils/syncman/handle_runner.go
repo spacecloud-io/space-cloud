@@ -5,9 +5,12 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/context"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
@@ -70,4 +73,30 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 // GetRunnerAddr returns runner address
 func (s *Manager) GetRunnerAddr() string {
 	return s.runnerAddr
+}
+
+// GetClusterType returns cluster type
+func (s *Manager) GetClusterType(admin *admin.Manager) (string, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if s.runnerAddr == "" {
+		return "none", nil
+	}
+
+	token, err := admin.GetInternalAccessToken()
+	if err != nil {
+		logrus.Errorf("GetClusterType failed to generate internal access token -%v", err)
+		return "", err
+	}
+
+	data := new(model.Response)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err = s.MakeHTTPRequest(ctx, http.MethodGet, fmt.Sprintf("http://%s/v1/runner/cluster-type", s.runnerAddr), token, "", map[string]interface{}{}, data)
+	if err != nil {
+		return "", err
+	}
+
+	return data.Result.(string), err
 }
