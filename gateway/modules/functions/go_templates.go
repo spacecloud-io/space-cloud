@@ -30,6 +30,9 @@ func goTemplate(tmpl *template.Template, format string, claims, params interface
 
 	var newParams interface{}
 	switch format {
+	case "string":
+		return s, nil
+
 	case "json":
 		if err := json.Unmarshal([]byte(s), &newParams); err != nil {
 			return nil, utils.LogError(fmt.Sprintf("Unable to marhsal templated output (%s) to JSON", s), module, segmentCall, err)
