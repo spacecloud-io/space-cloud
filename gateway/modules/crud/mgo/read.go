@@ -73,16 +73,14 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 		pipeline := make([]bson.M, 0)
 		for function, colArray := range req.Aggregate {
 			for _, column := range colArray {
+				asColumnName := generateAggregateAsColumnName(function, column)
 				switch function {
 				case "sum":
 					matchStage := getMatchStage(req.Find)
 					if matchStage != nil {
 						pipeline = append(pipeline, matchStage)
 					}
-					groupStage := getGroupByStage(req.GroupBy)
-					groupStage["total"] = bson.M{
-						"$sum": fmt.Sprintf("$%s", column),
-					}
+					groupStage := getGroupByStage(req.GroupBy, asColumnName, column)
 					pipeline = append(pipeline, groupStage)
 				default:
 					return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), "mgo", "Read", nil)
@@ -90,24 +88,8 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			}
 		}
 
-		// hardCodeQuery := []bson.M{
-		// 	{
-		// 		"$match": bson.M{
-		// 			"trainer_id": "1",
-		// 		},
-		// 	},
-		// 	{
-		// 		"$group": bson.M{
-		// 			"_id": "$id",
-		// 			"total": bson.M{
-		// 				"$sum": "$power",
-		// 			},
-		// 		},
-		// 	},
-		// }
-
 		results := []interface{}{}
-		cur, err := collection.Find(ctx, req.Find, findOptions)
+		cur, err := collection.Aggregate(ctx, pipeline)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -127,7 +109,17 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 				return 0, nil, err
 			}
 
-			results = append(results, doc)
+			resultObj := make(map[string]interface{})
+			for key, value := range doc {
+				v := strings.Split(key, "__")
+				if len(v) != 3 || !strings.HasPrefix(key, utils.GraphQLAggregate) {
+					resultObj[v[0]] = value
+					continue
+				}
+				resultObj[v[0]] = map[string]interface{}{v[1]: map[string]interface{}{v[2]: value}}
+			}
+
+			results = append(results, resultObj)
 		}
 
 		if err := cur.Err(); err != nil {
@@ -189,17 +181,26 @@ func getMatchStage(find map[string]interface{}) bson.M {
 	return nil
 }
 
-func getGroupByStage(groupBy []interface{}) bson.M {
+func getGroupByStage(groupBy []interface{}, asColumnName, column string) bson.M {
 	if len(groupBy) > 0 {
 		groupStage := bson.M{}
 		groupByMap := make(map[string]interface{})
 		for _, val := range groupBy {
-			groupByMap[fmt.Sprintf("%v", val)] = val
+			groupByMap[fmt.Sprintf("%v", val)] = fmt.Sprintf("$%v", val)
 		}
 		groupStage = bson.M{
-			"$group": groupByMap,
+			"$group": bson.M{
+				"_id": groupByMap,
+				asColumnName: bson.M{
+					"$sum": fmt.Sprintf("$%s", column),
+				},
+			},
 		}
 		return groupStage
 	}
-	return bson.M{}
+	return bson.M{"$group": bson.M{"_id": bson.M{}}}
+}
+
+func generateAggregateAsColumnName(function, column string) string {
+	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
 }
