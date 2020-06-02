@@ -2,14 +2,13 @@ package config
 
 // Config holds the entire configuration
 type Config struct {
-	Projects     []*Project    `json:"projects" yaml:"projects"` // The key here is the project id
-	GlobalConfig *GlobalConfig `json:"globalConfig" yaml:"globalConfig"`
-	SSL          *SSL          `json:"ssl" yaml:"ssl"`
-	Admin        *Admin        `json:"admin" yaml:"admin"`
+	Projects []*Project `json:"projects" yaml:"projects"` // The key here is the project id
+	SSL      *SSL       `json:"ssl" yaml:"ssl"`
+	Admin    *Admin     `json:"admin" yaml:"admin"`
 }
 
-// GlobalConfig holds the entire global configuration
-type GlobalConfig struct {
+// ClusterConfig holds the cluster level configuration
+type ClusterConfig struct {
 	Email         string `json:"email" yaml:"email"`
 	EnableMetrics bool   `json:"enableMetrics" yaml:"enableMetrics"`
 }
@@ -33,9 +32,10 @@ type Secret struct {
 
 // Admin holds the admin config
 type Admin struct {
-	ClusterID  string `json:"clusterId" yaml:"clusterId"`
-	ClusterKey string `json:"clusterKey" yaml:"clusterKey"`
-	Version    int    `json:"version" yaml:"version"`
+	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig"`
+	ClusterID     string         `json:"clusterId" yaml:"clusterId"`
+	ClusterKey    string         `json:"clusterKey" yaml:"clusterKey"`
+	Version       int            `json:"version" yaml:"version"`
 }
 
 // AdminUser holds the user credentials and scope

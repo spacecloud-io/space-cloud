@@ -3,27 +3,31 @@ package syncman
 import (
 	"os"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
 	"golang.org/x/net/context"
+
+	"github.com/spaceuptech/space-cloud/gateway/config"
 )
 
 // LocalStore is an object for storing localstore information
 type LocalStore struct {
-	configPath string
-	store      *config.Config
-	service    *service
+	configPath   string
+	globalConfig *config.Config
+	services     scServices
 }
 
 // NewLocalStore creates a new local store
 func NewLocalStore(nodeID, advertiseAddr string) (*LocalStore, error) {
-	configPath := os.Getenv("CONFIG")
-
+	configPath := os.Getenv("SC_CONFIG")
+	if configPath == "" {
+		configPath = "config.yaml"
+	}
 	// Load the configFile from path if provided
 	conf, err := config.LoadConfigFromFile(configPath)
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
 	}
-	return &LocalStore{configPath: configPath, store: conf, service: &service{id: nodeID, addr: advertiseAddr}}, nil
+	services := scServices{}
+	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &service{id: nodeID, addr: advertiseAddr})}, nil
 }
 
 // Register registers space cloud to the local store
@@ -31,68 +35,51 @@ func (s *LocalStore) Register() {}
 
 // WatchProjects maintains consistency over all projects
 func (s *LocalStore) WatchProjects(cb func(projects []*config.Project)) error {
-	cb(s.store.Projects)
+	cb(s.globalConfig.Projects)
 	return nil
 }
 
 // WatchServices maintains consistency over all services
 func (s *LocalStore) WatchServices(cb func(scServices)) error {
-	services := scServices{}
-	doesExist := false
-	for _, service := range services {
-		if service.id == s.service.id {
-			doesExist = true
-			service.addr = s.service.addr
-			break
-		}
-	}
-
-	// add service if it doesn't exist
-	if !doesExist {
-		services = append(services, &service{id: s.service.id, addr: s.service.addr})
-	}
-	cb(services)
+	cb(s.services)
 	return nil
 }
 
-//WatchGlobalConfig maintains consistency between all instances of sc
-func (s *LocalStore) WatchGlobalConfig(cb func(projects *config.GlobalConfig)) error {
-	cb(s.store.GlobalConfig)
+func (s *LocalStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
+	cb([]*config.Admin{s.globalConfig.Admin})
 	return nil
 }
 
-// SetProject sets the project of the local store
+// SetClusterConfig maintains consistency between all instances of sc
+func (s *LocalStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
+	s.globalConfig.Admin = adminConfig
+	return config.StoreConfigToFile(s.globalConfig, s.configPath)
+}
+
+// SetProject sets the project of the local globalConfig
 func (s *LocalStore) SetProject(ctx context.Context, project *config.Project) error {
 	doesExist := false
-	for i, v := range s.store.Projects {
+	for i, v := range s.globalConfig.Projects {
 		if v.ID == project.ID {
 			doesExist = true
-			s.store.Projects[i] = project
+			s.globalConfig.Projects[i] = project
 		}
 	}
 	if !doesExist {
-		s.store.Projects = append(s.store.Projects, project)
+		s.globalConfig.Projects = append(s.globalConfig.Projects, project)
 	}
 
-	err := config.StoreConfigToFile(s.store, s.configPath)
-	if err != nil {
-		return err
-	}
-	return nil
+	return config.StoreConfigToFile(s.globalConfig, s.configPath)
 }
 
-// DeleteProject deletes the project from the local store
+// DeleteProject deletes the project from the local gloablConfig
 func (s *LocalStore) DeleteProject(ctx context.Context, projectID string) error {
-	for i, v := range s.store.Projects {
-		if v.ID == projectID {
-			s.store.Projects[i] = s.store.Projects[len(s.store.Projects)-1]
-			s.store.Projects = s.store.Projects[:len(s.store.Projects)-1]
+	for index, project := range s.globalConfig.Projects {
+		if project.ID == projectID {
+			s.globalConfig.Projects = append(s.globalConfig.Projects[:index], s.globalConfig.Projects[index+1:]...)
 			break
 		}
 	}
-	err := config.StoreConfigToFile(s.store, s.configPath)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return config.StoreConfigToFile(s.globalConfig, s.configPath)
 }

@@ -18,7 +18,6 @@ type Manager struct {
 
 	// Config related to cluster config
 	projectConfig *config.Config
-	configFile    string
 
 	// Configuration for cluster information
 	nodeID        string
@@ -47,16 +46,14 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, configFile: configFile, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	switch storeType {
-	case "Local":
-		// m.services = []*service{{id: nodeID, addr: advertiseAddr}}
-		// return m, nil
+	case "local":
 		s, err := NewLocalStore(nodeID, advertiseAddr)
 		if err != nil {
 			return nil, err
@@ -90,49 +87,49 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile str
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(projectConfig *config.Config, port int) error {
+func (s *Manager) Start(ssl *config.SSL, port int) error {
 	// Save the ports
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	// Set the callback
-	s.modules.SetProjectConfig(projectConfig, s.letsencrypt, s.routing)
 	s.port = port
+	s.projectConfig = &config.Config{SSL: ssl}
 
-	// Write the config to file
-	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
+	// TODO: Do we need to store every change in config.yaml in case of kubernetes
+	// Start routine to observe space cloud projects
+	if err := s.store.WatchProjects(func(projects []*config.Project) {
+		s.lock.Lock()
+		defer s.lock.Unlock()
 
-	if len(s.projectConfig.Projects) > 0 {
-		s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+		logrus.WithFields(logrus.Fields{"projects": projects}).Debugln("Updating projects")
+		s.projectConfig.Projects = projects
+
+		if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
+			s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+		}
+	}); err != nil {
+		return err
 	}
 
-	if s.storeType != "none" {
-		// Start routine to observe active space-cloud services
-		if err := s.store.WatchProjects(func(projects []*config.Project) {
-			s.lock.Lock()
-			defer s.lock.Unlock()
-
-			logrus.WithFields(logrus.Fields{"projects": projects}).Debugln("Updating projects")
-			s.projectConfig.Projects = projects
-			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
-
-			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
-				s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
-			}
-		}); err != nil {
-			return err
+	// Start routine to admin config
+	if err := s.store.WatchAdminConfig(func(clusters []*config.Admin) {
+		s.lock.Lock()
+		defer s.lock.Unlock()
+		logrus.WithFields(logrus.Fields{"admin config": clusters}).Debugln("Updating admin config")
+		for _, cluster := range clusters {
+			s.adminMan.SetConfig(cluster)
+			s.projectConfig.Admin = cluster
 		}
+	}); err != nil {
+		return err
+	}
 
-		// Start routine to observe space cloud projects
-		if err := s.store.WatchServices(func(services scServices) {
-			s.lock.Lock()
-			defer s.lock.Unlock()
-			logrus.WithFields(logrus.Fields{"services": services}).Debugln("Updating services")
+	// Start routine to observe active space-cloud services
+	if err := s.store.WatchServices(func(services scServices) {
+		s.lock.Lock()
+		defer s.lock.Unlock()
+		logrus.WithFields(logrus.Fields{"services": services}).Debugln("Updating services")
 
-			s.services = services
-		}); err != nil {
-			return err
-		}
+		s.services = services
+	}); err != nil {
+		return err
 	}
 
 	return nil

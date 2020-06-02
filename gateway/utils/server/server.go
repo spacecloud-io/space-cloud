@@ -31,11 +31,11 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disableMetrics bool, adminUserInfo *config.AdminUser) (*Server, error) {
 
 	// Create the fundamental modules
 	adminMan := admin.New(clusterID, adminUserInfo)
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile, adminMan)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan)
 	if err != nil {
 		return nil, err
 	}
@@ -66,12 +66,14 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile str
 }
 
 // Start begins the server operations
-func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHosts []string) error {
-
+func (s *Server) Start(isDev, profiler bool, staticPath string, port int, restrictedHosts []string, ssl *config.SSL) error {
 	// Start the sync manager
-	if err := s.syncMan.Start(s.syncMan.GetGlobalConfig(), port); err != nil {
+	if err := s.syncMan.Start(ssl, port); err != nil {
 		return err
 	}
+
+	// Configure all modules
+	s.SetConfig(s.syncMan.GetGlobalConfig(), !isDev)
 
 	// Allow cors
 	corsObj := utils.CreateCorsObject()

@@ -32,7 +32,6 @@ type trackedItemMeta struct {
 	modRevision    int64
 	service        *service
 	project        *config.Project
-	globalConfig   *config.GlobalConfig
 }
 
 // NewETCDStore creates new etcd store
@@ -297,34 +296,32 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
-// WatchGlobalConfig maintains consistency between all instances of sc
-func (s *ETCDStore) WatchGlobalConfig(cb func(projects *config.GlobalConfig)) error {
-	//idxID := 3
-	itemsMeta := new(trackedItemMeta)
-
+// WatchAdminConfig maintains consistency between all instances of sc
+func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	// Query all KVs with prefix
-	res, err := s.etcdClient.Get(context.Background(), fmt.Sprintf("sc/projects/%s", s.clusterID), clientv3.WithPrefix())
+	res, err := s.etcdClient.Get(context.Background(), "sc/admin-config/"+s.clusterID, clientv3.WithPrefix())
 	if err != nil {
 		return err
 	}
 
+	clusters := []*config.Admin{
+		{
+			ClusterConfig: &config.ClusterConfig{},
+			ClusterID:     "",
+			ClusterKey:    "",
+			Version:       0,
+		},
+	}
 	for _, kv := range res.Kvs {
 		// Get the id of the item
-		//id := strings.Split(string(kv.Key), "/")[idxID]
-		globalConfig := new(config.GlobalConfig)
-		if err := json.Unmarshal(kv.Value, globalConfig); err != nil {
+		if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
 			log.Println("Sync manager: Could not parse project received -", err)
 			continue
 		}
-		// Store the item
-		itemsMeta.createRevision = kv.CreateRevision
-		itemsMeta.modRevision = kv.ModRevision
-		itemsMeta.globalConfig = globalConfig
-
 	}
-	cb(itemsMeta.globalConfig)
+	cb(clusters)
 
-	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/projects/%s", s.clusterID), clientv3.WithPrefix())
+	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/admin-config/%s", s.clusterID), clientv3.WithPrefix())
 
 	go func() {
 		for watchResponse := range ch {
@@ -334,47 +331,28 @@ func (s *ETCDStore) WatchGlobalConfig(cb func(projects *config.GlobalConfig)) er
 					log.Fatal(watchResponse.Err())
 				}
 				kv := event.Kv
-				a := strings.Split(string(kv.Key), "/")
-				// id := a[idxID]
-				if a[2] != s.clusterID {
-					continue
-				}
 
 				switch event.Type {
 				case mvccpb.PUT:
-					globalConfig := new(config.GlobalConfig)
-					if err := json.Unmarshal(kv.Value, globalConfig); err != nil {
+					if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
 						log.Println("Sync manager: Could not parse project received -", err)
 						continue
 					}
-					// meta, p := itemsMeta[id]
-					// if !p {
-					// AddStateless node if doesn't already exists
-					//itemsMeta[id] = &trackedItemMeta{createRevision: event.Kv.CreateRevision, modRevision: event.Kv.ModRevision, project: project}
-					itemsMeta.createRevision = kv.CreateRevision
-					itemsMeta.modRevision = kv.ModRevision
-					itemsMeta.globalConfig = globalConfig
-					cb(itemsMeta.globalConfig)
-					//}
 
-					// Ignore if incoming create revision is smaller
-					if event.Kv.CreateRevision < itemsMeta.createRevision {
-						break
-					}
-
-					// Update if incoming create revision or mod revision is greater
-					if event.Kv.CreateRevision > itemsMeta.createRevision || event.Kv.ModRevision > itemsMeta.modRevision {
-						itemsMeta.createRevision = event.Kv.CreateRevision
-						itemsMeta.modRevision = event.Kv.ModRevision
-						itemsMeta.globalConfig = globalConfig
-						//itemsMeta[id] = meta
-						cb(itemsMeta.globalConfig)
-					}
+					cb(clusters)
 				}
 			}
 		}
 	}()
 	return nil
+}
+
+// SetClusterConfig maintains consistency between all instances of sc
+func (s *ETCDStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
+	// TODO: set project name in key
+	data, _ := json.Marshal(adminConfig)
+	_, err := s.kv.Put(ctx, fmt.Sprintf("sc/admin-config/%s", s.clusterID), string(data))
+	return err
 }
 
 // SetProject sets the project of the etcd store

@@ -53,7 +53,7 @@ func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Projec
 	configMap := obj.(*v1.ConfigMap)
 	projectJSONString, ok := configMap.Data["project"]
 	if !ok {
-		logrus.Errorf("error watching projects in kube store unable to find field project in config map")
+		logrus.Errorf("error watching projects in kube gloablConfig unable to find field project in config map")
 		return nil
 	}
 
@@ -188,52 +188,98 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
-func onAddOrUpdateGlobalConfig(obj interface{}, projects *config.GlobalConfig) *config.GlobalConfig {
+func onAddOrUpdateAdminConfig(obj interface{}, clusters []*config.Admin) {
 	configMap := obj.(*v1.ConfigMap)
-	globalConfigJSONString, ok := configMap.Data["GlobalConfig"]
+	clusterJSONString, ok := configMap.Data["cluster"]
 	if !ok {
-		logrus.Errorf("error watching projects in kube store unable to find field GlobalConfig in config map")
-		return nil
+		logrus.Errorf("error watching projects in kube store unable to find field project in config map")
+		return
 	}
 
-	v := new(config.GlobalConfig)
-	if err := json.Unmarshal([]byte(globalConfigJSONString), v); err != nil {
-		logrus.Errorf("error while watching globalConfig in kube store unable to unmarshal data - %v", err)
-		return nil
+	if err := json.Unmarshal([]byte(clusterJSONString), clusters[0]); err != nil {
+		logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
+		return
 	}
-	projects.Email = v.Email
-	projects.EnableMetrics = v.EnableMetrics
-	return projects
+	return
 }
 
-// WatchGlobalConfig maintains consistency over all projects
-func (s *KubeStore) WatchGlobalConfig(cb func(projects *config.GlobalConfig)) error {
+// WatchAdminConfig maintains consistency over all projects
+func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	go func() {
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
-			options.LabelSelector = fmt.Sprintf("app=%s,clusterId=%s", "gateway", s.clusterID)
+			options.LabelSelector = fmt.Sprintf("adminConfig=adminConfig,clusterId=%s", s.clusterID)
 		}
-		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 0, informers.WithTweakListOptions(options)).Core().V1().Pods().Informer()
+		informer := informers.NewSharedInformerFactoryWithOptions(s.kube, 0, informers.WithTweakListOptions(options)).Core().V1().ConfigMaps().Informer()
 		stopper := make(chan struct{})
 		defer close(stopper)
-		defer runtime.HandleCrash()
+		defer runtime.HandleCrash() // handles a crash & logs an error
 
-		globalConfig := new(config.GlobalConfig)
+		clusters := []*config.Admin{
+			{
+				ClusterConfig: &config.ClusterConfig{},
+				ClusterID:     "",
+				ClusterKey:    "",
+				Version:       0,
+			},
+		}
 
 		informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				cb(onAddOrUpdateGlobalConfig(obj, globalConfig))
+				onAddOrUpdateAdminConfig(obj, clusters)
+				cb(clusters)
 			},
 			UpdateFunc: func(old, obj interface{}) {
-				cb(onAddOrUpdateGlobalConfig(obj, globalConfig))
+				onAddOrUpdateAdminConfig(obj, clusters)
+				cb(clusters)
 			},
 		})
 
 		go informer.Run(stopper)
 		<-stopper
-		logrus.Debug("stopped watching over GlobalConfig in kube store channel closed")
+		logrus.Debug("stopped watching over projects in kube store")
 	}()
-
 	return nil
+}
+
+// SetClusterConfig maintains consistency over all projects
+func (s *KubeStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
+	clusterConfigJSONString, err := json.Marshal(adminConfig)
+	if err != nil {
+		logrus.Errorf("error while setting project in kube gloablConfig unable to marshal project config - %v", err)
+		return err
+	}
+
+	name := fmt.Sprintf("%s", s.clusterID)
+	configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
+	if kubeErrors.IsNotFound(err) {
+		configMap := &v1.ConfigMap{
+			ObjectMeta: v12.ObjectMeta{
+				Name: name,
+				Labels: map[string]string{
+					"clusterId": s.clusterID,
+				},
+			},
+			Data: map[string]string{
+				"clusterConfig": string(clusterConfigJSONString),
+			},
+		}
+		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(configMap)
+		if err != nil {
+			logrus.Errorf("error while setting project in kube gloablConfig unable to create config map - %v", err)
+		}
+		return err
+	} else if err != nil {
+		logrus.Errorf("error while setting project in kube gloablConfig unable to get config map - %v", err)
+		return err
+	}
+
+	configMap.Data["clusterConfig"] = string(clusterConfigJSONString)
+
+	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(configMap)
+	if err != nil {
+		logrus.Errorf("error while setting project in kube gloablConfig unable to update config map - %v", err)
+	}
+	return err
 }
 
 // SetProject sets the project of the kube store
