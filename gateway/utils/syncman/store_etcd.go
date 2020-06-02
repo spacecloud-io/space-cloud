@@ -347,7 +347,7 @@ func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	return nil
 }
 
-// SetClusterConfig maintains consistency between all instances of sc
+// SetAdminConfig maintains consistency between all instances of sc
 func (s *ETCDStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
 	// TODO: set project name in key
 	data, _ := json.Marshal(adminConfig)

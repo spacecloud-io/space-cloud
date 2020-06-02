@@ -45,12 +45,13 @@ func (s *LocalStore) WatchServices(cb func(scServices)) error {
 	return nil
 }
 
+// WatchAdminConfig sets the admin config when the gateways is started
 func (s *LocalStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	cb([]*config.Admin{s.globalConfig.Admin})
 	return nil
 }
 
-// SetClusterConfig maintains consistency between all instances of sc
+// SetAdminConfig maintains consistency between all instances of sc
 func (s *LocalStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
 	s.globalConfig.Admin = adminConfig
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)

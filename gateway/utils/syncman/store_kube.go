@@ -200,7 +200,6 @@ func onAddOrUpdateAdminConfig(obj interface{}, clusters []*config.Admin) {
 		logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
 		return
 	}
-	return
 }
 
 // WatchAdminConfig maintains consistency over all projects
@@ -241,45 +240,47 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	return nil
 }
 
-// SetClusterConfig maintains consistency over all projects
+// SetAdminConfig maintains consistency over all projects
 func (s *KubeStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
-	clusterConfigJSONString, err := json.Marshal(adminConfig)
+	clusterJSONString, err := json.Marshal(adminConfig)
 	if err != nil {
-		logrus.Errorf("error while setting project in kube gloablConfig unable to marshal project config - %v", err)
+		logrus.Errorf("error while setting project in kube store unable to marshal project config - %v", err)
 		return err
 	}
 
-	name := fmt.Sprintf("%s", s.clusterID)
+	name := fmt.Sprintf("sc/admin-config/%s", s.clusterID)
 	configMap, err := s.kube.CoreV1().ConfigMaps(spaceCloud).Get(name, v12.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		configMap := &v1.ConfigMap{
 			ObjectMeta: v12.ObjectMeta{
 				Name: name,
 				Labels: map[string]string{
-					"clusterId": s.clusterID,
+					"adminConfig": "adminConfig",
+					"clusterId":   s.clusterID,
 				},
 			},
 			Data: map[string]string{
-				"clusterConfig": string(clusterConfigJSONString),
+				"cluster": string(clusterJSONString),
 			},
 		}
 		_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Create(configMap)
 		if err != nil {
-			logrus.Errorf("error while setting project in kube gloablConfig unable to create config map - %v", err)
+			logrus.Errorf("error while setting project in kube store unable to create config map - %v", err)
 		}
 		return err
 	} else if err != nil {
-		logrus.Errorf("error while setting project in kube gloablConfig unable to get config map - %v", err)
+		logrus.Errorf("error while setting project in kube store unable to get config map - %v", err)
 		return err
 	}
 
-	configMap.Data["clusterConfig"] = string(clusterConfigJSONString)
+	configMap.Data["cluster"] = string(clusterJSONString)
 
 	_, err = s.kube.CoreV1().ConfigMaps(spaceCloud).Update(configMap)
 	if err != nil {
-		logrus.Errorf("error while setting project in kube gloablConfig unable to update config map - %v", err)
+		logrus.Errorf("error while setting project in kube store unable to update config map - %v", err)
 	}
 	return err
+
 }
 
 // SetProject sets the project of the kube store
