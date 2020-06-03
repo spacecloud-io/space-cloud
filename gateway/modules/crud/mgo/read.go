@@ -78,14 +78,17 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 					asColumnName := generateAggregateAsColumnName(function, column)
 					switch function {
 					case "sum":
-						matchStage := getMatchStage(req.Find)
-						if matchStage != nil {
-							pipeline = append(pipeline, matchStage)
-						}
-						groupStage := getGroupByStage(req.GroupBy, asColumnName, column)
-						pipeline = append(pipeline, groupStage)
+						pipeline = generateQuery(pipeline, req, asColumnName, function, column)
+					case "min":
+						pipeline = generateQuery(pipeline, req, asColumnName, function, column)
+					case "max":
+						pipeline = generateQuery(pipeline, req, asColumnName, function, column)
+					case "avg":
+						pipeline = generateQuery(pipeline, req, asColumnName, function, column)
+					case "count":
+						pipeline = generateQuery(pipeline, req, asColumnName, function, "*")
 					default:
-						return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), "mgo", "Read", nil)
+						return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion %s`, function), "mgo", "Read", nil)
 					}
 				}
 			}
@@ -192,19 +195,31 @@ func getMatchStage(find map[string]interface{}) bson.M {
 	return nil
 }
 
-func getGroupByStage(groupBy []interface{}, asColumnName, column string) bson.M {
+func getGroupByStage(groupBy []interface{}, asColumnName, function, column string) bson.M {
 	if len(groupBy) > 0 {
 		groupByMap := make(map[string]interface{})
 		for _, val := range groupBy {
 			groupByMap[fmt.Sprintf("%v", val)] = fmt.Sprintf("$%v", val)
 		}
-		groupStage := bson.M{
-			"$group": bson.M{
-				"_id": groupByMap,
-				asColumnName: bson.M{
-					"$sum": fmt.Sprintf("$%s", column),
+		var groupStage bson.M
+		if column != "*" {
+			groupStage = bson.M{
+				"$group": bson.M{
+					"_id": groupByMap,
+					asColumnName: bson.M{
+						fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
+					},
 				},
-			},
+			}
+		} else {
+			groupStage = bson.M{
+				"$group": bson.M{
+					"_id": groupByMap,
+					asColumnName: bson.M{
+						"$sum": 1,
+					},
+				},
+			}
 		}
 		return groupStage
 	}
@@ -213,4 +228,14 @@ func getGroupByStage(groupBy []interface{}, asColumnName, column string) bson.M 
 
 func generateAggregateAsColumnName(function, column string) string {
 	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
+}
+
+func generateQuery(pipeline []bson.M, req *model.ReadRequest, asColumnName, function, column string) []bson.M {
+	matchStage := getMatchStage(req.Find)
+	if matchStage != nil {
+		pipeline = append(pipeline, matchStage)
+	}
+	groupStage := getGroupByStage(req.GroupBy, asColumnName, function, column)
+	pipeline = append(pipeline, groupStage)
+	return pipeline
 }
