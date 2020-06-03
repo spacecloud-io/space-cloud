@@ -130,8 +130,19 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 						continue
 					}
 					if len(results) > 0 {
-						results[0].(map[string]interface{})["aggregate"].(map[string]interface{})[v[1]] = map[string]interface{}{v[2]: value}
-						continue
+						for _, result := range results {
+							val, ok := result.(map[string]interface{})["aggregate"].(map[string]interface{})[v[1]]
+							if ok {
+								prevValuesMap := make(map[string]interface{})
+								for key, val := range val.(map[string]interface{}) {
+									prevValuesMap[key] = val
+								}
+								prevValuesMap[v[2]] = value
+								result.(map[string]interface{})["aggregate"].(map[string]interface{})[v[1]] = prevValuesMap
+							} else {
+								result.(map[string]interface{})["aggregate"].(map[string]interface{})[v[1]] = map[string]interface{}{v[2]: value}
+							}
+						}
 					} else {
 						resultObj[v[0]] = map[string]interface{}{v[1]: map[string]interface{}{v[2]: value}}
 						results = append(results, resultObj)
