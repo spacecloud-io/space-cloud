@@ -129,11 +129,15 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 					if len(v) != 3 || !strings.HasPrefix(key, utils.GraphQLAggregate) {
 						continue
 					}
-					resultObj[v[0]] = map[string]interface{}{v[1]: map[string]interface{}{v[2]: value}}
+					if len(results) > 0 {
+						results[0].(map[string]interface{})["aggregate"].(map[string]interface{})[v[1]] = map[string]interface{}{v[2]: value}
+						continue
+					} else {
+						resultObj[v[0]] = map[string]interface{}{v[1]: map[string]interface{}{v[2]: value}}
+						results = append(results, resultObj)
+					}
 				}
 			}
-
-			results = append(results, resultObj)
 		}
 
 		if err := cur.Err(); err != nil {
@@ -195,13 +199,29 @@ func getMatchStage(find map[string]interface{}) bson.M {
 	return nil
 }
 
-func getGroupByStage(groupBy []interface{}, asColumnName, function, column string) bson.M {
+func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, function, column string) bson.M {
 	if len(groupBy) > 0 {
 		groupByMap := make(map[string]interface{})
 		for _, val := range groupBy {
 			groupByMap[fmt.Sprintf("%v", val)] = fmt.Sprintf("$%v", val)
 		}
 		var groupStage bson.M
+		if len(pipeline) == 2 {
+			prevGroupStage := pipeline[1]["$group"]
+			if column != "*" {
+				prevGroupStage.(bson.M)[asColumnName] = bson.M{
+					fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
+				}
+			} else {
+				prevGroupStage.(bson.M)[asColumnName] = bson.M{
+					"$sum": 1,
+				}
+			}
+			groupStage = bson.M{
+				"$group": prevGroupStage.(bson.M),
+			}
+			return groupStage
+		}
 		if column != "*" {
 			groupStage = bson.M{
 				"$group": bson.M{
@@ -231,11 +251,15 @@ func generateAggregateAsColumnName(function, column string) string {
 }
 
 func generateQuery(pipeline []bson.M, req *model.ReadRequest, asColumnName, function, column string) []bson.M {
-	matchStage := getMatchStage(req.Find)
-	if matchStage != nil {
-		pipeline = append(pipeline, matchStage)
+	if len(pipeline) < 1 {
+		matchStage := getMatchStage(req.Find)
+		if matchStage != nil {
+			pipeline = append(pipeline, matchStage)
+		}
 	}
-	groupStage := getGroupByStage(req.GroupBy, asColumnName, function, column)
-	pipeline = append(pipeline, groupStage)
+	groupStage := getGroupByStage(pipeline, req.GroupBy, asColumnName, function, column)
+	if len(pipeline) != 2 {
+		pipeline = append(pipeline, groupStage)
+	}
 	return pipeline
 }
