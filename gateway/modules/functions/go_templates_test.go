@@ -16,6 +16,7 @@ func Test_goTemplate(t *testing.T) {
 		claims interface{}
 		params interface{}
 		format string
+		token  string
 	}
 	tests := []struct {
 		name    string
@@ -41,6 +42,16 @@ func Test_goTemplate(t *testing.T) {
 				format: "json",
 			},
 			want: map[string]interface{}{"foo": "bar"},
+		},
+		{
+			name: "valid - use params with token",
+			args: args{
+				tmpl:   `{"foo": "{{index . "body" "abc"}}", "token": "{{index . "token"}}"}`,
+				params: map[string]interface{}{"abc": "bar"},
+				format: "json",
+				token:  "jwt token",
+			},
+			want: map[string]interface{}{"foo": "bar", "token": "jwt token"},
 		},
 		{
 			name: "valid - use params",
@@ -167,7 +178,7 @@ variables:
 				return
 			}
 
-			got, err := goTemplate(tmpl, tt.args.format, tt.args.claims, tt.args.params)
+			got, err := goTemplate(tmpl, tt.args.format, tt.args.token, tt.args.claims, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("goTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return
