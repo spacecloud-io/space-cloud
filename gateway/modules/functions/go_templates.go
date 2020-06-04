@@ -50,5 +50,9 @@ func (m *Module) createGoFuncMaps() template.FuncMap {
 		"add":        func(a, b int) int { return a + b },
 		"generateId": func() string { return ksuid.New().String() },
 		"encrypt":    m.auth.Encrypt,
+		"marshalJSON": func(a interface{}) (string, error) {
+			data, err := json.Marshal(a)
+			return string(data), err
+		},
 	}
 }
