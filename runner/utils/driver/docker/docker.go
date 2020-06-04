@@ -529,6 +529,42 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 	return serviceArr, nil
 }
 
+// GetServiceStatus gets the status of service info from docker container
+func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]interface{}, error) {
+
+	services := make(map[string][]string)
+	var results []interface{}
+	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s", projectID))
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+	if err != nil {
+		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
+		return nil, err
+	}
+	for _, containerInfo := range containers {
+
+		containerInspect, err := d.client.ContainerInspect(ctx, containerInfo.ID)
+		if err != nil {
+			logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
+			return nil, err
+		}
+		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
+		ID := containerName[1]
+
+		services[ID] = append(services[ID], containerInfo.ID)
+
+	}
+	result := make(map[string]interface{})
+	for i, v := range services {
+		result[i] = map[string]interface{}{
+			"replicas":       1,
+			"activeReplicas": v,
+		}
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
 // AdjustScale adjust the scale for docker instance
 func (d *Docker) AdjustScale(service *model.Service, activeReqs int32) error {
 	logrus.Debug("adjust scale not implemented for docker")

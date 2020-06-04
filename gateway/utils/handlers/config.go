@@ -246,6 +246,47 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 	}
 }
 
+// HandleGetGlobalConfig returns handler to get global-config
+func HandleGetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		project, err := syncMan.GetProjectGlobalConfig()
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: project})
+	}
+}
+
+// HandleSetGlobalConfig set global-config
+func HandleSetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Load the request from the body
+		req := new(config.ClusterConfig)
+		_ = json.NewDecoder(r.Body).Decode(req)
+		defer utils.CloseTheCloser(r.Body)
+
+		c := syncMan.GetGlobalConfig()
+		c.Admin.ClusterConfig = req
+
+		syncMan.SetGlobalConfig(c)
+
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{})
+	}
+}
+
 // HandleApplyProject is an endpoint handler which adds a project configuration in config
 func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

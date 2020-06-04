@@ -243,6 +243,14 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	return []interface{}{}, errors.New("given project is not present in state")
 }
 
+// GetProjectGlobalConfig returns the config of specified project
+func (s *Manager) GetProjectGlobalConfig() (*config.ClusterConfig, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	return s.projectConfig.Admin.ClusterConfig, nil
+}
+
 // GetConfig returns the config present in the state
 func (s *Manager) GetConfig(projectID string) (*config.Project, error) {
 	s.lock.RLock()

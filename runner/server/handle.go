@@ -235,6 +235,37 @@ func (s *Server) HandleGetServices() http.HandlerFunc {
 	}
 }
 
+// HandleGetServicesStatus handles the request to get all services status
+func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Verify token
+		_, err := s.auth.VerifyToken(utils.GetToken(r))
+		if err != nil {
+			logrus.Errorf("Failed to apply service - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		//var result []interface{}
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		//serviceID, serviceIDExists := r.URL.Query()["serviceId"]
+		result, err := s.driver.GetServiceStatus(ctx, projectID)
+		if err != nil {
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
+	}
+}
+
 // HandleApplyEventingService handles request to apply eventing service
 func (s *Server) HandleApplyEventingService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

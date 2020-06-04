@@ -158,6 +158,11 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 	return services, nil
 }
 
+// GetServiceStatus gets the services status for istio
+func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]interface{}, error) {
+	return nil, nil
+}
+
 // GetServiceRoutes gets the routing rules of each service
 func (i *Istio) GetServiceRoutes(_ context.Context, projectID string) (map[string]model.Routes, error) {
 	ns := projectID
