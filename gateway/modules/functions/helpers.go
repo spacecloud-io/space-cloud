@@ -105,7 +105,8 @@ func (m *Module) adjustReqBody(serviceID, endpointID string, endpoint config.End
 			}
 		}
 	default:
-		return nil, utils.LogError(fmt.Sprintf("Invalid templating engine (%s) provided", endpoint.Tmpl), module, segmentCall, nil)
+		utils.LogWarn(fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), module, "adjust-req")
+		return params, nil
 	}
 
 	switch endpoint.Kind {
@@ -117,7 +118,7 @@ func (m *Module) adjustReqBody(serviceID, endpointID string, endpoint config.End
 	case config.EndpointKindPrepared:
 		return map[string]interface{}{"query": graph, "variables": req}, nil
 	default:
-		return nil, utils.LogError(fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), module, segmentCall, nil)
+		return nil, utils.LogError(fmt.Sprintf("Invalid endpoint kind (%s) provided", endpoint.Kind), module, "adjust-req", nil)
 	}
 }
 
@@ -134,7 +135,8 @@ func (m *Module) adjustResBody(serviceID, endpointID string, endpoint config.End
 			}
 		}
 	default:
-		return nil, utils.LogError(fmt.Sprintf("Invalid templating engine (%s) provided", endpoint.Tmpl), module, segmentCall, nil)
+		utils.LogWarn(fmt.Sprintf("Invalid templating engine (%s) provided. Skipping templating step.", endpoint.Tmpl), module, "adjust-res")
+		return params, nil
 	}
 
 	if res == nil {
