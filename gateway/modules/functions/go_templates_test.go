@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 	"text/template"
@@ -15,6 +16,7 @@ func Test_goTemplate(t *testing.T) {
 		claims interface{}
 		params interface{}
 		format string
+		token  string
 	}
 	tests := []struct {
 		name    string
@@ -28,6 +30,11 @@ func Test_goTemplate(t *testing.T) {
 			want: map[string]interface{}{"foo": "bar"},
 		},
 		{
+			name: "valid - empty params and claims",
+			args: args{tmpl: `foo: bar`, params: map[string]interface{}{}, format: "yaml"},
+			want: map[string]interface{}{"foo": "bar"},
+		},
+		{
 			name: "valid - use params",
 			args: args{
 				tmpl:   `{"foo": "{{index . "body" "abc"}}"}`,
@@ -35,6 +42,16 @@ func Test_goTemplate(t *testing.T) {
 				format: "json",
 			},
 			want: map[string]interface{}{"foo": "bar"},
+		},
+		{
+			name: "valid - use params with token",
+			args: args{
+				tmpl:   `{"foo": "{{index . "body" "abc"}}", "token": "{{index . "token"}}"}`,
+				params: map[string]interface{}{"abc": "bar"},
+				format: "json",
+				token:  "jwt token",
+			},
+			want: map[string]interface{}{"foo": "bar", "token": "jwt token"},
 		},
 		{
 			name: "valid - use params",
@@ -53,6 +70,24 @@ func Test_goTemplate(t *testing.T) {
 				format: "json",
 			},
 			want: map[string]interface{}{"foo": "bar"},
+		},
+		{
+			name: "valid - use params (nested objects) without index",
+			args: args{
+				tmpl:   `{"foo": "{{.body.a.b}}"}`,
+				params: map[string]interface{}{"a": map[string]interface{}{"b": "bar"}},
+				format: "json",
+			},
+			want: map[string]interface{}{"foo": "bar"},
+		},
+		{
+			name: "valid - use marshal function json",
+			args: args{
+				tmpl:   `{"foo": {{ marshalJSON (index . "body" "a")}}}`,
+				params: map[string]interface{}{"a": map[string]interface{}{"b": "bar"}},
+				format: "json",
+			},
+			want: map[string]interface{}{"foo": map[string]interface{}{"b": "bar"}},
 		},
 		{
 			name: "valid - use params (nested objects and arrays)",
@@ -142,13 +177,17 @@ variables:
 				"hash":       utils.HashString,
 				"generateId": func() string { return "generated id" },
 				"add":        func(a, b int) int { return a + b },
+				"marshalJSON": func(a interface{}) (string, error) {
+					data, err := json.Marshal(a)
+					return string(data), err
+				},
 			}).Parse(tt.args.tmpl)
 			if err != nil {
 				t.Errorf("goTemplate() error = %v, could not pass template", err)
 				return
 			}
 
-			got, err := goTemplate(tmpl, tt.args.format, tt.args.claims, tt.args.params)
+			got, err := goTemplate(tmpl, tt.args.format, tt.args.token, tt.args.claims, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("goTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -12,9 +12,9 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func goTemplate(tmpl *template.Template, format string, claims, params interface{}) (interface{}, error) {
+func goTemplate(tmpl *template.Template, format, token string, claims, params interface{}) (interface{}, error) {
 	// Prepare the object
-	object := map[string]interface{}{"body": params, "auth": claims}
+	object := map[string]interface{}{"body": params, "auth": claims, "token": token}
 	var b strings.Builder
 	if err := tmpl.Execute(&b, object); err != nil {
 		return nil, utils.LogError("Unable to execute golang template", module, segmentCall, err)
@@ -50,5 +50,9 @@ func (m *Module) createGoFuncMaps() template.FuncMap {
 		"add":        func(a, b int) int { return a + b },
 		"generateId": func() string { return ksuid.New().String() },
 		"encrypt":    m.auth.Encrypt,
+		"marshalJSON": func(a interface{}) (string, error) {
+			data, err := json.Marshal(a)
+			return string(data), err
+		},
 	}
 }

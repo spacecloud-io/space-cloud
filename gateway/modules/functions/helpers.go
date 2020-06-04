@@ -15,11 +15,13 @@ import (
 func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token string, auth, params interface{}) (interface{}, error) {
 	var url string
 	var method string
+	var ogToken string
 
 	// Load the service rule
 	service := m.loadService(serviceID)
 	serviceURL := strings.TrimSuffix(service.URL, "/")
 	endpoint := service.Endpoints[endpointID]
+	ogToken = token
 
 	/***************** Set the request url ******************/
 
@@ -64,7 +66,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	/***************** Set the request body *****************/
 
-	params, err = m.adjustReqBody(serviceID, endpointID, endpoint, auth, params)
+	params, err = m.adjustReqBody(serviceID, endpointID, ogToken, endpoint, auth, params)
 	if err != nil {
 		return nil, err
 	}
@@ -83,23 +85,23 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	/**************** Return the response body ****************/
 
-	return m.adjustResBody(serviceID, endpointID, endpoint, auth, res)
+	return m.adjustResBody(serviceID, endpointID, ogToken, endpoint, auth, res)
 }
 
-func (m *Module) adjustReqBody(serviceID, endpointID string, endpoint config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint config.Endpoint, auth, params interface{}) (interface{}, error) {
 	var req, graph interface{}
 	var err error
 
 	switch endpoint.Tmpl {
 	case config.EndpointTemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("request", serviceID, endpointID)]; p {
-			req, err = goTemplate(tmpl, endpoint.OpFormat, auth, params)
+			req, err = goTemplate(tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if tmpl, p := m.templates[getGoTemplateKey("graph", serviceID, endpointID)]; p {
-			graph, err = goTemplate(tmpl, "string", auth, params)
+			graph, err = goTemplate(tmpl, "string", token, auth, params)
 			if err != nil {
 				return nil, err
 			}
@@ -122,14 +124,14 @@ func (m *Module) adjustReqBody(serviceID, endpointID string, endpoint config.End
 	}
 }
 
-func (m *Module) adjustResBody(serviceID, endpointID string, endpoint config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustResBody(serviceID, endpointID, token string, endpoint config.Endpoint, auth, params interface{}) (interface{}, error) {
 	var res interface{}
 	var err error
 
 	switch endpoint.Tmpl {
 	case config.EndpointTemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("response", serviceID, endpointID)]; p {
-			res, err = goTemplate(tmpl, endpoint.OpFormat, auth, params)
+			res, err = goTemplate(tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err
 			}
