@@ -73,6 +73,9 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 
 		pipeline := make([]bson.M, 0)
 		if len(req.Aggregate) > 0 {
+			if len(req.Find) > 0 {
+				pipeline = append(pipeline, bson.M{"$match": req.Find})
+			}
 			for function, colArray := range req.Aggregate {
 				for _, column := range colArray {
 					asColumnName := generateAggregateAsColumnName(function, column)
@@ -122,33 +125,10 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 				return 0, nil, err
 			}
 
-			resultObj := make(map[string]interface{})
 			if len(req.Aggregate) > 0 {
-				for key, value := range doc {
-					v := strings.Split(key, "__")
-					if len(v) != 3 || !strings.HasPrefix(key, utils.GraphQLAggregate) {
-						continue
-					}
-					if len(results) > 0 {
-						for _, result := range results {
-							val, ok := result.(map[string]interface{})["aggregate"].(map[string]interface{})[v[1]]
-							if ok {
-								prevValuesMap := make(map[string]interface{})
-								for key, val := range val.(map[string]interface{}) {
-									prevValuesMap[key] = val
-								}
-								prevValuesMap[v[2]] = value
-								result.(map[string]interface{})["aggregate"].(map[string]interface{})[v[1]] = prevValuesMap
-							} else {
-								result.(map[string]interface{})["aggregate"].(map[string]interface{})[v[1]] = map[string]interface{}{v[2]: value}
-							}
-						}
-					} else {
-						resultObj[v[0]] = map[string]interface{}{v[1]: map[string]interface{}{v[2]: value}}
-						results = append(results, resultObj)
-					}
-				}
+				doc = getNestedObject(doc)
 			}
+			results = append(results, doc)
 		}
 
 		if err := cur.Err(); err != nil {
@@ -200,22 +180,8 @@ func generateSortOptions(array []string) bson.D {
 	return sort
 }
 
-func getMatchStage(find map[string]interface{}) bson.M {
-	if len(find) > 0 {
-		matchStage := bson.M{
-			"$match": find,
-		}
-		return matchStage
-	}
-	return nil
-}
-
 func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, function, column string) bson.M {
 	if len(groupBy) > 0 {
-		groupByMap := make(map[string]interface{})
-		for _, val := range groupBy {
-			groupByMap[fmt.Sprintf("%v", val)] = fmt.Sprintf("$%v", val)
-		}
 		var groupStage bson.M
 		if len(pipeline) == 2 {
 			prevGroupStage := pipeline[1]["$group"]
@@ -236,7 +202,7 @@ func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, fun
 		if column != "*" {
 			groupStage = bson.M{
 				"$group": bson.M{
-					"_id": groupByMap,
+					"_id": bson.M{},
 					asColumnName: bson.M{
 						fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
 					},
@@ -245,7 +211,7 @@ func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, fun
 		} else {
 			groupStage = bson.M{
 				"$group": bson.M{
-					"_id": groupByMap,
+					"_id": bson.M{},
 					asColumnName: bson.M{
 						"$sum": 1,
 					},
@@ -261,13 +227,35 @@ func generateAggregateAsColumnName(function, column string) string {
 	return fmt.Sprintf("%s__%s__%s", utils.GraphQLAggregate, function, column)
 }
 
-func generateQuery(pipeline []bson.M, req *model.ReadRequest, asColumnName, function, column string) []bson.M {
-	if len(pipeline) < 1 {
-		matchStage := getMatchStage(req.Find)
-		if matchStage != nil {
-			pipeline = append(pipeline, matchStage)
+func splitAggregateAsColumnName(asColumnName string) (functionName string, columnName string, isAggregateColumn bool) {
+	v := strings.Split(asColumnName, "__")
+	if len(v) != 3 || !strings.HasPrefix(asColumnName, utils.GraphQLAggregate) {
+		return "", "", false
+	}
+	return v[1], v[2], true
+}
+
+func getNestedObject(doc map[string]interface{}) map[string]interface{} {
+	resultObj := make(map[string]map[string]interface{})
+	for asColumnName, value := range doc {
+		functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
+		if isAggregateColumn {
+			delete(doc, asColumnName)
+			funcValue, ok := resultObj[functionName]
+			if !ok {
+				resultObj[functionName] = map[string]interface{}{columnName: value}
+				continue
+			}
+			funcValue[columnName] = value
 		}
 	}
+	if len(resultObj) > 0 {
+		doc[utils.GraphQLAggregate] = resultObj
+	}
+	return doc
+}
+
+func generateQuery(pipeline []bson.M, req *model.ReadRequest, asColumnName, function, column string) []bson.M {
 	groupStage := getGroupByStage(pipeline, req.GroupBy, asColumnName, function, column)
 	if len(pipeline) != 2 {
 		pipeline = append(pipeline, groupStage)
