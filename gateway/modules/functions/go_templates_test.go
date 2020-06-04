@@ -30,16 +30,25 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use params",
 			args: args{
-				tmpl:   `{"foo": "{{index . "abc"}}"}`,
+				tmpl:   `{"foo": "{{index . "body" "abc"}}"}`,
 				params: map[string]interface{}{"abc": "bar"},
 				format: "json",
 			},
 			want: map[string]interface{}{"foo": "bar"},
 		},
 		{
+			name: "valid - use params",
+			args: args{
+				tmpl:   `{"foo": "{{index . "body" "abc"}}"}`,
+				params: map[string]interface{}{"abc": "bar"},
+				format: "string",
+			},
+			want: `{"foo": "bar"}`,
+		},
+		{
 			name: "valid - use params (nested objects)",
 			args: args{
-				tmpl:   `{"foo": "{{index . "a" "b"}}"}`,
+				tmpl:   `{"foo": "{{index . "body" "a" "b"}}"}`,
 				params: map[string]interface{}{"a": map[string]interface{}{"b": "bar"}},
 				format: "json",
 			},
@@ -48,7 +57,7 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use params (nested objects and arrays)",
 			args: args{
-				tmpl:   `{"foo": "{{index . "a" "b" 0}}"}`,
+				tmpl:   `{"foo": "{{index . "body" "a" "b" 0}}"}`,
 				params: map[string]interface{}{"a": map[string]interface{}{"b": []interface{}{"bar"}}},
 				format: "json",
 			},
@@ -58,7 +67,7 @@ func Test_goTemplate(t *testing.T) {
 			name: "valid - trying loops in yaml (nobody might need something this complex)",
 			args: args{
 				tmpl: `
-{{ range $i, $value := index . "array" }}
+{{ range $i, $value := index . "body" "array" }}
 {{ index $value "p1" }}: {{ index $value "p2" }}
 {{ end }}
 `,
@@ -79,7 +88,7 @@ query: "mutation { update_clusters(where: $where, set: $set) @db { status error 
 variables:
   where:
     owner_id: "{{ index . "auth" "id" }}"
-    cluster_id: "{{ index . "cluster" }}"
+    cluster_id: "{{ index . "body" "cluster" }}"
   set:
     session_id: ""
     cluster_key: "{{ generateId }}"
@@ -105,7 +114,7 @@ variables:
 	"variables": {
 		"where": {
 			"owner_id": "{{ index . "auth" "id" }}",
-			"cluster_id": "{{ index . "cluster" }}"
+			"cluster_id": "{{ index . "body" "cluster" }}"
 		},
 		"set": {
 			"session_id": "",
