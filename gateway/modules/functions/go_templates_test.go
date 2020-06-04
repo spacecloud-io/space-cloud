@@ -72,6 +72,15 @@ func Test_goTemplate(t *testing.T) {
 			want: map[string]interface{}{"foo": "bar"},
 		},
 		{
+			name: "valid - use params (nested objects) without index",
+			args: args{
+				tmpl:   `{"foo": "{{.body.a.b}}"}`,
+				params: map[string]interface{}{"a": map[string]interface{}{"b": "bar"}},
+				format: "json",
+			},
+			want: map[string]interface{}{"foo": "bar"},
+		},
+		{
 			name: "valid - use marshal function json",
 			args: args{
 				tmpl:   `{"foo": {{ marshalJSON (index . "body" "a")}}}`,
