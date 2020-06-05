@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 )
 
@@ -16,7 +17,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 		testName, project, token, service, function string
 		secretKeys                                  []*config.Secret
 		params                                      interface{}
-		result                                      TokenClaims
+		result                                      model.TokenClaims
 		IsErrExpected, CheckResult                  bool
 	}{
 		{
@@ -110,7 +111,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			function:      "ep",
 			IsErrExpected: false,
 			CheckResult:   true,
-			result:        TokenClaims{"token1": "token1value", "token2": "token2value"},
+			result:        model.TokenClaims{"token1": "token1value", "token2": "token2value"},
 		},
 	}
 	authModule := Init("1", &crud.Module{})
@@ -124,6 +125,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				t.Error("Got Error-", err, "Want Error-", test.IsErrExpected)
 			}
 			// check result if TokenClaims is returned after parsing token and matching rule
+
 			if test.CheckResult && !reflect.DeepEqual(test.result, auth) {
 				t.Error("Got Result-", auth, "Wanted Result-", test.result)
 			}

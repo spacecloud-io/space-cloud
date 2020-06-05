@@ -12,24 +12,20 @@ import (
 	"github.com/graphql-go/graphql/language/source"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
-	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // Module is the object for the GraphQL module
 type Module struct {
 	project   string
-	auth      *auth.Module
-	crud      *crud.Module
-	functions *functions.Module
-	schema    *schema.Schema
+	auth      model.GraphQLAuthInterface
+	crud      model.GraphQLCrudInterface
+	functions model.GraphQLFunctionInterface
+	schema    model.GraphQLSchemaInterface
 }
 
 // New creates a new GraphQL module
-func New(a *auth.Module, c *crud.Module, f *functions.Module, s *schema.Schema) *Module {
+func New(a model.GraphQLAuthInterface, c model.GraphQLCrudInterface, f model.GraphQLFunctionInterface, s model.GraphQLSchemaInterface) *Module {
 	return &Module{auth: a, crud: c, functions: f, schema: s}
 }
 

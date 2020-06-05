@@ -6,10 +6,11 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // IsFuncCallAuthorised checks if the func call is authorised
-func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (TokenClaims, error) {
+func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (model.TokenClaims, error) {
 	m.RLock()
 	defer m.RUnlock()
 
