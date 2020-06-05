@@ -95,6 +95,10 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 					}
 				}
 			}
+			if req.Options != nil {
+				optionStage := getOptionStage(req.Options)
+				pipeline = append(pipeline, optionStage...)
+			}
 		}
 
 		var cur *mongo.Cursor
@@ -182,6 +186,10 @@ func generateSortOptions(array []string) bson.D {
 
 func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, function, column string) bson.M {
 	if len(groupBy) > 0 {
+		groupByMap := make(map[string]interface{})
+		for _, val := range groupBy {
+			groupByMap[fmt.Sprintf("%v", val)] = fmt.Sprintf("$%v", val)
+		}
 		var groupStage bson.M
 		if len(pipeline) == 2 {
 			prevGroupStage := pipeline[1]["$group"]
@@ -202,7 +210,7 @@ func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, fun
 		if column != "*" {
 			groupStage = bson.M{
 				"$group": bson.M{
-					"_id": bson.M{},
+					"_id": groupByMap,
 					asColumnName: bson.M{
 						fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
 					},
@@ -211,7 +219,7 @@ func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, fun
 		} else {
 			groupStage = bson.M{
 				"$group": bson.M{
-					"_id": bson.M{},
+					"_id": groupByMap,
 					asColumnName: bson.M{
 						"$sum": 1,
 					},
@@ -221,6 +229,35 @@ func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, fun
 		return groupStage
 	}
 	return bson.M{"$group": bson.M{"_id": bson.M{}}}
+}
+
+func generateAggregateSortOptions(array []string) bson.M {
+	sort := bson.M{}
+	for _, value := range array {
+		if strings.HasPrefix(value, "-") {
+			sort[strings.TrimPrefix(value, "-")] = -1
+		} else {
+			sort[value] = 1
+		}
+	}
+
+	return sort
+}
+
+func getOptionStage(options *model.ReadOptions) []bson.M {
+	var optionStage []bson.M
+
+	if options.Skip != nil {
+		optionStage = append(optionStage, bson.M{"$skip": options.Skip})
+	}
+	if options.Limit != nil {
+		optionStage = append(optionStage, bson.M{"$limit": options.Limit})
+	}
+	if options.Sort != nil {
+		optionStage = append(optionStage, bson.M{"$sort": generateAggregateSortOptions(options.Sort)})
+	}
+
+	return optionStage
 }
 
 func generateAggregateAsColumnName(function, column string) string {
