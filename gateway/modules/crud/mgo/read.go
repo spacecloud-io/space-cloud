@@ -284,6 +284,13 @@ func getNestedObject(doc map[string]interface{}) map[string]interface{} {
 				continue
 			}
 			funcValue[columnName] = value
+		} else {
+			if _, ok := value.(map[string]interface{}); ok {
+				for key, val := range value.(map[string]interface{}) {
+					delete(doc, asColumnName)
+					doc[key] = val
+				}
+			}
 		}
 	}
 	if len(resultObj) > 0 {
