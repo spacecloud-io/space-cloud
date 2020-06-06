@@ -45,7 +45,7 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 
 	var fieldsToProcess []fieldsToPostProcess
 	for columnName, columnValue := range tableInfo {
-		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime {
+		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime || columnValue.Kind == model.TypeBoolean {
 			fieldsToProcess = append(fieldsToProcess, fieldsToPostProcess{kind: columnValue.Kind, name: columnName})
 		}
 	}
@@ -74,6 +74,18 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 						return fmt.Errorf("unable to unmarshal json data for column (%s)", field.name)
 					}
 					doc[field.name] = v
+
+				case model.TypeBoolean:
+					switch v := column.(type) {
+					case int:
+						if v == 1 {
+							doc[field.name] = true
+						} else {
+							doc[field.name] = false
+						}
+					case bool:
+						continue
+					}
 
 				case model.TypeDateTime:
 					switch v := column.(type) {
