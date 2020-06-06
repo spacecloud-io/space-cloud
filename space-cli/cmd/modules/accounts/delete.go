@@ -20,7 +20,7 @@ func deleteAccount(prefix string) error {
 	}
 
 	if prefix == credential.SelectedAccount {
-		return utils.LogError("Can't delete selected account", nil)
+		return utils.LogError("Chosen account cannot be deleted. Use space-cli accounts set to change the selected account", nil)
 	}
 
 	for i, v := range credential.Accounts {
