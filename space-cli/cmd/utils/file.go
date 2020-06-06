@@ -129,7 +129,8 @@ func CreateConfigFile(path string) error {
 	return nil
 }
 
-func generateYamlFile(credential *model.Credential) error {
+// GenerateAccountsFile generates the yaml file for accounts
+func GenerateAccountsFile(credential *model.Credential) error {
 	d, err := yaml.Marshal(&credential)
 	if err != nil {
 		return err
