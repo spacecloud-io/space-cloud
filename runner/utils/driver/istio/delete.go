@@ -14,7 +14,6 @@ func (i *Istio) DeleteService(_ context.Context, projectID, serviceID, version s
 		logrus.Debugf("Error in delete service - could not get count of versions for service (%s) - %s", getServiceUniqueID(projectID, serviceID, version), err.Error())
 		return err
 	}
-	i.kube.CoreV1().Pods().GetEphemeralContainers()
 
 	// TODO: this could turn out to be a problem when two delete requests come in simultaneously
 	if count == 1 {
