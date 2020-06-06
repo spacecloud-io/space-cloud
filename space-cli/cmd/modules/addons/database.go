@@ -204,7 +204,7 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 		case <-ticker.C:
 			dbConfig, err := database.GetDbConfig(v.Meta["project"], "db-config", map[string]string{})
 			if err != nil {
-				logrus.Errorf("Unable to fetch database config", nil)
+				logrus.Errorln("Unable to fetch database config", nil)
 			}
 			_, ok := dbConfig[0].Meta["col"]
 			if !ok {
