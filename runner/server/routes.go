@@ -16,6 +16,8 @@ func (s *Server) routes() {
 	s.router.Methods(http.MethodPost).Path("/v1/runner/{project}/service-routes/{serviceId}").HandlerFunc(s.HandleServiceRoutingRequest())
 	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/service-routes").HandlerFunc(s.HandleGetServiceRoutingRequest())
 
+	s.router.Methods(http.MethodGet).Path("/v1/runner/{project}/services/logs/{serviceId}/{taskId}/{replicaId}").HandlerFunc(s.handleGetLogs())
+
 	s.router.HandleFunc("/v1/runner/socket", s.handleWebsocketRequest())
 
 	// secret routes

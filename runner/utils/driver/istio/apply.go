@@ -1,7 +1,15 @@
 package istio
 
 import (
+	"bufio"
 	"context"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/golang/glog"
+
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/sirupsen/logrus"
 
@@ -130,4 +138,50 @@ func (i *Istio) ApplyServiceRoutes(_ context.Context, projectID, serviceID strin
 	}
 
 	return i.applyVirtualService(ns, virtualService)
+}
+
+// GetLogs get logs of specified services
+func (i *Istio) GetLogs(_ context.Context, projectID, serviceID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
+
+	// get logs of pods
+	req := i.kube.CoreV1().Pods(projectID).GetLogs(serviceID, &v1.PodLogOptions{
+		Container:  taskID,
+		Follow:     true,
+		Timestamps: true,
+	})
+
+	b, err := req.Stream()
+	if err != nil {
+		return err
+	}
+
+	// get signal when client stop listening
+	done := r.Context().Done()
+
+	// read logs
+	rd := bufio.NewReader(b)
+
+	// implement http flusher
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		panic("expected http.ResponseWriter to be an http.Flusher")
+	}
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusOK)
+
+loop:
+	for {
+		select {
+		case <-done:
+			glog.Infof("Client stopped listening")
+			break loop
+		default:
+			str, _ := rd.ReadString('\n')
+			fmt.Fprintf(w, "%s\n", str[8:]) // leave header from str
+			flusher.Flush()                 // Trigger "chunked" encoding and send a chunk...
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+
+	return nil
 }

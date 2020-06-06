@@ -2,6 +2,7 @@ package driver
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
@@ -23,6 +24,11 @@ func (m *Module) ApplyService(ctx context.Context, service *model.Service) error
 		m.metricHook(service.ProjectID)
 	}
 	return err
+}
+
+// GetLogs get logs of specified service
+func (m *Module) GetLogs(ctx context.Context, projectID, serviceID, taskID, replica string, w http.ResponseWriter, r *http.Request) error {
+	return m.driver.GetLogs(ctx, projectID, serviceID, taskID, replica, w, r)
 }
 
 // GetServices gets services

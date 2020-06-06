@@ -135,6 +135,30 @@ func (s *Server) handleApplyService() http.HandlerFunc {
 	}
 }
 
+func (s *Server) handleGetLogs() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Close the body of the request
+		defer utils.CloseTheCloser(r.Body)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+
+		// get query params
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		serviceID := vars["serviceId"]
+		taskID := vars["taskId"]
+		replicaID := vars["replicaId"]
+
+		if err := s.driver.GetLogs(ctx, projectID, serviceID, taskID, replicaID, w, r); err != nil {
+			logrus.Errorf("Failed to get service logs - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+}
+
 // HandleDeleteService handles the request to delete a service
 func (s *Server) HandleDeleteService() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

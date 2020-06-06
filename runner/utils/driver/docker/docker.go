@@ -1,14 +1,20 @@
 package docker
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/golang/glog"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -121,6 +127,69 @@ func (d *Docker) ApplyService(ctx context.Context, service *model.Service) error
 
 	hostFile.AddHost(proxyIP, utils.GetServiceDomain(service.ProjectID, service.ID))
 	return hostFile.Save()
+}
+
+// GetLogs get logs of specified services
+func (d *Docker) GetLogs(ctx context.Context, projectID, serviceID, taskID, _ string, w http.ResponseWriter, r *http.Request) error {
+	// filter containers
+	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s--%s", projectID, serviceID))
+	if serviceID == "" {
+		args = filters.Arg("name", projectID)
+	}
+
+	// get contianer list
+	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
+	if err != nil {
+		logrus.Errorf("unable to list containers got error message - %v", err)
+		return err
+	}
+
+	var b io.ReadCloser
+	for _, container := range containers {
+		if strings.HasSuffix(container.Names[0], taskID) {
+			fmt.Println("container", container.Names[0])
+			b, err = d.client.ContainerLogs(ctx, container.Names[0], types.ContainerLogsOptions{
+				ShowStdout: true,
+				Details:    true,
+				Timestamps: true,
+				ShowStderr: true,
+				Follow:     true,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// get signal when client stop listening
+	done := r.Context().Done()
+	// read logs
+	rd := bufio.NewReader(b)
+
+	// implement http flusher
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		panic("expected http.ResponseWriter to be an http.Flusher")
+	}
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusOK)
+
+loop:
+	for {
+		select {
+		case <-done:
+			glog.Infof("Client stopped listening")
+			break loop
+		default:
+			str, _ := rd.ReadString('\n')
+			fmt.Fprintf(w, "%s\n", str[8:]) // leave header from str
+			flusher.Flush()                 // Trigger "chunked" encoding and send a chunk...
+			time.Sleep(500 * time.Millisecond)
+		}
+
+	}
+
+	return nil
 }
 
 func (d *Docker) createContainer(ctx context.Context, index int, task model.Task, service *model.Service, overridePorts []model.Port, cName string) (string, string, error) {
