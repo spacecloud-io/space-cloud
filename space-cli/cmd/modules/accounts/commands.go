@@ -24,19 +24,22 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('show-keys')", nil)
 			}
 		},
-		RunE: actionViewAccount,
+		SilenceErrors: true,
+		RunE:          actionViewAccount,
 	}
 
 	var setAccountCommand = &cobra.Command{
-		Use:   "set",
-		Short: "set the given account as the selected account",
-		RunE:  actionSetAccount,
+		Use:           "set",
+		Short:         "set the given account as the selected account",
+		SilenceErrors: true,
+		RunE:          actionSetAccount,
 	}
 
 	var deleteAccountCommand = &cobra.Command{
-		Use:   "delete",
-		Short: "deletes the given account",
-		RunE:  actionDeleteAccount,
+		Use:           "delete",
+		Short:         "deletes the given account",
+		SilenceErrors: true,
+		RunE:          actionDeleteAccount,
 	}
 
 	viewAccountsCommand.Flags().BoolP("show-keys", "", false, "shows the keys of the accounts")
@@ -72,9 +75,10 @@ func actionSetAccount(cmd *cobra.Command, args []string) error {
 
 func actionDeleteAccount(cmd *cobra.Command, args []string) error {
 
-	if len(args) == 0 {
-		return utils.LogError("Account ID to be deleted not provided in args", nil)
+	prefix := ""
+	if len(args) > 0 {
+		prefix = args[0]
 	}
 
-	return deleteAccount(args[0])
+	return deleteAccount(prefix)
 }

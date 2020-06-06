@@ -29,7 +29,7 @@ func listAccounts(prefix string, showKeys bool) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Username", "Key"})
+	table.SetHeader([]string{"ID", "Username", "Key", "Selected Account"})
 
 	table.SetBorder(false)
 	table.SetCenterSeparator("")
@@ -37,9 +37,17 @@ func listAccounts(prefix string, showKeys bool) error {
 
 	for _, account := range accounts {
 		if showKeys {
-			table.Append([]string{account.ID, account.UserName, account.Key})
+			if account.ID == credential.SelectedAccount {
+				table.Append([]string{account.ID, account.UserName, account.Key, "true"})
+			} else {
+				table.Append([]string{account.ID, account.UserName, account.Key, ""})
+			}
 		} else {
-			table.Append([]string{account.ID, account.UserName, strings.Repeat("*", utf8.RuneCountInString(account.Key))})
+			if account.ID == credential.SelectedAccount {
+				table.Append([]string{account.ID, account.UserName, strings.Repeat("*", utf8.RuneCountInString(account.Key)), "true"})
+			} else {
+				table.Append([]string{account.ID, account.UserName, strings.Repeat("*", utf8.RuneCountInString(account.Key)), ""})
+			}
 		}
 	}
 

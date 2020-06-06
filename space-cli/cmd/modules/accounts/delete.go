@@ -1,26 +1,32 @@
 package accounts
 
 import (
+	"strings"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
-func deleteAccount(accountID string) error {
+func deleteAccount(prefix string) error {
 	credential, err := utils.GetCredentials()
 	if err != nil {
 		return err
 	}
 
-	doesAccountExist := false
-	for i, v := range credential.Accounts {
-		if v.ID == accountID {
-			credential.Accounts = removeAccount(credential.Accounts, i)
-			doesAccountExist = true
-		}
+	prefix = strings.ToLower(prefix)
+	prefix, err = filterAccounts(credential.Accounts, prefix)
+	if err != nil {
+		return err
 	}
 
-	if !doesAccountExist {
-		return utils.LogError("Account ID not found in accounts.yaml", nil)
+	if prefix == credential.SelectedAccount {
+		return utils.LogError("Can't delete selected account", nil)
+	}
+
+	for i, v := range credential.Accounts {
+		if v.ID == prefix {
+			credential.Accounts = removeAccount(credential.Accounts, i)
+		}
 	}
 
 	if err := utils.GenerateAccountsFile(credential); err != nil {
