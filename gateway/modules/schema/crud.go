@@ -43,9 +43,10 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 		docs = []interface{}{v}
 	}
 
+	dbType, _ := s.crud.GetDBType(dbAlias)
 	var fieldsToProcess []fieldsToPostProcess
 	for columnName, columnValue := range tableInfo {
-		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime || columnValue.Kind == model.TypeBoolean {
+		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime || (dbType == string(utils.MySQL) && columnValue.Kind == model.TypeBoolean) {
 			fieldsToProcess = append(fieldsToProcess, fieldsToPostProcess{kind: columnValue.Kind, name: columnName})
 		}
 	}
@@ -77,14 +78,12 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 
 				case model.TypeBoolean:
 					switch v := column.(type) {
-					case int:
-						if v == 1 {
+					case int64:
+						if v == int64(1) {
 							doc[field.name] = true
 						} else {
 							doc[field.name] = false
 						}
-					case bool:
-						continue
 					}
 
 				case model.TypeDateTime:
