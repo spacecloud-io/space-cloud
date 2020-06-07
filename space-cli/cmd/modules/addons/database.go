@@ -202,47 +202,58 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 			return
 			// Got a tick, we should check on checkSomething()
 		case <-ticker.C:
-			dbConfig, err := database.GetDbConfig(v.Meta["project"], "db-config", map[string]string{})
-			if err != nil {
-				logrus.Errorln("Unable to fetch database config", nil)
-			}
-			_, ok := dbConfig[0].Meta["col"]
-			if !ok {
-				dbConfig[0] = &model.SpecObject{
-					API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules",
-					Type: "db-rules",
-					Meta: map[string]string{
-						"dbAlias": v.Meta["dbAlias"],
-						"col":     "default",
-						"project": v.Meta["project"],
-					},
-					Spec: map[string]interface{}{
-						"isRealtimeEnabled": v.Spec.(map[string]interface{})["enabled"],
-						"rules": map[string]interface{}{
-							"create": map[string]interface{}{
-								"rule": "allow",
-							},
-							"delete": map[string]interface{}{
-								"rule": "allow",
-							},
-							"read": map[string]interface{}{
-								"rule": "allow",
-							},
-							"update": map[string]interface{}{
-								"rule": "allow",
-							},
-						},
-					},
-				}
-			} else {
-				dbConfig[0].Spec.(map[string]interface{})["isRealtimeEnabled"] = v.Spec.(map[string]interface{})["enabled"]
-				dbConfig[0].Spec.(map[string]interface{})["rules"] = v.Spec.(map[string]interface{})["rules"]
-			}
-
 			if err := operations.ApplySpec(token, account, v); err != nil {
 				logrus.Warningln("Unable to add database to Space Cloud config", nil)
 				continue
 			}
+
+			v = &model.SpecObject{
+				API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules",
+				Type: "db-rules",
+				Meta: map[string]string{
+					"dbAlias": v.Meta["dbAlias"],
+					"col":     "default",
+					"project": v.Meta["project"],
+				},
+				Spec: map[string]interface{}{
+					"isRealtimeEnabled": v.Spec.(map[string]interface{})["enabled"],
+					"rules": map[string]interface{}{
+						"create": map[string]interface{}{
+							"rule": "allow",
+						},
+						"delete": map[string]interface{}{
+							"rule": "allow",
+						},
+						"read": map[string]interface{}{
+							"rule": "allow",
+						},
+						"update": map[string]interface{}{
+							"rule": "allow",
+						},
+					},
+				},
+			}
+			if err := operations.ApplySpec(token, account, v); err != nil {
+				logrus.Warningln("Couldn't add default rules", nil)
+				continue
+			}
+
+			v = &model.SpecObject{
+				API:  "/v1/config/projects/{project}/eventing/rules/{id}",
+				Type: "eventing-rule",
+				Meta: map[string]string{
+					"project": v.Meta["project"],
+					"id":      "default",
+				},
+				Spec: map[string]interface{}{
+					"rule": "allow",
+				},
+			}
+			if err := operations.ApplySpec(token, account, v); err != nil {
+				logrus.Warningln("Couldn't add eventing rules", nil)
+				continue
+			}
+
 			utils.LogInfo("Successfully added database to Space Cloud config.")
 			return
 		}
