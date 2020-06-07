@@ -216,7 +216,7 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 					"project": v.Meta["project"],
 				},
 				Spec: map[string]interface{}{
-					"isRealtimeEnabled": v.Spec.(map[string]interface{})["enabled"],
+					"isRealtimeEnabled": false,
 					"rules": map[string]interface{}{
 						"create": map[string]interface{}{
 							"rule": "allow",
@@ -234,23 +234,29 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 				},
 			}
 			if err := operations.ApplySpec(token, account, v); err != nil {
-				logrus.Warningln("Couldn't add default rules", nil)
+				logrus.Warningln("Couldn't add default collection rules", nil)
 				continue
 			}
 
 			v = &model.SpecObject{
-				API:  "/v1/config/projects/{project}/eventing/rules/{id}",
+				API:  "/v1/config/projects/{project}/database/{dbAlias}/prepared-queries/{id}",
 				Type: "eventing-rule",
 				Meta: map[string]string{
 					"project": v.Meta["project"],
+					"dbAlias": v.Meta["dbAlias"],
 					"id":      "default",
 				},
 				Spec: map[string]interface{}{
-					"rule": "allow",
+					"id":  "default",
+					"sql": "",
+					"rule": map[string]interface{}{
+						"rule": "allow",
+					},
+					"args": []string{},
 				},
 			}
 			if err := operations.ApplySpec(token, account, v); err != nil {
-				logrus.Warningln("Couldn't add eventing rules", nil)
+				logrus.Warningln("Couldn't add default prepared query rules", nil)
 				continue
 			}
 
