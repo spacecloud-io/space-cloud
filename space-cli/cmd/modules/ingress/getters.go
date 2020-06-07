@@ -6,6 +6,7 @@ import (
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cli/cmd/utils/transport"
 )
 
 // GetIngressRoutes gets ingress routes
@@ -13,7 +14,7 @@ func GetIngressRoutes(project, commandName string, params map[string]string) ([]
 	url := fmt.Sprintf("/v1/config/projects/%s/routing/ingress", project)
 	// Get the spec from the server
 	payload := new(model.Response)
-	if err := utils.Get(http.MethodGet, url, params, payload); err != nil {
+	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
 		return nil, err
 	}
 

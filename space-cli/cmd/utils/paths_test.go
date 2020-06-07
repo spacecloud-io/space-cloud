@@ -10,6 +10,12 @@ func Test_getHomeDirectory(t *testing.T) {
 	if err := os.Setenv("HOME", "/home"); err != nil {
 		return
 	}
+	if err := os.Setenv("HOMEPATH", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEDRIVE", ""); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
@@ -32,6 +38,12 @@ func Test_getHomeDirectory(t *testing.T) {
 func TestGetSpaceCloudHostsFilePath(t *testing.T) {
 
 	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEPATH", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEDRIVE", ""); err != nil {
 		return
 	}
 	tests := []struct {
@@ -58,6 +70,12 @@ func TestGetSpaceCloudRoutingConfigPath(t *testing.T) {
 	if err := os.Setenv("HOME", "/home"); err != nil {
 		return
 	}
+	if err := os.Setenv("HOMEPATH", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEDRIVE", ""); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
@@ -80,6 +98,12 @@ func TestGetSpaceCloudRoutingConfigPath(t *testing.T) {
 func TestGetSecretsDir(t *testing.T) {
 
 	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEPATH", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEDRIVE", ""); err != nil {
 		return
 	}
 	tests := []struct {
@@ -106,6 +130,12 @@ func TestGetTempSecretsDir(t *testing.T) {
 	if err := os.Setenv("HOME", "/home"); err != nil {
 		return
 	}
+	if err := os.Setenv("HOMEPATH", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEDRIVE", ""); err != nil {
+		return
+	}
 	tests := []struct {
 		name string
 		want string
@@ -128,6 +158,12 @@ func TestGetTempSecretsDir(t *testing.T) {
 func TestGetSpaceCloudConfigFilePath(t *testing.T) {
 
 	if err := os.Setenv("HOME", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEPATH", "/home"); err != nil {
+		return
+	}
+	if err := os.Setenv("HOMEDRIVE", ""); err != nil {
 		return
 	}
 	tests := []struct {

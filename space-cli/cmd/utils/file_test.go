@@ -193,13 +193,13 @@ func TestReadSpecObjectsFromFile(t *testing.T) {
 			},
 			args: args{fileName: "test"},
 			want: []*model.SpecObject{
-				&model.SpecObject{
+				{
 					API:  "api1",
 					Type: "type1",
 					Meta: map[string]string{"key": "value"},
 					Spec: map[string]interface{}{"key": "value"},
 				},
-				&model.SpecObject{
+				{
 					API:  "api2",
 					Type: "type2",
 					Meta: map[string]string{"key": "value"},
@@ -232,7 +232,7 @@ func TestReadSpecObjectsFromFile(t *testing.T) {
 			},
 			args: args{fileName: "test"},
 			want: []*model.SpecObject{
-				&model.SpecObject{
+				{
 					API:  "api2",
 					Type: "type2",
 					Meta: map[string]string{"key": "value"},
