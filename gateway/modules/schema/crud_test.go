@@ -26,6 +26,11 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 	if err != nil {
 		logrus.Errorf("err=%v", err)
 	}
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
 	type fields struct {
 		SchemaDoc model.Type
 	}
@@ -44,11 +49,12 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 	crudSQLServer := crud.Init()
 	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    interface{}
-		wantErr bool
+		name         string
+		fields       fields
+		args         args
+		crudMockArgs []mockArgs
+		want         interface{}
+		wantErr      bool
 	}{
 		// TODO: Add test cases.
 		{
@@ -80,6 +86,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  []interface{}{},
 			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
+			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
 			want:    []interface{}{},
 			wantErr: false,
@@ -90,6 +103,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				dbAlias: "mysql",
 				col:     "table1",
 				result:  []interface{}{map[string]interface{}{}},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
 			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
 			want:    []interface{}{map[string]interface{}{}},
@@ -102,6 +122,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  map[string]interface{}{"col2": b},
 			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
+			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
 			want:    map[string]interface{}{"col2": v},
 			wantErr: false,
@@ -112,6 +139,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				dbAlias: "mysql",
 				col:     "table1",
 				result:  map[string]interface{}{"col2": "mock"},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
 			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
 			want:    map[string]interface{}{"col2": "mock"},
@@ -124,6 +158,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  map[string]interface{}{"col2": []byte("mock")},
 			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
+			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeJSON}}}}},
 			want:    map[string]interface{}{"col2": []byte("mock")},
 			wantErr: true,
@@ -134,6 +175,13 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				dbAlias: "mysql",
 				col:     "table1",
 				result:  []interface{}{map[string]interface{}{"col2": time.Now().Round(time.Second)}},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
 			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
 			want:    []interface{}{map[string]interface{}{"col2": time.Now().Round(time.Second).UTC().Format(time.RFC3339)}},
@@ -146,8 +194,51 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 				col:     "table1",
 				result:  []interface{}{map[string]interface{}{"col2": primitive.DateTime(1)}},
 			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
+			},
 			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeDateTime}}}}},
 			want:    []interface{}{map[string]interface{}{"col2": primitive.DateTime(1).Time().UTC().Format(time.RFC3339)}},
+			wantErr: false,
+		},
+		{
+			name: "set kind as int64 true boolean type",
+			args: args{
+				dbAlias: "mysql",
+				col:     "table1",
+				result:  []interface{}{map[string]interface{}{"col2": int64(1)}},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
+			},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}}},
+			want:    []interface{}{map[string]interface{}{"col2": true}},
+			wantErr: false,
+		},
+		{
+			name: "set kind as int64 false boolean type",
+			args: args{
+				dbAlias: "mysql",
+				col:     "table1",
+				result:  []interface{}{map[string]interface{}{"col2": int64(0)}},
+			},
+			crudMockArgs: []mockArgs{
+				{
+					method:         "GetDBType",
+					args:           []interface{}{"mysql"},
+					paramsReturned: []interface{}{"mysql"},
+				},
+			},
+			fields:  fields{SchemaDoc: model.Type{"mysql": model.Collection{"table1": model.Fields{"col2": &model.FieldType{FieldName: "col2", Kind: model.TypeBoolean}}}}},
+			want:    []interface{}{map[string]interface{}{"col2": false}},
 			wantErr: false,
 		},
 	}
@@ -156,6 +247,15 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 			s := &Schema{
 				SchemaDoc: tt.fields.SchemaDoc,
 			}
+
+			mockCrud := mockCrudSchemaInterface{}
+
+			for _, m := range tt.crudMockArgs {
+				mockCrud.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			s.crud = &mockCrud
+
 			err := s.CrudPostProcess(tt.args.ctx, tt.args.dbAlias, tt.args.col, tt.args.result)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Schema.CrudPostProcess() error = %v, wantErr %v", err, tt.wantErr)
