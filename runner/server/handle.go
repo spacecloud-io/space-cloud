@@ -254,12 +254,28 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 		//var result []interface{}
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		//serviceID, serviceIDExists := r.URL.Query()["serviceId"]
+		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
 		result, err := s.driver.GetServiceStatus(ctx, projectID)
 		if err != nil {
 			return
 		}
+		if serviceIDExists {
+			for i, val := range result {
+				value := val.(map[string]interface{})
+				_, ok := value[serviceID[0]]
+				if ok {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(model.Response{Result: result[i]})
+					return
+				}
+			}
 
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("serviceID(%s) not present", serviceID[0])})
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: result})

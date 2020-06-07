@@ -532,7 +532,7 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 // GetServiceStatus gets the status of service info from docker container
 func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]interface{}, error) {
 
-	services := make(map[string][]string)
+	services := make(map[string][]interface{})
 	var results []interface{}
 	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s", projectID))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
@@ -549,8 +549,11 @@ func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]inte
 		}
 		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
 		ID := containerName[1]
-
-		services[ID] = append(services[ID], containerInfo.ID)
+		info := map[string]interface{}{
+			"ID":     containerInfo.ID,
+			"Status": containerInfo.Status,
+		}
+		services[ID] = append(services[ID], info)
 
 	}
 	result := make(map[string]interface{})

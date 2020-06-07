@@ -160,7 +160,46 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 
 // GetServiceStatus gets the services status for istio
 func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]interface{}, error) {
-	return nil, nil
+	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(metav1.ListOptions{})
+	if err != nil {
+		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
+		return nil, err
+	}
+	var results []interface{}
+	for _, deployment := range deploymentList.Items {
+		result := make(map[string]interface{})
+		serviceID := deployment.Labels["app"]
+		replicas := deployment.Spec.Replicas
+		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(metav1.ListOptions{})
+		if err != nil {
+			logrus.Errorf("Error getting service in istio - unable to find pods - %v", err)
+			return nil, err
+		}
+		res := make(map[string]interface{})
+		for _, p := range podlist.Items {
+			for _, c := range p.Status.InitContainerStatuses {
+
+				res[c.Name] = map[string]interface{}{
+					"id":     c.ContainerID,
+					"status": c.State,
+				}
+			}
+		}
+		// var containerID []string
+		// for _, containerInfo := range deployment.Spec.Template.Spec.Containers {
+		// 	if containerInfo.Name == "metric-proxy" || containerInfo.Name == "istio-proxy" {
+		// 		continue
+		// 	}
+		// 	containerID = append(containerID, containerInfo.Image)
+		// }
+		result[serviceID] = map[string]interface{}{
+			"replicas": replicas,
+			//"activeReplica": containerID,
+			"pod": res,
+		}
+		results = append(results, result)
+	}
+	return results, nil
 }
 
 // GetServiceRoutes gets the routing rules of each service
