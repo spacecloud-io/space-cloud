@@ -5,13 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"net"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/Pallinder/go-randomdata"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -19,7 +15,6 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/segmentio/ksuid"
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
@@ -39,14 +34,14 @@ func generateRandomString(length int) string {
 }
 
 // Setup initializes development environment
-func Setup(id, username, key, config, version, secret, clusterID string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
+func Setup(username, key, config, version, secret, clusterID string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
 
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
 	_ = utils.CreateDirIfNotExist(utils.GetSecretsDir(clusterID))
 	_ = utils.CreateDirIfNotExist(utils.GetTempSecretsDir(clusterID))
 
-	_ = utils.CreateFileIfNotExist(utils.GetSpaceCloudRoutingConfigPath(), "{}")
+	_ = utils.CreateFileIfNotExist(utils.GetSpaceCloudRoutingConfigPath(clusterID), "{}")
 	_ = utils.CreateConfigFile(utils.GetSpaceCloudConfigFilePath(clusterID))
 
 	utils.LogInfo("Setting up Space Cloud on docker.")
@@ -54,9 +49,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 	if username == "" {
 		username = "local-admin"
 	}
-	if id == "" {
-		id = randomdata.SillyName() + "-" + ksuid.New().String()
-	}
+
 	if key == "" {
 		key = generateRandomString(32)
 	}
@@ -84,17 +77,17 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 	portHTTPValue := strconv.FormatInt(portHTTP, 10)
 	portHTTPSValue := strconv.FormatInt(portHTTPS, 10)
 
-	portHTTPValue, err := checkPortAvailability(portHTTPValue, "HTTP")
+	portHTTPValue, err := utils.CheckPortAvailability(portHTTPValue, "HTTP")
 	if err != nil {
 		return err
 	}
-	portHTTPSValue, err = checkPortAvailability(portHTTPSValue, "HTTPS")
+	portHTTPSValue, err = utils.CheckPortAvailability(portHTTPSValue, "HTTPS")
 	if err != nil {
 		return err
 	}
 
 	selectedAccount := model.Account{
-		ID:        id,
+		ID:        clusterID,
 		UserName:  username,
 		Key:       key,
 		ServerURL: fmt.Sprintf("http://localhost:%s", portHTTPValue),
@@ -111,13 +104,13 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 
 	envs := []string{
 		//"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
-		"RUNNER_ADDR=runner." + getNetworkName(clusterID) + ".svc.cluster.local:4050",
+		"RUNNER_ADDR=runner." + utils.GetNetworkName(clusterID) + ".svc.cluster.local:4050",
 		"ADMIN_USER=" + username,
 		"ADMIN_PASS=" + key,
 		"ADMIN_SECRET=" + secret,
 		"DEV=" + devMode,
 		"GOOGLE_APPLICATION_CREDENTIALS=/root/.gcp/credentials.json",
-		"CLUSTER_ID=" + id,
+		"CLUSTER_ID=" + clusterID,
 		"PORT=" + portHTTPValue,
 	}
 
@@ -158,8 +151,8 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 		{
 			name:           "gateway",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", version),
-			containerName:  getNetworkName(clusterID) + "-gateway",
-			dnsName:        "gateway." + getNetworkName(clusterID) + ".svc.cluster.local",
+			containerName:  utils.GetScContainers(clusterID, "gateway"),
+			dnsName:        "gateway." + utils.GetNetworkName(clusterID) + ".svc.cluster.local",
 			envs:           envs,
 			exposedPorts: nat.PortSet{
 				nat.Port(portHTTPValue):  struct{}{},
@@ -176,11 +169,11 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 			// runner
 			name:           "runner",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
-			containerName:  getNetworkName(clusterID) + "-runner",
-			dnsName:        "runner." + getNetworkName(clusterID) + ".svc.cluster.local",
+			containerName:  utils.GetScContainers(clusterID, "runner"),
+			dnsName:        "runner." + utils.GetNetworkName(clusterID) + ".svc.cluster.local",
 			envs: []string{
 				"DEV=" + devMode,
-				"ARTIFACT_ADDR=store." + getNetworkName(clusterID) + ".svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
+				"ARTIFACT_ADDR=store." + utils.GetNetworkName(clusterID) + ".svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
 				"DRIVER=docker",
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
@@ -188,7 +181,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 				"HOME_SECRETS_PATH=" + utils.GetTempSecretsDir(clusterID),
 				"HOSTS_FILE_PATH=" + utils.GetSpaceCloudHostsFilePath(clusterID),
 				"ROUTING_FILE_PATH=" + "/routing-config.json",
-				"CLUSTER_ID=" + id,
+				"CLUSTER_ID=" + clusterID,
 				"PORT=4050",
 			},
 			mount: []mount.Mount{
@@ -209,7 +202,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSpaceCloudRoutingConfigPath(),
+					Source: utils.GetSpaceCloudRoutingConfigPath(clusterID),
 					Target: "/routing-config.json",
 				},
 			},
@@ -234,7 +227,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 	}
 
 	// First we create a network for space cloud
-	if _, err := cli.NetworkCreate(ctx, getNetworkName(clusterID), types.NetworkCreate{Driver: "bridge"}); err != nil {
+	if _, err := cli.NetworkCreate(ctx, utils.GetNetworkName(clusterID), types.NetworkCreate{Driver: "bridge"}); err != nil {
 		return utils.LogError("Unable to create a network named space-cloud", err)
 	}
 
@@ -257,14 +250,14 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 
 		// create container with specified defaults
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
-			Labels:       map[string]string{"app": "space-cloud", "service": c.name, "clusterID": fmt.Sprintf("%s-space-cloud", clusterID)},
+			Labels:       map[string]string{"app": "space-cloud", "service": c.name},
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
 			Env:          c.envs,
 		}, &container.HostConfig{
 			Mounts:       c.mount,
 			PortBindings: c.portMapping,
-			NetworkMode:  container.NetworkMode(getNetworkName(clusterID)),
+			NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterID)),
 		}, nil, c.containerName)
 		if err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), err)
@@ -280,7 +273,7 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 			return utils.LogError(fmt.Sprintf("Unable to inspect container (%v)", c.containerName), err)
 		}
 
-		ip := data.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress
+		ip := data.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress
 		utils.LogDebug(fmt.Sprintf("Adding entry (%s - %s) to hosts file", c.dnsName, ip), nil)
 		hosts.AddHost(ip, c.dnsName)
 	}
@@ -295,27 +288,4 @@ func Setup(id, username, key, config, version, secret, clusterID string, dev boo
 	utils.LogInfo(fmt.Sprintf("Your login credentials: [username: \"%s\"; key: \"%s\"] 🤫", selectedAccount.UserName, selectedAccount.Key))
 
 	return nil
-}
-
-func getNetworkName(id string) string {
-	if id == "default" {
-		return "space-cloud"
-	}
-	return fmt.Sprintf("space-cloud-%s", id)
-}
-
-func checkPortAvailability(port, s string) (string, error) {
-	ln, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		utils.LogInfo(fmt.Sprintf("The port %s is current busy", port))
-		if err := survey.AskOne(&survey.Input{Message: fmt.Sprintf("Enter %s port", s)}, &port); err != nil {
-			return "", utils.LogError("error getting port", err)
-		}
-		if port == "" {
-			return "", utils.LogError("Invalid port", err)
-		}
-		return checkPortAvailability(port, s)
-	}
-	_ = ln.Close()
-	return port, nil
 }

@@ -38,8 +38,9 @@ func DockerStart() error {
 	}
 
 	// Start the add ons first
-	argsAddOns := filters.Arg("name", fmt.Sprintf("%s--addon", getNetworkName(clusterID)))
-	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsAddOns), All: true})
+	argsAddOns := filters.Arg("label", "app=addon")
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsAddOns), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
 	}
@@ -61,7 +62,7 @@ func DockerStart() error {
 		hosts.RemoveHost(hostName)
 
 		// Add it back with the new ip address
-		hosts.AddHost(info.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress, hostName)
+		hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress, hostName)
 	}
 
 	// Save the hosts file before continuing
@@ -71,8 +72,9 @@ func DockerStart() error {
 
 	// Second step is to start the gateway and runner. We'll need the runner's ip address in the next step
 	var runnerIP string
-	argsSC := filters.Arg("label", fmt.Sprintf("clusterID=%s-space-cloud", clusterID))
-	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsSC), All: true})
+	argsSC := filters.Arg("label", "app=space-cloud")
+	argsNetwork = filters.Arg("network", utils.GetNetworkName(clusterID))
+	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsSC), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
 	}
@@ -91,16 +93,16 @@ func DockerStart() error {
 
 		// Set the runner ip with the current service is the runner
 		name := info.Config.Labels["service"]
-		hostName := fmt.Sprintf("%s.%s.svc.cluster.local", name, getNetworkName(clusterID))
+		hostName := fmt.Sprintf("%s.%s.svc.cluster.local", name, utils.GetNetworkName(clusterID))
 		if name == "runner" {
-			runnerIP = info.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress
+			runnerIP = info.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress
 		}
 
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(hostName)
 
 		// Add it back with the new ip address
-		hosts.AddHost(info.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress, hostName)
+		hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress, hostName)
 	}
 
 	// Check if the ip address is set

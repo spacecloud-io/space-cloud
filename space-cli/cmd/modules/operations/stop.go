@@ -39,8 +39,9 @@ func DockerStop() error {
 		}
 	}
 
-	argsSC := filters.Arg("label", fmt.Sprintf("clusterID=%s-space-cloud", clusterID))
-	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsSC), All: true})
+	argsSC := filters.Arg("label", "app=space-cloud")
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	scContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsSC), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
 	}
@@ -52,8 +53,9 @@ func DockerStop() error {
 		}
 	}
 
-	argsAddOns := filters.Arg("name", fmt.Sprintf("%s--addon", getNetworkName(clusterID)))
-	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsAddOns), All: true})
+	argsAddOns := filters.Arg("label", "app=addon")
+	argsNetwork = filters.Arg("network", utils.GetNetworkName(clusterID))
+	addOnContainers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsAddOns), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud core containers", err)
 	}

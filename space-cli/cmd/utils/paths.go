@@ -11,6 +11,11 @@ func GetSpaceCloudDirectory() string {
 	return fmt.Sprintf("%s/.space-cloud", getHomeDirectory())
 }
 
+// GetSpaceCloudDirectory gets the root space cloud directory
+func GetSpaceCloudClusterDirectory(clusterID string) string {
+	return fmt.Sprintf("%s/.space-cloud/%s", getHomeDirectory(), clusterID)
+}
+
 // GetSpaceCloudHostsFilePath returns the path of the hosts files used in space cloud
 func GetSpaceCloudHostsFilePath(id string) string {
 	if id == "default" {
@@ -20,8 +25,11 @@ func GetSpaceCloudHostsFilePath(id string) string {
 }
 
 // GetSpaceCloudRoutingConfigPath returns the path of the file storing the service routing config
-func GetSpaceCloudRoutingConfigPath() string {
-	return fmt.Sprintf("%s/routing-config.json", GetSpaceCloudDirectory())
+func GetSpaceCloudRoutingConfigPath(id string) string {
+	if id == "default" {
+		return fmt.Sprintf("%s/routing-config.json", GetSpaceCloudDirectory())
+	}
+	return fmt.Sprintf("%s/%s/routing-config.json", GetSpaceCloudDirectory(), id)
 }
 
 // GetSpaceCloudConfigFilePath returns the path of the file storing the config

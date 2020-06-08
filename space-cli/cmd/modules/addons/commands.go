@@ -18,14 +18,13 @@ func Commands() []*cobra.Command {
 		Use:   "registry",
 		Short: "Add a docker registry",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
-			if err != nil {
+			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
 			}
 		},
 		RunE: ActionAddRegistry,
 	}
-	addRegistryCmd.Flags().StringP("cluster-id", "", "default", "provide the cluster-id")
+	addRegistryCmd.Flags().StringP("cluster-id", "", "default", "Space Cloud cluster id in which the registry has to be added")
 
 	var addDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -64,7 +63,7 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
-	addDatabaseCmd.Flags().StringP("cluster-id", "", "default", "provide the cluster-id")
+	addDatabaseCmd.Flags().StringP("cluster-id", "", "default", "Space Cloud cluster id in which the database has to be added")
 
 	var removeCmd = &cobra.Command{
 		Use:   "remove",
@@ -75,8 +74,7 @@ func Commands() []*cobra.Command {
 		Use:   "registry",
 		Short: "Remove a docker registry",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
-			if err != nil {
+			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
 			}
 		},
@@ -88,8 +86,7 @@ func Commands() []*cobra.Command {
 		Use:   "database",
 		Short: "Remove a database",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
-			if err != nil {
+			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
 			}
 		},
@@ -168,6 +165,11 @@ func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Database Alias not provided as an argument", nil)
 		return nil
 	}
-	_ = removeDatabase(args[0], args[1])
+	project, check := utils.GetProjectID()
+	if !check {
+		_ = utils.LogError("Project not specified in flag", nil)
+		return nil
+	}
+	_ = removeDatabase(args[0], project)
 	return nil
 }

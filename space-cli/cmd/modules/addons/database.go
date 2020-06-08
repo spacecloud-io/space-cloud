@@ -94,8 +94,9 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	}
 
 	// Check if a database container already exist
-	filterArgs := filters.Arg("label", fmt.Sprintf("clusterID=%s-space-cloud", clusterID))
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
+	argsSC := filters.Arg("label", "app=space-cloud")
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsSC)})
 	if err != nil {
 		return utils.LogError("Unable to check if database already exists", err)
 	}
@@ -111,12 +112,12 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 
 	// Create the database
 	containerRes, err := docker.ContainerCreate(ctx, &container.Config{
-		Labels: map[string]string{"app": "addon", "service": "db", "name": alias, "clusterID": fmt.Sprintf("%s-addons-database-%s", clusterID, alias)},
+		Labels: map[string]string{"app": "addon", "service": "db", "name": alias},
 		Image:  dockerImage,
 		Env:    env,
 	}, &container.HostConfig{
-		NetworkMode: container.NetworkMode(getNetworkName(clusterID)),
-	}, nil, getDatabaseContainerName(clusterID, alias))
+		NetworkMode: container.NetworkMode(utils.GetNetworkName(clusterID)),
+	}, nil, utils.GetDatabaseContainerName(clusterID, alias))
 	if err != nil {
 		return utils.LogError("Unable to create local docker database", err)
 	}
@@ -144,7 +145,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	hosts.RemoveHost(hostName)
 
 	// Add it back with the new ip address
-	hosts.AddHost(info.NetworkSettings.Networks[getNetworkName(clusterID)].IPAddress, hostName)
+	hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress, hostName)
 
 	// Save the hosts file
 	if err := hosts.Save(); err != nil {
@@ -225,8 +226,9 @@ func removeDatabase(alias, project string) error {
 	}
 
 	// Check if a database container already exist
-	filterArgs := filters.Arg("label", fmt.Sprintf("clusterID=%s-addons-database-%s", clusterID, alias))
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
+	argsDB := filters.Arg("name", utils.GetDatabaseContainerName(clusterID, alias))
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsDB)})
 	if err != nil {
 		return utils.LogError("Unable to check if database already exists", err)
 	}
@@ -265,20 +267,6 @@ func removeDatabase(alias, project string) error {
 	utils.LogInfo(fmt.Sprintf("Removed database (%s)", alias))
 
 	return nil
-}
-
-func getNetworkName(id string) string {
-	if id == "default" {
-		return "space-cloud"
-	}
-	return fmt.Sprintf("space-cloud-%s", id)
-}
-
-func getDatabaseContainerName(id, alias string) string {
-	if id == "default" {
-		return fmt.Sprintf("space-cloud--addon--db--%s", alias)
-	}
-	return fmt.Sprintf("space-cloud-%s--addon--db--%s", id, alias)
 }
 
 func deleteDatabaseConfig(projectID, dbAlias string) error {

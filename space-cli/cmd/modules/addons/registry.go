@@ -3,7 +3,6 @@ package addons
 import (
 	"context"
 	"fmt"
-	"net"
 
 	"github.com/spf13/viper"
 
@@ -33,8 +32,9 @@ func addRegistry(projectID string) error {
 	}
 
 	// Check if a registry container already exist
-	filterArgs := filters.Arg("label", fmt.Sprintf("clusterID=%s-addons-registry", clusterID))
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
+	argsRegistry := filters.Arg("label", "service=registry")
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsRegistry)})
 	if err != nil {
 		return utils.LogError("Unable to check if registry already exists", err)
 	}
@@ -44,7 +44,7 @@ func addRegistry(projectID string) error {
 	}
 
 	// check if port is available
-	port, err = checkPortAvailability(port)
+	port, err = utils.CheckPortAvailability(port, "registry")
 	if err != nil {
 		return err
 	}
@@ -84,12 +84,6 @@ func addRegistry(projectID string) error {
 		utils.LogInfo(fmt.Sprintf("Adding registry to project - %s with ID - %s", projects[0].Name, projectID))
 	}
 
-	// check if port is available
-	port, err = checkPortAvailability(port)
-	if err != nil {
-		return err
-	}
-
 	// Set registry config in SpaceCloud. We will first get the projectID config, then apply the registry url to it
 	specObj, err := project.GetProjectConfig(projectID, "project", nil)
 	if err != nil {
@@ -111,13 +105,13 @@ func addRegistry(projectID string) error {
 
 	// Create the registry
 	containerRes, err := docker.ContainerCreate(ctx, &container.Config{
-		Labels:       map[string]string{"app": "addon", "service": "registry", "name": "registry", "clusterID": fmt.Sprintf("%s-addons-registry", clusterID)},
+		Labels:       map[string]string{"app": "addon", "service": "registry", "name": "registry"},
 		Image:        dockerImage,
 		ExposedPorts: nat.PortSet{nat.Port(port): struct{}{}},
 	}, &container.HostConfig{
 		PortBindings: nat.PortMap{nat.Port(port): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: port}}},
-		NetworkMode:  container.NetworkMode(getNetworkName(clusterID)),
-	}, nil, getRegisterContainerName(clusterID))
+		NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterID)),
+	}, nil, utils.GetRegistryContainerName(clusterID))
 	if err != nil {
 		return utils.LogError("Unable to create local docker registry", err)
 	}
@@ -142,8 +136,9 @@ func removeRegistry(projectID string) error {
 	}
 
 	// Check if a registry container already exist
-	filterArgs := filters.Arg("label", fmt.Sprintf("clusterID=%s-addons-registry", clusterID))
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
+	argsRegistry := filters.Arg("name", utils.GetRegistryContainerName(clusterID))
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsRegistry, argsNetwork)})
 	if err != nil {
 		return utils.LogError("Unable to check if registry already exists", err)
 	}
@@ -174,34 +169,10 @@ func removeRegistry(projectID string) error {
 	// Remove all container
 	for _, containerInfo := range containers {
 		// remove the container from host machine
-
 		if err := docker.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to remove container %s", containerInfo.ID), err)
 		}
 	}
 
 	return nil
-}
-
-func getRegisterContainerName(id string) string {
-	if id == "default" {
-		return "space-cloud--addon--registry"
-	}
-	return fmt.Sprintf("space-cloud-%s--addon--registry", id)
-}
-
-func checkPortAvailability(port string) (string, error) {
-	ln, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		utils.LogInfo(fmt.Sprintf("The port %s is current busy", port))
-		if err := survey.AskOne(&survey.Input{Message: "Enter Port: "}, &port); err != nil {
-			return "", utils.LogError("error getting port", err)
-		}
-		if port == "" {
-			return "", utils.LogError("Invalid port", err)
-		}
-		return checkPortAvailability(port)
-	}
-	_ = ln.Close()
-	return port, nil
 }

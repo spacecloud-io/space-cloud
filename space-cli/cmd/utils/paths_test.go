@@ -48,17 +48,24 @@ func TestGetSpaceCloudHostsFilePath(t *testing.T) {
 	}
 	tests := []struct {
 		name string
+		args string
 		want string
 	}{
 		// TODO: Add test cases.
 		{
 			name: "test",
+			args: "default",
 			want: "/home/.space-cloud/hosts",
+		},
+		{
+			name: "test",
+			args: "name",
+			want: "/home/.space-cloud/name/hosts",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSpaceCloudHostsFilePath("default"); got != tt.want {
+			if got := GetSpaceCloudHostsFilePath(tt.args); got != tt.want {
 				t.Errorf("GetSpaceCloudHostsFilePath() = %v, want %v", got, tt.want)
 			}
 		})
@@ -78,17 +85,24 @@ func TestGetSpaceCloudRoutingConfigPath(t *testing.T) {
 	}
 	tests := []struct {
 		name string
+		args string
 		want string
 	}{
 		// TODO: Add test cases.
 		{
 			name: "test",
+			args: "default",
 			want: "/home/.space-cloud/routing-config.json",
+		},
+		{
+			name: "test",
+			args: "name",
+			want: "/home/.space-cloud/name/routing-config.json",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSpaceCloudRoutingConfigPath(); got != tt.want {
+			if got := GetSpaceCloudRoutingConfigPath(tt.args); got != tt.want {
 				t.Errorf("GetSpaceCloudRoutingConfigPath() = %v, want %v", got, tt.want)
 			}
 		})
@@ -108,12 +122,19 @@ func TestGetSecretsDir(t *testing.T) {
 	}
 	tests := []struct {
 		name string
+		args string
 		want string
 	}{
 		// TODO: Add test cases.
 		{
 			name: "test",
+			args: "default",
 			want: "/home/.space-cloud/secrets",
+		},
+		{
+			name: "test",
+			args: "name",
+			want: "/home/.space-cloud/name/secrets",
 		},
 	}
 	for _, tt := range tests {
@@ -138,17 +159,24 @@ func TestGetTempSecretsDir(t *testing.T) {
 	}
 	tests := []struct {
 		name string
+		args string
 		want string
 	}{
 		// TODO: Add test cases.
 		{
 			name: "test",
+			args: "name",
+			want: "/home/.space-cloud/name/secrets/temp-secrets",
+		},
+		{
+			name: "test",
+			args: "default",
 			want: "/home/.space-cloud/secrets/temp-secrets",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetTempSecretsDir("default"); got != tt.want {
+			if got := GetTempSecretsDir(tt.args); got != tt.want {
 				t.Errorf("GetTempSecretsDir() = %v, want %v", got, tt.want)
 			}
 		})
@@ -168,17 +196,24 @@ func TestGetSpaceCloudConfigFilePath(t *testing.T) {
 	}
 	tests := []struct {
 		name string
+		args string
 		want string
 	}{
 		// TODO: Add test cases.
 		{
 			name: "test",
+			args: "default",
 			want: "/home/.space-cloud/config.yaml",
+		},
+		{
+			name: "test",
+			args: "name",
+			want: "/home/.space-cloud/name/config.yaml",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSpaceCloudConfigFilePath("default"); got != tt.want {
+			if got := GetSpaceCloudConfigFilePath(tt.args); got != tt.want {
 				t.Errorf("GetSpaceCloudConfigFilePath() = %v, want %v", got, tt.want)
 			}
 		})
