@@ -45,7 +45,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('auto-apply')", nil)
 			}
 		},
-		RunE: ActionAddDatabase,
+		RunE:      ActionAddDatabase,
+		ValidArgs: []string{"mysql", "postgres", "sqlserver", "mongo"},
 	}
 
 	addDatabaseCmd.Flags().StringP("username", "U", "", "provide the username")
