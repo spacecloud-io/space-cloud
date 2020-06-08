@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 	"strconv"
 	"strings"
 	"text/template"
@@ -26,7 +27,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	/***************** Set the request url ******************/
 
 	// Adjust the endpointPath to account for variables
-	endpointPath, err := adjustPath(endpoint.Path, params)
+	endpointPath, err := adjustPath(endpoint.Path, auth, params)
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +58,6 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	}
 	method = endpoint.Method
 
-	/***************** Set the request token ****************/
-
 	// Overwrite the token if provided
 	if endpoint.Token != "" {
 		token = endpoint.Token
@@ -79,13 +78,36 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	}
 
 	var res interface{}
-	if err := m.manager.MakeHTTPRequest(ctx, method, url, token, scToken, params, &res); err != nil {
+	req := &utils.HTTPRequest{
+		Params: params,
+		Method: method, URL: url,
+		Token: token, SCToken: scToken,
+		Headers: prepareHeaders(endpoint, auth, params),
+	}
+	if err := utils.MakeHTTPRequest(ctx, req, &res); err != nil {
 		return nil, err
 	}
 
 	/**************** Return the response body ****************/
 
 	return m.adjustResBody(serviceID, endpointID, ogToken, endpoint, auth, res)
+}
+
+func prepareHeaders(endpoint config.Endpoint, claims, params interface{}) map[string]string {
+	headers := make(map[string]string, len(endpoint.Headers))
+	state := map[string]interface{}{"args": params, "auth": claims}
+	for k, v := range endpoint.Headers {
+		// Load the string if it exists
+		value, err := utils.LoadValue(v, state)
+		if err == nil {
+			if temp, ok := value.(string); ok {
+				v = temp
+			}
+		}
+
+		headers[k] = v
+	}
+	return headers
 }
 
 func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint config.Endpoint, auth, params interface{}) (interface{}, error) {
@@ -95,13 +117,13 @@ func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint con
 	switch endpoint.Tmpl {
 	case config.EndpointTemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("request", serviceID, endpointID)]; p {
-			req, err = goTemplate(tmpl, endpoint.OpFormat, token, auth, params)
+			req, err = tmpl2.GoTemplate(module, segmentCall, tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if tmpl, p := m.templates[getGoTemplateKey("graph", serviceID, endpointID)]; p {
-			graph, err = goTemplate(tmpl, "string", token, auth, params)
+			graph, err = tmpl2.GoTemplate(module, segmentCall, tmpl, "string", token, auth, params)
 			if err != nil {
 				return nil, err
 			}
@@ -131,7 +153,7 @@ func (m *Module) adjustResBody(serviceID, endpointID, token string, endpoint con
 	switch endpoint.Tmpl {
 	case config.EndpointTemplatingEngineGo:
 		if tmpl, p := m.templates[getGoTemplateKey("response", serviceID, endpointID)]; p {
-			res, err = goTemplate(tmpl, endpoint.OpFormat, token, auth, params)
+			res, err = tmpl2.GoTemplate(module, segmentCall, tmpl, endpoint.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err
 			}
@@ -147,7 +169,7 @@ func (m *Module) adjustResBody(serviceID, endpointID, token string, endpoint con
 	return res, nil
 }
 
-func adjustPath(path string, params interface{}) (string, error) {
+func adjustPath(path string, claims, params interface{}) (string, error) {
 	newPath := path
 	for {
 		pre := strings.IndexRune(newPath, '{')
@@ -157,7 +179,7 @@ func adjustPath(path string, params interface{}) (string, error) {
 		post := strings.IndexRune(newPath, '}')
 
 		key := strings.TrimSuffix(strings.TrimPrefix(newPath[pre:post], "{"), "}")
-		value, err := loadParam(key, params)
+		value, err := loadParam(key, claims, params)
 		if err != nil {
 			return "", err
 		}
@@ -166,8 +188,8 @@ func adjustPath(path string, params interface{}) (string, error) {
 	}
 }
 
-func loadParam(key string, params interface{}) (string, error) {
-	val, err := utils.LoadValue(key, map[string]interface{}{"args": params})
+func loadParam(key string, claims, params interface{}) (string, error) {
+	val, err := utils.LoadValue(key, map[string]interface{}{"args": params, "auth": claims})
 	if err != nil {
 		return "", err
 	}
@@ -197,7 +219,7 @@ func (m *Module) createGoTemplate(kind, serviceID, endpointID, tmpl string) erro
 
 	// Create a new template object
 	t := template.New(key)
-	t = t.Funcs(m.createGoFuncMaps())
+	t = t.Funcs(tmpl2.CreateGoFuncMaps(m.auth))
 	val, err := t.Parse(tmpl)
 	if err != nil {
 		return utils.LogError("Invalid golang template provided", module, segmentSetConfig, err)

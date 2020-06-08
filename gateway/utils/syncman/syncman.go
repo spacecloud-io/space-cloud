@@ -6,10 +6,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
+	"github.com/spaceuptech/space-cloud/gateway/utils/types"
 )
 
 // Manager syncs the project config between folders
@@ -36,7 +36,7 @@ type Manager struct {
 	adminMan *admin.Manager
 
 	// Modules
-	modules     model.ModulesInterface
+	modules     types.ModulesInterface
 	letsencrypt *letsencrypt.LetsEncrypt
 	routing     *routing.Routing
 }
@@ -147,7 +147,7 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 }
 
 // SetModules sets all the modules
-func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+func (s *Manager) SetModules(modulesInterface types.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
 	s.modules = modulesInterface
 	s.letsencrypt = letsEncrypt
 	s.routing = routing

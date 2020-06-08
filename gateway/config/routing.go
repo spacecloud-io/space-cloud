@@ -36,8 +36,17 @@ func (a Routes) Less(i, j int) bool {
 // Route describes the parameters of a single route
 type Route struct {
 	ID      string        `json:"id" yaml:"id"`
+	Project string        `json:"project" yaml:"project"`
 	Source  RouteSource   `json:"source" yaml:"source"`
 	Targets []RouteTarget `json:"targets" yaml:"targets"`
+	Rule    *Rule         `json:"rule" yaml:"rule"`
+	Modify  struct {
+		Tmpl     EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
+		ReqTmpl  string                   `json:"requestTemplate" yaml:"requestTemplate"`
+		ResTmpl  string                   `json:"responseTemplate" yaml:"responseTemplate"`
+		OpFormat string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+		Headers  map[string]string        `json:"headers" yaml:"headers"`
+	} `json:"modify" yaml:"modify"`
 }
 
 // SelectTarget returns a target based on the weights assigned
