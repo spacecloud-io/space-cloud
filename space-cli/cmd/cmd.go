@@ -24,6 +24,14 @@ func GetRootCommand() *cobra.Command {
 		},
 	}
 
+	var completionCmd = &cobra.Command{
+		Use:   "completion",
+		Short: "Shell completion code",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return rootCmd.GenBashCompletionFile("out.sh")
+		},
+	}
+
 	rootCmd.PersistentFlags().StringP("log-level", "", "info", "Sets the log level of the command")
 	err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
 	if err != nil {
@@ -51,6 +59,7 @@ func GetRootCommand() *cobra.Command {
 	rootCmd.AddCommand(operations.Commands()...)
 	rootCmd.AddCommand(login.Commands()...)
 	rootCmd.AddCommand(accounts.Commands()...)
+	rootCmd.AddCommand(completionCmd)
 	return rootCmd
 }
 
