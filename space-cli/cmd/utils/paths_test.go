@@ -58,7 +58,7 @@ func TestGetSpaceCloudHostsFilePath(t *testing.T) {
 			want: "/home/.space-cloud/hosts",
 		},
 		{
-			name: "test",
+			name: "test1",
 			args: "name",
 			want: "/home/.space-cloud/name/hosts",
 		},
@@ -95,7 +95,7 @@ func TestGetSpaceCloudRoutingConfigPath(t *testing.T) {
 			want: "/home/.space-cloud/routing-config.json",
 		},
 		{
-			name: "test",
+			name: "test1",
 			args: "name",
 			want: "/home/.space-cloud/name/routing-config.json",
 		},
@@ -132,14 +132,14 @@ func TestGetSecretsDir(t *testing.T) {
 			want: "/home/.space-cloud/secrets",
 		},
 		{
-			name: "test",
+			name: "test1",
 			args: "name",
 			want: "/home/.space-cloud/name/secrets",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSecretsDir("default"); got != tt.want {
+			if got := GetSecretsDir(tt.args); got != tt.want {
 				t.Errorf("GetSecretsDir() = %v, want %v", got, tt.want)
 			}
 		})
@@ -169,7 +169,7 @@ func TestGetTempSecretsDir(t *testing.T) {
 			want: "/home/.space-cloud/name/secrets/temp-secrets",
 		},
 		{
-			name: "test",
+			name: "test1",
 			args: "default",
 			want: "/home/.space-cloud/secrets/temp-secrets",
 		},
@@ -206,7 +206,7 @@ func TestGetSpaceCloudConfigFilePath(t *testing.T) {
 			want: "/home/.space-cloud/config.yaml",
 		},
 		{
-			name: "test",
+			name: "test1",
 			args: "name",
 			want: "/home/.space-cloud/name/config.yaml",
 		},
@@ -215,6 +215,31 @@ func TestGetSpaceCloudConfigFilePath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := GetSpaceCloudConfigFilePath(tt.args); got != tt.want {
 				t.Errorf("GetSpaceCloudConfigFilePath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetSpaceCloudClusterDirectory(t *testing.T) {
+	type args struct {
+		clusterID string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		// TODO: Add test cases.
+		{
+			name: "test",
+			args: args{clusterID: "name"},
+			want: "/home/.space-cloud/name",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetSpaceCloudClusterDirectory(tt.args.clusterID); got != tt.want {
+				t.Errorf("GetSpaceCloudClusterDirectory() = %v, want %v", got, tt.want)
 			}
 		})
 	}

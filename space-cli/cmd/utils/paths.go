@@ -11,7 +11,7 @@ func GetSpaceCloudDirectory() string {
 	return fmt.Sprintf("%s/.space-cloud", getHomeDirectory())
 }
 
-// GetSpaceCloudDirectory gets the root space cloud directory
+// GetSpaceCloudClusterDirectory gets the root space cloud directory
 func GetSpaceCloudClusterDirectory(clusterID string) string {
 	return fmt.Sprintf("%s/.space-cloud/%s", getHomeDirectory(), clusterID)
 }

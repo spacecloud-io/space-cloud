@@ -24,6 +24,7 @@ func CheckPortAvailability(port, s string) (string, error) {
 	return port, nil
 }
 
+// GetNetworkName provides network name of particular cluster
 func GetNetworkName(id string) string {
 	if id == "default" {
 		return "space-cloud"
@@ -31,6 +32,7 @@ func GetNetworkName(id string) string {
 	return fmt.Sprintf("space-cloud-%s", id)
 }
 
+// GetScContainers provides name for space-cloud containers
 func GetScContainers(clusterID, name string) string {
 	if clusterID == "default" {
 		return fmt.Sprintf("space-cloud-%s", name)
@@ -38,6 +40,7 @@ func GetScContainers(clusterID, name string) string {
 	return fmt.Sprintf("space-cloud-%s-%s", clusterID, name)
 }
 
+// GetDatabaseContainerName provides name for database container
 func GetDatabaseContainerName(id, alias string) string {
 	if id == "default" {
 		return fmt.Sprintf("space-cloud--addon--db--%s", alias)
@@ -45,6 +48,7 @@ func GetDatabaseContainerName(id, alias string) string {
 	return fmt.Sprintf("space-cloud-%s--addon--db--%s", id, alias)
 }
 
+// GetRegistryContainerName provides name for registry container
 func GetRegistryContainerName(id string) string {
 	if id == "default" {
 		return "space-cloud--addon--registry"
