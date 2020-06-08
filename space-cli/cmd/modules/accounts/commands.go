@@ -10,6 +10,13 @@ import (
 // Commands are the set of account commands for space-cli
 func Commands() []*cobra.Command {
 
+	credential, _ := utils.GetCredentials()
+
+	accountIDs := []string{}
+	for _, v := range credential.Accounts {
+		accountIDs = append(accountIDs, v.ID)
+	}
+
 	var accountsCmd = &cobra.Command{
 		Use:   "accounts",
 		Short: "Operations for space-cloud accounts",
@@ -26,6 +33,7 @@ func Commands() []*cobra.Command {
 		},
 		SilenceErrors: true,
 		RunE:          actionViewAccount,
+		ValidArgs:     accountIDs,
 	}
 
 	var setAccountCommand = &cobra.Command{
@@ -33,6 +41,7 @@ func Commands() []*cobra.Command {
 		Short:         "set the given account as the selected account",
 		SilenceErrors: true,
 		RunE:          actionSetAccount,
+		ValidArgs:     accountIDs,
 	}
 
 	var deleteAccountCommand = &cobra.Command{
@@ -40,6 +49,7 @@ func Commands() []*cobra.Command {
 		Short:         "deletes the given account",
 		SilenceErrors: true,
 		RunE:          actionDeleteAccount,
+		ValidArgs:     accountIDs,
 	}
 
 	viewAccountsCommand.Flags().BoolP("show-keys", "", false, "shows the keys of the accounts")
