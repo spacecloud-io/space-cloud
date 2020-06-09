@@ -24,6 +24,31 @@ func CheckPortAvailability(port, s string) (string, error) {
 	return port, nil
 }
 
+// RemoveAccount removes account from accounts file
+func RemoveAccount(id string) error {
+	credential, err := GetCredentials()
+	if err != nil {
+		return err
+	}
+
+	index := 0
+	for i, v := range credential.Accounts {
+		if v.ID == id {
+			index = i
+			credential.SelectedAccount = ""
+		}
+	}
+	copy(credential.Accounts[index:], credential.Accounts[index+1:])
+	credential.Accounts[len(credential.Accounts)-1] = nil
+	credential.Accounts = credential.Accounts[:len(credential.Accounts)-1]
+
+	if err := GenerateAccountsFile(credential); err != nil {
+		return err
+	}
+
+	return err
+}
+
 // GetNetworkName provides network name of particular cluster
 func GetNetworkName(id string) string {
 	if id == "default" {

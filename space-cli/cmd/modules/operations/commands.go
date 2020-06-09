@@ -203,7 +203,8 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 }
 
 func actionUpgrade(cmd *cobra.Command, args []string) error {
-	_ = Upgrade()
+	clusterID := viper.GetString("cluster-id")
+	_ = Upgrade(clusterID)
 	return nil
 }
 
@@ -225,11 +226,13 @@ func actionApply(cmd *cobra.Command, args []string) error {
 }
 
 func actionStart(cmd *cobra.Command, args []string) error {
-	_ = DockerStart()
+	clusterID := viper.GetString("cluster-id")
+	_ = DockerStart(clusterID)
 	return nil
 }
 
 func actionStop(cmd *cobra.Command, args []string) error {
-	_ = DockerStop()
+	clusterID := viper.GetString("cluster-id")
+	_ = DockerStop(clusterID)
 	return nil
 }

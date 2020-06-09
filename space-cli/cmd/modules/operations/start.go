@@ -4,27 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/spf13/viper"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/txn2/txeh"
-	"github.com/urfave/cli"
-
 	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/txn2/txeh"
 )
 
-// ActionStart starts all SC databases, runner, gateway and services
-func ActionStart(_ *cli.Context) error {
-	return DockerStart()
-}
-
 // DockerStart restarts the services which might have been stopped for any reason
-func DockerStart() error {
+func DockerStart(clusterID string) error {
 	ctx := context.Background()
 
-	clusterID := viper.GetString("cluster-id")
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -116,8 +106,9 @@ func DockerStart() error {
 	}
 
 	// Get the list of the other containers we need to start
+	argsNetwork = filters.Arg("network", utils.GetNetworkName(clusterID))
 	argsServices := filters.Arg("label", "app=service")
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsServices), All: true})
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsServices), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud services containers", err)
 	}
@@ -147,7 +138,7 @@ func DockerStart() error {
 
 		// Add them back. The general domain will point to the runner while the internal service domain will point to the actual container
 		hosts.AddHost(runnerIP, generalDomain)
-		hosts.AddHost(info.NetworkSettings.Networks["space-cloud"].IPAddress, internalDomain)
+		hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress, internalDomain)
 	}
 
 	// Save the hosts file before continuing

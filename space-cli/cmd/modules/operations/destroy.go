@@ -82,6 +82,9 @@ func Destroy(clusterID string) error {
 		}
 	}
 
+	if err := utils.RemoveAccount(clusterID); err != nil {
+		return err
+	}
 	utils.LogInfo("Space cloud cluster has been destroyed successfully 😢")
 	utils.LogInfo("Looking forward to seeing you again! 😊")
 	return nil

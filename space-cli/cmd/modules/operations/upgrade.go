@@ -11,14 +11,13 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	"github.com/spf13/viper"
 	"github.com/txn2/txeh"
 
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
 // Upgrade upgrades the environment which has been setup
-func Upgrade() error {
+func Upgrade(clusterID string) error {
 
 	// Getting current version
 	result := make(map[string]interface{})
@@ -38,8 +37,6 @@ func Upgrade() error {
 		return nil
 	}
 
-	clusterID := viper.GetString("cluster-id")
-
 	// Creating docker client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -48,9 +45,9 @@ func Upgrade() error {
 	}
 
 	// Get all containers containing < space-cloud > in their name
-	argsName := filters.Arg("name", "space-cloud")
+	argsSC := filters.Arg("label", "app=space-cloud")
 	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsName), All: true})
+	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsSC), All: true})
 	if err != nil {
 		return utils.LogError("Unable to get Space Cloud container details. Is Docker running?", err)
 	}
@@ -177,5 +174,12 @@ func Upgrade() error {
 	}
 
 	utils.LogInfo(fmt.Sprintf("Space Cloud has been upgraded to %s successfully", latestVersion))
+	utils.LogInfo("Restarting Space Cloud")
+	if err := DockerStop(clusterID); err != nil {
+		return err
+	}
+	if err := DockerStart(clusterID); err != nil {
+		return err
+	}
 	return nil
 }

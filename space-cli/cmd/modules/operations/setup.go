@@ -77,7 +77,26 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 	portHTTPValue := strconv.FormatInt(portHTTP, 10)
 	portHTTPSValue := strconv.FormatInt(portHTTPS, 10)
 
-	portHTTPValue, err := utils.CheckPortAvailability(portHTTPValue, "HTTP")
+	// set a docker client
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return utils.LogError("Unable to initialize docker client ", err)
+	}
+
+	// check if network already exists
+	args := filters.Arg("name", utils.GetNetworkName(clusterID))
+	nws, err := cli.NetworkList(ctx, types.NetworkListOptions{Filters: filters.NewArgs(args)})
+	if err != nil {
+		return utils.LogError("Unable to list networks", err)
+	}
+	for _, nw := range nws {
+		if nw.Name == utils.GetNetworkName(clusterID) {
+			return utils.LogError(fmt.Sprintf("Network (%s) already exists, try using different cluster", utils.GetNetworkName(clusterID)), errors.New(""))
+		}
+	}
+
+	portHTTPValue, err = utils.CheckPortAvailability(portHTTPValue, "HTTP")
 	if err != nil {
 		return err
 	}
@@ -207,12 +226,6 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 				},
 			},
 		},
-	}
-
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return utils.LogError("Unable to initialize docker client ", err)
 	}
 
 	hosts, err := txeh.NewHostsDefault()

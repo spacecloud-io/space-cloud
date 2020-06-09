@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/spf13/viper"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -14,11 +12,9 @@ import (
 )
 
 // DockerStop stops the services which have been started
-func DockerStop() error {
+func DockerStop(clusterID string) error {
 
 	ctx := context.Background()
-
-	clusterID := viper.GetString("cluster-id")
 
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -26,8 +22,9 @@ func DockerStop() error {
 		return utils.LogError("Unable to initialize docker client", err)
 	}
 
+	networkArgs := filters.Arg("network", utils.GetNetworkName(clusterID))
 	argsServices := filters.Arg("label", "app=service")
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsServices), All: true})
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(networkArgs, argsServices), All: true})
 	if err != nil {
 		return utils.LogError("Unable to list space-cloud services containers", err)
 	}
