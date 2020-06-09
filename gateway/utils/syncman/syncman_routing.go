@@ -58,6 +58,8 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 		if id == route.ID {
 			route.Source = c.Source
 			route.Targets = c.Targets
+			route.Rule = c.Rule
+			route.Modify = c.Modify
 			doesExist = true
 		}
 	}

@@ -65,7 +65,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	/***************** Set the request body *****************/
 
-	params, err = m.adjustReqBody(serviceID, endpointID, ogToken, endpoint, auth, params)
+	newParams, err := m.adjustReqBody(serviceID, endpointID, ogToken, endpoint, auth, params)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 
 	var res interface{}
 	req := &utils.HTTPRequest{
-		Params: params,
+		Params: newParams,
 		Method: method, URL: url,
 		Token: token, SCToken: scToken,
 		Headers: prepareHeaders(endpoint, ogToken, auth, params),
@@ -96,16 +96,16 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 func prepareHeaders(endpoint config.Endpoint, token string, claims, params interface{}) map[string]string {
 	headers := make(map[string]string, len(endpoint.Headers))
 	state := map[string]interface{}{"args": params, "auth": claims, "token": token}
-	for k, v := range endpoint.Headers {
+	for _, header := range endpoint.Headers {
 		// Load the string if it exists
-		value, err := utils.LoadValue(v, state)
+		value, err := utils.LoadValue(header.Value, state)
 		if err == nil {
 			if temp, ok := value.(string); ok {
-				v = temp
+				header.Value = temp
 			}
 		}
 
-		headers[k] = v
+		headers[header.Key] = header.Value
 	}
 	return headers
 }

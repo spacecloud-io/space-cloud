@@ -28,13 +28,13 @@ func getGoTemplateKey(kind, project, id string) string {
 	return fmt.Sprintf("%s---%s---%s", project, id, kind)
 }
 
-func (r *Routing) adjustBody(project, token string, route *config.Route, auth, params interface{}) (interface{}, error) {
+func (r *Routing) adjustBody(kind, project, token string, route *config.Route, auth, params interface{}) (interface{}, error) {
 	var req interface{}
 	var err error
 
 	switch route.Modify.Tmpl {
 	case config.EndpointTemplatingEngineGo:
-		if tmpl, p := r.goTemplates[getGoTemplateKey("request", project, route.ID)]; p {
+		if tmpl, p := r.goTemplates[getGoTemplateKey(kind, project, route.ID)]; p {
 			req, err = tmpl2.GoTemplate(module, "go-template", tmpl, route.Modify.OpFormat, token, auth, params)
 			if err != nil {
 				return nil, err

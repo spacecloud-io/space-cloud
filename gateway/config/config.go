@@ -153,7 +153,10 @@ type Endpoint struct {
 	Method    string                   `json:"method" yaml:"method"`
 	Path      string                   `json:"path" yaml:"path"`
 	Rule      *Rule                    `json:"rule" yaml:"rule"`
-	Headers   map[string]string        `json:"headers" yaml:"headers"`
+	Headers   []struct {
+		Key   string `json:"key" yaml:"key"`
+		Value string `json:"value" yaml:"value"`
+	} `json:"headers" yaml:"headers"`
 }
 
 // EndpointKind describes the type of endpoint. Default value - internal

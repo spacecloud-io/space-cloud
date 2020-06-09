@@ -201,6 +201,9 @@ func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 
 		// Get the claims
 		if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
+			if err := claims.Valid(); err != nil {
+				return nil, err
+			}
 			obj := make(TokenClaims, len(claims))
 			for key, val := range claims {
 				obj[key] = val

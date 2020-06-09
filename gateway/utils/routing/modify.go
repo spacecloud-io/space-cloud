@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -44,23 +45,23 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 
 	// Set the headers
 	state := map[string]interface{}{"args": params, "auth": auth}
-	for k, v := range route.Modify.Headers {
+	for _, header := range route.Modify.Headers {
 		// Load the string if it exists
-		value, err := utils.LoadValue(v, state)
+		value, err := utils.LoadValue(header.Value, state)
 		if err == nil {
 			if temp, ok := value.(string); ok {
-				v = temp
+				header.Value = temp
 			}
 		}
 
 		// Set the header
-		req.Header.Add(k, v)
+		req.Header.Add(header.Key, header.Value)
 	}
 
 	// Don't forget to reset the body
 	if params != nil {
 		// Generate new request body if template was provided
-		newParams, err := r.adjustBody(route.Project, token, route, auth, params)
+		newParams, err := r.adjustBody("request", route.Project, token, route, auth, params)
 		if err != nil {
 			return "", nil, err
 		}
@@ -68,6 +69,8 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 		// Marshal it then set it
 		data, _ = json.Marshal(newParams)
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+		req.Header.Set("Content-Length", strconv.Itoa(len(data)))
+		req.ContentLength = int64(len(data))
 	}
 
 	return token, auth, err
@@ -85,7 +88,7 @@ func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token 
 			return utils.LogError("Unable to unmarshal body to JSON", module, handleResponse, err)
 		}
 
-		newParams, err := r.adjustBody(route.Project, token, route, auth, params)
+		newParams, err := r.adjustBody("response", route.Project, token, route, auth, params)
 		if err != nil {
 			return err
 		}
@@ -93,6 +96,8 @@ func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token 
 		// Marshal it then set it
 		data, _ = json.Marshal(newParams)
 		res.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+		res.Header.Set("Content-Length", strconv.Itoa(len(data)))
+		res.ContentLength = int64(len(data))
 	}
 
 	return nil
