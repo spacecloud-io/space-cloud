@@ -1,4 +1,4 @@
-package functions
+package tmpl
 
 import (
 	"encoding/json"
@@ -37,7 +37,7 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use params",
 			args: args{
-				tmpl:   `{"foo": "{{index . "body" "abc"}}"}`,
+				tmpl:   `{"foo": "{{index . "args" "abc"}}"}`,
 				params: map[string]interface{}{"abc": "bar"},
 				format: "json",
 			},
@@ -46,7 +46,7 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use params with token",
 			args: args{
-				tmpl:   `{"foo": "{{index . "body" "abc"}}", "token": "{{index . "token"}}"}`,
+				tmpl:   `{"foo": "{{index . "args" "abc"}}", "token": "{{index . "token"}}"}`,
 				params: map[string]interface{}{"abc": "bar"},
 				format: "json",
 				token:  "jwt token",
@@ -56,7 +56,7 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use params",
 			args: args{
-				tmpl:   `{"foo": "{{index . "body" "abc"}}"}`,
+				tmpl:   `{"foo": "{{index . "args" "abc"}}"}`,
 				params: map[string]interface{}{"abc": "bar"},
 				format: "string",
 			},
@@ -65,7 +65,7 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use params (nested objects)",
 			args: args{
-				tmpl:   `{"foo": "{{index . "body" "a" "b"}}"}`,
+				tmpl:   `{"foo": "{{index . "args" "a" "b"}}"}`,
 				params: map[string]interface{}{"a": map[string]interface{}{"b": "bar"}},
 				format: "json",
 			},
@@ -74,7 +74,7 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use params (nested objects) without index",
 			args: args{
-				tmpl:   `{"foo": "{{.body.a.b}}"}`,
+				tmpl:   `{"foo": "{{.args.a.b}}"}`,
 				params: map[string]interface{}{"a": map[string]interface{}{"b": "bar"}},
 				format: "json",
 			},
@@ -83,7 +83,7 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use marshal function json",
 			args: args{
-				tmpl:   `{"foo": {{ marshalJSON (index . "body" "a")}}}`,
+				tmpl:   `{"foo": {{ marshalJSON (index . "args" "a")}}}`,
 				params: map[string]interface{}{"a": map[string]interface{}{"b": "bar"}},
 				format: "json",
 			},
@@ -92,17 +92,17 @@ func Test_goTemplate(t *testing.T) {
 		{
 			name: "valid - use params (nested objects and arrays)",
 			args: args{
-				tmpl:   `{"foo": "{{index . "body" "a" "b" 0}}"}`,
+				tmpl:   `{"foo": "{{index . "args" "a" "b" 0}}"}`,
 				params: map[string]interface{}{"a": map[string]interface{}{"b": []interface{}{"bar"}}},
 				format: "json",
 			},
 			want: map[string]interface{}{"foo": "bar"},
 		},
 		{
-			name: "valid - trying loops in yaml (nobody might need something this complex)",
+			name: "valid - trying loops in yaml (noargs might need something this complex)",
 			args: args{
 				tmpl: `
-{{ range $i, $value := index . "body" "array" }}
+{{ range $i, $value := index . "args" "array" }}
 {{ index $value "p1" }}: {{ index $value "p2" }}
 {{ end }}
 `,
@@ -123,7 +123,7 @@ query: "mutation { update_clusters(where: $where, set: $set) @db { status error 
 variables:
   where:
     owner_id: "{{ index . "auth" "id" }}"
-    cluster_id: "{{ index . "body" "cluster" }}"
+    cluster_id: "{{ index . "args" "cluster" }}"
   set:
     session_id: ""
     cluster_key: "{{ generateId }}"
@@ -149,7 +149,7 @@ variables:
 	"variables": {
 		"where": {
 			"owner_id": "{{ index . "auth" "id" }}",
-			"cluster_id": "{{ index . "body" "cluster" }}"
+			"cluster_id": "{{ index . "args" "cluster" }}"
 		},
 		"set": {
 			"session_id": "",
@@ -183,17 +183,17 @@ variables:
 				},
 			}).Parse(tt.args.tmpl)
 			if err != nil {
-				t.Errorf("goTemplate() error = %v, could not pass template", err)
+				t.Errorf("GoTemplate() error = %v, could not pass template", err)
 				return
 			}
 
-			got, err := goTemplate(tmpl, tt.args.format, tt.args.token, tt.args.claims, tt.args.params)
+			got, err := GoTemplate("", "", tmpl, tt.args.format, tt.args.token, tt.args.claims, tt.args.params)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("goTemplate() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GoTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("goTemplate() got = %v, want %v", got, tt.want)
+				t.Errorf("GoTemplate() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

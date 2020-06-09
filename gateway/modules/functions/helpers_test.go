@@ -5,6 +5,7 @@ import "testing"
 func Test_adjustPath(t *testing.T) {
 	type args struct {
 		path   string
+		claims interface{}
 		params interface{}
 	}
 	tests := []struct {
@@ -16,6 +17,8 @@ func Test_adjustPath(t *testing.T) {
 		{name: "no params", args: args{path: "/abc"}, want: "/abc", wantErr: false},
 		{name: "single param", args: args{path: "/abc/{args.p1}",
 			params: map[string]interface{}{"p1": "xyz"}}, want: "/abc/xyz", wantErr: false},
+		{name: "single param (using auth)", args: args{path: "/abc/{auth.p1}",
+			claims: map[string]interface{}{"p1": "xyz"}}, want: "/abc/xyz", wantErr: false},
 		{name: "double params", args: args{path: "/abc/{args.p1}/def/{args.p2}",
 			params: map[string]interface{}{"p1": "xyz", "p2": "cba"}}, want: "/abc/xyz/def/cba", wantErr: false},
 		{name: "double params with float", args: args{path: "/abc/{args.p1}/def/{args.p2}",
@@ -28,7 +31,7 @@ func Test_adjustPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := adjustPath(tt.args.path, tt.args.params)
+			got, err := adjustPath(tt.args.path, tt.args.claims, tt.args.params)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("adjustPath() error = %v, wantErr %v", err, tt.wantErr)
 				return
