@@ -465,19 +465,16 @@ func Test_routeMapping_addProjectRoutes(t *testing.T) {
 				},
 				"test2": config.Routes{
 					&config.Route{
-						ID:      "1234",
-						Project: "test2",
-						Source:  config.RouteSource{URL: "/get"},
+						ID:     "1234",
+						Source: config.RouteSource{URL: "/get"},
 					},
 					&config.Route{
-						ID:      "1234",
-						Project: "test2",
-						Source:  config.RouteSource{URL: "/add"},
+						ID:     "1234",
+						Source: config.RouteSource{URL: "/add"},
 					},
 					&config.Route{
-						ID:      "1234",
-						Project: "test2",
-						Source:  config.RouteSource{URL: "/"},
+						ID:     "1234",
+						Source: config.RouteSource{URL: "/"},
 					},
 				},
 			},

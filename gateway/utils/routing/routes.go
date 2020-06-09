@@ -12,17 +12,13 @@ import (
 type routeMapping map[string]config.Routes // The key here is the project name
 
 const (
-	module string = "ingress-route"
-	handle string = "handle"
+	module         string = "ingress-route"
+	handleRequest  string = "handle-request"
+	handleResponse string = "handle-response"
 )
 
 func (r routeMapping) addProjectRoutes(project string, routes config.Routes) {
 	sort.Stable(routes) // This will sort the array in place
-
-	// Add projects to the routes object
-	for _, r := range routes {
-		r.Project = project
-	}
 
 	// Store the projects
 	r[project] = routes

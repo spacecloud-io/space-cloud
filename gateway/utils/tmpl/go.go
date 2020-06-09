@@ -51,14 +51,18 @@ type authModule interface {
 
 // CreateGoFuncMaps creates the helper functions that can be used in go templates
 func CreateGoFuncMaps(auth authModule) template.FuncMap {
-	return template.FuncMap{
+	m := template.FuncMap{
 		"hash":       utils.HashString,
 		"add":        func(a, b int) int { return a + b },
 		"generateId": func() string { return ksuid.New().String() },
-		"encrypt":    auth.Encrypt,
 		"marshalJSON": func(a interface{}) (string, error) {
 			data, err := json.Marshal(a)
 			return string(data), err
 		},
 	}
+	if auth != nil {
+		m["encrypt"] = auth.Encrypt
+	}
+
+	return m
 }

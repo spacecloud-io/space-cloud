@@ -82,7 +82,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 		Params: params,
 		Method: method, URL: url,
 		Token: token, SCToken: scToken,
-		Headers: prepareHeaders(endpoint, auth, params),
+		Headers: prepareHeaders(endpoint, ogToken, auth, params),
 	}
 	if err := utils.MakeHTTPRequest(ctx, req, &res); err != nil {
 		return nil, err
@@ -93,9 +93,9 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	return m.adjustResBody(serviceID, endpointID, ogToken, endpoint, auth, res)
 }
 
-func prepareHeaders(endpoint config.Endpoint, claims, params interface{}) map[string]string {
+func prepareHeaders(endpoint config.Endpoint, token string, claims, params interface{}) map[string]string {
 	headers := make(map[string]string, len(endpoint.Headers))
-	state := map[string]interface{}{"args": params, "auth": claims}
+	state := map[string]interface{}{"args": params, "auth": claims, "token": token}
 	for k, v := range endpoint.Headers {
 		// Load the string if it exists
 		value, err := utils.LoadValue(v, state)

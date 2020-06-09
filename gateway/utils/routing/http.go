@@ -35,8 +35,9 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 			return
 		}
 
-		if err := authorizeRequest(request.Context(), modules, route, request); err != nil {
-			writer.WriteHeader(http.StatusForbidden)
+		token, auth, err := r.modifyRequest(request.Context(), modules, route, request)
+		if err != nil {
+			writer.WriteHeader(http.StatusBadRequest)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
 			return
 		}
@@ -65,6 +66,12 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 			return
 		}
 		defer utils.CloseTheCloser(response.Body)
+
+		if err := r.modifyResponse(response, route, token, auth); err != nil {
+			writer.WriteHeader(http.StatusInternalServerError)
+			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
+			return
+		}
 
 		// Copy headers and status code
 		for k, v := range response.Header {
