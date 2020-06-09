@@ -127,7 +127,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			Auth:        map[string]*config.AuthStub{},
 			Crud:        map[string]*config.CrudStub{},
 			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}, Email: ""},
 		}
 		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
@@ -140,7 +140,9 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 		}
 	}
 	// We will ignore the error for the create project request
-	_ = s.modules.SetProjectConfig(project, s.letsencrypt, s.routing)
+	if err := s.modules.SetProjectConfig(project, s.letsencrypt, s.routing); err != nil {
+		return http.StatusInternalServerError, err
+	}
 
 	if s.storeType == "none" {
 		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -197,7 +199,7 @@ func (s *Manager) SetAdminConfig(ctx context.Context, cluster *config.Admin) err
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	utils.LogDebug("Storing the admin config", map[string]interface{}{"cluster": cluster})
+	utils.LogDebug("Storing the admin config", "syncman", "SetAdminConfig", map[string]interface{}{"cluster": cluster})
 
 	s.projectConfig.Admin = cluster
 

@@ -113,7 +113,7 @@ func (s *Manager) PingLeader() error {
 
 		service, err := s.getLeaderGateway()
 		if err != nil {
-			_ = utils.LogError("Unable to ping server", err)
+			_ = utils.LogError("Unable to ping server", "syncman", "PingLeader", err)
 
 			// Sleep for 5 seconds before trying again
 			time.Sleep(5 * time.Second)
@@ -121,7 +121,7 @@ func (s *Manager) PingLeader() error {
 		}
 
 		if err := s.MakeHTTPRequest(ctx, "GET", fmt.Sprintf("http://%s/v1/config/env", service.addr), "", "", struct{}{}, &map[string]interface{}{}); err != nil {
-			_ = utils.LogError("Unable to ping server", err)
+			_ = utils.LogError("Unable to ping server", "syncman", "PingLeader", err)
 
 			// Sleep for 5 seconds before trying again
 			time.Sleep(5 * time.Second)

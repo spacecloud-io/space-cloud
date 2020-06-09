@@ -21,20 +21,20 @@ import (
 )
 
 // Update updates the document(s) which match the condition provided.
-func (s *SQL) Update(ctx context.Context, project, col string, req *model.UpdateRequest) (int64, error) {
+func (s *SQL) Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error) {
 	tx, err := s.client.BeginTxx(ctx, nil) // TODO - Write *sqlx.TxOption instead of nil
 	if err != nil {
 		fmt.Println("Error in initiating Batch")
 		return 0, err
 	}
-	count, err := s.update(ctx, project, col, req, tx)
+	count, err := s.update(ctx, col, req, tx)
 	if err != nil {
 		return 0, err
 	}
 	return count, tx.Commit() // commit the Batch
 }
 
-func (s *SQL) update(ctx context.Context, project, col string, req *model.UpdateRequest, executor executor) (int64, error) {
+func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, executor executor) (int64, error) {
 	if req == nil {
 		return 0, utils.ErrInvalidParams
 	}
@@ -47,10 +47,11 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 		for k := range req.Update {
 			switch k {
 			case "$set", "$inc", "$mul", "$max", "$min", "$currentDate", "$unset":
-				sqlQuery, args, err := s.generateUpdateQuery(ctx, project, col, req, k)
+				sqlQuery, args, err := s.generateUpdateQuery(ctx, col, req, k)
 				if err != nil {
 					return 0, err
 				}
+				logrus.Debugln("Update Query", sqlQuery)
 				res, err := doExecContext(ctx, sqlQuery, args, executor)
 				if err != nil {
 					return 0, err
@@ -67,7 +68,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 		return count, nil
 
 	case utils.Upsert:
-		count, _, err := s.read(ctx, project, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
+		count, _, err := s.read(ctx, col, &model.ReadRequest{Find: req.Find, Operation: utils.All}, executor)
 		if err != nil {
 			return 0, err
 		}
@@ -100,7 +101,7 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 					}
 				}
 			}
-			sqlQuery, args, err := s.generateCreateQuery(project, col, &model.CreateRequest{Document: doc, Operation: utils.One})
+			sqlQuery, args, err := s.generateCreateQuery(col, &model.CreateRequest{Document: doc, Operation: utils.One})
 			if err != nil {
 				return 0, err
 			}
@@ -120,14 +121,14 @@ func (s *SQL) update(ctx context.Context, project, col string, req *model.Update
 			return res.RowsAffected()
 		}
 		req.Operation = utils.All
-		return s.update(ctx, project, col, req, executor)
+		return s.update(ctx, col, req, executor)
 	default: // (case utils.One)
 		return 0, errors.New("sql databases do no support op type `one` for updates")
 	}
 }
 
 // generateUpdateQuery makes query for update operations
-func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req *model.UpdateRequest, op string) (string, []interface{}, error) {
+func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.UpdateRequest, op string) (string, []interface{}, error) {
 	// Generate a prepared query builder
 
 	dbType := s.dbType
@@ -135,7 +136,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, project, col string, req 
 		dbType = string(utils.Postgres)
 	}
 	dialect := goqu.Dialect(dbType)
-	query := dialect.From(s.getDBName(project, col)).Prepared(true)
+	query := dialect.From(s.getDBName(col)).Prepared(true)
 
 	if req.Find != nil {
 		// Get the where clause from query object

@@ -50,9 +50,7 @@ func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
 			logrus.Errorf("error handling process event response eventing feature isn't enabled")
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			_ = utils.SendErrorResponse(w, http.StatusNotFound, "This feature isn't enabled")
 			return
 		}
 
@@ -61,18 +59,14 @@ func HandleEventResponse(modules *modules.Modules) http.HandlerFunc {
 
 		if err := auth.IsTokenInternal(token); err != nil {
 			logrus.Errorf("error handling process event response token not valid - %s", err.Error())
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		// Process the incoming events
 		eventing.SendEventResponse(req.BatchID, req.Response)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -97,9 +91,7 @@ func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
 			logrus.Errorf("error handling process event request eventing feature isn't enabled")
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			_ = utils.SendErrorResponse(w, http.StatusNotFound, "This feature isn't enabled")
 			return
 		}
 
@@ -108,18 +100,14 @@ func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.
 
 		if err := adminMan.IsTokenValid(token); err != nil {
 			logrus.Errorf("error handling process event request token not valid - %s", err.Error())
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		// Process the incoming events
 		eventing.ProcessTransmittedEvents(eventDocs)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -144,9 +132,7 @@ func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 		// Return if the eventing module is not enabled
 		if !eventing.IsEnabled() {
 			logrus.Errorf("error handling queue event request eventing feature isn't enabled")
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": "This feature isn't enabled"})
+			_ = utils.SendErrorResponse(w, http.StatusNotFound, "This feature isn't enabled")
 			return
 		}
 
@@ -159,18 +145,14 @@ func HandleQueueEvent(modules *modules.Modules) http.HandlerFunc {
 		res, err := eventing.QueueEvent(ctx, projectID, token, &req)
 		if err != nil {
 			logrus.Errorf("error handling queue event request - %s", err.Error())
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
 		if res != nil {
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
+			_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"result": res})
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }

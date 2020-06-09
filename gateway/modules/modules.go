@@ -21,27 +21,25 @@ type Modules struct {
 	lock   sync.RWMutex
 	blocks map[string]*Module
 
-	nodeID             string
-	removeProjectScope bool
-	syncMan            *syncman.Manager
-	adminMan           *admin.Manager
-	metrics            *metrics.Module
-	driver             *driver.Handler
+	nodeID   string
+	syncMan  *syncman.Manager
+	adminMan *admin.Manager
+	metrics  *metrics.Module
+	driver   *driver.Handler
 
 	letsencrypt *letsencrypt.LetsEncrypt
 	routing     *routing.Routing
 }
 
 // New creates a new modules instance
-func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
+func New(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
 	return &Modules{
-		blocks:             map[string]*Module{},
-		nodeID:             nodeID,
-		removeProjectScope: removeProjectScope,
-		syncMan:            syncMan,
-		adminMan:           adminMan,
-		metrics:            metrics,
-		driver:             driver.New(removeProjectScope),
+		blocks:   map[string]*Module{},
+		nodeID:   nodeID,
+		syncMan:  syncMan,
+		adminMan: adminMan,
+		metrics:  metrics,
+		driver:   driver.New(),
 	}, nil
 }
 
@@ -162,7 +160,7 @@ func (m *Modules) newModule(projectID string) (*Module, error) {
 		return nil, errors.New("upgrade your plan to create new project")
 	}
 
-	module := newModule(m.nodeID, m.removeProjectScope, m.syncMan, m.adminMan, m.metrics, m.driver)
+	module := newModule(m.nodeID, m.syncMan, m.adminMan, m.metrics, m.driver)
 	m.blocks[projectID] = module
 	return module, nil
 }

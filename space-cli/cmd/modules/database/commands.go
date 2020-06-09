@@ -1,9 +1,9 @@
 package database
 
 import (
-	"github.com/spaceuptech/space-cli/cmd/utils"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+
+	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
 // GenerateSubCommands is the list of commands the database module exposes
@@ -30,7 +30,7 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getrule = &cobra.Command{
-		Use:  "db-rules",
+		Use:  "db-rule",
 		RunE: actionGetDbRules,
 	}
 
@@ -44,13 +44,31 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetDbSchema,
 	}
 
-	return []*cobra.Command{getrule, getconfig, getschema}
+	var getrules = &cobra.Command{
+		Use:  "db-rules",
+		RunE: actionGetDbRules,
+	}
+
+	var getconfigs = &cobra.Command{
+		Use:  "db-configs",
+		RunE: actionGetDbConfig,
+	}
+
+	var getschemas = &cobra.Command{
+		Use:  "db-schemas",
+		RunE: actionGetDbSchema,
+	}
+
+	return []*cobra.Command{getrule, getconfig, getschema, getrules, getconfigs, getschemas}
 }
 
 func actionGetDbRules(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
-	commandName := cmd.Use
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+	commandName := "db-rule"
 
 	params := map[string]string{}
 	switch len(args) {
@@ -62,19 +80,22 @@ func actionGetDbRules(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetDbRule(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGetDbConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
-	commandName := cmd.Use
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+	commandName := "db-config"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -82,19 +103,22 @@ func actionGetDbConfig(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetDbConfig(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGetDbSchema(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
-	commandName := cmd.Use
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+	commandName := "db-schema"
 
 	params := map[string]string{}
 	switch len(args) {
@@ -107,55 +131,49 @@ func actionGetDbSchema(cmd *cobra.Command, args []string) error {
 
 	objs, err := GetDbSchema(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBRule()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBConfig()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateDBSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBSchema()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }

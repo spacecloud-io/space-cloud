@@ -170,7 +170,7 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 		logrus.Debugf("Pod (%s) isn't running yet. Current status - %s", id, pod.Status.Phase)
 		for index, service := range services {
 			if service.id == id {
-				utils.LogDebug("Removing service", map[string]interface{}{"id": id})
+				utils.LogDebug("Removing service", "syncman", "onAddOrUpdateServices", map[string]interface{}{"id": id})
 				services[index] = services[len(services)-1]
 				services = services[:len(services)-1]
 				break
@@ -184,7 +184,7 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 	doesExist := false
 	for _, service := range services {
 		if service.id == id {
-			utils.LogDebug("Updating service", map[string]interface{}{"id": id, "addr": addr})
+			utils.LogDebug("Updating service", "syncman", "onAddOrUpdateServices", map[string]interface{}{"id": id, "addr": addr})
 			doesExist = true
 			service.addr = addr
 			break
@@ -193,7 +193,7 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 
 	// add service if it doesn't exist
 	if !doesExist {
-		utils.LogDebug("Adding service", map[string]interface{}{"id": id, "addr": addr})
+		utils.LogDebug("Adding service", "syncman", "onAddOrUpdateServices", map[string]interface{}{"id": id, "addr": addr})
 		services = append(services, &service{id: id, addr: addr})
 	}
 	return services
@@ -223,7 +223,7 @@ func (s *KubeStore) WatchServices(cb func(scServices)) error {
 				for index, service := range services {
 					if service.id == id {
 						// remove service
-						utils.LogDebug("Removing service", map[string]interface{}{"id": id})
+						utils.LogDebug("Removing service", "syncman", "WatchServices", map[string]interface{}{"id": id})
 						services[index] = services[len(services)-1]
 						services = services[:len(services)-1]
 						break
@@ -300,7 +300,7 @@ func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 		if kubeErrors.IsNotFound(err) {
 			return new(config.Admin), nil
 		} else if err != nil {
-			_ = utils.LogError("Unable to fetch admin config", err)
+			_ = utils.LogError("Unable to fetch admin config", "syncman", "GetAdminConfig", err)
 
 			// Sleep for 5 seconds then try again
 			time.Sleep(5 * time.Second)
@@ -309,12 +309,12 @@ func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 
 		clusterJSONString, ok := configMap.Data["cluster"]
 		if !ok {
-			return nil, utils.LogError("Admin config data is corrupted", errors.New("key not found in config map"))
+			return nil, utils.LogError("Admin config data is corrupted", "syncman", "GetAdminConfig", errors.New("key not found in config map"))
 		}
 
 		cluster := new(config.Admin)
 		if err := json.Unmarshal([]byte(clusterJSONString), cluster); err != nil {
-			return nil, utils.LogError("Admin config data is corrupted", err)
+			return nil, utils.LogError("Admin config data is corrupted", "syncman", "GetAdminConfig", err)
 		}
 
 		return cluster, nil

@@ -11,9 +11,9 @@ import (
 )
 
 func (s *Manager) RenewLicense(ctx context.Context, token string) error {
-	utils.LogDebug(`Force renewing the license key...`, map[string]interface{}{})
+	utils.LogDebug(`Force renewing the license key...`, "syncman", "RenewLicense", map[string]interface{}{})
 	if !s.adminMan.IsRegistered() {
-		return utils.LogError("Only registered clusters can force renew", nil)
+		return utils.LogError("Only registered clusters can force renew", "syncman", "RenewLicense", nil)
 	}
 	// A follower will forward this request to leader gateway
 	if !s.checkIfLeaderGateway(s.nodeID) {
@@ -24,7 +24,7 @@ func (s *Manager) RenewLicense(ctx context.Context, token string) error {
 
 		url := fmt.Sprintf("http://%s/v1/config/renew-license", service.addr)
 		params := map[string]string{}
-		utils.LogDebug("Forwarding force renew request to leader", map[string]interface{}{"leader": service.addr})
+		utils.LogDebug("Forwarding force renew request to leader", "syncman", "RenewLicense", map[string]interface{}{"leader": service.addr})
 		return s.MakeHTTPRequest(ctx, http.MethodPost, url, token, "", params, &map[string]interface{}{})
 	}
 
@@ -36,9 +36,9 @@ func (s *Manager) RenewLicense(ctx context.Context, token string) error {
 }
 
 func (s *Manager) ConvertToEnterprise(ctx context.Context, token, clusterID, clusterKey string) error {
-	utils.LogDebug(`Upgrading gateway to enterprise...`, map[string]interface{}{"clusterId": clusterID, "clusterKey": clusterKey})
+	utils.LogDebug(`Upgrading gateway to enterprise...`, "syncman", "ConvertToEnterprise", map[string]interface{}{"clusterId": clusterID, "clusterKey": clusterKey})
 	if s.adminMan.IsRegistered() {
-		return utils.LogError("Unable to upgrade, already running in enterprise mode", nil)
+		return utils.LogError("Unable to upgrade, already running in enterprise mode", "syncman", "ConvertToEnterprise", nil)
 	}
 
 	// A follower will forward this request to leader gateway
@@ -50,7 +50,7 @@ func (s *Manager) ConvertToEnterprise(ctx context.Context, token, clusterID, clu
 
 		url := fmt.Sprintf("http://%s/v1/config/upgrade", service.addr)
 		params := map[string]string{"clusterId": clusterID, "clusterKey": clusterKey}
-		utils.LogDebug("Forwarding upgrade request to leader", map[string]interface{}{"leader": service.addr})
+		utils.LogDebug("Forwarding upgrade request to leader", "syncman", "ConvertToEnterprise", map[string]interface{}{"leader": service.addr})
 		return s.MakeHTTPRequest(ctx, http.MethodPost, url, token, "", params, &map[string]interface{}{})
 	}
 

@@ -39,12 +39,12 @@ func (m *Manager) licenseRenewalRoutine() {
 				if m.checkIfLeaderGateway() {
 					// Fetch the public key periodically
 					if err := m.RenewLicense(false); err != nil {
-						_ = utils.LogError("Unable to renew license. Has your subscription expired?", err)
+						_ = utils.LogError("Unable to renew license. Has your subscription expired?", "admin", "licenseRenewalRoutine", err)
 						break
 					}
 					go func() {
 						if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
-							_ = utils.LogError("Unable to save admin config", err)
+							_ = utils.LogError("Unable to save admin config", "admin", "licenseRenewalRoutine", err)
 						}
 					}()
 				} else {
@@ -117,7 +117,7 @@ func (m *Manager) ValidateLicense() error {
 
 	if _, err := m.decryptLicense(m.config.License); err != nil {
 		m.resetQuotas()
-		return utils.LogError("Unable to validate license key", err)
+		return utils.LogError("Unable to validate license key", "admin", "ValidateLicense", err)
 	}
 
 	return nil
@@ -145,11 +145,11 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 		},
 		"timeout": 10,
 	})
-	utils.LogDebug(`Renewing admin license`, map[string]interface{}{"clusterId": m.config.ClusterID, "clusterKey": m.config.ClusterKey, "sessionId": m.sessionID})
+	utils.LogDebug(`Renewing admin license`, "admin", "renewLicenseWithoutLock", map[string]interface{}{"clusterId": m.config.ClusterID, "clusterKey": m.config.ClusterKey, "sessionId": m.sessionID})
 	// Fire the request
 	res, err := http.Post("https://api.spaceuptech.com/v1/api/spacecloud/services/backend/fetch_license", "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return utils.LogError("Unable to contact server to fetch license file from server", err)
+		return utils.LogError("Unable to contact server to fetch license file from server", "admin", "renewLicenseWithoutLock", err)
 	}
 	defer func() { _ = res.Body.Close() }()
 
@@ -162,15 +162,15 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return utils.LogError("Invalid status code received in response", errors.New(v.Error))
+		return utils.LogError("Invalid status code received in response", "admin", "renewLicenseWithoutLock", errors.New(v.Error))
 	}
 
 	// Check if response is valid
 	if v.Result.Status != http.StatusOK {
 		m.licenseFetchErrorCount++
-		_ = utils.LogError(fmt.Sprintf("Unable to fetch license file. Retry count - %d", m.licenseFetchErrorCount), errors.New(v.Result.Message))
+		_ = utils.LogError(fmt.Sprintf("Unable to fetch license file. Retry count - %d", m.licenseFetchErrorCount), "admin", "renewLicenseWithoutLock", errors.New(v.Result.Message))
 		if m.licenseFetchErrorCount > maxLicenseFetchErrorCount || force {
-			utils.LogInfo("Max retry limit hit.")
+			utils.LogInfo("Max retry limit hit.", "admin", "renewLicenseWithoutLock")
 			m.resetQuotas()
 			return fmt.Errorf("%s-%s", v.Result.Message, v.Result.Error)
 		}
@@ -185,7 +185,7 @@ func (m *Manager) renewLicenseWithoutLock(force bool) error {
 
 func (m *Manager) resetQuotas() {
 	// TODO set sync man
-	utils.LogInfo("Resetting space cloud to run in open source model. You will have to re-register the cluster again.")
+	utils.LogInfo("Resetting space cloud to run in open source model. You will have to re-register the cluster again.", "admin", "resetQuotas")
 	m.quotas.MaxProjects = 1
 	m.quotas.MaxDatabases = 1
 	m.plan = "space-cloud-open--monthly"
@@ -193,18 +193,18 @@ func (m *Manager) resetQuotas() {
 
 	go func() {
 		if err := m.syncMan.SetAdminConfig(context.Background(), m.config); err != nil {
-			_ = utils.LogError("Unable to save admin config", err)
+			_ = utils.LogError("Unable to save admin config", "admin", "resetQuotas", err)
 		}
 	}()
 }
 
 func (m *Manager) setQuotas(license string) error {
 	if err := m.fetchPublicKeyWithoutLock(); err != nil {
-		return utils.LogError("Unable to fetch public key", err)
+		return utils.LogError("Unable to fetch public key", "admin", "setQuotas", err)
 	}
 	licenseObj, err := m.decryptLicense(license)
 	if err != nil {
-		return utils.LogError("Unable to decrypt license key", err)
+		return utils.LogError("Unable to decrypt license key", "admin", "setQuotas", err)
 	}
 
 	// set quotas

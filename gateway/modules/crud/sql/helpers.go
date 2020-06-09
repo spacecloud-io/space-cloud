@@ -112,12 +112,12 @@ func generateRecord(temp interface{}) (goqu.Record, error) {
 	return record, nil
 }
 
-func (s *SQL) getDBName(project, col string) string {
-	if s.removeProjectScope {
-		return col
+func (s *SQL) getDBName(col string) string {
+	switch utils.DBType(s.dbType) {
+	case utils.Postgres, utils.SQLServer:
+		return fmt.Sprintf("%s.%s", s.name, col)
 	}
-
-	return project + "." + col
+	return col
 }
 
 func (s *SQL) generateQuerySQLServer(query string) string {

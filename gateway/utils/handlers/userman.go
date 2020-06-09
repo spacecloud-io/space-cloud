@@ -39,13 +39,11 @@ func HandleProfile(modules *modules.Modules) http.HandlerFunc {
 
 		status, result, err := userManagement.Profile(ctx, token, dbAlias, projectID, id)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
 		if err != nil {
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"user": result})
+		_ = utils.SendResponse(w, status, map[string]interface{}{"user": result})
 	}
 }
 
@@ -73,15 +71,13 @@ func HandleProfiles(modules *modules.Modules) http.HandlerFunc {
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
 
-		w.Header().Set("Content-Type", "application/json")
 		status, result, err := userManagement.Profiles(ctx, token, dbAlias, projectID)
+
 		if err != nil {
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		w.WriteHeader(status)
-		_ = json.NewEncoder(w).Encode(result)
+		_ = utils.SendResponse(w, status, result)
 	}
 }
 
@@ -111,13 +107,11 @@ func HandleEmailSignIn(modules *modules.Modules) http.HandlerFunc {
 
 		status, result, err := userManagement.EmailSignIn(ctx, dbAlias, projectID, req["email"].(string), req["pass"].(string))
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
 		if err != nil {
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = json.NewEncoder(w).Encode(result)
+		_ = utils.SendResponse(w, status, result)
 	}
 }
 
@@ -147,13 +141,11 @@ func HandleEmailSignUp(modules *modules.Modules) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		status, result, err := userManagement.EmailSignUp(ctx, dbAlias, projectID, req["email"].(string), req["name"].(string), req["pass"].(string), req["role"].(string))
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
 		if err != nil {
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = json.NewEncoder(w).Encode(result)
+		_ = utils.SendResponse(w, status, result)
 	}
 }
 
@@ -188,12 +180,10 @@ func HandleEmailEditProfile(modules *modules.Modules) http.HandlerFunc {
 
 		status, result, err := userManagement.EmailEditProfile(ctx, token, dbAlias, projectID, id, req["email"].(string), req["name"].(string), req["pass"].(string))
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
 		if err != nil {
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = json.NewEncoder(w).Encode(result)
+		_ = utils.SendResponse(w, status, result)
 	}
 }

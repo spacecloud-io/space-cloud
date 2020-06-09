@@ -32,7 +32,7 @@ func (m *Module) InternalCreate(ctx context.Context, dbAlias, project, col strin
 	if req.IsBatch {
 		n, err = m.createBatch(project, dbAlias, col, req.Document)
 	} else {
-		n, err = crud.Create(ctx, project, col, req)
+		n, err = crud.Create(ctx, col, req)
 	}
 
 	// Invoke the metric hook if the operation was successful
@@ -69,7 +69,7 @@ func (m *Module) InternalUpdate(ctx context.Context, dbAlias, project, col strin
 	}
 
 	// Perform the update operation
-	n, err := crud.Update(ctx, project, col, req)
+	n, err := crud.Update(ctx, col, req)
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {
@@ -100,7 +100,7 @@ func (m *Module) InternalDelete(ctx context.Context, dbAlias, project, col strin
 	}
 
 	// Perform the delete operation
-	n, err := crud.Delete(ctx, project, col, req)
+	n, err := crud.Delete(ctx, col, req)
 
 	// Invoke the metric hook if the operation was successful
 	if err == nil {

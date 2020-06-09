@@ -2,7 +2,6 @@ package eventing
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
@@ -37,7 +36,7 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var gettrigger = &cobra.Command{
-		Use:  "eventing-triggers",
+		Use:  "eventing-trigger",
 		RunE: actionGetEventingTrigger,
 	}
 
@@ -56,13 +55,36 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetEventingSecurityRule,
 	}
 
-	return []*cobra.Command{gettrigger, getconfig, getschema, getrule}
+	var gettriggers = &cobra.Command{
+		Use:  "eventing-triggers",
+		RunE: actionGetEventingTrigger,
+	}
+
+	var getconfigs = &cobra.Command{
+		Use:  "eventing-configs",
+		RunE: actionGetEventingConfig,
+	}
+
+	var getschemas = &cobra.Command{
+		Use:  "eventing-schemas",
+		RunE: actionGetEventingSchema,
+	}
+
+	var getrules = &cobra.Command{
+		Use:  "eventing-rules",
+		RunE: actionGetEventingSecurityRule,
+	}
+
+	return []*cobra.Command{gettrigger, getconfig, getschema, getrule, gettriggers, getconfigs, getschemas, getrules}
 }
 
 func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
-	commandName := cmd.Use
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+	commandName := "eventing-trigger"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -70,35 +92,41 @@ func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetEventingTrigger(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGetEventingConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
-	commandName := cmd.Use
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+	commandName := "eventing-config"
 
 	params := map[string]string{}
 	obj, err := GetEventingConfig(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(obj); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGetEventingSchema(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
-	commandName := cmd.Use
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+	commandName := "eventing-schema"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -106,19 +134,22 @@ func actionGetEventingSchema(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetEventingSchema(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
-	commandName := cmd.Use
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
+	commandName := "eventing-rule"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -126,71 +157,63 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetEventingSecurityRule(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingRule()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingSchema()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingConfig()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingTrigger()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }

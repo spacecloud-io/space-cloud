@@ -68,13 +68,23 @@ type Crud map[string]*CrudStub // The key here is the alias for database type
 
 // CrudStub holds the config at the database level
 type CrudStub struct {
-	Type         string                `json:"type,omitempty" yaml:"type"` // database type
-	Conn         string                `json:"conn,omitempty" yaml:"conn"`
-	Collections  map[string]*TableRule `json:"collections,omitempty" yaml:"collections"` // The key here is table name
-	IsPrimary    bool                  `json:"isPrimary" yaml:"isPrimary"`
-	Enabled      bool                  `json:"enabled" yaml:"enabled"`
-	BatchTime    int                   `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
-	BatchRecords int                   `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+	Type            string                    `json:"type,omitempty" yaml:"type"` // database type
+	DBName          string                    `json:"name,omitempty" yaml:"name"` // name of the logical database or schema name according to the database type
+	Conn            string                    `json:"conn,omitempty" yaml:"conn"`
+	Collections     map[string]*TableRule     `json:"collections,omitempty" yaml:"collections"` // The key here is table name
+	PreparedQueries map[string]*PreparedQuery `json:"preparedQueries,omitempty" yaml:"preparedQueries"`
+	IsPrimary       bool                      `json:"isPrimary" yaml:"isPrimary"`
+	Enabled         bool                      `json:"enabled" yaml:"enabled"`
+	BatchTime       int                       `json:"batchTime,omitempty" yaml:"batchTime"`       // time in milli seconds
+	BatchRecords    int                       `json:"batchRecords,omitempty" yaml:"batchRecords"` // indicates number of records per batch
+}
+
+// PreparedQuery contains the config at the collection level
+type PreparedQuery struct {
+	ID        string   `json:"id" yaml:"id"`
+	SQL       string   `json:"sql" yaml:"sql"`
+	Rule      *Rule    `json:"rule" yaml:"rule"`
+	Arguments []string `json:"args" yaml:"args"`
 }
 
 // TableRule contains the config at the collection level
@@ -133,10 +143,43 @@ type Service struct {
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Method string `json:"method" yaml:"method"`
-	Path   string `json:"path" yaml:"path"`
-	Rule   *Rule  `json:"rule" yaml:"rule"`
+	Kind      EndpointKind             `json:"kind" yaml:"kind"`
+	Tmpl      EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
+	ReqTmpl   string                   `json:"requestTemplate" yaml:"requestTemplate"`
+	GraphTmpl string                   `json:"graphTemplate" yaml:"graphTemplate"`
+	ResTmpl   string                   `json:"responseTemplate" yaml:"responseTemplate"`
+	OpFormat  string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+	Token     string                   `json:"token,omitempty" yaml:"token,omitempty"`
+	Method    string                   `json:"method" yaml:"method"`
+	Path      string                   `json:"path" yaml:"path"`
+	Rule      *Rule                    `json:"rule" yaml:"rule"`
+	Headers   []struct {
+		Key   string `json:"key" yaml:"key"`
+		Value string `json:"value" yaml:"value"`
+	} `json:"headers" yaml:"headers"`
 }
+
+// EndpointKind describes the type of endpoint. Default value - internal
+type EndpointKind string
+
+const (
+	// EndpointKindInternal describes a simple or straight forward web-hook call
+	EndpointKindInternal EndpointKind = "internal"
+
+	// EndpointKindExternal describes an endpoint on an external server
+	EndpointKindExternal EndpointKind = "external"
+
+	// EndpointKindPrepared describes an endpoint on on Space Cloud GraphQL layer
+	EndpointKindPrepared EndpointKind = "prepared"
+)
+
+// EndpointTemplatingEngine describes the type of endpoint. Default value - go
+type EndpointTemplatingEngine string
+
+const (
+	// EndpointTemplatingEngineGo describes the go templating engine
+	EndpointTemplatingEngineGo EndpointTemplatingEngine = "go"
+)
 
 // FileStore holds the config for the file store module
 type FileStore struct {
@@ -145,6 +188,7 @@ type FileStore struct {
 	Conn      string      `json:"conn" yaml:"conn"`
 	Endpoint  string      `json:"endpoint" yaml:"endpoint"`
 	Bucket    string      `json:"bucket" yaml:"bucket"`
+	Secret    string      `json:"secret" yaml:"secret"`
 	Rules     []*FileRule `json:"rules,omitempty" yaml:"rules"`
 }
 
@@ -202,4 +246,5 @@ type SchemaObject struct {
 type LetsEncrypt struct {
 	ID                 string   `json:"id,omitempty" yaml:"id,omitempty"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
+	Email              string   `json:"email" yaml:"email"`
 }

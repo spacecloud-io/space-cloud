@@ -7,9 +7,9 @@ import (
 )
 
 // GetCollections returns collection / tables name of specified database
-func (m *Mongo) GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error) {
+func (m *Mongo) GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error) {
 
-	collections, err := m.client.Database(project).ListCollectionNames(ctx, map[string]interface{}{})
+	collections, err := m.client.Database(m.dbName).ListCollectionNames(ctx, map[string]interface{}{})
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,6 @@ import (
 )
 
 // Batch performs the provided operations in a single Batch
-func (b *Bolt) Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error) {
+func (b *Bolt) Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error) {
 	return nil, fmt.Errorf("batch operation not supported for selected database")
 }

@@ -42,22 +42,16 @@ func HandleRealtimeEvent(modules *modules.Modules) http.HandlerFunc {
 
 		// Check if the token is valid
 		if err := auth.IsTokenInternal(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		if err := realtime.HandleRealtimeEvent(r.Context(), &eventDoc); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]string{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -93,21 +87,15 @@ func HandleRealtimeProcessRequest(modules *modules.Modules) http.HandlerFunc {
 
 		// Check if the token is valid
 		if err := auth.IsTokenInternal(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		if err := realtime.ProcessRealtimeRequests(&eventDoc); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]string{})
+		_ = utils.SendOkayResponse(w)
 	}
 }

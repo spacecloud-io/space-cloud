@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/dataloader"
 
@@ -23,10 +24,13 @@ import (
 // Module is the root block providing convenient wrappers
 type Module struct {
 	sync.RWMutex
-	project            string
-	removeProjectScope bool
-	schema             model.SchemaCrudInterface
 
+	block   Crud
+	dbType  string
+	alias   string
+	project string
+	schema  model.SchemaCrudInterface
+	queries map[string]*config.PreparedQuery
 	// batch operation
 	batchMapTableToChan batchMap // every table gets mapped to group of channels
 
@@ -38,6 +42,8 @@ type Module struct {
 	// Extra variables for enterprise
 	blocks map[string]Crud
 	admin  *admin.Manager
+	// function to get secrets from runner
+	getSecrets utils.GetSecrets
 }
 
 type loader struct {
@@ -47,17 +53,18 @@ type loader struct {
 
 // Crud abstracts the implementation crud operations of databases
 type Crud interface {
-	Create(ctx context.Context, project, col string, req *model.CreateRequest) (int64, error)
-	Read(ctx context.Context, project, col string, req *model.ReadRequest) (int64, interface{}, error)
-	Update(ctx context.Context, project, col string, req *model.UpdateRequest) (int64, error)
-	Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error)
-	Aggregate(ctx context.Context, project, col string, req *model.AggregateRequest) (interface{}, error)
-	Batch(ctx context.Context, project string, req *model.BatchRequest) ([]int64, error)
-	DescribeTable(ctc context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
-	RawExec(ctx context.Context, project string) error
-	GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error)
-	DeleteCollection(ctx context.Context, project, col string) error
-	CreateDatabaseIfNotExist(ctx context.Context, project string) error
+	Create(ctx context.Context, col string, req *model.CreateRequest) (int64, error)
+	Read(ctx context.Context, col string, req *model.ReadRequest) (int64, interface{}, error)
+	Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error)
+	Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error)
+	Aggregate(ctx context.Context, col string, req *model.AggregateRequest) (interface{}, error)
+	Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error)
+	DescribeTable(ctc context.Context, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
+	RawExec(ctx context.Context, query string) error
+	RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error)
+	GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error)
+	DeleteCollection(ctx context.Context, col string) error
+	CreateDatabaseIfNotExist(ctx context.Context, name string) error
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
@@ -66,8 +73,8 @@ type Crud interface {
 }
 
 // Init create a new instance of the Module object
-func Init(removeProjectScope bool) *Module {
-	return &Module{removeProjectScope: removeProjectScope, batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+func Init() *Module {
+	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 // SetSchema sets the schema module
@@ -86,14 +93,25 @@ func (m *Module) SetHooks(hooks *model.CrudHooks, metricHook model.MetricCrudHoo
 	m.metricHook = metricHook
 }
 
-func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection string) (Crud, error) {
+func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, dbName string) (Crud, error) {
 	switch dbType {
 	case utils.Mongo:
-		return mgo.Init(enabled, connection)
+		return mgo.Init(enabled, connection, dbName)
 	case utils.EmbeddedDB:
-		return bolt.Init(enabled, connection)
+		return bolt.Init(enabled, connection, dbName)
 	case utils.MySQL, utils.Postgres, utils.SQLServer:
-		return sql.Init(dbType, enabled, m.removeProjectScope, connection)
+		c, err := sql.Init(dbType, enabled, connection, dbName)
+		if err == nil && enabled {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := c.CreateDatabaseIfNotExist(ctx, dbName); err != nil {
+				return nil, err
+			}
+		}
+		if dbType == utils.MySQL {
+			return sql.Init(dbType, enabled, fmt.Sprintf("%s%s", connection, dbName), dbName)
+		}
+		return c, err
 	default:
 		return nil, utils.ErrInvalidParams
 	}
@@ -118,6 +136,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 	m.project = project
 
+	// Reset all existing prepared query
+	m.queries = map[string]*config.PreparedQuery{}
+
 	// Close the previous database connection
 	for _, block := range m.blocks {
 		utils.CloseTheCloser(block)
@@ -137,8 +158,22 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			v.Type = k
 		}
 
+		// set default database name to project id
+		if v.DBName == "" {
+			v.DBName = project
+		}
+
+		// check if connection string starts with secrets
+		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
+		if isSecretExists {
+			v.Conn, err = m.getSecrets(project, secretName, secretKey)
+			if err != nil {
+				return utils.LogError("cannot get secrets from runner", "crud", "setConfig", err)
+			}
+		}
+
 		v.Type = strings.TrimPrefix(v.Type, "sql-")
-		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn)
+		c, err = m.initBlock(utils.DBType(v.Type), v.Enabled, v.Conn, v.DBName)
 
 		if v.Enabled {
 			if err != nil {
@@ -149,12 +184,28 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		}
 
 		// Store the block
+		m.dbType = v.Type
 		m.blocks[strings.TrimPrefix(k, "sql-")] = c
+		m.alias = strings.TrimPrefix(k, "sql-")
+
+		// Add the prepared queries in this db
+		for id, query := range v.PreparedQueries {
+			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
+		}
 	}
 
 	m.closeBatchOperation()
 	m.initBatchOperation(project, crud)
 	return nil
+}
+
+// splitConnectionString splits the connection string
+func splitConnectionString(connection string) (string, string, bool) {
+	s := strings.Split(connection, ".")
+	if s[0] == "secrets" {
+		return s[1], s[2], true
+	}
+	return "", "", false
 }
 
 // GetDBType returns the type of the db for the alias provided
@@ -166,4 +217,12 @@ func (m *Module) GetDBType(dbAlias string) (string, error) {
 	}
 
 	return string(block.GetDBType()), nil
+}
+
+// SetGetSecrets sets the GetSecrets function
+func (m *Module) SetGetSecrets(function utils.GetSecrets) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.getSecrets = function
 }

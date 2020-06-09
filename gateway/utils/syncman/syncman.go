@@ -9,11 +9,11 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
+	"github.com/spaceuptech/space-cloud/gateway/utils/types"
 )
 
 // Manager syncs the project config between folders
@@ -39,8 +39,8 @@ type Manager struct {
 	// For authentication
 	adminMan *admin.Manager
 
-	// Modules≤
-	modules     model.ModulesInterface
+	// Modules
+	modules     types.ModulesInterface
 	letsencrypt *letsencrypt.LetsEncrypt
 	routing     *routing.Routing
 }
@@ -100,7 +100,7 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 		for _, p := range s.projectConfig.Projects {
 			if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
 				logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
-				break
+				return err
 			}
 		}
 	}
@@ -109,18 +109,18 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 		// Fetch initial version of admin config. This must be called before watch admin config callback is invoked
 		adminConfig, err := s.store.GetAdminConfig(context.Background())
 		if err != nil {
-			return utils.LogError("Unable to fetch initial copy of admin config", err)
+			return utils.LogError("Unable to fetch initial copy of admin config", "syncman", "Start", err)
 		}
-		utils.LogDebug("Successfully loaded initial copy of config file", nil)
+		utils.LogDebug("Successfully loaded initial copy of config file", "syncman", "Start", nil)
 		_ = s.adminMan.SetConfig(adminConfig, true)
 
 		// Now lets store the config as well
 		if s.checkIfLeaderGateway(s.nodeID) {
 			s.projectConfig.Admin = s.adminMan.GetConfig()
 			if err := s.store.SetAdminConfig(context.Background(), s.projectConfig.Admin); err != nil {
-				return utils.LogError("Unable to save initial license copy", err)
+				return utils.LogError("Unable to save initial license copy", "syncman", "Start", err)
 			}
-			utils.LogDebug("Successfully stored initial copy of config file", nil)
+			utils.LogDebug("Successfully stored initial copy of config file", "syncman", "Start", nil)
 		}
 
 		// Start routine to observe active space-cloud services
@@ -135,7 +135,7 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
 				for _, p := range s.projectConfig.Projects {
 					if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
-						logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
+						_ = utils.LogError("Unable to set project config", "syncman", "watch-projects", err)
 						break
 					}
 				}
@@ -175,7 +175,7 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 
 			logrus.WithFields(logrus.Fields{"admin config": clusters}).Debugln("Updating admin config")
 			if err := s.adminMan.SetConfig(cluster, false); err != nil {
-				_ = utils.LogError("Unable to apply admin config", err)
+				_ = utils.LogError("Unable to apply admin config", "syncman", "Start", err)
 				return
 			}
 		}); err != nil {
@@ -183,7 +183,7 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 		}
 	}
 
-	utils.LogDebug("Exiting syncman start", nil)
+	utils.LogDebug("Exiting syncman start", "syncman", "Start", nil)
 	return nil
 }
 
@@ -202,7 +202,7 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 }
 
 // SetModules sets all the modules
-func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+func (s *Manager) SetModules(modulesInterface types.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
 	s.modules = modulesInterface
 	s.letsencrypt = letsEncrypt
 	s.routing = routing
