@@ -140,7 +140,9 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 		}
 	}
 	// We will ignore the error for the create project request
-	_ = s.modules.SetProjectConfig(project, s.letsencrypt, s.routing)
+	if err := s.modules.SetProjectConfig(project, s.letsencrypt, s.routing); err != nil {
+		return http.StatusInternalServerError, err
+	}
 
 	if s.storeType == "none" {
 		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)

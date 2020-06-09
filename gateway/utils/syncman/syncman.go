@@ -9,11 +9,11 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
+	"github.com/spaceuptech/space-cloud/gateway/utils/types"
 )
 
 // Manager syncs the project config between folders
@@ -39,8 +39,8 @@ type Manager struct {
 	// For authentication
 	adminMan *admin.Manager
 
-	// Modules≤
-	modules     model.ModulesInterface
+	// Modules
+	modules     types.ModulesInterface
 	letsencrypt *letsencrypt.LetsEncrypt
 	routing     *routing.Routing
 }
@@ -100,7 +100,7 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 		for _, p := range s.projectConfig.Projects {
 			if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
 				logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
-				break
+				return err
 			}
 		}
 	}
@@ -135,7 +135,7 @@ func (s *Manager) Start(projectConfig *config.Config, port int) error {
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
 				for _, p := range s.projectConfig.Projects {
 					if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
-						logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
+						_ = utils.LogError("Unable to set project config", "syncman", "watch-projects", err)
 						break
 					}
 				}
@@ -202,7 +202,7 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 }
 
 // SetModules sets all the modules
-func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+func (s *Manager) SetModules(modulesInterface types.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
 	s.modules = modulesInterface
 	s.letsencrypt = letsEncrypt
 	s.routing = routing
