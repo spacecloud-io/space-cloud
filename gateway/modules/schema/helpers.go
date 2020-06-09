@@ -130,6 +130,9 @@ func (c *creationModule) addNewColumn() string {
 		if c.columnType == "timestamp" && !c.realColumnInfo.IsFieldTypeRequired {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " NULL"
 		}
+		if c.columnType == "varchar("+model.SQLTypeIDSize+")" || c.columnType == "varchar(max)" || c.columnType == "text" {
+			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS"
+		}
 
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType
 	}
@@ -291,6 +294,10 @@ func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string,
 
 		query += realFieldKey + " " + sqlType
 
+		if (utils.DBType(dbType) == utils.SQLServer) && (sqlType == "varchar("+model.SQLTypeIDSize+")" || sqlType == "varchar(max)" || sqlType == "text") {
+			query += " collate Latin1_General_CS_AS"
+		}
+
 		if realFieldStruct.IsFieldTypeRequired {
 			query += " NOT NULL"
 		}
@@ -299,6 +306,9 @@ func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string,
 	}
 	if !doesPrimaryKeyExists {
 		return "", utils.LogError("Primary key not found, make sure there is a primary key on a field with type (ID)", "schema", "addNewTable", nil)
+	}
+	if utils.DBType(dbType) == utils.MySQL {
+		return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `)COLLATE Latin1_General_CS;`, nil
 	}
 	return `CREATE TABLE ` + s.getTableName(dbType, logicalDBName, realColName) + ` (` + primaryKeyQuery + strings.TrimSuffix(query, " ,") + `);`, nil
 }
