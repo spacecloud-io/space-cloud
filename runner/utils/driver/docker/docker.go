@@ -14,8 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -137,7 +135,7 @@ func (d *Docker) GetLogs(ctx context.Context, projectID, serviceID, taskID, _ st
 		args = filters.Arg("name", projectID)
 	}
 
-	// get contianer list
+	// get container list
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("unable to list containers got error message - %v", err)
@@ -145,9 +143,10 @@ func (d *Docker) GetLogs(ctx context.Context, projectID, serviceID, taskID, _ st
 	}
 
 	var b io.ReadCloser
+	containerNotFound := true
 	for _, container := range containers {
 		if strings.HasSuffix(container.Names[0], taskID) {
-			fmt.Println("container", container.Names[0])
+			containerNotFound = false
 			b, err = d.client.ContainerLogs(ctx, container.Names[0], types.ContainerLogsOptions{
 				ShowStdout: true,
 				Details:    true,
@@ -161,6 +160,10 @@ func (d *Docker) GetLogs(ctx context.Context, projectID, serviceID, taskID, _ st
 		}
 	}
 
+	if containerNotFound {
+		return fmt.Errorf("No service log found for service - %s", serviceID)
+	}
+
 	// get signal when client stop listening
 	done := r.Context().Done()
 	// read logs
@@ -169,7 +172,7 @@ func (d *Docker) GetLogs(ctx context.Context, projectID, serviceID, taskID, _ st
 	// implement http flusher
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		panic("expected http.ResponseWriter to be an http.Flusher")
+		return errors.New("expected http.ResponseWriter to be an http.Flusher")
 	}
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
@@ -178,7 +181,6 @@ loop:
 	for {
 		select {
 		case <-done:
-			glog.Infof("Client stopped listening")
 			break loop
 		default:
 			str, _ := rd.ReadString('\n')

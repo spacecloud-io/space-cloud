@@ -7,6 +7,7 @@ import (
 	"github.com/spaceuptech/space-cli/cmd/modules/filestore"
 	"github.com/spaceuptech/space-cli/cmd/modules/ingress"
 	"github.com/spaceuptech/space-cli/cmd/modules/letsencrypt"
+	"github.com/spaceuptech/space-cli/cmd/modules/logs"
 	"github.com/spaceuptech/space-cli/cmd/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/cmd/modules/remote-services"
 	"github.com/spaceuptech/space-cli/cmd/modules/services"
@@ -28,6 +29,7 @@ func FetchGetSubCommands() *cobra.Command {
 	getCmd.AddCommand(project.GetSubCommands()...)
 	getCmd.AddCommand(remoteservices.GetSubCommands()...)
 	getCmd.AddCommand(services.GetSubCommands()...)
+	getCmd.AddCommand(logs.GetSubCommands()...)
 	getCmd.AddCommand(getSubCommands()...)
 
 	return getCmd

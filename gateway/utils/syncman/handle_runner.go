@@ -2,8 +2,10 @@ package syncman
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -63,17 +65,29 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 			if k == "X-Content-Type-Options" && v[0] == "nosniff" {
 				streamData = true
 			}
-			fmt.Println("header", k, v)
 			w.Header().Set(k, v[0])
 		}
+
 		if streamData {
+			if response.StatusCode != 200 {
+				data, _ := ioutil.ReadAll(response.Body)
+				respBody := map[string]interface{}{}
+				if err := json.Unmarshal(data, &respBody); err != nil {
+					_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+					return
+				}
+				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("received invalid status code (%d) got error - %v", response.StatusCode, respBody["error"]))
+				return
+			}
+
 			rd := bufio.NewReader(response.Body)
 
 			// get signal when client stops listening
 			done := r.Context().Done()
 			flusher, ok := w.(http.Flusher)
 			if !ok {
-				panic("expected http.ResponseWriter to be an http.Flusher")
+				_ = utils.SendErrorResponse(w, http.StatusInternalServerError, "expected http.ResponseWriter to be an http.Flusher")
+				return
 			}
 			w.Header().Set("X-Content-Type-Options", "nosniff")
 

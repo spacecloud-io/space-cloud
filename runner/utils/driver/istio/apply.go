@@ -3,11 +3,10 @@ package istio
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/golang/glog"
 
 	v1 "k8s.io/api/core/v1"
 
@@ -164,7 +163,7 @@ func (i *Istio) GetLogs(_ context.Context, projectID, serviceID, taskID, replica
 	// implement http flusher
 	flusher, ok := w.(http.Flusher)
 	if !ok {
-		panic("expected http.ResponseWriter to be an http.Flusher")
+		return errors.New("expected http.ResponseWriter to be an http.Flusher")
 	}
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
@@ -173,7 +172,6 @@ loop:
 	for {
 		select {
 		case <-done:
-			glog.Infof("Client stopped listening")
 			break loop
 		default:
 			str, _ := rd.ReadString('\n')
