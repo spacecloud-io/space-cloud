@@ -2,6 +2,7 @@ package functions
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
@@ -102,6 +103,9 @@ func prepareHeaders(endpoint config.Endpoint, token string, claims, params inter
 		if err == nil {
 			if temp, ok := value.(string); ok {
 				header.Value = temp
+			} else {
+				d, _ := json.Marshal(value)
+				header.Value = string(d)
 			}
 		}
 
