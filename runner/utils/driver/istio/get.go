@@ -159,7 +159,7 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 }
 
 // GetServiceStatus gets the services status for istio
-func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]interface{}, error) {
+func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (map[string][]interface{}, error) {
 	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
@@ -199,7 +199,8 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) ([]inter
 		}
 		results = append(results, result)
 	}
-	return results, nil
+	statusArr := make(map[string][]interface{})
+	return statusArr, nil
 }
 
 // GetServiceRoutes gets the routing rules of each service

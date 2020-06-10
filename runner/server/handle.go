@@ -260,10 +260,8 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 			return
 		}
 		if serviceIDExists {
-			for i, val := range result {
-				value := val.(map[string]interface{})
-				_, ok := value[serviceID[0]]
-				if ok {
+			for i := range result {
+				if i == serviceID[0] {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(model.Response{Result: result[i]})

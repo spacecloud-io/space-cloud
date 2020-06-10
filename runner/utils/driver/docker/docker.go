@@ -530,42 +530,42 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 }
 
 // GetServiceStatus gets the status of service info from docker container
-func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) ([]interface{}, error) {
-
-	services := make(map[string][]interface{})
-	var results []interface{}
+func (d *Docker) GetServiceStatus(ctx context.Context, projectID string) (map[string][]interface{}, error) {
 	args := filters.Arg("name", fmt.Sprintf("space-cloud-%s", projectID))
 	containers, err := d.client.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(args), All: true})
 	if err != nil {
 		logrus.Errorf("error getting service in docker unable to list containers got error message - %v", err)
 		return nil, err
 	}
+	result := make(map[string][]interface{})
+	stat := make(map[string][]interface{})
 	for _, containerInfo := range containers {
-
 		containerInspect, err := d.client.ContainerInspect(ctx, containerInfo.ID)
 		if err != nil {
 			logrus.Errorf("error getting service in docker unable to inspect container - %v", err)
 			return nil, err
 		}
 		containerName := strings.Split(strings.TrimPrefix(containerInspect.Name, "/"), "--")
-		ID := containerName[1]
-		info := map[string]interface{}{
+		ServiceID := containerName[1]
+		Version := containerName[2]
+		Cont := map[string]interface{}{
 			"ID":     containerInfo.ID,
 			"Status": containerInfo.Status,
 		}
-		services[ID] = append(services[ID], info)
-
+		result[fmt.Sprintf("%s--%s", ServiceID, Version)] = append(result[fmt.Sprintf("%s--%s", ServiceID, Version)], Cont)
 	}
-	result := make(map[string]interface{})
-	for i, v := range services {
-		result[i] = map[string]interface{}{
-			"replicas":       1,
-			"activeReplicas": v,
+	for strs, v := range result {
+		str := strings.Split(strs, "--")
+		res := map[string]interface{}{
+			str[1]: map[string]interface{}{
+				"desiredReplicas": 1,
+				"replicas":        v,
+			},
 		}
-		results = append(results, result)
+		stat[str[0]] = append(stat[str[0]], res)
 	}
 
-	return results, nil
+	return stat, nil
 }
 
 // AdjustScale adjust the scale for docker instance
