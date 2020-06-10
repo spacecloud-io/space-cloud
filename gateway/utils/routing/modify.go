@@ -49,8 +49,12 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 		// Load the string if it exists
 		value, err := utils.LoadValue(header.Value, state)
 		if err == nil {
-			if temp, ok := value.(string); ok {
+			temp, ok := value.(string)
+			if ok {
 				header.Value = temp
+			} else {
+				headerValue, _ := json.Marshal(value)
+				header.Value = string(headerValue)
 			}
 		}
 
