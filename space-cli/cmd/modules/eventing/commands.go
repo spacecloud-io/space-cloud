@@ -35,26 +35,6 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the eventing module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var gettrigger = &cobra.Command{
-		Use:  "eventing-trigger",
-		RunE: actionGetEventingTrigger,
-	}
-
-	var getconfig = &cobra.Command{
-		Use:  "eventing-config",
-		RunE: actionGetEventingConfig,
-	}
-
-	var getschema = &cobra.Command{
-		Use:  "eventing-schema",
-		RunE: actionGetEventingSchema,
-	}
-
-	var getrule = &cobra.Command{
-		Use:  "eventing-rule",
-		RunE: actionGetEventingSecurityRule,
-	}
-
 	var gettriggers = &cobra.Command{
 		Use:  "eventing-triggers",
 		RunE: actionGetEventingTrigger,
@@ -75,7 +55,7 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetEventingSecurityRule,
 	}
 
-	return []*cobra.Command{gettrigger, getconfig, getschema, getrule, gettriggers, getconfigs, getschemas, getrules}
+	return []*cobra.Command{gettriggers, getconfigs, getschemas, getrules}
 }
 
 func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {

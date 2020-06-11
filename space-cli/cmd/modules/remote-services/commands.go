@@ -19,16 +19,11 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the remote-services module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getService = &cobra.Command{
-		Use:  "remote-service",
-		RunE: actionGetRemoteServices,
-	}
-
 	var getServices = &cobra.Command{
 		Use:  "remote-services",
 		RunE: actionGetRemoteServices,
 	}
-	return []*cobra.Command{getService, getServices}
+	return []*cobra.Command{getServices}
 }
 
 func actionGetRemoteServices(cmd *cobra.Command, args []string) error {

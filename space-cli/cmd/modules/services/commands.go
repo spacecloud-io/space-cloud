@@ -23,21 +23,6 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the services module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getServicesRoute = &cobra.Command{
-		Use:  "service-route",
-		RunE: actionGetServicesRoutes,
-	}
-
-	var getServicesSecret = &cobra.Command{
-		Use:  "secret",
-		RunE: actionGetServicesSecrets,
-	}
-
-	var getService = &cobra.Command{
-		Use:  "service",
-		RunE: actionGetServices,
-	}
-
 	var getServicesRoutes = &cobra.Command{
 		Use:  "service-routes",
 		RunE: actionGetServicesRoutes,
@@ -53,7 +38,7 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetServices,
 	}
 
-	return []*cobra.Command{getServicesRoute, getServicesSecret, getService, getServicesRoutes, getServicesSecrets, getServices}
+	return []*cobra.Command{getServicesRoutes, getServicesSecrets, getServices}
 }
 
 func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {

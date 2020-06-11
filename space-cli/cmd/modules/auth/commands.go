@@ -8,15 +8,11 @@ import (
 
 // GetSubCommands is the list of commands the auth module exposes
 func GetSubCommands() []*cobra.Command {
-	var getAuthProvider = &cobra.Command{
-		Use:  "auth-provider",
-		RunE: actionGetAuthProviders,
-	}
 	var getAuthProviders = &cobra.Command{
 		Use:  "auth-providers",
 		RunE: actionGetAuthProviders,
 	}
-	return []*cobra.Command{getAuthProvider, getAuthProviders}
+	return []*cobra.Command{getAuthProviders}
 }
 
 func actionGetAuthProviders(cmd *cobra.Command, args []string) error {

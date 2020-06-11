@@ -20,17 +20,12 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands dis the list of commands the project module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getproject = &cobra.Command{
-		Use:  "project",
-		RunE: actionGetProjectConfig,
-	}
-
 	var getprojects = &cobra.Command{
 		Use:  "projects",
 		RunE: actionGetProjectConfig,
 	}
 
-	return []*cobra.Command{getproject, getprojects}
+	return []*cobra.Command{getprojects}
 }
 
 func actionGetProjectConfig(cmd *cobra.Command, args []string) error {

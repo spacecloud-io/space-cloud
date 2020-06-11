@@ -67,9 +67,10 @@ func Commands() []*cobra.Command {
 	}
 
 	var removeDatabaseCmd = &cobra.Command{
-		Use:   "database",
-		Short: "Remove a database",
-		RunE:  ActionRemoveDatabase,
+		Use:       "database",
+		Short:     "Remove a database",
+		RunE:      ActionRemoveDatabase,
+		ValidArgs: []string{"mysql", "postgres", "sqlserver", "mongo"},
 	}
 	addCmd.AddCommand(addRegistryCmd)
 	addCmd.AddCommand(addDatabaseCmd)

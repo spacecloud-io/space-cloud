@@ -29,21 +29,6 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the database module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getrule = &cobra.Command{
-		Use:  "db-rule",
-		RunE: actionGetDbRules,
-	}
-
-	var getconfig = &cobra.Command{
-		Use:  "db-config",
-		RunE: actionGetDbConfig,
-	}
-
-	var getschema = &cobra.Command{
-		Use:  "db-schema",
-		RunE: actionGetDbSchema,
-	}
-
 	var getrules = &cobra.Command{
 		Use:  "db-rules",
 		RunE: actionGetDbRules,
@@ -59,7 +44,7 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetDbSchema,
 	}
 
-	return []*cobra.Command{getrule, getconfig, getschema, getrules, getconfigs, getschemas}
+	return []*cobra.Command{getrules, getconfigs, getschemas}
 }
 
 func actionGetDbRules(cmd *cobra.Command, args []string) error {

@@ -25,16 +25,6 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the filestore module exposes
 func GetSubCommands() []*cobra.Command {
 
-	var getFileStoreRule = &cobra.Command{
-		Use:  "filestore-rule",
-		RunE: actionGetFileStoreRule,
-	}
-
-	var getFileStoreConfig = &cobra.Command{
-		Use:  "filestore-config",
-		RunE: actionGetFileStoreConfig,
-	}
-
 	var getFileStoreRules = &cobra.Command{
 		Use:  "filestore-rules",
 		RunE: actionGetFileStoreRule,
@@ -45,7 +35,7 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetFileStoreConfig,
 	}
 
-	return []*cobra.Command{getFileStoreRule, getFileStoreConfig, getFileStoreRules, getFileStoreConfigs}
+	return []*cobra.Command{getFileStoreRules, getFileStoreConfigs}
 }
 
 func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
