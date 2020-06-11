@@ -39,13 +39,6 @@ func (s *SQL) RawBatch(ctx context.Context, queries []string) error {
 	return nil
 }
 
-// RawExec performs an operation for schema creation
-// NOTE: not to be exposed externally
-func (s *SQL) RawExec(ctx context.Context, query string) error {
-	_, err := s.client.ExecContext(ctx, query, []interface{}{}...)
-	return err
-}
-
 // RawQuery query document(s) from the database
 func (s *SQL) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
 	return s.readexec(ctx, query, args, utils.All, s.client, false)
@@ -78,5 +71,5 @@ func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, name string) error {
 	default:
 		return fmt.Errorf("invalid db type (%s) provided", s.dbType)
 	}
-	return s.RawExec(ctx, sql)
+	return s.RawBatch(ctx, []string{sql})
 }

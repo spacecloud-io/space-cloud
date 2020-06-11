@@ -127,7 +127,7 @@ func (s *SQL) generateQuerySQLServer(query string) string {
 func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[string]interface{}) {
 	for _, colType := range types {
 		typeName := colType.DatabaseTypeName()
-		if typeName == "VARCHAR" || typeName == "TEXT" {
+		if typeName == "VARCHAR" || typeName == "TEXT" || typeName == "JSON" {
 			val, ok := mapping[colType.Name()].([]byte)
 			if ok {
 				mapping[colType.Name()] = string(val)

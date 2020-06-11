@@ -42,8 +42,8 @@ func TestSQL_Create(t *testing.T) {
 						"age":        20,
 						"height":     5.8,
 						"is_prime":   true,
-						"birth_date": "2020-06-11T13:22:24+00:00",
-						"address":    []byte(`{"city":"pune","pinCode":123456}`),
+						"birth_date": "2015-11-05 14:29:36",
+						"address":    `{"city": "pune", "pinCode": 123456}`,
 					},
 					Operation: utils.One,
 				},
@@ -57,8 +57,8 @@ func TestSQL_Create(t *testing.T) {
 					"age":        int64(20),
 					"height":     5.8,
 					"is_prime":   int64(1),
-					"birth_date": "2020-06-11T13:22:24Z",
-					"address":    []byte(`{"city":"pune","pinCode":123456}`),
+					"birth_date": "2015-11-05T14:29:36Z",
+					"address":    `{"city": "pune", "pinCode": 123456}`,
 				},
 			},
 			readQuery: `SELECT * FROM customers WHERE id = "1"`,
@@ -76,8 +76,8 @@ func TestSQL_Create(t *testing.T) {
 							"age":        int64(30),
 							"height":     6.2,
 							"is_prime":   int64(1),
-							"birth_date": "2020-06-11T13:22:24+00:00",
-							"address":    []byte(`{"city":"california","pinCode":567890}`),
+							"birth_date": "2015-11-05 14:29:36",
+							"address":    `{"city": "california", "pinCode": 567890}`,
 						},
 						map[string]interface{}{
 							"id":         "3",
@@ -85,8 +85,8 @@ func TestSQL_Create(t *testing.T) {
 							"age":        int64(40),
 							"height":     5.0,
 							"is_prime":   int64(0),
-							"birth_date": "2020-06-11T13:22:24Z",
-							"address":    []byte(`{"city":"california","pinCode":567890}`),
+							"birth_date": "2015-11-05 14:29:36",
+							"address":    `{"city": "newYork", "pinCode": 654321}`,
 						},
 					},
 					Operation: utils.All,
@@ -101,8 +101,8 @@ func TestSQL_Create(t *testing.T) {
 					"age":        int64(30),
 					"height":     6.2,
 					"is_prime":   int64(1),
-					"birth_date": "2020-06-11T13:22:24+00:00",
-					"address":    []byte(`{"city":"newYork","pinCode":654321}`),
+					"birth_date": "2015-11-05T14:29:36Z",
+					"address":    `{"city": "california", "pinCode": 567890}`,
 				},
 				map[string]interface{}{
 					"id":         "3",
@@ -110,8 +110,8 @@ func TestSQL_Create(t *testing.T) {
 					"age":        int64(40),
 					"height":     5.0,
 					"is_prime":   int64(0),
-					"birth_date": "2020-06-11T13:22:24Z",
-					"address":    []byte(`{"city":"newYork","pinCode":654321}`),
+					"birth_date": "2015-11-05T14:29:36Z",
+					"address":    `{"city": "newYork", "pinCode": 654321}`,
 				},
 			},
 			readQuery: `SELECT * FROM customers WHERE id = "2" or id = "3"`,
@@ -153,8 +153,20 @@ func TestSQL_Create(t *testing.T) {
 			if len(tt.wantReadResult) != len(readResult) {
 				t.Errorf("Create() mismatch in result lenght got %v want %v", len(readResult), len(tt.wantReadResult))
 			}
-			if !reflect.DeepEqual(tt.wantReadResult, readResult) {
-				t.Errorf("Create() mismatch in result got %v \n want %v", readResult, tt.wantReadResult)
+			for index, result := range tt.wantReadResult {
+				for key, value := range result.(map[string]interface{}) {
+					readValue, ok := readResult[index].(map[string]interface{})[key]
+					if !ok {
+						t.Errorf("Create() missing field key %v at index %v", key, value)
+					}
+					if !reflect.DeepEqual(readValue, value) {
+						// switch value.(type) {
+						// case :
+						// 	t.Errorf("Create() mismatch in result got %v \n want %v", string(readValue.([]byte)), string(value.([]byte)))
+						// }
+						t.Errorf("Create() mismatch in result got %v \n want %v", readValue, value)
+					}
+				}
 			}
 		})
 	}

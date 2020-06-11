@@ -130,6 +130,7 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 	if s.dbType == string(utils.SQLServer) {
 		sqlString = s.generateQuerySQLServer(sqlString)
 	}
+	// logrus.Println("Log Query", sqlString)
 	return sqlString, args, nil
 }
 func generateAggregateAsColumnName(function, column string) string {
