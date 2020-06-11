@@ -59,7 +59,9 @@ func adjustValTypes(v1, v2 interface{}) (interface{}, interface{}) {
 // Validate checks if the provided document matches with the where clause
 func Validate(where map[string]interface{}, obj interface{}) bool {
 	if res, ok := obj.(map[string]interface{}); ok {
+		fmt.Printf("obj=%v\n", res)
 		for k, temp := range where {
+			fmt.Printf("where=%v\n", where)
 			if k == "$or" {
 				array, ok := temp.([]interface{})
 				if !ok {
