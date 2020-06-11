@@ -206,6 +206,58 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 				logrus.Warningln("Unable to add database to Space Cloud config", nil)
 				continue
 			}
+
+			v = &model.SpecObject{
+				API:  "/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules",
+				Type: "db-rules",
+				Meta: map[string]string{
+					"dbAlias": v.Meta["dbAlias"],
+					"col":     "default",
+					"project": v.Meta["project"],
+				},
+				Spec: map[string]interface{}{
+					"isRealtimeEnabled": false,
+					"rules": map[string]interface{}{
+						"create": map[string]interface{}{
+							"rule": "allow",
+						},
+						"delete": map[string]interface{}{
+							"rule": "allow",
+						},
+						"read": map[string]interface{}{
+							"rule": "allow",
+						},
+						"update": map[string]interface{}{
+							"rule": "allow",
+						},
+					},
+				},
+			}
+			if err := operations.ApplySpec(token, account, v); err != nil {
+				logrus.Warningln("Couldn't add default collection rules", nil)
+			}
+
+			v = &model.SpecObject{
+				API:  "/v1/config/projects/{project}/database/{dbAlias}/prepared-queries/{id}",
+				Type: "eventing-rule",
+				Meta: map[string]string{
+					"project": v.Meta["project"],
+					"dbAlias": v.Meta["dbAlias"],
+					"id":      "default",
+				},
+				Spec: map[string]interface{}{
+					"id":  "default",
+					"sql": "",
+					"rule": map[string]interface{}{
+						"rule": "allow",
+					},
+					"args": []string{},
+				},
+			}
+			if err := operations.ApplySpec(token, account, v); err != nil {
+				logrus.Warningln("Couldn't add default prepared query rules", nil)
+			}
+
 			utils.LogInfo("Successfully added database to Space Cloud config.")
 			return
 		}
