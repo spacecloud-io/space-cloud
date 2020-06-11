@@ -12,10 +12,10 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, route *config.Route, req *http.Request) (string, interface{}, error) {
+func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, route *config.Route, req *http.Request) (string, interface{}, int, error) {
 	// Return if the rule is allow
 	if route.Rule == nil || route.Rule.Rule == "allow" {
-		return "", nil, nil
+		return "", nil, http.StatusOK, nil
 	}
 
 	// Extract the token
@@ -28,23 +28,23 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 	if req.Header.Get("Content-Type") == "application/json" {
 		data, err = ioutil.ReadAll(req.Body)
 		if err != nil {
-			return "", nil, err
+			return "", nil, http.StatusBadRequest, err
 		}
 
 		if err := json.Unmarshal(data, &params); err != nil {
-			return "", nil, utils.LogError("Unable to unmarshal body to JSON", module, handleRequest, err)
+			return "", nil, http.StatusBadRequest, utils.LogError("Unable to unmarshal body to JSON", module, handleRequest, err)
 		}
 	}
 
 	// Finally we authorize the request
 	a, err := modules.Auth(route.Project)
 	if err != nil {
-		return "", nil, err
+		return "", nil, http.StatusBadRequest, err
 	}
 
 	auth, err := a.AuthorizeRequest(ctx, route.Rule, route.Project, token, params)
 	if err != nil {
-		return "", nil, err
+		return "", nil, http.StatusForbidden, err
 	}
 
 	// Set the headers
@@ -71,7 +71,7 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 		// Generate new request body if template was provided
 		newParams, err := r.adjustBody("request", route.Project, token, route, auth, params)
 		if err != nil {
-			return "", nil, err
+			return "", nil, http.StatusBadRequest, err
 		}
 
 		// Marshal it then set it
@@ -81,7 +81,7 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 		req.ContentLength = int64(len(data))
 	}
 
-	return token, auth, err
+	return token, auth, http.StatusOK, err
 }
 
 func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token string, auth interface{}) error {

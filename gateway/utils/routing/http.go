@@ -35,9 +35,9 @@ func (r *Routing) HandleRoutes(modules modulesInterface) http.HandlerFunc {
 			return
 		}
 
-		token, auth, err := r.modifyRequest(request.Context(), modules, route, request)
+		token, auth, status, err := r.modifyRequest(request.Context(), modules, route, request)
 		if err != nil {
-			writer.WriteHeader(http.StatusBadRequest)
+			writer.WriteHeader(status)
 			_ = json.NewEncoder(writer).Encode(map[string]string{"error": err.Error()})
 			return
 		}

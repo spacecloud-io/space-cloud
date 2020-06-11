@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 	"strconv"
 	"strings"
 	"text/template"
+
+	tmpl2 "github.com/spaceuptech/space-cloud/gateway/utils/tmpl"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
