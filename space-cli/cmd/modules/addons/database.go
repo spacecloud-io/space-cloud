@@ -235,7 +235,6 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 			}
 			if err := operations.ApplySpec(token, account, v); err != nil {
 				logrus.Warningln("Couldn't add default collection rules", nil)
-				continue
 			}
 
 			v = &model.SpecObject{
@@ -257,7 +256,6 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 			}
 			if err := operations.ApplySpec(token, account, v); err != nil {
 				logrus.Warningln("Couldn't add default prepared query rules", nil)
-				continue
 			}
 
 			utils.LogInfo("Successfully added database to Space Cloud config.")
