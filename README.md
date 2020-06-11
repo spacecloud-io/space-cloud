@@ -35,7 +35,7 @@ It provides **GraphQL** and **REST** APIs which can be consumed directly by your
 
 View complete feature set [here](https://docs.spaceuptech.com/introduction/features).
 
-- **Powerful CRUD**: Flexible queries, transactions and cross-database joins
+- **Powerful CRUD**: Flexible queries, transactions, aggregations and cross-database joins
 - **Realtime**: Make live queries to your database
 - **File storage**: Upload/download files to scalable file stores (e.g., Amazon S3, Google Cloud Storage)
 - **Extensible**: Unified APIs for your custom HTTP services
@@ -43,7 +43,7 @@ View complete feature set [here](https://docs.spaceuptech.com/introduction/featu
 - **Fine-grained access control**: Dynamic access control that integrates with your auth system (e.g., auth0, firebase-auth)
 - **Scalable**: Written in Golang, it follows cloud-native practices and scales horizontally
 - **Service Mesh**: Get all the capabilities of a service mesh without having to learn any of that!
-- **Scale down to zero**: Auto scale your http workloads including scaling down to zero.
+- **Scale down to zero**: Auto scale your http workloads including scaling down to zero
 
 Supported databases :heart::
 
@@ -101,7 +101,7 @@ With that, it also provides **autoscaling functionality** out of the box includi
 
 The documentation and community should help you troubleshoot most issues. If you have encountered a bug or need to get in touch with us, you can contact us using one of the following channels:
 
-- Support & feedback: [Discord](https://discord.gg/ypXEEBr)
+- Support & feedback: [Discord](https://discord.gg/RkGjW93)
 - Issue & bug tracking: [GitHub issues](https://github.com/spaceuptech/space-cloud/issues)
 - Follow product updates: [@spaceuptech](https://twitter.com/spaceuptech)
 
