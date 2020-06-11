@@ -15,7 +15,7 @@ import (
 func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, route *config.Route, req *http.Request) (string, interface{}, int, error) {
 	// Return if the rule is allow
 	if route.Rule == nil || route.Rule.Rule == "allow" {
-		return "", nil, http.StatusBadRequest, nil
+		return "", nil, http.StatusOK, nil
 	}
 
 	// Extract the token
