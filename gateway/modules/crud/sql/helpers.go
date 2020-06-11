@@ -133,14 +133,14 @@ func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[st
 				mapping[colType.Name()] = string(val)
 			}
 		}
-		if data, ok := mapping[colType.Name()].([]byte); ok && (typeName == "BIGINT" || typeName == "INT" || typeName == "SMALLINT") {
+		if data, ok := mapping[colType.Name()].([]byte); ok && (typeName == "BIGINT" || typeName == "INT" || typeName == "SMALLINT" || typeName == "TINYINT") {
 			var err error
 			mapping[colType.Name()], err = strconv.ParseInt(string(data), 10, 64)
 			if err != nil {
 				log.Println("Error:", err)
 			}
 		}
-		if data, ok := mapping[colType.Name()].([]byte); ok && (typeName == "DECIMAL" || typeName == "NUMERIC") {
+		if data, ok := mapping[colType.Name()].([]byte); ok && (typeName == "DECIMAL" || typeName == "NUMERIC" || typeName == "FLOAT") {
 			var err error
 			mapping[colType.Name()], err = strconv.ParseFloat(string(data), 64)
 			if err != nil {
