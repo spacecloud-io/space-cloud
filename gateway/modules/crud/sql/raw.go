@@ -46,6 +46,11 @@ func (s *SQL) RawExec(ctx context.Context, query string) error {
 	return err
 }
 
+// RawQuery query document(s) from the database
+func (s *SQL) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
+	return s.readexec(ctx, query, args, utils.All, s.client, false)
+}
+
 // GetConnectionState : Function to get connection state
 func (s *SQL) GetConnectionState(ctx context.Context) bool {
 	if !s.enabled || s.client == nil {
@@ -58,17 +63,17 @@ func (s *SQL) GetConnectionState(ctx context.Context) bool {
 }
 
 // CreateDatabaseIfNotExist creates a schema / database
-func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, project string) error {
+func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, name string) error {
 	var sql string
 	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
-		sql = "create database if not exists " + project
+		sql = "create database if not exists " + name
 	case utils.Postgres:
-		sql = "create schema if not exists " + project
+		sql = "create schema if not exists " + name
 	case utils.SQLServer:
-		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + project + `')) 
+		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + name + `')) 
 					BEGIN
-    					EXEC ('CREATE SCHEMA [` + project + `] ')
+    					EXEC ('CREATE SCHEMA [` + name + `] ')
 					END`
 	default:
 		return fmt.Errorf("invalid db type (%s) provided", s.dbType)

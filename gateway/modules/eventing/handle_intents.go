@@ -19,7 +19,6 @@ func (m *Module) processIntents(t *time.Time) {
 		return
 	}
 	m.lock.RLock()
-	project := m.project
 	dbAlias, col := m.config.DBAlias, utils.TableEventingLogs
 	m.lock.RUnlock()
 
@@ -37,7 +36,7 @@ func (m *Module) processIntents(t *time.Time) {
 		},
 	}}
 
-	results, err := m.crud.Read(ctx, dbAlias, project, col, &readRequest)
+	results, err := m.crud.Read(ctx, dbAlias, col, &readRequest)
 	if err != nil {
 		logrus.Errorf("Eventing intent routine error - %s", err.Error())
 		return
@@ -86,7 +85,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		// Check if document exists in database
 		readRequest := &model.ReadRequest{Operation: utils.One, Find: createEvent.Find.(map[string]interface{})}
-		if _, err := m.crud.Read(ctx, createEvent.DBType, m.project, createEvent.Col, readRequest); err != nil {
+		if _, err := m.crud.Read(ctx, createEvent.DBType, createEvent.Col, readRequest); err != nil {
 
 			// Mark event as cancelled if it document doesn't exist
 			if err := m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID)); err != nil {
@@ -113,7 +112,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 		// Get the document from the database
 		timestamp := time.Now()
 		readRequest := &model.ReadRequest{Operation: utils.One, Find: updateEvent.Find.(map[string]interface{})}
-		result, err := m.crud.Read(ctx, updateEvent.DBType, m.project, updateEvent.Col, readRequest)
+		result, err := m.crud.Read(ctx, updateEvent.DBType, updateEvent.Col, readRequest)
 		if err != nil {
 			// Do nothing if there is an error while reading
 			return
@@ -146,7 +145,7 @@ func (m *Module) processIntent(eventDoc *model.EventDocument) {
 
 		// Check if document exists in database
 		readRequest := &model.ReadRequest{Operation: utils.One, Find: deleteEvent.Find.(map[string]interface{})}
-		if _, err := m.crud.Read(ctx, deleteEvent.DBType, m.project, deleteEvent.Col, readRequest); err == nil {
+		if _, err := m.crud.Read(ctx, deleteEvent.DBType, deleteEvent.Col, readRequest); err == nil {
 
 			// Mark the event as cancelled if the document still exists
 			_ = m.crud.InternalUpdate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateCancelEventRequest(eventID))

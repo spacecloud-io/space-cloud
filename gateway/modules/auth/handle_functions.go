@@ -9,7 +9,7 @@ import (
 )
 
 // IsFuncCallAuthorised checks if the func call is authorised
-func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (TokenClaims, error) {
+func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (map[string]interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -23,7 +23,9 @@ func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, fun
 		}
 		return map[string]interface{}{}, errors.New("invalid project details provided")
 	}
-	auth, err := m.parseToken(token)
+
+	var auth map[string]interface{}
+	auth, err = m.parseToken(token)
 	if err != nil {
 		return nil, err
 	}

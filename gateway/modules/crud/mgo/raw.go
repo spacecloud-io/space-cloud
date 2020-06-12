@@ -17,6 +17,11 @@ func (m *Mongo) RawExec(ctx context.Context, query string) error {
 	return errors.New("raw exec operation cannot be performed on mongo")
 }
 
+// RawQuery query document(s) from the database
+func (m *Mongo) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
+	return 0, "", errors.New("error raw querry operation cannot be performed on mongo")
+}
+
 // GetConnectionState : function to check connection state
 func (m *Mongo) GetConnectionState(ctx context.Context) bool {
 	if !m.enabled || m.client == nil {

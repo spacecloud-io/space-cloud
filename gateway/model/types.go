@@ -6,8 +6,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
-	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // SchemaCrudInterface is an interface consisting of functions of schema module used by auth module
@@ -21,7 +19,7 @@ type SchemaCrudInterface interface {
 
 // CrudAuthInterface is an interface consisting of functions of crud module used by auth module
 type CrudAuthInterface interface {
-	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
 }
 
 // SchemaEventingInterface is an interface consisting of functions of schema module used by eventing module
@@ -29,14 +27,14 @@ type SchemaEventingInterface interface {
 	CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool)
 	Parser(crud config.Crud) (Type, error)
 	SchemaValidator(col string, collectionFields Fields, doc map[string]interface{}) (map[string]interface{}, error)
-	SchemaModifyAll(ctx context.Context, dbAlias, project string, tables map[string]*config.TableRule) error
+	SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error
 }
 
 // CrudEventingInterface is an interface consisting of functions of crud module used by Eventing module
 type CrudEventingInterface interface {
 	InternalCreate(ctx context.Context, dbAlias, project, col string, req *CreateRequest, isIgnoreMetrics bool) error
 	InternalUpdate(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
-	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
 }
 
 // AuthEventingInterface is an interface consisting of functions of auth module used by Eventing module
@@ -59,6 +57,7 @@ type AuthFilestoreInterface interface {
 // AuthFunctionInterface is an interface consisting of functions of auth module used by Function module
 type AuthFunctionInterface interface {
 	GetSCAccessToken() (string, error)
+	Encrypt(value string) (string, error)
 }
 
 // EventingRealtimeInterface is an interface consisting of functions of Eventing module used by RealTime module
@@ -76,24 +75,23 @@ type AuthRealtimeInterface interface {
 
 // CrudRealtimeInterface is an interface consisting of functions of crud module used by RealTime module
 type CrudRealtimeInterface interface {
-	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
 }
 
 // CrudSchemaInterface is an interface consisting of functions of crud module used by Schema module
 type CrudSchemaInterface interface {
 	GetDBType(dbAlias string) (string, error)
 	// CreateProjectIfNotExists(ctx context.Context, project, dbAlias string) error
-	CreateDatabaseIfNotExist(ctx context.Context, project, dbAlias string) error
 	RawBatch(ctx context.Context, dbAlias string, batchedQueries []string) error
-	DescribeTable(ctx context.Context, dbAlias, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
+	DescribeTable(ctx context.Context, dbAlias, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error)
 }
 
 // CrudUserInterface is an interface consisting of functions of crud module used by User module
 type CrudUserInterface interface {
 	GetDBType(dbAlias string) (string, error)
-	Read(ctx context.Context, dbAlias, project, col string, req *ReadRequest) (interface{}, error)
-	Create(ctx context.Context, dbAlias, project, col string, req *CreateRequest) error
-	Update(ctx context.Context, dbAlias, project, col string, req *UpdateRequest) error
+	Read(ctx context.Context, dbAlias, col string, req *ReadRequest) (interface{}, error)
+	Create(ctx context.Context, dbAlias, col string, req *CreateRequest) error
+	Update(ctx context.Context, dbAlias, col string, req *UpdateRequest) error
 }
 
 // AuthUserInterface is an interface consisting of functions of auth module used by User module
@@ -102,28 +100,6 @@ type AuthUserInterface interface {
 	PostProcessMethod(postProcess *PostProcess, result interface{}) error
 	CreateToken(tokenClaims TokenClaims) (string, error)
 	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (int, error)
-}
-
-// ModulesInterface is an interface consisting of functions of the modules module used by syncman
-type ModulesInterface interface {
-	// SetProjectConfig sets the config all modules
-	SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing)
-	// SetGlobalConfig sets the auth secret and AESKey
-	SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error
-	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
-	SetCrudConfig(projectID string, crudConfig config.Crud) error
-	// SetServicesConfig sets the config of auth and functions modules
-	SetServicesConfig(projectID string, services *config.ServicesModule) error
-	// SetFileStoreConfig sets the config of auth and filestore modules
-	SetFileStoreConfig(projectID string, fileStore *config.FileStore) error
-	// SetEventingConfig sets the config of eventing module
-	SetEventingConfig(projectID string, eventingConfig *config.Eventing) error
-	// SetUsermanConfig set the config of the userman module
-	SetUsermanConfig(projectID string, auth config.Auth)
-
-	// Getters
-
-	GetSchemaModuleForSyncMan() SchemaEventingInterface
 }
 
 // SyncmanEventingInterface is an interface consisting of functions of syncman module used by eventing module

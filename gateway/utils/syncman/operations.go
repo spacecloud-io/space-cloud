@@ -126,7 +126,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			Auth:        map[string]*config.AuthStub{},
 			Crud:        map[string]*config.CrudStub{},
 			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}, Email: ""},
 		}
 		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
@@ -229,7 +229,7 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	for _, p := range s.projectConfig.Projects {
 		if projectID == "*" {
 			// get all projects
-			v = append(v, config.Project{AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Name: p.Name, ID: p.ID})
+			v = append(v, config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, Name: p.Name, ID: p.ID})
 			continue
 		}
 

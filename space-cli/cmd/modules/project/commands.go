@@ -25,13 +25,18 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetProjectConfig,
 	}
 
-	return []*cobra.Command{getproject}
+	var getprojects = &cobra.Command{
+		Use:  "projects",
+		RunE: actionGetProjectConfig,
+	}
+
+	return []*cobra.Command{getproject, getprojects}
 }
 
 func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and cmd parameters
 	project := viper.GetString("project")
-	commandName := cmd.Use
+	commandName := "project"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -39,26 +44,24 @@ func actionGetProjectConfig(cmd *cobra.Command, args []string) error {
 	}
 	obj, err := GetProjectConfig(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(obj); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGenerateProject(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	projectFilePath := args[0]
 	project, err := generateProject()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(project, projectFilePath)
-	return nil
+	return utils.AppendConfigToDisk(project, projectFilePath)
 }

@@ -10,9 +10,9 @@ import (
 )
 
 // GetCollections returns collection / tables name of specified database
-func (s *SQL) GetCollections(ctx context.Context, project string) ([]utils.DatabaseCollections, error) {
+func (s *SQL) GetCollections(ctx context.Context) ([]utils.DatabaseCollections, error) {
 	dialect := goqu.Dialect(s.dbType)
-	query := dialect.From("information_schema.tables").Prepared(true).Select("table_name").Where(goqu.Ex{"table_schema": project})
+	query := dialect.From("information_schema.tables").Prepared(true).Select("table_name").Where(goqu.Ex{"table_schema": s.name})
 
 	sqlString, args, err := query.ToSQL()
 	if err != nil {

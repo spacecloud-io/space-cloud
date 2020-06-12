@@ -14,13 +14,13 @@ import (
 )
 
 // Update updates the document(s) which match the condition provided.
-func (b *Bolt) Update(ctx context.Context, project, col string, req *model.UpdateRequest) (int64, error) {
+func (b *Bolt) Update(ctx context.Context, col string, req *model.UpdateRequest) (int64, error) {
 	var count int64
 	switch req.Operation {
 	case utils.One, utils.All, utils.Upsert:
 		if err := b.client.Update(func(tx *bbolt.Tx) error {
 			// Assume bucket exists and has keys
-			bucket := tx.Bucket([]byte(project))
+			bucket := tx.Bucket([]byte(b.bucketName))
 			c := bucket.Cursor()
 
 			// get all keys matching the prefix
@@ -76,7 +76,7 @@ func (b *Bolt) Update(ctx context.Context, project, col string, req *model.Updat
 					objToSet[findName] = findValue
 				}
 			}
-			rowsAffected, err := b.Create(ctx, project, col, &model.CreateRequest{Operation: utils.One, Document: objToSet})
+			rowsAffected, err := b.Create(ctx, col, &model.CreateRequest{Operation: utils.One, Document: objToSet})
 			if err != nil || rowsAffected == 0 {
 				return 0, fmt.Errorf("error while upserting in bbolt db - %v rows affected %v", err, rowsAffected)
 			}

@@ -14,12 +14,13 @@ import (
 type Bolt struct {
 	enabled    bool
 	connection string
+	bucketName string
 	client     *bbolt.DB
 }
 
 // Init initialises a new bolt instance
-func Init(enabled bool, connection string) (b *Bolt, err error) {
-	b = &Bolt{enabled: enabled, connection: connection}
+func Init(enabled bool, connection, bucketName string) (b *Bolt, err error) {
+	b = &Bolt{enabled: enabled, connection: connection, bucketName: bucketName}
 
 	if b.enabled {
 		err = b.connect()

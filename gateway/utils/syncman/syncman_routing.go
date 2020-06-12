@@ -20,7 +20,10 @@ func (s *Manager) SetProjectRoutes(ctx context.Context, project string, c config
 
 	// Update the project's routes
 	projectConfig.Modules.Routes = c
-	s.routing.SetProjectRoutes(project, c)
+	if err := s.routing.SetProjectRoutes(project, c); err != nil {
+		return err
+	}
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -55,6 +58,8 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 		if id == route.ID {
 			route.Source = c.Source
 			route.Targets = c.Targets
+			route.Rule = c.Rule
+			route.Modify = c.Modify
 			doesExist = true
 		}
 	}
@@ -62,7 +67,10 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 		projectConfig.Modules.Routes = append(projectConfig.Modules.Routes, c)
 	}
 
-	s.routing.SetProjectRoutes(project, projectConfig.Modules.Routes)
+	if err := s.routing.SetProjectRoutes(project, projectConfig.Modules.Routes); err != nil {
+		return err
+	}
+
 	return s.setProject(ctx, projectConfig)
 }
 
@@ -84,7 +92,10 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 			projectConfig.Modules.Routes = projectConfig.Modules.Routes[:len(projectConfig.Modules.Routes)-1]
 
 			// update the config
-			s.routing.SetProjectRoutes(project, projectConfig.Modules.Routes)
+			if err := s.routing.SetProjectRoutes(project, projectConfig.Modules.Routes); err != nil {
+				return err
+			}
+
 			return s.setProject(ctx, projectConfig)
 		}
 	}

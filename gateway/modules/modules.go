@@ -30,17 +30,19 @@ type Modules struct {
 }
 
 // New creates a new modules instance
-func New(nodeID string, removeProjectScope bool, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
+func New(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
 
-	c := crud.Init(removeProjectScope)
-	s := schema.Init(c, removeProjectScope)
+	c := crud.Init()
+	c.SetGetSecrets(syncMan.GetSecrets)
+	s := schema.Init(c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c, removeProjectScope)
+	a := auth.Init(nodeID, c)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
 	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)
 	f := filestore.Init(a, metrics.AddFileOperation)
+	f.SetGetSecrets(syncMan.GetSecrets)
 
 	e := eventing.New(a, c, s, adminMan, syncMan, f, metrics.AddEventingType)
 	f.SetEventingModule(e)

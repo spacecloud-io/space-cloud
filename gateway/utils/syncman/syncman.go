@@ -6,10 +6,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
+	"github.com/spaceuptech/space-cloud/gateway/utils/types"
 )
 
 // Manager syncs the project config between folders
@@ -36,7 +36,7 @@ type Manager struct {
 	adminMan *admin.Manager
 
 	// Modules
-	modules     model.ModulesInterface
+	modules     types.ModulesInterface
 	letsencrypt *letsencrypt.LetsEncrypt
 	routing     *routing.Routing
 }
@@ -47,10 +47,10 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, configFile: configFile, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	switch storeType {
@@ -84,7 +84,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
+func (s *Manager) Start(projectConfig *config.Config, port int) error {
 	// Save the ports
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -92,8 +92,6 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 	// Set the callback
 	s.modules.SetProjectConfig(projectConfig, s.letsencrypt, s.routing)
 	s.port = port
-
-	s.configFile = configFilePath
 
 	// Write the config to file
 	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -149,7 +147,7 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 }
 
 // SetModules sets all the modules
-func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+func (s *Manager) SetModules(modulesInterface types.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
 	s.modules = modulesInterface
 	s.letsencrypt = letsEncrypt
 	s.routing = routing

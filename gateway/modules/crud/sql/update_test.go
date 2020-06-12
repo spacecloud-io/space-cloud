@@ -10,16 +10,16 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestSQL_generateUpdateQuery(t *testing.T) {
 	type fields struct {
-		enabled            bool
-		connection         string
-		client             *sqlx.DB
-		dbType             string
-		removeProjectScope bool
+		enabled    bool
+		connection string
+		client     *sqlx.DB
+		dbType     string
 	}
 	type args struct {
 		ctx     context.Context
@@ -37,6 +37,25 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name:   "msyql: valid set find on json",
+			fields: fields{dbType: "mysql"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$set",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
+					Find: map[string]interface{}{
+						"Obj2": map[string]interface{}{"$contains": map[string]interface{}{"obj1": "value1"}},
+					},
+				},
+			},
+			want:    "UPDATE col SET String1=? WHERE json_contains(Obj2,?)",
+			want1:   []interface{}{"1", `{"obj1":"value1"}`},
+			wantErr: false,
+		},
+		{
 			name:   "sql: valid $set query",
 			fields: fields{dbType: "mysql"},
 			args: args{
@@ -51,7 +70,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=? WHERE (FindString1 = ?)",
+			want:    "UPDATE col SET String1=? WHERE (FindString1 = ?)",
 			want1:   []interface{}{"1", "1"},
 			wantErr: false,
 		},
@@ -88,7 +107,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=CURRENT_TIMESTAMP WHERE (today = ?)",
+			want:    "UPDATE col SET String1=CURRENT_TIMESTAMP WHERE (today = ?)",
 			want1:   []interface{}{"1"},
 			wantErr: false,
 		},
@@ -155,7 +174,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1*? WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=String1*? WHERE (op1 = ?)",
 			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
@@ -174,7 +193,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=GREATEST(String1,?) WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=GREATEST(String1,?) WHERE (op1 = ?)",
 			want1:   []interface{}{int64(6132), int64(121)},
 			wantErr: false,
 		},
@@ -193,7 +212,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
 			want1:   []interface{}{int64(6), int64(1)},
 			wantErr: false,
 		},
@@ -212,7 +231,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
 			want1:   []interface{}{float64(-6.54), int64(1)},
 			wantErr: false,
 		},
@@ -231,7 +250,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=LEAST(String1,?) WHERE (op1 = ?)",
 			want1:   []interface{}{int64(18), int64(1)},
 			wantErr: false,
 		},
@@ -269,7 +288,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=CURRENT_DATE WHERE (today = ?)",
+			want:    "UPDATE col SET String1=CURRENT_DATE WHERE (today = ?)",
 			want1:   []interface{}{"1"},
 			wantErr: false,
 		},
@@ -289,7 +308,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 				},
 			},
 			want: "",
-			//want1:   []interface{}{},
+			// want1:   []interface{}{},
 			wantErr: true,
 		},
 		{
@@ -324,7 +343,7 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 					},
 				},
 			},
-			want:    "UPDATE project.col SET String1=String1+? WHERE (op1 = ?)",
+			want:    "UPDATE col SET String1=String1+? WHERE (op1 = ?)",
 			want1:   []interface{}{int64(18446), int64(67)},
 			wantErr: false,
 		},
@@ -441,6 +460,25 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 			want: "",
 
 			wantErr: true,
+		},
+		{
+			name:   "postgres: valid set find on json",
+			fields: fields{dbType: "postgres"},
+			args: args{
+				ctx:     context.TODO(),
+				project: "project",
+				col:     "col",
+				op:      "$set",
+				req: model.UpdateRequest{
+					Update: map[string]interface{}{"$set": map[string]interface{}{"String1": "1"}},
+					Find: map[string]interface{}{
+						"Obj2": map[string]interface{}{"$contains": map[string]interface{}{"obj1": "value1"}},
+					},
+				},
+			},
+			want:    "UPDATE project.col SET String1=$1 WHERE Obj2 @> $2",
+			want1:   []interface{}{"1", `{"obj1":"value1"}`},
+			wantErr: false,
 		},
 		{
 			name:   "postgres: valid set",
@@ -1295,13 +1333,13 @@ func TestSQL_generateUpdateQuery(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &SQL{
-				enabled:            tt.fields.enabled,
-				connection:         tt.fields.connection,
-				client:             tt.fields.client,
-				dbType:             tt.fields.dbType,
-				removeProjectScope: tt.fields.removeProjectScope,
+				enabled:    tt.fields.enabled,
+				connection: tt.fields.connection,
+				client:     tt.fields.client,
+				dbType:     tt.fields.dbType,
+				name:       tt.args.project,
 			}
-			got, got1, err := s.generateUpdateQuery(tt.args.ctx, tt.args.project, tt.args.col, &tt.args.req, tt.args.op)
+			got, got1, err := s.generateUpdateQuery(tt.args.ctx, tt.args.col, &tt.args.req, tt.args.op)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("name = %v, SQL.generateUpdateQuery() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 				return

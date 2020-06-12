@@ -8,6 +8,6 @@ import (
 )
 
 // DescribeTable return a structure of sql table
-func (m *Mongo) DescribeTable(ctx context.Context, project, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error) {
+func (m *Mongo) DescribeTable(ctc context.Context, col string) ([]utils.FieldType, []utils.ForeignKeysType, []utils.IndexType, error) {
 	return nil, nil, nil, errors.New("schema operation cannot be performed")
 }
