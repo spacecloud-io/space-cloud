@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"crypto/rsa"
 	"net/http"
 	"sync"
 	"testing"
@@ -11,21 +12,35 @@ import (
 
 func TestManager_LoadEnv(t *testing.T) {
 	type fields struct {
-		config    *config.Admin
-		quotas    model.UsageQuotas
-		user      *config.AdminUser
-		isProd    bool
-		clusterID string
+		config                 *config.Admin
+		quotas                 model.UsageQuotas
+		user                   *config.AdminUser
+		isProd                 bool
+		clusterID              string
+		plan                   string
+		syncMan                model.SyncManAdminInterface
+		licenseFetchErrorCount int
+		// Config for enterprise
+		nodeID    string
+		sessionID string
+		publicKey *rsa.PublicKey
 	}
 	tests := []struct {
 		name   string
 		fields fields
 		want   bool
+		want1  string
+		want2  model.UsageQuotas
 	}{
 		{
 			name:   "valid config",
-			fields: fields{isProd: true},
+			fields: fields{isProd: true, plan: "space-cloud-open", quotas: model.UsageQuotas{MaxProjects: 1, MaxDatabases: 1}},
 			want:   true,
+			want1:  "space-cloud-open",
+			want2: model.UsageQuotas{
+				MaxProjects:  1,
+				MaxDatabases: 1,
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -36,10 +51,18 @@ func TestManager_LoadEnv(t *testing.T) {
 				quotas:    tt.fields.quotas,
 				user:      tt.fields.user,
 				isProd:    tt.fields.isProd,
+				plan:      tt.fields.plan,
 				clusterID: tt.fields.clusterID,
 			}
-			if got := m.LoadEnv(); got != tt.want {
+			got, got1, got2 := m.LoadEnv()
+			if got != tt.want {
 				t.Errorf("LoadEnv() = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("LoadEnv() = %v, want %v", got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("LoadEnv() = %v, want %v", got2, tt.want2)
 			}
 		})
 	}
@@ -78,7 +101,7 @@ func TestManager_Login(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	m := New("nodeID", "clusterID", &config.AdminUser{User: "admin", Pass: "123", Secret: "some-secret"})
+	m := New("nodeID", "clusterID", true, &config.AdminUser{User: "admin", Pass: "123", Secret: "some-secret"})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, got1, err := m.Login(tt.args.user, tt.args.pass)

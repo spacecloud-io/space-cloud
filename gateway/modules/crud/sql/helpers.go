@@ -55,7 +55,14 @@ func (s *SQL) generator(find map[string]interface{}) (goqu.Expression, []string)
 						logrus.Errorf("error marshalling data $contains data (%s)", err.Error())
 						break
 					}
-					array = append(array, goqu.L(fmt.Sprintf("%s @> ?", k), string(data)))
+					switch s.dbType {
+					case string(utils.MySQL):
+						array = append(array, goqu.L(fmt.Sprintf("json_contains(%s,?)", k), string(data)))
+					case string(utils.Postgres):
+						array = append(array, goqu.L(fmt.Sprintf("%s @> ?", k), string(data)))
+					default:
+						logrus.Errorf("_contains not supported for database (%s)", s.dbType)
+					}
 				case "$gt":
 					array = append(array, goqu.I(k).Gt(v2))
 
@@ -105,12 +112,12 @@ func generateRecord(temp interface{}) (goqu.Record, error) {
 	return record, nil
 }
 
-func (s *SQL) getDBName(project, col string) string {
-	if s.removeProjectScope {
-		return col
+func (s *SQL) getDBName(col string) string {
+	switch utils.DBType(s.dbType) {
+	case utils.Postgres, utils.SQLServer:
+		return fmt.Sprintf("%s.%s", s.name, col)
 	}
-
-	return project + "." + col
+	return col
 }
 
 func (s *SQL) generateQuerySQLServer(query string) string {

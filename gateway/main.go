@@ -79,11 +79,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "Comma separated values of the hosts to restrict mission-control to",
 		Value:  "*",
 	},
-	cli.BoolFlag{
-		Name:   "remove-project-scope",
-		Usage:  "Removes the project level scope in the database and file storage modules",
-		EnvVar: "REMOVE_PROJECT_SCOPE",
-	},
 	cli.StringFlag{
 		Name:   "runner-addr",
 		Usage:  "The address used to reach the runner",
@@ -174,7 +169,6 @@ func actionRun(c *cli.Context) error {
 	// Load flag related to the port
 	port := c.Int("port")
 
-	removeProjectScope := c.Bool("remove-project-scope")
 	runnerAddr := c.String("runner-addr")
 
 	// Load flags related to ssl
@@ -197,7 +191,7 @@ func actionRun(c *cli.Context) error {
 
 	// Generate a new id if not provided
 	if nodeID == "none" {
-		nodeID = "auto-" + ksuid.New().String()
+		nodeID = fmt.Sprintf("auto-%s-0", ksuid.New().String())
 	}
 
 	// Load the configFile from path if provided
@@ -217,13 +211,10 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, removeProjectScope, disableMetrics, adminUserInfo)
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configPath, disableMetrics, isDev, adminUserInfo)
 	if err != nil {
 		return err
 	}
-
-	// Save the config file path for future use
-	s.SetConfigFilePath(configPath)
 
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
@@ -237,7 +228,7 @@ func actionRun(c *cli.Context) error {
 	}
 
 	// Configure all modules
-	if err := s.SetConfig(conf, !isDev); err != nil {
+	if err := s.SetConfig(conf); err != nil {
 		return err
 	}
 

@@ -2,13 +2,19 @@ package bolt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 )
 
 // RawExec performs an operation for schema creation
 // NOTE: not to be exposed externally
-func (b *Bolt) RawExec(ctx context.Context, project string) error {
-	return fmt.Errorf("error raw exec cannot be performed over selected database")
+func (b *Bolt) RawExec(ctx context.Context, query string) error {
+	return errors.New("error raw exec cannot be performed over embedded database")
+}
+
+// RawQuery query document(s) from the database
+func (b *Bolt) RawQuery(ctx context.Context, query string, args []interface{}) (int64, interface{}, error) {
+	return 0, "", errors.New("error raw querry cannot be performed over embedded database")
 }
 
 // CreateDatabaseIfNotExist creates a project if none exist

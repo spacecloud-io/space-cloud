@@ -19,9 +19,10 @@ func (s *Server) handleGetClusterType() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+		logrus.Println("driver", s.driver.Type())
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: s.driver.Type()})
 	}

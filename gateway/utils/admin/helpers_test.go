@@ -81,7 +81,7 @@ func TestManager_parseToken(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	m := New("", "clusterID", &config.AdminUser{Secret: "some-secret"})
+	m := New("node-0", "clusterID", true, &config.AdminUser{Secret: "some-secret"})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := m.parseToken(tt.args.token)

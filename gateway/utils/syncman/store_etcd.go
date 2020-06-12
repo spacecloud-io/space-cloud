@@ -27,6 +27,10 @@ type ETCDStore struct {
 	nodeID, clusterID, advertiseAddr string
 }
 
+func (s *ETCDStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
+	panic("implement me")
+}
+
 type trackedItemMeta struct {
 	createRevision int64
 	modRevision    int64
@@ -136,7 +140,7 @@ func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 		{
 			ClusterID:  "",
 			ClusterKey: "",
-			Version:    0,
+			License:    "",
 		},
 	}
 	for _, kv := range res.Kvs {

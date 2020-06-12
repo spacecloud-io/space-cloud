@@ -127,7 +127,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			Auth:        map[string]*config.AuthStub{},
 			Crud:        map[string]*config.CrudStub{},
 			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}, Email: ""},
 		}
 		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
@@ -140,7 +140,9 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 		}
 	}
 	// We will ignore the error for the create project request
-	_ = s.modules.SetProjectConfig(project, s.letsencrypt, s.routing)
+	if err := s.modules.SetProjectConfig(project, s.letsencrypt, s.routing); err != nil {
+		return http.StatusInternalServerError, err
+	}
 
 	if s.storeType == "none" {
 		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -193,13 +195,11 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 	return s.store.SetProject(ctx, project)
 }
 
-func (s *Manager) setAdminConfig(ctx context.Context, cluster *config.Admin) error {
+func (s *Manager) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if err := s.adminMan.SetConfig(cluster); err != nil {
-		return err
-	}
+	utils.LogDebug("Storing the admin config", "syncman", "SetAdminConfig", map[string]interface{}{"cluster": cluster})
 
 	s.projectConfig.Admin = cluster
 
@@ -248,7 +248,7 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	for _, p := range s.projectConfig.Projects {
 		if projectID == "*" {
 			// get all projects
-			v = append(v, config.Project{AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Name: p.Name, ID: p.ID})
+			v = append(v, config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, Name: p.Name, ID: p.ID})
 			continue
 		}
 

@@ -51,9 +51,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 			err = r.ParseForm()
 		}
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Could not parse form: %s", err.Error())})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, fmt.Sprintf("Could not parse form: %s", err.Error()))
 			return
 		}
 
@@ -67,9 +65,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 		if makeAllString != "" {
 			makeAll, err = strconv.ParseBool(makeAllString)
 			if err != nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": "Incorrect value for makeAll"})
+				_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Incorrect value for makeAll")
 				return
 			}
 		}
@@ -77,9 +73,7 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 		if fileType == "file" {
 			file, header, err := r.FormFile("file")
 			if err != nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": fmt.Sprintf("Incorrect value for file: %s", err)})
+				_ = utils.SendErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Incorrect value for file: %s", err))
 				return
 			}
 			defer utils.CloseTheCloser(file)
@@ -91,23 +85,19 @@ func HandleCreateFile(modules *modules.Modules) http.HandlerFunc {
 			}
 
 			status, err := fileStore.UploadFile(ctx, projectID, token, &model.CreateFileRequest{Name: fileName, Path: path, Type: fileType, MakeAll: makeAll, Meta: v}, file)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
 			if err != nil {
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = utils.SendErrorResponse(w, status, err.Error())
 				return
 			}
-			_ = json.NewEncoder(w).Encode(map[string]string{})
+			_ = utils.SendResponse(w, status, map[string]string{})
 		} else {
 			name := r.FormValue("name")
 			status, err := fileStore.CreateDir(ctx, projectID, token, &model.CreateFileRequest{Name: name, Path: path, Type: fileType, MakeAll: makeAll}, v)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
 			if err != nil {
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = utils.SendErrorResponse(w, status, err.Error())
 				return
 			}
-			_ = json.NewEncoder(w).Encode(map[string]string{})
+			_ = utils.SendResponse(w, status, map[string]string{})
 		}
 	}
 }
@@ -136,36 +126,29 @@ func HandleRead(modules *modules.Modules) http.HandlerFunc {
 		if op == "list" {
 			mode := r.URL.Query().Get("mode")
 			status, res, err := fileStore.ListFiles(ctx, projectID, token, &model.ListFilesRequest{Path: path, Type: mode})
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
 			if err != nil {
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = utils.SendErrorResponse(w, status, err.Error())
 				return
 			}
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": res})
+			_ = utils.SendResponse(w, status, map[string]interface{}{"result": res})
 			return
 		} else if op == "exist" {
 			if err := fileStore.DoesExists(ctx, projectID, token, path); err != nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusNotFound)
-				_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				_ = utils.SendErrorResponse(w, http.StatusNotFound, err.Error())
 				return
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]string{})
+			_ = utils.SendOkayResponse(w)
 			return
 		}
 
 		// Read the file from file storage
 		status, file, err := fileStore.DownloadFile(ctx, projectID, token, path)
-		w.WriteHeader(status)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
 		defer func() { _ = file.Close() }()
+		w.WriteHeader(http.StatusOK)
 		_, _ = io.Copy(w, file.File)
 	}
 }
@@ -194,13 +177,11 @@ func HandleDelete(modules *modules.Modules) http.HandlerFunc {
 
 		status, err := fileStore.DeleteFile(ctx, projectID, token, path, v)
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
 		if err != nil {
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, status, err.Error())
 			return
 		}
-		_ = json.NewEncoder(w).Encode(map[string]string{})
+		_ = utils.SendResponse(w, status, map[string]string{})
 	}
 }
 

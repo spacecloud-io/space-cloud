@@ -46,12 +46,13 @@ config.yaml
 
 # Helper scripts
 kube
+scripts
 runner/scripts
 gateway/scripts
 metric-proxy/scripts
 docker-build.sh
 
-
+scripts/*
 #IDEs
 
 yarn.lock

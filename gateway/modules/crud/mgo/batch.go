@@ -3,20 +3,21 @@ package mgo
 import (
 	"context"
 
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Batch performs the provided operations in a single Batch
-func (m *Mongo) Batch(ctx context.Context, project string, txRequest *model.BatchRequest) ([]int64, error) {
-	counts := make([]int64, len(txRequest.Requests))
+func (m *Mongo) Batch(ctx context.Context, req *model.BatchRequest) ([]int64, error) {
+	counts := make([]int64, len(req.Requests))
 	err := m.client.UseSession(ctx, func(session mongo.SessionContext) error {
 		err := session.StartTransaction()
 		if err != nil {
 			return err
 		}
-		for i, req := range txRequest.Requests {
+		for i, req := range req.Requests {
 			col := req.Col
 
 			switch req.Type {
@@ -24,7 +25,7 @@ func (m *Mongo) Batch(ctx context.Context, project string, txRequest *model.Batc
 				doc := req.Document
 				op := req.Operation
 
-				counts[i], err = m.Create(session, project, col, &model.CreateRequest{Document: doc, Operation: op})
+				counts[i], err = m.Create(session, col, &model.CreateRequest{Document: doc, Operation: op})
 				if err != nil {
 					_ = session.AbortTransaction(session)
 					return err
@@ -34,7 +35,7 @@ func (m *Mongo) Batch(ctx context.Context, project string, txRequest *model.Batc
 				op := req.Operation
 				update := req.Update
 
-				counts[i], err = m.Update(session, project, col, &model.UpdateRequest{Find: find, Operation: op, Update: update})
+				counts[i], err = m.Update(session, col, &model.UpdateRequest{Find: find, Operation: op, Update: update})
 				if err != nil {
 					_ = session.AbortTransaction(session)
 					return err
@@ -43,7 +44,7 @@ func (m *Mongo) Batch(ctx context.Context, project string, txRequest *model.Batc
 				find := req.Find
 				op := req.Operation
 
-				counts[i], err = m.Delete(session, project, col, &model.DeleteRequest{Find: find, Operation: op})
+				counts[i], err = m.Delete(session, col, &model.DeleteRequest{Find: find, Operation: op})
 				if err != nil {
 					_ = session.AbortTransaction(session)
 					return err

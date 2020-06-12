@@ -9,6 +9,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 
 	"github.com/gorilla/mux"
+
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
@@ -28,9 +29,7 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -41,15 +40,11 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		projectID := vars["project"]
 
 		if err := syncMan.SetService(ctx, projectID, service, &v); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 		// return
 
 	}
@@ -66,9 +61,7 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -81,15 +74,11 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		}
 		services, err := syncMan.GetServices(ctx, projectID, serviceID)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(model.Response{Result: services})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: services})
 	}
 }
 
@@ -103,9 +92,7 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -116,16 +103,10 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		projectID := vars["project"]
 
 		if err := syncMan.DeleteService(ctx, projectID, service); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) //http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
-		// return
-
+		_ = utils.SendOkayResponse(w)
 	}
 }

@@ -1,12 +1,15 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils"
 )
@@ -23,7 +26,7 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -36,18 +39,21 @@ func (s *Server) handleSetFileSecretRootPath() http.HandlerFunc {
 		reqBody := new(request)
 		if err := json.NewDecoder(r.Body).Decode(reqBody); err != nil {
 			logrus.Errorf("Failed to set file secret root path - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
 
 		// set file secret root path
-		if err := s.driver.SetFileSecretRootPath(projectID, secretName, reqBody.RootPath); err != nil {
+		if err := s.driver.SetFileSecretRootPath(ctx, projectID, secretName, reqBody.RootPath); err != nil {
 			logrus.Errorf("Failed to create secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -61,7 +67,7 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -74,20 +80,23 @@ func (s *Server) handleApplySecret() http.HandlerFunc {
 		secretObj := new(model.Secret)
 		if err := json.NewDecoder(r.Body).Decode(secretObj); err != nil {
 			logrus.Errorf("Failed to create secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
 		secretObj.ID = name
 
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
 		// create/update secret
-		if err := s.driver.CreateSecret(projectID, secretObj); err != nil {
+		if err := s.driver.CreateSecret(ctx, projectID, secretObj); err != nil {
 			logrus.Errorf("Failed to create secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -101,7 +110,7 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -109,11 +118,14 @@ func (s *Server) handleListSecrets() http.HandlerFunc {
 		projectID := vars["project"]
 		name, exists := r.URL.Query()["id"]
 
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
 		// list all secrets
-		secrets, err := s.driver.ListSecrets(projectID)
+		secrets, err := s.driver.ListSecrets(ctx, projectID)
 		if err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -149,7 +161,7 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -158,14 +170,17 @@ func (s *Server) handleDeleteSecret() http.HandlerFunc {
 		projectID := vars["project"]
 		name := vars["id"]
 
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
 		// list all secrets
-		if err := s.driver.DeleteSecret(projectID, name); err != nil {
+		if err := s.driver.DeleteSecret(ctx, projectID, name); err != nil {
 			logrus.Errorf("Failed to delete secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -179,7 +194,7 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -193,17 +208,21 @@ func (s *Server) handleSetSecretKey() http.HandlerFunc {
 		secretVal := new(model.SecretValue)
 		if err := json.NewDecoder(r.Body).Decode(secretVal); err != nil {
 			logrus.Errorf("Failed to set secret key - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusBadRequest, err)
-			return
-		}
-		// setSecretKey
-		if err := s.driver.SetKey(projectID, name, key, secretVal); err != nil {
-			logrus.Errorf("Failed to list secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
+		// setSecretKey
+		if err := s.driver.SetKey(ctx, projectID, name, key, secretVal); err != nil {
+			logrus.Errorf("Failed to list secret - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -217,7 +236,7 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 		_, err := s.auth.VerifyToken(utils.GetToken(r))
 		if err != nil {
 			logrus.Errorf("Failed to apply service - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusUnauthorized, err)
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -226,12 +245,16 @@ func (s *Server) handleDeleteSecretKey() http.HandlerFunc {
 		name := vars["id"] // secret-name
 		key := vars["key"] // secret-key
 		// setSecretKey
-		if err := s.driver.DeleteKey(projectID, name, key); err != nil {
+
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+
+		if err := s.driver.DeleteKey(ctx, projectID, name, key); err != nil {
 			logrus.Errorf("Failed to list secret - %s", err.Error())
-			utils.SendErrorResponse(w, r, http.StatusInternalServerError, err)
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		utils.SendEmptySuccessResponse(w, r)
+		_ = utils.SendOkayResponse(w)
 	}
 }

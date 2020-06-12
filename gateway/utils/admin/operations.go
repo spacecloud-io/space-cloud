@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -33,7 +34,15 @@ func (m *Manager) IsDBConfigValid(config config.Crud) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	if len(config) > m.quotas.MaxDatabases {
+	// Only count the length of enabled databases
+	var length int
+	for _, c := range config {
+		if c.Enabled {
+			length++
+		}
+	}
+
+	if length > m.quotas.MaxDatabases {
 		return fmt.Errorf("plan needs to be upgraded to use more than %d databases", m.quotas.MaxDatabases)
 	}
 
@@ -70,16 +79,16 @@ func (m *Manager) RefreshToken(token string) (string, error) {
 	return newToken, nil
 }
 
-func (m *Manager) IsEnterpriseMode() bool {
+func (m *Manager) IsRegistered() bool {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	return m.isEnterpriseMode()
+	return m.isRegistered()
 }
 
 // GetQuotas gets number of projects & databases that can be created
-func (m *Manager) GetQuotas() map[string]interface{} {
-	return map[string]interface{}{"projects": m.quotas.MaxProjects, "databases": m.quotas.MaxDatabases}
+func (m *Manager) GetQuotas() *model.UsageQuotas {
+	return &m.quotas
 }
 
 // GetCredentials gets user name & pass
@@ -90,4 +99,11 @@ func (m *Manager) GetCredentials() map[string]interface{} {
 // GetClusterID returns the cluster id
 func (m *Manager) GetClusterID() string {
 	return m.clusterID
+}
+func (m *Manager) GetSessionID() string {
+	return m.sessionID
+}
+
+func (m *Manager) GetEnterpriseClusterID() string {
+	return m.config.ClusterID
 }

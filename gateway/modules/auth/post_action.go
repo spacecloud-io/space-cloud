@@ -55,13 +55,11 @@ func (m *Module) PostProcessMethod(postProcess *model.PostProcess, result interf
 				if !ok {
 					return fmt.Errorf("Value should be of type string and not %T", loadedValue)
 				}
-				encrypted := make([]byte, len(stringValue))
-				err1 := encryptAESCFB(encrypted, []byte(stringValue), m.aesKey, m.aesKey[:aes.BlockSize])
-				if err1 != nil {
-					logrus.Errorln("error encrypting value in postProcessMethod: ", err1)
-					return err1
+				encryptedValue, err := utils.Encrypt(m.aesKey, stringValue)
+				if err != nil {
+					return utils.LogError("Unable to encrypt string", "auth", "post-process", err)
 				}
-				er := utils.StoreValue(field.Field, base64.StdEncoding.EncodeToString(encrypted), map[string]interface{}{"res": doc})
+				er := utils.StoreValue(field.Field, encryptedValue, map[string]interface{}{"res": doc})
 				if er != nil {
 					logrus.Errorln("error storing value in postProcessMethod: ", er)
 					return er

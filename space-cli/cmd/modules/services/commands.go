@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
@@ -24,6 +23,21 @@ func GenerateSubCommands() []*cobra.Command {
 // GetSubCommands is the list of commands the services module exposes
 func GetSubCommands() []*cobra.Command {
 
+	var getServicesRoute = &cobra.Command{
+		Use:  "service-route",
+		RunE: actionGetServicesRoutes,
+	}
+
+	var getServicesSecret = &cobra.Command{
+		Use:  "secret",
+		RunE: actionGetServicesSecrets,
+	}
+
+	var getService = &cobra.Command{
+		Use:  "service",
+		RunE: actionGetServices,
+	}
+
 	var getServicesRoutes = &cobra.Command{
 		Use:  "service-routes",
 		RunE: actionGetServicesRoutes,
@@ -34,17 +48,20 @@ func GetSubCommands() []*cobra.Command {
 		RunE: actionGetServicesSecrets,
 	}
 
-	var getService = &cobra.Command{
+	var getServices = &cobra.Command{
 		Use:  "services",
 		RunE: actionGetServices,
 	}
 
-	return []*cobra.Command{getServicesRoutes, getServicesSecrets, getService}
+	return []*cobra.Command{getServicesRoute, getServicesSecret, getService, getServicesRoutes, getServicesSecrets, getServices}
 }
 
 func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
 	commandName := "service-route"
 
 	params := map[string]string{}
@@ -54,17 +71,20 @@ func actionGetServicesRoutes(cmd *cobra.Command, args []string) error {
 
 	objs, err := GetServicesRoutes(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
 	commandName := "secret"
 
 	params := map[string]string{}
@@ -74,17 +94,20 @@ func actionGetServicesSecrets(cmd *cobra.Command, args []string) error {
 
 	objs, err := GetServicesSecrets(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGetServices(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
-	project := viper.GetString("project")
+	project, check := utils.GetProjectID()
+	if !check {
+		return utils.LogError("Project not specified in flag", nil)
+	}
 	commandName := "service"
 
 	params := map[string]string{}
@@ -97,11 +120,11 @@ func actionGetServices(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetServices(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
@@ -109,16 +132,14 @@ func actionGetServices(cmd *cobra.Command, args []string) error {
 func actionGenerateService(cmd *cobra.Command, args []string) error {
 	// get filename from args in which service config will be stored
 	if len(os.Args) != 4 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	serviceConfigFile := os.Args[3]
 
 	service, err := GenerateService("", "")
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(service, serviceConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(service, serviceConfigFile)
 }

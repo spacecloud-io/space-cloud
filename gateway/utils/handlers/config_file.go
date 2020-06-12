@@ -31,9 +31,7 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -43,15 +41,11 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		projectID := vars["project"]
 
 		if err := syncMan.SetFileStore(ctx, projectID, value); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -66,9 +60,7 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -79,15 +71,11 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// get project config
 		fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: fileConfig})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: fileConfig})
 	}
 }
 
@@ -107,9 +95,7 @@ func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -122,16 +108,12 @@ func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.
 		}
 
 		if err := file.GetState(ctx); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK) // http status code
 			logrus.Errorf("error handling file get state got error - %s", err.Error())
-			_ = json.NewEncoder(w).Encode(model.Response{Result: false, Error: err.Error()})
+			_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: false, Error: err.Error()})
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(model.Response{Result: true})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: true})
 	}
 }
 
@@ -148,9 +130,7 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -161,15 +141,11 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		ruleName := vars["id"]
 
 		if err := syncMan.SetFileRule(ctx, projectID, ruleName, value); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -182,9 +158,7 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -201,14 +175,11 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		// get project config
 		fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: fileRules})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: fileRules})
 	}
 }
 
@@ -225,9 +196,7 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 
 		// Check if the request is authorised
 		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
@@ -238,14 +207,10 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		ruleName := vars["id"]
 
 		if err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status code
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }

@@ -16,11 +16,10 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	}
 
 	router := mux.NewRouter()
-	router.Methods(http.MethodGet).Path("/v1/config/quotas").HandlerFunc(handlers.HandleGetQuotas(s.adminMan))
 	router.Methods(http.MethodGet).Path("/v1/config/credentials").HandlerFunc(handlers.HandleGetCredentials(s.adminMan))
 
-	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/version/upgrade").HandlerFunc(handlers.HandleVersionUpgrade(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/upgrade").HandlerFunc(handlers.HandleUpgrade(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/renew-license").HandlerFunc(handlers.HandleRenewLicense(s.adminMan, s.syncMan))
 
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan))
@@ -65,6 +64,9 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/rules").HandlerFunc(handlers.HandleSetTableRules(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/config/{id}").HandlerFunc(handlers.HandleSetDatabaseConfig(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/config/{id}").HandlerFunc(handlers.HandleRemoveDatabaseConfig(s.adminMan, s.syncMan))
+	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/database/prepared-queries").HandlerFunc(handlers.HandleGetPreparedQuery(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/prepared-queries/{id}").HandlerFunc(handlers.HandleSetPreparedQueries(s.adminMan, s.syncMan))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/prepared-queries/{id}").HandlerFunc(handlers.HandleRemovePreparedQueries(s.adminMan, s.syncMan))
 	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}").HandlerFunc(handlers.HandleDeleteTable(s.adminMan, s.modules, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/schema/mutate").HandlerFunc(handlers.HandleModifyAllSchema(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/database/{dbAlias}/collections/{col}/schema/mutate").HandlerFunc(handlers.HandleModifySchema(s.adminMan, s.modules, s.syncMan))
@@ -108,7 +110,7 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	// Initialize the routes for the crud operations
 	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/batch").HandlerFunc(handlers.HandleCrudBatch(s.modules))
-
+	router.Methods(http.MethodPost).Path("/v1/api/{project}/crud/{dbAlias}/prepared-queries/{id}").HandlerFunc(handlers.HandleCrudPreparedQuery(s.modules))
 	crudRouter := router.Methods(http.MethodPost).PathPrefix("/v1/api/{project}/crud/{dbAlias}/{col}").Subrouter()
 	crudRouter.HandleFunc("/create", handlers.HandleCrudCreate(s.modules))
 	crudRouter.HandleFunc("/read", handlers.HandleCrudRead(s.modules))
@@ -148,6 +150,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
 
 	// Add handler for routing module
-	router.PathPrefix("/").HandlerFunc(s.routing.HandleRoutes())
+	router.PathPrefix("/").HandlerFunc(s.routing.HandleRoutes(s.modules))
 	return s.restrictDomainMiddleware(restrictedHosts, router)
 }

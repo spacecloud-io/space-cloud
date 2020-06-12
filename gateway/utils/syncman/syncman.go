@@ -1,15 +1,19 @@
 package syncman
 
 import (
+	"context"
+	"encoding/json"
+	"reflect"
 	"sync"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
+	"github.com/spaceuptech/space-cloud/gateway/utils/types"
 )
 
 // Manager syncs the project config between folders
@@ -35,8 +39,8 @@ type Manager struct {
 	// For authentication
 	adminMan *admin.Manager
 
-	// Modules≤
-	modules     model.ModulesInterface
+	// Modules
+	modules     types.ModulesInterface
 	letsencrypt *letsencrypt.LetsEncrypt
 	routing     *routing.Routing
 }
@@ -47,10 +51,10 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, adminMan *admin.Manager) (*Manager, error) {
 
 	// Create a new manager instance
-	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
+	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, configFile: configFile, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
 	switch storeType {
@@ -84,13 +88,10 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(configFilePath string, projectConfig *config.Config, port int) error {
+func (s *Manager) Start(projectConfig *config.Config, port int) error {
 	// Save the ports
-	s.lock.Lock()
-	defer s.lock.Unlock()
 
 	s.port = port
-	s.configFile = configFilePath
 
 	// Write the config to file
 	_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
@@ -99,12 +100,29 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 		for _, p := range s.projectConfig.Projects {
 			if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
 				logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
-				break
+				return err
 			}
 		}
 	}
 
 	if s.storeType != "none" {
+		// Fetch initial version of admin config. This must be called before watch admin config callback is invoked
+		adminConfig, err := s.store.GetAdminConfig(context.Background())
+		if err != nil {
+			return utils.LogError("Unable to fetch initial copy of admin config", "syncman", "Start", err)
+		}
+		utils.LogDebug("Successfully loaded initial copy of config file", "syncman", "Start", nil)
+		_ = s.adminMan.SetConfig(adminConfig, true)
+
+		// Now lets store the config as well
+		if s.checkIfLeaderGateway(s.nodeID) {
+			s.projectConfig.Admin = s.adminMan.GetConfig()
+			if err := s.store.SetAdminConfig(context.Background(), s.projectConfig.Admin); err != nil {
+				return utils.LogError("Unable to save initial license copy", "syncman", "Start", err)
+			}
+			utils.LogDebug("Successfully stored initial copy of config file", "syncman", "Start", nil)
+		}
+
 		// Start routine to observe active space-cloud services
 		if err := s.store.WatchProjects(func(projects []*config.Project) {
 			s.lock.Lock()
@@ -117,7 +135,7 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 			if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
 				for _, p := range s.projectConfig.Projects {
 					if err := s.modules.SetProjectConfig(p, s.letsencrypt, s.routing); err != nil {
-						logrus.Errorf("Unable to apply project (%s). Upgrade your plan.", p.ID)
+						_ = utils.LogError("Unable to set project config", "syncman", "watch-projects", err)
 						break
 					}
 				}
@@ -130,7 +148,9 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 		if err := s.store.WatchServices(func(services scServices) {
 			s.lock.Lock()
 			defer s.lock.Unlock()
-			logrus.WithFields(logrus.Fields{"services": services}).Debugln("Updating services")
+
+			data, _ := json.Marshal(services)
+			logrus.WithFields(logrus.Fields{"services": string(data)}).Debugln("Updating services")
 
 			s.services = services
 		}); err != nil {
@@ -139,23 +159,31 @@ func (s *Manager) Start(configFilePath string, projectConfig *config.Config, por
 
 		// Start routine to observe space cloud projects
 		if err := s.store.WatchAdminConfig(func(clusters []*config.Admin) {
+			if len(clusters) == 0 {
+				return
+			}
+			cluster := clusters[0]
+
+			if reflect.DeepEqual(cluster, s.adminMan.GetConfig()) {
+				return
+			}
+
 			s.lock.Lock()
-			defer s.lock.Unlock()
+			s.projectConfig.Admin = cluster
+			_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
+			s.lock.Unlock()
+
 			logrus.WithFields(logrus.Fields{"admin config": clusters}).Debugln("Updating admin config")
-			for _, cluster := range clusters {
-				if err := s.adminMan.SetConfig(cluster); err != nil {
-					logrus.Errorf("unable to apply admin config")
-					break
-				}
-				s.projectConfig.Admin = cluster
-				_ = config.StoreConfigToFile(s.projectConfig, s.configFile)
+			if err := s.adminMan.SetConfig(cluster, false); err != nil {
+				_ = utils.LogError("Unable to apply admin config", "syncman", "Start", err)
+				return
 			}
 		}); err != nil {
 			return err
 		}
-
 	}
 
+	utils.LogDebug("Exiting syncman start", "syncman", "Start", nil)
 	return nil
 }
 
@@ -174,7 +202,7 @@ func (s *Manager) GetGlobalConfig() *config.Config {
 }
 
 // SetModules sets all the modules
-func (s *Manager) SetModules(modulesInterface model.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
+func (s *Manager) SetModules(modulesInterface types.ModulesInterface, letsEncrypt *letsencrypt.LetsEncrypt, routing *routing.Routing) {
 	s.modules = modulesInterface
 	s.letsencrypt = letsEncrypt
 	s.routing = routing
