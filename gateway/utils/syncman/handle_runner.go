@@ -12,11 +12,10 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
 // HandleRunnerRequests handles requests of the runner
-func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
+func (s *Manager) HandleRunnerRequests(admin model.AdminSyncmanInterface) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
@@ -76,7 +75,7 @@ func (s *Manager) GetRunnerAddr() string {
 }
 
 // GetClusterType returns cluster type
-func (s *Manager) GetClusterType(admin *admin.Manager) (string, error) {
+func (s *Manager) GetClusterType(admin model.AdminSyncmanInterface) (string, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if s.runnerAddr == "" {

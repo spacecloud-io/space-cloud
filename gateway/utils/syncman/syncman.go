@@ -33,7 +33,7 @@ type Manager struct {
 	services  []*service
 
 	// For authentication
-	adminMan *admin.Manager
+	adminMan model.AdminSyncmanInterface
 
 	// Modules
 	modules     model.ModulesInterface
