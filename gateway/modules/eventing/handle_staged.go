@@ -132,7 +132,9 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		// Reaching here means the event was successfully processed. Let's simply return
 		return
 	}
-
+	if err := m.generateDLQEventRequest(eventDoc); err != nil {
+		logrus.Errorf(err.Error())
+	}
 	if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
 	}

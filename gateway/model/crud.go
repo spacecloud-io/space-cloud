@@ -65,3 +65,10 @@ type AllRequest struct {
 type BatchRequest struct {
 	Requests []*AllRequest `json:"reqs"`
 }
+
+// DLQRequest is request body for dlq
+type DLQRequest struct {
+	ID   string      `json:"id"`
+	Type string      `json:"type"`
+	Body interface{} `json:"body"`
+}

@@ -179,6 +179,23 @@ func (m *Module) generateProcessedEventRequest(eventID string) *model.UpdateRequ
 	}
 }
 
+func (m *Module) generateDLQEventRequest(eventDoc *model.EventDocument) error {
+	Docs := make([]interface{}, 0)
+
+	Doc := &model.DLQRequest{
+		ID:   eventDoc.ID,
+		Type: "dlq_event_trigger_name",
+		Body: eventDoc.Payload,
+	}
+	Docs = append(Docs, Doc)
+	ctx := context.Background()
+	createRequest := &model.CreateRequest{Document: Docs, Operation: utils.All, IsBatch: true}
+	if err := m.crud.InternalCreate(ctx, m.config.DBAlias, m.project, utils.TableEventingLogs, createRequest, false); err != nil {
+		return errors.New("eventing module couldn't log the request -" + err.Error())
+	}
+	return nil
+}
+
 func getCreateRows(doc interface{}, op string) []interface{} {
 	var rows []interface{}
 	switch op {
