@@ -703,3 +703,217 @@ func TestManager_SetProjectConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestManager_DeleteProjectConfig(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		ctx       context.Context
+		projectID string
+	}
+	tests := []struct {
+		name            string
+		s               *Manager
+		args            args
+		adminMockArgs   []mockArgs
+		modulesMockArgs []mockArgs
+		storeMockArgs   []mockArgs
+		wantErr         bool
+	}{
+		{
+			name: "could not get internal access token",
+			s:    &Manager{storeType: "none"},
+			args: args{ctx: context.Background(), projectID: "project"},
+			adminMockArgs: []mockArgs{
+				{
+					method:         "GetInternalAccessToken",
+					paramsReturned: []interface{}{"", errors.New("could not generate signed string for token")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "store type none and couldn't store config to file",
+			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "notProject"}}}},
+			args: args{ctx: context.Background(), projectID: "project"},
+			adminMockArgs: []mockArgs{
+				{
+					method:         "GetInternalAccessToken",
+					paramsReturned: []interface{}{"token", nil},
+				},
+			},
+			modulesMockArgs: []mockArgs{
+				{
+					method: "SetProjectConfig",
+					args:   []interface{}{mock.Anything, mock.Anything, mock.Anything},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "store type kube and couldn't delete project",
+			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "notProject"}}}},
+			args: args{ctx: context.Background(), projectID: "project"},
+			adminMockArgs: []mockArgs{
+				{
+					method:         "GetInternalAccessToken",
+					paramsReturned: []interface{}{"token", nil},
+				},
+			},
+			modulesMockArgs: []mockArgs{
+				{
+					method: "SetProjectConfig",
+					args:   []interface{}{mock.Anything, mock.Anything, mock.Anything},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "DeleteProject",
+					args:           []interface{}{mock.Anything, "project"},
+					paramsReturned: []interface{}{errors.New("unable to get config map")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "store type kube and project is deleted",
+			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "notProject"}}}},
+			args: args{ctx: context.Background(), projectID: "project"},
+			adminMockArgs: []mockArgs{
+				{
+					method:         "GetInternalAccessToken",
+					paramsReturned: []interface{}{"token", nil},
+				},
+			},
+			modulesMockArgs: []mockArgs{
+				{
+					method: "SetProjectConfig",
+					args:   []interface{}{mock.Anything, mock.Anything, mock.Anything},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "DeleteProject",
+					args:           []interface{}{mock.Anything, "project"},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockAdmin := mockAdminSyncmanInterface{}
+			mockModules := mockModulesInterface{}
+			mockStore := mockStoreInterface{}
+
+			for _, m := range tt.adminMockArgs {
+				mockAdmin.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.modulesMockArgs {
+				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.storeMockArgs {
+				mockStore.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			tt.s.adminMan = &mockAdmin
+			tt.s.modules = &mockModules
+			tt.s.store = &mockStore
+
+			if err := tt.s.DeleteProjectConfig(tt.args.ctx, tt.args.projectID); (err != nil) != tt.wantErr {
+				t.Errorf("Manager.DeleteProjectConfig() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			mockAdmin.AssertExpectations(t)
+			mockModules.AssertExpectations(t)
+			mockStore.AssertExpectations(t)
+		})
+	}
+}
+
+func TestManager_GetProjectConfig(t *testing.T) {
+	type args struct {
+		projectID string
+	}
+	tests := []struct {
+		name    string
+		s       *Manager
+		args    args
+		want    []interface{}
+		wantErr bool
+	}{
+		{
+			name:    "project not present in state",
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}, {ID: "2"}}}},
+			args:    args{projectID: "3"},
+			want:    []interface{}{},
+			wantErr: true,
+		},
+		{
+			name: "projectID is *",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}, {ID: "2"}}}},
+			args: args{projectID: "*"},
+			want: []interface{}{config.Project{ID: "1"}, config.Project{ID: "2"}},
+		},
+		{
+			name: "projectID matches an existing project's id",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}, {ID: "2"}}}},
+			args: args{projectID: "1"},
+			want: []interface{}{config.Project{ID: "1"}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.GetProjectConfig(tt.args.projectID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Manager.GetProjectConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Manager.GetProjectConfig() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestManager_GetConfig(t *testing.T) {
+	type args struct {
+		projectID string
+	}
+	tests := []struct {
+		name    string
+		s       *Manager
+		args    args
+		want    *config.Project
+		wantErr bool
+	}{
+		{
+			name:    "project not present in state",
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
+			args:    args{projectID: "2"},
+			wantErr: true,
+		},
+		{
+			name: "projectID matches an existing project's ID",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
+			args: args{projectID: "1"},
+			want: &config.Project{ID: "1"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.GetConfig(tt.args.projectID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Manager.GetConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Manager.GetConfig() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
