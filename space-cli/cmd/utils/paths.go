@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 )
 
 // GetSpaceCloudDirectory gets the root space cloud directory
@@ -49,4 +50,52 @@ func getHomeDirectory() string {
 
 func getAccountConfigPath() string {
 	return fmt.Sprintf("%s/accounts.yaml", GetSpaceCloudDirectory())
+}
+
+// GetMountHostsFilePath returns the path of the hosts files to be mounted in in space cloud
+func GetMountHostsFilePath() string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("%s/.space-cloud/hosts", getHomeDirectoryToolBox())
+	}
+	return GetSpaceCloudHostsFilePath()
+}
+
+// GetMountConfigFilePath returns the path of the config files to be mounted in space cloud
+func GetMountConfigFilePath() string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("%s/.space-cloud/config.yaml", getHomeDirectoryToolBox())
+	}
+	return GetSpaceCloudConfigFilePath()
+}
+
+// GetMountSecretsDir returns the path of the secret dir to be mounted in space cloud
+func GetMountSecretsDir() string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("%s/.space-cloud/secrets", getHomeDirectoryToolBox())
+	}
+	return GetSecretsDir()
+}
+
+// GetMountTempSecretsDir returns the path of the temp secret dir to be mounted in space cloud
+func GetMountTempSecretsDir() string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("%s/.space-cloud/secrets/temp-secrets", getHomeDirectoryToolBox())
+	}
+	return GetSecretsDir()
+}
+
+// GetMountRoutingConfigPath returns the path of the routing config to be mounted in space cloud
+func GetMountRoutingConfigPath() string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("%s/.space-cloud/routing-config.json", getHomeDirectoryToolBox())
+	}
+	return GetSpaceCloudRoutingConfigPath()
+}
+
+// getHomeDirectoryToolBox gets home directory to support setup on window
+func getHomeDirectoryToolBox() string {
+	homeDrive := strings.ToLower(strings.Split(os.Getenv("HOMEDRIVE"), ":")[0])
+	homePath := strings.ReplaceAll(os.Getenv("HOMEPATH"), "\\", "/")
+
+	return "/" + homeDrive + homePath
 }

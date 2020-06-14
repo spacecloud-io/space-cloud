@@ -116,12 +116,12 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
-			Source: utils.GetSpaceCloudHostsFilePath(),
+			Source: utils.GetMountHostsFilePath(),
 			Target: "/etc/hosts",
 		},
 		{
 			Type:   mount.TypeBind,
-			Source: config,
+			Source: utils.GetMountConfigFilePath(),
 			Target: "/app/config.yaml",
 		},
 	}
@@ -175,20 +175,20 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
 				"SECRETS_PATH=/secrets",
-				"HOME_SECRETS_PATH=" + utils.GetTempSecretsDir(),
-				"HOSTS_FILE_PATH=" + utils.GetSpaceCloudHostsFilePath(),
+				"HOME_SECRETS_PATH=" + utils.GetMountTempSecretsDir(),
+				"HOSTS_FILE_PATH=" + utils.GetMountHostsFilePath(),
 				"ROUTING_FILE_PATH=" + "/routing-config.json",
 				"CLUSTER_ID=" + id,
 			},
 			mount: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSecretsDir(),
+					Source: utils.GetMountSecretsDir(),
 					Target: "/secrets",
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSpaceCloudHostsFilePath(),
+					Source: utils.GetMountHostsFilePath(),
 					Target: "/etc/hosts",
 				},
 				{
@@ -198,7 +198,7 @@ func Setup(id, username, key, config, version, secret string, dev bool, portHTTP
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSpaceCloudRoutingConfigPath(),
+					Source: utils.GetMountRoutingConfigPath(),
 					Target: "/routing-config.json",
 				},
 			},

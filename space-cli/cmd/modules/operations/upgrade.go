@@ -57,6 +57,8 @@ func Upgrade() error {
 	var gatewayMounts []mount.Mount
 	var gatewayPorts nat.PortMap
 	var gatewayEnvs []string
+	var Labels map[string]string
+	var gatewayExposedPorts nat.PortSet
 
 	// Parameters for runner
 	var runnerEnvs []string
@@ -74,6 +76,8 @@ func Upgrade() error {
 			gatewayEnvs = containerInspect.Config.Env
 			gatewayMounts = containerInspect.HostConfig.Mounts
 			gatewayPorts = containerInspect.HostConfig.PortBindings
+			Labels = containerInspect.Config.Labels
+			gatewayExposedPorts = containerInspect.Config.ExposedPorts
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), err)
 			}
@@ -101,12 +105,9 @@ func Upgrade() error {
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           gatewayEnvs,
-			exposedPorts: nat.PortSet{
-				"4122": struct{}{},
-				"4126": struct{}{},
-			},
-			portMapping: gatewayPorts,
-			mount:       gatewayMounts,
+			exposedPorts:   gatewayExposedPorts,
+			portMapping:    gatewayPorts,
+			mount:          gatewayMounts,
 		},
 
 		{
@@ -138,6 +139,7 @@ func Upgrade() error {
 		}
 
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
+			Labels:       Labels,
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
 			Env:          c.envs,
@@ -172,5 +174,14 @@ func Upgrade() error {
 	}
 
 	utils.LogInfo(fmt.Sprintf("Space Cloud has been upgraded to %s successfully", latestVersion))
+	utils.LogInfo("Restarting Space Cloud")
+
+	if err := DockerStop(); err != nil {
+		return err
+	}
+	if err := DockerStart(); err != nil {
+		return err
+	}
+
 	return nil
 }
