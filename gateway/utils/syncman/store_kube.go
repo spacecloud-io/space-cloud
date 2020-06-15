@@ -29,7 +29,7 @@ type KubeStore struct {
 const spaceCloud string = "space-cloud"
 
 // NewKubeStore creates a new Kube store
-func NewKubeStore(clusterID string) (*KubeStore, error) {
+func NewKubeStore(clusterID string) (Store, error) {
 	// Create the kubernetes client
 	restConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -242,7 +242,7 @@ func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 
 // SetAdminConfig maintains consistency over all projects
 func (s *KubeStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
-	clusterJSONString, err := json.Marshal(adminConfig)
+	clusterJSONString, err := json.MarshalIndent(adminConfig, "", " ")
 	if err != nil {
 		logrus.Errorf("error while setting project in kube store unable to marshal project config - %v", err)
 		return err
@@ -285,7 +285,7 @@ func (s *KubeStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admi
 
 // SetProject sets the project of the kube store
 func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) error {
-	projectJSONString, err := json.Marshal(project)
+	projectJSONString, err := json.MarshalIndent(project, "", " ")
 	if err != nil {
 		logrus.Errorf("error while setting project in kube store unable to marshal project config - %v", err)
 		return err

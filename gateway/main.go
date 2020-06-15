@@ -34,12 +34,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "The id to start space cloud with",
 		EnvVar: "NODE_ID",
 	},
-	cli.StringFlag{
-		Name:   "config",
-		Value:  "config.yaml",
-		Usage:  "Load space cloud config from `FILE`",
-		EnvVar: "CONFIG",
-	},
 	cli.BoolFlag{
 		Name:   "dev",
 		Usage:  "Run space-cloud in development mode",

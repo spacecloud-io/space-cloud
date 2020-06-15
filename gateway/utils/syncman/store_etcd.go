@@ -35,7 +35,7 @@ type trackedItemMeta struct {
 }
 
 // NewETCDStore creates new etcd store
-func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
+func NewETCDStore(nodeID, clusterID, advertiseAddr string) (Store, error) {
 	config, err := loadConfig()
 	if err != nil {
 		return &ETCDStore{}, fmt.Errorf("error loading etcd config from environment %v", err)

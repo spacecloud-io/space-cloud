@@ -72,9 +72,6 @@ func (s *Server) Start(isDev, profiler bool, staticPath string, port int, restri
 		return err
 	}
 
-	// Configure all modules
-	s.SetConfig(s.syncMan.GetGlobalConfig(), !isDev)
-
 	// Allow cors
 	corsObj := utils.CreateCorsObject()
 

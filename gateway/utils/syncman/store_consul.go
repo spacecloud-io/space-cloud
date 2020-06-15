@@ -23,7 +23,7 @@ type ConsulStore struct {
 }
 
 // NewConsulStore creates new consul store
-func NewConsulStore(nodeID, clusterID, advertiseAddr string) (*ConsulStore, error) {
+func NewConsulStore(nodeID, clusterID, advertiseAddr string) (Store, error) {
 	client, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
 		return nil, err

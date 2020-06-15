@@ -16,8 +16,8 @@ type LocalStore struct {
 }
 
 // NewLocalStore creates a new local store
-func NewLocalStore(nodeID, advertiseAddr string) (*LocalStore, error) {
-	configPath := os.Getenv("SC_CONFIG")
+func NewLocalStore(nodeID, advertiseAddr string) (Store, error) {
+	configPath := os.Getenv("CONFIG")
 	if configPath == "" {
 		configPath = "config.yaml"
 	}

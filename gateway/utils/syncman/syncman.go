@@ -1,12 +1,12 @@
 package syncman
 
 import (
+	"fmt"
 	"sync"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
 	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
@@ -52,36 +52,26 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
 
 	// Initialise the consul client if enabled
+	var s Store
+	var err error
 	switch storeType {
 	case "local":
-		s, err := NewLocalStore(nodeID, advertiseAddr)
-		if err != nil {
-			return nil, err
-		}
-		m.store = s
-		m.store.Register()
+		s, err = NewLocalStore(nodeID, advertiseAddr)
 	case "kube":
-		s, err := NewKubeStore(clusterID)
-		if err != nil {
-			return nil, err
-		}
-		m.store = s
-		m.store.Register()
+		s, err = NewKubeStore(clusterID)
 	case "consul":
-		s, err := NewConsulStore(nodeID, clusterID, advertiseAddr)
-		if err != nil {
-			return nil, err
-		}
-		m.store = s
-		m.store.Register()
+		s, err = NewConsulStore(nodeID, clusterID, advertiseAddr)
 	case "etcd":
-		s, err := NewETCDStore(nodeID, clusterID, advertiseAddr)
-		if err != nil {
-			return nil, err
-		}
-		m.store = s
-		m.store.Register()
+		s, err = NewETCDStore(nodeID, clusterID, advertiseAddr)
+	default:
+		return nil, fmt.Errorf("couldnt initialize syncaman, unknown store type (%v) provided", storeType)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+	m.store = s
+	m.store.Register()
 
 	return m, nil
 }
@@ -90,15 +80,12 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 func (s *Manager) Start(ssl *config.SSL, port int) error {
 	// Save the ports
 	s.port = port
-	s.projectConfig = &config.Config{SSL: ssl}
 
-	// TODO: Do we need to store every change in config.yaml in case of kubernetes
 	// Start routine to observe space cloud projects
 	if err := s.store.WatchProjects(func(projects []*config.Project) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
-
-		logrus.WithFields(logrus.Fields{"projects": projects}).Debugln("Updating projects")
+		utils.LogDebug("Updating projects", "syncman", "Start", map[string]interface{}{"projects": projects})
 		s.projectConfig.Projects = projects
 
 		if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
@@ -112,7 +99,7 @@ func (s *Manager) Start(ssl *config.SSL, port int) error {
 	if err := s.store.WatchAdminConfig(func(clusters []*config.Admin) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
-		logrus.WithFields(logrus.Fields{"admin config": clusters}).Debugln("Updating admin config")
+		utils.LogDebug("Updating admin config", "syncman", "Start", map[string]interface{}{"admin config": clusters})
 		for _, cluster := range clusters {
 			s.adminMan.SetConfig(cluster)
 			s.projectConfig.Admin = cluster
@@ -125,7 +112,7 @@ func (s *Manager) Start(ssl *config.SSL, port int) error {
 	if err := s.store.WatchServices(func(services scServices) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
-		logrus.WithFields(logrus.Fields{"services": services}).Debugln("Updating services")
+		utils.LogDebug("Updating services", "syncman", "Start", map[string]interface{}{"services": services})
 
 		s.services = services
 	}); err != nil {
