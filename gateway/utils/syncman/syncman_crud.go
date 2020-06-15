@@ -109,14 +109,15 @@ func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias s
 	return collection.DBName, nil
 }
 
+type response struct {
+	ID        string   `json:"id"`
+	SQL       string   `json:"sql"`
+	Arguments []string `json:"arguments" yaml:"arguments"`
+}
+
 // GetPreparedQuery gets preparedQuery from config
 func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id string) ([]interface{}, error) {
 	// Acquire a lock
-	type response struct {
-		ID        string   `json:"id"`
-		SQL       string   `json:"sql"`
-		Arguments []string `json:"arguments" yaml:"arguments"`
-	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
