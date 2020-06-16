@@ -179,20 +179,20 @@ func (m *Module) generateProcessedEventRequest(eventID string) *model.UpdateRequ
 	}
 }
 
-func (m *Module) generateDLQEventRequest(eventDoc *model.EventDocument) error {
+func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocument) error {
 	req := model.QueueEventRequest{
-		Type: "dlq_event_trigger_" + eventDoc.RuleName,
+		Type: fmt.Sprintf("%s%s", utils.DLQEventTriggerSuffix, eventDoc.RuleName),
 		Payload: map[string]interface{}{
 			"id":   eventDoc.ID,
 			"body": eventDoc.Payload,
 		},
 	}
-
-	_, err := m.QueueEvent(context.Background(), m.project, "", &req)
+	token, err := m.adminMan.GetInternalAccessToken()
 	if err != nil {
-		logrus.Errorf("error=%v\n", err)
+		return err
 	}
-	return nil
+	_, err = m.QueueEvent(ctx, m.project, token, &req)
+	return err
 }
 
 func getCreateRows(doc interface{}, op string) []interface{} {
