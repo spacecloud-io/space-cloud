@@ -673,3 +673,198 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 		})
 	}
 }
+
+func TestManager_SetModifySchema(t *testing.T) {
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	type args struct {
+		ctx     context.Context
+		project string
+		dbAlias string
+		col     string
+		schema  string
+	}
+	tests := []struct {
+		name            string
+		s               *Manager
+		args            args
+		modulesMockArgs []mockArgs
+		storeMockArgs   []mockArgs
+		wantErr         bool
+	}{
+		{
+			name:    "unable to get project config",
+			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2", schema: "type event {id: ID! title: String}"},
+			wantErr: true,
+		},
+		{
+			name:    "database not present in config",
+			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "notAlias", project: "1", schema: "type event {id: ID! title: String}"},
+			wantErr: true,
+		},
+		{
+			name: "collections in config is nil and unable to set crud config",
+			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to set db config")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "collections in config is nil and unable to set project",
+			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "collections in config is nil and project is set",
+			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{context.Background(), mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+		},
+		{
+			name: "table name doesn't exist and unable to set crud config",
+			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to set db config")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "table name doesn't exist and unable to set project",
+			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "table name doesn't exist and project is set",
+			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{context.Background(), mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+		},
+		{
+			name: "table name exists and unable to set crud config",
+			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to set db config")},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "table name exists and project is not set",
+			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "table name exists and project is set",
+			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
+			modulesMockArgs: []mockArgs{
+				{
+					method:         "SetCrudConfig",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{context.Background(), mock.Anything},
+					paramsReturned: []interface{}{nil},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockModules := mockModulesInterface{}
+			mockStore := mockStoreInterface{}
+
+			for _, m := range tt.modulesMockArgs {
+				mockModules.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+			for _, m := range tt.storeMockArgs {
+				mockStore.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			tt.s.modules = &mockModules
+			tt.s.store = &mockStore
+
+			if err := tt.s.SetModifySchema(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col, tt.args.schema); (err != nil) != tt.wantErr {
+				t.Errorf("Manager.SetModifySchema() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			mockModules.AssertExpectations(t)
+			mockStore.AssertExpectations(t)
+		})
+	}
+}
