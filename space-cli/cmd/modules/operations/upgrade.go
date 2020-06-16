@@ -57,12 +57,13 @@ func Upgrade() error {
 	var gatewayMounts []mount.Mount
 	var gatewayPorts nat.PortMap
 	var gatewayEnvs []string
-	var Labels map[string]string
+	var gatewayLabels map[string]string
 	var gatewayExposedPorts nat.PortSet
 
 	// Parameters for runner
 	var runnerEnvs []string
 	var runnerMounts []mount.Mount
+	var runnerLabels map[string]string
 
 	// Remove all container
 	for _, containerInfo := range containers {
@@ -76,7 +77,7 @@ func Upgrade() error {
 			gatewayEnvs = containerInspect.Config.Env
 			gatewayMounts = containerInspect.HostConfig.Mounts
 			gatewayPorts = containerInspect.HostConfig.PortBindings
-			Labels = containerInspect.Config.Labels
+			gatewayLabels = containerInspect.Config.Labels
 			gatewayExposedPorts = containerInspect.Config.ExposedPorts
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), err)
@@ -85,6 +86,7 @@ func Upgrade() error {
 		case "runner":
 			runnerEnvs = containerInspect.Config.Env
 			runnerMounts = containerInspect.HostConfig.Mounts
+			runnerLabels = containerInspect.Config.Labels
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), err)
 			}
@@ -95,6 +97,7 @@ func Upgrade() error {
 		dnsName        string
 		containerImage string
 		containerName  string
+		labels         map[string]string
 		envs           []string
 		mount          []mount.Mount
 		exposedPorts   nat.PortSet
@@ -104,6 +107,7 @@ func Upgrade() error {
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", latestVersion),
 			containerName:  ContainerGateway,
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
+			labels:         gatewayLabels,
 			envs:           gatewayEnvs,
 			exposedPorts:   gatewayExposedPorts,
 			portMapping:    gatewayPorts,
@@ -115,6 +119,7 @@ func Upgrade() error {
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", latestVersion),
 			containerName:  ContainerRunner,
 			dnsName:        "runner.space-cloud.svc.cluster.local",
+			labels:         runnerLabels,
 			envs:           runnerEnvs,
 			mount:          runnerMounts,
 		},
@@ -139,7 +144,7 @@ func Upgrade() error {
 		}
 
 		resp, err := cli.ContainerCreate(ctx, &container.Config{
-			Labels:       Labels,
+			Labels:       c.labels,
 			Image:        c.containerImage,
 			ExposedPorts: c.exposedPorts,
 			Env:          c.envs,
