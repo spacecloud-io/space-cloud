@@ -133,7 +133,7 @@ func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 		return
 	}
 	if err := m.triggerDLQEvent(ctx, eventDoc); err != nil {
-		utils.LogError(fmt.Sprintf("Couldn't create DLQ event for event id %v", eventDoc.ID), "eventing", "triggerDLQEvent", err)
+		_ = utils.LogError(fmt.Sprintf("Couldn't create DLQ event for event id %v", eventDoc.ID), "eventing", "triggerDLQEvent", err)
 	}
 	if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
 		logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
