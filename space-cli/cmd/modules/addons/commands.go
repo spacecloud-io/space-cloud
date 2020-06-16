@@ -24,7 +24,7 @@ func Commands() []*cobra.Command {
 		},
 		RunE: ActionAddRegistry,
 	}
-	addRegistryCmd.Flags().StringP("cluster-id", "", "default", "Space Cloud cluster id in which the registry has to be added")
+	addRegistryCmd.Flags().StringP("cluster-id", "", "default", "id of space Cloud cluster in which the registry is to be added")
 
 	var addDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -63,7 +63,7 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
-	addDatabaseCmd.Flags().StringP("cluster-id", "", "default", "Space Cloud cluster id in which the database has to be added")
+	addDatabaseCmd.Flags().StringP("cluster-id", "", "default", "id of space Cloud cluster in which the database is to be added")
 
 	var removeCmd = &cobra.Command{
 		Use:   "remove",
@@ -80,7 +80,7 @@ func Commands() []*cobra.Command {
 		},
 		RunE: ActionRemoveRegistry,
 	}
-	removeRegistryCmd.Flags().StringP("cluster-id", "", "default", "provide the cluster-id")
+	removeRegistryCmd.Flags().StringP("cluster-id", "", "default", "id of space Cloud cluster from which the registry is to be removed")
 
 	var removeDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -89,10 +89,14 @@ func Commands() []*cobra.Command {
 			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
 			}
+			if err := viper.BindPFlag("auto-remove", cmd.Flags().Lookup("auto-remove")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('auto-remove')", nil)
+			}
 		},
 		RunE: ActionRemoveDatabase,
 	}
-	removeDatabaseCmd.Flags().StringP("cluster-id", "", "default", "provide the cluster-id")
+	removeDatabaseCmd.Flags().StringP("cluster-id", "", "default", "id of space Cloud cluster from which the database is to be removed")
+	removeDatabaseCmd.Flags().BoolP("auto-remove", "", false, "remove database in space cloud config")
 
 	addCmd.AddCommand(addRegistryCmd)
 	addCmd.AddCommand(addDatabaseCmd)
@@ -165,11 +169,7 @@ func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
 		_ = utils.LogError("Database Alias not provided as an argument", nil)
 		return nil
 	}
-	project, check := utils.GetProjectID()
-	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
-	}
-	_ = removeDatabase(args[0], project)
+
+	_ = removeDatabase(args[0])
 	return nil
 }

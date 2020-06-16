@@ -122,8 +122,7 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 	}
 
 	envs := []string{
-		//"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:4122",
-		"RUNNER_ADDR=runner." + utils.GetNetworkName(clusterID) + ".svc.cluster.local:4050",
+		"RUNNER_ADDR=runner.space-cloud.svc.cluster.local:4050",
 		"ADMIN_USER=" + username,
 		"ADMIN_PASS=" + key,
 		"ADMIN_SECRET=" + secret,
@@ -171,7 +170,7 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 			name:           "gateway",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", version),
 			containerName:  utils.GetScContainers(clusterID, "gateway"),
-			dnsName:        "gateway." + utils.GetNetworkName(clusterID) + ".svc.cluster.local",
+			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           envs,
 			exposedPorts: nat.PortSet{
 				nat.Port(portHTTPValue):  struct{}{},
@@ -189,10 +188,10 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 			name:           "runner",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
 			containerName:  utils.GetScContainers(clusterID, "runner"),
-			dnsName:        "runner." + utils.GetNetworkName(clusterID) + ".svc.cluster.local",
+			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
 				"DEV=" + devMode,
-				"ARTIFACT_ADDR=store." + utils.GetNetworkName(clusterID) + ".svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
+				"ARTIFACT_ADDR=store.space-cloud.svc.cluster.local:" + portHTTPValue, // TODO Change the default value in runner it starts with http
 				"DRIVER=docker",
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),

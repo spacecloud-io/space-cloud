@@ -110,7 +110,7 @@ func Commands() []*cobra.Command {
 
 	setup.Flags().StringSliceP("env", "e", []string{}, "Environment variables to be provided to gateway")
 
-	setup.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	setup.Flags().StringP("cluster-id", "", "default", "The id of space-cloud cluster")
 	err = viper.BindEnv("cluster-id", "CLUSTER_ID")
 	if err != nil {
 		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
@@ -126,7 +126,7 @@ func Commands() []*cobra.Command {
 		},
 		RunE: actionUpgrade,
 	}
-	upgrade.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	upgrade.Flags().StringP("cluster-id", "", "default", "The id of space-cloud cluster")
 
 	if err = viper.BindEnv("cluster-id", "CLUSTER_ID"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
@@ -142,7 +142,7 @@ func Commands() []*cobra.Command {
 		},
 		RunE: actionDestroy,
 	}
-	destroy.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	destroy.Flags().StringP("cluster-id", "", "default", "The id of  space-cloud cluster")
 	if err = viper.BindEnv("cluster-id", "CLUSTER_ID"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
 	}
@@ -162,7 +162,7 @@ func Commands() []*cobra.Command {
 		},
 		RunE: actionStart,
 	}
-	start.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	start.Flags().StringP("cluster-id", "", "default", "The id of space-cloud cluster")
 	if err = viper.BindEnv("cluster-id", "CLUSTER_ID"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
 	}
@@ -177,7 +177,7 @@ func Commands() []*cobra.Command {
 		},
 		RunE: actionStop,
 	}
-	stop.Flags().StringP("cluster-id", "", "default", "The unique id for the cluster")
+	stop.Flags().StringP("cluster-id", "", "default", "The id of space-cloud cluster")
 	if err = viper.BindEnv("cluster-id", "CLUSTER_ID"); err != nil {
 		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
 	}

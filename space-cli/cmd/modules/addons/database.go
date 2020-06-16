@@ -266,8 +266,10 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 	}
 }
 
-func removeDatabase(alias, project string) error {
+func removeDatabase(alias string) error {
 	clusterID := viper.GetString("cluster-id")
+	project := viper.GetString("project")
+	autoRemove := viper.GetBool("auto-remove")
 
 	ctx := context.Background()
 
@@ -289,8 +291,15 @@ func removeDatabase(alias, project string) error {
 		return nil
 	}
 
-	if err := deleteDatabaseConfig(project, alias); err != nil {
-		return err
+	if autoRemove {
+		if project == "" {
+			return utils.LogError(`Please provide project id through "--project" flag`, nil)
+		}
+
+		// remove database from space-cloud
+		if err := deleteDatabaseConfig(project, alias); err != nil {
+			return err
+		}
 	}
 
 	// Get the hosts file
@@ -328,7 +337,6 @@ func deleteDatabaseConfig(projectID, dbAlias string) error {
 	}
 	url := fmt.Sprintf("%s/v1/config/projects/%s/database/%s/config/database-config", account.ServerURL, projectID, dbAlias)
 
-	fmt.Println("url: ", url)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return err

@@ -83,7 +83,8 @@ func DockerStart(clusterID string) error {
 
 		// Set the runner ip with the current service is the runner
 		name := info.Config.Labels["service"]
-		hostName := fmt.Sprintf("%s.%s.svc.cluster.local", name, utils.GetNetworkName(clusterID))
+		hostName := fmt.Sprintf("%s.space-cloud.svc.cluster.local", name)
+
 		if name == "runner" {
 			runnerIP = info.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress
 		}

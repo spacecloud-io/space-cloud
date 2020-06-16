@@ -107,9 +107,9 @@ func addRegistry(projectID string) error {
 	containerRes, err := docker.ContainerCreate(ctx, &container.Config{
 		Labels:       map[string]string{"app": "addon", "service": "registry", "name": "registry"},
 		Image:        dockerImage,
-		ExposedPorts: nat.PortSet{nat.Port(port): struct{}{}},
+		ExposedPorts: nat.PortSet{"5000/tcp": struct{}{}},
 	}, &container.HostConfig{
-		PortBindings: nat.PortMap{nat.Port(port): []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: port}}},
+		PortBindings: nat.PortMap{"5000/tcp": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: port}}},
 		NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterID)),
 	}, nil, utils.GetRegistryContainerName(clusterID))
 	if err != nil {
