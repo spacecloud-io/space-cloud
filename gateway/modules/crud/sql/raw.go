@@ -67,7 +67,7 @@ func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, name string) error {
 	var sql string
 	switch utils.DBType(s.dbType) {
 	case utils.MySQL:
-		sql = "create database if not exists " + name + " collate latin1_general_cs"
+		sql = "create database if not exists " + name
 	case utils.Postgres:
 		sql = "create schema if not exists " + name
 	case utils.SQLServer:
