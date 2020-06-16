@@ -203,7 +203,7 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 			// Got a tick, we should check on checkSomething()
 		case <-ticker.C:
 			if err := operations.ApplySpec(token, account, v); err != nil {
-				logrus.Warningln(fmt.Sprintf("Unable to add database to Space Cloud config by spec object with id %v type %v - %v", v.Meta["id"], v.Type, err), nil)
+				logrus.Warningln("Unable to add database to Space Cloud config", nil)
 				continue
 			}
 
@@ -234,7 +234,7 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 				},
 			}
 			if err := operations.ApplySpec(token, account, v); err != nil {
-				logrus.Warningln(fmt.Sprintf("Couldn't add default collection rules by spec object with type %v - %v", v.Type, err), nil)
+				logrus.Warningln("Couldn't add default collection rules", nil)
 			}
 
 			v = &model.SpecObject{
@@ -255,7 +255,7 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 				},
 			}
 			if err := operations.ApplySpec(token, account, v); err != nil {
-				logrus.Warningln(fmt.Sprintf("Couldn't add default prepared query rules by spec object with id %v type %v - %v", v.Meta["id"], v.Type, err), nil)
+				logrus.Warningln("Couldn't add default prepared query rules", nil)
 			}
 
 			utils.LogInfo("Successfully added database to Space Cloud config.")
