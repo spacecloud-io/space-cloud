@@ -188,6 +188,12 @@ func actionRun(c *cli.Context) error {
 		nodeID = "auto-" + ksuid.New().String()
 	}
 
+	// Set the ssl config
+	ssl := &config.SSL{}
+	if sslEnable {
+		ssl = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
+	}
+
 	// Override the admin config if provided
 	if adminUser == "" {
 		adminUser = "admin"
@@ -199,10 +205,12 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, disableMetrics, adminUserInfo)
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, disableMetrics, adminUserInfo, ssl)
 	if err != nil {
 		return err
 	}
+
+	s.SetConfig(ssl, !isDev)
 
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
@@ -210,13 +218,7 @@ func actionRun(c *cli.Context) error {
 		return err
 	}
 
-	// Set the ssl config
-	ssl := &config.SSL{}
-	if sslEnable {
-		ssl = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
-	}
-
-	return s.Start(isDev, profiler, staticPath, port, strings.Split(c.String("restrict-hosts"), ","), ssl)
+	return s.Start(profiler, staticPath, port, strings.Split(c.String("restrict-hosts"), ","))
 }
 
 func actionInit(*cli.Context) error {

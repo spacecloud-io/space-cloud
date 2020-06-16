@@ -46,7 +46,7 @@ type service struct {
 }
 
 // New creates a new instance of the sync manager
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager) (*Manager, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMan *admin.Manager, ssl *config.SSL) (*Manager, error) {
 
 	// Create a new manager instance
 	m := &Manager{nodeID: nodeID, clusterID: clusterID, advertiseAddr: advertiseAddr, storeType: storeType, runnerAddr: runnerAddr, adminMan: adminMan}
@@ -56,7 +56,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 	var err error
 	switch storeType {
 	case "local":
-		s, err = NewLocalStore(nodeID, advertiseAddr)
+		s, err = NewLocalStore(nodeID, advertiseAddr, ssl)
 	case "kube":
 		s, err = NewKubeStore(clusterID)
 	case "consul":
@@ -77,9 +77,11 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, adminMa
 }
 
 // Start begins the sync manager operations
-func (s *Manager) Start(ssl *config.SSL, port int) error {
+func (s *Manager) Start(port int) error {
 	// Save the ports
 	s.port = port
+	// NOTE: SSL is not set in config
+	s.projectConfig = &config.Config{}
 
 	// Start routine to observe space cloud projects
 	if err := s.store.WatchProjects(func(projects []*config.Project) {

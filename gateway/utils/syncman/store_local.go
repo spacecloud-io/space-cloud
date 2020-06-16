@@ -16,7 +16,7 @@ type LocalStore struct {
 }
 
 // NewLocalStore creates a new local store
-func NewLocalStore(nodeID, advertiseAddr string) (Store, error) {
+func NewLocalStore(nodeID, advertiseAddr string, ssl *config.SSL) (Store, error) {
 	configPath := os.Getenv("CONFIG")
 	if configPath == "" {
 		configPath = "config.yaml"
@@ -25,6 +25,9 @@ func NewLocalStore(nodeID, advertiseAddr string) (Store, error) {
 	conf, err := config.LoadConfigFromFile(configPath)
 	if err != nil {
 		conf = config.GenerateEmptyConfig()
+	}
+	if ssl.Enabled {
+		conf.SSL = ssl
 	}
 	services := scServices{}
 	return &LocalStore{configPath: configPath, globalConfig: conf, services: append(services, &service{id: nodeID, addr: advertiseAddr})}, nil
