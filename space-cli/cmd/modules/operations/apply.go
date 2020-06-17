@@ -7,35 +7,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"sort"
-	"strconv"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
 )
-
-type alphabetic []string
-
-func (list alphabetic) Len() int { return len(list) }
-
-func (list alphabetic) Swap(i, j int) { list[i], list[j] = list[j], list[i] }
-
-func (list alphabetic) Less(i, j int) bool {
-	a, err := strconv.Atoi(strings.Split(list[i], "-")[0])
-	if err != nil {
-		logrus.Errorf("unable to convert string to int while sorting file name (i) (%s)", list[i])
-		return false
-	}
-	b, err := strconv.Atoi(strings.Split(list[j], "-")[0])
-	if err != nil {
-		logrus.Errorf("unable to convert string to int while sorting file name (j) (%s)", list[j])
-		return false
-	}
-	return a < b
-}
 
 // Apply reads the config file(s) from the provided file / directory and applies it to the server
 func Apply(applyName string) error {
@@ -55,7 +31,7 @@ func Apply(applyName string) error {
 			return utils.LogError("Couldn't get account details or login token", err)
 		}
 
-		fileNames := alphabetic{}
+		var fileNames []string
 		// filter directories
 		for _, fileInfo := range files {
 			if !fileInfo.IsDir() {
@@ -63,7 +39,6 @@ func Apply(applyName string) error {
 			}
 		}
 		// sort file names alphanumerically
-		sort.Stable(fileNames)
 
 		for _, fileName := range fileNames {
 			if strings.HasSuffix(fileName, ".yaml") {

@@ -10,8 +10,9 @@ import (
 // Commands is the list of commands the addon module exposes
 func Commands() []*cobra.Command {
 	var addCmd = &cobra.Command{
-		Use:   "add",
-		Short: "Add a add-on to the environment",
+		Use:           "add",
+		Short:         "Add a add-on to the environment",
+		SilenceErrors: true,
 	}
 
 	var addRegistryCmd = &cobra.Command{
@@ -55,8 +56,9 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
 
 	var removeCmd = &cobra.Command{
-		Use:   "remove",
-		Short: "Remove a add-on from the environment",
+		Use:           "remove",
+		Short:         "Remove a add-on from the environment",
+		SilenceErrors: true,
 	}
 
 	var removeRegistryCmd = &cobra.Command{
@@ -82,29 +84,24 @@ func Commands() []*cobra.Command {
 func ActionAddRegistry(cmd *cobra.Command, args []string) error {
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
-	_ = addRegistry(project)
-	return nil
+	return addRegistry(project)
 }
 
 // ActionRemoveRegistry removes a registry add on
 func ActionRemoveRegistry(cmd *cobra.Command, args []string) error {
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
-	_ = removeRegistry(project)
-	return nil
+	return removeRegistry(project)
 }
 
 // ActionAddDatabase adds a database add on
 func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		_ = utils.LogError("Database type not provided as an arguement", nil)
-		return nil
+		return utils.LogError("Database type not provided as an arguement", nil)
 	}
 	dbtype := args[0]
 	username := viper.GetString("username")
@@ -114,6 +111,8 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 			username = "postgres"
 		case "mysql":
 			username = "root"
+		case "sqlserver":
+			username = "sa"
 		}
 	}
 	password := viper.GetString("password")
@@ -123,20 +122,19 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 			password = "mysecretpassword"
 		case "mysql":
 			password = "my-secret-pw"
+		case "sqlserver":
+			password = "yourStrong(!)Password"
 		}
 	}
 	alias := viper.GetString("alias")
 	version := viper.GetString("version")
-	_ = addDatabase(dbtype, username, password, alias, version)
-	return nil
+	return addDatabase(dbtype, username, password, alias, version)
 }
 
 // ActionRemoveDatabase removes a database add on
 func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		_ = utils.LogError("Database Alias not provided as an argument", nil)
-		return nil
+		return utils.LogError("Database Alias not provided as an argument", nil)
 	}
-	_ = removeDatabase(args[0])
-	return nil
+	return removeDatabase(args[0])
 }

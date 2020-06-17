@@ -1,27 +1,31 @@
 package auth
 
 import (
-	"github.com/spaceuptech/space-cli/cmd/utils"
 	"github.com/spf13/cobra"
+
+	"github.com/spaceuptech/space-cli/cmd/utils"
 )
 
 // GetSubCommands is the list of commands the auth module exposes
 func GetSubCommands() []*cobra.Command {
+	var getAuthProvider = &cobra.Command{
+		Use:  "auth-provider",
+		RunE: actionGetAuthProviders,
+	}
 	var getAuthProviders = &cobra.Command{
 		Use:  "auth-providers",
 		RunE: actionGetAuthProviders,
 	}
-	return []*cobra.Command{getAuthProviders}
+	return []*cobra.Command{getAuthProvider, getAuthProviders}
 }
 
 func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
-	commandName := cmd.Use
+	commandName := "auth-provider"
 
 	params := map[string]string{}
 	if len(args) != 0 {
@@ -30,11 +34,11 @@ func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 
 	objs, err := GetAuthProviders(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }

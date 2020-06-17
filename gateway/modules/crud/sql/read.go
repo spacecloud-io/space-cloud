@@ -98,7 +98,7 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 				case "count":
 					selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
 				default:
-					return "", nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), nil)
+					return "", nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion "%s"`, function), "sql", "generateReadQuery", nil)
 				}
 			}
 		}

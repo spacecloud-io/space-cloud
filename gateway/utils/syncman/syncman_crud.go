@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 
 	"github.com/sirupsen/logrus"
 
@@ -47,10 +50,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 	if err != nil {
 		return err
 	}
-	// set default database name to project id
-	if v.DBName == "" {
-		v.DBName = project
-	}
+
 	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, DBName: v.DBName}
@@ -500,4 +500,35 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) 
 		}
 	}
 	return []interface{}{coll}, nil
+}
+
+type result struct {
+	Result []*secret `json:"result,omitempty"`
+}
+
+type secret struct {
+	Data map[string]string `json:"data,omitempty"`
+}
+
+// GetSecrets gets secrets from runner
+// This function should be called only from setConfig method of any module
+func (s *Manager) GetSecrets(project, secretName, key string) (string, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Generate internal access token
+	token, err := s.adminMan.GetInternalAccessToken()
+	if err != nil {
+		return "", utils.LogError("cannot get internal access token", "syncman", "GetSecrets", err)
+	}
+
+	// makes http request to get secrets from runner
+	var vPtr result
+	url := fmt.Sprintf("http://%s/v1/runner/%s/secrets?id=%s", s.runnerAddr, project, secretName)
+	if err := s.MakeHTTPRequest(ctx, "GET", url, token, "", map[string]interface{}{}, &vPtr); err != nil {
+		return "", err
+	}
+
+	return vPtr.Result[0].Data[key], nil
 }

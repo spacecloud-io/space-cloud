@@ -28,17 +28,13 @@ require (
 	github.com/txn2/txeh v1.3.0
 	github.com/urfave/cli v1.22.2
 	go.etcd.io/bbolt v1.3.3
-	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4 // indirect
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a // indirect
 	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
 	google.golang.org/genproto v0.0.0-20191216164720-4f79533eabd1 // indirect
-	google.golang.org/grpc v1.24.0 // indirect
-	gopkg.in/yaml.v2 v2.2.7 // indirect
-	gotest.tools v2.2.0+incompatible // indirect
-	istio.io/api v0.0.0-20200213230120-00efe7317328
-	istio.io/client-go v0.0.0-20200212163417-ad75bb5565ef
-	k8s.io/api v0.17.2
-	k8s.io/apimachinery v0.17.2
-	k8s.io/client-go v0.17.2
-	k8s.io/utils v0.0.0-20191217005138-9e5e9d854fcc // indirect
+	gotest.tools v2.2.0+incompatible // indirect; indirects
+	istio.io/api v0.0.0-20200518203817-6d29a38039bd
+	istio.io/client-go v0.0.0-20200521172153-8555211db875
+	k8s.io/api v0.18.3
+	k8s.io/apimachinery v0.18.3
+	k8s.io/client-go v0.18.3
 )

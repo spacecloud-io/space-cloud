@@ -16,7 +16,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 		testName, project, token, service, function string
 		secretKeys                                  []*config.Secret
 		params                                      interface{}
-		result                                      TokenClaims
+		result                                      map[string]interface{}
 		IsErrExpected, CheckResult                  bool
 	}{
 		{
@@ -110,7 +110,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			function:      "ep",
 			IsErrExpected: false,
 			CheckResult:   true,
-			result:        TokenClaims{"token1": "token1value", "token2": "token2value"},
+			result:        map[string]interface{}{"token1": "token1value", "token2": "token2value"},
 		},
 	}
 	authModule := Init("1", &crud.Module{})
@@ -123,7 +123,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Got Error-", err, "Want Error-", test.IsErrExpected)
 			}
-			//check result if TokenClaims is returned after parsing token and matching rule
+			// check result if TokenClaims is returned after parsing token and matching rule
 			if test.CheckResult && !reflect.DeepEqual(test.result, auth) {
 				t.Error("Got Result-", auth, "Wanted Result-", test.result)
 			}

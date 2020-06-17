@@ -172,7 +172,7 @@ func extractAggregate(v *ast.Field) (map[string][]string, error) {
 			continue
 		}
 		if aggregateFound {
-			return nil, utils.LogError("GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", nil)
+			return nil, utils.LogError("GraphQL query cannot have multiple aggregate fields, specify all functions in single aggregate field", "graphql", "extractAggregate", nil)
 		}
 		aggregateFound = true
 		// get function name
@@ -180,7 +180,10 @@ func extractAggregate(v *ast.Field) (map[string][]string, error) {
 			functionField := selection.(*ast.Field)
 			_, ok := functionMap[functionField.Name.Value]
 			if ok {
-				return nil, utils.LogError(fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), nil)
+				return nil, utils.LogError(fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), "graphql", "extractAggregate", nil)
+			}
+			if functionField.SelectionSet == nil {
+				return nil, nil
 			}
 			colArray := make([]string, 0)
 			// get column name
@@ -205,7 +208,7 @@ func extractGroupByClause(args []*ast.Argument, store utils.M) ([]interface{}, e
 			if obj, ok := temp.([]interface{}); ok {
 				return obj, nil
 			}
-			return nil, utils.LogError(fmt.Sprintf("GraphQL (%s) argument is of type %v, but it should be of type array ([])", utils.GraphQLGroupByArgument, reflect.TypeOf(temp)), nil)
+			return nil, utils.LogError(fmt.Sprintf("GraphQL (%s) argument is of type %v, but it should be of type array ([])", utils.GraphQLGroupByArgument, reflect.TypeOf(temp)), "graphql", "extractGroupByClause", nil)
 		}
 	}
 

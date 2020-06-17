@@ -157,6 +157,8 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *model.FieldTyp
 		fieldDetails.Kind = model.TypeDateTime
 	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = model.TypeBoolean
+	case "json":
+		fieldDetails.Kind = model.TypeJSON
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])
 	}
