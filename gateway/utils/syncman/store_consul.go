@@ -23,7 +23,7 @@ type ConsulStore struct {
 }
 
 // NewConsulStore creates new consul store
-func NewConsulStore(nodeID, clusterID, advertiseAddr string) (*ConsulStore, error) {
+func NewConsulStore(nodeID, clusterID, advertiseAddr string) (Store, error) {
 	client, err := api.NewClient(api.DefaultConfig())
 	if err != nil {
 		return nil, err
@@ -148,6 +148,61 @@ func (s *ConsulStore) WatchServices(cb func(scServices)) error {
 	}()
 
 	return nil
+}
+
+// WatchAdminConfig watched for any changes made in admin config by other SC instances
+func (s *ConsulStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
+	watchParams := map[string]interface{}{
+		"type":   "keyprefix",
+		"prefix": "sc/admin-config/" + s.clusterID,
+	}
+	p, err := watch.Parse(watchParams)
+	if err != nil {
+		return err
+	}
+
+	p.HybridHandler = func(val watch.BlockingParamVal, data interface{}) {
+		kvPairs := data.(api.KVPairs)
+		clusters := []*config.Admin{
+			{
+				ClusterConfig: &config.ClusterConfig{},
+				ClusterID:     "",
+				ClusterKey:    "",
+				Version:       0,
+			},
+		}
+
+		for _, kv := range kvPairs {
+			if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
+				log.Println("Sync manager: Could not parse project received -", err)
+				continue
+			}
+		}
+		cb(clusters)
+	}
+
+	go func() {
+		if err := p.Run(""); err != nil {
+			log.Println("Sync Manager: could not start watcher -", err)
+			os.Exit(-1)
+		}
+	}()
+	return nil
+}
+
+// SetAdminConfig maintains consistency between all instances of sc
+func (s *ConsulStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
+	opts := &api.WriteOptions{}
+	opts = opts.WithContext(ctx)
+
+	data, _ := json.Marshal(adminConfig)
+	// TODO: enter project name in key
+	_, err := s.consulClient.KV().Put(&api.KVPair{
+		Key:   fmt.Sprintf("sc/admin-config/%s", s.clusterID),
+		Value: data,
+	}, opts)
+
+	return err
 }
 
 // SetProject sets the project of the consul store
