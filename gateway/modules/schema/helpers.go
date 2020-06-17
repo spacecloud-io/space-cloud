@@ -93,7 +93,7 @@ func (c *creationModule) addNotNull() string {
 	case utils.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " SET NOT NULL"
 	case utils.SQLServer:
-		if c.columnType == "varchar("+model.SQLTypeIDSize+")" || c.columnType == "varchar(max)" || c.columnType == "text" {
+		if c.columnType == "varchar("+model.SQLTypeIDSize+")" || c.columnType == "varchar(max)" {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS NOT NULL"
 		}
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NOT NULL"
@@ -113,7 +113,7 @@ func (c *creationModule) removeNotNull() string {
 	case utils.Postgres:
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " DROP NOT NULL"
 	case utils.SQLServer:
-		if c.columnType == "varchar("+model.SQLTypeIDSize+")" || c.columnType == "varchar(max)" || c.columnType == "text" {
+		if c.columnType == "varchar("+model.SQLTypeIDSize+")" || c.columnType == "varchar(max)" {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS NULL"
 		}
 		return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ALTER COLUMN " + c.ColumnName + " " + c.columnType + " NULL" // adding NULL solves a bug that DateTime type is always not nullable even if (!) is not provided
@@ -136,7 +136,7 @@ func (c *creationModule) addNewColumn() string {
 		if c.columnType == "timestamp" && !c.realColumnInfo.IsFieldTypeRequired {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " NULL"
 		}
-		if c.columnType == "varchar("+model.SQLTypeIDSize+")" || c.columnType == "varchar(max)" || c.columnType == "text" {
+		if c.columnType == "varchar("+model.SQLTypeIDSize+")" || c.columnType == "varchar(max)" {
 			return "ALTER TABLE " + c.schemaModule.getTableName(dbType, c.logicalDBName, c.TableName) + " ADD " + c.ColumnName + " " + c.columnType + " collate Latin1_General_CS_AS"
 		}
 
@@ -300,7 +300,7 @@ func (s *Schema) addNewTable(logicalDBName, dbType, dbAlias, realColName string,
 
 		query += realFieldKey + " " + sqlType
 
-		if (utils.DBType(dbType) == utils.SQLServer) && (sqlType == "varchar("+model.SQLTypeIDSize+")" || sqlType == "varchar(max)" || sqlType == "text") {
+		if (utils.DBType(dbType) == utils.SQLServer) && (sqlType == "varchar("+model.SQLTypeIDSize+")" || sqlType == "varchar(max)") {
 			query += " collate Latin1_General_CS_AS"
 		}
 
