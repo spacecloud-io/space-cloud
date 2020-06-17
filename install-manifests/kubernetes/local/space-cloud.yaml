@@ -326,7 +326,7 @@ metadata:
   labels:
     app: gateway
 spec:
-  replicas: 3
+  replicas: 1
   serviceName: gateway
   selector:
     matchLabels:
