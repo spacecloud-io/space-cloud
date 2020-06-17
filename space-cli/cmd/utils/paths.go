@@ -55,7 +55,7 @@ func getAccountConfigPath() string {
 // GetMountHostsFilePath returns the path of the hosts files to be mounted in in space cloud
 func GetMountHostsFilePath() string {
 	if runtime.GOOS == "windows" {
-		return fmt.Sprintf("%s/.space-cloud/hosts", getHomeDirectoryToolBox())
+		return fmt.Sprintf("%s/.space-cloud/hosts", getWindowsUserDirectory())
 	}
 	return GetSpaceCloudHostsFilePath()
 }
@@ -63,7 +63,7 @@ func GetMountHostsFilePath() string {
 // GetMountConfigFilePath returns the path of the config files to be mounted in space cloud
 func GetMountConfigFilePath() string {
 	if runtime.GOOS == "windows" {
-		return fmt.Sprintf("%s/.space-cloud/config.yaml", getHomeDirectoryToolBox())
+		return fmt.Sprintf("%s/.space-cloud/config.yaml", getWindowsUserDirectory())
 	}
 	return GetSpaceCloudConfigFilePath()
 }
@@ -71,7 +71,7 @@ func GetMountConfigFilePath() string {
 // GetMountSecretsDir returns the path of the secret dir to be mounted in space cloud
 func GetMountSecretsDir() string {
 	if runtime.GOOS == "windows" {
-		return fmt.Sprintf("%s/.space-cloud/secrets", getHomeDirectoryToolBox())
+		return fmt.Sprintf("%s/.space-cloud/secrets", getWindowsUserDirectory())
 	}
 	return GetSecretsDir()
 }
@@ -79,21 +79,22 @@ func GetMountSecretsDir() string {
 // GetMountTempSecretsDir returns the path of the temp secret dir to be mounted in space cloud
 func GetMountTempSecretsDir() string {
 	if runtime.GOOS == "windows" {
-		return fmt.Sprintf("%s/.space-cloud/secrets/temp-secrets", getHomeDirectoryToolBox())
+		return fmt.Sprintf("%s/.space-cloud/secrets/temp-secrets", getWindowsUserDirectory())
 	}
-	return GetSecretsDir()
+	return GetTempSecretsDir()
 }
 
 // GetMountRoutingConfigPath returns the path of the routing config to be mounted in space cloud
 func GetMountRoutingConfigPath() string {
 	if runtime.GOOS == "windows" {
-		return fmt.Sprintf("%s/.space-cloud/routing-config.json", getHomeDirectoryToolBox())
+		return fmt.Sprintf("%s/.space-cloud/routing-config.json", getWindowsUserDirectory())
 	}
 	return GetSpaceCloudRoutingConfigPath()
 }
 
-// getHomeDirectoryToolBox gets home directory to support setup on window
-func getHomeDirectoryToolBox() string {
+// getWindowsUserDirectory gets home directory to support setup on window
+func getWindowsUserDirectory() string {
+	// eg. HOMEDRIVE = "C:" and HOMEPATH = "\User\username	"
 	homeDrive := strings.ToLower(strings.Split(os.Getenv("HOMEDRIVE"), ":")[0])
 	homePath := strings.ReplaceAll(os.Getenv("HOMEPATH"), "\\", "/")
 
