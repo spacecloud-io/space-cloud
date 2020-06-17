@@ -184,6 +184,7 @@ func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocum
 		Type: fmt.Sprintf("%s%s", utils.DLQEventTriggerSuffix, eventDoc.RuleName),
 		Payload: map[string]interface{}{
 			"id":   eventDoc.ID,
+			"type": eventDoc.Type,
 			"body": eventDoc.Payload,
 		},
 	}
