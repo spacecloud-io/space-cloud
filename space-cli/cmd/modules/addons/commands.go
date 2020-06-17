@@ -18,13 +18,13 @@ func Commands() []*cobra.Command {
 		Use:   "registry",
 		Short: "Add a docker registry",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: ActionAddRegistry,
 	}
-	addRegistryCmd.Flags().StringP("cluster-id", "", "default", "id of space Cloud cluster in which the registry is to be added")
+	addRegistryCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster in which the registry is to be added")
 
 	var addDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -50,9 +50,9 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('auto-apply')", nil)
 			}
-			err = viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			err = viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name"))
 			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: ActionAddDatabase,
@@ -63,7 +63,7 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
-	addDatabaseCmd.Flags().StringP("cluster-id", "", "default", "id of space Cloud cluster in which the database is to be added")
+	addDatabaseCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster in which the database is to be added")
 
 	var removeCmd = &cobra.Command{
 		Use:   "remove",
@@ -74,20 +74,20 @@ func Commands() []*cobra.Command {
 		Use:   "registry",
 		Short: "Remove a docker registry",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: ActionRemoveRegistry,
 	}
-	removeRegistryCmd.Flags().StringP("cluster-id", "", "default", "id of space Cloud cluster from which the registry is to be removed")
+	removeRegistryCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster from which the registry is to be removed")
 
 	var removeDatabaseCmd = &cobra.Command{
 		Use:   "database",
 		Short: "Remove a database",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 			if err := viper.BindPFlag("auto-remove", cmd.Flags().Lookup("auto-remove")); err != nil {
 				_ = utils.LogError("Unable to bind the flag ('auto-remove')", nil)
@@ -95,8 +95,8 @@ func Commands() []*cobra.Command {
 		},
 		RunE: ActionRemoveDatabase,
 	}
-	removeDatabaseCmd.Flags().StringP("cluster-id", "", "default", "id of space Cloud cluster from which the database is to be removed")
-	removeDatabaseCmd.Flags().BoolP("auto-remove", "", false, "remove database in space cloud config")
+	removeDatabaseCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster from which the database is to be removed")
+	removeDatabaseCmd.Flags().BoolP("auto-remove", "", false, "remove database from space cloud config")
 
 	addCmd.AddCommand(addRegistryCmd)
 	addCmd.AddCommand(addDatabaseCmd)

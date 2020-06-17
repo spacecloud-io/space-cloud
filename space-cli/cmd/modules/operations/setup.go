@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Pallinder/go-randomdata"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -34,15 +36,15 @@ func generateRandomString(length int) string {
 }
 
 // Setup initializes development environment
-func Setup(username, key, config, version, secret, clusterID string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
+func Setup(username, key, config, version, secret, clusterName string, dev bool, portHTTP, portHTTPS int64, volumes, environmentVariables []string) error {
 	// TODO: old keys always remain in accounts.yaml file
 
 	_ = utils.CreateDirIfNotExist(utils.GetSpaceCloudDirectory())
-	_ = utils.CreateDirIfNotExist(utils.GetSecretsDir(clusterID))
-	_ = utils.CreateDirIfNotExist(utils.GetTempSecretsDir(clusterID))
+	_ = utils.CreateDirIfNotExist(utils.GetSecretsDir(clusterName))
+	_ = utils.CreateDirIfNotExist(utils.GetTempSecretsDir(clusterName))
 
-	_ = utils.CreateFileIfNotExist(utils.GetSpaceCloudRoutingConfigPath(clusterID), "{}")
-	_ = utils.CreateConfigFile(utils.GetSpaceCloudConfigFilePath(clusterID))
+	_ = utils.CreateFileIfNotExist(utils.GetSpaceCloudRoutingConfigPath(clusterName), "{}")
+	_ = utils.CreateConfigFile(utils.GetSpaceCloudConfigFilePath(clusterName))
 
 	utils.LogInfo("Setting up Space Cloud on docker.")
 
@@ -54,7 +56,7 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 		key = generateRandomString(32)
 	}
 	if config == "" {
-		config = utils.GetSpaceCloudConfigFilePath(clusterID)
+		config = utils.GetSpaceCloudConfigFilePath(clusterName)
 	}
 	if !strings.Contains(config, ".yaml") {
 		return fmt.Errorf("full path not provided for config file")
@@ -85,14 +87,14 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 	}
 
 	// check if network already exists
-	args := filters.Arg("name", utils.GetNetworkName(clusterID))
+	args := filters.Arg("name", utils.GetNetworkName(clusterName))
 	nws, err := cli.NetworkList(ctx, types.NetworkListOptions{Filters: filters.NewArgs(args)})
 	if err != nil {
 		return utils.LogError("Unable to list networks", err)
 	}
 	for _, nw := range nws {
-		if nw.Name == utils.GetNetworkName(clusterID) {
-			return utils.LogError(fmt.Sprintf("Network (%s) already exists, try using different cluster", utils.GetNetworkName(clusterID)), errors.New(""))
+		if nw.Name == utils.GetNetworkName(clusterName) {
+			return utils.LogError(fmt.Sprintf("Network (%s) already exists, try using different cluster", utils.GetNetworkName(clusterName)), errors.New(""))
 		}
 	}
 
@@ -104,6 +106,8 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 	if err != nil {
 		return err
 	}
+
+	clusterID := fmt.Sprintf("%s--%s", clusterName, randomdata.SillyName())
 
 	selectedAccount := model.Account{
 		ID:        clusterID,
@@ -137,7 +141,7 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
-			Source: utils.GetSpaceCloudHostsFilePath(clusterID),
+			Source: utils.GetSpaceCloudHostsFilePath(clusterName),
 			Target: "/etc/hosts",
 		},
 		{
@@ -169,7 +173,7 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 		{
 			name:           "gateway",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", version),
-			containerName:  utils.GetScContainers(clusterID, "gateway"),
+			containerName:  utils.GetScContainers(clusterName, "gateway"),
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			envs:           envs,
 			exposedPorts: nat.PortSet{
@@ -187,7 +191,7 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 			// runner
 			name:           "runner",
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", version),
-			containerName:  utils.GetScContainers(clusterID, "runner"),
+			containerName:  utils.GetScContainers(clusterName, "runner"),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			envs: []string{
 				"DEV=" + devMode,
@@ -196,8 +200,8 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
 				"SECRETS_PATH=/secrets",
-				"HOME_SECRETS_PATH=" + utils.GetTempSecretsDir(clusterID),
-				"HOSTS_FILE_PATH=" + utils.GetSpaceCloudHostsFilePath(clusterID),
+				"HOME_SECRETS_PATH=" + utils.GetTempSecretsDir(clusterName),
+				"HOSTS_FILE_PATH=" + utils.GetSpaceCloudHostsFilePath(clusterName),
 				"ROUTING_FILE_PATH=" + "/routing-config.json",
 				"CLUSTER_ID=" + clusterID,
 				"PORT=4050",
@@ -205,12 +209,12 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 			mount: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSecretsDir(clusterID),
+					Source: utils.GetSecretsDir(clusterName),
 					Target: "/secrets",
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSpaceCloudHostsFilePath(clusterID),
+					Source: utils.GetSpaceCloudHostsFilePath(clusterName),
 					Target: "/etc/hosts",
 				},
 				{
@@ -220,7 +224,7 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSpaceCloudRoutingConfigPath(clusterID),
+					Source: utils.GetSpaceCloudRoutingConfigPath(clusterName),
 					Target: "/routing-config.json",
 				},
 			},
@@ -233,13 +237,13 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 	}
 	// change the default host file location for crud operation to our specified path
 	// default value /etc/hosts
-	hosts.WriteFilePath = utils.GetSpaceCloudHostsFilePath(clusterID)
-	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath(clusterID)); err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to save as host file to specified path (%s)", utils.GetSpaceCloudHostsFilePath(clusterID)), errors.New(""))
+	hosts.WriteFilePath = utils.GetSpaceCloudHostsFilePath(clusterName)
+	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath(clusterName)); err != nil {
+		return utils.LogError(fmt.Sprintf("Unable to save as host file to specified path (%s)", utils.GetSpaceCloudHostsFilePath(clusterName)), errors.New(""))
 	}
 
 	// First we create a network for space cloud
-	if _, err := cli.NetworkCreate(ctx, utils.GetNetworkName(clusterID), types.NetworkCreate{Driver: "bridge"}); err != nil {
+	if _, err := cli.NetworkCreate(ctx, utils.GetNetworkName(clusterName), types.NetworkCreate{Driver: "bridge"}); err != nil {
 		return utils.LogError("Unable to create a network named space-cloud", err)
 	}
 
@@ -269,7 +273,7 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 		}, &container.HostConfig{
 			Mounts:       c.mount,
 			PortBindings: c.portMapping,
-			NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterID)),
+			NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterName)),
 		}, nil, c.containerName)
 		if err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), err)
@@ -285,12 +289,12 @@ func Setup(username, key, config, version, secret, clusterID string, dev bool, p
 			return utils.LogError(fmt.Sprintf("Unable to inspect container (%v)", c.containerName), err)
 		}
 
-		ip := data.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress
+		ip := data.NetworkSettings.Networks[utils.GetNetworkName(clusterName)].IPAddress
 		utils.LogDebug(fmt.Sprintf("Adding entry (%s - %s) to hosts file", c.dnsName, ip), nil)
 		hosts.AddHost(ip, c.dnsName)
 	}
 
-	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath(clusterID)); err != nil {
+	if err := hosts.SaveAs(utils.GetSpaceCloudHostsFilePath(clusterName)); err != nil {
 		return utils.LogError("Unable to save host file - %s", err)
 	}
 

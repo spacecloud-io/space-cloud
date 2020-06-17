@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -25,7 +26,7 @@ func CheckPortAvailability(port, s string) (string, error) {
 }
 
 // RemoveAccount removes account from accounts file
-func RemoveAccount(id string) error {
+func RemoveAccount(clusterName string) error {
 	credential, err := GetCredentials()
 	if err != nil {
 		return err
@@ -33,7 +34,8 @@ func RemoveAccount(id string) error {
 
 	index := 0
 	for i, v := range credential.Accounts {
-		if v.ID == id {
+		accountName := strings.Split(v.ID, "--")[0]
+		if accountName == clusterName {
 			index = i
 			credential.SelectedAccount = ""
 		}
@@ -46,23 +48,55 @@ func RemoveAccount(id string) error {
 		return err
 	}
 
-	return err
+	return nil
+}
+
+// ChangeSelectedAccount change selected account according to cluster name provided
+func ChangeSelectedAccount(clusterName string) error {
+	credential, err := GetCredentials()
+	if err != nil {
+		return err
+	}
+
+	index := -1
+	credential.SelectedAccount = ""
+	for i, v := range credential.Accounts {
+		accountName := strings.Split(v.ID, "--")[0]
+		if accountName == clusterName {
+			credential.SelectedAccount = v.ID
+		}
+		if accountName == v.ID {
+			index = i
+		}
+	}
+	if credential.SelectedAccount == "" {
+		if index == -1 {
+			return fmt.Errorf("no account found in account.yaml")
+		}
+		credential.SelectedAccount = credential.Accounts[index].ID
+	}
+
+	if err := GenerateAccountsFile(credential); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetNetworkName provides network name of particular cluster
-func GetNetworkName(id string) string {
-	if id == "default" {
+func GetNetworkName(clusterName string) string {
+	if clusterName == "default" {
 		return "space-cloud"
 	}
-	return fmt.Sprintf("space-cloud-%s", id)
+	return fmt.Sprintf("space-cloud-%s", clusterName)
 }
 
 // GetScContainers provides name for space-cloud containers
-func GetScContainers(clusterID, name string) string {
-	if clusterID == "default" {
+func GetScContainers(clusterName, name string) string {
+	if clusterName == "default" {
 		return fmt.Sprintf("space-cloud-%s", name)
 	}
-	return fmt.Sprintf("space-cloud-%s-%s", clusterID, name)
+	return fmt.Sprintf("space-cloud-%s-%s", clusterName, name)
 }
 
 // GetDatabaseContainerName provides name for database container
@@ -74,9 +108,9 @@ func GetDatabaseContainerName(id, alias string) string {
 }
 
 // GetRegistryContainerName provides name for registry container
-func GetRegistryContainerName(id string) string {
-	if id == "default" {
+func GetRegistryContainerName(clusterName string) string {
+	if clusterName == "default" {
 		return "space-cloud--addon--registry"
 	}
-	return fmt.Sprintf("space-cloud-%s--addon--registry", id)
+	return fmt.Sprintf("space-cloud-%s--addon--registry", clusterName)
 }

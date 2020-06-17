@@ -12,7 +12,7 @@ import (
 )
 
 // Destroy cleans the environment which has been setup. It removes the containers, secrets & host file
-func Destroy(clusterID string) error {
+func Destroy(clusterName string) error {
 	utils.LogInfo("Destroying the cluster...")
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -23,7 +23,7 @@ func Destroy(clusterID string) error {
 
 	// get all containers containing < space-cloud > in their name
 	argsName := filters.Arg("name", "space-cloud")
-	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsName), All: true})
 	if err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to list containers - %s", err.Error()), nil)
@@ -39,50 +39,50 @@ func Destroy(clusterID string) error {
 	}
 
 	// Remove the space-cloud network
-	args := filters.Arg("name", utils.GetNetworkName(clusterID))
+	args := filters.Arg("name", utils.GetNetworkName(clusterName))
 	nws, err := cli.NetworkList(ctx, types.NetworkListOptions{Filters: filters.NewArgs(args)})
 	if err != nil {
 		return utils.LogError("Unable to list networks", err)
 	}
 	for _, nw := range nws {
-		if nw.Name == utils.GetNetworkName(clusterID) {
+		if nw.Name == utils.GetNetworkName(clusterName) {
 			_ = cli.NetworkRemove(ctx, nw.ID)
 		}
 	}
 
 	// Remove secrets directory
-	if err := os.RemoveAll(utils.GetSecretsDir(clusterID)); err != nil {
+	if err := os.RemoveAll(utils.GetSecretsDir(clusterName)); err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to remove secrets directory - %s", err.Error()), nil)
 		return err
 	}
 
 	// Remove host file
-	if err := os.RemoveAll(utils.GetSpaceCloudHostsFilePath(clusterID)); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudHostsFilePath(clusterName)); err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to remove host file - %s", err.Error()), nil)
 		return err
 	}
 
 	// Remove the service routing file
-	if err := os.RemoveAll(utils.GetSpaceCloudRoutingConfigPath(clusterID)); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudRoutingConfigPath(clusterName)); err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to remove service routing file file - %s", err.Error()), nil)
 		return err
 	}
 
 	// Remove the config file
-	if err := os.RemoveAll(utils.GetSpaceCloudConfigFilePath(clusterID)); err != nil {
+	if err := os.RemoveAll(utils.GetSpaceCloudConfigFilePath(clusterName)); err != nil {
 		_ = utils.LogError(fmt.Sprintf("Unable to remove config file file - %s", err.Error()), nil)
 		return err
 	}
 
-	if clusterID != "default" {
+	if clusterName != "default" {
 		// Remove the directory
-		if err := os.RemoveAll(utils.GetSpaceCloudClusterDirectory(clusterID)); err != nil {
+		if err := os.RemoveAll(utils.GetSpaceCloudClusterDirectory(clusterName)); err != nil {
 			_ = utils.LogError(fmt.Sprintf("Unable to remove cluster dir- %s", err.Error()), nil)
 			return err
 		}
 	}
 
-	if err := utils.RemoveAccount(clusterID); err != nil {
+	if err := utils.RemoveAccount(clusterName); err != nil {
 		return err
 	}
 	utils.LogInfo("Space cloud cluster has been destroyed successfully 😢")

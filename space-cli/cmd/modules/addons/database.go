@@ -32,7 +32,13 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	ctx := context.Background()
 	autoApply := viper.GetBool("auto-apply")
 	project := viper.GetString("project")
-	clusterID := viper.GetString("cluster-id")
+	clusterName := viper.GetString("cluster-id")
+
+	// change selected account according to cluster name provided
+	if err := utils.ChangeSelectedAccount(clusterName); err != nil {
+		return utils.LogError("Could not set selected account ", err)
+	}
+
 	if autoApply {
 		if project == "" {
 			return utils.LogError(`Please provide project id through "--project" flag`, nil)
@@ -95,7 +101,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 
 	// Check if a database container already exist
 	argsSC := filters.Arg("label", "app=space-cloud")
-	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsSC)})
 	if err != nil {
 		return utils.LogError("Unable to check if database already exists", err)
@@ -116,8 +122,8 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 		Image:  dockerImage,
 		Env:    env,
 	}, &container.HostConfig{
-		NetworkMode: container.NetworkMode(utils.GetNetworkName(clusterID)),
-	}, nil, utils.GetDatabaseContainerName(clusterID, alias))
+		NetworkMode: container.NetworkMode(utils.GetNetworkName(clusterName)),
+	}, nil, utils.GetDatabaseContainerName(clusterName, alias))
 	if err != nil {
 		return utils.LogError("Unable to create local docker database", err)
 	}
@@ -128,7 +134,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	}
 
 	// Get the hosts file
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterID), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterID)})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterName), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterName)})
 	if err != nil {
 		return utils.LogError("Unable to open hosts file", err)
 	}
@@ -145,7 +151,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	hosts.RemoveHost(hostName)
 
 	// Add it back with the new ip address
-	hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress, hostName)
+	hosts.AddHost(info.NetworkSettings.Networks[utils.GetNetworkName(clusterName)].IPAddress, hostName)
 
 	// Save the hosts file
 	if err := hosts.Save(); err != nil {
@@ -267,9 +273,14 @@ func keepSettingConfig(token, dbType string, account *model.Account, v *model.Sp
 }
 
 func removeDatabase(alias string) error {
-	clusterID := viper.GetString("cluster-id")
+	clusterName := viper.GetString("cluster-id")
 	project := viper.GetString("project")
 	autoRemove := viper.GetBool("auto-remove")
+
+	// change selected account according to cluster name provided
+	if err := utils.ChangeSelectedAccount(clusterName); err != nil {
+		return utils.LogError("Could not set selected account ", err)
+	}
 
 	ctx := context.Background()
 
@@ -280,8 +291,8 @@ func removeDatabase(alias string) error {
 	}
 
 	// Check if a database container already exist
-	argsDB := filters.Arg("name", utils.GetDatabaseContainerName(clusterID, alias))
-	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	argsDB := filters.Arg("name", utils.GetDatabaseContainerName(clusterName, alias))
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
 	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsDB)})
 	if err != nil {
 		return utils.LogError("Unable to check if database already exists", err)
@@ -303,7 +314,7 @@ func removeDatabase(alias string) error {
 	}
 
 	// Get the hosts file
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterID), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterID)})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterName), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterName)})
 	if err != nil {
 		return utils.LogError("Unable to open hosts file", err)
 	}

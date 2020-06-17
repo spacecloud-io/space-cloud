@@ -18,7 +18,7 @@ import (
 )
 
 // Upgrade upgrades the environment which has been setup
-func Upgrade(clusterID string) error {
+func Upgrade(clusterName string) error {
 
 	// Getting current version
 	result := make(map[string]interface{})
@@ -47,7 +47,7 @@ func Upgrade(clusterID string) error {
 
 	// Get all containers containing < space-cloud > in their name
 	argsSC := filters.Arg("label", "app=space-cloud")
-	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterID))
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsSC), All: true})
 	if err != nil {
 		return utils.LogError("Unable to get Space Cloud container details. Is Docker running?", err)
@@ -106,7 +106,7 @@ func Upgrade(clusterID string) error {
 	}{
 		{
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/gateway", latestVersion),
-			containerName:  utils.GetScContainers(clusterID, "gateway"),
+			containerName:  utils.GetScContainers(clusterName, "gateway"),
 			dnsName:        "gateway.space-cloud.svc.cluster.local",
 			labels:         gatewayLabels,
 			envs:           gatewayEnvs,
@@ -118,7 +118,7 @@ func Upgrade(clusterID string) error {
 		{
 			// runner
 			containerImage: fmt.Sprintf("%s:%s", "spaceuptech/runner", latestVersion),
-			containerName:  utils.GetScContainers(clusterID, "runner"),
+			containerName:  utils.GetScContainers(clusterName, "runner"),
 			dnsName:        "runner.space-cloud.svc.cluster.local",
 			labels:         runnerLabels,
 			envs:           runnerEnvs,
@@ -132,7 +132,7 @@ func Upgrade(clusterID string) error {
 		return utils.LogError("Unable to initialize docker client", err)
 	}
 
-	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterID), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterID)})
+	hosts, err := txeh.NewHosts(&txeh.HostsConfig{ReadFilePath: utils.GetSpaceCloudHostsFilePath(clusterName), WriteFilePath: utils.GetSpaceCloudHostsFilePath(clusterName)})
 	if err != nil {
 		return utils.LogError("Unable to load host file", err)
 	}
@@ -152,7 +152,7 @@ func Upgrade(clusterID string) error {
 		}, &container.HostConfig{
 			Mounts:       c.mount,
 			PortBindings: c.portMapping,
-			NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterID)),
+			NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterName)),
 		}, nil, c.containerName)
 		if err != nil {
 			return utils.LogError(fmt.Sprintf("Unable to create container (%v)", c.containerName), err)
@@ -170,7 +170,7 @@ func Upgrade(clusterID string) error {
 		// Remove the domain from the hosts file
 		hosts.RemoveHost(c.dnsName)
 		// Add it back with the new ip address
-		ip := data.NetworkSettings.Networks[utils.GetNetworkName(clusterID)].IPAddress
+		ip := data.NetworkSettings.Networks[utils.GetNetworkName(clusterName)].IPAddress
 
 		hosts.AddHost(ip, c.dnsName)
 	}
@@ -181,11 +181,11 @@ func Upgrade(clusterID string) error {
 
 	utils.LogInfo(fmt.Sprintf("Space Cloud has been upgraded to %s successfully", latestVersion))
 	utils.LogInfo("Restarting Space Cloud")
-	if err := DockerStop(clusterID); err != nil {
+	if err := DockerStop(clusterName); err != nil {
 		return err
 	}
 	utils.LogInfo("Space Cloud is starting")
-	if err := DockerStart(clusterID); err != nil {
+	if err := DockerStart(clusterName); err != nil {
 		return err
 	}
 	return nil
