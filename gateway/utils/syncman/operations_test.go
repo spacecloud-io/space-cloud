@@ -93,12 +93,6 @@ func TestManager_GetAssignedSpaceCloudURL(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "store type is none",
-			s:    &Manager{storeType: "none", port: 4122},
-			args: args{ctx: context.Background(), project: "project", token: 100},
-			want: "http://localhost:4122/v1/api/project/eventing/process",
-		},
-		{
 			name: "got assigned space cloud url",
 			s:    &Manager{storeType: "kube", services: []*service{{id: "1", addr: "some.com"}}},
 			args: args{ctx: context.Background(), project: "project", token: 0},
@@ -129,12 +123,6 @@ func TestManager_GetSpaceCloudNodeURLs(t *testing.T) {
 		args args
 		want []string
 	}{
-		{
-			name: "store type is none",
-			s:    &Manager{port: 4122, storeType: "none"},
-			args: args{project: "project"},
-			want: []string{"http://localhost:4122/v1/api/project/realtime/process"},
-		},
 		{
 			name: "got space cloud urls",
 			s:    &Manager{services: []*service{{id: "1", addr: "some.com"}}},
@@ -257,54 +245,6 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"", errors.New("could not generate signed string for token")},
-				},
-			},
-			want:    http.StatusInternalServerError,
-			wantErr: true,
-		},
-		{
-			name: "project exists already and store type none and can not store config to file",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
-			args: args{ctx: context.Background(), project: &config.Project{ID: "1"}},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "ValidateSyncOperation",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{true},
-				},
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"token", nil},
-				},
-			},
-			modulesMockArgs: []mockArgs{
-				{
-					method: "SetProjectConfig",
-					args:   []interface{}{mock.Anything, mock.Anything, mock.Anything},
-				},
-			},
-			want:    http.StatusInternalServerError,
-			wantErr: true,
-		},
-		{
-			name: "project doesn't exist and store type none and can not store config to file",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1"}}}},
-			args: args{ctx: context.Background(), project: &config.Project{ID: "2"}},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "ValidateSyncOperation",
-					args:           []interface{}{mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{true},
-				},
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"token", nil},
-				},
-			},
-			modulesMockArgs: []mockArgs{
-				{
-					method: "SetProjectConfig",
-					args:   []interface{}{mock.Anything, mock.Anything, mock.Anything},
 				},
 			},
 			want:    http.StatusInternalServerError,
@@ -488,12 +428,6 @@ func TestManager_setProject(t *testing.T) {
 		wantErr       bool
 	}{
 		{
-			name:    "store type is none",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "2"}}}},
-			args:    args{ctx: context.Background(), project: &config.Project{ID: "1"}},
-			wantErr: true,
-		},
-		{
 			name: "store type kube and couldn't set project",
 			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "2"}}}},
 			args: args{ctx: context.Background(), project: &config.Project{ID: "1"}},
@@ -648,13 +582,20 @@ func TestManager_SetProjectConfig(t *testing.T) {
 		wantErr         bool
 	}{
 		{
-			name: "couldn't set project",
-			s:    &Manager{storeType: "none", projectConfig: config.GenerateEmptyConfig()},
+			name: "project config is not set",
+			s:    &Manager{storeType: "kube", projectConfig: config.GenerateEmptyConfig()},
 			args: args{ctx: context.Background(), project: &config.Project{ID: "1"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method: "SetProjectConfig",
 					args:   []interface{}{mock.Anything, mock.Anything, mock.Anything},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{mock.Anything, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to get db config")},
 				},
 			},
 			wantErr: true,
@@ -731,24 +672,6 @@ func TestManager_DeleteProjectConfig(t *testing.T) {
 				{
 					method:         "GetInternalAccessToken",
 					paramsReturned: []interface{}{"", errors.New("could not generate signed string for token")},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "store type none and couldn't store config to file",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "notProject"}}}},
-			args: args{ctx: context.Background(), projectID: "project"},
-			adminMockArgs: []mockArgs{
-				{
-					method:         "GetInternalAccessToken",
-					paramsReturned: []interface{}{"token", nil},
-				},
-			},
-			modulesMockArgs: []mockArgs{
-				{
-					method: "SetProjectConfig",
-					args:   []interface{}{mock.Anything, mock.Anything, mock.Anything},
 				},
 			},
 			wantErr: true,

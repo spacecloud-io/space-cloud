@@ -28,6 +28,10 @@ func (m *mockAdminSyncmanInterface) ValidateSyncOperation(c *config.Config, proj
 	return a.Bool(0)
 }
 
+func (m *mockAdminSyncmanInterface) SetConfig(admin *config.Admin) {
+	m.Called(admin)
+}
+
 type mockModulesInterface struct {
 	mock.Mock
 }
@@ -95,5 +99,15 @@ func (m *mockStoreInterface) SetProject(ctx context.Context, project *config.Pro
 
 func (m *mockStoreInterface) DeleteProject(ctx context.Context, projectID string) error {
 	c := m.Called(ctx, projectID)
+	return c.Error(0)
+}
+
+func (m *mockStoreInterface) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
+	c := m.Called(ctx, adminConfig)
+	return c.Error(0)
+}
+
+func (m *mockStoreInterface) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
+	c := m.Called(cb)
 	return c.Error(0)
 }

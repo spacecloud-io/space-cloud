@@ -500,12 +500,13 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	return []interface{}{coll}, nil
 }
 
+type schemaResponse struct {
+	Schema string `json:"schema"`
+}
+
 // GetSchemas gets schemas from config
 func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) ([]interface{}, error) {
 	// Acquire a lock
-	type response struct {
-		Schema string `json:"schema"`
-	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -518,20 +519,20 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) 
 		if !ok {
 			return nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
 		}
-		return []interface{}{map[string]*response{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
+		return []interface{}{map[string]*schemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
 	} else if dbAlias != "" {
 		collections := projectConfig.Modules.Crud[dbAlias].Collections
-		coll := map[string]*response{}
+		coll := map[string]*schemaResponse{}
 		for key, value := range collections {
-			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &response{Schema: value.Schema}
+			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &schemaResponse{Schema: value.Schema}
 		}
 		return []interface{}{coll}, nil
 	}
 	databases := projectConfig.Modules.Crud
-	coll := map[string]*response{}
+	coll := map[string]*schemaResponse{}
 	for dbName, dbInfo := range databases {
 		for key, value := range dbInfo.Collections {
-			coll[fmt.Sprintf("%s-%s", dbName, key)] = &response{Schema: value.Schema}
+			coll[fmt.Sprintf("%s-%s", dbName, key)] = &schemaResponse{Schema: value.Schema}
 		}
 	}
 	return []interface{}{coll}, nil

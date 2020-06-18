@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -36,13 +37,20 @@ func TestManager_SetUserManagement(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{}}}}}},
+			name: "userman config is not set",
+			s:    &Manager{storeType: "kube", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{}}}}}},
 			args: args{ctx: context.Background(), project: "1", provider: "provider", value: &config.AuthStub{ID: "1"}},
 			modulesMockArgs: []mockArgs{
 				{
 					method: "SetUsermanConfig",
 					args:   []interface{}{"1", config.Auth{"provider": &config.AuthStub{ID: "provider", Enabled: false}}},
+				},
+			},
+			storeMockArgs: []mockArgs{
+				{
+					method:         "SetProject",
+					args:           []interface{}{context.Background(), mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to get db config")},
 				},
 			},
 			wantErr: true,
