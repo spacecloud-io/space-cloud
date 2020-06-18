@@ -54,9 +54,9 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('e')", nil)
 			}
 
-			err = viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id"))
+			err = viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name"))
 			if err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: actionSetup,
@@ -110,41 +110,41 @@ func Commands() []*cobra.Command {
 
 	setup.Flags().StringSliceP("env", "e", []string{}, "Environment variables to be provided to gateway")
 
-	setup.Flags().StringP("cluster-id", "", "default", "The id of space-cloud cluster")
-	err = viper.BindEnv("cluster-id", "CLUSTER_ID")
+	setup.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
+	err = viper.BindEnv("cluster-name", "CLUSTER_NAME")
 	if err != nil {
-		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 
 	var upgrade = &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade development environment",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: actionUpgrade,
 	}
-	upgrade.Flags().StringP("cluster-id", "", "default", "The id of space-cloud cluster")
+	upgrade.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 
-	if err = viper.BindEnv("cluster-id", "CLUSTER_ID"); err != nil {
-		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 
 	var destroy = &cobra.Command{
 		Use:   "destroy",
 		Short: "clean development environment & remove secrets",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: actionDestroy,
 	}
-	destroy.Flags().StringP("cluster-id", "", "default", "The id of  space-cloud cluster")
-	if err = viper.BindEnv("cluster-id", "CLUSTER_ID"); err != nil {
-		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	destroy.Flags().StringP("cluster-name", "", "default", "The name of  space-cloud cluster")
+	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 
 	var apply = &cobra.Command{
@@ -156,30 +156,30 @@ func Commands() []*cobra.Command {
 		Use:   "start",
 		Short: "Resumes the space-cloud docker environment",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: actionStart,
 	}
-	start.Flags().StringP("cluster-id", "", "default", "The id of space-cloud cluster")
-	if err = viper.BindEnv("cluster-id", "CLUSTER_ID"); err != nil {
-		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	start.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
+	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 
 	var stop = &cobra.Command{
 		Use:   "stop",
 		Short: "Stops the space-cloud docker environment",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if err := viper.BindPFlag("cluster-id", cmd.Flags().Lookup("cluster-id")); err != nil {
-				_ = utils.LogError("Unable to bind the flag ('cluster-id')", nil)
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
 		RunE: actionStop,
 	}
-	stop.Flags().StringP("cluster-id", "", "default", "The id of space-cloud cluster")
-	if err = viper.BindEnv("cluster-id", "CLUSTER_ID"); err != nil {
-		_ = utils.LogError("Unable to bind lag ('id') to environment variables", nil)
+	stop.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
+	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
+		_ = utils.LogError("Unable to bind lag ('cluster-name') to environment variables", nil)
 	}
 	return []*cobra.Command{setup, upgrade, destroy, apply, start, stop}
 
@@ -196,21 +196,21 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	portHTTPS := viper.GetInt64("port-https")
 	volumes := viper.GetStringSlice("volume")
 	environmentVariables := viper.GetStringSlice("env")
-	clusterID := viper.GetString("cluster-id")
+	clusterName := viper.GetString("cluster-name")
 
-	_ = Setup(userName, key, config, version, secret, clusterID, local, portHTTP, portHTTPS, volumes, environmentVariables)
+	_ = Setup(userName, key, config, version, secret, clusterName, local, portHTTP, portHTTPS, volumes, environmentVariables)
 	return nil
 }
 
 func actionUpgrade(cmd *cobra.Command, args []string) error {
-	clusterID := viper.GetString("cluster-id")
-	_ = Upgrade(clusterID)
+	clusterName := viper.GetString("cluster-name")
+	_ = Upgrade(clusterName)
 	return nil
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {
-	clusterID := viper.GetString("cluster-id")
-	_ = Destroy(clusterID)
+	clusterName := viper.GetString("cluster-name")
+	_ = Destroy(clusterName)
 	return nil
 }
 
@@ -226,13 +226,13 @@ func actionApply(cmd *cobra.Command, args []string) error {
 }
 
 func actionStart(cmd *cobra.Command, args []string) error {
-	clusterID := viper.GetString("cluster-id")
-	_ = DockerStart(clusterID)
+	clusterName := viper.GetString("cluster-name")
+	_ = DockerStart(clusterName)
 	return nil
 }
 
 func actionStop(cmd *cobra.Command, args []string) error {
-	clusterID := viper.GetString("cluster-id")
-	_ = DockerStop(clusterID)
+	clusterName := viper.GetString("cluster-name")
+	_ = DockerStop(clusterName)
 	return nil
 }
