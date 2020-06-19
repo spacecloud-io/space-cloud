@@ -12,8 +12,8 @@ import (
 type routeMapping map[string]config.Routes // The key here is the project name
 
 const (
-	module string = "ingress-route"
-	// handleRequest  string = "handle-request"
+	module         string = "ingress-route"
+	handleRequest  string = "handle-request"
 	handleResponse string = "handle-response"
 )
 

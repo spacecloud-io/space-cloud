@@ -32,6 +32,7 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 		}
 
 		if err := json.Unmarshal(data, &params); err != nil {
+			utils.LogWarn("Unable to unmarshal body to JSON", module, handleRequest)
 			req.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 		}
 	}
@@ -82,15 +83,12 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 
 func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token string, auth interface{}) error {
 	if res.Header.Get("Content-Type") == "application/json" {
-		var data []byte
-		var err error
-		if route.Modify.Tmpl != "" {
-			data, err = ioutil.ReadAll(res.Body)
-			if err != nil {
-				return err
-			}
-		} else {
+		if route.Modify.Tmpl == "" {
 			return nil
+		}
+		data, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return err
 		}
 
 		var params interface{}
