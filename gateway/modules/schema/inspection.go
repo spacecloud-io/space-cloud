@@ -33,7 +33,7 @@ func (s *Schema) SchemaInspection(ctx context.Context, dbAlias, project, col str
 
 // Inspector generates schema
 func (s *Schema) Inspector(ctx context.Context, dbAlias, dbType, project, col string) (model.Collection, error) {
-	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbAlias, project, col)
+	fields, foreignkeys, indexes, err := s.crud.DescribeTable(ctx, dbAlias, col)
 
 	if err != nil {
 		return nil, err
@@ -104,17 +104,21 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 		for _, foreignValue := range foreignkeys {
 			if foreignValue.ColumnName == field.FieldName && foreignValue.RefTableName != "" && foreignValue.RefColumnName != "" {
 				fieldDetails.IsForeign = true
-				fieldDetails.JointTable = &model.TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName, OnDelete: foreignValue.DeleteRule}
+				fieldDetails.JointTable = &model.TableProperties{Table: foreignValue.RefTableName, To: foreignValue.RefColumnName, OnDelete: foreignValue.DeleteRule, ConstraintName: foreignValue.ConstraintName}
 			}
 		}
 		for _, indexValue := range indexes {
 			if indexValue.ColumnName == field.FieldName {
 				fieldDetails.IsIndex = true
 				fieldDetails.IsUnique = indexValue.IsUnique == "yes"
-				fieldDetails.IndexInfo = &model.TableProperties{Group: indexValue.IndexName, Order: indexValue.Order, Sort: indexValue.Sort}
+				fieldDetails.IndexInfo = &model.TableProperties{Order: indexValue.Order, Sort: indexValue.Sort, ConstraintName: indexValue.IndexName}
+				if strings.HasPrefix(indexValue.IndexName, "index__") {
+					// index is created through gateway, as it follows our naming convention
+					indexValue.IndexName = getGroupNameFromIndexName(indexValue.IndexName)
+				}
+				fieldDetails.IndexInfo.Group = indexValue.IndexName
 			}
 		}
-
 		// field name
 		inspectionFields[field.FieldName] = &fieldDetails
 	}
@@ -125,8 +129,17 @@ func generateInspection(dbType, col string, fields []utils.FieldType, foreignkey
 	return inspectionCollection, nil
 }
 
+func getGroupNameFromIndexName(indexName string) string {
+	// ignoring the length check as the length is assured to be 3
+	return strings.Split(indexName, "__")[2]
+}
+
 func inspectionMySQLCheckFieldType(typeName string, fieldDetails *model.FieldType) error {
-	if typeName == "varchar("+model.SQLTypeIDSize+")" {
+	if typeName == "varchar(-1)" {
+		fieldDetails.Kind = model.TypeString
+		return nil
+	}
+	if strings.HasPrefix(typeName, "varchar(") {
 		fieldDetails.Kind = model.TypeID
 		return nil
 	}
@@ -134,18 +147,18 @@ func inspectionMySQLCheckFieldType(typeName string, fieldDetails *model.FieldTyp
 	result := strings.Split(typeName, "(")
 
 	switch result[0] {
-	case "varchar":
-		fieldDetails.Kind = model.TypeString // for sql server
 	case "char", "tinytext", "text", "blob", "mediumtext", "mediumblob", "longtext", "longblob", "decimal":
 		fieldDetails.Kind = model.TypeString
 	case "smallint", "mediumint", "int", "bigint":
 		fieldDetails.Kind = model.TypeInteger
 	case "float", "double":
 		fieldDetails.Kind = model.TypeFloat
-	case "date", "time", "datetime", "timestamp":
+	case "date", "time", "datetime", "timestamp", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
 	case "tinyint", "boolean", "bit":
 		fieldDetails.Kind = model.TypeBoolean
+	case "json":
+		fieldDetails.Kind = model.TypeJSON
 	default:
 		return errors.New("Inspection type check : no match found got " + result[0])
 	}
@@ -168,7 +181,7 @@ func inspectionPostgresCheckFieldType(typeName string, fieldDetails *model.Field
 		fieldDetails.Kind = model.TypeInteger
 	case "float", "double", "real":
 		fieldDetails.Kind = model.TypeFloat
-	case "date", "time", "datetime", "timestamp", "interval":
+	case "date", "time", "datetime", "timestamp", "interval", "datetimeoffset":
 		fieldDetails.Kind = model.TypeDateTime
 	case "boolean":
 		fieldDetails.Kind = model.TypeBoolean

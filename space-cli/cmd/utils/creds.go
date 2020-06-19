@@ -3,14 +3,14 @@ package utils
 import (
 	"io/ioutil"
 
+	"github.com/ghodss/yaml"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
-// GetSelectedAccount gets the account information of the selected account
-func GetSelectedAccount() (*model.Account, error) {
+// getSelectedAccount gets the account information of the selected account
+func getSelectedAccount() (*model.Account, error) {
 	filePath := getAccountConfigPath()
 	yamlFile, err := ioutil.ReadFile(filePath)
 	if err != nil {

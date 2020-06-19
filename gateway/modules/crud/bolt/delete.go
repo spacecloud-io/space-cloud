@@ -14,13 +14,13 @@ import (
 )
 
 // Delete deletes a document (or multiple when op is "all") from the database
-func (b *Bolt) Delete(ctx context.Context, project, col string, req *model.DeleteRequest) (int64, error) {
+func (b *Bolt) Delete(ctx context.Context, col string, req *model.DeleteRequest) (int64, error) {
 	var count int64
 	switch req.Operation {
 	case utils.One, utils.All:
 		if err := b.client.Update(func(tx *bbolt.Tx) error {
 			// Assume bucket exists and has keys
-			bucket := tx.Bucket([]byte(project))
+			bucket := tx.Bucket([]byte(b.bucketName))
 			c := bucket.Cursor()
 
 			// get all keys matching the prefix

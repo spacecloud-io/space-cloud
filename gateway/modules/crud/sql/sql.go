@@ -17,16 +17,16 @@ import (
 
 // SQL holds the sql db object
 type SQL struct {
-	enabled            bool
-	connection         string
-	client             *sqlx.DB
-	dbType             string
-	removeProjectScope bool
+	enabled    bool
+	connection string
+	client     *sqlx.DB
+	dbType     string
+	name       string // logical db name or schema name according to the database type
 }
 
 // Init initialises a new sql instance
-func Init(dbType utils.DBType, enabled, removeProjectScope bool, connection string) (s *SQL, err error) {
-	s = &SQL{enabled: enabled, removeProjectScope: removeProjectScope, connection: connection, client: nil}
+func Init(dbType utils.DBType, enabled bool, connection string, dbName string) (s *SQL, err error) {
+	s = &SQL{enabled: enabled, connection: connection, name: dbName, client: nil}
 
 	switch dbType {
 	case utils.Postgres:

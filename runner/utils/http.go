@@ -8,7 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
-	"github.com/sirupsen/logrus"
 )
 
 // HTTPMeta holds the http meta parameters
@@ -40,30 +39,22 @@ func GetToken(r *http.Request) (token string) {
 	return strings.TrimPrefix(tokens[0], "Bearer ")
 }
 
-// SendErrorResponse sends an error http response
-func SendErrorResponse(w http.ResponseWriter, r *http.Request, status int, err error) {
+// SendOkayResponse sends an Okay http response
+func SendOkayResponse(w http.ResponseWriter) error {
+	return SendResponse(w, 200, map[string]string{})
+}
+
+// SendErrorResponse sends an Error http response
+func SendErrorResponse(w http.ResponseWriter, status int, message string) error {
+	return SendResponse(w, status, map[string]string{"error": message})
+}
+
+// SendResponse sends an http response
+func SendResponse(w http.ResponseWriter, status int, body interface{}) error {
+	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(map[string]interface{}{"error": err.Error()}); err != nil {
-		logrus.Errorf("Error while sending error response for %s %s - %s", r.Method, r.URL.String(), err.Error())
-	}
-}
-
-// SendEmptySuccessResponse sends an empty http ok response
-func SendEmptySuccessResponse(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(map[string]string{}); err != nil {
-		logrus.Errorf("Error while sending error response for %s %s - %s", r.Method, r.URL.String(), err.Error())
-	}
-}
-
-// SendSuccessResponse sends an empty http ok response
-func SendSuccessResponse(w http.ResponseWriter, r *http.Request, body interface{}) {
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(body); err != nil {
-		logrus.Errorf("Error while sending error response for %s %s - %s", r.Method, r.URL.String(), err.Error())
-	}
+	return json.NewEncoder(w).Encode(body)
 }
 
 // CloseTheCloser closes an io read closer while explicitly ignoring the error

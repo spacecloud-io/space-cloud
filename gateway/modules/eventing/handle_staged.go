@@ -22,7 +22,6 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		return
 	}
 	m.lock.RLock()
-	project := m.project
 	dbAlias, col := m.config.DBAlias, utils.TableEventingLogs
 	m.lock.RUnlock()
 
@@ -40,7 +39,7 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		},
 	}}
 
-	results, err := m.crud.Read(ctx, dbAlias, project, col, &readRequest)
+	results, err := m.crud.Read(ctx, dbAlias, col, &readRequest)
 	if err != nil {
 		logrus.Errorf("Eventing stage routine error - %s", err.Error())
 		return

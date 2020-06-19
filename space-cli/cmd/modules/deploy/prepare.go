@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 
 	"github.com/spaceuptech/space-cli/cmd/modules/services"
 	"github.com/spaceuptech/space-cli/cmd/utils"
@@ -35,7 +35,7 @@ func prepareService(projectID, dockerFilePath, serviceFilePath string) error {
 		case "python":
 			dockerFileContents = utils.DockerfilePython
 		default:
-			return utils.LogError(fmt.Sprintf("Lnaguage (%s) not supported. Consider making a Dockerfile yourself.", lang), nil)
+			return utils.LogError(fmt.Sprintf("Language (%s) not supported. Consider making a Dockerfile yourself.", lang), nil)
 		}
 
 		// Create the docker file

@@ -1,7 +1,6 @@
 package syncman
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,8 +17,7 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := admin.IsTokenValid(utils.GetTokenFromHeader(r)); err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to validate token -%v", err)
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -40,8 +38,7 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 		token, err := admin.GetInternalAccessToken()
 		if err != nil {
 			logrus.Errorf("error handling forwarding runner request failed to generate internal access token -%v", err)
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
@@ -49,9 +46,7 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 		// TODO: Use http2 client if that was the incoming request protocol
 		response, err := http.DefaultClient.Do(r)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		defer utils.CloseTheCloser(response.Body)

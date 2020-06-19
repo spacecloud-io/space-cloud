@@ -7,11 +7,12 @@ import (
 	"net/http"
 
 	"github.com/AlecAivazis/survey/v2"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
 // Login logs the user in
-func Login(selectedAccount *model.Account) (*model.LoginResponse, error) {
+func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 	requestBody, err := json.Marshal(map[string]string{
 		"user": selectedAccount.UserName,
 		"key":  selectedAccount.Key,
@@ -39,13 +40,18 @@ func Login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 }
 
 // LoginStart take info of the user
-func LoginStart(userName, key, url string) error {
+func LoginStart(userName, ID, key, url string) error {
 	if userName == "None" {
 		if err := survey.AskOne(&survey.Input{Message: "Enter username:"}, &userName); err != nil {
 			_ = LogError(fmt.Sprintf("error in login start unable to get username - %v", err), nil)
 			return err
 		}
 	}
+
+	if ID == "None" {
+		ID = userName
+	}
+
 	if key == "None" {
 		if err := survey.AskOne(&survey.Password{Message: "Enter key:"}, &key); err != nil {
 			_ = LogError(fmt.Sprintf("error in login start unable to get key - %v", err), nil)
@@ -57,13 +63,13 @@ func LoginStart(userName, key, url string) error {
 		Key:       key,
 		ServerURL: url,
 	}
-	_, err := Login(&account)
+	_, err := login(&account)
 	if err != nil {
 		_ = LogError(fmt.Sprintf("error in login start unable to login - %v", err), nil)
 		return err
 	}
 	account = model.Account{
-		ID:        userName,
+		ID:        ID,
 		UserName:  userName,
 		Key:       key,
 		ServerURL: url,
@@ -75,4 +81,17 @@ func LoginStart(userName, key, url string) error {
 	}
 	fmt.Printf("Login Successful\n")
 	return nil
+}
+
+// LoginWithSelectedAccount returns selected account & login token
+func LoginWithSelectedAccount() (*model.Account, string, error) {
+	account, err := getSelectedAccount()
+	if err != nil {
+		return nil, "", err
+	}
+	login, err := login(account)
+	if err != nil {
+		return nil, "", err
+	}
+	return account, login.Token, nil
 }

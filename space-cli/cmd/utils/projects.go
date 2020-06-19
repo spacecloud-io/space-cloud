@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/spf13/viper"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 )
 
@@ -32,4 +34,13 @@ func GetProjectsFromSC() ([]*model.Projects, error) {
 	}
 
 	return res.Projects, nil
+}
+
+// GetProjectID checks if project is specified in flags
+func GetProjectID() (string, bool) {
+	projectID := viper.GetString("project")
+	if projectID == "" {
+		return "", false
+	}
+	return projectID, true
 }

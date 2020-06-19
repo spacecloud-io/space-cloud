@@ -165,7 +165,12 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 				// Each document is actually an object
 				linkedDoc := linkedDocTemp.(map[string]interface{})
 
-				graph.prepareDocs(linkedDoc, schemaFields)
+				linkedSchemaFields, p := graph.schema.GetSchema(dbAlias, fieldSchema.LinkedTable.Table)
+				if !p {
+					return nil, nil, fmt.Errorf("schema not provided for table (%s). Check the link directive for field (%s) in table (%s)", fieldSchema.LinkedTable.Table, fieldSchema.FieldName, col)
+				}
+
+				graph.prepareDocs(linkedDoc, linkedSchemaFields)
 
 				// Check if the `from` field is a primary key. If it is, we need to set that value in the `to` field
 				// of the nested value. If it is not a primary key, we'll have to set it with the value of the `to`
