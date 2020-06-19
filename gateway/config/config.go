@@ -7,6 +7,12 @@ type Config struct {
 	Admin    *Admin     `json:"admin" yaml:"admin"`
 }
 
+// ClusterConfig holds the cluster level configuration
+type ClusterConfig struct {
+	Email         string `json:"email" yaml:"email"`
+	EnableMetrics bool   `json:"enableMetrics" yaml:"enableMetrics"`
+}
+
 // Project holds the project level configuration
 type Project struct {
 	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
@@ -26,9 +32,10 @@ type Secret struct {
 
 // Admin holds the admin config
 type Admin struct {
-	ClusterID  string `json:"clusterId" yaml:"clusterId"`
-	ClusterKey string `json:"clusterKey" yaml:"clusterKey"`
-	License    string `json:"license" yaml:"license"`
+	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig"`
+	ClusterID     string         `json:"clusterId" yaml:"clusterId"`
+	ClusterKey    string         `json:"clusterKey" yaml:"clusterKey"`
+	License       string         `json:"license" yaml:"license"`
 }
 
 // AdminUser holds the user credentials and scope
@@ -246,5 +253,4 @@ type SchemaObject struct {
 type LetsEncrypt struct {
 	ID                 string   `json:"id,omitempty" yaml:"id,omitempty"`
 	WhitelistedDomains []string `json:"domains" yaml:"domains"`
-	Email              string   `json:"email" yaml:"email"`
 }

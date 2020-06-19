@@ -19,7 +19,7 @@ func (m *Module) SetProjectConfig(c *config.Project, le *letsencrypt.LetsEncrypt
 			Auth:        map[string]*config.AuthStub{},
 			Crud:        map[string]*config.CrudStub{},
 			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}, Email: ""},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
 		}
 	}
 

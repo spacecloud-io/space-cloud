@@ -34,12 +34,6 @@ var essentialFlags = []cli.Flag{
 		Usage:  "The id to start space cloud with",
 		EnvVar: "NODE_ID",
 	},
-	cli.StringFlag{
-		Name:   "config",
-		Value:  "config.yaml",
-		Usage:  "Load space cloud config from `FILE`",
-		EnvVar: "CONFIG",
-	},
 	cli.BoolFlag{
 		Name:   "dev",
 		Usage:  "Run space-cloud in development mode",
@@ -66,7 +60,7 @@ var essentialFlags = []cli.Flag{
 		Name:   "store-type",
 		Usage:  "The config store to use for storing project configs and other meta data",
 		EnvVar: "STORE_TYPE",
-		Value:  "none",
+		Value:  "local",
 	},
 	cli.IntFlag{
 		Name:   "port",
@@ -161,7 +155,6 @@ func main() {
 func actionRun(c *cli.Context) error {
 	// Load cli flags
 	nodeID := c.String("id")
-	configPath := c.String("config")
 	isDev := c.Bool("dev")
 	logLevel := c.String("log-level")
 	setLogLevel(logLevel)
@@ -194,10 +187,10 @@ func actionRun(c *cli.Context) error {
 		nodeID = fmt.Sprintf("auto-%s-0", ksuid.New().String())
 	}
 
-	// Load the configFile from path if provided
-	conf, err := config.LoadConfigFromFile(configPath)
-	if err != nil {
-		conf = config.GenerateEmptyConfig()
+	// Set the ssl config
+	ssl := &config.SSL{}
+	if sslEnable {
+		ssl = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
 	}
 
 	// Override the admin config if provided
@@ -211,24 +204,16 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configPath, disableMetrics, isDev, adminUserInfo)
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, disableMetrics, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return err
 	}
+
+	s.SetConfig(ssl)
 
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
 	if err != nil {
-		return err
-	}
-
-	// Set the ssl config
-	if sslEnable {
-		conf.SSL = &config.SSL{Enabled: true, Crt: sslCert, Key: sslKey}
-	}
-
-	// Configure all modules
-	if err := s.SetConfig(conf); err != nil {
 		return err
 	}
 

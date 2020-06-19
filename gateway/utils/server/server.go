@@ -34,11 +34,11 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile string, disableMetrics, isDev bool, adminUserInfo *config.AdminUser) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disableMetrics, isDev bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Server, error) {
 
 	// Create the fundamental modules
 	adminMan := admin.New(nodeID, clusterID, isDev, adminUserInfo)
-	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile, adminMan)
+	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan, ssl)
 	if err != nil {
 		return nil, err
 	}
@@ -72,9 +72,8 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, configFile str
 
 // Start begins the server operations
 func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHosts []string) error {
-
 	// Start the sync manager
-	if err := s.syncMan.Start(s.syncMan.GetGlobalConfig(), port); err != nil {
+	if err := s.syncMan.Start(port); err != nil {
 		return err
 	}
 
@@ -120,11 +119,6 @@ func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHos
 }
 
 // SetConfig sets the config
-func (s *Server) SetConfig(c *config.Config) error {
-	s.ssl = c.SSL
-	s.syncMan.SetGlobalConfig(c)
-	if err := s.adminMan.SetConfig(c.Admin, true); err != nil {
-		return err
-	}
-	return nil
+func (s *Server) SetConfig(ssl *config.SSL) {
+	s.ssl = ssl
 }
