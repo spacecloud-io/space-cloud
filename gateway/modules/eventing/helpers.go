@@ -196,16 +196,9 @@ func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocum
 			"event_name":      eventDoc.RuleName,
 		},
 	}
-	batchID := m.generateBatchID()
 
-	responseChan := make(chan interface{}, 1)
-	defer close(responseChan) // close channel
-
-	m.eventChanMap.Store(batchID, eventResponse{time: time.Now(), response: responseChan})
-	defer m.eventChanMap.Delete(batchID)
-
-	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, batchID); err != nil {
-		logrus.Errorf("error queueing event in eventing unable to batch requests - %s", err.Error())
+	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, m.generateBatchID()); err != nil {
+		logrus.Errorf("error queueing dlq event in eventing unable to batch requests - %s", err.Error())
 		return err
 	}
 
