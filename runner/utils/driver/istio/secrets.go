@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/utils"
 )
 
 // CreateSecret is used to upsert secret
@@ -25,7 +26,7 @@ func (i *Istio) CreateSecret(ctx context.Context, projectID string, secretObj *m
 	oldSecret, err := i.kube.CoreV1().Secrets(projectID).Get(ctx, secretObj.ID, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
-		logrus.Debugf("Creating oldSecret (%s)", secretObj.ID)
+		logrus.Debugf("Creating secret (%s)", secretObj.ID)
 		newSecret, err := generateSecret(projectID, secretObj)
 		if err != nil {
 			return err
@@ -36,9 +37,10 @@ func (i *Istio) CreateSecret(ctx context.Context, projectID string, secretObj *m
 
 	} else if err == nil {
 		// oldSecret already exists...update it!
-		logrus.Debugf("Updating oldSecret (%s)", secretObj.ID)
-		if string(oldSecret.Type) != secretObj.Type {
-			return fmt.Errorf("secret already exists type mismatch")
+		logrus.Debugf("Updating secret (%s)", secretObj.ID)
+		oldSecretType := oldSecret.Annotations["secretType"]
+		if oldSecret.Annotations["secretType"] != secretObj.Type {
+			return utils.LogError(fmt.Sprintf("Secret type mismatch. Wanted - %s; Got - %s", oldSecretType, secretObj.Type), "secrets", "apply", nil)
 		}
 		newSecret, err := generateSecret(projectID, secretObj)
 		if err != nil {
@@ -47,7 +49,7 @@ func (i *Istio) CreateSecret(ctx context.Context, projectID string, secretObj *m
 		_, err = i.kube.CoreV1().Secrets(projectID).Update(ctx, newSecret, metav1.UpdateOptions{})
 		return err
 	}
-	logrus.Errorf("Failed to create oldSecret (%s) - %s", secretObj.ID, err)
+	logrus.Errorf("Failed to create secret (%s) - %s", secretObj.ID, err)
 	return err
 }
 

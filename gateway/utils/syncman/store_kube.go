@@ -123,7 +123,7 @@ func onAddOrUpdateServices(obj interface{}, services scServices) scServices {
 		return services
 	}
 
-	addr := pod.Status.PodIP + ":4122"
+	addr := fmt.Sprintf("%s.gateway.space-cloud.svc.cluster.local:4122", pod.Name)
 
 	doesExist := false
 	for _, service := range services {
