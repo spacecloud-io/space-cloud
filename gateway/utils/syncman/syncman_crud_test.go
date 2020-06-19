@@ -143,13 +143,13 @@ func TestManager_SetDatabaseConnection(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args:    args{ctx: context.Background(), dbAlias: "alias", project: "2", v: config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}},
 			wantErr: true,
 		},
 		{
 			name: "alias doesn't exist already and unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "notAlias", project: "1", v: config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -162,7 +162,7 @@ func TestManager_SetDatabaseConnection(t *testing.T) {
 		},
 		{
 			name: "alias exists already and unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", project: "1", v: config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -175,7 +175,7 @@ func TestManager_SetDatabaseConnection(t *testing.T) {
 		},
 		{
 			name: "alias doesn't exist already and unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "notAlias", project: "1", v: config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -195,7 +195,7 @@ func TestManager_SetDatabaseConnection(t *testing.T) {
 		},
 		{
 			name: "alias exists already and unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", project: "1", v: config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -299,13 +299,13 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args:    args{ctx: context.Background(), dbAlias: "alias", project: "2"},
 			wantErr: true,
 		},
 		{
 			name: "unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -318,7 +318,7 @@ func TestManager_RemoveDatabaseConfig(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -516,19 +516,19 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
 			args:    args{ctx: context.Background(), dbAlias: "alias", id: "id", project: "2", v: &config.PreparedQuery{ID: "queryID", SQL: "field"}},
 			wantErr: true,
 		},
 		{
 			name:    "database not present in config",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
 			args:    args{ctx: context.Background(), dbAlias: "notAlias", id: "id", project: "1", v: &config.PreparedQuery{ID: "queryID", SQL: "field"}},
 			wantErr: true,
 		},
 		{
 			name: "unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", id: "id", project: "1", v: &config.PreparedQuery{ID: "queryID", SQL: "field"}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -541,7 +541,7 @@ func TestManager_SetPreparedQueries(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", id: "id", project: "1", v: &config.PreparedQuery{ID: "queryID", SQL: "field"}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -627,19 +627,19 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
 			args:    args{ctx: context.Background(), dbAlias: "alias", id: "id", project: "2"},
 			wantErr: true,
 		},
 		{
 			name:    "database not present in config",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
 			args:    args{ctx: context.Background(), dbAlias: "notAlias", id: "id", project: "1"},
 			wantErr: true,
 		},
 		{
 			name: "unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", id: "id", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -652,7 +652,7 @@ func TestManager_RemovePreparedQueries(t *testing.T) {
 		},
 		{
 			name: "unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
 			args: args{ctx: context.Background(), dbAlias: "alias", id: "id", project: "1"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -739,19 +739,19 @@ func TestManager_SetModifySchema(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project config",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2", schema: "type event {id: ID! title: String}"},
 			wantErr: true,
 		},
 		{
 			name:    "database not present in config",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "notAlias", project: "1", schema: "type event {id: ID! title: String}"},
 			wantErr: true,
 		},
 		{
 			name: "collections in config is nil and unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -764,7 +764,7 @@ func TestManager_SetModifySchema(t *testing.T) {
 		},
 		{
 			name: "collections in config is nil and unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -803,7 +803,7 @@ func TestManager_SetModifySchema(t *testing.T) {
 		},
 		{
 			name: "table name doesn't exist and unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -816,7 +816,7 @@ func TestManager_SetModifySchema(t *testing.T) {
 		},
 		{
 			name: "table name doesn't exist and unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -855,7 +855,7 @@ func TestManager_SetModifySchema(t *testing.T) {
 		},
 		{
 			name: "table name exists and unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -868,7 +868,7 @@ func TestManager_SetModifySchema(t *testing.T) {
 		},
 		{
 			name: "table name exists and project is not set",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", schema: "type event {id: ID! title: String}"},
 			modulesMockArgs: []mockArgs{
 				{
@@ -955,19 +955,19 @@ func TestManager_SetCollectionRules(t *testing.T) {
 	}{
 		{
 			name:    "unable to get project",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2", v: &config.TableRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}},
 			wantErr: true,
 		},
 		{
 			name:    "database not present in config",
-			s:       &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:       &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "notAlias", project: "1", v: &config.TableRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}},
 			wantErr: true,
 		},
 		{
 			name: "collection already present and unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", v: &config.TableRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -980,7 +980,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 		},
 		{
 			name: "collection already present and unable to set project",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1", v: &config.TableRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -1019,7 +1019,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 		},
 		{
 			name: "collection not present and collectons is nil in config and unable to set crud config",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
 			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", v: &config.TableRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -1032,7 +1032,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 		},
 		{
 			name: "collection not present and collectons is nil in config and project is not set",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{}}}}}}},
 			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", v: &config.TableRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}},
 			modulesMockArgs: []mockArgs{
 				{
@@ -1071,7 +1071,7 @@ func TestManager_SetCollectionRules(t *testing.T) {
 		},
 		{
 			name: "collection not present and project is not set",
-			s:    &Manager{storeType: "none", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
+			s:    &Manager{storeType: "local", projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {}}}}}}}}},
 			args: args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1", v: &config.TableRule{Rules: map[string]*config.Rule{"DB_INSERT": {ID: "rule1"}}}},
 			modulesMockArgs: []mockArgs{
 				{

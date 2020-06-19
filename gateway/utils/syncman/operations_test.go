@@ -173,12 +173,6 @@ func TestManager_GetAssignedTokens(t *testing.T) {
 		wantEnd   int
 	}{
 		{
-			name:      "store type is none",
-			s:         &Manager{storeType: "none"},
-			wantStart: 0,
-			wantEnd:   99,
-		},
-		{
 			name:      "got assigned tokens",
 			s:         &Manager{storeType: "kube", services: []*service{{id: "1"}, {id: "2"}}},
 			wantStart: 0,
@@ -666,7 +660,7 @@ func TestManager_DeleteProjectConfig(t *testing.T) {
 	}{
 		{
 			name: "could not get internal access token",
-			s:    &Manager{storeType: "none"},
+			s:    &Manager{storeType: "local"},
 			args: args{ctx: context.Background(), projectID: "project"},
 			adminMockArgs: []mockArgs{
 				{
