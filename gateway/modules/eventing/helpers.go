@@ -181,10 +181,8 @@ func (m *Module) generateProcessedEventRequest(eventID string) *model.UpdateRequ
 }
 
 func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocument) error {
-	switch eventDoc.Payload.(type) {
-	case map[string]interface{}:
-	default:
-		logrus.Errorf("Payload in given event is of type %v wanted type map[string]interface{}", reflect.TypeOf(eventDoc.Payload))
+	if reflect.TypeOf(eventDoc.Payload).Kind() != reflect.Map {
+		_ = utils.LogError(fmt.Sprintf("Payload in given event is of type %v wanted type object", reflect.TypeOf(eventDoc.Payload)), "eventing", "triggerDLQEvent", nil)
 		return nil
 	}
 	req := &model.QueueEventRequest{
@@ -199,7 +197,7 @@ func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocum
 	}
 
 	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, m.generateBatchID()); err != nil {
-		logrus.Errorf("error queueing dlq event in eventing unable to batch requests - %s", err.Error())
+		_ = utils.LogError(fmt.Sprintf("error queueing dlq event in eventing unable to batch requests - %s", err.Error()), "eventing", "triggerDLQEvent", err)
 		return err
 	}
 
