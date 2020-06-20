@@ -169,6 +169,16 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 	return s.store.SetProject(ctx, project)
 }
 
+// SetAdminConfig applies the set Admin config
+func (s *Manager) SetAdminConfig(ctx context.Context, req *config.ClusterConfig) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	c := s.GetGlobalConfig()
+	c.Admin.ClusterConfig = req
+	return s.store.SetAdminConfig(ctx, c.Admin)
+}
+
 // DeleteProjectConfig applies delete project config command to the raft log
 func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) error {
 	// Acquire a lock

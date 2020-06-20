@@ -273,15 +273,33 @@ func HandleGetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 func HandleSetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
 		// Load the request from the body
 		req := new(config.ClusterConfig)
-		_ = json.NewDecoder(r.Body).Decode(req)
+		err := json.NewDecoder(r.Body).Decode(req)
 		defer utils.CloseTheCloser(r.Body)
 
-		c := syncMan.GetGlobalConfig()
-		c.Admin.ClusterConfig = req
+		// Throw error if request was of incorrect type
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, "Admin Config was of invalid type - "+err.Error())
+			return
+		}
 
-		syncMan.SetGlobalConfig(c)
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		// Sync the Adminconfig
+		if err := syncMan.SetAdminConfig(ctx, req); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
 
 		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{})
 	}
