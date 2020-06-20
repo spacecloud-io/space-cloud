@@ -172,8 +172,8 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 // SetAdminConfig applies the set Admin config
 func (s *Manager) SetAdminConfig(ctx context.Context, req *config.ClusterConfig) error {
 	// Acquire a lock
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	// s.lock.Lock()
+	// defer s.lock.Unlock()
 	c := s.GetGlobalConfig()
 	c.Admin.ClusterConfig = req
 	return s.store.SetAdminConfig(ctx, c.Admin)
