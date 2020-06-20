@@ -111,3 +111,27 @@ func (m *mockStoreInterface) WatchAdminConfig(cb func(clusters []*config.Admin))
 	c := m.Called(cb)
 	return c.Error(0)
 }
+
+type mockSchemaEventingInterface struct {
+	mock.Mock
+}
+
+func (m *mockSchemaEventingInterface) CheckIfEventingIsPossible(dbAlias, col string, obj map[string]interface{}, isFind bool) (findForUpdate map[string]interface{}, present bool) {
+	c := m.Called(dbAlias, col, obj, isFind)
+	return map[string]interface{}{}, c.Bool(1)
+}
+
+func (m *mockSchemaEventingInterface) Parser(crud config.Crud) (model.Type, error) {
+	c := m.Called(crud)
+	return nil, c.Error(1)
+}
+
+func (m *mockSchemaEventingInterface) SchemaValidator(col string, collectionFields model.Fields, doc map[string]interface{}) (map[string]interface{}, error) {
+	c := m.Called(col, collectionFields, doc)
+	return nil, c.Error(1)
+}
+
+func (m *mockSchemaEventingInterface) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
+	c := m.Called(ctx, dbAlias, logicalDBName, tables)
+	return c.Error(0)
+}

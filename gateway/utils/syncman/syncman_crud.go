@@ -460,15 +460,16 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 	return services, nil
 }
 
+type rulesResponse struct {
+	IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
+	Rules             map[string]*config.Rule `json:"rules"`
+}
+
 // GetCollectionRules gets collection rules
 func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col string) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	type response struct {
-		IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
-		Rules             map[string]*config.Rule `json:"rules"`
-	}
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return nil, err
@@ -478,20 +479,20 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 		if !ok {
 			return nil, fmt.Errorf("specified collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
 		}
-		return []interface{}{map[string]*response{fmt.Sprintf("%s-%s", dbAlias, col): {IsRealTimeEnabled: collectionInfo.IsRealTimeEnabled, Rules: collectionInfo.Rules}}}, nil
+		return []interface{}{map[string]*rulesResponse{fmt.Sprintf("%s-%s", dbAlias, col): {IsRealTimeEnabled: collectionInfo.IsRealTimeEnabled, Rules: collectionInfo.Rules}}}, nil
 	} else if dbAlias != "" {
 		collections := projectConfig.Modules.Crud[dbAlias].Collections
-		coll := map[string]*response{}
+		coll := map[string]*rulesResponse{}
 		for key, value := range collections {
-			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &response{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
+			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &rulesResponse{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
 		}
 		return []interface{}{coll}, nil
 	}
 	databases := projectConfig.Modules.Crud
-	coll := map[string]*response{}
+	coll := map[string]*rulesResponse{}
 	for dbName, dbInfo := range databases {
 		for key, value := range dbInfo.Collections {
-			coll[fmt.Sprintf("%s-%s", dbName, key)] = &response{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
+			coll[fmt.Sprintf("%s-%s", dbName, key)] = &rulesResponse{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
 		}
 	}
 	return []interface{}{coll}, nil
