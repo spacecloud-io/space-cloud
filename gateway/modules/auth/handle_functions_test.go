@@ -16,7 +16,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 		testName, project, token, service, function string
 		secretKeys                                  []*config.Secret
 		params                                      interface{}
-		result                                      TokenClaims
+		result                                      map[string]interface{}
 		IsErrExpected, CheckResult                  bool
 	}{
 		{
@@ -110,7 +110,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			function:      "ep",
 			IsErrExpected: false,
 			CheckResult:   true,
-			result:        TokenClaims{"token1": "token1value", "token2": "token2value"},
+			result:        map[string]interface{}{"token1": "token1value", "token2": "token2value"},
 		},
 	}
 	authModule := Init("1", &crud.Module{})
