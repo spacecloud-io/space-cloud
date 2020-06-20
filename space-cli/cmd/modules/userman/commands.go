@@ -18,15 +18,13 @@ func GenerateSubCommands() []*cobra.Command {
 
 func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateUserManagement()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }

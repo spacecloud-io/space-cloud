@@ -64,7 +64,7 @@ func TestParseToken(t *testing.T) {
 		IsErrExpected bool
 		secretKeys    []*config.Secret
 		token         string
-		wantThis      TokenClaims
+		wantThis      map[string]interface{}
 		reason        error
 	}{
 		{name: "Test should successfully parse a token", IsErrExpected: false, secretKeys: []*config.Secret{{IsPrimary: true, Secret: "mySecretkey"}}, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbjEiOiJ0b2tlbjF2YWx1ZSIsInRva2VuMiI6InRva2VuMnZhbHVlIn0.h3jo37fYvnf55A63N-uCyLj9tueFwlGxEGCsf7gCjDc", wantThis: TokenClaims{"token1": "token1value", "token2": "token2value"}},

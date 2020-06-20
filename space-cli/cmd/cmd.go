@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/spaceuptech/space-cli/cmd/modules"
+	"github.com/spaceuptech/space-cli/cmd/modules/accounts"
 	"github.com/spaceuptech/space-cli/cmd/modules/addons"
 	"github.com/spaceuptech/space-cli/cmd/modules/deploy"
 	"github.com/spaceuptech/space-cli/cmd/modules/login"
@@ -21,6 +22,7 @@ func GetRootCommand() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			utils.SetLogLevel(viper.GetString("log-level"))
 		},
+		SilenceUsage: true,
 	}
 
 	rootCmd.PersistentFlags().StringP("log-level", "", "info", "Sets the log level of the command")
@@ -49,6 +51,7 @@ func GetRootCommand() *cobra.Command {
 	rootCmd.AddCommand(deploy.Commands()...)
 	rootCmd.AddCommand(operations.Commands()...)
 	rootCmd.AddCommand(login.Commands()...)
+	rootCmd.AddCommand(accounts.Commands()...)
 	return rootCmd
 }
 

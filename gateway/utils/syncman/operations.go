@@ -34,10 +34,6 @@ func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, 
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	if s.storeType == "none" {
-		return fmt.Sprintf("http://localhost:%d/v1/api/%s/eventing/process", s.port, project), nil
-	}
-
 	index := calcIndex(token, utils.MaxEventTokens, len(s.services))
 
 	return fmt.Sprintf("http://%s/v1/api/%s/eventing/process", s.services[index].addr, project), nil
@@ -47,10 +43,6 @@ func (s *Manager) GetAssignedSpaceCloudURL(ctx context.Context, project string, 
 func (s *Manager) GetSpaceCloudNodeURLs(project string) []string {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-
-	if s.storeType == "none" {
-		return []string{fmt.Sprintf("http://localhost:%d/v1/api/%s/realtime/process", s.port, project)}
-	}
 
 	urls := make([]string, len(s.services))
 
@@ -71,15 +63,9 @@ func (s *Manager) GetAssignedTokens() (start, end int) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	// Always return true if running in single mode
-	if s.storeType == "none" {
-		return calcTokens(1, utils.MaxEventTokens, 0)
-	}
-
 	index := s.GetGatewayIndex()
 
-	totalMembers := len(s.services)
-	return calcTokens(totalMembers, utils.MaxEventTokens, index)
+	return calcTokens(len(s.services), utils.MaxEventTokens, index)
 }
 
 // ApplyProjectConfig creates the config for the project
@@ -126,7 +112,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			Auth:        map[string]*config.AuthStub{},
 			Crud:        map[string]*config.CrudStub{},
 			Routes:      []*config.Route{},
-			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}, Email: ""},
+			LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
 		}
 		s.projectConfig.Projects = append(s.projectConfig.Projects, project)
 
@@ -140,10 +126,6 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 	}
 	// We will ignore the error for the create project request
 	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
-
-	if s.storeType == "none" {
-		return http.StatusInternalServerError, config.StoreConfigToFile(s.projectConfig, s.configFile)
-	}
 
 	return http.StatusInternalServerError, s.store.SetProject(ctx, project)
 }
@@ -184,11 +166,6 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 
 func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
 	s.setProjectConfig(project)
-
-	if s.storeType == "none" {
-		return config.StoreConfigToFile(s.projectConfig, s.configFile)
-	}
-
 	return s.store.SetProject(ctx, project)
 }
 
@@ -211,10 +188,6 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 		}
 	}
 	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
-
-	if s.storeType == "none" {
-		return config.StoreConfigToFile(s.projectConfig, s.configFile)
-	}
 
 	return s.store.DeleteProject(ctx, projectID)
 }

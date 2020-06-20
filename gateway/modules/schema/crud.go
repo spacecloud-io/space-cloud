@@ -43,9 +43,10 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 		docs = []interface{}{v}
 	}
 
+	dbType, _ := s.crud.GetDBType(dbAlias)
 	var fieldsToProcess []fieldsToPostProcess
 	for columnName, columnValue := range tableInfo {
-		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime {
+		if columnValue.Kind == model.TypeJSON || columnValue.Kind == model.TypeDateTime || (dbType == string(utils.MySQL) && columnValue.Kind == model.TypeBoolean) {
 			fieldsToProcess = append(fieldsToProcess, fieldsToPostProcess{kind: columnValue.Kind, name: columnName})
 		}
 	}
@@ -65,6 +66,9 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 				case model.TypeJSON:
 					data, ok := column.([]byte)
 					if !ok {
+						if column == nil {
+							continue
+						}
 						logrus.Errorf("error crud post process in schema module unable to type assert interface to []byte it is of type (%T) for column (%s)", field.name, doc[field.name])
 						return fmt.Errorf("unable to type assert interface to []byte for column (%s)", field.name)
 					}
@@ -74,6 +78,16 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 						return fmt.Errorf("unable to unmarshal json data for column (%s)", field.name)
 					}
 					doc[field.name] = v
+
+				case model.TypeBoolean:
+					switch v := column.(type) {
+					case int64:
+						if v == int64(1) {
+							doc[field.name] = true
+						} else {
+							doc[field.name] = false
+						}
+					}
 
 				case model.TypeDateTime:
 					switch v := column.(type) {

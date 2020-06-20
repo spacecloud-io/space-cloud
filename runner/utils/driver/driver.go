@@ -27,8 +27,8 @@ type Interface interface {
 	GetServices(ctx context.Context, projectID string) ([]*model.Service, error)
 	GetServiceStatus(ctx context.Context, projectID string) (map[string][]interface{}, error)
 	DeleteService(ctx context.Context, projectID, serviceID, version string) error
-	AdjustScale(service *model.Service, activeReqs int32) error
-	WaitForService(service *model.Service) error
+	AdjustScale(ctx context.Context, service *model.Service, activeReqs int32) error
+	WaitForService(ctx context.Context, service *model.Service) error
 	Type() model.DriverType
 
 	// Service routes
@@ -36,12 +36,12 @@ type Interface interface {
 	GetServiceRoutes(ctx context.Context, projectID string) (map[string]model.Routes, error)
 
 	// Secret methods!
-	CreateSecret(projectID string, secretObj *model.Secret) error
-	ListSecrets(projectID string) ([]*model.Secret, error)
-	DeleteSecret(projectID, secretName string) error
-	SetKey(projectID, secretName, secretKey string, secretObj *model.SecretValue) error
-	DeleteKey(projectID, secretName, secretKey string) error
-	SetFileSecretRootPath(projectID string, secretName, rootPath string) error
+	CreateSecret(ctx context.Context, projectID string, secretObj *model.Secret) error
+	ListSecrets(ctx context.Context, projectID string) ([]*model.Secret, error)
+	DeleteSecret(ctx context.Context, projectID, secretName string) error
+	SetKey(ctx context.Context, projectID, secretName, secretKey string, secretObj *model.SecretValue) error
+	DeleteKey(ctx context.Context, projectID, secretName, secretKey string) error
+	SetFileSecretRootPath(ctx context.Context, projectID string, secretName, rootPath string) error
 }
 
 // Module holds config of driver package
