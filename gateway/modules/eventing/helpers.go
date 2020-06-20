@@ -181,10 +181,11 @@ func (m *Module) generateProcessedEventRequest(eventID string) *model.UpdateRequ
 }
 
 func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocument) error {
-	if reflect.TypeOf(eventDoc.Payload).String() == "string" || reflect.TypeOf(eventDoc.Payload) == reflect.TypeOf([]byte(nil)) {
-		var doc interface{}
-		_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
-		eventDoc.Payload = doc
+	switch eventDoc.Payload.(type) {
+	case map[string]interface{}:
+	default:
+		logrus.Errorf("Payload in given event is of type %v wanted type map[string]interface{}", reflect.TypeOf(eventDoc.Payload))
+		return nil
 	}
 	req := &model.QueueEventRequest{
 		Type: fmt.Sprintf("%s%s", utils.DLQEventTriggerPrefix, eventDoc.RuleName),
@@ -203,7 +204,6 @@ func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocum
 	}
 
 	m.metricHook(m.project, req.Type)
-	//_, err = m.QueueEvent(ctx, m.project, token, &req)
 	return nil
 }
 
