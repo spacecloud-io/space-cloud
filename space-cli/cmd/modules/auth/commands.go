@@ -23,8 +23,7 @@ func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
 	commandName := "auth-provider"
 
@@ -35,11 +34,11 @@ func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 
 	objs, err := GetAuthProviders(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }

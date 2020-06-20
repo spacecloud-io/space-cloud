@@ -9,7 +9,7 @@ import (
 )
 
 // IsFuncCallAuthorised checks if the func call is authorised
-func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (TokenClaims, error) {
+func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (map[string]interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 

@@ -148,6 +148,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
 
 	// Add handler for routing module
-	router.PathPrefix("/").HandlerFunc(s.routing.HandleRoutes())
+	router.PathPrefix("/").HandlerFunc(s.routing.HandleRoutes(s.modules))
 	return s.restrictDomainMiddleware(restrictedHosts, router)
 }
