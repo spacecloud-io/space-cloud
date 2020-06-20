@@ -52,19 +52,18 @@ func actionGetFileStoreConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
 	commandName := "filestore-config"
 
 	params := map[string]string{}
 	obj, err := GetFileStoreConfig(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(obj); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
@@ -73,8 +72,7 @@ func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
 	commandName := "filestore-rule"
 
@@ -85,41 +83,37 @@ func actionGetFileStoreRule(cmd *cobra.Command, args []string) error {
 
 	objs, err := GetFileStoreRule(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGenerateFilestoreRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateFilestoreRule()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateFilestoreConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateFilestoreConfig()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }

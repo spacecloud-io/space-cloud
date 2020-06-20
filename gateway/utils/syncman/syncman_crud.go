@@ -50,10 +50,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 	if err != nil {
 		return err
 	}
-	// set default database name to project id
-	if v.DBName == "" {
-		v.DBName = project
-	}
+
 	coll, ok := projectConfig.Modules.Crud[dbAlias]
 	if !ok {
 		projectConfig.Modules.Crud[dbAlias] = &config.CrudStub{Conn: v.Conn, Enabled: v.Enabled, Collections: map[string]*config.TableRule{}, Type: v.Type, DBName: v.DBName}

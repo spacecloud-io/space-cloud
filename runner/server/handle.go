@@ -407,9 +407,12 @@ func (s *Server) handleProxy() http.HandlerFunc {
 		// TODO: add support for multiple versions
 		s.chAppend <- &model.ProxyMessage{Service: service, Project: project, Version: ogVersion, NodeID: "s-proxy", ActiveRequests: 1}
 
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+
 		// Wait for the service to scale up
 		if err := s.debounce.Wait(fmt.Sprintf("proxy-%s-%s", project, service), func() error {
-			return s.driver.WaitForService(&model.Service{ProjectID: project, ID: service, Version: ogVersion})
+			return s.driver.WaitForService(ctx, &model.Service{ProjectID: project, ID: service, Version: ogVersion})
 		}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusServiceUnavailable, err.Error())
 			return

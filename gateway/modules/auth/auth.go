@@ -32,7 +32,7 @@ type Module struct {
 	eventingRules   map[string]*config.Rule
 	project         string
 	fileStoreType   string
-	makeHTTPRequest utils.MakeHTTPRequest
+	makeHTTPRequest utils.TypeMakeHTTPRequest
 	aesKey          []byte
 }
 
@@ -184,7 +184,7 @@ func (m *Module) IsTokenInternal(token string) error {
 	return errors.New("token has not been created internally")
 }
 
-func (m *Module) parseToken(token string) (TokenClaims, error) {
+func (m *Module) parseToken(token string) (map[string]interface{}, error) {
 	for _, secret := range m.secrets {
 		// Parse the JWT token
 		tokenObj, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
@@ -201,6 +201,9 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 
 		// Get the claims
 		if claims, ok := tokenObj.Claims.(jwt.MapClaims); ok && tokenObj.Valid {
+			if err := claims.Valid(); err != nil {
+				return nil, err
+			}
 			obj := make(TokenClaims, len(claims))
 			for key, val := range claims {
 				obj[key] = val
@@ -213,7 +216,7 @@ func (m *Module) parseToken(token string) (TokenClaims, error) {
 }
 
 // SetMakeHTTPRequest sets the http request
-func (m *Module) SetMakeHTTPRequest(function utils.MakeHTTPRequest) {
+func (m *Module) SetMakeHTTPRequest(function utils.TypeMakeHTTPRequest) {
 	m.Lock()
 	defer m.Unlock()
 

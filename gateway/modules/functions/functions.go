@@ -1,6 +1,7 @@
 package functions
 
 import (
+	"fmt"
 	"sync"
 	"text/template"
 
@@ -58,20 +59,40 @@ func (m *Module) SetConfig(project string, c *config.ServicesModule) error {
 	m.templates = map[string]*template.Template{}
 	for serviceID, service := range m.config.Services {
 		for endpointID, endpoint := range service.Endpoints {
-			// Add go templates only
-			if endpoint.Kind == config.EndpointKindTransform && endpoint.Tmpl != "" {
-				key := getGoTemplateKey(serviceID, endpointID)
+			// Set the default endpoint kind
+			if endpoint.Kind == "" {
+				endpoint.Kind = config.EndpointKindInternal
+			}
 
-				// Create a new template object
-				t := template.New(key)
-				t = t.Funcs(m.createGoFuncMaps())
-				tmpl, err := t.Parse(endpoint.Tmpl)
-				if err != nil {
-					return utils.LogError("Invalid golang template provided", module, segmentSetConfig, err)
+			// Set default templating engine
+			if endpoint.Tmpl == "" {
+				endpoint.Tmpl = config.EndpointTemplatingEngineGo
+			}
+
+			// Set default output format
+			if endpoint.OpFormat == "" {
+				endpoint.OpFormat = "yaml"
+			}
+
+			switch endpoint.Tmpl {
+			case config.EndpointTemplatingEngineGo:
+				if endpoint.ReqTmpl != "" {
+					if err := m.createGoTemplate("request", serviceID, endpointID, endpoint.ReqTmpl); err != nil {
+						return err
+					}
 				}
-
-				// Save it for later use
-				m.templates[getGoTemplateKey(serviceID, endpointID)] = tmpl
+				if endpoint.ResTmpl != "" {
+					if err := m.createGoTemplate("response", serviceID, endpointID, endpoint.ResTmpl); err != nil {
+						return err
+					}
+				}
+				if endpoint.GraphTmpl != "" {
+					if err := m.createGoTemplate("graph", serviceID, endpointID, endpoint.GraphTmpl); err != nil {
+						return err
+					}
+				}
+			default:
+				return utils.LogError(fmt.Sprintf("Invalid templating engine (%s) provided", endpoint.Tmpl), module, segmentSetConfig, nil)
 			}
 		}
 	}
