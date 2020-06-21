@@ -276,8 +276,8 @@ const (
 // SpaceCloudServiceName is the service name space cloud will register itself with in service discovery mechanisms
 const SpaceCloudServiceName string = "space-cloud"
 
-// MakeHTTPRequest makes a http request
-type MakeHTTPRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
+// TypeMakeHTTPRequest makes a http request
+type TypeMakeHTTPRequest func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error
 
 // GetSecrets gets fileStore and database secrets from runner
 type GetSecrets func(project, secretName, key string) (string, error)

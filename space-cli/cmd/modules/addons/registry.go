@@ -88,7 +88,7 @@ func addRegistry(projectID string) error {
 	}
 
 	if err := operations.ApplySpec(token, account, specObj[0]); err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to update project (%s) with docker registry url", projectID), err)
+		return utils.LogError(fmt.Sprintf("Unable to update project (%s) with docker registry url by spec object with id (%v) type (%v)", projectID, specObj[0].Meta["id"], specObj[0].Type), err)
 	}
 
 	// Create the registry
@@ -148,7 +148,7 @@ func removeRegistry(projectID string) error {
 	}
 
 	if err := operations.ApplySpec(token, account, specObj[0]); err != nil {
-		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url", projectID), err)
+		return utils.LogError(fmt.Sprintf("Unable to remove project (%s) with docker registry url by spec object with id (%v) type (%v)", projectID, specObj[0].Meta["id"], specObj[0].Type), err)
 	}
 
 	// Remove all container

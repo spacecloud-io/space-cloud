@@ -530,13 +530,13 @@ func (d *Docker) GetServices(ctx context.Context, projectID string) ([]*model.Se
 }
 
 // AdjustScale adjust the scale for docker instance
-func (d *Docker) AdjustScale(service *model.Service, activeReqs int32) error {
+func (d *Docker) AdjustScale(_ context.Context, service *model.Service, activeReqs int32) error {
 	logrus.Debug("adjust scale not implemented for docker")
 	return nil
 }
 
 // WaitForService waits for the docker service
-func (d *Docker) WaitForService(service *model.Service) error {
+func (d *Docker) WaitForService(_ context.Context, service *model.Service) error {
 	logrus.Debug("wait for service not implemented for docker")
 	return nil
 }

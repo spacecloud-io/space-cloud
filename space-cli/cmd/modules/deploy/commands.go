@@ -29,7 +29,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('prepare')", err)
 			}
 		},
-		RunE: actionDeploy,
+		RunE:          actionDeploy,
+		SilenceErrors: true,
 	}
 
 	commandDeploy.Flags().StringP("project", "", "", "The project to deploy the service to.")
@@ -48,10 +49,8 @@ func actionDeploy(cmd *cobra.Command, args []string) error {
 
 	// Prepare configuration files
 	if prepare {
-		_ = prepareService(projectID, dockerFilePath, serviceFilePath)
-		return nil
+		return prepareService(projectID, dockerFilePath, serviceFilePath)
 	}
 
-	_ = deployService(dockerFilePath, serviceFilePath)
-	return nil
+	return deployService(dockerFilePath, serviceFilePath)
 }
