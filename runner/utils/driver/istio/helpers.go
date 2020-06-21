@@ -402,8 +402,6 @@ func prepareAuthPolicyRules(service *model.Service) []*securityv1beta1.Rule {
 		})
 	}
 
-	froms = append(froms, &securityv1beta1.Rule_From{Source: &securityv1beta1.Source{}})
-
 	return []*securityv1beta1.Rule{{From: froms}}
 }
 
@@ -553,7 +551,7 @@ func generateGeneralDestinationRule(service *model.Service) *v1alpha3.Destinatio
 		Spec: networkingv1alpha3.DestinationRule{
 			Host: fmt.Sprintf("%s.%s.svc.cluster.local", service.ID, service.ProjectID),
 			TrafficPolicy: &networkingv1alpha3.TrafficPolicy{
-				Tls: &networkingv1alpha3.TLSSettings{Mode: networkingv1alpha3.TLSSettings_ISTIO_MUTUAL},
+				Tls: &networkingv1alpha3.ClientTLSSettings{Mode: networkingv1alpha3.ClientTLSSettings_ISTIO_MUTUAL},
 			},
 		},
 	}
@@ -568,14 +566,14 @@ func generateInternalDestinationRule(service *model.Service) *v1alpha3.Destinati
 		Spec: networkingv1alpha3.DestinationRule{
 			Host: getInternalServiceDomain(service.ProjectID, service.ID, service.Version),
 			TrafficPolicy: &networkingv1alpha3.TrafficPolicy{
-				Tls: &networkingv1alpha3.TLSSettings{Mode: networkingv1alpha3.TLSSettings_ISTIO_MUTUAL},
+				Tls: &networkingv1alpha3.ClientTLSSettings{Mode: networkingv1alpha3.ClientTLSSettings_ISTIO_MUTUAL},
 			},
 		},
 	}
 }
 
 func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
-	return &v1beta1.AuthorizationPolicy{
+	authPolicy := &v1beta1.AuthorizationPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version),
 			Annotations: map[string]string{"generatedBy": getGeneratedByAnnotationName()},
@@ -585,6 +583,7 @@ func generateAuthPolicy(service *model.Service) *v1beta1.AuthorizationPolicy {
 			Rules:    prepareAuthPolicyRules(service),
 		},
 	}
+	return authPolicy
 }
 
 func generateSidecarConfig(service *model.Service) *v1alpha3.Sidecar {

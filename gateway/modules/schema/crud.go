@@ -66,6 +66,9 @@ func (s *Schema) CrudPostProcess(ctx context.Context, dbAlias, col string, resul
 				case model.TypeJSON:
 					data, ok := column.([]byte)
 					if !ok {
+						if column == nil {
+							continue
+						}
 						logrus.Errorf("error crud post process in schema module unable to type assert interface to []byte it is of type (%T) for column (%s)", field.name, doc[field.name])
 						return fmt.Errorf("unable to type assert interface to []byte for column (%s)", field.name)
 					}
