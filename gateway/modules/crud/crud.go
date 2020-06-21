@@ -75,7 +75,7 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init() *Module {
-	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+	return &Module{batchMapTableToChan: make(batchMap), blocks: map[string]Crud{}, dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 // SetSchema sets the schema module
