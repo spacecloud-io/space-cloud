@@ -26,6 +26,7 @@ func (m *Module) ProcessTransmittedEvents(eventDocs []*model.EventDocument) {
 			}
 
 			if currentTimestamp.After(timestamp) || currentTimestamp.Equal(timestamp) {
+				m.wg.Add(1)
 				go m.processStagedEvent(eventDoc)
 			}
 		}

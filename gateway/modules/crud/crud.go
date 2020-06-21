@@ -40,6 +40,9 @@ type Module struct {
 
 	// function to get secrets from runner
 	getSecrets utils.GetSecrets
+
+	stopChan chan struct{}
+	wg       sync.WaitGroup
 }
 
 type loader struct {
@@ -208,4 +211,23 @@ func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 	defer m.Unlock()
 
 	m.getSecrets = function
+}
+
+// CloseConfig close the rules and secret key required by the crud block
+func (m *Module) CloseConfig(project string, crud config.Crud) error {
+	for k := range m.queries {
+		delete(m.queries, k)
+	}
+	for _, project := range m.batchMapTableToChan {
+		for _, dbAlias := range project {
+			for _, tablename := range dbAlias {
+				close(tablename.closeC)
+			}
+		}
+	}
+	// fmt.Println("main: telling goroutines to stop")
+	// close(m.stopChan)
+	// m.wg.Wait()
+	// fmt.Println("main: all goroutines have told us they've finished")
+	return nil
 }

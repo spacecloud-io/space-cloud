@@ -77,6 +77,44 @@ func (m *Modules) SetProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt
 	}
 }
 
+// CloseProjectConfig close the config all modules
+func (m *Modules) CloseProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
+	if c.Projects != nil && len(c.Projects) > 0 {
+		p := c.Projects[0]
+
+		if p.Modules == nil {
+			p.Modules = &config.Modules{
+				FileStore:   &config.FileStore{},
+				Services:    &config.ServicesModule{},
+				Auth:        map[string]*config.AuthStub{},
+				Crud:        map[string]*config.CrudStub{},
+				Routes:      []*config.Route{},
+				LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
+			}
+		}
+
+		logrus.Debugln("closing config of db module")
+		if err := m.db.CloseConfig(p.ID, p.Modules.Crud); err != nil {
+			logrus.Errorf("error closing db module config - %s", err.Error())
+		}
+
+		logrus.Debugln("closing config of gcpstorage module")
+		if err := m.file.CloseConfig(p.ID, p.Modules.FileStore); err != nil {
+			logrus.Errorf("error closing filestore module config - %s", err.Error())
+		}
+
+		logrus.Debugln("closing config of eventing module")
+		if err := m.eventing.CloseConfig(p.ID, &p.Modules.Eventing); err != nil {
+			logrus.Errorf("error closing eventing module config - %s", err.Error())
+		}
+
+		logrus.Debugln("closing config of realtime module")
+		if err := m.realtime.CloseConfig(p.ID, p.Modules.Crud); err != nil {
+			logrus.Errorf("error closing realtime module config - %s", err.Error())
+		}
+	}
+}
+
 // SetGlobalConfig sets the auth secret and AESKey
 func (m *Modules) SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error {
 	m.auth.SetSecrets(secrets)

@@ -53,3 +53,8 @@ func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 
 	return nil
 }
+
+// CloseConfig close the rules and secret key required by the realtime block
+func (m *Module) CloseConfig(project string, crudConfig config.Crud) error {
+	return nil
+}
