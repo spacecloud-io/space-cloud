@@ -2014,3 +2014,114 @@ func TestManager_SetModifyAllSchema(t *testing.T) {
 		})
 	}
 }
+
+func TestManager_GetDatabaseConfig(t *testing.T) {
+	type args struct {
+		ctx     context.Context
+		project string
+		dbAlias string
+	}
+	tests := []struct {
+		name    string
+		s       *Manager
+		args    args
+		want    []interface{}
+		wantErr bool
+	}{
+		{
+			name:    "unable to get project config",
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Conn: "mongo:conn", Enabled: true, Type: "mongo"}}}}}}},
+			args:    args{ctx: context.Background(), dbAlias: "alias", project: "2"},
+			wantErr: true,
+		},
+		{
+			name:    "db alias not present in config",
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Conn: "mongo:conn", Enabled: true, Type: "mongo"}}}}}}},
+			args:    args{ctx: context.Background(), dbAlias: "notAlias", project: "1"},
+			wantErr: true,
+		},
+		{
+			name: "got db alias config",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Conn: "mongo:conn", Enabled: true, Type: "mongo"}}}}}}},
+			args: args{ctx: context.Background(), dbAlias: "alias", project: "1"},
+			want: []interface{}{config.Crud{"alias": {Enabled: true, Conn: "mongo:conn", Type: "mongo"}}},
+		},
+		{
+			name: "got services config",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Conn: "mongo:conn", Enabled: true, Type: "mongo"}}}}}}},
+			args: args{ctx: context.Background(), dbAlias: "", project: "1"},
+			want: []interface{}{config.Crud{"alias": {Enabled: true, Conn: "mongo:conn", Type: "mongo"}}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.GetDatabaseConfig(tt.args.ctx, tt.args.project, tt.args.dbAlias)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Manager.GetDatabaseConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Manager.GetDatabaseConfig() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestManager_GetCollectionRules(t *testing.T) {
+	type args struct {
+		ctx     context.Context
+		project string
+		dbAlias string
+		col     string
+	}
+	tests := []struct {
+		name    string
+		s       *Manager
+		args    args
+		want    []interface{}
+		wantErr bool
+	}{
+		{
+			name:    "unable to get project config",
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}, Schema: "type event {id: ID! title: String}"}}}}}}}}},
+			args:    args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "2"},
+			wantErr: true,
+		},
+		{
+			name:    "specified collection not present in config for dbAlias",
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}, Schema: "type event {id: ID! title: String}"}}}}}}}}},
+			args:    args{ctx: context.Background(), col: "notTableName", dbAlias: "alias", project: "1"},
+			wantErr: true,
+		},
+		{
+			name: "got collection rules for specific db alias and collection",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}, Schema: "type event {id: ID! title: String}"}}}}}}}}},
+			args: args{ctx: context.Background(), col: "tableName", dbAlias: "alias", project: "1"},
+			want: []interface{}{map[string]*rulesResponse{"alias-tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}}}},
+		},
+		{
+			name: "col is empty and got collection rules",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}, Schema: "type event {id: ID! title: String}"}}}}}}}}},
+			args: args{ctx: context.Background(), col: "", dbAlias: "alias", project: "1"},
+			want: []interface{}{map[string]*rulesResponse{"alias-tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}}}},
+		},
+		{
+			name: "col and dbalias is empty and got collection rules",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}, Schema: "type event {id: ID! title: String}"}}}}}}}}},
+			args: args{ctx: context.Background(), col: "", dbAlias: "", project: "1"},
+			want: []interface{}{map[string]*rulesResponse{"alias-tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}}}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.GetCollectionRules(tt.args.ctx, tt.args.project, tt.args.dbAlias, tt.args.col)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Manager.GetCollectionRules() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Manager.GetCollectionRules() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
