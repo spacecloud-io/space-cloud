@@ -27,8 +27,29 @@ func GetRootCommand() *cobra.Command {
 	var completionCmd = &cobra.Command{
 		Use:   "completion",
 		Short: "Shell completion code",
+		// RunE: func(cmd *cobra.Command, args []string) error {
+		// 	return rootCmd.GenBashCompletionFile("/home/prithvi/project/space-cloud/out.sh")
+		// },
+	}
+	var bashCmd = &cobra.Command{
+		Use:   "bash",
+		Short: "Bash shell completion code",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return rootCmd.GenBashCompletionFile("out.sh")
+		},
+	}
+	var zshCmd = &cobra.Command{
+		Use:   "zsh",
+		Short: "Zsh shell completion code",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return rootCmd.GenZshCompletionFile("out1.sh")
+		},
+	}
+	var powershellCmd = &cobra.Command{
+		Use:   "powershell",
+		Short: "Powershell shell completion code",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return rootCmd.GenPowerShellCompletionFile("out2.sh")
 		},
 	}
 
@@ -59,6 +80,9 @@ func GetRootCommand() *cobra.Command {
 	rootCmd.AddCommand(operations.Commands()...)
 	rootCmd.AddCommand(login.Commands()...)
 	rootCmd.AddCommand(accounts.Commands()...)
+	completionCmd.AddCommand(bashCmd)
+	completionCmd.AddCommand(zshCmd)
+	completionCmd.AddCommand(powershellCmd)
 	rootCmd.AddCommand(completionCmd)
 	return rootCmd
 }
