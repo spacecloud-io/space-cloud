@@ -3,6 +3,7 @@ package mgo
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
@@ -37,6 +38,11 @@ func (m *Mongo) Close() error {
 	}
 
 	return nil
+}
+
+// IsSame checks if we've got the same connection string
+func (m *Mongo) IsSame(conn, dbName string) bool {
+	return strings.HasPrefix(m.connection, conn) && dbName == m.dbName
 }
 
 // IsClientSafe checks whether database is enabled and connected

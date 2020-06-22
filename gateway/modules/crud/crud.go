@@ -68,13 +68,14 @@ type Crud interface {
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
+	IsSame(conn, dbName string) bool
 	Close() error
 	GetConnectionState(ctx context.Context) bool
 }
 
 // Init create a new instance of the Module object
 func Init() *Module {
-	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+	return &Module{batchMapTableToChan: make(batchMap), blocks: map[string]Crud{}, dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 // SetSchema sets the schema module
@@ -139,21 +140,14 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	// Reset all existing prepared query
 	m.queries = map[string]*config.PreparedQuery{}
 
-	// Close the previous database connection
-	for _, block := range m.blocks {
-		utils.CloseTheCloser(block)
-	}
-
-	// Reset the blocks
-	m.blocks = map[string]Crud{}
-
 	// clear previous data loader
 	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 
 	// Create a new crud blocks
 	for k, v := range crud {
-		var c Crud
-		var err error
+		// Trim away the sql prefix for backward compatibility
+		blockKey := strings.TrimPrefix(k, "sql-")
+
 		if v.Type == "" {
 			v.Type = k
 		}
@@ -162,6 +156,21 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if v.DBName == "" {
 			v.DBName = project
 		}
+
+		if block, p := m.blocks[blockKey]; p {
+			// Skip if the connection string is the same
+			if block.IsSame(v.Conn, v.DBName) {
+				break
+			}
+
+			// Close the previous database connection
+			if err := block.Close(); err != nil {
+				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
+			}
+		}
+
+		var c Crud
+		var err error
 
 		// check if connection string starts with secrets
 		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
@@ -185,12 +194,26 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 		// Store the block
 		m.dbType = v.Type
-		m.blocks[strings.TrimPrefix(k, "sql-")] = c
-		m.alias = strings.TrimPrefix(k, "sql-")
+		m.blocks[blockKey] = c
+		m.alias = blockKey
 
 		// Add the prepared queries in this db
 		for id, query := range v.PreparedQueries {
 			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
+		}
+	}
+
+	// Dont forget to delete the old crud blocks
+	for k, block := range m.blocks {
+		_, p1 := crud[k]
+		_, p2 := crud["sql-"+k]
+		if !p1 && !p2 {
+			// Close the previous database connection
+			if err := block.Close(); err != nil {
+				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
+			}
+
+			delete(m.blocks, k)
 		}
 	}
 
