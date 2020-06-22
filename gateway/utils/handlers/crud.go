@@ -42,13 +42,15 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the user is authenticated
-		actions, status, err := auth.IsPreparedQueryAuthorised(ctx, project, dbAlias, id, token, &req)
+		actions, authArgs, status, err := auth.IsPreparedQueryAuthorised(ctx, project, dbAlias, id, token, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
+		req.Params["auth"] = authArgs
 
 		// Perform the PreparedQuery operation
 		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req)

@@ -89,11 +89,13 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 	}
 	req := model.PreparedQueryRequest{Params: params}
 	// Check if PreparedQuery op is authorised
-	actions, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
+	actions, auth, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
+
+	req.Params["auth"] = auth
 
 	go func() {
 		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req)
