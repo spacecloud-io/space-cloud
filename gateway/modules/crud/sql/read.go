@@ -84,6 +84,11 @@ func (s *SQL) generateReadQuery(col string, req *model.ReadRequest) (string, []i
 		query = query.Select(selArray...)
 	case utils.All:
 		for function, colArray := range req.Aggregate {
+			if function == "count" && colArray == nil {
+				asColumnName := generateAggregateAsColumnName(function, "*")
+				selArray = append(selArray, goqu.COUNT("*").As(asColumnName))
+				continue
+			}
 			for _, column := range colArray {
 				asColumnName := generateAggregateAsColumnName(function, column)
 				switch function {
@@ -239,7 +244,7 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 				mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 			}
 			if isAggregate {
-				funcMap := map[string]map[string]interface{}{}
+				funcMap := map[string]interface{}{}
 				for asColumnName, value := range mapping {
 					functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 					if isAggregateColumn {
@@ -248,11 +253,19 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 						funcValue, ok := funcMap[functionName]
 						if !ok {
 							// set new function
-							funcMap[functionName] = map[string]interface{}{columnName: value}
+							if columnName == "*" {
+								funcMap[functionName] = value
+							} else {
+								funcMap[functionName] = map[string]interface{}{columnName: value}
+							}
 							continue
 						}
 						// add new column to existing function
-						funcValue[columnName] = value
+						if columnName == "*" {
+							funcValue = value
+						} else {
+							funcValue.(map[string]interface{})[columnName] = value
+						}
 					}
 				}
 				if len(funcMap) > 0 {
