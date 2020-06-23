@@ -18,6 +18,7 @@ assignees: ''
 ### Your environment
 - Space Cloud version:
 - OS:
+- Kubernetes or Docker:
 - The client api version (if applicable):
 - Browser (if applicable):
 

@@ -1596,7 +1596,32 @@ func TestSQL_Read(t *testing.T) {
 	}
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		t.Fatal("Couldn't establishing connection with database", dbType)
+		t.Fatal("Read() Couldn't establishing connection with database", dbType)
+	}
+
+	if _, err := db.client.Exec(`insert into myproject.orders (id,order_date,amount,is_prime,product_id,address,stars) values
+								('1','2001-11-01 14:29:36',10,1,'smart-phone','{"city":"mumbai", "pinCode": 400014}',12.3),
+								('2','2001-11-12 14:29:36',19,0,'shoes','{"city":"newyork", "pinCode": 4003014}',51.3),
+								('3','2002-11-05 14:29:36',52,1,'fridge','{"city":"amsterdam", "pinCode": 4200014}',1.37),
+								('4','2002-11-02 14:29:36',95,0,'door','{"city":"pune", "pinCode": 4000134}',41.3),
+								('5','2004-11-03 14:29:36',79,0,'basket','{"city":"hyderabad", "pinCode": 4030014}',21.3),
+								('6','2004-11-05 14:29:36',85,0,'books','{"city":"bangalore", "pinCode": 400014}',81.3),
+								('7','2006-11-03 14:29:36',85,0,'cover','{"city":"surat", "pinCode": 4000134}',81.3),
+								('8','2006-11-06 14:29:36',97,0,'sheets','{"city":"ahemdabad", "pinCode": 40450014}',122.3),
+								('9','2008-11-21 14:29:36',94,0,'bed','{"city":"venice", "pinCode": 4000154}',111.3),
+								('10','2008-11-13 14:29:36',93,1,'sofa','{"city":"california", "pinCode": 40006514}',1.96),
+								('11','2050-11-13 14:29:36',91,1,'pillow','{"city":"chennai", "pinCode": 40560014}',1.54),
+								('12','2050-11-05 14:29:36',37,1,'mat','{"city":"berlin", "pinCode": 40001654}',1134.3),
+								('13','2045-11-15 14:29:36',19,1,'juice','{"city":"moscow", "pinCode": 40005714}',451.3),
+								('14','2045-11-25 14:29:36',14,1,'mixer','{"city":"paris", "pinCode": 40005614}',761.433),
+								('15','2080-11-12 14:29:36',10,1,'grinder','{"city":"vein", "pinCode": 400056714}',1435.3),
+								('16','2016-11-10 14:29:36',98,1,'washing','{"city":"islamabad", "pinCode": 40530014}',131.3),
+								('17','2026-11-05 14:29:36',28,0,'powder','{"city":"dhaka", "pinCode": 400014}',1567.3),
+								('18','2015-11-05 14:29:36',26,0,'cake','{"city":"los-angeles", "pinCode": 40001434}',71.3),
+								('19','2015-11-05 14:29:36',37,0,'jam','{"city":"mumbai", "pinCode": 40001445}',451.3),
+								('20','2010-11-05 14:29:36',19,0,'jeans','{"city":"mumbai", "pinCode": 40002314}',4.5);
+							`); err != nil {
+		t.Fatal("Read() Couldn't insert rows in orders table")
 	}
 
 	for _, tt := range tests {
@@ -1618,21 +1643,12 @@ func TestSQL_Read(t *testing.T) {
 					}
 				case []interface{}:
 					isFound := false
-					// t.Log("got", v)
 					for _, gotReadMap := range v {
-						// for wantKey, wantValue := range wantReadResult.(map[string]interface{}) {
-						// 	gotValue, ok := gotReadMap.(map[string]interface{})[wantKey]
-						// 	if !ok {
-						// 		t.Errorf("Read() missing field %v in result", wantKey)
-						// 	}
 						if cmp.Equal(gotReadMap, wantReadResult) {
 							isFound = true
-							// t.Errorf("Read() value mismatch got %v type %v want %v type %v", gotValue, reflect.TypeOf(gotValue), wantValue, reflect.TypeOf(wantValue))
 						}
-						// }
 					}
 					if !isFound {
-						t.Log("Got", v)
 						t.Errorf("Read() want value not found  %v", wantReadResult)
 					}
 				}

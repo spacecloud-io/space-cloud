@@ -1,3 +1,5 @@
+// +build integration
+
 package sql
 
 import (
@@ -316,22 +318,173 @@ func TestSQL_Update(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "$unset operation on type ID",
+			insertQuery: []string{
+				`INSERT INTO companies (id,parent,established_date,kind,is_public,name,description,volume)
+				VALUES 
+				("1","tata","2001-11-01 14:29:36",20,0,"tata salt",'{"city":"india", "pinCode": 400014}',9.5)
+				`,
+			},
+			readQuery: `SELECT * FROM companies where  id = "1"`,
+			args: args{
+				ctx: context.Background(),
+				col: "companies",
+				req: &model.UpdateRequest{
+					Find: map[string]interface{}{
+						"id": "1",
+					},
+					Operation: utils.All,
+					Update: map[string]interface{}{
+						// TODO: default value of date time not known
+						"$unset": map[string]interface{}{
+							"parent":      "",
+							"kind":        0,
+							"is_public":   false,
+							"name":        "",
+							"description": "{}",
+							"volume":      0.0,
+						},
+					},
+				},
+			},
+			want:           1,
+			wantErr:        false,
+			wantReadResult: []interface{}{},
+			readResult: []interface{}{
+				map[string]interface{}{
+					"id":               "1",
+					"established_date": "2001-11-01T14:29:36Z",
+					"parent":           "",
+					"kind":             int64(0),
+					"is_public":        int64(0),
+					"name":             "",
+					"description":      "{}",
+					"volume":           0.0,
+				},
+			},
+		},
+		// TODO:Current Date Operator Remaining
+		{
+			name: "upsert operation data doesn exists so insert operation",
+			insertQuery: []string{
+				`INSERT INTO companies (id,parent,established_date,kind,is_public,name,description,volume)
+				VALUES
+				("1","tata","2001-11-01 14:29:36",20,0,"tata salt",'{"city":"india", "pinCode": 400014}',9.5)
+				`,
+			},
+			readQuery: `SELECT * FROM companies where  id = "1" or id = "2"`,
+			args: args{
+				ctx: context.Background(),
+				col: "companies",
+				req: &model.UpdateRequest{
+					Find: map[string]interface{}{
+						"id": "2",
+					},
+					Operation: utils.Upsert,
+					Update: map[string]interface{}{
+						"$set": map[string]interface{}{
+							"parent":           "reliance",
+							"established_date": "2002-11-01 14:29:36",
+							"kind":             10,
+							"is_public":        true,
+							"name":             "jio",
+							"description":      `{"city":"india", "pinCode": 400014}`,
+							"volume":           5.5,
+						},
+					},
+				},
+			},
+			want:           1,
+			wantErr:        false,
+			wantReadResult: []interface{}{},
+			readResult: []interface{}{
+				map[string]interface{}{
+					"id":               "1",
+					"parent":           "tata",
+					"established_date": "2001-11-01T14:29:36Z",
+					"kind":             int64(20),
+					"is_public":        int64(0),
+					"name":             "tata salt",
+					"description":      `{"city": "india", "pinCode": 400014}`,
+					"volume":           9.5,
+				},
+				map[string]interface{}{
+					"id":               "2",
+					"parent":           "reliance",
+					"established_date": "2002-11-01T14:29:36Z",
+					"kind":             int64(10),
+					"is_public":        int64(1),
+					"name":             "jio",
+					"description":      `{"city": "india", "pinCode": 400014}`,
+					"volume":           5.5,
+				},
+			},
+		},
+		{
+			name: "upsert operation data exists so update operation",
+			insertQuery: []string{
+				`INSERT INTO companies (id,parent,established_date,kind,is_public,name,description,volume)
+				VALUES
+				("1","tata","2001-11-01 14:29:36",20,0,"tata salt",'{"city":"india", "pinCode": 400014}',9.5),
+				("2","reliance","2002-11-01 14:29:36",10,1,"jio",'{"city":"india", "pinCode": 400014}',5.5)
+				`,
+			},
+			readQuery: `SELECT * FROM companies where  id = "1" or id = "2"`,
+			args: args{
+				ctx: context.Background(),
+				col: "companies",
+				req: &model.UpdateRequest{
+					Find: map[string]interface{}{
+						"id": "2",
+					},
+					Operation: utils.Upsert,
+					Update: map[string]interface{}{
+						"$set": map[string]interface{}{
+							"parent": "reliance telecom",
+						},
+					},
+				},
+			},
+			want:           1,
+			wantErr:        false,
+			wantReadResult: []interface{}{},
+			readResult: []interface{}{
+				map[string]interface{}{
+					"id":               "1",
+					"parent":           "tata",
+					"established_date": "2001-11-01T14:29:36Z",
+					"kind":             int64(20),
+					"is_public":        int64(0),
+					"name":             "tata salt",
+					"description":      `{"city": "india", "pinCode": 400014}`,
+					"volume":           9.5,
+				},
+				map[string]interface{}{
+					"id":               "2",
+					"parent":           "reliance telecom",
+					"established_date": "2002-11-01T14:29:36Z",
+					"kind":             int64(10),
+					"is_public":        int64(1),
+					"name":             "jio",
+					"description":      `{"city": "india", "pinCode": 400014}`,
+					"volume":           5.5,
+				},
+			},
+		},
 	}
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		t.Fatal("Couldn't establishing connection with database", dbType)
+		t.Fatal("Update() Couldn't establishing connection with database", dbType)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// clear the mutated data in db
-			if _, err := db.client.Exec("TRUNCATE TABLE companies"); err != nil {
-				t.Log("Couldn't truncate table", err)
-			}
 			// insert data in db
 			if err := db.RawBatch(context.Background(), tt.insertQuery); err != nil {
 				t.Errorf("Update() couldn't insert rows got error - (%v)", err)
 			}
+
 			// update the data
 			got, err := db.Update(tt.args.ctx, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
@@ -341,7 +494,7 @@ func TestSQL_Update(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("Update() got = %v, want %v", got, tt.want)
 			}
-
+			// read the data to check if it is actually updated
 			rows, err := db.client.Queryx(tt.readQuery)
 			if err != nil {
 				t.Error("Update() query error", err)
@@ -363,7 +516,7 @@ func TestSQL_Update(t *testing.T) {
 
 			// clear the mutated data in db
 			if _, err := db.client.Exec("TRUNCATE TABLE companies"); err != nil {
-				t.Log("Couldn't truncate table", err)
+				t.Log("Update() Couldn't truncate table", err)
 			}
 		})
 	}

@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -13,8 +14,8 @@ import (
 	"github.com/spaceuptech/space-cloud/runner/model"
 )
 
-func (i *Istio) getPreviousVirtualServiceIfExists(ns, service string) (*v1alpha3.VirtualService, error) {
-	prevVirtualService, err := i.istio.NetworkingV1alpha3().VirtualServices(ns).Get(getVirtualServiceName(service), metav1.GetOptions{})
+func (i *Istio) getPreviousVirtualServiceIfExists(ctx context.Context, ns, service string) (*v1alpha3.VirtualService, error) {
+	prevVirtualService, err := i.istio.NetworkingV1alpha3().VirtualServices(ns).Get(ctx, getVirtualServiceName(service), metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// We'll simple send `nil` if the virtual service did not actually exist. This is important since it indicates that
 		// a virtual service needs to be created
@@ -27,12 +28,12 @@ func (i *Istio) getPreviousVirtualServiceIfExists(ns, service string) (*v1alpha3
 	return prevVirtualService, nil
 }
 
-func (i *Istio) getServiceDeployments(ns, serviceID string) (*appsv1.DeploymentList, error) {
-	return i.kube.AppsV1().Deployments(ns).List(metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", serviceID)})
+func (i *Istio) getServiceDeployments(ctx context.Context, ns, serviceID string) (*appsv1.DeploymentList, error) {
+	return i.kube.AppsV1().Deployments(ns).List(ctx, metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", serviceID)})
 }
 
-func (i *Istio) getServiceDeploymentsCount(ns, serviceID string) (int, error) {
-	deployments, err := i.getServiceDeployments(ns, serviceID)
+func (i *Istio) getServiceDeploymentsCount(ctx context.Context, ns, serviceID string) (int, error) {
+	deployments, err := i.getServiceDeployments(ctx, ns, serviceID)
 	if err != nil {
 		return 0, err
 	}
@@ -40,13 +41,13 @@ func (i *Istio) getServiceDeploymentsCount(ns, serviceID string) (int, error) {
 	return len(deployments.Items), nil
 }
 
-func (i *Istio) getVirtualServices(ns string) (*v1alpha3.VirtualServiceList, error) {
-	return i.istio.NetworkingV1alpha3().VirtualServices(ns).List(metav1.ListOptions{})
+func (i *Istio) getVirtualServices(ctx context.Context, ns string) (*v1alpha3.VirtualServiceList, error) {
+	return i.istio.NetworkingV1alpha3().VirtualServices(ns).List(ctx, metav1.ListOptions{})
 }
 
-func (i *Istio) getAllVersionScaleConfig(ns, serviceID string) (map[string]model.ScaleConfig, error) {
+func (i *Istio) getAllVersionScaleConfig(ctx context.Context, ns, serviceID string) (map[string]model.ScaleConfig, error) {
 	// Get all deployments of the provided service
-	deployments, err := i.getServiceDeployments(ns, serviceID)
+	deployments, err := i.getServiceDeployments(ctx, ns, serviceID)
 	if err != nil {
 		return nil, err
 	}

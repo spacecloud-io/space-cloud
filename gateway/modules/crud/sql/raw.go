@@ -66,7 +66,7 @@ func (s *SQL) CreateDatabaseIfNotExist(ctx context.Context, name string) error {
 	case utils.SQLServer:
 		sql = `IF (NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '` + name + `')) 
 					BEGIN
-    					EXEC ('CREATE SCHEMA [` + name + `] ')
+    					EXEC ('CREATE SCHEMA [` + name + `]')
 					END`
 	default:
 		return fmt.Errorf("invalid db type (%s) provided", s.dbType)

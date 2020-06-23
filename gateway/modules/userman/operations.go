@@ -167,7 +167,7 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 	req["role"] = role
 	actualDbType, err := m.crud.GetDBType(dbAlias)
 	if err != nil {
-		return 0, nil, err
+		return http.StatusInternalServerError, nil, err
 	}
 	// Create a create request
 	id := uuid.NewV1()

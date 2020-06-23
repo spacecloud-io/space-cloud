@@ -5,16 +5,12 @@ package sql
 
 import (
 	"context"
-	"flag"
 	"reflect"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
-
-var dbType = flag.String("db_type", "", "db_type of test case to be run")
-var connection = flag.String("conn", "", "connection string of the database")
 
 func TestSQL_Create(t *testing.T) {
 	type args struct {
@@ -31,7 +27,7 @@ func TestSQL_Create(t *testing.T) {
 		wantReadResult []interface{}
 	}{
 		{
-			name: "Single Simple Insert",
+			name: "Single Insert",
 			args: args{
 				ctx: context.Background(),
 				col: "customers",
@@ -64,7 +60,7 @@ func TestSQL_Create(t *testing.T) {
 			readQuery: `SELECT * FROM customers WHERE id = "1"`,
 		},
 		{
-			name: "Multiple Simple Insert",
+			name: "Multiple Insert",
 			args: args{
 				ctx: context.Background(),
 				col: "customers",
@@ -117,16 +113,20 @@ func TestSQL_Create(t *testing.T) {
 			readQuery: `SELECT * FROM customers WHERE id = "2" or id = "3"`,
 		},
 	}
+
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		t.Fatal("Couldn't establishing connection with database", dbType)
+		t.Fatal("Create() Couldn't establishing connection with database", dbType)
 	}
+
+	// ensure that the table is empty
 	if _, err := db.client.Exec("TRUNCATE TABLE customers"); err != nil {
-		t.Log("Couldn't truncate table", err)
+		t.Log("Create() Couldn't truncate table", err)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// insert data in db
 			got, err := db.Create(tt.args.ctx, tt.args.col, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Create() error = %v, wantErr %v", err, tt.wantErr)
@@ -135,11 +135,15 @@ func TestSQL_Create(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("Create() got = %v, want %v", got, tt.want)
 			}
+
+			// query the database to ensure that data is inserted in database
 			rows, err := db.client.Queryx(tt.readQuery)
 			if err != nil {
 				t.Error("Create() query error", err)
 				return
 			}
+
+			// store query result
 			readResult := []interface{}{}
 			rowTypes, _ := rows.ColumnTypes()
 			for rows.Next() {
@@ -160,17 +164,15 @@ func TestSQL_Create(t *testing.T) {
 						t.Errorf("Create() missing field key %v at index %v", key, value)
 					}
 					if !reflect.DeepEqual(readValue, value) {
-						// switch value.(type) {
-						// case :
-						// 	t.Errorf("Create() mismatch in result got %v \n want %v", string(readValue.([]byte)), string(value.([]byte)))
-						// }
 						t.Errorf("Create() mismatch in result got %v \n want %v", readValue, value)
 					}
 				}
 			}
 		})
 	}
+
+	// clear data
 	if _, err := db.client.Exec("TRUNCATE TABLE customers"); err != nil {
-		t.Log("Couldn't truncate table", err)
+		t.Log("Create() Couldn't truncate table", err)
 	}
 }

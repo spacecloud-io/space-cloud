@@ -1,3 +1,5 @@
+// +build integration
+
 package sql
 
 import (
@@ -31,10 +33,12 @@ func TestSQL_CreateDatabaseIfNotExist(t *testing.T) {
 			want:    []interface{}{map[string]interface{}{"SCHEMA_NAME": "myproject"}},
 		},
 	}
+
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		t.Fatal("Couldn't establishing connection with database", dbType)
+		t.Fatal("CreateDatabaseIfNotExist() Couldn't establishing connection with database", dbType)
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := db.CreateDatabaseIfNotExist(tt.args.ctx, tt.args.name); (err != nil) != tt.wantErr {
@@ -82,7 +86,7 @@ func TestSQL_GetConnectionState(t *testing.T) {
 
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		t.Fatal("Couldn't establishing connection with database", dbType)
+		t.Fatal("GetConnectionState() Couldn't establishing connection with database", dbType)
 	}
 
 	for _, tt := range tests {
@@ -123,7 +127,7 @@ func TestSQL_RawBatch(t *testing.T) {
 
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		t.Fatal("Couldn't establishing connection with database", dbType)
+		t.Fatal("RawBatch() Couldn't establishing connection with database", dbType)
 	}
 
 	for _, tt := range tests {
@@ -154,7 +158,7 @@ func TestSQL_RawBatch(t *testing.T) {
 		})
 	}
 	if _, err := db.client.Exec("TRUNCATE TABLE raw_batch"); err != nil {
-		t.Log("Couldn't truncate table", err)
+		t.Log("RawBatch() Couldn't truncate table", err)
 	}
 }
 
@@ -190,7 +194,7 @@ func TestSQL_RawQuery(t *testing.T) {
 
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
-		t.Fatal("Couldn't establishing connection with database", dbType)
+		t.Fatal("RawQuery() Couldn't establishing connection with database", dbType)
 	}
 
 	for _, tt := range tests {
@@ -231,6 +235,6 @@ func TestSQL_RawQuery(t *testing.T) {
 		})
 	}
 	if _, err := db.client.Exec("TRUNCATE TABLE raw_query"); err != nil {
-		t.Log("Couldn't truncate table", err)
+		t.Log("RawQuery() Couldn't truncate table", err)
 	}
 }

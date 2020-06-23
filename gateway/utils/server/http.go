@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Server) restrictDomainMiddleware(restrictedHosts []string, h http.Handler) http.Handler {
-	routingHandler := s.routing.HandleRoutes()
+	routingHandler := s.routing.HandleRoutes(s.modules)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the url and host parameters

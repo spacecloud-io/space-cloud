@@ -145,6 +145,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			v.Type = k
 		}
 
+		// set default database name to project id
+		if v.DBName == "" {
+			v.DBName = project
+		}
+
 		// check if connection string starts with secrets
 		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
 		if isSecretExists {

@@ -78,8 +78,18 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 			doc := make(map[string]interface{})
 			dates := make(map[string]interface{})
 			for k, v := range req.Find {
-				for _, newValue := range v.(map[string]interface{}) {
-					doc[k] = newValue
+				if reflect.TypeOf(v).Kind() == reflect.Array {
+					return 0, utils.ErrInvalidParams
+				}
+
+				// implicit equality operator in where e.g -> "id" : "1"
+				if !strings.HasPrefix(k, "$") && reflect.TypeOf(v).Kind() != reflect.Map {
+					doc[k] = v
+					continue
+				}
+
+				for colName, colValue := range v.(map[string]interface{}) {
+					doc[colName] = colValue
 				}
 			}
 			for op := range req.Update {
