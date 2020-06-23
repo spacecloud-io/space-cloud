@@ -36,7 +36,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		req.Operation = utils.Distinct
 	}
 	go func() {
-		if req.IsBatch != true {
+		if !req.IsBatch {
 			req.IsBatch = !(len(req.Aggregate) > 0)
 		}
 		if req.Options == nil {
