@@ -3,6 +3,7 @@ package syncman
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -109,6 +110,45 @@ func TestManager_SetFileStore(t *testing.T) {
 
 			mockModules.AssertExpectations(t)
 			mockStore.AssertExpectations(t)
+		})
+	}
+}
+
+func TestManager_GetFileStoreConfig(t *testing.T) {
+	type args struct {
+		ctx     context.Context
+		project string
+	}
+	tests := []struct {
+		name    string
+		s       *Manager
+		args    args
+		want    []interface{}
+		wantErr bool
+	}{
+		{
+			name:    "unable to get project config",
+			s:       &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{}}}}}},
+			args:    args{ctx: context.Background(), project: "2"},
+			wantErr: true,
+		},
+		{
+			name: "got filestore config",
+			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{}}}}}},
+			args: args{ctx: context.Background(), project: "1"},
+			want: []interface{}{config.FileStore{}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.s.GetFileStoreConfig(tt.args.ctx, tt.args.project)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Manager.GetFileStoreConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Manager.GetFileStoreConfig() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }
