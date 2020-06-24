@@ -417,7 +417,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 json NOT NULL);"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 json NOT NULL)COLLATE Latin1_General_CS;"},
 			wantErr: false,
 		},
 		{
@@ -430,7 +430,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 bigint NOT NULL);", "ALTER TABLE table1 ALTER col1 SET DEFAULT 543"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 bigint NOT NULL)COLLATE Latin1_General_CS;", "ALTER TABLE table1 ALTER col1 SET DEFAULT 543"},
 			wantErr: false,
 		},
 		{
@@ -443,7 +443,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 float NOT NULL);", "ALTER TABLE table1 ALTER col1 SET DEFAULT 5.2"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 float NOT NULL)COLLATE Latin1_General_CS;", "ALTER TABLE table1 ALTER col1 SET DEFAULT 5.2"},
 			wantErr: false,
 		},
 		{
@@ -456,7 +456,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 text NOT NULL);", "ALTER TABLE table1 ALTER col1 SET DEFAULT 'string'"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 text NOT NULL)COLLATE Latin1_General_CS;", "ALTER TABLE table1 ALTER col1 SET DEFAULT 'string'"},
 			wantErr: false,
 		},
 		{
@@ -469,7 +469,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 boolean NOT NULL);", "ALTER TABLE table1 ALTER col1 SET DEFAULT true"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 boolean NOT NULL)COLLATE Latin1_General_CS;", "ALTER TABLE table1 ALTER col1 SET DEFAULT true"},
 			wantErr: false,
 		},
 		{
@@ -509,7 +509,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 bigint);", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 bigint)COLLATE Latin1_General_CS;", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -522,7 +522,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col2 datetime);", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES table2 (id)"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col2 datetime)COLLATE Latin1_General_CS;", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -535,7 +535,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col2 datetime);", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES table2 (id) ON DELETE CASCADE"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col2 datetime)COLLATE Latin1_General_CS;", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col2 FOREIGN KEY (col2) REFERENCES table2 (id) ON DELETE CASCADE"},
 			wantErr: false,
 		},
 		{
@@ -574,7 +574,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 boolean);", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 boolean)COLLATE Latin1_General_CS;", "ALTER TABLE table1 ADD CONSTRAINT c_table1_col1 FOREIGN KEY (col1) REFERENCES table2 (id)"},
 			wantErr: false,
 		},
 		{
@@ -587,7 +587,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (col3 varchar(50) PRIMARY KEY NOT NULL, );"},
+			want:    []string{"CREATE TABLE table1 (col3 varchar(50) PRIMARY KEY NOT NULL, )COLLATE Latin1_General_CS;"},
 			wantErr: false,
 		},
 		{
@@ -986,7 +986,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeString}}},
 			},
 			fields:  fields{crud: crudMySQL, project: "test"},
-			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 varchar(50));"},
+			want:    []string{"CREATE TABLE table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 varchar(50))COLLATE Latin1_General_CS;"},
 			wantErr: false,
 		},
 		{
@@ -1582,7 +1582,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 varchar(max) NOT NULL);", "ALTER TABLE test.table1 ADD CONSTRAINT c_col1 DEFAULT 'string' FOR col1"},
+			want:    []string{"CREATE TABLE test.table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 varchar(max) collate Latin1_General_CS_AS NOT NULL);", "ALTER TABLE test.table1 ADD CONSTRAINT c_col1 DEFAULT 'string' FOR col1"},
 			wantErr: false,
 		},
 		{
@@ -1622,7 +1622,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 			},
 			isSort:  true,
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)", "ALTER TABLE test.table1 ADD col2 varchar(max)"},
+			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50) collate Latin1_General_CS_AS", "ALTER TABLE test.table1 ADD col2 varchar(max) collate Latin1_General_CS_AS"},
 			wantErr: false,
 		},
 		{
@@ -1739,7 +1739,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID}}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ALTER COLUMN col1 varchar(50) NOT NULL"},
+			want:    []string{"ALTER TABLE test.table1 ALTER COLUMN col1 varchar(50) collate Latin1_General_CS_AS NOT NULL"},
 			wantErr: false,
 		},
 		{
@@ -1752,7 +1752,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsFieldTypeRequired: true}}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ALTER COLUMN col1 varchar(50) NULL"},
+			want:    []string{"ALTER TABLE test.table1 ALTER COLUMN col1 varchar(50) collate Latin1_General_CS_AS NULL"},
 			wantErr: false,
 		},
 		{
@@ -1765,7 +1765,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeInteger}}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 varchar(max)"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 varchar(max) collate Latin1_General_CS_AS"},
 			wantErr: false,
 		},
 		{
@@ -1843,7 +1843,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeDateTime}}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 varchar(50)"},
+			want:    []string{"ALTER TABLE test.table1 DROP COLUMN col1", "ALTER TABLE test.table1 ADD col1 varchar(50) collate Latin1_General_CS_AS"},
 			wantErr: false,
 		},
 		{
@@ -1960,7 +1960,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table1": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeID, IsLinked: true, LinkedTable: &model.TableProperties{Table: "table2", To: "id"}}}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50)"},
+			want:    []string{"ALTER TABLE test.table1 ADD col1 varchar(50) collate Latin1_General_CS_AS"},
 			wantErr: false,
 		},
 		{
@@ -2021,7 +2021,7 @@ func TestSchema_generateCreationQueries(t *testing.T) {
 				currentSchema: model.Collection{"table2": model.Fields{"col1": &model.FieldType{FieldName: "col1", Kind: model.TypeString}}},
 			},
 			fields:  fields{crud: crudSQLServer, project: "test"},
-			want:    []string{"CREATE TABLE test.table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 varchar(50));"},
+			want:    []string{"CREATE TABLE test.table1 (id varchar(50) PRIMARY KEY NOT NULL, col1 varchar(50) collate Latin1_General_CS_AS);"},
 			wantErr: false,
 		},
 		{

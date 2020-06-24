@@ -68,13 +68,14 @@ type Crud interface {
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
+	IsSame(conn, dbName string) bool
 	Close() error
 	GetConnectionState(ctx context.Context) bool
 }
 
 // Init create a new instance of the Module object
 func Init() *Module {
-	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
+	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}, blocks: map[string]Crud{}}
 }
 
 // SetSchema sets the schema module
@@ -139,21 +140,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	// Reset all existing prepared query
 	m.queries = map[string]*config.PreparedQuery{}
 
-	// Close the previous database connection
-	for _, block := range m.blocks {
-		utils.CloseTheCloser(block)
-	}
-
-	// Reset the blocks
-	m.blocks = map[string]Crud{}
-
 	// clear previous data loader
 	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 
 	// Create a new crud blocks
 	for k, v := range crud {
-		var c Crud
-		var err error
 		if v.Type == "" {
 			v.Type = k
 		}
@@ -162,6 +153,21 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if v.DBName == "" {
 			v.DBName = project
 		}
+
+		if m.block != nil {
+			// Skip if the connection string is the same
+			if m.block.IsSame(v.Conn, v.DBName) {
+				break
+			}
+
+			// Close the previous database connection
+			if err := m.block.Close(); err != nil {
+				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
+			}
+		}
+
+		var c Crud
+		var err error
 
 		// check if connection string starts with secrets
 		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
