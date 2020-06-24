@@ -256,11 +256,7 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 							continue
 						}
 						// add new column to existing function
-						if columnName == "" {
-							funcValue = value
-						} else {
-							funcValue.(map[string]interface{})[columnName] = value
-						}
+						funcValue.(map[string]interface{})[columnName] = value
 					}
 				}
 				if len(funcMap) > 0 {
