@@ -35,7 +35,7 @@ type trackedItemMeta struct {
 }
 
 // NewETCDStore creates new etcd store
-func NewETCDStore(nodeID, clusterID, advertiseAddr string) (*ETCDStore, error) {
+func NewETCDStore(nodeID, clusterID, advertiseAddr string) (Store, error) {
 	config, err := loadConfig()
 	if err != nil {
 		return &ETCDStore{}, fmt.Errorf("error loading etcd config from environment %v", err)
@@ -294,6 +294,65 @@ func (s *ETCDStore) WatchServices(cb func(scServices)) error {
 	}()
 
 	return nil
+}
+
+// WatchAdminConfig maintains consistency between all instances of sc
+func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
+	// Query all KVs with prefix
+	res, err := s.etcdClient.Get(context.Background(), "sc/admin-config/"+s.clusterID, clientv3.WithPrefix())
+	if err != nil {
+		return err
+	}
+
+	clusters := []*config.Admin{
+		{
+			ClusterConfig: &config.ClusterConfig{},
+			ClusterID:     "",
+			ClusterKey:    "",
+			Version:       0,
+		},
+	}
+	for _, kv := range res.Kvs {
+		// Get the id of the item
+		if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
+			log.Println("Sync manager: Could not parse project received -", err)
+			continue
+		}
+	}
+	cb(clusters)
+
+	ch := s.etcdClient.Watch(context.Background(), fmt.Sprintf("sc/admin-config/%s", s.clusterID), clientv3.WithPrefix())
+
+	go func() {
+		for watchResponse := range ch {
+
+			for _, event := range watchResponse.Events {
+				if watchResponse.Err() != nil {
+					log.Fatal(watchResponse.Err())
+				}
+				kv := event.Kv
+
+				switch event.Type {
+				case mvccpb.PUT:
+					if err := json.Unmarshal(kv.Value, clusters[0]); err != nil {
+						log.Println("Sync manager: Could not parse project received -", err)
+						continue
+					}
+
+					cb(clusters)
+				}
+			}
+		}
+	}()
+	return nil
+}
+
+// SetAdminConfig maintains consistency between all instances of sc
+func (s *ETCDStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
+	// TODO: set project name in key
+	data, _ := json.Marshal(adminConfig)
+	_, err := s.kv.Put(ctx, fmt.Sprintf("sc/admin-config/%s", s.clusterID), string(data))
+	return err
 }
 
 // SetProject sets the project of the etcd store

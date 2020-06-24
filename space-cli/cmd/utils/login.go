@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/AlecAivazis/survey/v2"
 
 	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cli/cmd/utils/file"
 )
 
 // Login logs the user in
@@ -22,7 +22,7 @@ func login(selectedAccount *model.Account) (*model.LoginResponse, error) {
 		return nil, err
 	}
 
-	resp, err := http.Post(fmt.Sprintf("%s/v1/config/login?cli=true", selectedAccount.ServerURL), "application/json", bytes.NewBuffer(requestBody))
+	resp, err := file.File.Post(fmt.Sprintf("%s/v1/config/login?cli=true", selectedAccount.ServerURL), "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		_ = LogError(fmt.Sprintf("error in login unable to send http request - %s", err.Error()), nil)
 		return nil, err
