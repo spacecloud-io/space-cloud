@@ -28,6 +28,7 @@ func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 	}
 }
 
+// HandleRunnerApplySecret handles requests of the runner
 func (s *Manager) HandleRunnerApplySecret(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -40,6 +41,7 @@ func (s *Manager) HandleRunnerApplySecret(admin *admin.Manager) http.HandlerFunc
 	}
 }
 
+// HandleRunnerListSecret handles requests of the runner
 func (s *Manager) HandleRunnerListSecret(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -52,6 +54,7 @@ func (s *Manager) HandleRunnerListSecret(admin *admin.Manager) http.HandlerFunc 
 	}
 }
 
+// HandleRunnerSetFileSecretRootPath handles requests of the runner
 func (s *Manager) HandleRunnerSetFileSecretRootPath(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -64,6 +67,7 @@ func (s *Manager) HandleRunnerSetFileSecretRootPath(admin *admin.Manager) http.H
 	}
 }
 
+// HandleRunnerDeleteSecret handles requests of the runner
 func (s *Manager) HandleRunnerDeleteSecret(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -76,6 +80,7 @@ func (s *Manager) HandleRunnerDeleteSecret(admin *admin.Manager) http.HandlerFun
 	}
 }
 
+// HandleRunnerSetSecretKey handles requests of the runner
 func (s *Manager) HandleRunnerSetSecretKey(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -88,6 +93,7 @@ func (s *Manager) HandleRunnerSetSecretKey(admin *admin.Manager) http.HandlerFun
 	}
 }
 
+// HandleRunnerDeleteSecretKey handles requests of the runner
 func (s *Manager) HandleRunnerDeleteSecretKey(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -100,6 +106,7 @@ func (s *Manager) HandleRunnerDeleteSecretKey(admin *admin.Manager) http.Handler
 	}
 }
 
+// HandleRunnerApplyService handles requests of the runner
 func (s *Manager) HandleRunnerApplyService(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -112,6 +119,7 @@ func (s *Manager) HandleRunnerApplyService(admin *admin.Manager) http.HandlerFun
 	}
 }
 
+// HandleRunnerApplyEventingService handles requests of the runner
 func (s *Manager) HandleRunnerApplyEventingService(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -124,6 +132,7 @@ func (s *Manager) HandleRunnerApplyEventingService(admin *admin.Manager) http.Ha
 	}
 }
 
+// HandleRunnerGetServices handles requests of the runner
 func (s *Manager) HandleRunnerGetServices(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -136,6 +145,7 @@ func (s *Manager) HandleRunnerGetServices(admin *admin.Manager) http.HandlerFunc
 	}
 }
 
+// HandleRunnerDeleteService handles requests of the runner
 func (s *Manager) HandleRunnerDeleteService(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -148,6 +158,7 @@ func (s *Manager) HandleRunnerDeleteService(admin *admin.Manager) http.HandlerFu
 	}
 }
 
+// HandleRunnerServiceRoutingRequest handles requests of the runner
 func (s *Manager) HandleRunnerServiceRoutingRequest(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
@@ -160,6 +171,7 @@ func (s *Manager) HandleRunnerServiceRoutingRequest(admin *admin.Manager) http.H
 	}
 }
 
+// HandleRunnerGetServiceRoutingRequest handles requests of the runner
 func (s *Manager) HandleRunnerGetServiceRoutingRequest(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
