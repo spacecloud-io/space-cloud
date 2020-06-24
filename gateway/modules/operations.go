@@ -20,7 +20,7 @@ func (m *Modules) SetProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt
 				Auth:        map[string]*config.AuthStub{},
 				Crud:        map[string]*config.CrudStub{},
 				Routes:      []*config.Route{},
-				LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}, Email: ""},
+				LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
 			}
 		}
 
@@ -71,7 +71,9 @@ func (m *Modules) SetProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt
 		}
 
 		logrus.Debugln("Setting config of ingress routing module")
-		ingressRouting.SetProjectRoutes(p.ID, p.Modules.Routes)
+		if err := ingressRouting.SetProjectRoutes(p.ID, p.Modules.Routes); err != nil {
+			logrus.Errorf("error setting routing module config - %s", err.Error())
+		}
 	}
 }
 

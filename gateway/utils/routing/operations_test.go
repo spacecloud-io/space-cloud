@@ -116,7 +116,7 @@ func TestRouting_SetProjectRoutes(t *testing.T) {
 			r := &Routing{
 				routes: tt.fields.routes,
 			}
-			r.SetProjectRoutes(tt.args.project, tt.args.routes)
+			_ = r.SetProjectRoutes(tt.args.project, tt.args.routes)
 			if !reflect.DeepEqual(tt.fields.routes, tt.want) {
 				log.Println("Routing.addProjectRoutes()")
 

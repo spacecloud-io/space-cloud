@@ -71,7 +71,7 @@ func (m *Module) matchRule(ctx context.Context, project string, rule *config.Rul
 	}
 }
 
-func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPRequest utils.MakeHTTPRequest, args map[string]interface{}) error {
+func (m *Module) matchFunc(ctx context.Context, rule *config.Rule, MakeHTTPRequest utils.TypeMakeHTTPRequest, args map[string]interface{}) error {
 	obj := args["args"].(map[string]interface{})
 	token := obj["token"].(string)
 
