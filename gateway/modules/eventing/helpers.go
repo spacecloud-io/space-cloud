@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"reflect"
 	"strings"
 	"time"
 
@@ -181,10 +180,6 @@ func (m *Module) generateProcessedEventRequest(eventID string) *model.UpdateRequ
 }
 
 func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocument) error {
-	if reflect.TypeOf(eventDoc.Payload).Kind() != reflect.Map {
-		_ = utils.LogError(fmt.Sprintf("Payload in given event is of type %v wanted type object", reflect.TypeOf(eventDoc.Payload)), "eventing", "triggerDLQEvent", nil)
-		return nil
-	}
 	req := &model.QueueEventRequest{
 		Type: fmt.Sprintf("%s%s", utils.DLQEventTriggerPrefix, eventDoc.RuleName),
 		Payload: map[string]interface{}{
