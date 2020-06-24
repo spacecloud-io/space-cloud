@@ -75,7 +75,7 @@ type Crud interface {
 
 // Init create a new instance of the Module object
 func Init() *Module {
-	return &Module{batchMapTableToChan: make(batchMap), dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}, blocks: map[string]Crud{}}
+	return &Module{batchMapTableToChan: make(batchMap), blocks: map[string]Crud{}, dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}}}
 }
 
 // SetSchema sets the schema module
@@ -145,6 +145,9 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 	// Create a new crud blocks
 	for k, v := range crud {
+		// Trim away the sql prefix for backward compatibility
+		blockKey := strings.TrimPrefix(k, "sql-")
+
 		if v.Type == "" {
 			v.Type = k
 		}
@@ -154,14 +157,14 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			v.DBName = project
 		}
 
-		if m.block != nil {
+		if block, p := m.blocks[blockKey]; p {
 			// Skip if the connection string is the same
-			if m.block.IsSame(v.Conn, v.DBName) {
+			if block.IsSame(v.Conn, v.DBName) {
 				break
 			}
 
 			// Close the previous database connection
-			if err := m.block.Close(); err != nil {
+			if err := block.Close(); err != nil {
 				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
 			}
 		}
@@ -191,12 +194,26 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 
 		// Store the block
 		m.dbType = v.Type
-		m.blocks[strings.TrimPrefix(k, "sql-")] = c
-		m.alias = strings.TrimPrefix(k, "sql-")
+		m.blocks[blockKey] = c
+		m.alias = blockKey
 
 		// Add the prepared queries in this db
 		for id, query := range v.PreparedQueries {
 			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
+		}
+	}
+
+	// Dont forget to delete the old crud blocks
+	for k, block := range m.blocks {
+		_, p1 := crud[k]
+		_, p2 := crud["sql-"+k]
+		if !p1 && !p2 {
+			// Close the previous database connection
+			if err := block.Close(); err != nil {
+				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
+			}
+
+			delete(m.blocks, k)
 		}
 	}
 
