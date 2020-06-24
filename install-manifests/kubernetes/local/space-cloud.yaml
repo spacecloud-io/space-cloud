@@ -99,7 +99,7 @@ subjects:
   - kind: ServiceAccount
     name: space-cloud-gateway # Name is case sensitive
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: space-cloud-gateway
   apiGroup: rbac.authorization.k8s.io
 ---
@@ -406,4 +406,3 @@ spec:
           ports:
             - containerPort: 4122
             - containerPort: 4126
-
