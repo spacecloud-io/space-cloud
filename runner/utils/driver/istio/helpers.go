@@ -412,7 +412,12 @@ func prepareUpstreamHosts(service *model.Service) []string {
 	hosts[0] = "space-cloud/*"
 
 	for i, upstream := range service.Upstreams {
-		hosts[i+1] = upstream.ProjectID + "/" + upstream.Service
+		projectID := upstream.ProjectID
+		serviceID := upstream.Service
+		if serviceID != "*" {
+			serviceID = getServiceDomainName(projectID, serviceID)
+		}
+		hosts[i+1] = upstream.ProjectID + "/" + serviceID
 	}
 
 	return hosts
