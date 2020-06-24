@@ -141,8 +141,22 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 		router.Handle("/debug/pprof/block", pprof.Handler("block"))
 	}
 
-	// Add addresses for runner
-	router.PathPrefix("/v1/runner").HandlerFunc(s.syncMan.HandleRunnerRequests(s.adminMan))
+	// forward request for project mutation, websocket, getting cluster type
+	runnerRouter := router.PathPrefix("/v1/runner").HandlerFunc(s.syncMan.HandleRunnerRequests(s.adminMan))
+	// secret routes
+	runnerRouter.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{id}").HandlerFunc(s.syncMan.HandleRunnerApplySecret(s.adminMan))
+	runnerRouter.Methods(http.MethodGet).Path("/v1/runner/{project}/secrets").HandlerFunc(s.syncMan.HandleRunnerListSecret(s.adminMan))
+	runnerRouter.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{id}/root-path").HandlerFunc(s.syncMan.HandleRunnerSetFileSecretRootPath(s.adminMan))
+	runnerRouter.Methods(http.MethodDelete).Path("/v1/runner/{project}/secrets/{id}").HandlerFunc(s.syncMan.HandleRunnerDeleteSecret(s.adminMan))
+	runnerRouter.Methods(http.MethodPost).Path("/v1/runner/{project}/secrets/{id}/{key}").HandlerFunc(s.syncMan.HandleRunnerSetSecretKey(s.adminMan))
+	runnerRouter.Methods(http.MethodDelete).Path("/v1/runner/{project}/secrets/{id}/{key}").HandlerFunc(s.syncMan.HandleRunnerDeleteSecretKey(s.adminMan))
+	// service routes
+	runnerRouter.Methods(http.MethodPost).Path("/v1/runner/{project}/services/{serviceId}/{version}").HandlerFunc(s.syncMan.HandleRunnerApplyService(s.adminMan))
+	runnerRouter.Methods(http.MethodPost).Path("/v1/runner/{project}/event-service").HandlerFunc(s.syncMan.HandleRunnerApplyEventingService(s.adminMan))
+	runnerRouter.Methods(http.MethodGet).Path("/v1/runner/{project}/services").HandlerFunc(s.syncMan.HandleRunnerGetServices(s.adminMan))
+	runnerRouter.Methods(http.MethodDelete).Path("/v1/runner/{project}/services/{serviceId}/{version}").HandlerFunc(s.syncMan.HandleRunnerDeleteService(s.adminMan))
+	runnerRouter.Methods(http.MethodPost).Path("/v1/runner/{project}/service-routes/{serviceId}").HandlerFunc(s.syncMan.HandleRunnerServiceRoutingRequest(s.adminMan))
+	runnerRouter.Methods(http.MethodGet).Path("/v1/runner/{project}/service-routes").HandlerFunc(s.syncMan.HandleRunnerGetServiceRoutingRequest(s.adminMan))
 
 	// Add handler for mission control
 	router.PathPrefix("/mission-control").HandlerFunc(handlers.HandleMissionControl(staticPath))
