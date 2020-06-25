@@ -185,7 +185,7 @@ func extractAggregate(v *ast.Field) (map[string][]string, error) {
 
 			if functionField.Name.Value == "count" && functionField.SelectionSet == nil {
 				functionMap[functionField.Name.Value] = []string{""}
-				return functionMap, nil
+				continue
 			}
 
 			if functionField.SelectionSet == nil {

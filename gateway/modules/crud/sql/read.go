@@ -248,6 +248,7 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 						funcValue, ok := funcMap[functionName]
 						if !ok {
 							// set new function
+							// NOTE: This case occurs for count function with no column name (using * operator instead)
 							if columnName == "" {
 								funcMap[functionName] = value
 							} else {
