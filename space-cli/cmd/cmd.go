@@ -42,27 +42,29 @@ func GetRootCommand() *cobra.Command {
 			case "bash":
 				if file == "" {
 					_ = utils.LogError("Creating file ('space-cli.sh') in current Directory", nil)
-					rootCmd.GenBashCompletionFile("space-cli.sh")
+					err := rootCmd.GenBashCompletionFile("space-cli.sh")
+					_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion file-%s", err), nil)
 					break
 				}
 				if !strings.HasSuffix(file, ".sh") {
 					_ = utils.LogError("file path should end with .sh file", nil)
 					break
 				}
-				rootCmd.GenBashCompletionFile(fmt.Sprintf("%s", file))
-				break
+				err := rootCmd.GenBashCompletionFile(fmt.Sprintf("%s", file))
+				_ = utils.LogError(fmt.Sprintf("Error in generating Bash completion file-%s", err), nil)
 			case "zsh":
 				if file == "" {
 					_ = utils.LogError("Creating file ('_space-cli') in current Directory", nil)
-					rootCmd.GenBashCompletionFile("_space-cli")
+					err := rootCmd.GenBashCompletionFile("_space-cli")
+					_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion file-%s", err), nil)
 					break
 				}
 				if !strings.HasSuffix(file, "_space-cli") {
 					_ = utils.LogError("file path should end with _space-cli", nil)
 					break
 				}
-				rootCmd.GenZshCompletionFile(fmt.Sprintf("%s", file))
-				break
+				err := rootCmd.GenZshCompletionFile(fmt.Sprintf("%s", file))
+				_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion file-%s", err), nil)
 			}
 		},
 	}
