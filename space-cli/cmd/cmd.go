@@ -50,7 +50,7 @@ func GetRootCommand() *cobra.Command {
 					_ = utils.LogError("file path should end with .sh file", nil)
 					break
 				}
-				err := rootCmd.GenBashCompletionFile(fmt.Sprintf("%s", file))
+				err := rootCmd.GenBashCompletionFile(file)
 				_ = utils.LogError(fmt.Sprintf("Error in generating Bash completion file-%s", err), nil)
 			case "zsh":
 				if file == "" {
@@ -63,7 +63,7 @@ func GetRootCommand() *cobra.Command {
 					_ = utils.LogError("file path should end with _space-cli", nil)
 					break
 				}
-				err := rootCmd.GenZshCompletionFile(fmt.Sprintf("%s", file))
+				err := rootCmd.GenZshCompletionFile(file)
 				_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion file-%s", err), nil)
 			}
 		},
