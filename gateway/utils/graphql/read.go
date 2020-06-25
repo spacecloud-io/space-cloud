@@ -182,6 +182,12 @@ func extractAggregate(v *ast.Field) (map[string][]string, error) {
 			if ok {
 				return nil, utils.LogError(fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), "graphql", "extractAggregate", nil)
 			}
+
+			if functionField.Name.Value == "count" && functionField.SelectionSet == nil {
+				functionMap[functionField.Name.Value] = []string{""}
+				continue
+			}
+
 			if functionField.SelectionSet == nil {
 				return nil, nil
 			}
