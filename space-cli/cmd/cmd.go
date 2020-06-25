@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -36,16 +37,30 @@ func GetRootCommand() *cobra.Command {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			file := viper.GetString("file")
 			switch args[0] {
 			case "bash":
-				file := viper.GetString("file")
 				if file == "" {
-					_ = utils.LogError("file path not provided ()", nil)
+					_ = utils.LogError("Creating file ('space-cli.sh') in current Directory", nil)
+					rootCmd.GenBashCompletionFile("space-cli.sh")
+					break
+				}
+				if !strings.HasSuffix(file, ".sh") {
+					_ = utils.LogError("file path should end with .sh file", nil)
+					break
 				}
 				rootCmd.GenBashCompletionFile(fmt.Sprintf("%s", file))
 				break
 			case "zsh":
-				file := viper.GetString("file")
+				if file == "" {
+					_ = utils.LogError("Creating file ('_space-cli') in current Directory", nil)
+					rootCmd.GenBashCompletionFile("_space-cli")
+					break
+				}
+				if !strings.HasSuffix(file, "_space-cli") {
+					_ = utils.LogError("file path should end with _space-cli", nil)
+					break
+				}
 				rootCmd.GenZshCompletionFile(fmt.Sprintf("%s", file))
 				break
 			}
