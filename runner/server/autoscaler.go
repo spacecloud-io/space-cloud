@@ -75,7 +75,10 @@ func (s *Server) aggregate() {
 
 		// Adjust the scale of the service
 		go func() {
-			if err := s.driver.AdjustScale(&model.Service{ProjectID: project, ID: service, Version: version}, value); err != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+
+			if err := s.driver.AdjustScale(ctx, &model.Service{ProjectID: project, ID: service, Version: version}, value); err != nil {
 				logrus.Errorf("Could not adjust scale of service (%s:%s): %s", project, service, err.Error())
 			}
 		}()
@@ -85,7 +88,10 @@ func (s *Server) aggregate() {
 
 	a6.iterate(func(project, service, version string, value int32) {
 		go func() {
-			if err := s.driver.AdjustScale(&model.Service{ProjectID: project, ID: service, Version: version}, value); err != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+			defer cancel()
+
+			if err := s.driver.AdjustScale(ctx, &model.Service{ProjectID: project, ID: service, Version: version}, value); err != nil {
 				logrus.Errorf("Could not adjust scale of service (%s:%s): %s", project, service, err.Error())
 			}
 		}()
