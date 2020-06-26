@@ -32,13 +32,13 @@ func actionRunner(c *cli.Context) error {
 	isDev := c.Bool("dev")
 	isMetricDisabled := c.Bool("disable-metrics")
 
-	ArtifactAddr := c.String("artifact-addr")
-	ClusterID := os.Getenv("CLUSTER_ID")
-	if ClusterID == "" {
+	artifactAddr := c.String("artifact-addr")
+	clusterID := os.Getenv("CLUSTER_ID")
+	if clusterID == "" {
 		logrus.Error("Failed to setup runner: CLUSTER_ID environment variable not provided")
 		return nil
 	}
-	ClusterName := strings.Split(ClusterID, "--")[0]
+	clusterName := strings.Split(clusterID, "--")[0]
 	// Set the log level
 	setLogLevel(loglevel)
 
@@ -56,8 +56,8 @@ func actionRunner(c *cli.Context) error {
 			DriverType:     model.DriverType(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
-			ArtifactAddr:   ArtifactAddr,
-			ClusterName:    ClusterName,
+			ArtifactAddr:   artifactAddr,
+			ClusterName:    clusterName,
 		},
 	})
 	if err != nil {

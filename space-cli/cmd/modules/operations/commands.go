@@ -59,7 +59,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		RunE: actionSetup,
+		RunE:          actionSetup,
+		SilenceErrors: true,
 	}
 
 	setup.Flags().StringP("username", "", "", "The username used for login")
@@ -124,7 +125,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		RunE: actionUpgrade,
+		SilenceErrors: true,
+		RunE:          actionUpgrade,
 	}
 	upgrade.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 
@@ -140,7 +142,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		RunE: actionDestroy,
+		SilenceErrors: true,
+		RunE:          actionDestroy,
 	}
 	destroy.Flags().StringP("cluster-name", "", "default", "The name of  space-cloud cluster")
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
@@ -148,10 +151,12 @@ func Commands() []*cobra.Command {
 	}
 
 	var apply = &cobra.Command{
-		Use:   "apply",
-		Short: "deploys service",
-		RunE:  actionApply,
+		Use:           "apply",
+		Short:         "deploys service",
+		RunE:          actionApply,
+		SilenceErrors: true,
 	}
+
 	var start = &cobra.Command{
 		Use:   "start",
 		Short: "Resumes the space-cloud docker environment",
@@ -160,7 +165,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		RunE: actionStart,
+		SilenceErrors: true,
+		RunE:          actionStart,
 	}
 	start.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
@@ -175,7 +181,8 @@ func Commands() []*cobra.Command {
 				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
 			}
 		},
-		RunE: actionStop,
+		SilenceErrors: true,
+		RunE:          actionStop,
 	}
 	stop.Flags().StringP("cluster-name", "", "default", "The name of space-cloud cluster")
 	if err = viper.BindEnv("cluster-name", "CLUSTER_NAME"); err != nil {
@@ -198,41 +205,34 @@ func actionSetup(cmd *cobra.Command, args []string) error {
 	environmentVariables := viper.GetStringSlice("env")
 	clusterName := viper.GetString("cluster-name")
 
-	_ = Setup(userName, key, config, version, secret, clusterName, local, portHTTP, portHTTPS, volumes, environmentVariables)
-	return nil
+	return Setup(userName, key, config, version, secret, clusterName, local, portHTTP, portHTTPS, volumes, environmentVariables)
 }
 
 func actionUpgrade(cmd *cobra.Command, args []string) error {
 	clusterName := viper.GetString("cluster-name")
-	_ = Upgrade(clusterName)
-	return nil
+	return Upgrade(clusterName)
 }
 
 func actionDestroy(cmd *cobra.Command, args []string) error {
 	clusterName := viper.GetString("cluster-name")
-	_ = Destroy(clusterName)
-	return nil
+	return Destroy(clusterName)
 }
 
 func actionApply(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("error while applying service incorrect number of arguments provided", nil)
-		return nil
+		return utils.LogError("error while applying service incorrect number of arguments provided", nil)
 	}
 
 	dirName := args[0]
-	_ = Apply(dirName)
-	return nil
+	return Apply(dirName)
 }
 
 func actionStart(cmd *cobra.Command, args []string) error {
 	clusterName := viper.GetString("cluster-name")
-	_ = DockerStart(clusterName)
-	return nil
+	return DockerStart(clusterName)
 }
 
 func actionStop(cmd *cobra.Command, args []string) error {
 	clusterName := viper.GetString("cluster-name")
-	_ = DockerStop(clusterName)
-	return nil
+	return DockerStop(clusterName)
 }

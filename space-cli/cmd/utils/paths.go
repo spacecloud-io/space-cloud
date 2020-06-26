@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 )
 
 // GetSpaceCloudDirectory gets the root space cloud directory
@@ -70,4 +71,68 @@ func getHomeDirectory() string {
 // GetAccountConfigPath get the path to account config yaml file
 func getAccountConfigPath() string {
 	return fmt.Sprintf("%s/accounts.yaml", GetSpaceCloudDirectory())
+}
+
+// GetMountHostsFilePath returns the path of the hosts files to be mounted in in space cloud
+func GetMountHostsFilePath(id string) string {
+	if runtime.GOOS == "windows" {
+		if id == "default" {
+			return fmt.Sprintf("%s/.space-cloud/hosts", getWindowsUserDirectory())
+		}
+		return fmt.Sprintf("%s/.space-cloud/%s/hosts", getWindowsUserDirectory(), id)
+	}
+	return GetSpaceCloudHostsFilePath(id)
+}
+
+// GetMountConfigFilePath returns the path of the config files to be mounted in space cloud
+func GetMountConfigFilePath(id string) string {
+	if runtime.GOOS == "windows" {
+		if id == "default" {
+			return fmt.Sprintf("%s/.space-cloud/config.yaml", getWindowsUserDirectory())
+		}
+		return fmt.Sprintf("%s/.space-cloud/%s/config.yaml", getWindowsUserDirectory(), id)
+	}
+	return GetSpaceCloudConfigFilePath(id)
+}
+
+// GetMountSecretsDir returns the path of the secret dir to be mounted in space cloud
+func GetMountSecretsDir(id string) string {
+	if runtime.GOOS == "windows" {
+		if id == "default" {
+			return fmt.Sprintf("%s/.space-cloud/secrets", getWindowsUserDirectory())
+		}
+		return fmt.Sprintf("%s/.space-cloud/%s/secrets", getWindowsUserDirectory(), id)
+	}
+	return GetSecretsDir(id)
+}
+
+// GetMountTempSecretsDir returns the path of the temp secret dir to be mounted in space cloud
+func GetMountTempSecretsDir(id string) string {
+	if runtime.GOOS == "windows" {
+		if id == "default" {
+			return fmt.Sprintf("%s/.space-cloud/secrets/temp-secrets", getWindowsUserDirectory())
+		}
+		return fmt.Sprintf("%s/.space-cloud/%s/secrets/temp-secrets", getWindowsUserDirectory(), id)
+	}
+	return GetTempSecretsDir(id)
+}
+
+// GetMountRoutingConfigPath returns the path of the routing config to be mounted in space cloud
+func GetMountRoutingConfigPath(id string) string {
+	if runtime.GOOS == "windows" {
+		if id == "default" {
+			return fmt.Sprintf("%s/.space-cloud/routing-config.json", getWindowsUserDirectory())
+		}
+		return fmt.Sprintf("%s/.space-cloud/%s/routing-config.json", getWindowsUserDirectory(), id)
+	}
+	return GetSpaceCloudRoutingConfigPath(id)
+}
+
+// getWindowsUserDirectory gets home directory to support setup on window
+func getWindowsUserDirectory() string {
+	// eg. HOMEDRIVE = "C:" and HOMEPATH = "\User\username	"
+	homeDrive := strings.ToLower(strings.Split(os.Getenv("HOMEDRIVE"), ":")[0])
+	homePath := strings.ReplaceAll(os.Getenv("HOMEPATH"), "\\", "/")
+
+	return "/" + homeDrive + homePath
 }

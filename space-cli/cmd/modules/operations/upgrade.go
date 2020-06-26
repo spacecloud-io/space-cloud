@@ -79,7 +79,6 @@ func Upgrade(clusterName string) error {
 			gatewayPorts = containerInspect.HostConfig.PortBindings
 			gatewayLabels = containerInspect.Config.Labels
 			gatewayExposedPorts = containerInspect.Config.ExposedPorts
-
 			if err := cli.ContainerRemove(ctx, containerInfo.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
 				return utils.LogError(fmt.Sprintf("Unable to remove container - %s", containerInfo.ID), err)
 			}

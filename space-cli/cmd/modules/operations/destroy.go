@@ -13,7 +13,7 @@ import (
 
 // Destroy cleans the environment which has been setup. It removes the containers, secrets & host file
 func Destroy(clusterName string) error {
-	utils.LogInfo("Destroying the cluster...")
+	utils.LogInfo(fmt.Sprintf("Destroying the cluster (%s)...", clusterName))
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

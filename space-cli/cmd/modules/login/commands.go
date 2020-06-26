@@ -27,7 +27,8 @@ func Commands() []*cobra.Command {
 			}
 
 		},
-		RunE: actionLogin,
+		RunE:          actionLogin,
+		SilenceErrors: true,
 	}
 	loginCommands.Flags().StringP("username", "", "None", "Accepts the username for login")
 	err := viper.BindEnv("username", "USER_NAME")
@@ -62,6 +63,5 @@ func actionLogin(cmd *cobra.Command, args []string) error {
 	key := viper.GetString("key")
 	url := viper.GetString("url")
 
-	_ = utils.LoginStart(userName, ID, key, url)
-	return nil
+	return utils.LoginStart(userName, ID, key, url)
 }

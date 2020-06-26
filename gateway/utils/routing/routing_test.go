@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"text/template"
 )
 
 func TestNew(t *testing.T) {
@@ -15,8 +16,9 @@ func TestNew(t *testing.T) {
 		{
 			name: "New Routing instance",
 			want: &Routing{
-				lock:   sync.RWMutex{},
-				routes: routeMapping{},
+				lock:        sync.RWMutex{},
+				routes:      routeMapping{},
+				goTemplates: map[string]*template.Template{},
 			},
 		},
 	}

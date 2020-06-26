@@ -113,7 +113,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		ID:        clusterID,
 		UserName:  username,
 		Key:       key,
-		ServerURL: fmt.Sprintf("http://localhost:%s", portHTTPValue),
+		ServerURL: "http://localhost:" + portHTTPValue,
 	}
 
 	if err := utils.StoreCredentials(&selectedAccount); err != nil {
@@ -141,12 +141,12 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
-			Source: utils.GetSpaceCloudHostsFilePath(clusterName),
+			Source: utils.GetMountHostsFilePath(clusterName),
 			Target: "/etc/hosts",
 		},
 		{
 			Type:   mount.TypeBind,
-			Source: config,
+			Source: utils.GetMountConfigFilePath(clusterName),
 			Target: "/app/config.yaml",
 		},
 	}
@@ -200,8 +200,8 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 				"JWT_SECRET=" + secret,
 				"JWT_PROXY_SECRET=" + generateRandomString(24),
 				"SECRETS_PATH=/secrets",
-				"HOME_SECRETS_PATH=" + utils.GetTempSecretsDir(clusterName),
-				"HOSTS_FILE_PATH=" + utils.GetSpaceCloudHostsFilePath(clusterName),
+				"HOME_SECRETS_PATH=" + utils.GetMountTempSecretsDir(clusterName),
+				"HOSTS_FILE_PATH=" + utils.GetMountHostsFilePath(clusterName),
 				"ROUTING_FILE_PATH=" + "/routing-config.json",
 				"CLUSTER_ID=" + clusterID,
 				"PORT=4050",
@@ -209,12 +209,12 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 			mount: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSecretsDir(clusterName),
+					Source: utils.GetMountSecretsDir(clusterName),
 					Target: "/secrets",
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSpaceCloudHostsFilePath(clusterName),
+					Source: utils.GetMountHostsFilePath(clusterName),
 					Target: "/etc/hosts",
 				},
 				{
@@ -224,7 +224,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 				},
 				{
 					Type:   mount.TypeBind,
-					Source: utils.GetSpaceCloudRoutingConfigPath(clusterName),
+					Source: utils.GetMountRoutingConfigPath(clusterName),
 					Target: "/routing-config.json",
 				},
 			},
