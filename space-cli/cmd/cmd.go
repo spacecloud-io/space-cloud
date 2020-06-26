@@ -22,6 +22,7 @@ func GetRootCommand() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			utils.SetLogLevel(viper.GetString("log-level"))
 		},
+		SilenceUsage: true,
 	}
 
 	rootCmd.PersistentFlags().StringP("log-level", "", "info", "Sets the log level of the command")

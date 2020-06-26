@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -50,10 +51,19 @@ func Init(dbType utils.DBType, enabled bool, connection string, dbName string) (
 	return
 }
 
+// IsSame checks if we've got the same connection string
+func (s *SQL) IsSame(conn, dbName string) bool {
+	return strings.HasPrefix(s.connection, conn) && dbName == s.name
+}
+
 // Close gracefully the SQL client
 func (s *SQL) Close() error {
 	if s.client != nil {
-		return s.client.Close()
+		if err := s.client.Close(); err != nil {
+			return err
+		}
+
+		s.client = nil
 	}
 
 	return nil
@@ -101,6 +111,8 @@ func (s *SQL) connect() error {
 	}
 
 	s.client = sql
+
+	s.client.SetMaxOpenConns(10)
 
 	return sql.PingContext(ctx)
 }
