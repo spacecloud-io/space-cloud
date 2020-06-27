@@ -50,10 +50,8 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 			return
 		}
 
-		req.Params["auth"] = authArgs
-
 		// Perform the PreparedQuery operation
-		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req)
+		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req, authArgs)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)

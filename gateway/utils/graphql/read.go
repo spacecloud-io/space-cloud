@@ -98,7 +98,7 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 	req.Params["auth"] = auth
 
 	go func() {
-		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req)
+		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, auth)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbAlias, id, result, err)
 	}()
