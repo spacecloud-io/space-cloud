@@ -157,6 +157,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			v.DBName = project
 		}
 
+		// Add the prepared queries in this db
+		for id, query := range v.PreparedQueries {
+			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
+		}
+
 		if block, p := m.blocks[blockKey]; p {
 			// Skip if the connection string is the same
 			if block.IsSame(v.Conn, v.DBName) {
@@ -196,11 +201,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.dbType = v.Type
 		m.blocks[blockKey] = c
 		m.alias = blockKey
-
-		// Add the prepared queries in this db
-		for id, query := range v.PreparedQueries {
-			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
-		}
 	}
 
 	// Dont forget to delete the old crud blocks
