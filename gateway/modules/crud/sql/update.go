@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -49,11 +50,13 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 			case "$set", "$inc", "$mul", "$max", "$min", "$currentDate", "$unset":
 				sqlQuery, args, err := s.generateUpdateQuery(ctx, col, req, k)
 				if err != nil {
+					logrus.Println("Update Queryx", sqlQuery)
 					return 0, err
 				}
 				logrus.Debugln("Update Query", sqlQuery)
 				res, err := doExecContext(ctx, sqlQuery, args, executor)
 				if err != nil {
+					logrus.Println("Update Queryxx", sqlQuery, args)
 					return 0, err
 				}
 
@@ -168,17 +171,17 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 		}
 	}
 
-	if op == "$unset" && dbType == string(utils.Postgres) {
-		unsetObj, ok := req.Update[op].(map[string]interface{})
-		if !ok {
-			return "", nil, errors.New("incorrect unset object provided")
-		}
-
-		for k := range unsetObj {
-			arr := strings.Split(k, ".")
-			unsetObj[k] = fmt.Sprintf("{%s}", strings.Join(arr[1:], ","))
-		}
-	}
+	//if op == "$unset" && dbType == string(utils.Postgres) {
+	//	unsetObj, ok := req.Update[op].(map[string]interface{})
+	//	if !ok {
+	//		return "", nil, errors.New("incorrect unset object provided")
+	//	}
+	//
+	//	for k := range unsetObj {
+	//		arr := strings.Split(k, ".")
+	//		unsetObj[k] = fmt.Sprintf("{%s}", strings.Join(arr[1:], ","))
+	//	}
+	//}
 
 	record, err := generateRecord(req.Update[op])
 	if err != nil {
@@ -189,6 +192,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 	// Generate SQL string and arguments
 	sqlString, args, err := query.Update().Set(record).ToSQL()
 	if err != nil {
+		log.Println("here", err)
 		logrus.Errorf("Error generating update query unable generate sql string - %s", err)
 		return "", nil, err
 	}

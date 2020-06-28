@@ -24,13 +24,13 @@ func TestSQL_CreateDatabaseIfNotExist(t *testing.T) {
 	}{
 		{
 			name:  "Db Creation check",
-			query: "SELECT schema_name FROM information_schema.schemata where SCHEMA_NAME = 'myproject';",
+			query: "SELECT SCHEMA_NAME as schema_name FROM INFORMATION_SCHEMA.SCHEMATA where SCHEMA_NAME = 'abcd';",
 			args: args{
 				ctx:  context.Background(),
-				name: *dbType,
+				name: "abcd",
 			},
 			wantErr: false,
-			want:    []interface{}{map[string]interface{}{"SCHEMA_NAME": "myproject"}},
+			want:    []interface{}{map[string]interface{}{"schema_name": "abcd"}},
 		},
 	}
 
@@ -56,7 +56,13 @@ func TestSQL_CreateDatabaseIfNotExist(t *testing.T) {
 				if err := rows.MapScan(v); err != nil {
 					t.Error("CreateDatabaseIfNotExist() Scanning error", err)
 				}
-				mysqlTypeCheck(utils.DBType(*dbType), rowTypes, v)
+				for _, colType := range rowTypes {
+					value, ok := v[colType.Name()].([]byte)
+					if ok {
+						v[colType.Name()] = string(value)
+					}
+				}
+				// mysqlTypeCheck(utils.DBType(*dbType), rowTypes, v)
 				readResult = append(readResult, v)
 			}
 			if !reflect.DeepEqual(tt.want, readResult) {
@@ -112,12 +118,11 @@ func TestSQL_RawBatch(t *testing.T) {
 	}{
 		{
 			name:  "Raw Batch List of Queries",
-			query: "SELECT * FROM raw_batch",
+			query: "SELECT * FROM myproject.raw_batch",
 			args: args{
 				ctx: context.Background(),
 				queries: []string{
-					"INSERT INTO raw_batch (id,score) VALUE ('11',20)",
-					"INSERT INTO raw_batch (id,score) VALUE ('22',30)",
+					`INSERT INTO myproject.raw_batch (id,score) VALUES ('11',20),('22',30)`,
 				},
 			},
 			want:    []map[string]interface{}{{"id": "11", "score": int64(20)}, {"id": "22", "score": int64(30)}},
@@ -157,7 +162,7 @@ func TestSQL_RawBatch(t *testing.T) {
 			}
 		})
 	}
-	if _, err := db.client.Exec("TRUNCATE TABLE raw_batch"); err != nil {
+	if _, err := db.client.Exec("TRUNCATE TABLE myproject.raw_batch"); err != nil {
 		t.Log("RawBatch() Couldn't truncate table", err)
 	}
 }
@@ -179,10 +184,10 @@ func TestSQL_RawQuery(t *testing.T) {
 	}{
 		{
 			name:  "Raw Prepared Query",
-			query: "SELECT * FROM raw_query",
+			query: "SELECT * FROM myproject.raw_query",
 			args: args{
 				ctx:   context.Background(),
-				query: "INSERT INTO raw_query (id,score) VALUE (?,?)",
+				query: "INSERT INTO myproject.raw_query (id,score) VALUES (?,?)",
 				args:  []interface{}{"1", 20},
 			},
 			want:       0,
@@ -199,8 +204,11 @@ func TestSQL_RawQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if utils.DBType(*dbType) == utils.Postgres {
+				tt.args.query = db.generateQueryPostgres(tt.args.query)
+			}
 			if utils.DBType(*dbType) == utils.SQLServer {
-				tt.args.query = db.generateQuerySQLServer(tt.args.query)
+				tt.args.query = db.generateQuerySQLServer(db.generateQueryPostgres(tt.args.query))
 			}
 			got, got1, err := db.RawQuery(tt.args.ctx, tt.args.query, tt.args.args)
 			if (err != nil) != tt.wantErr {
@@ -234,7 +242,7 @@ func TestSQL_RawQuery(t *testing.T) {
 			}
 		})
 	}
-	if _, err := db.client.Exec("TRUNCATE TABLE raw_query"); err != nil {
+	if _, err := db.client.Exec("TRUNCATE TABLE myproject.raw_query"); err != nil {
 		t.Log("RawQuery() Couldn't truncate table", err)
 	}
 }

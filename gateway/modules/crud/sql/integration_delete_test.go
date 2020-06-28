@@ -17,7 +17,7 @@ func TestSQL_Delete(t *testing.T) {
 		col string
 		req *model.DeleteRequest
 	}
-	tests := []struct {
+	type test struct {
 		name           string
 		insertQuery    []string
 		readQuery      string
@@ -25,17 +25,19 @@ func TestSQL_Delete(t *testing.T) {
 		want           int64
 		wantErr        bool
 		wantReadResult []interface{}
-	}{
+	}
+	var testCases []test
+	mssqlCases := []test{
 		{
 			name: "Simple Delete",
 			insertQuery: []string{
-				`INSERT INTO companies (id,parent,established_date,kind,is_public,name,description,volume)
+				`INSERT INTO myproject.companies (id,parent,established_date,kind,is_public,name,volume)
 				VALUES
-				("1","tata","2001-11-01 14:29:36",20,0,"tata salt",'{"city":"india", "pinCode": 400014}',9.5),
-				("2","reliance","2002-11-01 14:29:36",30,1,"jio",'{"city":"india", "pinCode": 400014}',18.5)
+				('1','tata','2001-11-01 14:29:36',20,0,'tata salt',9.5),
+				('2','reliance','2002-11-01 14:29:36',30,1,'jio',18.5)
 				`,
 			},
-			readQuery: "SELECT * FROM companies",
+			readQuery: "SELECT * FROM myproject.companies",
 			args: args{
 				ctx: context.Background(),
 				col: "companies",
@@ -50,13 +52,60 @@ func TestSQL_Delete(t *testing.T) {
 		{
 			name: "Delete with where clause",
 			insertQuery: []string{
-				`INSERT INTO companies (id,parent,established_date,kind,is_public,name,description,volume)
+				`INSERT INTO myproject.companies (id,parent,established_date,kind,is_public,name,volume)
 				VALUES
-				("1","tata","2001-11-01 14:29:36",20,0,"tata salt",'{"city":"india", "pinCode": 400014}',9.5),
-				("2","reliance","2002-11-01 14:29:36",30,1,"jio",'{"city":"india", "pinCode": 400014}',18.5)
+				('1','tata','2001-11-01 14:29:36',20,0,'tata salt',9.5),
+				('2','reliance','2002-11-01 14:29:36',30,1,'jio',18.5)
 				`,
 			},
-			readQuery: "SELECT * FROM companies where id = '1'",
+			readQuery: "SELECT * FROM myproject.companies where id = '1'",
+			args: args{
+				ctx: context.Background(),
+				col: "companies",
+				req: &model.DeleteRequest{
+					Find: map[string]interface{}{
+						"id": "1",
+					},
+					Operation: utils.All,
+				},
+			},
+			want:           1,
+			wantErr:        false,
+			wantReadResult: []interface{}{},
+		},
+	}
+	sqlCases := []test{
+		{
+			name: "Simple Delete",
+			insertQuery: []string{
+				`INSERT INTO myproject.companies (id,parent,established_date,kind,is_public,name,description,volume)
+				VALUES
+				('1','tata','2001-11-01 14:29:36',20,false,'tata salt','{"city":"india", "pinCode": 400014}',9.5),
+				('2','reliance','2002-11-01 14:29:36',30,true,'jio','{"city":"india", "pinCode": 400014}',18.5)
+				`,
+			},
+			readQuery: "SELECT * FROM myproject.companies",
+			args: args{
+				ctx: context.Background(),
+				col: "companies",
+				req: &model.DeleteRequest{
+					Operation: utils.All,
+				},
+			},
+			want:           2,
+			wantErr:        false,
+			wantReadResult: []interface{}{},
+		},
+		{
+			name: "Delete with where clause",
+			insertQuery: []string{
+				`INSERT INTO myproject.companies (id,parent,established_date,kind,is_public,name,description,volume)
+				VALUES
+				('1','tata','2001-11-01 14:29:36',20,false,'tata salt','{"city":"india", "pinCode": 400014}',9.5),
+				('2','reliance','2002-11-01 14:29:36',30,true,'jio','{"city":"india", "pinCode": 400014}',18.5)
+				`,
+			},
+			readQuery: "SELECT * FROM myproject.companies where id = '1'",
 			args: args{
 				ctx: context.Background(),
 				col: "companies",
@@ -73,12 +122,18 @@ func TestSQL_Delete(t *testing.T) {
 		},
 	}
 
+	if utils.DBType(*dbType) == utils.SQLServer {
+		testCases = mssqlCases
+	} else {
+		testCases = sqlCases
+	}
+
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
 	if err != nil {
 		t.Fatal("Delete() Couldn't establishing connection with database", dbType)
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			// insert data in db
 			if err := db.RawBatch(context.Background(), tt.insertQuery); err != nil {
@@ -114,7 +169,7 @@ func TestSQL_Delete(t *testing.T) {
 			}
 
 			// clear the mutated data in db
-			if _, err := db.client.Exec("TRUNCATE TABLE companies"); err != nil {
+			if _, err := db.client.Exec("TRUNCATE TABLE myproject.companies"); err != nil {
 				t.Log("Delete() Couldn't truncate table", err)
 			}
 		})
@@ -136,7 +191,7 @@ func TestSQL_DeleteCollection(t *testing.T) {
 	}{
 		{
 			name:        "Delete table",
-			createQuery: []string{"CREATE TABLE abcd (id VARCHAR(50))"},
+			createQuery: []string{"CREATE TABLE myproject.abcd (id VARCHAR(50))"},
 			readQuery:   "SELECT * FROM information_schema.TABLES where TABLE_SCHEMA = 'myproject' AND TABLE_NAME = 'abcd';",
 			args: args{
 				ctx: context.Background(),

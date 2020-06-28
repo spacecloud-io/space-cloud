@@ -177,7 +177,7 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 	var rowTypes []*sql.ColumnType
 
 	switch s.GetDBType() {
-	case utils.MySQL, utils.Postgres:
+	case utils.MySQL, utils.Postgres, utils.SQLServer:
 		rowTypes, _ = rows.ColumnTypes()
 	}
 
@@ -194,7 +194,7 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 		}
 
 		switch s.GetDBType() {
-		case utils.MySQL, utils.Postgres:
+		case utils.MySQL, utils.Postgres, utils.SQLServer:
 			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 		}
 
@@ -216,7 +216,7 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 		}
 
 		switch s.GetDBType() {
-		case utils.MySQL, utils.Postgres:
+		case utils.MySQL, utils.Postgres, utils.SQLServer:
 			mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 		}
 
@@ -236,7 +236,7 @@ func (s *SQL) readexec(ctx context.Context, sqlString string, args []interface{}
 				return 0, nil, err
 			}
 			switch s.GetDBType() {
-			case utils.MySQL, utils.Postgres:
+			case utils.MySQL, utils.Postgres, utils.SQLServer:
 				mysqlTypeCheck(s.GetDBType(), rowTypes, mapping)
 			}
 			if isAggregate {

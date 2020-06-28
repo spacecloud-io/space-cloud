@@ -28,8 +28,6 @@ func TestSQL_GetCollections(t *testing.T) {
 			want: []utils.DatabaseCollections{
 				{TableName: "companies"},
 				{TableName: "customers"},
-				{TableName: "event_logs"},
-				{TableName: "invocation_logs"},
 				{TableName: "orders"},
 				{TableName: "raw_batch"},
 				{TableName: "raw_query"},
@@ -49,7 +47,19 @@ func TestSQL_GetCollections(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetCollections() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			gotCount := 0
+			for _, wantValue := range tt.want {
+				isFound := false
+				for _, gotValue := range got {
+					if reflect.DeepEqual(gotValue, wantValue) {
+						isFound = true
+					}
+				}
+				if isFound {
+					gotCount++
+				}
+			}
+			if gotCount != len(tt.want) {
 				t.Errorf("GetCollections() got = %v, want %v", got, tt.want)
 			}
 		})

@@ -18,14 +18,98 @@ func TestSQL_Create(t *testing.T) {
 		col string
 		req *model.CreateRequest
 	}
-	tests := []struct {
+	type test struct {
 		name           string
 		readQuery      string
 		args           args
 		want           int64
 		wantErr        bool
 		wantReadResult []interface{}
-	}{
+	}
+	var testCases []test
+	mssqlCases := []test{
+		{
+			name: "Single Insert",
+			args: args{
+				ctx: context.Background(),
+				col: "customers",
+				req: &model.CreateRequest{
+					Document: map[string]interface{}{
+						"id":         "1",
+						"name":       "John",
+						"age":        20,
+						"height":     5.8,
+						"is_prime":   1,
+						"birth_date": "2015-11-05 14:29:36",
+					},
+					Operation: utils.One,
+				},
+			},
+			want:    1,
+			wantErr: false,
+			wantReadResult: []interface{}{
+				map[string]interface{}{
+					"id":         "1",
+					"name":       "John",
+					"age":        int64(20),
+					"height":     5.8,
+					"is_prime":   true,
+					"birth_date": "2015-11-05T14:29:36Z",
+				},
+			},
+			readQuery: `SELECT * FROM myproject.customers WHERE id = '1'`,
+		},
+		{
+			name: "Multiple Insert",
+			args: args{
+				ctx: context.Background(),
+				col: "customers",
+				req: &model.CreateRequest{
+					Document: []interface{}{
+						map[string]interface{}{
+							"id":         "2",
+							"name":       "Sam",
+							"age":        int64(30),
+							"height":     6.2,
+							"is_prime":   1,
+							"birth_date": "2015-11-05 14:29:36",
+						},
+						map[string]interface{}{
+							"id":         "3",
+							"name":       "Amy",
+							"age":        int64(40),
+							"height":     5.0,
+							"is_prime":   0,
+							"birth_date": "2015-11-05 14:29:36",
+						},
+					},
+					Operation: utils.All,
+				},
+			},
+			want:    2,
+			wantErr: false,
+			wantReadResult: []interface{}{
+				map[string]interface{}{
+					"id":         "2",
+					"name":       "Sam",
+					"age":        int64(30),
+					"height":     6.2,
+					"is_prime":   true,
+					"birth_date": "2015-11-05T14:29:36Z",
+				},
+				map[string]interface{}{
+					"id":         "3",
+					"name":       "Amy",
+					"age":        int64(40),
+					"height":     5.0,
+					"is_prime":   false,
+					"birth_date": "2015-11-05T14:29:36Z",
+				},
+			},
+			readQuery: `SELECT * FROM myproject.customers WHERE id = '2' or id = '3'`,
+		},
+	}
+	sqlCases := []test{
 		{
 			name: "Single Insert",
 			args: args{
@@ -52,12 +136,12 @@ func TestSQL_Create(t *testing.T) {
 					"name":       "John",
 					"age":        int64(20),
 					"height":     5.8,
-					"is_prime":   int64(1),
+					"is_prime":   true,
 					"birth_date": "2015-11-05T14:29:36Z",
 					"address":    `{"city": "pune", "pinCode": 123456}`,
 				},
 			},
-			readQuery: `SELECT * FROM customers WHERE id = "1"`,
+			readQuery: `SELECT * FROM myproject.customers WHERE id = '1'`,
 		},
 		{
 			name: "Multiple Insert",
@@ -71,7 +155,7 @@ func TestSQL_Create(t *testing.T) {
 							"name":       "Sam",
 							"age":        int64(30),
 							"height":     6.2,
-							"is_prime":   int64(1),
+							"is_prime":   true,
 							"birth_date": "2015-11-05 14:29:36",
 							"address":    `{"city": "california", "pinCode": 567890}`,
 						},
@@ -80,7 +164,7 @@ func TestSQL_Create(t *testing.T) {
 							"name":       "Amy",
 							"age":        int64(40),
 							"height":     5.0,
-							"is_prime":   int64(0),
+							"is_prime":   false,
 							"birth_date": "2015-11-05 14:29:36",
 							"address":    `{"city": "newYork", "pinCode": 654321}`,
 						},
@@ -96,7 +180,7 @@ func TestSQL_Create(t *testing.T) {
 					"name":       "Sam",
 					"age":        int64(30),
 					"height":     6.2,
-					"is_prime":   int64(1),
+					"is_prime":   true,
 					"birth_date": "2015-11-05T14:29:36Z",
 					"address":    `{"city": "california", "pinCode": 567890}`,
 				},
@@ -105,13 +189,19 @@ func TestSQL_Create(t *testing.T) {
 					"name":       "Amy",
 					"age":        int64(40),
 					"height":     5.0,
-					"is_prime":   int64(0),
+					"is_prime":   false,
 					"birth_date": "2015-11-05T14:29:36Z",
 					"address":    `{"city": "newYork", "pinCode": 654321}`,
 				},
 			},
-			readQuery: `SELECT * FROM customers WHERE id = "2" or id = "3"`,
+			readQuery: `SELECT * FROM myproject.customers WHERE id = '2' or id = '3'`,
 		},
+	}
+
+	if utils.DBType(*dbType) == utils.SQLServer {
+		testCases = mssqlCases
+	} else {
+		testCases = sqlCases
 	}
 
 	db, err := Init(utils.DBType(*dbType), true, *connection, "myproject")
@@ -120,11 +210,11 @@ func TestSQL_Create(t *testing.T) {
 	}
 
 	// ensure that the table is empty
-	if _, err := db.client.Exec("TRUNCATE TABLE customers"); err != nil {
+	if _, err := db.client.Exec("TRUNCATE TABLE myproject.customers"); err != nil {
 		t.Log("Create() Couldn't truncate table", err)
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			// insert data in db
 			got, err := db.Create(tt.args.ctx, tt.args.col, tt.args.req)
@@ -172,7 +262,7 @@ func TestSQL_Create(t *testing.T) {
 	}
 
 	// clear data
-	if _, err := db.client.Exec("TRUNCATE TABLE customers"); err != nil {
+	if _, err := db.client.Exec("TRUNCATE TABLE myproject.customers"); err != nil {
 		t.Log("Create() Couldn't truncate table", err)
 	}
 }
