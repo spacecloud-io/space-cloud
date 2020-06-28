@@ -4,7 +4,9 @@ package sql
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -245,4 +247,18 @@ func TestSQL_RawQuery(t *testing.T) {
 	if _, err := db.client.Exec("TRUNCATE TABLE myproject.raw_query"); err != nil {
 		t.Log("RawQuery() Couldn't truncate table", err)
 	}
+}
+
+func (s *SQL) generateQueryPostgres(query string) string {
+	arr := strings.Split(query, "?")
+	l := len(arr) - 1
+	var str string
+	for i, value := range arr {
+		if i == l {
+			continue
+		}
+		str += fmt.Sprintf("%s$%v", value, i+1)
+	}
+	return str + ")"
+
 }

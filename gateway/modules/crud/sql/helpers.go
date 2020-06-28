@@ -124,19 +124,6 @@ func (s *SQL) getDBName(col string) string {
 func (s *SQL) generateQuerySQLServer(query string) string {
 	return strings.Replace(query, "$", "@p", -1)
 }
-func (s *SQL) generateQueryPostgres(query string) string {
-	arr := strings.Split(query, "?")
-	l := len(arr) - 1
-	var str string
-	for i, value := range arr {
-		if i == l {
-			continue
-		}
-		str += fmt.Sprintf("%s$%v", value, i+1)
-	}
-	return str + ")"
-
-}
 
 func mysqlTypeCheck(dbType utils.DBType, types []*sql.ColumnType, mapping map[string]interface{}) {
 	var err error
