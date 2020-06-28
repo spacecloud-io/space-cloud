@@ -116,7 +116,9 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 
 		// Add the request to the number of requests available for that database
 		r = append(r, generatedRequests...)
-		reqs[dbAlias] = r
+		for _, v := range r {
+			reqs[v.DBAlias] = append(reqs[v.DBAlias], v)
+		}
 	}
 
 	for dbAlias, reqs := range reqs {
