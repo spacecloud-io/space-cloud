@@ -76,28 +76,29 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			if len(req.Find) > 0 {
 				pipeline = append(pipeline, bson.M{"$match": req.Find})
 			}
+			functionsMap := make(bson.M, 0)
 			for function, colArray := range req.Aggregate {
 				for _, column := range colArray {
 					asColumnName := generateAggregateAsColumnName(function, column)
 					switch function {
 					case "sum":
-						pipeline = generateQuery(pipeline, req, asColumnName, function, column)
+						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
 					case "min":
-						pipeline = generateQuery(pipeline, req, asColumnName, function, column)
+						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
 					case "max":
-						pipeline = generateQuery(pipeline, req, asColumnName, function, column)
+						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
 					case "avg":
-						pipeline = generateQuery(pipeline, req, asColumnName, function, column)
+						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, column)
 					case "count":
-						pipeline = generateQuery(pipeline, req, asColumnName, function, "*")
+						functionsMap = getGroupByStageFunctionsMap(functionsMap, asColumnName, function, "*")
 					default:
 						return 0, nil, utils.LogError(fmt.Sprintf(`Unknown aggregate funcion %s`, function), "mgo", "Read", nil)
 					}
 				}
 			}
+			pipeline = append(pipeline, createGroupByStage(functionsMap, req.GroupBy))
 			if req.Options != nil {
-				optionStage := getOptionStage(req.Options)
-				pipeline = append(pipeline, optionStage...)
+				pipeline = append(pipeline, getOptionStage(req.Options)...)
 			}
 		}
 
@@ -130,7 +131,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			}
 
 			if len(req.Aggregate) > 0 {
-				doc = getNestedObject(doc)
+				getNestedObject(doc)
 			}
 			results = append(results, doc)
 		}
@@ -184,51 +185,34 @@ func generateSortOptions(array []string) bson.D {
 	return sort
 }
 
-func getGroupByStage(pipeline []bson.M, groupBy []interface{}, asColumnName, function, column string) bson.M {
+func getGroupByStageFunctionsMap(functionsMap bson.M, asColumnName, function, column string) bson.M {
+	if column != "*" {
+		functionsMap[asColumnName] = bson.M{
+			fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
+		}
+	} else {
+		functionsMap[asColumnName] = bson.M{
+			"$sum": 1,
+		}
+	}
+	return functionsMap
+}
+
+func createGroupByStage(functionsMap bson.M, groupBy []interface{}) bson.M {
+	groupByMap := make(map[string]interface{})
+	groupStage := bson.M{
+		"$group": bson.M{"_id": bson.M{}},
+	}
 	if len(groupBy) > 0 {
-		groupByMap := make(map[string]interface{})
 		for _, val := range groupBy {
 			groupByMap[fmt.Sprintf("%v", val)] = fmt.Sprintf("$%v", val)
 		}
-		var groupStage bson.M
-		if len(pipeline) == 2 {
-			prevGroupStage := pipeline[1]["$group"]
-			if column != "*" {
-				prevGroupStage.(bson.M)[asColumnName] = bson.M{
-					fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
-				}
-			} else {
-				prevGroupStage.(bson.M)[asColumnName] = bson.M{
-					"$sum": 1,
-				}
-			}
-			groupStage = bson.M{
-				"$group": prevGroupStage.(bson.M),
-			}
-			return groupStage
-		}
-		if column != "*" {
-			groupStage = bson.M{
-				"$group": bson.M{
-					"_id": groupByMap,
-					asColumnName: bson.M{
-						fmt.Sprintf("$%s", function): fmt.Sprintf("$%s", column),
-					},
-				},
-			}
-		} else {
-			groupStage = bson.M{
-				"$group": bson.M{
-					"_id": groupByMap,
-					asColumnName: bson.M{
-						"$sum": 1,
-					},
-				},
-			}
-		}
-		return groupStage
+		groupStage["$group"].(bson.M)["_id"] = groupByMap
 	}
-	return bson.M{"$group": bson.M{"_id": bson.M{}}}
+	for key, value := range functionsMap {
+		groupStage["$group"].(bson.M)[key] = value
+	}
+	return groupStage
 }
 
 func generateAggregateSortOptions(array []string) bson.M {
@@ -272,7 +256,7 @@ func splitAggregateAsColumnName(asColumnName string) (functionName string, colum
 	return v[1], v[2], true
 }
 
-func getNestedObject(doc map[string]interface{}) map[string]interface{} {
+func getNestedObject(doc map[string]interface{}) {
 	resultObj := make(map[string]map[string]interface{})
 	for asColumnName, value := range doc {
 		functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
@@ -284,25 +268,9 @@ func getNestedObject(doc map[string]interface{}) map[string]interface{} {
 				continue
 			}
 			funcValue[columnName] = value
-		} else {
-			if _, ok := value.(map[string]interface{}); ok {
-				for key, val := range value.(map[string]interface{}) {
-					delete(doc, asColumnName)
-					doc[key] = val
-				}
-			}
 		}
 	}
 	if len(resultObj) > 0 {
 		doc[utils.GraphQLAggregate] = resultObj
 	}
-	return doc
-}
-
-func generateQuery(pipeline []bson.M, req *model.ReadRequest, asColumnName, function, column string) []bson.M {
-	groupStage := getGroupByStage(pipeline, req.GroupBy, asColumnName, function, column)
-	if len(pipeline) != 2 {
-		pipeline = append(pipeline, groupStage)
-	}
-	return pipeline
 }
