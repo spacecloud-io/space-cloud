@@ -17,6 +17,7 @@ type Config struct {
 	IsInCluster    bool
 	ProxyPort      uint32
 	ArtifactAddr   string
+	ClusterName    string
 }
 
 // Interface is the interface of the modules which interact with the deployment targets
@@ -74,7 +75,7 @@ func initDriver(auth *auth.Module, c *Config) (Interface, error) {
 		return istio.NewIstioDriver(auth, istioConfig)
 
 	case model.TypeDocker:
-		return docker.NewDockerDriver(auth, c.ArtifactAddr)
+		return docker.NewDockerDriver(auth, c.ClusterName, c.ArtifactAddr)
 
 	default:
 		return nil, fmt.Errorf("invalid driver type (%s) provided", c.DriverType)
