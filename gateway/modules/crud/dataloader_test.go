@@ -3,30 +3,18 @@ package crud
 import (
 	"errors"
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/graph-gophers/dataloader"
 
-	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestModule_getLoader(t *testing.T) {
 	type fields struct {
-		RWMutex             sync.RWMutex
 		block               Crud
-		dbType              string
-		alias               string
-		project             string
-		schema              model.SchemaCrudInterface
-		queries             map[string]*config.PreparedQuery
 		batchMapTableToChan batchMap
-		dataLoader          loader
 		hooks               *model.CrudHooks
-		metricHook          model.MetricCrudHook
-		getSecrets          utils.GetSecrets
 	}
 	type args struct {
 		key string
@@ -39,10 +27,8 @@ func TestModule_getLoader(t *testing.T) {
 		want1  bool
 	}{
 		{
-			name: "Get Loader For Specified key",
-			fields: fields{
-				dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}},
-			},
+			name:   "Get Loader For Specified key",
+			fields: fields{},
 			args: args{
 				key: "some-key",
 			},
@@ -53,18 +39,10 @@ func TestModule_getLoader(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				RWMutex:             tt.fields.RWMutex,
 				block:               tt.fields.block,
-				dbType:              tt.fields.dbType,
-				alias:               tt.fields.alias,
-				project:             tt.fields.project,
-				schema:              tt.fields.schema,
-				queries:             tt.fields.queries,
 				batchMapTableToChan: tt.fields.batchMapTableToChan,
-				dataLoader:          tt.fields.dataLoader,
+				dataLoader:          loader{loaderMap: map[string]*dataloader.Loader{}},
 				hooks:               tt.fields.hooks,
-				metricHook:          tt.fields.metricHook,
-				getSecrets:          tt.fields.getSecrets,
 			}
 			tt.want = m.createLoader(tt.args.key)
 			got, got1 := m.getLoader(tt.args.key)
@@ -80,7 +58,6 @@ func TestModule_getLoader(t *testing.T) {
 
 func Test_resultsHolder_addResult(t *testing.T) {
 	type fields struct {
-		Mutex        sync.Mutex
 		results      []*dataloader.Result
 		whereClauses []interface{}
 	}
@@ -126,8 +103,6 @@ func Test_resultsHolder_addResult(t *testing.T) {
 
 func Test_resultsHolder_addWhereClause(t *testing.T) {
 	type fields struct {
-		Mutex        sync.Mutex
-		results      []*dataloader.Result
 		whereClauses []interface{}
 	}
 	type args struct {
@@ -165,9 +140,7 @@ func Test_resultsHolder_addWhereClause(t *testing.T) {
 
 func Test_resultsHolder_fillErrorMessage(t *testing.T) {
 	type fields struct {
-		Mutex        sync.Mutex
-		results      []*dataloader.Result
-		whereClauses []interface{}
+		results []*dataloader.Result
 	}
 	type args struct {
 		err error
@@ -200,7 +173,6 @@ func Test_resultsHolder_fillErrorMessage(t *testing.T) {
 
 func Test_resultsHolder_fillResults(t *testing.T) {
 	type fields struct {
-		Mutex        sync.Mutex
 		results      []*dataloader.Result
 		whereClauses []interface{}
 	}
@@ -281,9 +253,7 @@ func Test_resultsHolder_fillResults(t *testing.T) {
 
 func Test_resultsHolder_getResults(t *testing.T) {
 	type fields struct {
-		Mutex        sync.Mutex
-		results      []*dataloader.Result
-		whereClauses []interface{}
+		results []*dataloader.Result
 	}
 	tests := []struct {
 		name   string
@@ -342,8 +312,6 @@ func Test_resultsHolder_getResults(t *testing.T) {
 
 func Test_resultsHolder_getWhereClauses(t *testing.T) {
 	type fields struct {
-		Mutex        sync.Mutex
-		results      []*dataloader.Result
 		whereClauses []interface{}
 	}
 	tests := []struct {

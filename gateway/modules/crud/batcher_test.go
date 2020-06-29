@@ -5,26 +5,11 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 func TestModule_closeBatchOperation(t *testing.T) {
 	type fields struct {
-		RWMutex             sync.RWMutex
-		block               Crud
-		dbType              string
-		alias               string
-		project             string
-		schema              model.SchemaCrudInterface
-		queries             map[string]*config.PreparedQuery
 		batchMapTableToChan batchMap
-		dataLoader          loader
-		hooks               *model.CrudHooks
-		metricHook          model.MetricCrudHook
-		getSecrets          utils.GetSecrets
 	}
 	tests := []struct {
 		name    string

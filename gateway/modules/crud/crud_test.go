@@ -4,7 +4,6 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/sql"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"reflect"
-	"sync"
 	"testing"
 
 	"github.com/graph-gophers/dataloader"
@@ -38,18 +37,8 @@ func TestInit(t *testing.T) {
 
 func TestModule_GetDBType(t *testing.T) {
 	type fields struct {
-		RWMutex             sync.RWMutex
-		block               Crud
-		dbType              string
-		alias               string
-		project             string
-		schema              model.SchemaCrudInterface
-		queries             map[string]*config.PreparedQuery
-		batchMapTableToChan batchMap
-		dataLoader          loader
-		hooks               *model.CrudHooks
-		metricHook          model.MetricCrudHook
-		getSecrets          utils.GetSecrets
+		dbType string
+		alias  string
 	}
 	type args struct {
 		dbAlias string
@@ -113,18 +102,6 @@ func TestModule_GetDBType(t *testing.T) {
 func TestModule_SetSchema(t *testing.T) {
 	var v model.SchemaCrudInterface = &schema.Schema{}
 	type fields struct {
-		RWMutex             sync.RWMutex
-		block               Crud
-		dbType              string
-		alias               string
-		project             string
-		schema              model.SchemaCrudInterface
-		queries             map[string]*config.PreparedQuery
-		batchMapTableToChan batchMap
-		dataLoader          loader
-		hooks               *model.CrudHooks
-		metricHook          model.MetricCrudHook
-		getSecrets          utils.GetSecrets
 	}
 	type args struct {
 		s model.SchemaCrudInterface
@@ -145,18 +122,7 @@ func TestModule_SetSchema(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				RWMutex:             tt.fields.RWMutex,
-				block:               tt.fields.block,
-				dbType:              tt.fields.dbType,
-				alias:               tt.fields.alias,
-				project:             tt.fields.project,
-				schema:              tt.fields.schema,
-				queries:             tt.fields.queries,
-				batchMapTableToChan: tt.fields.batchMapTableToChan,
-				dataLoader:          tt.fields.dataLoader,
-				hooks:               tt.fields.hooks,
-				metricHook:          tt.fields.metricHook,
-				getSecrets:          tt.fields.getSecrets,
+				dataLoader: loader{loaderMap: map[string]*dataloader.Loader{}},
 			}
 			m.SetSchema(v)
 			if !reflect.DeepEqual(m.schema, v) {
@@ -169,7 +135,6 @@ func TestModule_SetSchema(t *testing.T) {
 func TestModule_getCrudBlock(t *testing.T) {
 	var v Crud = &sql.SQL{}
 	type fields struct {
-		RWMutex             sync.RWMutex
 		block               Crud
 		dbType              string
 		alias               string
@@ -177,7 +142,6 @@ func TestModule_getCrudBlock(t *testing.T) {
 		schema              model.SchemaCrudInterface
 		queries             map[string]*config.PreparedQuery
 		batchMapTableToChan batchMap
-		dataLoader          loader
 		hooks               *model.CrudHooks
 		metricHook          model.MetricCrudHook
 		getSecrets          utils.GetSecrets
@@ -226,7 +190,6 @@ func TestModule_getCrudBlock(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Module{
-				RWMutex:             tt.fields.RWMutex,
 				block:               tt.fields.block,
 				dbType:              tt.fields.dbType,
 				alias:               tt.fields.alias,
@@ -234,7 +197,7 @@ func TestModule_getCrudBlock(t *testing.T) {
 				schema:              tt.fields.schema,
 				queries:             tt.fields.queries,
 				batchMapTableToChan: tt.fields.batchMapTableToChan,
-				dataLoader:          tt.fields.dataLoader,
+				dataLoader:          loader{loaderMap: map[string]*dataloader.Loader{}},
 				hooks:               tt.fields.hooks,
 				metricHook:          tt.fields.metricHook,
 				getSecrets:          tt.fields.getSecrets,
