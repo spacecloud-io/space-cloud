@@ -18,8 +18,14 @@ func Commands() []*cobra.Command {
 	var addRegistryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "Add a docker registry",
-		RunE:  ActionAddRegistry,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+		},
+		RunE: ActionAddRegistry,
 	}
+	addRegistryCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster in which the registry is to be added")
 
 	var addDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -45,6 +51,10 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('auto-apply')", nil)
 			}
+			err = viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
 		},
 		RunE: ActionAddDatabase,
 	}
@@ -54,6 +64,7 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
+	addDatabaseCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster in which the database is to be added")
 
 	var removeCmd = &cobra.Command{
 		Use:           "remove",
@@ -64,14 +75,31 @@ func Commands() []*cobra.Command {
 	var removeRegistryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "Remove a docker registry",
-		RunE:  ActionRemoveRegistry,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+		},
+		RunE: ActionRemoveRegistry,
 	}
+	removeRegistryCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster from which the registry is to be removed")
 
 	var removeDatabaseCmd = &cobra.Command{
 		Use:   "database",
 		Short: "Remove a database",
-		RunE:  ActionRemoveDatabase,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+			if err := viper.BindPFlag("auto-remove", cmd.Flags().Lookup("auto-remove")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('auto-remove')", nil)
+			}
+		},
+		RunE: ActionRemoveDatabase,
 	}
+	removeDatabaseCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster from which the database is to be removed")
+	removeDatabaseCmd.Flags().BoolP("auto-remove", "", false, "remove database from space cloud config")
+
 	addCmd.AddCommand(addRegistryCmd)
 	addCmd.AddCommand(addDatabaseCmd)
 	removeCmd.AddCommand(removeRegistryCmd)
