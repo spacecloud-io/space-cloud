@@ -76,7 +76,7 @@ func (m *Mongo) Read(ctx context.Context, col string, req *model.ReadRequest) (i
 			if len(req.Find) > 0 {
 				pipeline = append(pipeline, bson.M{"$match": req.Find})
 			}
-			functionsMap := make(bson.M, 0)
+			functionsMap := make(bson.M)
 			for function, colArray := range req.Aggregate {
 				for _, column := range colArray {
 					asColumnName := generateAggregateAsColumnName(function, column)
