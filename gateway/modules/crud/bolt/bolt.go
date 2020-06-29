@@ -38,6 +38,11 @@ func (b *Bolt) Close() error {
 	return nil
 }
 
+// IsSame checks if we've got the same connection string
+func (b *Bolt) IsSame(conn, dbName string) bool {
+	return b.connection == conn && dbName == b.bucketName
+}
+
 // IsClientSafe checks whether database is enabled and connected
 func (b *Bolt) IsClientSafe() error {
 	if !b.enabled {

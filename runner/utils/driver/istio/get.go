@@ -13,8 +13,8 @@ import (
 )
 
 // GetServices gets the services for istio
-func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Service, error) {
-	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(metav1.ListOptions{})
+func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Service, error) {
+	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
 		return nil, err
@@ -117,7 +117,7 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 		}
 
 		// set whitelist
-		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectID).Get(getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version), metav1.GetOptions{})
+		authPolicy, _ := i.istio.SecurityV1beta1().AuthorizationPolicies(projectID).Get(ctx, getAuthorizationPolicyName(service.ProjectID, service.ID, service.Version), metav1.GetOptions{})
 		if len(authPolicy.Spec.Rules[0].From) != 0 {
 			for _, rule := range authPolicy.Spec.Rules[0].From {
 				for _, projectID := range rule.Source.Namespaces {
@@ -138,7 +138,7 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 		}
 
 		// Set upstreams
-		sideCar, err := i.istio.NetworkingV1alpha3().Sidecars(projectID).Get(getSidecarName(service.ID, service.Version), metav1.GetOptions{})
+		sideCar, err := i.istio.NetworkingV1alpha3().Sidecars(projectID).Get(ctx, getSidecarName(service.ID, service.Version), metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -159,11 +159,11 @@ func (i *Istio) GetServices(_ context.Context, projectID string) ([]*model.Servi
 }
 
 // GetServiceRoutes gets the routing rules of each service
-func (i *Istio) GetServiceRoutes(_ context.Context, projectID string) (map[string]model.Routes, error) {
+func (i *Istio) GetServiceRoutes(ctx context.Context, projectID string) (map[string]model.Routes, error) {
 	ns := projectID
 
 	// Get all virtual services
-	services, err := i.getVirtualServices(ns)
+	services, err := i.getVirtualServices(ctx, ns)
 	if err != nil {
 		return nil, err
 	}

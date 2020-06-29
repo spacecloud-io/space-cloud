@@ -35,6 +35,30 @@ metadata:
   namespace: space-cloud
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: space-cloud-runner
+  namespace: space-cloud
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "services", "configmaps", "secrets", "serviceaccounts"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups:
+      - "extensions"
+      - "apps"
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups:
+    - "apps"
+    resources: ["statefulsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups:
+    - "security.istio.io"
+    - "networking.istio.io"
+    resources: ["*"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
 # This cluster role binding allows anyone in the "manager" group to read secrets in any namespace.
 kind: ClusterRoleBinding
 metadata:
@@ -45,7 +69,7 @@ subjects:
     namespace: space-cloud
 roleRef:
   kind: ClusterRole
-  name: cluster-admin
+  name: space-cloud-runner
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
@@ -55,17 +79,28 @@ metadata:
   namespace: space-cloud
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-# This cluster role binding allows anyone in the "manager" group to read secrets in any namespace.
+kind: ClusterRole
+metadata:
+  name: space-cloud-gateway
+  namespace: space-cloud
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: space-cloud-gateway
 subjects:
   - kind: ServiceAccount
     name: space-cloud-gateway # Name is case sensitive
-    namespace: space-cloud
 roleRef:
   kind: ClusterRole
-  name: cluster-admin
+  name: space-cloud-gateway
   apiGroup: rbac.authorization.k8s.io
 ---
 #############################################################################################
@@ -163,7 +198,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner:0.17.1
+          image: spaceuptech/runner:0.18.1
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
@@ -267,6 +302,14 @@ spec:
         protocol: HTTP
       hosts:
         - "*"
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: PASSTHROUGH
+      hosts:
+        - "*"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
@@ -282,6 +325,16 @@ spec:
         - destination:
             port:
               number: 4122
+            host: gateway.space-cloud.svc.cluster.local
+  tls:
+    - match:
+        - port: 443
+          sniHosts:
+            - '*'
+      route:
+        - destination:
+            port:
+              number: 4126
             host: gateway.space-cloud.svc.cluster.local
 ---
 apiVersion: v1
@@ -327,7 +380,7 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway:0.17.1
+          image: spaceuptech/gateway:0.18.1
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "NODE_ID"
