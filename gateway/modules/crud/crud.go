@@ -201,6 +201,5 @@ func (m *Module) GetDBType(dbAlias string) (string, error) {
 func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 	m.Lock()
 	defer m.Unlock()
-
 	m.getSecrets = function
 }
