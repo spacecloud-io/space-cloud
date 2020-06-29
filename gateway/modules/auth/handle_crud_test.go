@@ -382,7 +382,7 @@ func TestIsPreparedQueryAuthorised(t *testing.T) {
 	}
 	for _, test := range authMatchQuery {
 		t.Run(test.testName, func(t *testing.T) {
-			_, r, err := (auth).IsPreparedQueryAuthorised(context.Background(), test.project, test.dbType, test.id, test.token, &test.value)
+			_, _, r, err := (auth).IsPreparedQueryAuthorised(context.Background(), test.project, test.dbType, test.id, test.token, &test.value)
 			if (err != nil) != test.IsErrExpected {
 				t.Error("Success GoErr", err, "Want Error", test.IsErrExpected)
 			}
