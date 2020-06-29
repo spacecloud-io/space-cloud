@@ -122,7 +122,6 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 // HandleSetDatabaseConfig is an endpoint handler which updates database config & connects to database
 func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 

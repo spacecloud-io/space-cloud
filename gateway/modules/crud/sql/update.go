@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -78,8 +79,18 @@ func (s *SQL) update(ctx context.Context, col string, req *model.UpdateRequest, 
 			doc := make(map[string]interface{})
 			dates := make(map[string]interface{})
 			for k, v := range req.Find {
-				for _, newValue := range v.(map[string]interface{}) {
-					doc[k] = newValue
+				if reflect.TypeOf(v).Kind() == reflect.Array {
+					return 0, utils.ErrInvalidParams
+				}
+
+				// implicit equality operator in where e.g -> "id" : "1"
+				if !strings.HasPrefix(k, "$") && reflect.TypeOf(v).Kind() != reflect.Map {
+					doc[k] = v
+					continue
+				}
+
+				for colName, colValue := range v.(map[string]interface{}) {
+					doc[colName] = colValue
 				}
 			}
 			for op := range req.Update {
@@ -158,17 +169,17 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 		}
 	}
 
-	if op == "$unset" && dbType == string(utils.Postgres) {
-		unsetObj, ok := req.Update[op].(map[string]interface{})
-		if !ok {
-			return "", nil, errors.New("incorrect unset object provided")
-		}
-
-		for k := range unsetObj {
-			arr := strings.Split(k, ".")
-			unsetObj[k] = fmt.Sprintf("{%s}", strings.Join(arr[1:], ","))
-		}
-	}
+	//if op == "$unset" && dbType == string(utils.Postgres) {
+	//	unsetObj, ok := req.Update[op].(map[string]interface{})
+	//	if !ok {
+	//		return "", nil, errors.New("incorrect unset object provided")
+	//	}
+	//
+	//	for k := range unsetObj {
+	//		arr := strings.Split(k, ".")
+	//		unsetObj[k] = fmt.Sprintf("{%s}", strings.Join(arr[1:], ","))
+	//	}
+	//}
 
 	record, err := generateRecord(req.Update[op])
 	if err != nil {
@@ -179,6 +190,7 @@ func (s *SQL) generateUpdateQuery(ctx context.Context, col string, req *model.Up
 	// Generate SQL string and arguments
 	sqlString, args, err := query.Update().Set(record).ToSQL()
 	if err != nil {
+		log.Println("here", err)
 		logrus.Errorf("Error generating update query unable generate sql string - %s", err)
 		return "", nil, err
 	}
