@@ -135,7 +135,8 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 				defer wg.Done()
 
 				// make sures metric get collected for following read request
-				req.Req.IsBatch = false // NOTE: DO NOT REMOVE THIS
+				req.Req.IsBatch = false      // NOTE: DO NOT REMOVE THIS
+				req.Req.Options.Select = nil // Need to make this nil so that we load all the fields data
 				// Execute the query
 				res, err := m.Read(ctx, dbAlias, req.Col, &req.Req)
 				if err != nil {
@@ -161,16 +162,19 @@ func (m *Module) dataLoaderBatchFn(c context.Context, keys dataloader.Keys) []*d
 	// Wait for all results to be done
 	wg.Wait()
 
-	// Prepare a merged request
-	req := model.ReadRequest{Find: map[string]interface{}{"$or": holder.getWhereClauses()}, Operation: utils.All, Options: &model.ReadOptions{}}
+	clauses := holder.getWhereClauses()
 
-	// Fire the merged request
-
-	res, err := m.Read(ctx, dbAlias, col, &req)
-	if err != nil {
-		holder.fillErrorMessage(err)
-	} else {
-		holder.fillResults(res.([]interface{}))
+	// Fire the query only if where clauses exist
+	if len(clauses) > 0 {
+		// Prepare a merged request
+		req := model.ReadRequest{Find: map[string]interface{}{"$or": clauses}, Operation: utils.All, Options: &model.ReadOptions{}}
+		// Fire the merged request
+		res, err := m.Read(ctx, dbAlias, col, &req)
+		if err != nil {
+			holder.fillErrorMessage(err)
+		} else {
+			holder.fillResults(res.([]interface{}))
+		}
 	}
 
 	// do some async work to get data for specified keys

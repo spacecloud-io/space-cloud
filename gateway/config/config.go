@@ -143,31 +143,49 @@ type Services map[string]*Service
 
 // Service holds the config of service
 type Service struct {
-	ID        string              `json:"id,omitempty" yaml:"id,omitempty"`   // eg. http://localhost:8080
-	URL       string              `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
-	Endpoints map[string]Endpoint `json:"endpoints" yaml:"endpoints"`
+	ID        string               `json:"id,omitempty" yaml:"id,omitempty"`   // eg. http://localhost:8080
+	URL       string               `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
+	Endpoints map[string]*Endpoint `json:"endpoints" yaml:"endpoints"`
 }
 
 // Endpoint holds the config of a endpoint
 type Endpoint struct {
-	Kind     EndpointKind `json:"kind" yaml:"kind"`
-	Tmpl     string       `json:"template,omitempty" yaml:"template,omitempty"`
-	OpFormat string       `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
-	Token    string       `json:"token,omitempty" yaml:"token,omitempty"`
-	Method   string       `json:"method" yaml:"method"`
-	Path     string       `json:"path" yaml:"path"`
-	Rule     *Rule        `json:"rule" yaml:"rule"`
+	Kind      EndpointKind             `json:"kind" yaml:"kind"`
+	Tmpl      EndpointTemplatingEngine `json:"template,omitempty" yaml:"template,omitempty"`
+	ReqTmpl   string                   `json:"requestTemplate" yaml:"requestTemplate"`
+	GraphTmpl string                   `json:"graphTemplate" yaml:"graphTemplate"`
+	ResTmpl   string                   `json:"responseTemplate" yaml:"responseTemplate"`
+	OpFormat  string                   `json:"outputFormat,omitempty" yaml:"outputFormat,omitempty"`
+	Token     string                   `json:"token,omitempty" yaml:"token,omitempty"`
+	Method    string                   `json:"method" yaml:"method"`
+	Path      string                   `json:"path" yaml:"path"`
+	Rule      *Rule                    `json:"rule" yaml:"rule"`
+	Headers   []struct {
+		Key   string `json:"key" yaml:"key"`
+		Value string `json:"value" yaml:"value"`
+	} `json:"headers" yaml:"headers"`
 }
 
-// EndpointKind descriped the type of endpoint
+// EndpointKind describes the type of endpoint. Default value - internal
 type EndpointKind string
 
 const (
-	// EndpointKindSimple describes a simple or straight forward web-hook call
-	EndpointKindSimple EndpointKind = "simple"
+	// EndpointKindInternal describes a simple or straight forward web-hook call
+	EndpointKindInternal EndpointKind = "internal"
 
-	// EndpointKindTransform describes a payload transformation using go templates
-	EndpointKindTransform EndpointKind = "transform-go"
+	// EndpointKindExternal describes an endpoint on an external server
+	EndpointKindExternal EndpointKind = "external"
+
+	// EndpointKindPrepared describes an endpoint on on Space Cloud GraphQL layer
+	EndpointKindPrepared EndpointKind = "prepared"
+)
+
+// EndpointTemplatingEngine describes the type of endpoint. Default value - go
+type EndpointTemplatingEngine string
+
+const (
+	// EndpointTemplatingEngineGo describes the go templating engine
+	EndpointTemplatingEngineGo EndpointTemplatingEngine = "go"
 )
 
 // FileStore holds the config for the file store module
