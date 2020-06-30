@@ -22,22 +22,22 @@ func HandleSetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		provider := vars["id"]
+
 		// Load the body of the request
 		value := new(config.AuthStub)
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "auth-provider", "modify", map[string]string{"project": projectID, "id": provider}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		provider := vars["id"]
 
 		// Sync the config
 		if err := syncMan.SetUserManagement(ctx, projectID, provider, value); err != nil {
@@ -56,22 +56,23 @@ func HandleGetUserManagement(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		providerID := ""
+		providerID := "*"
 		providerQuery, exists := r.URL.Query()["id"]
 		if exists {
 			providerID = providerQuery[0]
 		}
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "auth-provider", "modify", map[string]string{"project": projectID, "id": providerID}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
 		providers, err := syncMan.GetUserManagement(ctx, projectID, providerID)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())

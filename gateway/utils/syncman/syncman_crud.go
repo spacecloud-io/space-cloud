@@ -122,13 +122,13 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 		return nil, err
 	}
 
-	if dbAlias != "" {
+	if dbAlias != "*" {
 		databaseConfig, ok := projectConfig.Modules.Crud[dbAlias]
 		if !ok {
 			return nil, fmt.Errorf("specified database (%s) not present in config", dbAlias)
 		}
 
-		if id != "" {
+		if id != "*" {
 			preparedQuery, ok := databaseConfig.PreparedQueries[id]
 			if !ok {
 				return nil, fmt.Errorf("Prepared Queries for id (%s) not present in config for dbAlias (%s) )", id, dbAlias)
@@ -143,7 +143,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 		return coll, nil
 	}
 	databases := projectConfig.Modules.Crud
-	var coll []interface{} = make([]interface{}, 0)
+	coll := make([]interface{}, 0)
 	for _, dbInfo := range databases {
 		for key, value := range dbInfo.PreparedQueries {
 			coll = append(coll, &response{ID: key, SQL: value.SQL, Arguments: value.Arguments})
@@ -444,7 +444,7 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 	if err != nil {
 		return nil, err
 	}
-	if dbAlias != "" {
+	if dbAlias != "*" {
 		dbConfig, ok := projectConfig.Modules.Crud[dbAlias]
 		if !ok {
 			return nil, fmt.Errorf("specified dbAlias (%s) not present in config", dbAlias)
@@ -472,13 +472,13 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 	if err != nil {
 		return nil, err
 	}
-	if dbAlias != "" && col != "" {
+	if dbAlias != "*" && col != "*" {
 		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
 		if !ok {
 			return nil, fmt.Errorf("specified collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
 		}
 		return []interface{}{map[string]*response{fmt.Sprintf("%s-%s", dbAlias, col): {IsRealTimeEnabled: collectionInfo.IsRealTimeEnabled, Rules: collectionInfo.Rules}}}, nil
-	} else if dbAlias != "" {
+	} else if dbAlias != "*" {
 		collections := projectConfig.Modules.Crud[dbAlias].Collections
 		coll := map[string]*response{}
 		for key, value := range collections {
@@ -509,13 +509,13 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) 
 	if err != nil {
 		return nil, err
 	}
-	if dbAlias != "" && col != "" {
+	if dbAlias != "*" && col != "*" {
 		collectionInfo, ok := projectConfig.Modules.Crud[dbAlias].Collections[col]
 		if !ok {
 			return nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
 		}
 		return []interface{}{map[string]*response{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
-	} else if dbAlias != "" {
+	} else if dbAlias != "*" {
 		collections := projectConfig.Modules.Crud[dbAlias].Collections
 		coll := map[string]*response{}
 		for key, value := range collections {

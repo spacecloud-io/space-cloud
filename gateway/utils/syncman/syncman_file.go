@@ -123,7 +123,7 @@ func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string)
 	if err != nil {
 		return nil, err
 	}
-	if ruleID != "" {
+	if ruleID != "*" {
 		for _, value := range projectConfig.Modules.FileStore.Rules {
 			if ruleID == value.ID {
 				return []interface{}{value}, nil

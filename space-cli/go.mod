@@ -18,7 +18,6 @@ require (
 	github.com/google/go-cmp v0.4.1
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
@@ -27,12 +26,11 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spaceuptech/space-api-go v0.17.0
 	github.com/spf13/afero v1.2.2 // indirect
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.3.2
+	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
 	github.com/txn2/txeh v1.3.0
-	github.com/urfave/cli v1.22.2
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a // indirect
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
