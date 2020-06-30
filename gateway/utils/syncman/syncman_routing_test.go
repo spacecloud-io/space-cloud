@@ -69,7 +69,7 @@ func TestManager_GetIngressRouting(t *testing.T) {
 		{
 			name: "routeID empty and got all routes",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Routes: config.Routes{{ID: "1"}}}}}}},
-			args: args{ctx: context.Background(), project: "1", routeID: ""},
+			args: args{ctx: context.Background(), project: "1", routeID: "*"},
 			want: []interface{}{&config.Route{ID: "1"}},
 		},
 		{

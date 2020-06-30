@@ -5,9 +5,10 @@ import "github.com/spaceuptech/space-cloud/gateway/config"
 // AdminSyncmanInterface is an interface consisting of functions of admin module used by eventing module
 type AdminSyncmanInterface interface {
 	GetInternalAccessToken() (string, error)
-	IsTokenValid(token string) error
+	IsTokenValid(token, resource, op string, attr map[string]string) error
 	ValidateSyncOperation(c *config.Config, project *config.Project) bool
-	SetConfig(admin *config.Admin)
+	SetConfig(admin *config.Admin) error
+	GetConfig() *config.Admin
 }
 
 type preparedQueryResponse struct {

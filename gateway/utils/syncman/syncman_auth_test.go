@@ -122,7 +122,7 @@ func TestManager_GetUserManagement(t *testing.T) {
 		{
 			name: "providerID is empty",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Auth: config.Auth{"provider": &config.AuthStub{ID: "id"}}}}}}},
-			args: args{ctx: context.Background(), project: "1", providerID: ""},
+			args: args{ctx: context.Background(), project: "1", providerID: "*"},
 			want: []interface{}{&config.AuthStub{ID: "id"}},
 		},
 		{

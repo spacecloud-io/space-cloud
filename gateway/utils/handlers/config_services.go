@@ -23,21 +23,22 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		// Check if the request is authorised
+		vars := mux.Vars(r)
+		service := vars["id"]
+		projectID := vars["project"]
+
 		v := config.Service{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "remote-service", "modify", map[string]string{"project": projectID, "service": service}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		service := vars["id"]
-		projectID := vars["project"]
 
 		if err := syncMan.SetService(ctx, projectID, service, &v); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -60,18 +61,19 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		token := utils.GetTokenFromHeader(r)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		serviceID := ""
+		serviceID := "*"
 		serviceQuery, ok := r.URL.Query()["id"]
 		if ok {
 			serviceID = serviceQuery[0]
 		}
+
+		if err := adminMan.IsTokenValid(token, "remote-service", "read", map[string]string{"project": projectID, "service": serviceID}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
 		services, err := syncMan.GetServices(ctx, projectID, serviceID)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -88,19 +90,21 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-
 		vars := mux.Vars(r)
 		service := vars["id"]
 		projectID := vars["project"]
+
+		defer utils.CloseTheCloser(r.Body)
+
+		if err := adminMan.IsTokenValid(token, "remote-service", "modify", map[string]string{"project": projectID, "service": service}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		if err := syncMan.DeleteService(ctx, projectID, service); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())

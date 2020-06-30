@@ -453,7 +453,7 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 		{
 			name: "dbAlias is empty",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
-			args: args{ctx: context.Background(), dbAlias: "", id: "responseID", project: "1"},
+			args: args{ctx: context.Background(), dbAlias: "*", id: "responseID", project: "1"},
 			want: []interface{}{&preparedQueryResponse{ID: "key", SQL: "field"}},
 		},
 		{
@@ -477,7 +477,7 @@ func TestManager_GetPreparedQuery(t *testing.T) {
 		{
 			name: "id is empty",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{PreparedQueries: map[string]*config.PreparedQuery{"key": {ID: "id", SQL: "field"}}}}}}}}},
-			args: args{ctx: context.Background(), dbAlias: "alias", id: "", project: "1"},
+			args: args{ctx: context.Background(), dbAlias: "alias", id: "*", project: "1"},
 			want: []interface{}{&preparedQueryResponse{ID: "key", SQL: "field"}},
 		},
 	}
@@ -1230,13 +1230,13 @@ func TestManager_GetSchemas(t *testing.T) {
 		{
 			name: "dbAlias is not empty and got schemas",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "", dbAlias: "alias", project: "1"},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1"},
 			want: []interface{}{map[string]*dbSchemaResponse{"alias-tableName": {Schema: "type event {id: ID! title: String}"}}},
 		},
 		{
 			name: "dbAlias and col are empty and got schemas",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "", dbAlias: "", project: "1"},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1"},
 			want: []interface{}{map[string]*dbSchemaResponse{"alias-tableName": {Schema: "type event {id: ID! title: String}"}}},
 		},
 	}
@@ -2049,7 +2049,7 @@ func TestManager_GetDatabaseConfig(t *testing.T) {
 		{
 			name: "got services config",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Conn: "mongo:conn", Enabled: true, Type: "mongo"}}}}}}},
-			args: args{ctx: context.Background(), dbAlias: "", project: "1"},
+			args: args{ctx: context.Background(), dbAlias: "*", project: "1"},
 			want: []interface{}{config.Crud{"alias": {Enabled: true, Conn: "mongo:conn", Type: "mongo"}}},
 		},
 	}
@@ -2102,13 +2102,13 @@ func TestManager_GetCollectionRules(t *testing.T) {
 		{
 			name: "col is empty and got collection rules",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}, Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "", dbAlias: "alias", project: "1"},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "alias", project: "1"},
 			want: []interface{}{map[string]*dbRulesResponse{"alias-tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}}}},
 		},
 		{
 			name: "col and dbalias is empty and got collection rules",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Crud: config.Crud{"alias": &config.CrudStub{Collections: map[string]*config.TableRule{"tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}, Schema: "type event {id: ID! title: String}"}}}}}}}}},
-			args: args{ctx: context.Background(), col: "", dbAlias: "", project: "1"},
+			args: args{ctx: context.Background(), col: "*", dbAlias: "*", project: "1"},
 			want: []interface{}{map[string]*dbRulesResponse{"alias-tableName": {IsRealTimeEnabled: true, Rules: map[string]*config.Rule{"rule": {}}}}},
 		},
 	}

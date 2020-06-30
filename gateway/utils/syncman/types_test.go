@@ -13,8 +13,8 @@ type mockAdminSyncmanInterface struct {
 	mock.Mock
 }
 
-func (m *mockAdminSyncmanInterface) IsTokenValid(token string) error {
-	c := m.Called(token)
+func (m *mockAdminSyncmanInterface) IsTokenValid(token, resource, op string, attr map[string]string) error {
+	c := m.Called(token, resource, op, attr)
 	return c.Error(0)
 }
 
@@ -28,8 +28,12 @@ func (m *mockAdminSyncmanInterface) ValidateSyncOperation(c *config.Config, proj
 	return a.Bool(0)
 }
 
-func (m *mockAdminSyncmanInterface) SetConfig(admin *config.Admin) {
-	m.Called(admin)
+func (m *mockAdminSyncmanInterface) SetConfig(admin *config.Admin) error {
+	return m.Called(admin).Error(0)
+}
+
+func (m *mockAdminSyncmanInterface) GetConfig() *config.Admin {
+	return m.Called().Get(0).(*config.Admin)
 }
 
 type mockModulesInterface struct {
@@ -105,6 +109,11 @@ func (m *mockStoreInterface) DeleteProject(ctx context.Context, projectID string
 func (m *mockStoreInterface) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
 	c := m.Called(ctx, adminConfig)
 	return c.Error(0)
+}
+
+func (m *mockStoreInterface) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
+	c := m.Called(ctx)
+	return c.Get(0).(*config.Admin), c.Error(1)
 }
 
 func (m *mockStoreInterface) WatchAdminConfig(cb func(clusters []*config.Admin)) error {

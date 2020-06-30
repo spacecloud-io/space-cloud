@@ -305,7 +305,7 @@ func TestManager_GetServices(t *testing.T) {
 		{
 			name: "got all services",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Services: &config.ServicesModule{Services: config.Services{"service": &config.Service{ID: "id"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", serviceID: ""},
+			args: args{ctx: context.Background(), project: "1", serviceID: "*"},
 			want: []interface{}{&config.Service{ID: "id"}},
 		},
 	}
