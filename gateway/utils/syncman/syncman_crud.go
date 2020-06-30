@@ -106,12 +106,6 @@ func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias s
 	return collection.DBName, nil
 }
 
-type response struct {
-	ID        string   `json:"id"`
-	SQL       string   `json:"sql"`
-	Arguments []string `json:"arguments" yaml:"arguments"`
-}
-
 // GetPreparedQuery gets preparedQuery from config
 func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id string) ([]interface{}, error) {
 	// Acquire a lock
@@ -134,12 +128,12 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 			if !ok {
 				return nil, fmt.Errorf("Prepared Queries for id (%s) not present in config for dbAlias (%s) )", id, dbAlias)
 			}
-			return []interface{}{&response{ID: id, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments}}, nil
+			return []interface{}{&preparedQueryResponse{ID: id, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments}}, nil
 		}
 		preparedQuery := databaseConfig.PreparedQueries
 		var coll []interface{} = make([]interface{}, 0)
 		for key, value := range preparedQuery {
-			coll = append(coll, &response{ID: key, SQL: value.SQL, Arguments: value.Arguments})
+			coll = append(coll, &preparedQueryResponse{ID: key, SQL: value.SQL, Arguments: value.Arguments})
 		}
 		return coll, nil
 	}
@@ -147,7 +141,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	var coll []interface{} = make([]interface{}, 0)
 	for _, dbInfo := range databases {
 		for key, value := range dbInfo.PreparedQueries {
-			coll = append(coll, &response{ID: key, SQL: value.SQL, Arguments: value.Arguments})
+			coll = append(coll, &preparedQueryResponse{ID: key, SQL: value.SQL, Arguments: value.Arguments})
 		}
 	}
 	return coll, nil
@@ -460,11 +454,6 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 	return services, nil
 }
 
-type rulesResponse struct {
-	IsRealTimeEnabled bool                    `json:"isRealtimeEnabled"`
-	Rules             map[string]*config.Rule `json:"rules"`
-}
-
 // GetCollectionRules gets collection rules
 func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col string) ([]interface{}, error) {
 	// Acquire a lock
@@ -479,27 +468,23 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 		if !ok {
 			return nil, fmt.Errorf("specified collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
 		}
-		return []interface{}{map[string]*rulesResponse{fmt.Sprintf("%s-%s", dbAlias, col): {IsRealTimeEnabled: collectionInfo.IsRealTimeEnabled, Rules: collectionInfo.Rules}}}, nil
+		return []interface{}{map[string]*dbRulesResponse{fmt.Sprintf("%s-%s", dbAlias, col): {IsRealTimeEnabled: collectionInfo.IsRealTimeEnabled, Rules: collectionInfo.Rules}}}, nil
 	} else if dbAlias != "" {
 		collections := projectConfig.Modules.Crud[dbAlias].Collections
-		coll := map[string]*rulesResponse{}
+		coll := map[string]*dbRulesResponse{}
 		for key, value := range collections {
-			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &rulesResponse{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
+			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbRulesResponse{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
 		}
 		return []interface{}{coll}, nil
 	}
 	databases := projectConfig.Modules.Crud
-	coll := map[string]*rulesResponse{}
+	coll := map[string]*dbRulesResponse{}
 	for dbName, dbInfo := range databases {
 		for key, value := range dbInfo.Collections {
-			coll[fmt.Sprintf("%s-%s", dbName, key)] = &rulesResponse{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
+			coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbRulesResponse{IsRealTimeEnabled: value.IsRealTimeEnabled, Rules: value.Rules}
 		}
 	}
 	return []interface{}{coll}, nil
-}
-
-type schemaResponse struct {
-	Schema string `json:"schema"`
 }
 
 // GetSchemas gets schemas from config
@@ -517,20 +502,20 @@ func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) 
 		if !ok {
 			return nil, fmt.Errorf("collection (%s) not present in config for dbAlias (%s) )", dbAlias, col)
 		}
-		return []interface{}{map[string]*schemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
+		return []interface{}{map[string]*dbSchemaResponse{fmt.Sprintf("%s-%s", dbAlias, col): {Schema: collectionInfo.Schema}}}, nil
 	} else if dbAlias != "" {
 		collections := projectConfig.Modules.Crud[dbAlias].Collections
-		coll := map[string]*schemaResponse{}
+		coll := map[string]*dbSchemaResponse{}
 		for key, value := range collections {
-			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &schemaResponse{Schema: value.Schema}
+			coll[fmt.Sprintf("%s-%s", dbAlias, key)] = &dbSchemaResponse{Schema: value.Schema}
 		}
 		return []interface{}{coll}, nil
 	}
 	databases := projectConfig.Modules.Crud
-	coll := map[string]*schemaResponse{}
+	coll := map[string]*dbSchemaResponse{}
 	for dbName, dbInfo := range databases {
 		for key, value := range dbInfo.Collections {
-			coll[fmt.Sprintf("%s-%s", dbName, key)] = &schemaResponse{Schema: value.Schema}
+			coll[fmt.Sprintf("%s-%s", dbName, key)] = &dbSchemaResponse{Schema: value.Schema}
 		}
 	}
 	return []interface{}{coll}, nil

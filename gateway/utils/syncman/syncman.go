@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
@@ -33,7 +32,7 @@ type Manager struct {
 	services  []*service
 
 	// For authentication
-	adminMan model.AdminSyncmanInterface
+	adminMan AdminSyncmanInterface
 
 	// Modules
 	modules     types.ModulesInterface

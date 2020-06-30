@@ -3,8 +3,6 @@ package syncman
 import (
 	"errors"
 	"testing"
-
-	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_GetRunnerAddr(t *testing.T) {
@@ -35,7 +33,7 @@ func TestManager_GetClusterType(t *testing.T) {
 		paramsReturned []interface{}
 	}
 	type args struct {
-		admin model.AdminSyncmanInterface
+		admin AdminSyncmanInterface
 	}
 	tests := []struct {
 		name          string

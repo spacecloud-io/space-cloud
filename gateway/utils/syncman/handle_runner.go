@@ -12,10 +12,11 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
 // HandleRunnerRequests handles requests of the runner
-func (s *Manager) HandleRunnerRequests(admin model.AdminSyncmanInterface) http.HandlerFunc {
+func (s *Manager) HandleRunnerRequests(admin *admin.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := utils.GetTokenFromHeader(r)
 		if err := admin.IsTokenValid(token); err != nil {
@@ -236,7 +237,7 @@ func (s *Manager) GetRunnerAddr() string {
 }
 
 // GetClusterType returns cluster type
-func (s *Manager) GetClusterType(admin model.AdminSyncmanInterface) (string, error) {
+func (s *Manager) GetClusterType(admin AdminSyncmanInterface) (string, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if s.runnerAddr == "" {

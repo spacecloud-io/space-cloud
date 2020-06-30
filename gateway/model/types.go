@@ -117,14 +117,6 @@ type AdminEventingInterface interface {
 	GetInternalAccessToken() (string, error)
 }
 
-// AdminSyncmanInterface is an interface consisting of functions of admin module used by eventing module
-type AdminSyncmanInterface interface {
-	GetInternalAccessToken() (string, error)
-	IsTokenValid(token string) error
-	ValidateSyncOperation(c *config.Config, project *config.Project) bool
-	SetConfig(admin *config.Admin)
-}
-
 // HTTPEventingInterface is an interface consisting of functions of a http client used by eventing module
 type HTTPEventingInterface interface {
 	Do(req *http.Request) (*http.Response, error)
