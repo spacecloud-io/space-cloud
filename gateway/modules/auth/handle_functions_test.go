@@ -29,8 +29,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				funcRules: &config.ServicesModule{
 					InternalServices: config.Services{
 						"service": &config.Service{
-							Endpoints: map[string]config.Endpoint{
-								"ep": config.Endpoint{
+							Endpoints: map[string]*config.Endpoint{
+								"ep": {
 									Rule: &config.Rule{Rule: "allow"},
 								},
 							},
@@ -52,8 +52,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				funcRules: &config.ServicesModule{
 					Services: config.Services{
 						"service": &config.Service{
-							Endpoints: map[string]config.Endpoint{
-								"ep": config.Endpoint{
+							Endpoints: map[string]*config.Endpoint{
+								"ep": {
 									Rule: &config.Rule{Rule: "allow"},
 								},
 							},
@@ -75,8 +75,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				funcRules: &config.ServicesModule{
 					InternalServices: config.Services{
 						"service": &config.Service{
-							Endpoints: map[string]config.Endpoint{
-								"ep": config.Endpoint{
+							Endpoints: map[string]*config.Endpoint{
+								"ep": {
 									Rule: &config.Rule{Rule: "deny"},
 								},
 							},
@@ -97,8 +97,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			}, funcRules: &config.ServicesModule{
 				InternalServices: config.Services{
 					"service": &config.Service{
-						Endpoints: map[string]config.Endpoint{
-							"ep": config.Endpoint{
+						Endpoints: map[string]*config.Endpoint{
+							"ep": {
 								Rule: &config.Rule{Rule: "match", Eval: "==", F1: 1, F2: 1, Type: "number"},
 							},
 						},

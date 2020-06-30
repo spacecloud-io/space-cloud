@@ -5,7 +5,10 @@ import (
 )
 
 // BuildVersion is the current version of Space Cloud
-const BuildVersion = "0.18.0"
+const BuildVersion = "0.18.2"
+
+//DLQEventTriggerPrefix used as suffix for DLQ event trigger
+const DLQEventTriggerPrefix = "dlq_"
 
 const (
 	// One operation returns a single document from the database

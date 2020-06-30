@@ -120,22 +120,22 @@ func (m *Module) IsAggregateOpAuthorised(ctx context.Context, project, dbAlias, 
 }
 
 // IsPreparedQueryAuthorised checks if the crud operation is authorised
-func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, int, error) {
+func (m *Module) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, map[string]interface{}, int, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, auth, err := m.authenticatePreparedQueryRequest(dbAlias, id, token)
 	if err != nil {
-		return nil, http.StatusUnauthorized, err
+		return nil, nil, http.StatusUnauthorized, err
 	}
 
 	args := map[string]interface{}{"auth": auth, "params": req.Params, "token": token}
 	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{"args": args}, auth)
 	if err != nil {
-		return nil, http.StatusForbidden, err
+		return nil, nil, http.StatusForbidden, err
 	}
 
-	return actions, http.StatusOK, nil
+	return actions, auth, http.StatusOK, nil
 }
 
 func (m *Module) authenticateCrudRequest(dbAlias, col, token string, op utils.OperationType) (rule *config.Rule, auth map[string]interface{}, err error) {
