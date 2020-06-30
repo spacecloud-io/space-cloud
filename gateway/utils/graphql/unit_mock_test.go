@@ -40,8 +40,8 @@ func (m *mockGraphQLCrudInterface) IsPreparedQueryPresent(directive, fieldName s
 	args := m.Called(directive, fieldName)
 	return args.Bool(0)
 }
-func (m *mockGraphQLCrudInterface) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest) (interface{}, error) {
-	args := m.Called(ctx, dbAlias, id, req)
+func (m *mockGraphQLCrudInterface) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, auth map[string]interface{}) (interface{}, error) {
+	args := m.Called(ctx, dbAlias, id, req, auth)
 	return args.Get(0).(interface{}), args.Error(1)
 }
 
@@ -65,17 +65,17 @@ func (m *mockGraphQLAuthInterface) IsDeleteOpAuthorised(ctx context.Context, pro
 	args := m.Called(ctx, project, dbAlias, col, token, req)
 	return args.Int(0), args.Error(1)
 }
-func (m *mockGraphQLAuthInterface) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (model.TokenClaims, error) {
+func (m *mockGraphQLAuthInterface) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (map[string]interface{}, error) {
 	args := m.Called()
-	return args.Get(0).(model.TokenClaims), args.Error(1)
+	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 func (m *mockGraphQLAuthInterface) PostProcessMethod(postProcess *model.PostProcess, result interface{}) error {
 	args := m.Called()
 	return args.Error(0)
 }
-func (m *mockGraphQLAuthInterface) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, int, error) {
+func (m *mockGraphQLAuthInterface) IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *model.PreparedQueryRequest) (*model.PostProcess, map[string]interface{}, int, error) {
 	args := m.Called()
-	return args.Get(0).(*model.PostProcess), args.Int(1), args.Error(2)
+	return args.Get(0).(*model.PostProcess), args.Get(1).(map[string]interface{}), args.Int(2), args.Error(3)
 }
 
 type mockGraphQLFunctionInterface struct {

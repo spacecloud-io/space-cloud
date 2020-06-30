@@ -10,15 +10,22 @@ import (
 // Commands is the list of commands the addon module exposes
 func Commands() []*cobra.Command {
 	var addCmd = &cobra.Command{
-		Use:   "add",
-		Short: "Add a add-on to the environment",
+		Use:           "add",
+		Short:         "Add a add-on to the environment",
+		SilenceErrors: true,
 	}
 
 	var addRegistryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "Add a docker registry",
-		RunE:  ActionAddRegistry,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+		},
+		RunE: ActionAddRegistry,
 	}
+	addRegistryCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster in which the registry is to be added")
 
 	var addDatabaseCmd = &cobra.Command{
 		Use:   "database",
@@ -44,6 +51,10 @@ func Commands() []*cobra.Command {
 			if err != nil {
 				_ = utils.LogError("Unable to bind the flag ('auto-apply')", nil)
 			}
+			err = viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name"))
+			if err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
 		},
 		RunE: ActionAddDatabase,
 	}
@@ -53,23 +64,42 @@ func Commands() []*cobra.Command {
 	addDatabaseCmd.Flags().StringP("alias", "", "", "provide the alias for the database")
 	addDatabaseCmd.Flags().StringP("version", "", "latest", "provide the version of the database")
 	addDatabaseCmd.Flags().BoolP("auto-apply", "", false, "add database in space cloud config")
+	addDatabaseCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster in which the database is to be added")
 
 	var removeCmd = &cobra.Command{
-		Use:   "remove",
-		Short: "Remove a add-on from the environment",
+		Use:           "remove",
+		Short:         "Remove a add-on from the environment",
+		SilenceErrors: true,
 	}
 
 	var removeRegistryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "Remove a docker registry",
-		RunE:  ActionRemoveRegistry,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+		},
+		RunE: ActionRemoveRegistry,
 	}
+	removeRegistryCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster from which the registry is to be removed")
 
 	var removeDatabaseCmd = &cobra.Command{
 		Use:   "database",
 		Short: "Remove a database",
-		RunE:  ActionRemoveDatabase,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if err := viper.BindPFlag("cluster-name", cmd.Flags().Lookup("cluster-name")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('cluster-name')", nil)
+			}
+			if err := viper.BindPFlag("auto-remove", cmd.Flags().Lookup("auto-remove")); err != nil {
+				_ = utils.LogError("Unable to bind the flag ('auto-remove')", nil)
+			}
+		},
+		RunE: ActionRemoveDatabase,
 	}
+	removeDatabaseCmd.Flags().StringP("cluster-name", "", "default", "name of space Cloud cluster from which the database is to be removed")
+	removeDatabaseCmd.Flags().BoolP("auto-remove", "", false, "remove database from space cloud config")
+
 	addCmd.AddCommand(addRegistryCmd)
 	addCmd.AddCommand(addDatabaseCmd)
 	removeCmd.AddCommand(removeRegistryCmd)
@@ -82,29 +112,24 @@ func Commands() []*cobra.Command {
 func ActionAddRegistry(cmd *cobra.Command, args []string) error {
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
-	_ = addRegistry(project)
-	return nil
+	return addRegistry(project)
 }
 
 // ActionRemoveRegistry removes a registry add on
 func ActionRemoveRegistry(cmd *cobra.Command, args []string) error {
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
-	_ = removeRegistry(project)
-	return nil
+	return removeRegistry(project)
 }
 
 // ActionAddDatabase adds a database add on
 func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		_ = utils.LogError("Database type not provided as an arguement", nil)
-		return nil
+		return utils.LogError("Database type not provided as an arguement", nil)
 	}
 	dbtype := args[0]
 	username := viper.GetString("username")
@@ -131,16 +156,13 @@ func ActionAddDatabase(cmd *cobra.Command, args []string) error {
 	}
 	alias := viper.GetString("alias")
 	version := viper.GetString("version")
-	_ = addDatabase(dbtype, username, password, alias, version)
-	return nil
+	return addDatabase(dbtype, username, password, alias, version)
 }
 
 // ActionRemoveDatabase removes a database add on
 func ActionRemoveDatabase(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		_ = utils.LogError("Database Alias not provided as an argument", nil)
-		return nil
+		return utils.LogError("Database Alias not provided as an argument", nil)
 	}
-	_ = removeDatabase(args[0])
-	return nil
+	return removeDatabase(args[0])
 }

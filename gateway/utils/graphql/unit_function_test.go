@@ -21,7 +21,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", model.TokenClaims{}, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -29,7 +29,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{model.TokenClaims{}, nil},
+				paramsReturned: []interface{}{map[string]interface{}{}, nil},
 			},
 		},
 		args: args{
@@ -62,7 +62,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", model.TokenClaims{}, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -70,7 +70,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{model.TokenClaims{}, nil},
+				paramsReturned: []interface{}{map[string]interface{}{}, nil},
 			},
 		},
 		args: args{
@@ -103,7 +103,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", model.TokenClaims{}, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -111,7 +111,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{model.TokenClaims{}, nil},
+				paramsReturned: []interface{}{map[string]interface{}{}, nil},
 			},
 		},
 		args: args{
@@ -145,7 +145,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", model.TokenClaims{}, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -153,7 +153,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{model.TokenClaims{}, errors.New("function call not authorized")},
+				paramsReturned: []interface{}{map[string]interface{}{}, errors.New("function call not authorized")},
 			},
 		},
 		args: args{
@@ -186,7 +186,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", model.TokenClaims{}, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -194,7 +194,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{model.TokenClaims{}, errors.New("function call not authorized")},
+				paramsReturned: []interface{}{map[string]interface{}{}, errors.New("function call not authorized")},
 			},
 		},
 		args: args{
@@ -227,7 +227,7 @@ var functionTestCases = []tests{
 		functionMockArgs: []mockArgs{
 			{
 				method:         "CallWithContext",
-				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", model.TokenClaims{}, map[string]interface{}{"num1": 10, "num2": 20}},
+				args:           []interface{}{mock.Anything, "arithmetic", "adder", "", mock.Anything, map[string]interface{}{"num1": 10, "num2": 20}},
 				paramsReturned: []interface{}{map[string]interface{}{"sum": 30}, nil},
 			},
 		},
@@ -235,7 +235,7 @@ var functionTestCases = []tests{
 			{
 				method:         "IsFuncCallAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{model.TokenClaims{}, errors.New("function call not authorized")},
+				paramsReturned: []interface{}{map[string]interface{}{}, errors.New("function call not authorized")},
 			},
 		},
 		args: args{

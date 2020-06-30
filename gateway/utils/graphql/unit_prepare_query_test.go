@@ -23,7 +23,7 @@ var prepareQueryTestCases = []tests{
 			},
 			{
 				method:         "ExecPreparedQuery",
-				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}},
+				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}, map[string]interface{}{}},
 				paramsReturned: []interface{}{[]interface{}{}, nil},
 			},
 		},
@@ -31,7 +31,7 @@ var prepareQueryTestCases = []tests{
 			{
 				method:         "IsPreparedQueryAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{&model.PostProcess{}, 0, nil},
+				paramsReturned: []interface{}{&model.PostProcess{}, map[string]interface{}{}, 0, nil},
 			},
 			{
 				method:         "PostProcessMethod",
@@ -73,7 +73,7 @@ var prepareQueryTestCases = []tests{
 			},
 			{
 				method:         "ExecPreparedQuery",
-				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}},
+				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}, map[string]interface{}{}},
 				paramsReturned: []interface{}{[]interface{}{}, nil},
 			},
 		},
@@ -81,7 +81,7 @@ var prepareQueryTestCases = []tests{
 			{
 				method:         "IsPreparedQueryAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{&model.PostProcess{}, 0, errors.New("query not authorized")},
+				paramsReturned: []interface{}{&model.PostProcess{}, map[string]interface{}{}, 0, errors.New("query not authorized")},
 			},
 			{
 				method:         "PostProcessMethod",
@@ -123,7 +123,7 @@ var prepareQueryTestCases = []tests{
 			},
 			{
 				method:         "ExecPreparedQuery",
-				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}},
+				args:           []interface{}{mock.Anything, "custom_sql", "insert1", &model.PreparedQueryRequest{Params: map[string]interface{}{"id": "1", "name": "ash"}}, map[string]interface{}{}},
 				paramsReturned: []interface{}{[]interface{}{}, nil},
 			},
 		},
@@ -131,7 +131,7 @@ var prepareQueryTestCases = []tests{
 			{
 				method:         "IsPreparedQueryAuthorised",
 				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-				paramsReturned: []interface{}{&model.PostProcess{}, 0, errors.New("query not authorized")},
+				paramsReturned: []interface{}{&model.PostProcess{}, map[string]interface{}{}, 0, errors.New("query not authorized")},
 			},
 			{
 				method:         "PostProcessMethod",

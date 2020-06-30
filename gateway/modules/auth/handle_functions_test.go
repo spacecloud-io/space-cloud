@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 )
 
@@ -17,7 +16,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 		testName, project, token, service, function string
 		secretKeys                                  []*config.Secret
 		params                                      interface{}
-		result                                      model.TokenClaims
+		result                                      map[string]interface{}
 		IsErrExpected, CheckResult                  bool
 	}{
 		{
@@ -30,8 +29,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				funcRules: &config.ServicesModule{
 					InternalServices: config.Services{
 						"service": &config.Service{
-							Endpoints: map[string]config.Endpoint{
-								"ep": config.Endpoint{
+							Endpoints: map[string]*config.Endpoint{
+								"ep": {
 									Rule: &config.Rule{Rule: "allow"},
 								},
 							},
@@ -53,8 +52,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				funcRules: &config.ServicesModule{
 					Services: config.Services{
 						"service": &config.Service{
-							Endpoints: map[string]config.Endpoint{
-								"ep": config.Endpoint{
+							Endpoints: map[string]*config.Endpoint{
+								"ep": {
 									Rule: &config.Rule{Rule: "allow"},
 								},
 							},
@@ -76,8 +75,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 				funcRules: &config.ServicesModule{
 					InternalServices: config.Services{
 						"service": &config.Service{
-							Endpoints: map[string]config.Endpoint{
-								"ep": config.Endpoint{
+							Endpoints: map[string]*config.Endpoint{
+								"ep": {
 									Rule: &config.Rule{Rule: "deny"},
 								},
 							},
@@ -98,8 +97,8 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			}, funcRules: &config.ServicesModule{
 				InternalServices: config.Services{
 					"service": &config.Service{
-						Endpoints: map[string]config.Endpoint{
-							"ep": config.Endpoint{
+						Endpoints: map[string]*config.Endpoint{
+							"ep": {
 								Rule: &config.Rule{Rule: "match", Eval: "==", F1: 1, F2: 1, Type: "number"},
 							},
 						},
@@ -111,7 +110,7 @@ func TestIsFuncCallAuthorised(t *testing.T) {
 			function:      "ep",
 			IsErrExpected: false,
 			CheckResult:   true,
-			result:        model.TokenClaims{"token1": "token1value", "token2": "token2value"},
+			result:        map[string]interface{}{"token1": "token1value", "token2": "token2value"},
 		},
 	}
 	authModule := Init("1", &crud.Module{})

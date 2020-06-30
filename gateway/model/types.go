@@ -6,8 +6,6 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/letsencrypt"
-	"github.com/spaceuptech/space-cloud/gateway/utils/routing"
 )
 
 // GraphQLCrudInterface is an interface consisting of functions of crud module used by graphql module
@@ -19,7 +17,7 @@ type GraphQLCrudInterface interface {
 	Batch(ctx context.Context, dbAlias string, req *BatchRequest) error
 	GetDBType(dbAlias string) (string, error)
 	IsPreparedQueryPresent(directive, fieldName string) bool
-	ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *PreparedQueryRequest) (interface{}, error)
+	ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *PreparedQueryRequest, auth map[string]interface{}) (interface{}, error)
 }
 
 // GraphQLAuthInterface is an interface consisting of functions of auth module used by graphql module
@@ -28,9 +26,9 @@ type GraphQLAuthInterface interface {
 	IsReadOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *ReadRequest) (*PostProcess, int, error)
 	IsUpdateOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *UpdateRequest) (int, error)
 	IsDeleteOpAuthorised(ctx context.Context, project, dbAlias, col, token string, req *DeleteRequest) (int, error)
-	IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (TokenClaims, error)
+	IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (map[string]interface{}, error)
 	PostProcessMethod(postProcess *PostProcess, result interface{}) error
-	IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *PreparedQueryRequest) (*PostProcess, int, error)
+	IsPreparedQueryAuthorised(ctx context.Context, project, dbAlias, id, token string, req *PreparedQueryRequest) (*PostProcess, map[string]interface{}, int, error)
 }
 
 // GraphQLFunctionInterface is an interface consisting of functions of function module used by graphql module
@@ -135,28 +133,6 @@ type AuthUserInterface interface {
 	PostProcessMethod(postProcess *PostProcess, result interface{}) error
 	CreateToken(tokenClaims TokenClaims) (string, error)
 	IsUpdateOpAuthorised(ctx context.Context, project, dbType, col, token string, req *UpdateRequest) (int, error)
-}
-
-// ModulesInterface is an interface consisting of functions of the modules module used by syncman
-type ModulesInterface interface {
-	// SetProjectConfig sets the config all modules
-	SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing)
-	// SetGlobalConfig sets the auth secret and AESKey
-	SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error
-	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
-	SetCrudConfig(projectID string, crudConfig config.Crud) error
-	// SetServicesConfig sets the config of auth and functions modules
-	SetServicesConfig(projectID string, services *config.ServicesModule) error
-	// SetFileStoreConfig sets the config of auth and filestore modules
-	SetFileStoreConfig(projectID string, fileStore *config.FileStore) error
-	// SetEventingConfig sets the config of eventing module
-	SetEventingConfig(projectID string, eventingConfig *config.Eventing) error
-	// SetUsermanConfig set the config of the userman module
-	SetUsermanConfig(projectID string, auth config.Auth)
-
-	// Getters
-
-	GetSchemaModuleForSyncMan() SchemaEventingInterface
 }
 
 // SyncmanEventingInterface is an interface consisting of functions of syncman module used by eventing module
