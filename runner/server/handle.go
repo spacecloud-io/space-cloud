@@ -257,6 +257,8 @@ func (s *Server) HandleGetServicesStatus() http.HandlerFunc {
 		serviceID, serviceIDExists := r.URL.Query()["serviceId"]
 		result, err := s.driver.GetServiceStatus(ctx, projectID)
 		if err != nil {
+			logrus.Errorf("Failed to get service status - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		if serviceIDExists {

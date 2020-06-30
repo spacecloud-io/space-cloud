@@ -246,8 +246,8 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 	}
 }
 
-// HandleGetGlobalConfig returns handler to get global-config
-func HandleGetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleGetClusterConfig returns handler to get cluster-config
+func HandleGetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -259,18 +259,18 @@ func HandleGetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 			return
 		}
 
-		project, err := syncMan.GetProjectGlobalConfig()
+		clusterConfig, err := syncMan.GetClusterConfig()
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: project})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: clusterConfig})
 	}
 }
 
-// HandleSetGlobalConfig set global-config
-func HandleSetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
+// HandleSetClusterConfig set cluster-config
+func HandleSetClusterConfig(adminMan *admin.Manager, syncMan *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Get the JWT token from header
@@ -296,7 +296,7 @@ func HandleSetGlobalConfig(adminMan *admin.Manager, syncMan *syncman.Manager) ht
 		defer cancel()
 
 		// Sync the Adminconfig
-		if err := syncMan.SetAdminConfig(ctx, req); err != nil {
+		if err := syncMan.SetClusterConfig(ctx, req); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}

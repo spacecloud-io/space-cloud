@@ -169,14 +169,13 @@ func (s *Manager) setProject(ctx context.Context, project *config.Project) error
 	return s.store.SetProject(ctx, project)
 }
 
-// SetAdminConfig applies the set Admin config
-func (s *Manager) SetAdminConfig(ctx context.Context, req *config.ClusterConfig) error {
+// SetClusterConfig applies the set cluster config
+func (s *Manager) SetClusterConfig(ctx context.Context, req *config.ClusterConfig) error {
 	// Acquire a lock
-	// s.lock.Lock()
-	// defer s.lock.Unlock()
-	c := s.GetGlobalConfig()
-	c.Admin.ClusterConfig = req
-	return s.store.SetAdminConfig(ctx, c.Admin)
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.projectConfig.Admin.ClusterConfig = req
+	return s.store.SetAdminConfig(ctx, s.projectConfig.Admin)
 }
 
 // DeleteProjectConfig applies delete project config command to the raft log
@@ -226,8 +225,8 @@ func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
 	return []interface{}{}, errors.New("given project is not present in state")
 }
 
-// GetProjectGlobalConfig returns the config of specified project
-func (s *Manager) GetProjectGlobalConfig() (*config.ClusterConfig, error) {
+// GetClusterConfig returns cluster config
+func (s *Manager) GetClusterConfig() (*config.ClusterConfig, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 

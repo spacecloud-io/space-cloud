@@ -160,7 +160,7 @@ func (i *Istio) GetServices(ctx context.Context, projectID string) ([]*model.Ser
 
 // GetServiceStatus gets the services status for istio
 func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (map[string][]interface{}, error) {
-	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(metav1.ListOptions{})
+	deploymentList, err := i.kube.AppsV1().Deployments(projectID).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		logrus.Errorf("Error getting service in istio - unable to find deployment - %v", err)
 		return nil, err
@@ -170,7 +170,7 @@ func (i *Istio) GetServiceStatus(ctx context.Context, projectID string) (map[str
 		result := make(map[string]interface{})
 		serviceID := deployment.Labels["app"]
 		replicas := deployment.Spec.Replicas
-		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(metav1.ListOptions{})
+		podlist, err := i.kube.CoreV1().Pods(deployment.Namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			logrus.Errorf("Error getting service in istio - unable to find pods - %v", err)
 			return nil, err

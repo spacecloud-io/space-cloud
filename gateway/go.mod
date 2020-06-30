@@ -18,6 +18,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/google/go-cmp v0.4.0
+	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/websocket v1.4.1
 	github.com/graph-gophers/dataloader v5.0.0+incompatible
@@ -27,6 +28,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.12.1 // indirect
 	github.com/hashicorp/consul/api v1.2.0
 	github.com/hashicorp/go-msgpack v0.5.5 // indirect
+	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/memberlist v0.1.5 // indirect
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
@@ -40,7 +42,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/spaceuptech/space-api-go v0.17.3
-	github.com/spaceuptech/space-cloud/runner v0.0.0-20200514075441-5786fe5bc172 // indirect
+	github.com/spaceuptech/space-cloud/runner v0.0.0-20200627053843-b3cc444d531c // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/tidwall/pretty v0.0.0-20180105212114-65a9db5fad51 // indirect
@@ -53,13 +55,14 @@ require (
 	go.etcd.io/bbolt v1.3.3
 	go.mongodb.org/mongo-driver v1.1.1
 	go.uber.org/zap v1.15.0 // indirect
-	golang.org/x/crypto v0.0.0-20200219234226-1ad67e1f0ef4
+	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975
 	golang.org/x/net v0.0.0-20200222125558-5a598a2470a0
 	google.golang.org/api v0.18.0
 	gopkg.in/AlecAivazis/survey.v1 v1.8.5
-	k8s.io/api v0.17.2
-	k8s.io/apimachinery v0.17.2
-	k8s.io/client-go v0.17.2
+	k8s.io/api v0.18.3
+	k8s.io/apimachinery v0.18.3
+	k8s.io/client-go v0.18.3
+	sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e // indirect
 
 )
 
