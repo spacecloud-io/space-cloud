@@ -1,4 +1,4 @@
-package userman
+package auth
 
 import (
 	"github.com/AlecAivazis/survey/v2"

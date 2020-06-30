@@ -35,7 +35,7 @@ type Admin struct {
 	ClusterConfig *ClusterConfig `json:"clusterConfig" yaml:"clusterConfig"`
 	ClusterID     string         `json:"clusterId" yaml:"clusterId"`
 	ClusterKey    string         `json:"clusterKey" yaml:"clusterKey"`
-	Version       int            `json:"version" yaml:"version"`
+	License       string         `json:"license" yaml:"license"`
 }
 
 // AdminUser holds the user credentials and scope
@@ -143,9 +143,9 @@ type Services map[string]*Service
 
 // Service holds the config of service
 type Service struct {
-	ID        string              `json:"id,omitempty" yaml:"id,omitempty"`   // eg. http://localhost:8080
-	URL       string              `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
-	Endpoints map[string]Endpoint `json:"endpoints" yaml:"endpoints"`
+	ID        string               `json:"id,omitempty" yaml:"id,omitempty"`   // eg. http://localhost:8080
+	URL       string               `json:"url,omitempty" yaml:"url,omitempty"` // eg. http://localhost:8080
+	Endpoints map[string]*Endpoint `json:"endpoints" yaml:"endpoints"`
 }
 
 // Endpoint holds the config of a endpoint

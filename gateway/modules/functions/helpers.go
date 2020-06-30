@@ -95,7 +95,7 @@ func (m *Module) handleCall(ctx context.Context, serviceID, endpointID, token st
 	return m.adjustResBody(serviceID, endpointID, ogToken, endpoint, auth, res)
 }
 
-func prepareHeaders(endpoint config.Endpoint, token string, claims, params interface{}) map[string]string {
+func prepareHeaders(endpoint *config.Endpoint, token string, claims, params interface{}) map[string]string {
 	headers := make(map[string]string, len(endpoint.Headers))
 	state := map[string]interface{}{"args": params, "auth": claims, "token": token}
 	for _, header := range endpoint.Headers {
@@ -115,7 +115,7 @@ func prepareHeaders(endpoint config.Endpoint, token string, claims, params inter
 	return headers
 }
 
-func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
 	var req, graph interface{}
 	var err error
 
@@ -151,7 +151,7 @@ func (m *Module) adjustReqBody(serviceID, endpointID, token string, endpoint con
 	}
 }
 
-func (m *Module) adjustResBody(serviceID, endpointID, token string, endpoint config.Endpoint, auth, params interface{}) (interface{}, error) {
+func (m *Module) adjustResBody(serviceID, endpointID, token string, endpoint *config.Endpoint, auth, params interface{}) (interface{}, error) {
 	var res interface{}
 	var err error
 
