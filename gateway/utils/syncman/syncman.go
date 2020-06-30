@@ -2,6 +2,7 @@ package syncman
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
@@ -99,13 +100,25 @@ func (s *Manager) Start(port int) error {
 
 	// Start routine to admin config
 	if err := s.store.WatchAdminConfig(func(clusters []*config.Admin) {
-		s.lock.Lock()
-		defer s.lock.Unlock()
-		utils.LogDebug("Updating admin config", "syncman", "Start", map[string]interface{}{"admin config": clusters})
-		for _, cluster := range clusters {
-			s.adminMan.SetConfig(cluster)
-			s.projectConfig.Admin = cluster
+		if len(clusters) == 0 {
+			return
 		}
+		cluster := clusters[0]
+
+		if reflect.DeepEqual(cluster, s.adminMan.GetConfig()) {
+			return
+		}
+
+		s.lock.Lock()
+		s.projectConfig.Admin = cluster
+		s.lock.Unlock()
+
+		utils.LogDebug("Updating admin config", "syncman", "Start", map[string]interface{}{"admin config": clusters})
+		if err := s.adminMan.SetConfig(cluster); err != nil {
+			_ = utils.LogError("Unable to apply admin config", "syncman", "Start", err)
+			return
+		}
+
 	}); err != nil {
 		return err
 	}

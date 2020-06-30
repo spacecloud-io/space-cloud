@@ -29,7 +29,8 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			return
 		}
 
-		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": adminMan.LoadEnv(), "version": utils.BuildVersion, "plan": "space-cloud-open", "quotas": adminMan.GetQuotas(), "clusterId": "", "clusterType": clusterType})
+		isProd, plan, quotas := adminMan.LoadEnv()
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": isProd, "plan": plan, "quotas": quotas, "version": utils.BuildVersion, "clusterId": "", "clusterType": clusterType})
 	}
 }
 

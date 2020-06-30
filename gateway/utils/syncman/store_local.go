@@ -1,6 +1,7 @@
 package syncman
 
 import (
+	"errors"
 	"os"
 
 	"golang.org/x/net/context"
@@ -58,6 +59,11 @@ func (s *LocalStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 func (s *LocalStore) SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error {
 	s.globalConfig.Admin = adminConfig
 	return config.StoreConfigToFile(s.globalConfig, s.configPath)
+}
+
+// GetAdminConfig returns the admin config present in the store
+func (s *LocalStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
+	return nil, errors.New("not implemented for local store")
 }
 
 // SetProject sets the project of the local globalConfig

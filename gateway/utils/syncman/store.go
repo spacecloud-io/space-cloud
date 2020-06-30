@@ -14,6 +14,8 @@ type Store interface {
 
 	Register()
 
+	GetAdminConfig(ctx context.Context) (*config.Admin, error)
+
 	SetAdminConfig(ctx context.Context, adminConfig *config.Admin) error
 	SetProject(ctx context.Context, project *config.Project) error
 	DeleteProject(ctx context.Context, projectID string) error
