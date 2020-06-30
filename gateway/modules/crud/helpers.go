@@ -31,7 +31,7 @@ func (m *Module) createBatch(project, dbAlias, col string, doc interface{}) (int
 	ch, ok := m.batchMapTableToChan[project][dbAlias][col] // get channel for specified table
 	if !ok {
 		logrus.Errorf("error converting insert request to batch request unable to find channel for database %s & collection %s", dbAlias, col)
-		return 0, fmt.Errorf("cannot find channzel for database %s & collection %s", dbAlias, col)
+		return 0, fmt.Errorf("cannot find channel for database %s & collection %s", dbAlias, col)
 	}
 	ch.request <- batchRequest{documents: docArray, response: response}
 	result := <-response
