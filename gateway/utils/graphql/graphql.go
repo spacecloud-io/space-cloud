@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/graphql-go/graphql/language/ast"
@@ -137,7 +138,6 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 			wg.Wait()
 			cb(obj.GetAll(), nil)
 			return
-
 		case "mutation":
 			graph.handleMutation(ctx, node, token, store, cb)
 			return
@@ -199,6 +199,9 @@ func (graph *Module) execGraphQLDocument(ctx context.Context, node ast.Node, tok
 
 		if schema != nil {
 			fieldStruct, p := schema[field.Name.Value]
+			if p {
+				log.Println("Hello Graph", p, field.Name.Value, fieldStruct.IsLinked)
+			}
 			if p && fieldStruct.IsLinked {
 				linkedInfo := fieldStruct.LinkedTable
 				loadKey := fmt.Sprintf("%s.%s", store["coreParentKey"], linkedInfo.From)

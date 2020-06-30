@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -215,7 +216,11 @@ func extractDocs(args []*ast.Argument, store utils.M) ([]interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			return temp.([]interface{}), nil
+			arr, ok := temp.([]interface{})
+			if !ok {
+				return nil, errors.New("docs should be of type array []")
+			}
+			return arr, nil
 		}
 	}
 

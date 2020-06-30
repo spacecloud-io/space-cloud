@@ -1,6 +1,7 @@
 package graphql_test
 
 import (
+	"errors"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/model"
@@ -80,6 +81,290 @@ var queryTestCases = []tests{
 		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}},
 	},
 	{
+		name: "Query: Simple Query error read request not authorized",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+					},
+					IsBatch: true,
+				}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, 0, errors.New("request not authorized")},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons @db {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+	{
+		name: "Query: Simple Query error get collection is incorrect",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+					},
+					IsBatch: true,
+				}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, 0, errors.New("request not authorized")},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons @db(col : $data) {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+	{
+		name: "Query: Simple Query error read error incorrect where clause provided",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
+					Find:      map[string]interface{}{},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+					},
+					IsBatch: true,
+				}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "bulbasaur", "power_level": 60}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, 0, errors.New("request not authorized")},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons(
+									where : $data
+									) @db {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+	{
+		name: "Query: Using where clause with equality operator (skipping _eq in where)",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
+					Find: map[string]interface{}{
+						"power_level": 100},
+					Aggregate: map[string][]string{},
+					GroupBy:   []interface{}{},
+					Operation: utils.All,
+					Options: &model.ReadOptions{
+						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
+					},
+					IsBatch: true,
+				}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, 0, nil},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons(
+									where : {
+										power_level : 100
+									}
+								) @db {
+									id
+									name
+									power_level
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}},
+	},
+
+	{
 		name: "Query: Using where clause with equality operator (skipping _eq in where)",
 		crudMockArgs: []mockArgs{
 			{
@@ -154,7 +439,7 @@ var queryTestCases = []tests{
 		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}},
 	},
 	{
-		name: "Query: Using where clause with equality operator (_eq)",
+		name: "Query: aggregation",
 		crudMockArgs: []mockArgs{
 			{
 				method:         "GetDBType",
@@ -178,15 +463,13 @@ var queryTestCases = []tests{
 						"power_level": map[string]interface{}{
 							"$eq": 100,
 						}},
-					Aggregate: map[string][]string{},
-					GroupBy:   []interface{}{},
+					Aggregate: map[string][]string{"sum": {"power_level"}},
+					GroupBy:   []interface{}{"power_level"},
 					Operation: utils.All,
-					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1, "power_level": 1},
-					},
-					IsBatch: true,
+					Options:   &model.ReadOptions{},
+					IsBatch:   false,
 				}},
-				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}, nil},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}, nil},
 			},
 		},
 		schemaMockArgs: []mockArgs{
@@ -213,15 +496,18 @@ var queryTestCases = []tests{
 				OperationName: "query",
 				Query: `query {
 								pokemons(
+									group : [power_level],
 									where : {
 										power_level : {
 											_eq : 100
 										}
 									}
 								) @db {
-									id
-									name
-									power_level
+									aggregate {
+										sum {
+											power_level
+										}
+									}
 								}
 							}`,
 				Variables: nil,
@@ -229,8 +515,88 @@ var queryTestCases = []tests{
 			token: "",
 		},
 		wantErr:    false,
-		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "power_level": 100}, map[string]interface{}{"id": "2", "name": "charmander", "power_level": 100}}},
+		wantResult: map[string]interface{}{"pokemons": []interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}},
 	},
+	{
+		name: "Query: aggregation invalid type provided for group by ",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method:         "IsPreparedQueryPresent",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{false},
+			},
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
+					Find: map[string]interface{}{
+						"power_level": map[string]interface{}{
+							"$eq": 100,
+						}},
+					Aggregate: map[string][]string{"sum": {"power_level"}},
+					GroupBy:   []interface{}{"power_level"},
+					Operation: utils.All,
+					Options:   &model.ReadOptions{},
+					IsBatch:   false,
+				}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"aggregate": map[string]interface{}{"sum": map[string]interface{}{"power_level": 100}}}}, nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "pokemons"},
+				paramsReturned: []interface{}{model.Fields{}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsReadOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{&model.PostProcess{}, 0, nil},
+			},
+			{
+				method:         "PostProcessMethod",
+				args:           []interface{}{mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `query {
+								pokemons(
+									group : $data,
+									where : {
+										power_level : {
+											_eq : 100
+										}
+									}
+								) @db {
+									aggregate {
+										sum {
+											power_level
+										}
+									}
+								}
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+
 	{
 		name: "Query: Using where clause with not equality operator (_ne)",
 		crudMockArgs: []mockArgs{
@@ -2179,21 +2545,22 @@ var queryTestCases = []tests{
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "ash"}, map[string]interface{}{"id": "2", "name": "james"}}, nil},
 			},
 			{
-				method:         "IsPreparedQueryPresent",
-				args:           []interface{}{"db", "pokemons"},
-				paramsReturned: []interface{}{false},
+				method: "Read",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
+					Find:      map[string]interface{}{"trainer_id": "2"},
+					Operation: utils.All,
+					Options:   &model.ReadOptions{},
+					IsBatch:   true,
+				}},
+				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
 			},
 			{
 				method: "Read",
 				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
-					Find:      map[string]interface{}{},
-					Aggregate: map[string][]string{},
-					GroupBy:   []interface{}{},
+					Find:      map[string]interface{}{"trainer_id": "1"},
 					Operation: utils.All,
-					Options: &model.ReadOptions{
-						Select: map[string]int32{"id": 1, "name": 1},
-					},
-					IsBatch: true,
+					Options:   &model.ReadOptions{},
+					IsBatch:   true,
 				}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
 			},
@@ -2202,7 +2569,7 @@ var queryTestCases = []tests{
 			{
 				method:         "GetSchema",
 				args:           []interface{}{"db", "trainers"},
-				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", From: "id", To: "trainer_id"}}}, true},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", DBType: "db", From: "id", To: "trainer_id"}}}, true},
 			},
 			{
 				method:         "GetSchema",
@@ -2229,7 +2596,7 @@ var queryTestCases = []tests{
 								trainers @db {
 									id
 									name
-									pokemons @db {
+									pokemons {
 										id
 										name
 									}
@@ -2536,6 +2903,226 @@ var mutationTestCases = []tests{
 		wantResult: map[string]interface{}{"insert_trainers": map[string]interface{}{"error": nil, "status": 200, "returning": []interface{}{map[string]interface{}{"id": "1", "name": "ash"}}}},
 	},
 	{
+		name: "Mutation: Insert single object error improper query",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Create",
+				args: []interface{}{mock.Anything, "db", "trainers", &model.CreateRequest{
+					Document:  []interface{}{map[string]interface{}{"id": "1", "name": "ash"}},
+					Operation: utils.All,
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", From: "id", To: "trainer_id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsCreateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation 
+								  insert_trainers(
+								    docs: [
+								      {id: "1", name: "ash"}
+								    ]
+								  ) @db {
+								    status
+								    error
+								    returning {
+								      id
+								      name
+								    }
+								  }
+								}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+
+	{
+		name: "Mutation: Insert single object with default & created at & updated at directives",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Create",
+				args: []interface{}{mock.Anything, "db", "trainers", &model.CreateRequest{
+					Document:  []interface{}{map[string]interface{}{"id": "1", "name": "ash", "age": 19}},
+					Operation: utils.All,
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"age": &model.FieldType{FieldName: "age", IsFieldTypeRequired: true, Kind: model.TypeInteger, IsDefault: true, Default: 19}, "id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", From: "id", To: "trainer_id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsCreateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  insert_trainers(
+								    docs: [
+								      {id: "1", name: "ash"}
+								    ]
+								  ) @db {
+								    status
+								    error
+								    returning {
+								      id
+								      name
+								    }
+								  }
+								}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    false,
+		wantResult: map[string]interface{}{"insert_trainers": map[string]interface{}{"error": nil, "status": 200, "returning": []interface{}{map[string]interface{}{"id": "1", "name": "ash"}}}},
+	},
+
+	{
+		name: "Mutation: Insert single object error request is not authorized",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Create",
+				args: []interface{}{mock.Anything, "db", "trainers", &model.CreateRequest{
+					Document:  []interface{}{map[string]interface{}{"id": "1", "name": "ash"}},
+					Operation: utils.All,
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", From: "id", To: "trainer_id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsCreateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, errors.New("request is not authorized")},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  insert_trainers(
+								    docs: [
+								      {id: "1", name: "ash"}
+								    ]
+								  ) @db {
+								    status
+								    error
+								    returning {
+								      id
+								      name
+								    }
+								  }
+								}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+	{
+		name: "Mutation: Insert single object error invalid doc type provided",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Create",
+				args: []interface{}{mock.Anything, "db", "trainers", &model.CreateRequest{
+					Document:  []interface{}{map[string]interface{}{"id": "1", "name": "ash"}},
+					Operation: utils.All,
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{
+			{
+				method:         "GetSchema",
+				args:           []interface{}{"db", "trainers"},
+				paramsReturned: []interface{}{model.Fields{"id": &model.FieldType{FieldName: "id", IsFieldTypeRequired: true, IsPrimary: true, Kind: model.TypeID}, "name": &model.FieldType{FieldName: "name", Kind: model.TypeString}, "pokemons": &model.FieldType{IsList: true, Kind: model.TypeObject, IsLinked: true, LinkedTable: &model.TableProperties{Table: "pokemons", From: "id", To: "trainer_id"}}}, true},
+			},
+		},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsCreateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, errors.New("request is not authorized")},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  insert_trainers(
+								    docs: {}
+								  ) @db {
+								    status
+								    error
+								    returning {
+								      id
+								      name
+								    }
+								  }
+								}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+	{
 		name: "Mutation: Insert multiple objects",
 		crudMockArgs: []mockArgs{
 			{
@@ -2684,6 +3271,177 @@ var mutationTestCases = []tests{
 		wantErr:    false,
 		wantResult: map[string]interface{}{"insert_trainers": map[string]interface{}{"error": nil, "status": 200, "returning": []interface{}{map[string]interface{}{"id": "1", "name": "ash", "pokemons": []interface{}{map[string]interface{}{"id": "1", "name": "pikachu", "combat_power": 200}, map[string]interface{}{"id": "2", "name": "charmender", "combat_power": 150}}}}}},
 	},
+	{
+		name: "Mutation: Updating single object set operation incorrect value for set opeation",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Update",
+				args: []interface{}{mock.Anything, "db", "caught_pokemons", &model.UpdateRequest{
+					Find: map[string]interface{}{
+						"id": map[string]interface{}{
+							"$eq": "1",
+						},
+					},
+					Operation: utils.All,
+					Update: map[string]interface{}{
+						"$set": "$data",
+					},
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsUpdateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, errors.New("query not authorized")},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  update_caught_pokemons(
+								    where: {
+										id: {
+											_eq: "1"
+											}
+										},
+								    set: $data
+								  ) @db {
+									error
+								    status
+								  }
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+
+	{
+		name: "Mutation: Updating single object set operation error update operation not authorized",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Update",
+				args: []interface{}{mock.Anything, "db", "caught_pokemons", &model.UpdateRequest{
+					Find: map[string]interface{}{
+						"id": map[string]interface{}{
+							"$eq": "1",
+						},
+					},
+					Operation: utils.All,
+					Update: map[string]interface{}{
+						"$set": map[string]interface{}{
+							"name": "my cool pikachu",
+						},
+					},
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsUpdateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, errors.New("query not authorized")},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  update_caught_pokemons(
+								    where: {
+										id: {
+											_eq: "1"
+											}
+										},
+								    set: {
+										name: "my cool pikachu"
+									}
+								  ) @db {
+									error
+								    status
+								  }
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+	{
+		name: "Mutation: Updating single object set operation error incorrect value for where clause",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"postgres", nil},
+			},
+			{
+				method: "Update",
+				args: []interface{}{mock.Anything, "db", "caught_pokemons", &model.UpdateRequest{
+					Find: map[string]interface{}{
+						"id": map[string]interface{}{
+							"$eq": "1",
+						},
+					},
+					Operation: utils.All,
+					Update: map[string]interface{}{
+						"$set": map[string]interface{}{
+							"name": "my cool pikachu",
+						},
+					},
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsUpdateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  update_caught_pokemons(
+								    where: $data,
+								    set: {
+										name: "my cool pikachu"
+									}
+								  ) @db {
+									error
+								    status
+								  }
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+
 	{
 		name: "Mutation: Updating single object set operation",
 		crudMockArgs: []mockArgs{
@@ -3217,6 +3975,68 @@ var mutationTestCases = []tests{
 	},
 }
 var upsertTestCases = []tests{
+	{
+		name: "Mutation: Upsert operation error invalid type provided for op",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"mongo", nil},
+			},
+			{
+				method: "Update",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.UpdateRequest{
+					Find: map[string]interface{}{
+						"id": map[string]interface{}{
+							"$eq": "1",
+						},
+					},
+					Operation: utils.Upsert,
+					Update: map[string]interface{}{
+						"$set": map[string]interface{}{
+							"name": "pikachu",
+							"type": "electric",
+						},
+					},
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsUpdateOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  update_pokemons(
+								    where : {
+										id: {
+											_eq: "1"
+											}
+										},
+								    set : {
+										name : "pikachu",
+										type : "electric"
+									}
+									op : $data
+								  ) @db {
+									error
+								    status
+								  }
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
 
 	{
 		name: "Mutation: Upsert operation",
@@ -3333,6 +4153,104 @@ var deleteTestCases = []tests{
 		},
 		wantErr:    false,
 		wantResult: map[string]interface{}{"delete_pokemons": map[string]interface{}{"error": nil, "status": 200}},
+	},
+	{
+		name: "Mutation: Delete operation error not authorized",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"mongo", nil},
+			},
+			{
+				method: "Delete",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.DeleteRequest{
+					Find: map[string]interface{}{
+						"id": map[string]interface{}{
+							"$eq": "1",
+						},
+					},
+					Operation: utils.All,
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsDeleteOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, errors.New("operation not authorized")},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  delete_pokemons(
+								    where : {
+										id: {
+											_eq: "1"
+											}
+										},
+								  ) @db {
+									error
+								    status
+								  }
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
+	},
+	{
+		name: "Mutation: Delete operation error couldn't generate delete request as where clause is invalid",
+		crudMockArgs: []mockArgs{
+			{
+				method:         "GetDBType",
+				args:           []interface{}{"db"},
+				paramsReturned: []interface{}{"mongo", nil},
+			},
+			{
+				method: "Delete",
+				args: []interface{}{mock.Anything, "db", "pokemons", &model.DeleteRequest{
+					Find: map[string]interface{}{
+						"id": map[string]interface{}{
+							"$eq": "1",
+						},
+					},
+					Operation: utils.All,
+				}},
+				paramsReturned: []interface{}{nil},
+			},
+		},
+		schemaMockArgs: []mockArgs{},
+		authMockArgs: []mockArgs{
+			{
+				method:         "IsDeleteOpAuthorised",
+				args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything},
+				paramsReturned: []interface{}{0, nil},
+			},
+		},
+		args: args{
+			req: &model.GraphQLRequest{
+				OperationName: "query",
+				Query: `mutation {
+								  delete_pokemons(
+								    where : 1
+								  ) @db {
+									error
+								    status
+								  }
+							}`,
+				Variables: nil,
+			},
+			token: "",
+		},
+		wantErr:    true,
+		wantResult: nil,
 	},
 }
 

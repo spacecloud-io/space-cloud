@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/graphql-go/graphql/language/ast"
@@ -25,6 +26,8 @@ func (graph *Module) execFuncCall(ctx context.Context, token string, field *ast.
 		cb(nil, err)
 		return
 	}
+
+	log.Println("func name", funcName, timeout)
 
 	params, err := getFuncParams(field, store)
 	if err != nil {
@@ -80,7 +83,7 @@ func getFuncName(field *ast.Field) (string, error) {
 func getFuncTimeout(field *ast.Field, store utils.M) (int, error) {
 	if len(field.Directives[0].Arguments) > 0 {
 		for _, v := range field.Directives[0].Arguments {
-			if v.Name.Value == "func" {
+			if v.Name.Value == "timeout" {
 				val, err := utils.ParseGraphqlValue(v.Value, store)
 				if err != nil {
 					return 0, err

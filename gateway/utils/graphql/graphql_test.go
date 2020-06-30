@@ -75,17 +75,19 @@ func TestModule_ExecGraphQLQuery(t *testing.T) {
 				testErr = err
 			})
 			wg.Wait()
-			if testErr != nil {
+			if (testErr != nil) != tt.wantErr {
 				t.Errorf("ExecGraphQLQuery() got error %v want error %v", testErr, tt.wantErr)
 			}
 			if !reflect.DeepEqual(tt.wantResult, testOp) {
 				t.Errorf("ExecGraphQLQuery() got result %v want result %v", testOp, tt.wantResult)
 			}
 
-			mockCrud.AssertExpectations(t)
-			mockSchema.AssertExpectations(t)
-			mockFunction.AssertExpectations(t)
-			mockAuth.AssertExpectations(t)
+			if !tt.wantErr {
+				mockCrud.AssertExpectations(t)
+				mockSchema.AssertExpectations(t)
+				mockFunction.AssertExpectations(t)
+				mockAuth.AssertExpectations(t)
+			}
 		})
 	}
 }
