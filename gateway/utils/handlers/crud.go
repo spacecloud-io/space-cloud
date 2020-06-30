@@ -42,7 +42,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the user is authenticated
-		actions, status, err := auth.IsPreparedQueryAuthorised(ctx, project, dbAlias, id, token, &req)
+		actions, authArgs, status, err := auth.IsPreparedQueryAuthorised(ctx, project, dbAlias, id, token, &req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(status)
@@ -51,7 +51,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Perform the PreparedQuery operation
-		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req)
+		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req, authArgs)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)

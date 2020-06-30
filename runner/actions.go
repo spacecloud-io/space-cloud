@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
 	"github.com/spaceuptech/space-cloud/runner/utils/auth"
@@ -31,7 +32,13 @@ func actionRunner(c *cli.Context) error {
 	isDev := c.Bool("dev")
 	isMetricDisabled := c.Bool("disable-metrics")
 
-	ArtifactAddr := c.String("artifact-addr")
+	artifactAddr := c.String("artifact-addr")
+	clusterID := os.Getenv("CLUSTER_ID")
+	if clusterID == "" {
+		logrus.Error("Failed to setup runner: CLUSTER_ID environment variable not provided")
+		return nil
+	}
+	clusterName := strings.Split(clusterID, "--")[0]
 	// Set the log level
 	setLogLevel(loglevel)
 
@@ -49,7 +56,8 @@ func actionRunner(c *cli.Context) error {
 			DriverType:     model.DriverType(driverType),
 			ConfigFilePath: driverConfig,
 			IsInCluster:    !outsideCluster,
-			ArtifactAddr:   ArtifactAddr,
+			ArtifactAddr:   artifactAddr,
+			ClusterName:    clusterName,
 		},
 	})
 	if err != nil {
