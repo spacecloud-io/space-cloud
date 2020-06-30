@@ -32,23 +32,13 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
-	var hasOptions bool
-	req.Options, hasOptions, err = generateOptions(field.Arguments, store)
-	if err != nil {
-		cb("", "", nil, err)
-		return
-	}
-	// if distinct option has been set then set operation to distinct from all
-	if hasOptions && req.Options.Distinct != nil {
-		req.Operation = utils.Distinct
-	}
 	go func() {
 
 		req.IsBatch = !(len(req.Aggregate) > 0)
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
-		req.Options.HasOptions = hasOptions
+		req.Options.HasOptions = false
 		result, err := graph.crud.Read(ctx, dbAlias, col, req)
 		_ = graph.auth.PostProcessMethod(actions, result)
 
