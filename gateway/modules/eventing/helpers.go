@@ -179,6 +179,27 @@ func (m *Module) generateProcessedEventRequest(eventID string) *model.UpdateRequ
 	}
 }
 
+func (m *Module) triggerDLQEvent(ctx context.Context, eventDoc *model.EventDocument) error {
+	req := &model.QueueEventRequest{
+		Type: fmt.Sprintf("%s%s", utils.DLQEventTriggerPrefix, eventDoc.RuleName),
+		Payload: map[string]interface{}{
+			"event_id":        eventDoc.ID,
+			"event_type":      eventDoc.Type,
+			"event_payload":   eventDoc.Payload,
+			"event_timestamp": eventDoc.Timestamp,
+			"event_name":      eventDoc.RuleName,
+		},
+	}
+
+	if err := m.batchRequests(ctx, []*model.QueueEventRequest{req}, m.generateBatchID()); err != nil {
+		_ = utils.LogError(fmt.Sprintf("error queueing dlq event in eventing unable to batch requests - %s", err.Error()), "eventing", "triggerDLQEvent", err)
+		return err
+	}
+
+	m.metricHook(m.project, req.Type)
+	return nil
+}
+
 func getCreateRows(doc interface{}, op string) []interface{} {
 	var rows []interface{}
 	switch op {
