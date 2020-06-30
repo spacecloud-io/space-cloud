@@ -198,7 +198,7 @@ spec:
       containers:
         - name: runner
           command: ["./app", "start"]
-          image: spaceuptech/runner:0.18.1
+          image: spaceuptech/runner:0.18.2
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "LOG_LEVEL"
@@ -380,7 +380,7 @@ spec:
       containers:
         - name: gateway
           command: ["./app", "run"]
-          image: spaceuptech/gateway:0.18.1
+          image: spaceuptech/gateway:0.18.2
           imagePullPolicy: IfNotPresent # IfNotPresent | Always
           env:
             - name: "NODE_ID"
