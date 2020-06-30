@@ -32,6 +32,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 			}
 			result.Type = string(utils.Delete)
 			result.Col = col
+			result.DBAlias, _ = graph.GetDBAlias(field)
 			return []*model.AllRequest{result}, nil, nil
 		}
 
@@ -45,6 +46,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 			}
 			result.Type = string(utils.Update)
 			result.Col = col
+			result.DBAlias, _ = graph.GetDBAlias(field)
 			return []*model.AllRequest{result}, nil, nil
 
 		}
