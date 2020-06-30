@@ -755,7 +755,7 @@ func TestManager_GetEventingTriggerRules(t *testing.T) {
 		{
 			name: "id is empty and got all trigger rules",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Rules: map[string]config.EventingRule{"rule": {}}}}}}}},
-			args: args{ctx: context.Background(), id: "", project: "1"},
+			args: args{ctx: context.Background(), id: "*", project: "1"},
 			want: []interface{}{config.EventingRule{}},
 		},
 	}
@@ -807,7 +807,7 @@ func TestManager_GetEventingSchema(t *testing.T) {
 		{
 			name: "id empty and got schemas",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{Schemas: map[string]config.SchemaObject{"id": {}}}}}}}},
-			args: args{ctx: context.Background(), id: "", project: "1"},
+			args: args{ctx: context.Background(), id: "*", project: "1"},
 			want: []interface{}{config.SchemaObject{}},
 		},
 	}
@@ -859,7 +859,7 @@ func TestManager_GetEventingSecurityRules(t *testing.T) {
 		{
 			name: "id empty and got security rules",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{Eventing: config.Eventing{SecurityRules: map[string]*config.Rule{"id": {}}}}}}}},
-			args: args{ctx: context.Background(), id: "", project: "1"},
+			args: args{ctx: context.Background(), id: "*", project: "1"},
 			want: []interface{}{&config.Rule{}},
 		},
 	}

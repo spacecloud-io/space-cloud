@@ -25,20 +25,20 @@ func HandleSetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
 		value := new(config.FileStore)
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "filestore-config", "modify", map[string]string{"project": projectID}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
 
 		if err := syncMan.SetFileStore(ctx, projectID, value); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -58,15 +58,15 @@ func HandleGetFileStore(adminMan *admin.Manager, syncMan *syncman.Manager) http.
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
 		// get project id from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "filestore-config", "read", map[string]string{"project": projectID}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
 
 		// get project config
 		fileConfig, err := syncMan.GetFileStoreConfig(ctx, projectID)
@@ -85,13 +85,18 @@ func HandleGetFileState(adminMan *admin.Manager, modules *modules.Modules) http.
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		// get project id from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
 		defer utils.CloseTheCloser(r.Body)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "filestore-config", "read", map[string]string{"project": projectID}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -114,21 +119,21 @@ func HandleSetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		ruleName := vars["id"]
+
 		value := new(config.FileRule)
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		ruleName := vars["id"]
 
 		if err := syncMan.SetFileRule(ctx, projectID, ruleName, value); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -146,22 +151,24 @@ func HandleGetFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) http.H
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-
 		// get project id and ruleName
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		ruleID := ""
+		ruleID := "*"
 		ruleName, exists := r.URL.Query()["id"]
 		if exists {
 			ruleID = ruleName[0]
 		}
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "filestore-rule", "read", map[string]string{"project": projectID, "id": ruleID}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		// get project config
 		fileRules, err := syncMan.GetFileStoreRules(ctx, projectID, ruleID)
 		if err != nil {
@@ -180,21 +187,21 @@ func HandleDeleteFileRule(adminMan *admin.Manager, syncMan *syncman.Manager) htt
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		ruleName := vars["id"]
+
 		value := new(config.FileRule)
 		_ = json.NewDecoder(r.Body).Decode(value)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "filestore-rule", "modify", map[string]string{"project": projectID, "id": ruleName}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		ruleName := vars["id"]
 
 		if err := syncMan.SetDeleteFileRule(ctx, projectID, ruleName); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
