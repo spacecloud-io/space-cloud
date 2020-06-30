@@ -41,10 +41,10 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "no rules match",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "not file create"}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: "not file create"}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
@@ -53,16 +53,16 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "error creating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventFileCreate}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventFileCreate}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -72,22 +72,22 @@ func TestModule_CreateFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "file intent request handled",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventFileCreate}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventFileCreate}}}},
 			args: args{ctx: context.Background(), req: &model.CreateFileRequest{Meta: map[string]interface{}{}, Path: "path"}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{&model.EventDocument{Type: utils.EventFileCreate, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: utils.EventFileCreate, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
 		},
 	}
 	for _, tt := range tests {
@@ -172,10 +172,10 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "no rules match",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "not file delete"}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: "not file delete"}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
@@ -184,16 +184,16 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "error creating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventFileDelete}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventFileDelete}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -203,22 +203,22 @@ func TestModule_DeleteFileIntentHook(t *testing.T) {
 		},
 		{
 			name: "file intent request handled",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventFileDelete}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventFileDelete}}}},
 			args: args{ctx: context.Background(), meta: map[string]interface{}{}, path: "path"},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{&model.EventDocument{Type: utils.EventFileDelete, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: utils.EventFileDelete, RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"meta":{},"path":"path"}`, Status: "intent"}}},
 		},
 	}
 	for _, tt := range tests {
