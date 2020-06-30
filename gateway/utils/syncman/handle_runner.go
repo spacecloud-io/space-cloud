@@ -237,7 +237,7 @@ func (s *Manager) GetRunnerAddr() string {
 }
 
 // GetClusterType returns cluster type
-func (s *Manager) GetClusterType(admin *admin.Manager) (string, error) {
+func (s *Manager) GetClusterType(admin AdminSyncmanInterface) (string, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	if s.runnerAddr == "" {
