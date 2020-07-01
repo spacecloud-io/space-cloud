@@ -112,7 +112,7 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 	if err != nil {
 		return nil, err
 	}
-	if routeID != "" {
+	if routeID != "*" {
 		for _, value := range projectConfig.Modules.Routes {
 			if routeID == value.ID {
 				return []interface{}{value}, nil

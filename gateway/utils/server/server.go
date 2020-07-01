@@ -31,15 +31,15 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disableMetrics bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Server, error) {
+func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disableMetrics, isDev bool, adminUserInfo *config.AdminUser, ssl *config.SSL) (*Server, error) {
 
 	// Create the fundamental modules
-	adminMan := admin.New(clusterID, adminUserInfo)
+	adminMan := admin.New(nodeID, clusterID, isDev, adminUserInfo)
 	syncMan, err := syncman.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, adminMan, ssl)
 	if err != nil {
 		return nil, err
 	}
-	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, adminMan.LoadEnv())
+	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, !isDev)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disable
 
 	logrus.Infoln("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m, configFilePath: utils.DefaultConfigFilePath, modules: modules}, nil
+	return &Server{nodeID: nodeID, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m, configFilePath: utils.DefaultConfigFilePath, modules: modules, ssl: ssl}, nil
 }
 
 // Start begins the server operations
@@ -111,10 +111,4 @@ func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHos
 
 	logrus.Infoln("Space cloud is running on the specified ports :D")
 	return http.ListenAndServe(":"+strconv.Itoa(port), handler)
-}
-
-// SetConfig sets the config
-func (s *Server) SetConfig(ssl *config.SSL, isProd bool) {
-	s.ssl = ssl
-	s.adminMan.SetEnv(isProd)
 }
