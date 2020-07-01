@@ -23,21 +23,21 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		ruleName := vars["id"]
+		projectID := vars["project"]
+
 		value := config.EventingRule{}
 		_ = json.NewDecoder(r.Body).Decode(&value)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-trigger", "modify", map[string]string{"project": projectID, "id": ruleName}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		ruleName := vars["id"]
-		projectID := vars["project"]
 
 		if err := syncMan.SetEventingRule(ctx, projectID, ruleName, value); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -45,7 +45,6 @@ func HandleAddEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.Mana
 		}
 
 		_ = utils.SendOkayResponse(w)
-
 	}
 }
 
@@ -56,22 +55,23 @@ func HandleGetEventingTriggers(adminMan *admin.Manager, syncMan *syncman.Manager
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		// get projectId and ruleName from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		id := "*"
+		ruleNameQuery, exists := r.URL.Query()["id"]
+		if exists {
+			id = ruleNameQuery[0]
+		}
+
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-trigger", "read", map[string]string{"project": projectID, "id": id}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		// get projectId and ruleName from url
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		id := ""
-		ruleNameQuery, exists := r.URL.Query()["id"]
-		if exists {
-			id = ruleNameQuery[0]
-		}
 		rules, err := syncMan.GetEventingTriggerRules(ctx, projectID, id)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -87,19 +87,20 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		ruleName := vars["id"]
+		projectID := vars["project"]
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-trigger", "modify", map[string]string{"project": projectID, "id": ruleName}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		ruleName := vars["id"]
-		projectID := vars["project"]
 
 		if err := syncMan.SetDeleteEventingRule(ctx, projectID, ruleName); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -107,8 +108,6 @@ func HandleDeleteEventingTriggerRule(adminMan *admin.Manager, syncMan *syncman.M
 		}
 
 		_ = utils.SendOkayResponse(w)
-		// return
-
 	}
 }
 
@@ -118,29 +117,29 @@ func HandleSetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-config", "modify", map[string]string{"project": projectID}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		c := new(config.Eventing)
 		_ = json.NewDecoder(r.Body).Decode(c)
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
 		if err := syncMan.SetEventingConfig(ctx, projectID, c.DBAlias, c.Enabled); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		_ = utils.SendOkayResponse(w)
-		// return
-
 	}
 }
 
@@ -151,15 +150,15 @@ func HandleGetEventingConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
 		// get project id from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "eventing-config", "read", map[string]string{"project": projectID}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
 
 		// get project config
 		project, err := syncMan.GetConfig(projectID)
@@ -180,23 +179,25 @@ func HandleSetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		evType := vars["id"]
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-schema", "modify", map[string]string{"project": projectID, "id": evType}); err != nil {
 			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
 		c := schemaRequest{}
 		_ = json.NewDecoder(r.Body).Decode(&c)
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		evType := vars["id"]
 
 		if err := syncMan.SetEventingSchema(ctx, projectID, evType, c.Schema); err != nil {
 			logrus.Errorf("Failed to set eventing schema - %s", err.Error())
@@ -215,22 +216,23 @@ func HandleGetEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		// get project id and type from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		id := "*"
+		typ, exists := r.URL.Query()["id"]
+		if exists {
+			id = typ[0]
+		}
+
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-schema", "read", map[string]string{"project": projectID, "id": id}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		// get project id and type from url
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		id := ""
-		typ, exists := r.URL.Query()["id"]
-		if exists {
-			id = typ[0]
-		}
 		schemas, err := syncMan.GetEventingSchema(ctx, projectID, id)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -246,20 +248,22 @@ func HandleDeleteEventingSchema(adminMan *admin.Manager, syncMan *syncman.Manage
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		defer utils.CloseTheCloser(r.Body)
-
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			logrus.Errorf("Failed to validate token for delete eventing schema - %s", err.Error())
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
 
 		vars := mux.Vars(r)
 		projectID := vars["project"]
 		evType := vars["id"]
+
+		defer utils.CloseTheCloser(r.Body)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "eventing-schema", "modify", map[string]string{"project": projectID, "id": evType}); err != nil {
+			logrus.Errorf("Failed to validate token for delete eventing schema - %s", err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
 
 		if err := syncMan.SetDeleteEventingSchema(ctx, projectID, evType); err != nil {
 			logrus.Errorf("Failed to delete eventing schema - %s", err.Error())
@@ -277,10 +281,15 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		evType := vars["id"]
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-rule", "modify", map[string]string{"project": projectID, "id": evType}); err != nil {
 			logrus.Errorf("Failed to validate token for set eventing rules - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
@@ -290,10 +299,6 @@ func HandleAddEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.Man
 
 		c := new(config.Rule)
 		_ = json.NewDecoder(r.Body).Decode(&c)
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		evType := vars["id"]
 		if err := syncMan.SetEventingSecurityRules(ctx, projectID, evType, c); err != nil {
 			logrus.Errorf("Failed to add eventing rules - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -311,22 +316,24 @@ func HandleGetEventingSecurityRules(adminMan *admin.Manager, syncMan *syncman.Ma
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
-
 		// get project id and type from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		id := ""
+		id := "*"
 		typ, exists := r.URL.Query()["id"]
 		if exists {
 			id = typ[0]
 		}
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "eventing-rule", "read", map[string]string{"project": projectID, "id": id}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		securityRules, err := syncMan.GetEventingSecurityRules(ctx, projectID, id)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -344,18 +351,18 @@ func HandleDeleteEventingSecurityRule(adminMan *admin.Manager, syncMan *syncman.
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		evType := vars["id"]
+
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-rule", "modify", map[string]string{"project": projectID, "id": evType}); err != nil {
 			logrus.Errorf("Failed to validate token for delete eventing rules - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		evType := vars["id"]
 
 		if err := syncMan.SetDeleteEventingSecurityRules(ctx, projectID, evType); err != nil {
 			logrus.Errorf("Failed to delete eventing rules - %s", err.Error())

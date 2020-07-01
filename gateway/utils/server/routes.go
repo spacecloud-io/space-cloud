@@ -20,12 +20,11 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 
 	// Initialize the routes for config management
 	router.Methods(http.MethodGet).Path("/v1/config/env").HandlerFunc(handlers.HandleLoadEnv(s.adminMan, s.syncMan))
-	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan, s.syncMan))
+	router.Methods(http.MethodPost).Path("/v1/config/login").HandlerFunc(handlers.HandleAdminLogin(s.adminMan))
 	router.Methods(http.MethodGet).Path("/v1/config/refresh-token").HandlerFunc(handlers.HandleRefreshToken(s.adminMan, s.syncMan))
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleGetProjectConfig(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleApplyProject(s.adminMan, s.syncMan))
-	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan, s.configFilePath))
-	router.Methods(http.MethodGet).Path("/v1/config/projects").HandlerFunc(handlers.HandleLoadProjects(s.adminMan, s.syncMan, s.configFilePath))
+	router.Methods(http.MethodDelete).Path("/v1/config/projects/{project}").HandlerFunc(handlers.HandleDeleteProjectConfig(s.adminMan, s.syncMan))
 
 	router.Methods(http.MethodGet).Path("/v1/config/projects/{project}/remote-service/service").HandlerFunc(handlers.HandleGetService(s.adminMan, s.syncMan))
 	router.Methods(http.MethodPost).Path("/v1/config/projects/{project}/remote-service/service/{id}").HandlerFunc(handlers.HandleAddService(s.adminMan, s.syncMan))
@@ -152,7 +151,6 @@ func (s *Server) routes(profiler bool, staticPath string, restrictedHosts []stri
 	runnerRouter.Methods(http.MethodDelete).Path("/{project}/secrets/{id}/{key}").HandlerFunc(s.syncMan.HandleRunnerDeleteSecretKey(s.adminMan))
 	// service routes
 	runnerRouter.Methods(http.MethodPost).Path("/{project}/services/{serviceId}/{version}").HandlerFunc(s.syncMan.HandleRunnerApplyService(s.adminMan))
-	runnerRouter.Methods(http.MethodPost).Path("/{project}/event-service").HandlerFunc(s.syncMan.HandleRunnerApplyEventingService(s.adminMan))
 	runnerRouter.Methods(http.MethodGet).Path("/{project}/services").HandlerFunc(s.syncMan.HandleRunnerGetServices(s.adminMan))
 	runnerRouter.Methods(http.MethodDelete).Path("/{project}/services/{serviceId}/{version}").HandlerFunc(s.syncMan.HandleRunnerDeleteService(s.adminMan))
 	runnerRouter.Methods(http.MethodPost).Path("/{project}/service-routes/{serviceId}").HandlerFunc(s.syncMan.HandleRunnerServiceRoutingRequest(s.adminMan))

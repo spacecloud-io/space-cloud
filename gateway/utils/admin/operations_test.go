@@ -90,7 +90,7 @@ func TestManager_GetInternalAccessToken(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	m := New("", &config.AdminUser{})
+	m := New("", "", false, &config.AdminUser{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := m.GetInternalAccessToken()
@@ -179,7 +179,7 @@ func TestManager_IsTokenValid(t *testing.T) {
 				isProd:    tt.fields.isProd,
 				clusterID: tt.fields.clusterID,
 			}
-			if err := m.IsTokenValid(tt.args.token); (err != nil) != tt.wantErr {
+			if err := m.IsTokenValid(tt.args.token, "", "", nil); (err != nil) != tt.wantErr {
 				t.Errorf("IsTokenValid() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -203,7 +203,7 @@ func TestManager_RefreshToken(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	m := New("", &config.AdminUser{Secret: "some-secret"})
+	m := New("", "", false, &config.AdminUser{Secret: "some-secret"})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := m.RefreshToken(tt.args.token)
@@ -253,7 +253,7 @@ func TestManager_ValidateSyncOperation(t *testing.T) {
 			want: false,
 		},
 	}
-	m := New("clusterID", &config.AdminUser{})
+	m := New("", "clusterID", false, &config.AdminUser{})
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := m.ValidateSyncOperation(tt.args.c, tt.args.project); got != tt.want {

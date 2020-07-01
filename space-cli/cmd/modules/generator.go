@@ -3,6 +3,7 @@ package modules
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/spaceuptech/space-cli/cmd/modules/auth"
 	"github.com/spaceuptech/space-cli/cmd/modules/database"
 	"github.com/spaceuptech/space-cli/cmd/modules/eventing"
 	"github.com/spaceuptech/space-cli/cmd/modules/filestore"
@@ -11,7 +12,6 @@ import (
 	"github.com/spaceuptech/space-cli/cmd/modules/project"
 	remoteservices "github.com/spaceuptech/space-cli/cmd/modules/remote-services"
 	"github.com/spaceuptech/space-cli/cmd/modules/services"
-	"github.com/spaceuptech/space-cli/cmd/modules/userman"
 )
 
 // FetchGenerateSubCommands fetches all the generatesubcommands from different modules
@@ -28,7 +28,7 @@ func FetchGenerateSubCommands() *cobra.Command {
 	generateCmd.AddCommand(letsencrypt.GenerateSubCommands()...)
 	generateCmd.AddCommand(remoteservices.GenerateSubCommands()...)
 	generateCmd.AddCommand(services.GenerateSubCommands()...)
-	generateCmd.AddCommand(userman.GenerateSubCommands()...)
+	generateCmd.AddCommand(auth.GenerateSubCommands()...)
 	generateCmd.AddCommand(project.GenerateSubCommands()...)
 
 	return generateCmd

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/spf13/viper"
+
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -20,6 +22,9 @@ func addRegistry(projectID string) error {
 	ctx := context.Background()
 	dockerImage := "registry:2"
 
+	containerRegistryPort := "5000"
+	clusterName := viper.GetString("cluster-name")
+
 	// Create a docker client
 	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -27,14 +32,26 @@ func addRegistry(projectID string) error {
 	}
 
 	// Check if a registry container already exist
-	filterArgs := filters.Arg("label", "service=registry")
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
+	argsRegistry := filters.Arg("label", "service=registry")
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsNetwork, argsRegistry)})
 	if err != nil {
 		return utils.LogError("Unable to check if registry already exists", err)
 	}
 	if len(containers) != 0 {
 		utils.LogInfo("Registry already exists. Do you want to remove it?")
 		return nil
+	}
+
+	// check if port is available
+	containerRegistryPort, err = utils.CheckPortAvailability(containerRegistryPort, "registry")
+	if err != nil {
+		return err
+	}
+
+	// sets selected account according to cluster name provided
+	if err := utils.ChangeSelectedAccount(clusterName); err != nil {
+		return utils.LogError("Could not set selected account ", err)
 	}
 
 	// Pull image if it doesn't already exist
@@ -80,7 +97,7 @@ func addRegistry(projectID string) error {
 	if len(specObj) == 0 {
 		return utils.LogError(fmt.Sprintf("No project found with id (%s)", projectID), err)
 	}
-	specObj[0].Spec.(map[string]interface{})["dockerRegistry"] = "localhost:5000"
+	specObj[0].Spec.(map[string]interface{})["dockerRegistry"] = "localhost:" + containerRegistryPort
 
 	account, token, err := utils.LoginWithSelectedAccount()
 	if err != nil {
@@ -95,11 +112,11 @@ func addRegistry(projectID string) error {
 	containerRes, err := docker.ContainerCreate(ctx, &container.Config{
 		Labels:       map[string]string{"app": "addon", "service": "registry", "name": "registry"},
 		Image:        dockerImage,
-		ExposedPorts: nat.PortSet{"5000": struct{}{}},
+		ExposedPorts: nat.PortSet{"5000/tcp": struct{}{}},
 	}, &container.HostConfig{
-		PortBindings: nat.PortMap{"5000": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "5000"}}},
-		NetworkMode:  "space-cloud",
-	}, nil, "space-cloud--addon--registry")
+		PortBindings: nat.PortMap{"5000/tcp": []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: containerRegistryPort}}},
+		NetworkMode:  container.NetworkMode(utils.GetNetworkName(clusterName)),
+	}, nil, utils.GetRegistryContainerName(clusterName))
 	if err != nil {
 		return utils.LogError("Unable to create local docker registry", err)
 	}
@@ -113,6 +130,13 @@ func addRegistry(projectID string) error {
 }
 
 func removeRegistry(projectID string) error {
+	clusterName := viper.GetString("cluster-name")
+
+	// sets selected account according to cluster name provided
+	if err := utils.ChangeSelectedAccount(clusterName); err != nil {
+		return utils.LogError("Could not set selected account ", err)
+	}
+
 	ctx := context.Background()
 
 	// Create a docker client
@@ -122,8 +146,9 @@ func removeRegistry(projectID string) error {
 	}
 
 	// Check if a registry container already exist
-	filterArgs := filters.Arg("label", "service=registry")
-	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(filterArgs)})
+	argsRegistry := filters.Arg("name", utils.GetRegistryContainerName(clusterName))
+	argsNetwork := filters.Arg("network", utils.GetNetworkName(clusterName))
+	containers, err := docker.ContainerList(ctx, types.ContainerListOptions{Filters: filters.NewArgs(argsRegistry, argsNetwork)})
 	if err != nil {
 		return utils.LogError("Unable to check if registry already exists", err)
 	}

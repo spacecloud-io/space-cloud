@@ -20,8 +20,21 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
+	req.GroupBy, err = extractGroupByClause(field.Arguments, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	req.Aggregate, err = extractAggregate(field)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
 	go func() {
-		req.IsBatch = true
+
+		req.IsBatch = !(len(req.Aggregate) > 0)
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}

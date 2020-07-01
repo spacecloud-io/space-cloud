@@ -193,7 +193,7 @@ func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id strin
 	if err != nil {
 		return nil, err
 	}
-	if id != "" {
+	if id != "*" {
 		service, ok := projectConfig.Modules.Eventing.Rules[id]
 		if !ok {
 			return nil, fmt.Errorf("id (%s) not present in config", id)
@@ -218,7 +218,7 @@ func (s *Manager) GetEventingSchema(ctx context.Context, project, id string) ([]
 	if err != nil {
 		return nil, err
 	}
-	if id != "" {
+	if id != "*" {
 		service, ok := projectConfig.Modules.Eventing.Schemas[id]
 		if !ok {
 			return nil, fmt.Errorf("id (%s) not present in config", id)
@@ -243,7 +243,7 @@ func (s *Manager) GetEventingSecurityRules(ctx context.Context, project, id stri
 	if err != nil {
 		return nil, err
 	}
-	if id != "" {
+	if id != "*" {
 		service, ok := projectConfig.Modules.Eventing.SecurityRules[id]
 		if !ok {
 			return nil, fmt.Errorf("id (%s) not present in config", id)

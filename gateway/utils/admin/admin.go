@@ -17,38 +17,43 @@ type Manager struct {
 	user   *config.AdminUser
 	isProd bool
 
-	clusterID string
+	nodeID, clusterID string
 }
 
 // New creates a new admin manager instance
-func New(clusterID string, adminUserInfo *config.AdminUser) *Manager {
+func New(nodeID, clusterID string, isDev bool, adminUserInfo *config.AdminUser) *Manager {
 	m := new(Manager)
 	m.config = new(config.Admin)
 	m.user = adminUserInfo
 	m.quotas = model.UsageQuotas{MaxDatabases: 1, MaxProjects: 1}
+	m.nodeID = nodeID
 	m.clusterID = clusterID
+	m.isProd = !isDev
 	return m
 }
 
 // SetConfig sets the admin config
-func (m *Manager) SetConfig(admin *config.Admin) {
+func (m *Manager) SetConfig(admin *config.Admin) error {
 	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	m.config = admin
-	m.lock.Unlock()
+	return nil
 }
 
-// SetEnv sets the env
-func (m *Manager) SetEnv(isProd bool) {
-	m.lock.Lock()
-	m.isProd = isProd
-	m.lock.Unlock()
+// GetConfig returns the admin config
+func (m *Manager) GetConfig() *config.Admin {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	return m.config
 }
 
 // LoadEnv gets the env
-func (m *Manager) LoadEnv() bool {
+func (m *Manager) LoadEnv() (bool, string, model.UsageQuotas) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
-	return m.isProd
+	return m.isProd, "space-cloud-open", m.quotas
 }
 
 // Login handles the admin login operation

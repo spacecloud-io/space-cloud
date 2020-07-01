@@ -50,7 +50,7 @@ func TestModule_createCrudDocuments(t *testing.T) {
 			},
 		},
 	}
-	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+	m, _ := New("clusterID", "nodeID", false, admin.New("", "clusterID", false, &config.AdminUser{}), &syncman.Manager{}, false)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -94,7 +94,7 @@ func TestModule_createDocument(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+	m, _ := New("clusterID", "nodeID", false, admin.New("", "clusterID", false, &config.AdminUser{}), &syncman.Manager{}, false)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -138,7 +138,7 @@ func TestModule_createEventDocument(t *testing.T) {
 		},
 	}
 
-	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+	m, _ := New("clusterID", "nodeID", false, admin.New("", "clusterID", false, &config.AdminUser{}), &syncman.Manager{}, false)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -203,7 +203,7 @@ func TestModule_createFileDocuments(t *testing.T) {
 			},
 		},
 	}
-	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+	m, _ := New("clusterID", "nodeID", false, admin.New("", "clusterID", false, &config.AdminUser{}), &syncman.Manager{}, false)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -262,7 +262,7 @@ func TestModule_createFunctionDocument(t *testing.T) {
 			want: []interface{}{},
 		},
 	}
-	m, _ := New("clusterID", "nodeID", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+	m, _ := New("clusterID", "nodeID", false, admin.New("", "clusterID", false, &config.AdminUser{}), &syncman.Manager{}, false)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

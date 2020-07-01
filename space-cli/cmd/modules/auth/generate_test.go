@@ -1,4 +1,4 @@
-package userman
+package auth
 
 import (
 	"errors"
@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/stretchr/testify/mock"
+
 	"github.com/spaceuptech/space-cli/cmd/model"
 	"github.com/spaceuptech/space-cli/cmd/utils"
 	"github.com/spaceuptech/space-cli/cmd/utils/input"
-	"github.com/stretchr/testify/mock"
 )
 
 func Test_generateUserManagement(t *testing.T) {
