@@ -100,7 +100,7 @@ func TestModule_generateMetricsRequest(t *testing.T) {
 			want3: map[string]interface{}{"start_time": ""},
 		},
 	}
-	m, _ := New("", "", false, admin.New("clusterID", &config.AdminUser{}), &syncman.Manager{}, false)
+	m, _ := New("", "", false, admin.New("", "clusterID", false, &config.AdminUser{}), &syncman.Manager{}, false)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 

@@ -144,6 +144,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 			v.DBName = project
 		}
 
+		// Add the prepared queries in this db
+		for id, query := range v.PreparedQueries {
+			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
+		}
+
 		if m.block != nil {
 			// Skip if the connection string is the same
 			if m.block.IsSame(v.Conn, v.DBName) {
@@ -182,11 +187,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.dbType = v.Type
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
-
-		// Add the prepared queries in this db
-		for id, query := range v.PreparedQueries {
-			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
-		}
 	}
 	m.initBatchOperation(project, crud)
 	return nil

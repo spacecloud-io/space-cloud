@@ -56,7 +56,7 @@ func calcIndex(token, totalTokens, n int) int {
 	return token / bucketSize
 }
 
-// GetGatewayIndex returns the position of th current gateway instance
+// GetGatewayIndex returns the position of the current gateway instance
 func (s *Manager) GetGatewayIndex() int {
 	index := 0
 

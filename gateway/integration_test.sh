@@ -43,3 +43,14 @@ echo "running integration tests for sqlserver"
 go test -tags integration -db_type sqlserver -conn "Data Source=localhost,1433;Initial Catalog=master;User ID=sa;Password=yourPassword@#12345;"
 docker rm -f integration-sqlserver
 echo "removing sqlserver container"
+
+cd ../mgo
+
+# mongo test
+echo "starting mongo container,it will take 30 seconds"
+docker run --name integration-mongo -p 27017:27017 -d mongo:latest
+sleep 30
+echo "running integration tests for mongo"
+go test -tags integration -db_type mongo -conn "mongodb://localhost:27017"
+echo "removing mongo container"
+docker rm -f integration-mongo

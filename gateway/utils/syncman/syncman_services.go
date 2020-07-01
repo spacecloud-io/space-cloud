@@ -64,7 +64,7 @@ func (s *Manager) GetServices(ctx context.Context, project, serviceID string) ([
 	if err != nil {
 		return nil, err
 	}
-	if serviceID != "" {
+	if serviceID != "*" {
 		service, ok := projectConfig.Modules.Services.Services[serviceID]
 		if !ok {
 			return nil, fmt.Errorf("serviceID (%s) not present in config", serviceID)

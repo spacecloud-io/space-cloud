@@ -26,39 +26,39 @@ func TestModule_SetRealtimeTriggers(t *testing.T) {
 	}{
 		{
 			name: "no rules with prefix 'realtime'",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"notrealtime": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{eventingRules: []config.EventingRule{config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}},
-			want: map[string]config.EventingRule{"notrealtime": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
+			args: args{eventingRules: []config.EventingRule{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}},
+			want: map[string]config.EventingRule{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}},
 		},
 		{
 			name: "rules with prefix 'realtime'",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"realtime-abc": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{eventingRules: []config.EventingRule{config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}},
-			want: map[string]config.EventingRule{"realtime-db-col-type": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"realtime-abc": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
+			args: args{eventingRules: []config.EventingRule{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}},
+			want: map[string]config.EventingRule{"realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}},
 		},
 		{
 			name: "add eventing rules when no internal rules exist",
 			m:    &Module{config: &config.Eventing{InternalRules: make(map[string]config.EventingRule)}},
-			args: args{eventingRules: []config.EventingRule{config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, config.EventingRule{Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
-			want: map[string]config.EventingRule{"realtime-db-col-type": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": config.EventingRule{Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
+			args: args{eventingRules: []config.EventingRule{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
+			want: map[string]config.EventingRule{"realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
 		},
 		{
 			name: "add eventing rules when no realtime internal rules exist",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"notrealtime": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{eventingRules: []config.EventingRule{config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, config.EventingRule{Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
-			want: map[string]config.EventingRule{"notrealtime": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": config.EventingRule{Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
+			args: args{eventingRules: []config.EventingRule{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
+			want: map[string]config.EventingRule{"notrealtime": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
 		},
 		{
 			name: "add eventing rules when realtime internal rules exist",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"realtime-abc": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-def": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{eventingRules: []config.EventingRule{config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, config.EventingRule{Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
-			want: map[string]config.EventingRule{"realtime-db-col-type": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": config.EventingRule{Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"realtime-abc": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-def": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
+			args: args{eventingRules: []config.EventingRule{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
+			want: map[string]config.EventingRule{"realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
 		},
 		{
 			name: "add eventing rules when realtime and non-realtime internal rules exist",
-			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"realtime-abc": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "nonrealtime-def": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
-			args: args{eventingRules: []config.EventingRule{config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, config.EventingRule{Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
-			want: map[string]config.EventingRule{"nonrealtime-def": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": config.EventingRule{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": config.EventingRule{Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
+			m:    &Module{config: &config.Eventing{InternalRules: map[string]config.EventingRule{"realtime-abc": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "nonrealtime-def": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}}}},
+			args: args{eventingRules: []config.EventingRule{{Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}}},
+			want: map[string]config.EventingRule{"nonrealtime-def": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db-col-type": {Type: "type", Options: map[string]string{"db": "db", "col": "col"}}, "realtime-db1-col1-type1": {Type: "type1", Options: map[string]string{"db": "db1", "col": "col1"}}},
 		},
 	}
 	for _, tt := range tests {
@@ -178,10 +178,10 @@ func TestModule_QueueEvent(t *testing.T) {
 	}{
 		{
 			name: "error validating",
-			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "someType", Options: make(map[string]string)}}}},
+			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": {Type: "someType", Options: make(map[string]string)}}}},
 			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "someType", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "IsEventingOpAuthorised",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -191,17 +191,17 @@ func TestModule_QueueEvent(t *testing.T) {
 		},
 		{
 			name: "error batching requests",
-			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
+			m:    &Module{project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": {Type: "DB_INSERT", Options: make(map[string]string)}}}},
 			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{"nodeID"},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -211,41 +211,41 @@ func TestModule_QueueEvent(t *testing.T) {
 		},
 		{
 			name: "event is queued",
-			m:    &Module{metricHook: func(project, eventingType string) {}, project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "DB_INSERT", Options: make(map[string]string)}}}},
+			m:    &Module{metricHook: func(project, eventingType string) {}, project: mock.Anything, config: &config.Eventing{DBAlias: mock.Anything, Rules: map[string]config.EventingRule{"rule": {Type: "DB_INSERT", Options: make(map[string]string)}}}},
 			args: args{ctx: context.Background(), project: "project", token: "token", req: &model.QueueEventRequest{Type: "DB_INSERT", Delay: int64(0), Timestamp: time.Now().Format(time.RFC3339), Payload: "payload", Options: make(map[string]string), IsSynchronous: false}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{"nodeID"},
 				},
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
 					args:           []interface{}{mock.Anything, "POST", mock.Anything, mock.Anything, mock.Anything, mock.Anything, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},

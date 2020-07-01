@@ -23,23 +23,24 @@ func HandleLetsEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncma
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		id := vars["id"]
+
 		value := config.LetsEncrypt{}
 		defer utils.CloseTheCloser(r.Body)
 		if err := json.NewDecoder(r.Body).Decode(&value); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		value.ID = id
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "letsencrypt", "modify", map[string]string{"project": projectID}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		id := vars["id"]
-		value.ID = id
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
@@ -59,15 +60,15 @@ func HandleGetEncryptWhitelistedDomain(adminMan *admin.Manager, syncMan *syncman
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
 		// get project id from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "letsencrypt", "read", map[string]string{"project": projectID}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
 
 		// get project config
 		project, err := syncMan.GetConfig(projectID)

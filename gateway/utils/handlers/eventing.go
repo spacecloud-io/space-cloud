@@ -75,7 +75,7 @@ func HandleProcessEvent(adminMan *admin.Manager, modules *modules.Modules) http.
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "eventing-process", "process", nil); err != nil {
 			logrus.Errorf("error handling process event request token not valid - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
