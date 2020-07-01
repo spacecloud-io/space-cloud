@@ -153,17 +153,6 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	return s.setProject(ctx, projectConfig)
 }
 
-// SetProjectConfig applies the set project config command to the raft log
-func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project) error {
-	// Acquire a lock
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	s.modules.SetProjectConfig(s.projectConfig.Projects[0], s.letsencrypt, s.routing)
-
-	return s.setProject(ctx, project)
-}
-
 func (s *Manager) setProject(ctx context.Context, project *config.Project) error {
 	s.setProjectConfig(project)
 	return s.store.SetProject(ctx, project)

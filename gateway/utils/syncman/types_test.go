@@ -40,7 +40,7 @@ type mockModulesInterface struct {
 	mock.Mock
 }
 
-func (m *mockModulesInterface) SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
+func (m *mockModulesInterface) SetProjectConfig(config *config.Project, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
 	m.Called(config, le, ingressRouting)
 }
 
