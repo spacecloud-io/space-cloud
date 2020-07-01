@@ -126,7 +126,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 		}
 	}
 	// We will ignore the error for the create project request
-	s.modules.SetProjectConfig(project)
+	_ = s.modules.SetProjectConfig(project)
 
 	return http.StatusInternalServerError, s.store.SetProject(ctx, project)
 }
