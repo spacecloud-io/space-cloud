@@ -125,7 +125,7 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 		}
 	}
 	// We will ignore the error for the create project request
-	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+	s.modules.SetProjectConfig(s.projectConfig.Projects[0], s.letsencrypt, s.routing)
 
 	return http.StatusInternalServerError, s.store.SetProject(ctx, project)
 }
@@ -159,7 +159,7 @@ func (s *Manager) SetProjectConfig(ctx context.Context, project *config.Project)
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+	s.modules.SetProjectConfig(s.projectConfig.Projects[0], s.letsencrypt, s.routing)
 
 	return s.setProject(ctx, project)
 }
@@ -187,7 +187,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 			return err
 		}
 	}
-	s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+	s.modules.SetProjectConfig(s.projectConfig.Projects[0], s.letsencrypt, s.routing)
 
 	return s.store.DeleteProject(ctx, projectID)
 }

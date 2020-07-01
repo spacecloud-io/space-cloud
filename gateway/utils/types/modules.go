@@ -10,7 +10,7 @@ import (
 // ModulesInterface is an interface consisting of functions of the modules module used by syncman
 type ModulesInterface interface {
 	// SetProjectConfig sets the config all modules
-	SetProjectConfig(config *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing)
+	SetProjectConfig(config *config.Project, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing)
 	// SetGlobalConfig sets the auth secret and AESKey
 	SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error
 	// SetCrudConfig sets the config of crud, auth, schema and realtime modules

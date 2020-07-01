@@ -92,7 +92,7 @@ func (s *Manager) Start(port int) error {
 		s.projectConfig.Projects = projects
 
 		if s.projectConfig.Projects != nil && len(s.projectConfig.Projects) > 0 {
-			s.modules.SetProjectConfig(s.projectConfig, s.letsencrypt, s.routing)
+			s.modules.SetProjectConfig(s.projectConfig.Projects[0], s.letsencrypt, s.routing)
 		}
 	}); err != nil {
 		return err
