@@ -133,7 +133,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 		preparedQuery := databaseConfig.PreparedQueries
 		var coll []interface{} = make([]interface{}, 0)
 		for key, value := range preparedQuery {
-			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: preparedQuery.Rule})
+			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
 		}
 		return coll, nil
 	}
@@ -141,7 +141,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	coll := make([]interface{}, 0)
 	for _, dbInfo := range databases {
 		for key, value := range dbInfo.PreparedQueries {
-			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: preparedQuery.Rule})
+			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
 		}
 	}
 	return coll, nil
