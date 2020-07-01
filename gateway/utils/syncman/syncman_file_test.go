@@ -448,7 +448,7 @@ func TestManager_GetFileStoreRules(t *testing.T) {
 		{
 			name: "got all file store rule",
 			s:    &Manager{projectConfig: &config.Config{Projects: []*config.Project{{ID: "1", Modules: &config.Modules{FileStore: &config.FileStore{Rules: []*config.FileRule{{ID: "ruleID"}}}}}}}},
-			args: args{ctx: context.Background(), project: "1", ruleID: ""},
+			args: args{ctx: context.Background(), project: "1", ruleID: "*"},
 			want: []interface{}{&config.FileRule{ID: "ruleID"}},
 		},
 	}
