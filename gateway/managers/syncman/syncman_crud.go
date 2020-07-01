@@ -128,12 +128,12 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 			if !ok {
 				return nil, fmt.Errorf("Prepared Queries for id (%s) not present in config for dbAlias (%s) )", id, dbAlias)
 			}
-			return []interface{}{&preparedQueryResponse{ID: id, , DBAlias: dbAlias, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments, Rule: preparedQuery.Rule}}, nil
+			return []interface{}{&preparedQueryResponse{ID: id, DBAlias: dbAlias, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments, Rule: preparedQuery.Rule}}, nil
 		}
 		preparedQuery := databaseConfig.PreparedQueries
 		var coll []interface{} = make([]interface{}, 0)
 		for key, value := range preparedQuery {
-			coll = append(coll, &preparedQueryResponse{ID: key,, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: preparedQuery.Rule})
+			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: preparedQuery.Rule})
 		}
 		return coll, nil
 	}
@@ -141,7 +141,7 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	coll := make([]interface{}, 0)
 	for _, dbInfo := range databases {
 		for key, value := range dbInfo.PreparedQueries {
-			coll = append(coll, &preparedQueryResponse{ID: key,, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: preparedQuery.Rule})
+			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: preparedQuery.Rule})
 		}
 	}
 	return coll, nil
