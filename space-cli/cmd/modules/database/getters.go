@@ -106,3 +106,33 @@ func GetDbSchema(project, commandName string, params map[string]string) ([]*mode
 	}
 	return objs, nil
 }
+
+// GetDbPreparedQuery gets database prepared query
+func GetDbPreparedQuery(project, commandName string, params map[string]string) ([]*model.SpecObject, error) {
+	url := "/v1/config/projects/{project}/database/prepared-queries"
+
+	payload := new(model.Response)
+	if err := transport.Client.Get(http.MethodGet, url, params, payload); err != nil {
+		return nil, err
+	}
+
+	var objs []*model.SpecObject
+	for _, item := range payload.Result {
+		obj := item.(map[string]interface{})
+		meta := map[string]string{"project": project, "db": obj["db"].(string), "id": obj["id"].(string)}
+		for _, value := range obj {
+
+			// delete unwanted keys from spec
+			delete(obj, "sql")
+			delete(obj, "rule")
+			delete(obj, "args")
+
+			s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{db}/prepared-queries/{id}", commandName, meta, value)
+			if err != nil {
+				return nil, err
+			}
+			objs = append(objs, s)
+		}
+	}
+	return objs, nil
+}
