@@ -13,6 +13,8 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
+	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -41,12 +43,15 @@ func TestSchema_CrudPostProcess(t *testing.T) {
 		result  interface{}
 	}
 	crudPostgres := crud.Init()
+	crudPostgres.SetAdminManager(admin.New("", "", false, nil))
 	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
 
 	crudMySQL := crud.Init()
+	crudMySQL.SetAdminManager(admin.New("", "", false, nil))
 	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
 
 	crudSQLServer := crud.Init()
+	crudSQLServer.SetAdminManager(admin.New("", "", false, nil))
 	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
 	tests := []struct {
 		name         string
@@ -286,12 +291,15 @@ func TestSchema_AdjustWhereClause(t *testing.T) {
 		find    map[string]interface{}
 	}
 	crudPostgres := crud.Init()
+	crudPostgres.SetAdminManager(admin.New("", "", false, nil))
 	_ = crudPostgres.SetConfig("test", config.Crud{"postgres": {Type: "sql-postgres", Enabled: false}})
 
 	crudMySQL := crud.Init()
+	crudMySQL.SetAdminManager(admin.New("", "", false, nil))
 	_ = crudMySQL.SetConfig("test", config.Crud{"mysql": {Type: "sql-mysql", Enabled: false}})
 
 	crudSQLServer := crud.Init()
+	crudSQLServer.SetAdminManager(admin.New("", "", false, nil))
 	_ = crudSQLServer.SetConfig("test", config.Crud{"sqlserver": {Type: "sql-sqlserver", Enabled: false}})
 	tests := []struct {
 		name    string

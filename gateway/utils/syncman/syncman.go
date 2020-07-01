@@ -34,7 +34,7 @@ type Manager struct {
 	services  []*service
 
 	// For authentication
-	adminMan *admin.Manager
+	adminMan AdminSyncmanInterface
 
 	// Modules
 	modules     types.ModulesInterface
@@ -134,6 +134,7 @@ func (s *Manager) Start(port int) error {
 			_ = utils.LogError("Unable to apply admin config", "syncman", "Start", err)
 			return
 		}
+
 	}); err != nil {
 		return err
 	}

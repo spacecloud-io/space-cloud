@@ -64,7 +64,6 @@ func onAddOrUpdateAdminConfig(obj interface{}, clusters []*config.Admin) {
 		logrus.Errorf("error while watching projects in kube store unable to unmarshal data - %v", err)
 		return
 	}
-	return
 }
 
 func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Project) map[string]*config.Project {
@@ -84,7 +83,7 @@ func onAddOrUpdateProjects(obj interface{}, projectMap map[string]*config.Projec
 	return projectMap
 }
 
-// WatchProjects maintains consistency over all projects
+// WatchAdminConfig maintains consistency over all projects
 func (s *KubeStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	go func() {
 		var options internalinterfaces.TweakListOptionsFunc = func(options *v12.ListOptions) {
@@ -292,6 +291,7 @@ func (s *KubeStore) SetProject(ctx context.Context, project *config.Project) err
 	return err
 }
 
+// GetAdminConfig returns the admin config present in the store
 func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 	name := fmt.Sprintf("sc-admin-config-%s", s.clusterID)
 
@@ -323,7 +323,7 @@ func (s *KubeStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 	return nil, errors.New("admin config could not be fetched")
 }
 
-// SetProject sets the project of the kube store
+// SetAdminConfig sets the project of the kube store
 func (s *KubeStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
 	clusterJSONString, err := json.Marshal(cluster)
 	if err != nil {

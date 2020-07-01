@@ -27,10 +27,9 @@ type Manager struct {
 
 	syncMan model.SyncManAdminInterface
 
-	clusterID              string
+	nodeID, clusterID      string
 	licenseFetchErrorCount int
 	// Config for enterprise
-	nodeID    string
 	sessionID string
 	publicKey *rsa.PublicKey
 }
@@ -138,18 +137,12 @@ func (m *Manager) SetConfig(config *config.Admin, isInitialCall bool) error {
 	return nil
 }
 
+// GetConfig returns the admin config
 func (m *Manager) GetConfig() *config.Admin {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	return m.config
-}
-
-// SetEnv sets the env
-func (m *Manager) SetEnv(isProd bool) {
-	m.lock.Lock()
-	m.isProd = isProd
-	m.lock.Unlock()
 }
 
 // LoadEnv gets the env

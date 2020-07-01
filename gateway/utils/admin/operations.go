@@ -17,7 +17,20 @@ func (m *Manager) GetInternalAccessToken() (string, error) {
 }
 
 // IsTokenValid checks if the token is valid
-func (m *Manager) IsTokenValid(token string) error {
+func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]string) error {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	if !m.isProd {
+		return nil
+	}
+
+	_, err := m.parseToken(token)
+	return err
+}
+
+// CheckToken simply checks the token
+func (m *Manager) CheckToken(token string) error {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 

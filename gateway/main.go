@@ -209,8 +209,6 @@ func actionRun(c *cli.Context) error {
 		return err
 	}
 
-	s.SetConfig(ssl)
-
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)
 	if err != nil {

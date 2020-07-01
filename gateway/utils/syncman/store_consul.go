@@ -22,6 +22,7 @@ type ConsulStore struct {
 	nodeID, clusterID, advertiseAddr string
 }
 
+// GetAdminConfig returns the admin config
 func (s *ConsulStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 	panic("implement me")
 }
@@ -71,7 +72,7 @@ func (s *ConsulStore) Register() {
 	}()
 }
 
-// WatchProjects maintains consistency between all instances of sc
+// WatchAdminConfig maintains consistency between all instances of sc
 func (s *ConsulStore) WatchAdminConfig(cb func(cluster []*config.Admin)) error {
 	watchParams := map[string]interface{}{
 		"type":   "keyprefix",
@@ -208,6 +209,7 @@ func (s *ConsulStore) SetProject(ctx context.Context, project *config.Project) e
 	return err
 }
 
+// SetAdminConfig sets the admin config
 func (s *ConsulStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
 	opts := &api.WriteOptions{}
 	opts = opts.WithContext(ctx)

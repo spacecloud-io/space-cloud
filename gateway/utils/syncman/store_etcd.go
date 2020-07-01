@@ -27,6 +27,7 @@ type ETCDStore struct {
 	nodeID, clusterID, advertiseAddr string
 }
 
+// GetAdminConfig returns the admin config
 func (s *ETCDStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
 	panic("implement me")
 }
@@ -128,7 +129,7 @@ func (s *ETCDStore) Register() {
 	}()
 }
 
-// WatchProjects maintains consistency between all instances of sc
+// WatchAdminConfig maintains consistency between all instances of sc
 func (s *ETCDStore) WatchAdminConfig(cb func(clusters []*config.Admin)) error {
 	// Query all KVs with prefix
 	res, err := s.etcdClient.Get(context.Background(), "sc/admin-config/"+s.clusterID, clientv3.WithPrefix())
@@ -358,6 +359,7 @@ func (s *ETCDStore) SetProject(ctx context.Context, project *config.Project) err
 	return err
 }
 
+// SetAdminConfig sets the admin config in the store
 func (s *ETCDStore) SetAdminConfig(ctx context.Context, cluster *config.Admin) error {
 	data, _ := json.Marshal(cluster)
 	_, err := s.kv.Put(ctx, fmt.Sprintf("sc/admin-config/%s", s.clusterID), string(data))

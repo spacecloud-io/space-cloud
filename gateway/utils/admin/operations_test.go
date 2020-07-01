@@ -179,7 +179,7 @@ func TestManager_IsTokenValid(t *testing.T) {
 				isProd:    tt.fields.isProd,
 				clusterID: tt.fields.clusterID,
 			}
-			if err := m.IsTokenValid(tt.args.token); (err != nil) != tt.wantErr {
+			if err := m.IsTokenValid(tt.args.token, "", "", nil); (err != nil) != tt.wantErr {
 				t.Errorf("IsTokenValid() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

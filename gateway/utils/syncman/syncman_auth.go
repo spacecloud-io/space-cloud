@@ -34,7 +34,7 @@ func (s *Manager) GetUserManagement(ctx context.Context, project, providerID str
 	if err != nil {
 		return nil, err
 	}
-	if providerID != "" {
+	if providerID != "*" {
 		auth, ok := projectConfig.Modules.Auth[providerID]
 		if !ok {
 			return nil, fmt.Errorf("providerID (%s) not present in config", providerID)

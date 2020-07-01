@@ -44,7 +44,7 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disable
 	}
 	adminMan.SetSyncMan(syncMan)
 
-	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, isDev)
+	m, err := metrics.New(clusterID, nodeID, disableMetrics, adminMan, syncMan, !isDev)
 	if err != nil {
 		return nil, err
 	}
@@ -64,10 +64,10 @@ func New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr string, disable
 	}
 
 	syncMan.SetModules(modules, le, r)
-	modules.SetGlobalModules(le, r)
+
 	logrus.Infoln("Creating a new server with id", nodeID)
 
-	return &Server{nodeID: nodeID, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m, configFilePath: utils.DefaultConfigFilePath, modules: modules}, nil
+	return &Server{nodeID: nodeID, syncMan: syncMan, adminMan: adminMan, letsencrypt: le, routing: r, metrics: m, configFilePath: utils.DefaultConfigFilePath, modules: modules, ssl: ssl}, nil
 }
 
 // Start begins the server operations
@@ -116,9 +116,4 @@ func (s *Server) Start(profiler bool, staticPath string, port int, restrictedHos
 
 	logrus.Infoln("Space cloud is running on the specified ports :D")
 	return http.ListenAndServe(":"+strconv.Itoa(port), handler)
-}
-
-// SetConfig sets the config
-func (s *Server) SetConfig(ssl *config.SSL) {
-	s.ssl = ssl
 }

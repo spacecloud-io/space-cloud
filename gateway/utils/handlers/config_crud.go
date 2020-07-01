@@ -23,20 +23,20 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := vars["dbAlias"]
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		projectID := vars["project"]
 
 		crud, err := modules.DB(projectID)
 		if err != nil {
@@ -61,17 +61,17 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 
 		defer utils.CloseTheCloser(r.Body)
 
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -86,6 +86,7 @@ func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
 		connState := crud.GetConnectionState(ctx, dbAlias)
 
 		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: connState})
@@ -95,6 +96,10 @@ func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.
 // HandleDeleteTable is an endpoint handler which deletes a table in specified database & removes it from config
 func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncman *syncman.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
@@ -102,11 +107,8 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 
 		defer utils.CloseTheCloser(r.Body)
 
-		// Get the JWT token from header
-		token := utils.GetTokenFromHeader(r)
-
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -142,21 +144,22 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+
 		v := config.CrudStub{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		projectID := vars["project"]
 
 		if err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -174,22 +177,23 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		// get project id and dbType from url
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := "*"
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		// get project id and dbType from url
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		dbAlias := ""
-		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
-		if exists {
-			dbAlias = dbAliasQuery[0]
-		}
 		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -206,20 +210,20 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 
 		defer utils.CloseTheCloser(r.Body)
 
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		projectID := vars["project"]
 
 		if err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -227,7 +231,6 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 		}
 
 		_ = utils.SendOkayResponse(w)
-		// return
 	}
 }
 
@@ -237,28 +240,31 @@ func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
-		defer cancel()
 		// get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbAlias := ""
+		dbAlias := "*"
 		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
 		if exists {
 			dbAlias = dbAliasQuery[0]
 		}
 		idQuery, exists := r.URL.Query()["id"]
-		id := ""
+		id := "*"
 		if exists {
 			id = idQuery[0]
 		}
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "db-prepared-query", "read", map[string]string{"project": projectID, "db": dbAlias, "id": id}); err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
 		result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -266,6 +272,7 @@ func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) h
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
@@ -279,12 +286,17 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+		id := vars["id"]
+
 		v := config.PreparedQuery{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-prepared-query", "modify", map[string]string{"project": projectID, "db": dbAlias, "id": id}); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -293,12 +305,8 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		project := vars["project"]
-		id := vars["id"]
 
-		if err := syncman.SetPreparedQueries(ctx, project, dbAlias, id, &v); err != nil {
+		if err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -320,8 +328,13 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+		id := vars["id"]
+
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-prepared-query", "modify", map[string]string{"project": projectID, "db": dbAlias, "id": id}); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -330,12 +343,7 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		project := vars["project"]
-		id := vars["id"]
-
-		if err := syncman.RemovePreparedQueries(ctx, project, dbAlias, id); err != nil {
+		if err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id); err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -355,20 +363,20 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		v := config.TableRule{}
-		_ = json.NewDecoder(r.Body).Decode(&v)
-		defer utils.CloseTheCloser(r.Body)
-
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
 		col := vars["col"]
+
+		v := config.TableRule{}
+		_ = json.NewDecoder(r.Body).Decode(&v)
+		defer utils.CloseTheCloser(r.Body)
+
+		if err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
@@ -404,26 +412,29 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
-		defer cancel()
 		// get project id and dbType from url
 		vars := mux.Vars(r)
 		projectID := vars["project"]
-		dbAlias := ""
+		dbAlias := "*"
 		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
 		if exists {
 			dbAlias = dbAliasQuery[0]
 		}
 		colQuery, exists := r.URL.Query()["col"]
-		col := ""
+		col := "*"
 		if exists {
 			col = colQuery[0]
 		}
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
+		defer cancel()
+
 		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -440,21 +451,22 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+		col := vars["col"]
+
 		v := config.TableRule{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-rule", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		projectID := vars["project"]
-		col := vars["col"]
 
 		if err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -462,7 +474,6 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		}
 
 		_ = utils.SendOkayResponse(w)
-		// return
 	}
 }
 
@@ -473,27 +484,27 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		// get project id and dbAlias
+		vars := mux.Vars(r)
+		projectID := vars["project"]
+		dbAlias := "*"
+		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
+		if exists {
+			dbAlias = dbAliasQuery[0]
+		}
+		col := "*"
+		colQuery, exists := r.URL.Query()["col"]
+		if exists {
+			col = colQuery[0]
+		}
+
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-rule", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-
-		// get project id and dbAlias
-		vars := mux.Vars(r)
-		projectID := vars["project"]
-		dbAlias := ""
-		dbAliasQuery, exists := r.URL.Query()["dbAlias"]
-		if exists {
-			dbAlias = dbAliasQuery[0]
-		}
-		col := ""
-		colQuery, exists := r.URL.Query()["col"]
-		if exists {
-			col = colQuery[0]
-		}
 
 		dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col)
 		if err != nil {
@@ -510,17 +521,18 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
-		defer utils.CloseTheCloser(r.Body)
-
-		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
-			return
-		}
 
 		vars := mux.Vars(r)
 		dbAlias := vars["dbAlias"]
 		projectID := vars["project"]
+
+		defer utils.CloseTheCloser(r.Body)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": "*"}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
@@ -551,10 +563,16 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
+
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		col := vars["col"]
+		projectID := vars["project"]
+
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -563,10 +581,6 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		col := vars["col"]
-		projectID := vars["project"]
 		logicalDBName, err := syncman.GetLogicalDatabaseName(ctx, projectID, dbAlias)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -588,7 +602,6 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		}
 
 		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: s})
-		// return
 	}
 }
 
@@ -600,8 +613,13 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		token := utils.GetTokenFromHeader(r)
 		defer utils.CloseTheCloser(r.Body)
 
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		col := vars["col"]
+		projectID := vars["project"]
+
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -609,11 +627,6 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		col := vars["col"]
-		projectID := vars["project"]
 
 		if err := syncman.RemoveSchemaInspection(ctx, projectID, dbAlias, col); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -631,19 +644,19 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		// Get the JWT token from header
 		token := utils.GetTokenFromHeader(r)
 
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+
 		v := config.CrudStub{}
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token); err != nil {
+		if err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": "*"}); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
-
-		vars := mux.Vars(r)
-		dbAlias := vars["dbAlias"]
-		projectID := vars["project"]
 
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
@@ -656,5 +669,44 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 
 		_ = utils.SendOkayResponse(w)
 		// return
+	}
+}
+
+// HandleInspectTrackedCollectionsSchema is an endpoint handler which return schema for all tracked collections of a particular database
+func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, modules *modules.Modules) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Get the JWT token from header
+		token := utils.GetTokenFromHeader(r)
+
+		// Create a context of execution
+		vars := mux.Vars(r)
+		dbAlias := vars["dbAlias"]
+		projectID := vars["project"]
+
+		defer utils.CloseTheCloser(r.Body)
+
+		// Check if the request is authorised
+		if err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": "*"}); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 1*time.Minute)
+		defer cancel()
+
+		schema, err := modules.Schema(projectID)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		schemas, err := schema.GetCollectionSchema(ctx, projectID, dbAlias)
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: schemas})
 	}
 }
