@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 )
 
 func TestSchema_CheckIfEventingIsPossible(t *testing.T) {

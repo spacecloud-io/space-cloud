@@ -10,10 +10,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

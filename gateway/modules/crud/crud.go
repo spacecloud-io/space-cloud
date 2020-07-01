@@ -12,10 +12,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/bolt"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/mgo"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud/sql"
