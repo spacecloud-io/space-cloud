@@ -100,11 +100,6 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 			return
 		}
 
-		r, ok := reqs[dbAlias]
-		if !ok {
-			r = []*model.AllRequest{}
-		}
-
 		// Generate a *model.AllRequest object for this given field
 		generatedRequests, returningDocs, err := graph.generateAllReq(ctx, field, token, store)
 		if err != nil {
@@ -117,8 +112,7 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 		fieldReturningDocsMapping[getFieldName(field)] = returningDocs
 
 		// Add the request to the number of requests available for that database
-		r = append(r, generatedRequests...)
-		for _, v := range r {
+		for _, v := range generatedRequests {
 			reqs[v.DBAlias] = append(reqs[v.DBAlias], v)
 		}
 	}
