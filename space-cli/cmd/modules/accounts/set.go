@@ -46,15 +46,23 @@ func filterAccounts(accounts []*model.Account, prefix string) (string, error) {
 		}
 	}
 	if doesAccountExists {
-		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID: ", Options: filteredAccountIDs, Default: filteredAccountIDs[0]}, &prefix); err != nil {
-			return "", err
+		if len(filteredAccountIDs) == 1 {
+			prefix = filteredAccountIDs[0]
+		} else {
+			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID: ", Options: filteredAccountIDs, Default: filteredAccountIDs[0]}, &prefix); err != nil {
+				return "", err
+			}
 		}
 	} else {
-		if prefix != "" {
-			utils.LogInfo("Warning! No account found for prefix provided, showing all")
-		}
-		if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID: ", Options: accountIDs, Default: accountIDs[0]}, &prefix); err != nil {
-			return "", err
+		if len(accountIDs) == 1 {
+			prefix = accountIDs[0]
+		} else {
+			if prefix != "" {
+				utils.LogInfo("Warning! No account found for prefix provided, showing all")
+			}
+			if err := input.Survey.AskOne(&survey.Select{Message: "Choose the account ID: ", Options: accountIDs, Default: accountIDs[0]}, &prefix); err != nil {
+				return "", err
+			}
 		}
 	}
 
