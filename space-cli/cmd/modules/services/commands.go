@@ -12,8 +12,9 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateService = &cobra.Command{
-		Use:  "services",
-		RunE: actionGenerateService,
+		Use:     "services",
+		Aliases: []string{"service"},
+		RunE:    actionGenerateService,
 	}
 
 	return []*cobra.Command{generateService}

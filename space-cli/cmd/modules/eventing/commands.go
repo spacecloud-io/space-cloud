@@ -36,23 +36,27 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var gettriggers = &cobra.Command{
-		Use:  "eventing-triggers",
-		RunE: actionGetEventingTrigger,
+		Use:     "eventing-triggers",
+		Aliases: []string{"eventing-trigger"},
+		RunE:    actionGetEventingTrigger,
 	}
 
 	var getconfigs = &cobra.Command{
-		Use:  "eventing-configs",
-		RunE: actionGetEventingConfig,
+		Use:     "eventing-configs",
+		Aliases: []string{"eventing-config"},
+		RunE:    actionGetEventingConfig,
 	}
 
 	var getschemas = &cobra.Command{
-		Use:  "eventing-schemas",
-		RunE: actionGetEventingSchema,
+		Use:     "eventing-schemas",
+		Aliases: []string{"eventing-schema"},
+		RunE:    actionGetEventingSchema,
 	}
 
 	var getrules = &cobra.Command{
-		Use:  "eventing-rules",
-		RunE: actionGetEventingSecurityRule,
+		Use:     "eventing-rules",
+		Aliases: []string{"eventing-rule"},
+		RunE:    actionGetEventingSecurityRule,
 	}
 
 	return []*cobra.Command{gettriggers, getconfigs, getschemas, getrules}

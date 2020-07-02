@@ -20,8 +20,9 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getServices = &cobra.Command{
-		Use:  "remote-services",
-		RunE: actionGetRemoteServices,
+		Use:     "remote-services",
+		Aliases: []string{"remote-service"},
+		RunE:    actionGetRemoteServices,
 	}
 	return []*cobra.Command{getServices}
 }

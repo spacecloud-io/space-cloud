@@ -21,8 +21,9 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getroutes = &cobra.Command{
-		Use:  "ingress-routes",
-		RunE: actionGetIngressRoutes,
+		Use:     "ingress-routes",
+		Aliases: []string{"ingress-route"},
+		RunE:    actionGetIngressRoutes,
 	}
 
 	return []*cobra.Command{getroutes}

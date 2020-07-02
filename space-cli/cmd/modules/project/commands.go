@@ -21,8 +21,9 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getprojects = &cobra.Command{
-		Use:  "projects",
-		RunE: actionGetProjectConfig,
+		Use:     "projects",
+		Aliases: []string{"project"},
+		RunE:    actionGetProjectConfig,
 	}
 
 	return []*cobra.Command{getprojects}

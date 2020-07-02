@@ -30,18 +30,21 @@ func GenerateSubCommands() []*cobra.Command {
 func GetSubCommands() []*cobra.Command {
 
 	var getrules = &cobra.Command{
-		Use:  "db-rules",
-		RunE: actionGetDbRules,
+		Use:     "db-rules",
+		Aliases: []string{"db-rule"},
+		RunE:    actionGetDbRules,
 	}
 
 	var getconfigs = &cobra.Command{
-		Use:  "db-configs",
-		RunE: actionGetDbConfig,
+		Use:     "db-configs",
+		Aliases: []string{"db-config"},
+		RunE:    actionGetDbConfig,
 	}
 
 	var getschemas = &cobra.Command{
-		Use:  "db-schemas",
-		RunE: actionGetDbSchema,
+		Use:     "db-schemas",
+		Aliases: []string{"db-schema"},
+		RunE:    actionGetDbSchema,
 	}
 
 	return []*cobra.Command{getrules, getconfigs, getschemas}
