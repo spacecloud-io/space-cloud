@@ -32,7 +32,8 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
-		if err := adminMan.IsTokenValid(token, "remote-service", "modify", map[string]string{"project": projectID, "service": service}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "remote-service", "modify", map[string]string{"project": projectID, "service": service})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -40,14 +41,13 @@ func HandleAddService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.SetService(ctx, projectID, service, &v); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncMan.SetService(ctx, projectID, service, &v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		_ = utils.SendOkayResponse(w)
-		// return
-
 	}
 }
 
@@ -69,12 +69,14 @@ func HandleGetService(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 			serviceID = serviceQuery[0]
 		}
 
-		if err := adminMan.IsTokenValid(token, "remote-service", "read", map[string]string{"project": projectID, "service": serviceID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "remote-service", "read", map[string]string{"project": projectID, "service": serviceID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		services, err := syncMan.GetServices(ctx, projectID, serviceID)
+		reqParams.Headers = r.Header
+		services, err := syncMan.GetServices(ctx, projectID, serviceID, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -98,7 +100,8 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 
 		defer utils.CloseTheCloser(r.Body)
 
-		if err := adminMan.IsTokenValid(token, "remote-service", "modify", map[string]string{"project": projectID, "service": service}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "remote-service", "modify", map[string]string{"project": projectID, "service": service})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -106,7 +109,8 @@ func HandleDeleteService(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncMan.DeleteService(ctx, projectID, service); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncMan.DeleteService(ctx, projectID, service, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}

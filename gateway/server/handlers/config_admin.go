@@ -19,7 +19,7 @@ func HandleGetCredentials(adminMan *admin.Manager) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r), "creds", "read", nil); err != nil {
+		if _, err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r), "creds", "read", nil); err != nil {
 			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return

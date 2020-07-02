@@ -26,12 +26,14 @@ func HandleGetProjectConfig(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		projectID := vars["project"]
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "project", "read", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "project", "read", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		project, err := syncMan.GetProjectConfig(projectID)
+		reqParams.Headers = r.Header
+		project, err := syncMan.GetProjectConfig(projectID, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -57,7 +59,8 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 		projectConfig.ID = projectID
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "project", "modify", map[string]string{"project": projectID}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "project", "modify", map[string]string{"project": projectID})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -65,7 +68,8 @@ func HandleApplyProject(adminMan *admin.Manager, syncman *syncman.Manager) http.
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 
-		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig)
+		reqParams.Headers = r.Header
+		statusCode, err := syncman.ApplyProjectConfig(ctx, &projectConfig, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, statusCode, err.Error())
 			return

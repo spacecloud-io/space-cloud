@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
@@ -69,7 +70,7 @@ func (s *Manager) GetAssignedTokens() (start, end int) {
 }
 
 // ApplyProjectConfig creates the config for the project
-func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Project) (int, error) {
+func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Project, params model.RequestParams) (int, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -185,7 +186,7 @@ func (s *Manager) DeleteProjectConfig(ctx context.Context, projectID string) err
 }
 
 // GetProjectConfig returns the config of specified project
-func (s *Manager) GetProjectConfig(projectID string) ([]interface{}, error) {
+func (s *Manager) GetProjectConfig(projectID string, params model.RequestParams) ([]interface{}, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
