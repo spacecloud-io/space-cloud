@@ -2550,6 +2550,8 @@ var queryTestCases = []tests{
 					Find:      map[string]interface{}{"trainer_id": "2"},
 					Operation: utils.All,
 					Options:   &model.ReadOptions{},
+					GroupBy:   []interface{}{},
+					Aggregate: map[string][]string{},
 					IsBatch:   true,
 				}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
@@ -2559,7 +2561,9 @@ var queryTestCases = []tests{
 				args: []interface{}{mock.Anything, "db", "pokemons", &model.ReadRequest{
 					Find:      map[string]interface{}{"trainer_id": "1"},
 					Operation: utils.All,
+					GroupBy:   []interface{}{},
 					Options:   &model.ReadOptions{},
+					Aggregate: map[string][]string{},
 					IsBatch:   true,
 				}},
 				paramsReturned: []interface{}{[]interface{}{map[string]interface{}{"id": "1", "name": "squirtle"}, map[string]interface{}{"id": "2", "name": "pikachu"}}, nil},
