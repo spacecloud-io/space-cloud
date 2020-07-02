@@ -20,8 +20,21 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 		return
 	}
 
+	req.GroupBy, err = extractGroupByClause(field.Arguments, store)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
+	req.Aggregate, err = extractAggregate(field)
+	if err != nil {
+		cb("", "", nil, err)
+		return
+	}
+
 	go func() {
-		req.IsBatch = true
+
+		req.IsBatch = !(len(req.Aggregate) > 0)
 		if req.Options == nil {
 			req.Options = &model.ReadOptions{}
 		}
@@ -89,14 +102,14 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 	}
 	req := model.PreparedQueryRequest{Params: params}
 	// Check if PreparedQuery op is authorised
-	actions, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
+	actions, auth, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
 
 	go func() {
-		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req)
+		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, auth)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbAlias, id, result, err)
 	}()
@@ -182,6 +195,12 @@ func extractAggregate(v *ast.Field) (map[string][]string, error) {
 			if ok {
 				return nil, utils.LogError(fmt.Sprintf("Cannot repeat the same function (%s) twice. Specify all columns within single function field", functionField.Name.Value), "graphql", "extractAggregate", nil)
 			}
+
+			if functionField.Name.Value == "count" && functionField.SelectionSet == nil {
+				functionMap[functionField.Name.Value] = []string{""}
+				continue
+			}
+
 			if functionField.SelectionSet == nil {
 				return nil, nil
 			}

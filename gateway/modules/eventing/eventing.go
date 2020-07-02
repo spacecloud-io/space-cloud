@@ -7,9 +7,9 @@ import (
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
+	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // Module is responsible for managing the eventing system
@@ -80,7 +80,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		dummyCrud := config.Crud{
 			"dummyDBName": &config.CrudStub{
 				Collections: map[string]*config.TableRule{
-					eventType: &config.TableRule{
+					eventType: {
 						Schema: schemaObj.Schema,
 					},
 				},

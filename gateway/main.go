@@ -11,8 +11,8 @@ import (
 	"github.com/urfave/cli"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/server"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/server"
 )
 
 const (
@@ -205,12 +205,10 @@ func actionRun(c *cli.Context) error {
 		adminSecret = "some-secret"
 	}
 	adminUserInfo := &config.AdminUser{User: adminUser, Pass: adminPass, Secret: adminSecret}
-	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, disableMetrics, adminUserInfo, ssl)
+	s, err := server.New(nodeID, clusterID, advertiseAddr, storeType, runnerAddr, disableMetrics, isDev, adminUserInfo, ssl)
 	if err != nil {
 		return err
 	}
-
-	s.SetConfig(ssl, !isDev)
 
 	// Download and host mission control
 	staticPath, err := initMissionContol(utils.BuildVersion)

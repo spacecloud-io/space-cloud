@@ -1,6 +1,7 @@
 package istio
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
@@ -12,48 +13,50 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spaceuptech/space-cloud/runner/model"
+	"github.com/spaceuptech/space-cloud/runner/utils"
 )
 
 // CreateSecret is used to upsert secret
-func (i *Istio) CreateSecret(projectID string, secretObj *model.Secret) error {
+func (i *Istio) CreateSecret(ctx context.Context, projectID string, secretObj *model.Secret) error {
 	// check whether the oldSecret type is correct!
 	if secretObj.Type != model.FileType && secretObj.Type != model.EnvType && secretObj.Type != model.DockerType {
 		return fmt.Errorf("invalid oldSecret type (%s) provided", secretObj.Type)
 	}
 
-	oldSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretObj.ID, metav1.GetOptions{})
+	oldSecret, err := i.kube.CoreV1().Secrets(projectID).Get(ctx, secretObj.ID, metav1.GetOptions{})
 	if kubeErrors.IsNotFound(err) {
 		// Create a new Secret
-		logrus.Debugf("Creating oldSecret (%s)", secretObj.ID)
+		logrus.Debugf("Creating secret (%s)", secretObj.ID)
 		newSecret, err := generateSecret(projectID, secretObj)
 		if err != nil {
 			return err
 		}
 
-		_, err = i.kube.CoreV1().Secrets(projectID).Create(newSecret)
+		_, err = i.kube.CoreV1().Secrets(projectID).Create(ctx, newSecret, metav1.CreateOptions{})
 		return err
 
 	} else if err == nil {
 		// oldSecret already exists...update it!
-		logrus.Debugf("Updating oldSecret (%s)", secretObj.ID)
-		if string(oldSecret.Type) != secretObj.Type {
-			return fmt.Errorf("secret already exists type mismatch")
+		logrus.Debugf("Updating secret (%s)", secretObj.ID)
+		oldSecretType := oldSecret.Annotations["secretType"]
+		if oldSecret.Annotations["secretType"] != secretObj.Type {
+			return utils.LogError(fmt.Sprintf("Secret type mismatch. Wanted - %s; Got - %s", oldSecretType, secretObj.Type), "secrets", "apply", nil)
 		}
 		newSecret, err := generateSecret(projectID, secretObj)
 		if err != nil {
 			return err
 		}
-		_, err = i.kube.CoreV1().Secrets(projectID).Update(newSecret)
+		_, err = i.kube.CoreV1().Secrets(projectID).Update(ctx, newSecret, metav1.UpdateOptions{})
 		return err
 	}
-	logrus.Errorf("Failed to create oldSecret (%s) - %s", secretObj.ID, err)
+	logrus.Errorf("Failed to create secret (%s) - %s", secretObj.ID, err)
 	return err
 }
 
 // ListSecrets lists all the secrets in the provided name-space!
-func (i *Istio) ListSecrets(projectID string) ([]*model.Secret, error) {
+func (i *Istio) ListSecrets(ctx context.Context, projectID string) ([]*model.Secret, error) {
 	// List all secrets
-	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).List(metav1.ListOptions{LabelSelector: "app=space-cloud"})
+	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).List(ctx, metav1.ListOptions{LabelSelector: "app=space-cloud"})
 	if err != nil {
 		logrus.Errorf("Failed to fetch list of secrets - %s", err)
 		return nil, err
@@ -83,8 +86,8 @@ func (i *Istio) ListSecrets(projectID string) ([]*model.Secret, error) {
 }
 
 // DeleteSecret is used to delete secrets!
-func (i *Istio) DeleteSecret(projectID string, secretName string) error {
-	err := i.kube.CoreV1().Secrets(projectID).Delete(secretName, &metav1.DeleteOptions{})
+func (i *Istio) DeleteSecret(ctx context.Context, projectID string, secretName string) error {
+	err := i.kube.CoreV1().Secrets(projectID).Delete(ctx, secretName, metav1.DeleteOptions{})
 	if kubeErrors.IsNotFound(err) || err == nil {
 		return nil
 	}
@@ -93,13 +96,13 @@ func (i *Istio) DeleteSecret(projectID string, secretName string) error {
 }
 
 // SetFileSecretRootPath is used to set the file secret root path
-func (i *Istio) SetFileSecretRootPath(projectID string, secretName, rootPath string) error {
+func (i *Istio) SetFileSecretRootPath(ctx context.Context, projectID string, secretName, rootPath string) error {
 	if secretName == "" || rootPath == "" {
 		logrus.Errorf("empty secret name or root path provided")
 		return fmt.Errorf("empty secret name or root path provided got (%s,%s)", secretName, rootPath)
 	}
 	// Get secret and then check type
-	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretName, metav1.GetOptions{})
+	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -115,19 +118,19 @@ func (i *Istio) SetFileSecretRootPath(projectID string, secretName, rootPath str
 	}
 
 	// Update the secret
-	_, err = i.kube.CoreV1().Secrets(projectID).Update(kubeSecret)
+	_, err = i.kube.CoreV1().Secrets(projectID).Update(ctx, kubeSecret, metav1.UpdateOptions{})
 	return err
 }
 
 // SetKey adds a new secret key-value pair
-func (i *Istio) SetKey(projectID string, secretName string, secretKey string, secretValObj *model.SecretValue) error {
+func (i *Istio) SetKey(ctx context.Context, projectID string, secretName string, secretKey string, secretValObj *model.SecretValue) error {
 	if secretName == "" || secretValObj.Value == "" {
 		logrus.Errorf("Empty key/value provided. Key not set")
 		return fmt.Errorf("key/value not provided; got (%s,%s)", secretName, secretValObj.Value)
 	}
 
 	// Get secret and then check type
-	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretName, metav1.GetOptions{})
+	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(ctx, secretName, metav1.GetOptions{})
 
 	if kubeErrors.IsNotFound(err) {
 		return err
@@ -146,16 +149,16 @@ func (i *Istio) SetKey(projectID string, secretName string, secretKey string, se
 		}
 
 		// Update the secret
-		_, err := i.kube.CoreV1().Secrets(projectID).Update(kubeSecret)
+		_, err := i.kube.CoreV1().Secrets(projectID).Update(ctx, kubeSecret, metav1.UpdateOptions{})
 		return err
 	}
 	return err
 }
 
 // DeleteKey is used to delete a key from the secret!
-func (i *Istio) DeleteKey(projectID string, secretName string, secretKey string) error {
+func (i *Istio) DeleteKey(ctx context.Context, projectID string, secretName string, secretKey string) error {
 	// Get secret
-	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(secretName, metav1.GetOptions{})
+	kubeSecret, err := i.kube.CoreV1().Secrets(projectID).Get(ctx, secretName, metav1.GetOptions{})
 
 	if kubeErrors.IsNotFound(err) {
 		return fmt.Errorf("secret with name (%s) does not exist- %s", secretName, err)
@@ -171,7 +174,7 @@ func (i *Istio) DeleteKey(projectID string, secretName string, secretKey string)
 		}
 
 		// Update the secret
-		_, err := i.kube.CoreV1().Secrets(projectID).Update(kubeSecret)
+		_, err := i.kube.CoreV1().Secrets(projectID).Update(ctx, kubeSecret, metav1.UpdateOptions{})
 		return err
 	}
 	return err
@@ -226,7 +229,7 @@ func generateSecret(projectID string, secret *model.Secret) (*v1.Secret, error) 
 	}, nil
 }
 
-func (i *Istio) getSecrets(service *model.Service) (map[string]*v1.Secret, error) {
+func (i *Istio) getSecrets(ctx context.Context, service *model.Service) (map[string]*v1.Secret, error) {
 	listOfSecrets := map[string]*v1.Secret{}
 	tasks := service.Tasks
 	for _, task := range tasks {
@@ -234,7 +237,7 @@ func (i *Istio) getSecrets(service *model.Service) (map[string]*v1.Secret, error
 			if _, p := listOfSecrets[secretName]; p {
 				continue
 			}
-			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(secretName, metav1.GetOptions{})
+			secrets, err := i.kube.CoreV1().Secrets(service.ProjectID).Get(ctx, secretName, metav1.GetOptions{})
 			if err != nil {
 				return nil, err
 			}

@@ -31,7 +31,6 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.4.0
 	github.com/txn2/txeh v1.3.0
-	github.com/urfave/cli v1.22.2
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
 	golang.org/x/net v0.0.0-20191027093000-83d349e8ac1a // indirect
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect

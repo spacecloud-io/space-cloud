@@ -26,6 +26,7 @@ func GetRootCommand() *cobra.Command {
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			utils.SetLogLevel(viper.GetString("log-level"))
 		},
+		SilenceUsage: true,
 	}
 
 	var completionCmd = &cobra.Command{

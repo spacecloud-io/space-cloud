@@ -20,8 +20,7 @@ func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
 	commandName := "auth-provider"
 
@@ -32,11 +31,35 @@ func actionGetAuthProviders(cmd *cobra.Command, args []string) error {
 
 	objs, err := GetAuthProviders(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
+}
+
+// GenerateSubCommands dis the list of commands the project module exposes
+func GenerateSubCommands() []*cobra.Command {
+
+	var generateUserManagement = &cobra.Command{
+		Use:  "auth-provider",
+		RunE: actionGenerateUserManagement,
+	}
+
+	return []*cobra.Command{generateUserManagement}
+}
+
+func actionGenerateUserManagement(cmd *cobra.Command, args []string) error {
+	if len(args) != 1 {
+		return utils.LogError("incorrect number of arguments", nil)
+	}
+	dbruleConfigFile := args[0]
+	dbrule, err := generateUserManagement()
+	if err != nil {
+		return err
+	}
+
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }

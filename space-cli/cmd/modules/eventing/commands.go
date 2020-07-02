@@ -66,8 +66,7 @@ func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
 	commandName := "eventing-trigger"
 
@@ -77,10 +76,10 @@ func actionGetEventingTrigger(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetEventingTrigger(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
@@ -89,19 +88,18 @@ func actionGetEventingConfig(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
 	commandName := "eventing-config"
 
 	params := map[string]string{}
 	obj, err := GetEventingConfig(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(obj); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
@@ -110,8 +108,7 @@ func actionGetEventingSchema(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
 	commandName := "eventing-schema"
 
@@ -121,11 +118,11 @@ func actionGetEventingSchema(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetEventingSchema(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
@@ -134,8 +131,7 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 	// Get the project and url parameters
 	project, check := utils.GetProjectID()
 	if !check {
-		_ = utils.LogError("Project not specified in flag", nil)
-		return nil
+		return utils.LogError("Project not specified in flag", nil)
 	}
 	commandName := "eventing-rule"
 
@@ -145,71 +141,63 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 	}
 	objs, err := GetEventingSecurityRule(project, commandName, params)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := utils.PrintYaml(objs); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
 
 func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingRule()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingSchema()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingConfig()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
 
 func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		_ = utils.LogError("incorrect number of arguments", nil)
-		return nil
+		return utils.LogError("incorrect number of arguments", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingTrigger()
 	if err != nil {
-		return nil
+		return err
 	}
 
-	_ = utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
-	return nil
+	return utils.AppendConfigToDisk(dbrule, dbruleConfigFile)
 }
