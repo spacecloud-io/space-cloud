@@ -1,19 +1,18 @@
 package modules
 
 import (
+	"github.com/spaceuptech/space-cloud/gateway/managers"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/modules/eventing"
 	"github.com/spaceuptech/space-cloud/gateway/modules/filestore"
 	"github.com/spaceuptech/space-cloud/gateway/modules/functions"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global"
 	"github.com/spaceuptech/space-cloud/gateway/modules/realtime"
 	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 	"github.com/spaceuptech/space-cloud/gateway/modules/userman"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
 	"github.com/spaceuptech/space-cloud/gateway/utils/graphql"
-	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
-	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 // Modules is an object that sets up the modules
@@ -27,10 +26,23 @@ type Modules struct {
 	eventing  *eventing.Module
 	graphql   *graphql.Module
 	schema    *schema.Schema
+
+	// Global Modules
+	GlobalMods *global.Global
+
+	// Managers
+	Managers *managers.Managers
 }
 
 // New creates a new modules instance
-func New(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metrics *metrics.Module) (*Modules, error) {
+func New(nodeID string, managers *managers.Managers, globalMods *global.Global) (*Modules, error) {
+
+	// Extract managers
+	adminMan := managers.Admin()
+	syncMan := managers.Sync()
+
+	// Extract global modules
+	metrics := globalMods.Metrics()
 
 	c := crud.Init()
 	c.SetGetSecrets(syncMan.GetSecrets)
@@ -63,5 +75,10 @@ func New(nodeID string, syncMan *syncman.Manager, adminMan *admin.Manager, metri
 	u := userman.Init(c, a)
 	graphqlMan := graphql.New(a, c, fn, s)
 
-	return &Modules{auth: a, db: c, user: u, file: f, functions: fn, realtime: rt, eventing: e, graphql: graphqlMan, schema: s}, nil
+	return &Modules{auth: a, db: c, user: u, file: f, functions: fn, realtime: rt, eventing: e, graphql: graphqlMan, schema: s, GlobalMods: globalMods, Managers: managers}, nil
+}
+
+// Delete deletes a project
+func (m *Modules) Delete(projectID string) {
+	// Close all the modules here
 }
