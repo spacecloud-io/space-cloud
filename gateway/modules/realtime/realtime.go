@@ -4,9 +4,9 @@ import (
 	"sync"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
-	"github.com/spaceuptech/space-cloud/gateway/utils/metrics"
-	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/metrics"
 )
 
 // Module is responsible for managing the realtime module
