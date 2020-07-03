@@ -4,6 +4,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/letsencrypt"
+	"github.com/spaceuptech/space-cloud/gateway/modules/global/routing"
 )
 
 // SetProjectConfig sets the config all modules
@@ -78,36 +80,24 @@ func (m *Modules) SetProjectConfig(c *config.Project) error {
 // CloseProjectConfig close the config all modules
 func (m *Modules) CloseProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
 	if c.Projects != nil && len(c.Projects) > 0 {
-		p := c.Projects[0]
-
-		if p.Modules == nil {
-			p.Modules = &config.Modules{
-				FileStore:   &config.FileStore{},
-				Services:    &config.ServicesModule{},
-				Auth:        map[string]*config.AuthStub{},
-				Crud:        map[string]*config.CrudStub{},
-				Routes:      []*config.Route{},
-				LetsEncrypt: config.LetsEncrypt{WhitelistedDomains: []string{}},
-			}
-		}
 
 		logrus.Debugln("closing config of db module")
-		if err := m.db.CloseConfig(p.ID, p.Modules.Crud); err != nil {
+		if err := m.db.CloseConfig(); err != nil {
 			logrus.Errorf("error closing db module config - %s", err.Error())
 		}
 
 		logrus.Debugln("closing config of gcpstorage module")
-		if err := m.file.CloseConfig(p.ID, p.Modules.FileStore); err != nil {
+		if err := m.file.CloseConfig(); err != nil {
 			logrus.Errorf("error closing filestore module config - %s", err.Error())
 		}
 
 		logrus.Debugln("closing config of eventing module")
-		if err := m.eventing.CloseConfig(p.ID, &p.Modules.Eventing); err != nil {
+		if err := m.eventing.CloseConfig(); err != nil {
 			logrus.Errorf("error closing eventing module config - %s", err.Error())
 		}
 
 		logrus.Debugln("closing config of realtime module")
-		if err := m.realtime.CloseConfig(p.ID, p.Modules.Crud); err != nil {
+		if err := m.realtime.CloseConfig(); err != nil {
 			logrus.Errorf("error closing realtime module config - %s", err.Error())
 		}
 	}

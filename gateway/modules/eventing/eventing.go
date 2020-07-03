@@ -121,3 +121,34 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 
 	return nil
 }
+
+// CloseConfig closes the module config
+func (m *Module) CloseConfig() error {
+	//erase map
+	m.eventChanMap.Range(func(key interface{}, value interface{}) bool {
+		m.eventChanMap.Delete(key)
+		return true
+	})
+	//erase map
+	m.processingEvents.Range(func(key interface{}, value interface{}) bool {
+		m.processingEvents.Delete(key)
+		return true
+	})
+
+	for k := range m.schemas {
+		delete(m.schemas, k)
+	}
+	for k := range m.config.Rules {
+		delete(m.config.Rules, k)
+	}
+	for k := range m.config.InternalRules {
+		delete(m.config.InternalRules, k)
+	}
+	for k := range m.config.SecurityRules {
+		delete(m.config.SecurityRules, k)
+	}
+	for k := range m.config.Schemas {
+		delete(m.config.Schemas, k)
+	}
+	return nil
+}

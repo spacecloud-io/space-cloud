@@ -55,6 +55,11 @@ func (m *Module) SetConfig(project string, crudConfig config.Crud) error {
 }
 
 // CloseConfig close the rules and secret key required by the realtime block
-func (m *Module) CloseConfig(project string, crudConfig config.Crud) error {
+func (m *Module) CloseConfig() error {
+	//erase map
+	m.groups.Range(func(key interface{}, value interface{}) bool {
+		m.groups.Delete(key)
+		return true
+	})
 	return nil
 }
