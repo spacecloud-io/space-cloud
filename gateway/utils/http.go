@@ -60,8 +60,10 @@ func MakeHTTPRequest(ctx context.Context, request *HTTPRequest, vPtr interface{}
 	}
 	defer CloseTheCloser(resp.Body)
 
-	if err := json.NewDecoder(resp.Body).Decode(vPtr); err != nil {
-		return err
+	if resp.StatusCode != 204 {
+		if err := json.NewDecoder(resp.Body).Decode(vPtr); err != nil {
+			return err
+		}
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
