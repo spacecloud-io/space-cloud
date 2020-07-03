@@ -89,9 +89,12 @@ func GetRootCommand() *cobra.Command {
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('log-level') to environment variables", nil)
 	}
-	rootCmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = rootCmd.RegisterFlagCompletionFunc("log-level", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"info", "debug", "error"}, cobra.ShellCompDirectiveDefault
 	})
+	if err != nil {
+		_ = utils.LogError("Unable to provide suggetion for flag ('log-level')", nil)
+	}
 
 	rootCmd.PersistentFlags().StringP("project", "", "", "The project id to perform the options in")
 	err = viper.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
@@ -102,7 +105,7 @@ func GetRootCommand() *cobra.Command {
 	if err != nil {
 		_ = utils.LogError("Unable to bind flag ('project') to environment variables", nil)
 	}
-	rootCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = rootCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		obj, err := project.GetProjectConfig("", "project", map[string]string{})
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveDefault
@@ -113,6 +116,9 @@ func GetRootCommand() *cobra.Command {
 		}
 		return projects, cobra.ShellCompDirectiveDefault
 	})
+	if err != nil {
+		_ = utils.LogError("Unable to provide suggetion for flag ('project')", nil)
+	}
 
 	rootCmd.AddCommand(modules.FetchGenerateSubCommands())
 	rootCmd.AddCommand(modules.FetchGetSubCommands())
