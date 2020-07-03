@@ -80,7 +80,7 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 		dummyCrud := config.Crud{
 			"dummyDBName": &config.CrudStub{
 				Collections: map[string]*config.TableRule{
-					eventType: &config.TableRule{
+					eventType: {
 						Schema: schemaObj.Schema,
 					},
 				},
