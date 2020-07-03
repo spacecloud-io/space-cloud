@@ -105,8 +105,7 @@ func (m *Module) SetConfig(project string, conf *config.FileStore) error {
 
 // CloseConfig close todo
 func (m *Module) CloseConfig() error {
-	m.store.Close()
-	return nil
+	return m.store.Close()
 }
 
 func setFileSecret(fileStoreType utils.FileStoreType, key, value string) error {
