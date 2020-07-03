@@ -60,7 +60,6 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		}
 
 		if t.After(timestamp) || t.Equal(timestamp) {
-			m.wg.Add(1)
 			go m.processStagedEvent(eventDoc)
 		}
 	}
@@ -69,81 +68,75 @@ func (m *Module) processStagedEvents(t *time.Time) {
 func (m *Module) processStagedEvent(eventDoc *model.EventDocument) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
-	defer m.wg.Done()
+
+	// Return if the event is already being processed
+	if _, loaded := m.processingEvents.LoadOrStore(eventDoc.ID, true); loaded {
+		return
+	}
+
+	// Delete the event from the processing list without fail
+	defer m.processingEvents.Delete(eventDoc.ID)
+
+	evType, name := eventDoc.Type, eventDoc.RuleName
+
+	rule, err := m.selectRule(name)
+	if err != nil {
+		logrus.Errorln("Error processing staged event:", err)
+		return
+	}
+
+	var maxRetries int
+	if rule.Retries > 0 {
+		maxRetries = rule.Retries
+	} else {
+		maxRetries = 3
+	}
+
+	if rule.Timeout == 0 {
+		rule.Timeout = 5000
+	}
+
+	// Call the function to process the event
+	timeoutLocal := time.Duration(5000*maxRetries*rule.Timeout) * time.Millisecond
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutLocal)
+	defer cancel()
+
+	// Create a variable to track retries
+	retries := 0
+
+	// Payload will be of type json. Unmarshal it before sending
+	var doc interface{}
+	_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
+	eventDoc.Payload = doc
+
+	cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: evType, Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
+		Time: eventDoc.Timestamp, Data: eventDoc.Payload}
+
 	for {
-		select {
-		default:
-			// Return if the event is already being processed
-			if _, loaded := m.processingEvents.LoadOrStore(eventDoc.ID, true); loaded {
-				return
+		if err := m.invokeWebhook(ctx, &http.Client{}, rule, eventDoc, &cloudEvent); err != nil {
+			logrus.Errorf("Eventing staged event handler could not get response from service -%s", err.Error())
+
+			// Increment the retries. Exit the loop if max retries reached.
+			retries++
+			if retries >= maxRetries+1 {
+				// Mark event as failed
+				break
 			}
 
-			// Delete the event from the processing list without fail
-			defer m.processingEvents.Delete(eventDoc.ID)
-
-			evType, name := eventDoc.Type, eventDoc.RuleName
-
-			rule, err := m.selectRule(name)
-			if err != nil {
-				logrus.Errorln("Error processing staged event:", err)
-				return
-			}
-
-			var maxRetries int
-			if rule.Retries > 0 {
-				maxRetries = rule.Retries
-			} else {
-				maxRetries = 3
-			}
-
-			if rule.Timeout == 0 {
-				rule.Timeout = 5000
-			}
-
-			// Call the function to process the event
-			timeoutLocal := time.Duration(5000*maxRetries*rule.Timeout) * time.Millisecond
-
-			ctx, cancel := context.WithTimeout(context.Background(), timeoutLocal)
-			defer cancel()
-
-			// Create a variable to track retries
-			retries := 0
-
-			// Payload will be of type json. Unmarshal it before sending
-			var doc interface{}
-			_ = json.Unmarshal([]byte(eventDoc.Payload.(string)), &doc)
-			eventDoc.Payload = doc
-
-			cloudEvent := model.CloudEventPayload{SpecVersion: "1.0-rc1", Type: evType, Source: m.syncMan.GetEventSource(), ID: eventDoc.ID,
-				Time: eventDoc.Timestamp, Data: eventDoc.Payload}
-
-			for {
-				if err := m.invokeWebhook(ctx, &http.Client{}, rule, eventDoc, &cloudEvent); err != nil {
-					logrus.Errorf("Eventing staged event handler could not get response from service -%s", err.Error())
-
-					// Increment the retries. Exit the loop if max retries reached.
-					retries++
-					if retries >= maxRetries+1 {
-						// Mark event as failed
-						break
-					}
-
-					// Sleep for 5 seconds
-					time.Sleep(5 * time.Second)
-					continue
-				}
-
-				// Reaching here means the event was successfully processed. Let's simply return
-				return
-			}
-
-			if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
-				logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
-			}
-		case <-m.stopChan:
-			fmt.Println("goroutine processStagedEvent stopped")
-			return
+			// Sleep for 5 seconds
+			time.Sleep(5 * time.Second)
+			continue
 		}
+
+		// Reaching here means the event was successfully processed. Let's simply return
+		return
+	}
+	if err := m.triggerDLQEvent(ctx, eventDoc); err != nil {
+		_ = utils.LogError(fmt.Sprintf("Couldn't create DLQ event for event id %v", eventDoc.ID), "eventing", "triggerDLQEvent", err)
+	}
+	if err := m.crud.InternalUpdate(context.Background(), m.config.DBAlias, m.project, utils.TableEventingLogs, m.generateFailedEventRequest(eventDoc.ID, "Max retires limit reached")); err != nil {
+		logrus.Errorf("Eventing staged event handler could not update event doc - %s", err.Error())
 	}
 }
 

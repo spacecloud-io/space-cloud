@@ -40,9 +40,6 @@ type Module struct {
 
 	// function to get secrets from runner
 	getSecrets utils.GetSecrets
-
-	stopChan chan struct{}
-	wg       sync.WaitGroup
 }
 
 type loader struct {
@@ -67,6 +64,7 @@ type Crud interface {
 	RawBatch(ctx context.Context, batchedQueries []string) error
 	GetDBType() utils.DBType
 	IsClientSafe() error
+	IsSame(conn, dbName string) bool
 	Close() error
 	GetConnectionState(ctx context.Context) bool
 }
@@ -133,18 +131,11 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 	// Reset all existing prepared query
 	m.queries = map[string]*config.PreparedQuery{}
 
-	// Close the previous database connection
-	if m.block != nil {
-		utils.CloseTheCloser(m.block)
-	}
-
 	// clear previous data loader
 	m.dataLoader = loader{loaderMap: map[string]*dataloader.Loader{}}
 
 	// Create a new crud blocks
 	for k, v := range crud {
-		var c Crud
-		var err error
 		if v.Type == "" {
 			v.Type = k
 		}
@@ -153,6 +144,26 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		if v.DBName == "" {
 			v.DBName = project
 		}
+
+		// Add the prepared queries in this db
+		for id, query := range v.PreparedQueries {
+			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
+		}
+
+		if m.block != nil {
+			// Skip if the connection string is the same
+			if m.block.IsSame(v.Conn, v.DBName) {
+				break
+			}
+
+			// Close the previous database connection
+			if err := m.block.Close(); err != nil {
+				_ = utils.LogError("Unable to close database connections", "crud", "set-config", err)
+			}
+		}
+
+		var c Crud
+		var err error
 
 		// check if connection string starts with secrets
 		secretName, secretKey, isSecretExists := splitConnectionString(v.Conn)
@@ -177,11 +188,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.dbType = v.Type
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
-
-		// Add the prepared queries in this db
-		for id, query := range v.PreparedQueries {
-			m.queries[getPreparedQueryKey(strings.TrimPrefix(k, "sql-"), id)] = query
-		}
 	}
 	m.initBatchOperation(project, crud)
 	return nil
@@ -211,23 +217,4 @@ func (m *Module) SetGetSecrets(function utils.GetSecrets) {
 	defer m.Unlock()
 
 	m.getSecrets = function
-}
-
-// CloseConfig close the rules and secret key required by the crud block
-func (m *Module) CloseConfig(project string, crud config.Crud) error {
-	for k := range m.queries {
-		delete(m.queries, k)
-	}
-	for _, project := range m.batchMapTableToChan {
-		for _, dbAlias := range project {
-			for _, tablename := range dbAlias {
-				close(tablename.closeC)
-			}
-		}
-	}
-	// fmt.Println("main: telling goroutines to stop")
-	// close(m.stopChan)
-	// m.wg.Wait()
-	// fmt.Println("main: all goroutines have told us they've finished")
-	return nil
 }
