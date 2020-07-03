@@ -13,7 +13,7 @@ import (
 func Test_deleteAccount(t *testing.T) {
 	// singleMatchCase stores the value returned from the survey when prefix matches one account ID
 	// initialized with "lo" to be consistent with test case
-	singleMatchCase := "lo"
+	//singleMatchCase := "lo"
 	// multipleMatchCase stores the value returned from the survey when prefix matches multiple account IDs
 	// initialized with "l" to be consistent with test case
 	multipleMatchCase := "l"
@@ -60,13 +60,6 @@ func Test_deleteAccount(t *testing.T) {
 					paramsReturned: []interface{}{[]byte("accounts:\n- id: local-admin\n  username: local-admin\n  key: 81WZUGRTtHbG\n  serverurl: http://localhost:4122\nselectedAccount: local-admin"), nil},
 				},
 			},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID: ", Options: []string{"local-admin"}, Default: "local-admin"}, &singleMatchCase},
-					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
-				},
-			},
 			wantErr: true,
 		},
 		{
@@ -76,13 +69,6 @@ func Test_deleteAccount(t *testing.T) {
 				{
 					method:         "ReadFile",
 					paramsReturned: []interface{}{[]byte("accounts:\n- id: local-admin\n  username: local-admin\n  key: 81WZUGRTtHbG\n  serverurl: http://localhost:4122\nselectedAccount: local-admin"), nil},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID: ", Options: []string{"local-admin"}, Default: "local-admin"}, &singleMatchCase},
-					paramsReturned: []interface{}{nil, "local-admin"},
 				},
 			},
 			wantErr: true,
@@ -108,13 +94,6 @@ func Test_deleteAccount(t *testing.T) {
 					paramsReturned: []interface{}{errors.New("could not make directory")},
 				},
 			},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID: ", Options: []string{"last-admin"}, Default: "last-admin"}, &singleMatchCase},
-					paramsReturned: []interface{}{nil, "last-admin"},
-				},
-			},
 			wantErr: true,
 		},
 		{
@@ -136,13 +115,6 @@ func Test_deleteAccount(t *testing.T) {
 				{
 					method:         "WriteFile",
 					paramsReturned: []interface{}{nil},
-				},
-			},
-			surveyMockArgs: []mockArgs{
-				{
-					method:         "AskOne",
-					args:           []interface{}{&survey.Select{Message: "Choose the account ID: ", Options: []string{"last-admin"}, Default: "last-admin"}, &singleMatchCase},
-					paramsReturned: []interface{}{nil, "last-admin"},
 				},
 			},
 		},
