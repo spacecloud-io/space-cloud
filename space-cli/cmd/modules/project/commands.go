@@ -24,6 +24,18 @@ func GetSubCommands() []*cobra.Command {
 		Use:     "projects",
 		Aliases: []string{"project"},
 		RunE:    actionGetProjectConfig,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			project := viper.GetString("project")
+			objs, err := GetProjectConfig(project, "project", map[string]string{})
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			var ids []string
+			for _, v := range objs {
+				ids = append(ids, v.Meta["id"])
+			}
+			return ids, cobra.ShellCompDirectiveDefault
+		},
 	}
 
 	return []*cobra.Command{getprojects}
