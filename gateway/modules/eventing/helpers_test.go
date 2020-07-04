@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/managers/admin"
+	"github.com/spaceuptech/space-cloud/gateway/managers/syncman"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
 	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
-	"github.com/spaceuptech/space-cloud/gateway/utils/admin"
-	"github.com/spaceuptech/space-cloud/gateway/utils/syncman"
 )
 
 func TestModule_selectRule(t *testing.T) {
