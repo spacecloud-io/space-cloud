@@ -5,7 +5,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
 )
 
 // CreateSpecObject returns the string equivalent of the git op object

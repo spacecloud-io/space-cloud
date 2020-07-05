@@ -3,7 +3,7 @@ package auth
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 // GetSubCommands is the list of commands the auth module exposes
