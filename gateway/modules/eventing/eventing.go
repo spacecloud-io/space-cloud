@@ -36,6 +36,8 @@ type Module struct {
 	metricHook model.MetricEventingHook
 	// stores mapping of batchID w.r.t channel for sending synchronous event response
 	eventChanMap sync.Map // key here is batchID
+	ticker       *time.Ticker
+	done         chan bool
 }
 
 // synchronous event response
@@ -57,9 +59,12 @@ func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, sch
 		fileStore:  file,
 		metricHook: hook,
 		config:     &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
+		ticker:     &time.Ticker{},
+		done:       make(chan bool),
 	}
 
 	// Start the internal processes
+	m.ticker = time.NewTicker(5 * time.Second)
 	go m.routineProcessIntents()
 	go m.routineProcessStaged()
 
@@ -150,5 +155,7 @@ func (m *Module) CloseConfig() error {
 	for k := range m.config.Schemas {
 		delete(m.config.Schemas, k)
 	}
+	m.ticker.Stop()
+	close(m.done)
 	return nil
 }
