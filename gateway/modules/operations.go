@@ -4,8 +4,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/global/letsencrypt"
-	"github.com/spaceuptech/space-cloud/gateway/modules/global/routing"
 )
 
 // SetProjectConfig sets the config all modules
@@ -78,7 +76,7 @@ func (m *Modules) SetProjectConfig(c *config.Project) error {
 }
 
 // CloseProjectConfig close the config all modules
-func (m *Modules) CloseProjectConfig(c *config.Config, le *letsencrypt.LetsEncrypt, ingressRouting *routing.Routing) {
+func (m *Modules) CloseProjectConfig(c *config.Config) {
 	if c.Projects != nil && len(c.Projects) > 0 {
 
 		logrus.Debugln("closing config of db module")
