@@ -43,22 +43,22 @@ func TestModule_processCreateDocs(t *testing.T) {
 	}{
 		{
 			name: "length of rules is 0",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "someType", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": {Type: "someType", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventDocID: "eventid", batchID: "batchid", dbAlias: "db", col: "col", rows: nil},
 			want: nil,
 		},
 		{
 			name: "rows are nil",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventDocID: "eventid", batchID: "batchid", dbAlias: "db", col: "col", rows: nil},
 			want: []*model.EventDocument{},
 		},
 		{
 			name: "eventing is not possible",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventDocID: "eventid", batchID: "batchid", dbAlias: "db", col: "col", rows: []interface{}{map[string]interface{}{"key": "value"}}},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, false},
 					paramsReturned: []interface{}{nil, false},
@@ -68,16 +68,16 @@ func TestModule_processCreateDocs(t *testing.T) {
 		},
 		{
 			name: "doc are created",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, batchID: "batchid", dbAlias: "db", col: "col", rows: []interface{}{map[string]interface{}{"key": "value"}}},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, false},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
-			want: []*model.EventDocument{&model.EventDocument{BatchID: "batchid", Type: utils.EventDBCreate, RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: string(data), Status: utils.EventStatusIntent}},
+			want: []*model.EventDocument{{BatchID: "batchid", Type: utils.EventDBCreate, RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: string(data), Status: utils.EventStatusIntent}},
 		},
 	}
 	for _, tt := range tests {
@@ -149,17 +149,17 @@ func TestModule_processUpdateDeleteHook(t *testing.T) {
 	}{
 		{
 			name:  "no rules matched",
-			m:     &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "nottype", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:     &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": {Type: "nottype", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args:  args{token: 50, eventType: "type", batchID: "batchid", dbAlias: "db", col: "col", find: map[string]interface{}{"key": "value"}},
 			want:  nil,
 			want1: false,
 		},
 		{
 			name: "eventing is not possible",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "type", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": {Type: "type", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventType: "type", batchID: "batchid", dbAlias: "db", col: "col", find: map[string]interface{}{"key": "value"}},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, true},
 					paramsReturned: []interface{}{nil, false},
@@ -170,16 +170,16 @@ func TestModule_processUpdateDeleteHook(t *testing.T) {
 		},
 		{
 			name: "docs are updated",
-			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "type", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{config: &config.Eventing{Rules: map[string]config.EventingRule{"rule": {Type: "type", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{token: 50, eventType: "type", batchID: "batchid", dbAlias: "db", col: "col", find: map[string]interface{}{"key": "value"}},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, true},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
-			want:  []*model.EventDocument{&model.EventDocument{BatchID: "batchid", Type: "type", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: string(data), Status: utils.EventStatusIntent}},
+			want:  []*model.EventDocument{{BatchID: "batchid", Type: "type", RuleName: "rule", Token: 50, Timestamp: time.Now().Format(time.RFC3339), Payload: string(data), Status: utils.EventStatusIntent}},
 			want1: true,
 		},
 	}
@@ -256,9 +256,9 @@ func TestModule_HookStage(t *testing.T) {
 		{
 			name: "error is not nil",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{&model.EventDocument{Type: "notUpdate"}}}, err: errors.New("some error")},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: "notUpdate"}}}, err: errors.New("some error")},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "cancel", "remark": "some error"}}}},
 					paramsReturned: []interface{}{nil},
@@ -268,9 +268,9 @@ func TestModule_HookStage(t *testing.T) {
 		{
 			name: "error is not nil and unable to update internal",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{&model.EventDocument{Type: "notUpdate"}}}, err: errors.New("some error")},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: "notUpdate"}}}, err: errors.New("some error")},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "cancel", "remark": "some error"}}}},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -280,9 +280,9 @@ func TestModule_HookStage(t *testing.T) {
 		{
 			name: "error is nil and unable to update internal",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{&model.EventDocument{Type: "notUpdate"}}}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: "notUpdate"}}}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "staged"}}}},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -292,35 +292,35 @@ func TestModule_HookStage(t *testing.T) {
 		{
 			name: "event is staged not of type DB_UPDATE",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{&model.EventDocument{Type: "notUpdate"}}}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: "notUpdate"}}}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "staged"}}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{Status: "staged", Type: "notUpdate"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{Status: "staged", Type: "notUpdate"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
@@ -330,35 +330,35 @@ func TestModule_HookStage(t *testing.T) {
 		{
 			name: "type DB_UPDATE but error unmarshalling",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{&model.EventDocument{Type: utils.EventDBUpdate, Payload: "payload"}}}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: utils.EventDBUpdate, Payload: "payload"}}}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, &model.UpdateRequest{Find: map[string]interface{}{"batchid": "batchid"}, Operation: utils.All, Update: map[string]interface{}{"$set": map[string]interface{}{"status": "staged"}}}},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{Status: "staged", Type: "DB_UPDATE", Payload: "payload"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{Status: "staged", Type: "DB_UPDATE", Payload: "payload"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
@@ -368,40 +368,40 @@ func TestModule_HookStage(t *testing.T) {
 		{
 			name: "error reading",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{&model.EventDocument{Type: utils.EventDBUpdate, Payload: `{"db": "db", "col": "col", "find": {"key1": "value1"}}`}}}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: utils.EventDBUpdate, Payload: `{"db": "db", "col": "col", "find": {"key1": "value1"}}`}}}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Find: map[string]interface{}{"key1": "value1"}, Operation: utils.One}},
 					paramsReturned: []interface{}{map[string]interface{}{}, errors.New("some error")},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{Status: "staged", Type: "DB_UPDATE", Timestamp: "", Payload: "{\"db\": \"db\", \"col\": \"col\", \"find\": {\"key1\": \"value1\"}}"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{Status: "staged", Type: "DB_UPDATE", Timestamp: "", Payload: "{\"db\": \"db\", \"col\": \"col\", \"find\": {\"key1\": \"value1\"}}"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
@@ -411,40 +411,40 @@ func TestModule_HookStage(t *testing.T) {
 		{
 			name: "type DB_UPDATE event is staged",
 			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype"}},
-			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{&model.EventDocument{Type: utils.EventDBUpdate, Payload: `{"db": "db", "col": "col", "find": {"key1": "value1"}}`}}}},
+			args: args{ctx: context.Background(), intent: &model.EventIntent{BatchID: "batchid", Token: 50, Invalid: false, Docs: []*model.EventDocument{{Type: utils.EventDBUpdate, Payload: `{"db": "db", "col": "col", "find": {"key1": "value1"}}`}}}},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "Read",
 					args:           []interface{}{mock.Anything, "db", "col", &model.ReadRequest{Find: map[string]interface{}{"key1": "value1"}, Operation: utils.One}},
 					paramsReturned: []interface{}{map[string]interface{}{}, nil},
 				},
-				mockArgs{
+				{
 					method:         "InternalUpdate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			syncMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetAssignedSpaceCloudURL",
 					args:           []interface{}{mock.Anything, "abc", 50},
 					paramsReturned: []interface{}{"url", nil},
 				},
-				mockArgs{
+				{
 					method:         "MakeHTTPRequest",
-					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{&model.EventDocument{Status: "staged", Type: "DB_UPDATE", Timestamp: time.Now().Format(time.RFC3339), Payload: "{\"db\":\"db\",\"col\":\"col\",\"doc\":{},\"find\":{\"key1\":\"value1\"}}"}}, &res},
+					args:           []interface{}{mock.Anything, "POST", "url", mock.Anything, mock.Anything, []*model.EventDocument{{Status: "staged", Type: "DB_UPDATE", Timestamp: time.Now().Format(time.RFC3339), Payload: "{\"db\":\"db\",\"col\":\"col\",\"doc\":{},\"find\":{\"key1\":\"value1\"}}"}}, &res},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			adminMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetInternalAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
 				},
 			},
 			authMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetSCAccessToken",
 					args:           []interface{}{},
 					paramsReturned: []interface{}{mock.Anything, nil},
@@ -513,10 +513,10 @@ func TestModule_hookDBUpdateDeleteIntent(t *testing.T) {
 	}{
 		{
 			name: "update delete hook not ok",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "notEvType", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]config.EventingRule{"rule": {Type: "notEvType", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{ctx: context.Background(), eventType: "evType", dbAlias: "db", col: "col", find: map[string]interface{}{}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
@@ -525,23 +525,23 @@ func TestModule_hookDBUpdateDeleteIntent(t *testing.T) {
 		},
 		{
 			name: "error in internal create",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "evType", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]config.EventingRule{"rule": {Type: "evType", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{ctx: context.Background(), eventType: "evType", dbAlias: "db", col: "col", find: map[string]interface{}{}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
 			},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{}, true},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -552,29 +552,29 @@ func TestModule_hookDBUpdateDeleteIntent(t *testing.T) {
 		},
 		{
 			name: "no errors",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "evType", Options: map[string]string{"col": "col", "db": "db"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Rules: map[string]config.EventingRule{"rule": {Type: "evType", Options: map[string]string{"col": "col", "db": "db"}}}}},
 			args: args{ctx: context.Background(), eventType: "evType", dbAlias: "db", col: "col", find: map[string]interface{}{}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
 			},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{}, true},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{&model.EventDocument{Type: "evType", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":null,"find":{}}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: "evType", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":null,"find":{}}`, Status: "intent"}}},
 		},
 	}
 	for _, tt := range tests {
@@ -660,7 +660,7 @@ func TestModule_HookDBDeleteIntent(t *testing.T) {
 	}{
 		{
 			name: " eventing not enabled",
-			m:    &Module{config: &config.Eventing{Enabled: false, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "not delete"}}}},
+			m:    &Module{config: &config.Eventing{Enabled: false, Rules: map[string]config.EventingRule{"rule": {Type: "not delete"}}}},
 			args: args{context.Background(), "db", "col", nil},
 			want: &model.EventIntent{Invalid: true},
 		},
@@ -669,7 +669,7 @@ func TestModule_HookDBDeleteIntent(t *testing.T) {
 			m:    &Module{config: &config.Eventing{Enabled: true}},
 			args: args{ctx: context.Background(), dbAlias: "db", col: "col", req: &model.DeleteRequest{Find: map[string]interface{}{}}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
@@ -722,7 +722,7 @@ func TestModule_HookDBUpdateIntent(t *testing.T) {
 	}{
 		{
 			name: " eventing not enabled",
-			m:    &Module{config: &config.Eventing{Enabled: false, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "not update"}}}},
+			m:    &Module{config: &config.Eventing{Enabled: false, Rules: map[string]config.EventingRule{"rule": {Type: "not update"}}}},
 			args: args{context.Background(), "db", "col", nil},
 			want: &model.EventIntent{Invalid: true},
 		},
@@ -731,7 +731,7 @@ func TestModule_HookDBUpdateIntent(t *testing.T) {
 			m:    &Module{config: &config.Eventing{Enabled: true}},
 			args: args{ctx: context.Background(), dbAlias: "db", col: "col", req: &model.UpdateRequest{Find: map[string]interface{}{}}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
@@ -795,7 +795,7 @@ func TestModule_HookDBCreateIntent(t *testing.T) {
 			m:    &Module{config: &config.Eventing{Enabled: true}},
 			args: args{ctx: context.Background(), dbAlias: "db", col: "col", req: &model.CreateRequest{Operation: "default", Document: map[string]interface{}{}, IsBatch: true}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
@@ -804,23 +804,23 @@ func TestModule_HookDBCreateIntent(t *testing.T) {
 		},
 		{
 			name: "error creating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", col: "col", req: &model.CreateRequest{Operation: "one", Document: map[string]interface{}{"key": "value"}, IsBatch: true}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
 			},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, false},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -830,29 +830,29 @@ func TestModule_HookDBCreateIntent(t *testing.T) {
 		},
 		{
 			name: "no errors",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", col: "col", req: &model.CreateRequest{Operation: "one", Document: map[string]interface{}{"key": "value"}, IsBatch: true}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeid"},
 				},
 			},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, false},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{&model.EventDocument{Type: "DB_INSERT", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":{"key":"value"},"find":{}}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: "DB_INSERT", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":{"key":"value"},"find":{}}`, Status: "intent"}}},
 		},
 	}
 	for _, tt := range tests {
@@ -947,7 +947,7 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 			m:    &Module{config: &config.Eventing{Enabled: true}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "default", Col: "col"}}}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeID"},
 				},
@@ -956,23 +956,23 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		},
 		{
 			name: "error creating internal",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "create", Col: "col", Document: map[string]interface{}{"key": "value"}, Operation: "one"}}}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeID"},
 				},
 			},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, false},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -982,36 +982,36 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		},
 		{
 			name: "r.type create case",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBCreate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "create", Col: "col", Document: map[string]interface{}{"key": "value"}, Operation: "one"}}}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeID"},
 				},
 			},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, false},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{&model.EventDocument{Type: "DB_INSERT", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":{"key":"value"},"find":{}}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: "DB_INSERT", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":{"key":"value"},"find":{}}`, Status: "intent"}}},
 		},
 		{
 			name: "r.type update case where not ok",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: "not update", Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: "not update", Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "update", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeID"},
 				},
@@ -1020,55 +1020,55 @@ func TestModule_HookDBBatchIntent(t *testing.T) {
 		},
 		{
 			name: "r.type update case",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBUpdate, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBUpdate, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "update", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeID"},
 				},
 			},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, true},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{&model.EventDocument{Type: "DB_UPDATE", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":null,"find":{}}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: "DB_UPDATE", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":null,"find":{}}`, Status: "intent"}}},
 		},
 		{
 			name: "r.type delete case",
-			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": config.EventingRule{Type: utils.EventDBDelete, Options: map[string]string{"db": "db", "col": "col"}}}}},
+			m:    &Module{project: "abc", config: &config.Eventing{DBAlias: "dbtype", Enabled: true, Rules: map[string]config.EventingRule{"rule": {Type: utils.EventDBDelete, Options: map[string]string{"db": "db", "col": "col"}}}}},
 			args: args{ctx: context.Background(), dbAlias: "db", req: &model.BatchRequest{Requests: []*model.AllRequest{{Type: "delete", Col: "col", Find: map[string]interface{}{"key": "value"}}}}},
 			syncmanMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "GetNodeID",
 					paramsReturned: []interface{}{"nodeID"},
 				},
 			},
 			schemaMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "CheckIfEventingIsPossible",
 					args:           []interface{}{"db", "col", map[string]interface{}{"key": "value"}, true},
 					paramsReturned: []interface{}{map[string]interface{}{}, true},
 				},
 			},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{mock.Anything, "dbtype", "abc", utils.TableEventingLogs, mock.Anything, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
-			want: &model.EventIntent{Docs: []*model.EventDocument{&model.EventDocument{Type: "DB_DELETE", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":null,"find":{}}`, Status: "intent"}}},
+			want: &model.EventIntent{Docs: []*model.EventDocument{{Type: "DB_DELETE", RuleName: "rule", Timestamp: time.Now().Format(time.RFC3339), Payload: `{"db":"db","col":"col","doc":null,"find":{}}`, Status: "intent"}}},
 		},
 	}
 	for _, tt := range tests {

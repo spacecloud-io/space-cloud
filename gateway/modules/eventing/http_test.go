@@ -112,7 +112,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{method: "some-method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{nil, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "net/http: nil Context"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
@@ -125,7 +125,7 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{method: "some-method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{nil, mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "net/http: nil Context"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
@@ -138,14 +138,14 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "some error"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			httpMockArgs: []mockArgs{
-				mockArgs{
+				{
 					paramsReturned: []interface{}{nil, errors.New("some error")},
 				},
 			},
@@ -156,14 +156,14 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 0, "response_body": "", "error_msg": "some error"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			httpMockArgs: []mockArgs{
-				mockArgs{
+				{
 					paramsReturned: []interface{}{nil, errors.New("some error")},
 				},
 			},
@@ -174,14 +174,14 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			httpMockArgs: []mockArgs{
-				mockArgs{
+				{
 					paramsReturned: []interface{}{&http.Response{Body: http.NoBody}, nil},
 				},
 			},
@@ -192,14 +192,14 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: eventResponse},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": "json: Unmarshal(non-pointer model.EventResponse)"}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			httpMockArgs: []mockArgs{
-				mockArgs{
+				{
 					paramsReturned: []interface{}{&http.Response{Body: http.NoBody}, nil},
 				},
 			},
@@ -210,14 +210,14 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{nil},
 				},
 			},
 			httpMockArgs: []mockArgs{
-				mockArgs{
+				{
 					paramsReturned: []interface{}{&http.Response{
 						Proto:      "HTTP/1.1",
 						ProtoMajor: 1,
@@ -231,14 +231,14 @@ func TestModule_MakeInvocationHTTPRequest(t *testing.T) {
 			s:    &Module{config: &config.Eventing{DBAlias: mock.Anything}, project: mock.Anything},
 			args: args{ctx: context.Background(), method: "method", url: "url", eventID: "id", token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImludGVybmFsLXNjLXVzZXIifQ.k3OcidcCnshBOGtzpprfV5Fhl2xWb6sjzPZH3omDDpw", scToken: "scToken", payload: "payload", vPtr: &eventResponse},
 			crudMockArgs: []mockArgs{
-				mockArgs{
+				{
 					method:         "InternalCreate",
 					args:           []interface{}{context.Background(), mock.Anything, mock.Anything, utils.TableInvocationLogs, &model.CreateRequest{Document: map[string]interface{}{"event_id": "id", "request_payload": "\"payload\"", "response_status_code": 200, "response_body": "{\"event\": {\"type\": \"someType\"}, \"response\": \"response\"}", "error_msg": ""}, Operation: utils.One, IsBatch: true}, false},
 					paramsReturned: []interface{}{errors.New("some error")},
 				},
 			},
 			httpMockArgs: []mockArgs{
-				mockArgs{
+				{
 					paramsReturned: []interface{}{&http.Response{
 						Proto:      "HTTP/1.1",
 						ProtoMajor: 1,
