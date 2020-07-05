@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -39,46 +39,21 @@ func GetRootCommand() *cobra.Command {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			file := viper.GetString("file")
 			switch args[0] {
 			case "bash":
-				if file == "" {
-					utils.LogInfo("Creating file ('space-cli.sh') in current Directory")
-					err := rootCmd.GenBashCompletionFile("space-cli.sh")
-					if err != nil {
-						_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion file-%s", err), nil)
-					}
-					break
-				}
-				if !strings.HasSuffix(file, ".sh") {
-					_ = utils.LogError("file path should end with .sh file", nil)
-					break
-				}
-				err := rootCmd.GenBashCompletionFile(file)
+				err := rootCmd.GenBashCompletion(os.Stdout)
 				if err != nil {
-					_ = utils.LogError(fmt.Sprintf("Error in generating Bash completion file-%s", err), nil)
+					_ = utils.LogError(fmt.Sprintf("Error in generating Bash completion script-%s", err), nil)
 				}
+
 			case "zsh":
-				if file == "" {
-					utils.LogInfo("Creating file ('_space-cli') in current Directory")
-					err := rootCmd.GenBashCompletionFile("_space-cli")
-					if err != nil {
-						_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion file-%s", err), nil)
-					}
-					break
-				}
-				if !strings.HasSuffix(file, "_space-cli") {
-					_ = utils.LogError("file path should end with _space-cli", nil)
-					break
-				}
-				err := rootCmd.GenZshCompletionFile(file)
+				err := rootCmd.GenZshCompletion(os.Stdout)
 				if err != nil {
-					_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion file-%s", err), nil)
+					_ = utils.LogError(fmt.Sprintf("Error in generating Zsh completion script- %s", err), nil)
 				}
 			}
 		},
 	}
-	completionCmd.Flags().StringP("file", "", "", "")
 
 	rootCmd.PersistentFlags().StringP("log-level", "", "info", "Sets the log level of the command")
 	err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
@@ -93,7 +68,7 @@ func GetRootCommand() *cobra.Command {
 		return []string{"info", "debug", "error"}, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
-		_ = utils.LogError("Unable to provide suggetion for flag ('log-level')", nil)
+		utils.LogDebug("Unable to provide suggetion for flag ('log-level')", nil)
 	}
 
 	rootCmd.PersistentFlags().StringP("project", "", "", "The project id to perform the options in")
@@ -117,7 +92,7 @@ func GetRootCommand() *cobra.Command {
 		return projects, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
-		_ = utils.LogError("Unable to provide suggetion for flag ('project')", nil)
+		utils.LogDebug("Unable to provide suggetion for flag ('project')", nil)
 	}
 
 	rootCmd.AddCommand(modules.FetchGenerateSubCommands())

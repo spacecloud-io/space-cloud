@@ -28,7 +28,12 @@ func GetSubCommands() []*cobra.Command {
 		Use:  "service-routes",
 		RunE: actionGetServicesRoutes,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			obj, err := GetServicesRoutes("", "service-route", map[string]string{})
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			obj, err := GetServicesRoutes(project, "service-route", map[string]string{})
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveDefault
 			}
@@ -44,7 +49,12 @@ func GetSubCommands() []*cobra.Command {
 		Use:  "secrets",
 		RunE: actionGetServicesSecrets,
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			obj, err := GetServicesSecrets("", "secret", map[string]string{})
+			project, check := utils.GetProjectID()
+			if !check {
+				utils.LogDebug("Project not specified in flag", nil)
+				return nil, cobra.ShellCompDirectiveDefault
+			}
+			obj, err := GetServicesSecrets(project, "secret", map[string]string{})
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveDefault
 			}
@@ -64,7 +74,7 @@ func GetSubCommands() []*cobra.Command {
 			case 0:
 				project, check := utils.GetProjectID()
 				if !check {
-					_ = utils.LogError("Project not specified in flag", nil)
+					utils.LogDebug("Project not specified in flag", nil)
 					return nil, cobra.ShellCompDirectiveDefault
 				}
 				objs, err := GetServices(project, "service", map[string]string{})
@@ -79,7 +89,7 @@ func GetSubCommands() []*cobra.Command {
 			case 1:
 				project, check := utils.GetProjectID()
 				if !check {
-					_ = utils.LogError("Project not specified in flag", nil)
+					utils.LogDebug("Project not specified in flag", nil)
 					return nil, cobra.ShellCompDirectiveDefault
 				}
 				objs, err := GetServices(project, "service", map[string]string{})

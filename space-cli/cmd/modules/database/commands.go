@@ -1,8 +1,6 @@
 package database
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 
 	"github.com/spaceuptech/space-cli/cmd/utils"
@@ -38,10 +36,9 @@ func GetSubCommands() []*cobra.Command {
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			switch len(args) {
 			case 0:
-				fmt.Printf("case 0")
 				project, check := utils.GetProjectID()
 				if !check {
-					_ = utils.LogError("Project not specified in flag", nil)
+					utils.LogDebug("Project not specified in flag", nil)
 					return nil, cobra.ShellCompDirectiveDefault
 				}
 				objs, err := GetDbRule(project, "db-rule", map[string]string{})
@@ -54,10 +51,9 @@ func GetSubCommands() []*cobra.Command {
 				}
 				return dbAlias, cobra.ShellCompDirectiveDefault
 			case 1:
-				fmt.Printf("case 1")
 				project, check := utils.GetProjectID()
 				if !check {
-					_ = utils.LogError("Project not specified in flag", nil)
+					utils.LogDebug("Project not specified in flag", nil)
 					return nil, cobra.ShellCompDirectiveDefault
 				}
 				objs, err := GetDbRule(project, "db-rule", map[string]string{})
@@ -81,7 +77,7 @@ func GetSubCommands() []*cobra.Command {
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			project, check := utils.GetProjectID()
 			if !check {
-				_ = utils.LogError("Project not specified in flag", nil)
+				utils.LogDebug("Project not specified in flag", nil)
 				return nil, cobra.ShellCompDirectiveDefault
 			}
 			objs, err := GetDbConfig(project, "db-config", map[string]string{})
@@ -106,7 +102,7 @@ func GetSubCommands() []*cobra.Command {
 			case 0:
 				project, check := utils.GetProjectID()
 				if !check {
-					_ = utils.LogError("Project not specified in flag", nil)
+					utils.LogDebug("Project not specified in flag", nil)
 					return nil, cobra.ShellCompDirectiveDefault
 				}
 				objs, err := GetDbSchema(project, "db-schema", map[string]string{})
@@ -121,7 +117,7 @@ func GetSubCommands() []*cobra.Command {
 			case 1:
 				project, check := utils.GetProjectID()
 				if !check {
-					_ = utils.LogError("Project not specified in flag", nil)
+					utils.LogDebug("Project not specified in flag", nil)
 					return nil, cobra.ShellCompDirectiveDefault
 				}
 				objs, err := GetDbSchema(project, "db-schema", map[string]string{})

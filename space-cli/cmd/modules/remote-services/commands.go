@@ -26,7 +26,7 @@ func GetSubCommands() []*cobra.Command {
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			project, check := utils.GetProjectID()
 			if !check {
-				_ = utils.LogError("Project not specified in flag", nil)
+				utils.LogDebug("Project not specified in flag", nil)
 				return nil, cobra.ShellCompDirectiveDefault
 			}
 			objs, err := GetRemoteServices(project, "remote-service", map[string]string{})
