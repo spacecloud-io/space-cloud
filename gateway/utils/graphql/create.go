@@ -103,7 +103,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 	schemaFields, p := graph.schema.GetSchema(dbAlias, col)
 	if !p {
 		// Return the docs as is if no schema is available
-		return []*model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs}}, docs, nil
+		return []*model.AllRequest{{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs, DBAlias: dbAlias}}, docs, nil
 	}
 
 	returningDocs := make([]interface{}, len(docs))
@@ -166,7 +166,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 				// Each document is actually an object
 				linkedDoc := linkedDocTemp.(map[string]interface{})
 
-				linkedSchemaFields, p := graph.schema.GetSchema(dbAlias, fieldSchema.LinkedTable.Table)
+				linkedSchemaFields, p := graph.schema.GetSchema(fieldSchema.LinkedTable.DBType, fieldSchema.LinkedTable.Table)
 				if !p {
 					return nil, nil, fmt.Errorf("schema not provided for table (%s). Check the link directive for field (%s) in table (%s)", fieldSchema.LinkedTable.Table, fieldSchema.FieldName, col)
 				}
@@ -184,7 +184,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 				}
 			}
 
-			linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(linkedDocs, dbAlias, fieldSchema.LinkedTable.Table)
+			linkedCreateRequests, returningLinkedDocs, err := graph.processNestedFields(linkedDocs, fieldSchema.LinkedTable.DBType, fieldSchema.LinkedTable.Table)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -204,7 +204,7 @@ func (graph *Module) processNestedFields(docs []interface{}, dbAlias, col string
 		}
 		returningDocs[i] = newDoc
 	}
-	createRequests = append(createRequests, &model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs})
+	createRequests = append(createRequests, &model.AllRequest{Type: string(utils.Create), Col: col, Operation: utils.All, Document: docs, DBAlias: dbAlias})
 	return append(createRequests, afterRequests...), returningDocs, nil
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, []*model.AllRequest, []interface{}, error) {
+func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, dbAlias, token string, store map[string]interface{}) (model.RequestParams, []*model.AllRequest, []interface{}, error) {
 	if len(field.Directives) > 0 {
 		// Insert query function
 		if strings.HasPrefix(field.Name.Value, "insert_") {
@@ -32,6 +32,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 			}
 			result.Type = string(utils.Delete)
 			result.Col = col
+			result.DBAlias = dbAlias
 			return reqParams, []*model.AllRequest{result}, nil, nil
 		}
 
@@ -45,6 +46,7 @@ func (graph *Module) generateAllReq(ctx context.Context, field *ast.Field, token
 			}
 			result.Type = string(utils.Update)
 			result.Col = col
+			result.DBAlias = dbAlias
 			return reqParams, []*model.AllRequest{result}, nil, nil
 
 		}
@@ -99,13 +101,8 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 			return
 		}
 
-		r, ok := reqs[dbAlias]
-		if !ok {
-			r = []*model.AllRequest{}
-		}
-
 		// Generate a *model.AllRequest object for this given field
-		params, generatedRequests, returningDocs, err := graph.generateAllReq(ctx, field, token, store)
+		params, generatedRequests, returningDocs, err := graph.generateAllReq(ctx, field, dbAlias, token, store)
 		if err != nil {
 			cb(nil, err)
 			return
@@ -117,8 +114,9 @@ func (graph *Module) handleMutation(ctx context.Context, node ast.Node, token st
 		fieldReturningDocsMapping[getFieldName(field)] = returningDocs
 
 		// Add the request to the number of requests available for that database
-		r = append(r, generatedRequests...)
-		reqs[dbAlias] = r
+		for _, v := range generatedRequests {
+			reqs[v.DBAlias] = append(reqs[v.DBAlias], v)
+		}
 	}
 
 	for dbAlias, reqs := range reqs {

@@ -209,6 +209,9 @@ func getCollectionSchema(doc *ast.Document, dbName, collectionName string) (mode
 							case "field":
 								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
 								fieldTypeStuct.LinkedTable.Field = val.(string)
+							case "db":
+								val, _ := utils.ParseGraphqlValue(arg.Value, nil)
+								fieldTypeStuct.LinkedTable.DBType = val.(string)
 							}
 						}
 
