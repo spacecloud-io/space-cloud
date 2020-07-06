@@ -37,7 +37,7 @@ type IntegrationPermission struct {
 // Attributes describes the attributes of an integration resource.
 type Attributes map[string][]string
 
-// IntegrationAuthResponse
+// IntegrationAuthResponse is sent back as a response to auth checks
 type IntegrationAuthResponse interface {
 	// CheckResponse signifies whether the response of the integration module needs to be checked or now.
 	// If the value `true` is returned, this means the integration moduke intends to control the response of

@@ -331,7 +331,6 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 		}
 
 		_ = utils.SendOkayResponse(w)
-		return
 	}
 }
 
