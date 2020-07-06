@@ -10,7 +10,7 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateService = &cobra.Command{
-		Use:     "remote-services [config-file-name]",
+		Use:     "remote-service [path to config file]",
 		RunE:    actionGenerateService,
 		Example: "space-cli generate remote-services config.yaml --project myproject --log-level info",
 	}
