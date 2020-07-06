@@ -97,8 +97,10 @@ func (s *Manager) ApplyProjectConfig(ctx context.Context, project *config.Projec
 			p.Name = project.Name
 			p.AESKey = project.AESKey
 			p.Secrets = project.Secrets
+			p.SecretSource = project.SecretSource
 			p.DockerRegistry = project.DockerRegistry
 			p.ContextTimeGraphQL = project.ContextTimeGraphQL
+			p.Integration = project.Integration
 
 			// Mark project as existing
 			doesProjectExists = true
@@ -138,7 +140,7 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	if err := s.modules.SetGlobalConfig(project.Name, project.Secrets, project.AESKey); err != nil {
+	if err := s.modules.SetGlobalConfig(project.Name, project.SecretSource, project.Secrets, project.AESKey); err != nil {
 		return err
 	}
 
@@ -148,9 +150,11 @@ func (s *Manager) SetProjectGlobalConfig(ctx context.Context, project *config.Pr
 	}
 
 	projectConfig.Secrets = project.Secrets
+	projectConfig.SecretSource = project.SecretSource
 	projectConfig.AESKey = project.AESKey
 	projectConfig.Name = project.Name
 	projectConfig.ContextTimeGraphQL = project.ContextTimeGraphQL
+	projectConfig.Integration = project.Integration
 
 	return s.setProject(ctx, projectConfig)
 }
@@ -195,12 +199,12 @@ func (s *Manager) GetProjectConfig(projectID string, params model.RequestParams)
 	for _, p := range s.projectConfig.Projects {
 		if projectID == "*" {
 			// get all projects
-			v = append(v, config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, Name: p.Name, ID: p.ID})
+			v = append(v, config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, SecretSource: p.SecretSource, Integration: p.Integration, Name: p.Name, ID: p.ID})
 			continue
 		}
 
 		if projectID == p.ID {
-			return []interface{}{config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, Name: p.Name, ID: p.ID}}, nil
+			return []interface{}{config.Project{DockerRegistry: p.DockerRegistry, AESKey: p.AESKey, ContextTimeGraphQL: p.ContextTimeGraphQL, Secrets: p.Secrets, SecretSource: p.SecretSource, Integration: p.Integration, Name: p.Name, ID: p.ID}}, nil
 		}
 	}
 	if len(v) > 0 {

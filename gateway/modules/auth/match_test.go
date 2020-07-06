@@ -126,12 +126,12 @@ func TestMatch_Rule(t *testing.T) {
 			auth: map[string]interface{}{"id": "internal-sc", "roll": "1234"},
 		},
 	}
-	auth := Init("1", &crud.Module{})
+	auth := Init("1", &crud.Module{}, nil)
 	rule := config.Crud{"mongo": &config.CrudStub{Collections: map[string]*config.TableRule{"default": {Rules: map[string]*config.Rule{"update": {Rule: "query", Eval: "Eval", Type: "Type", DB: "mongo", Col: "default"}}}}}}
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	err := auth.SetConfig("default", []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	err := auth.SetConfig("default", "", []*config.Secret{{IsPrimary: true, Secret: "mySecretKey"}}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", rule, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	if err != nil {
 		t.Errorf("Unable to set auth config %s", err.Error())
 		return
@@ -190,11 +190,11 @@ func TestMatchForce_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
 		},
 	}
-	auth := Init("1", &crud.Module{})
+	auth := Init("1", &crud.Module{}, nil)
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	_ = auth.SetConfig("default", []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	_ = auth.SetConfig("default", "", []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := m.matchForce(context.Background(), "testID", test.rule, test.args, emptyAuth)
@@ -269,11 +269,11 @@ func TestMatchRemove_Rule(t *testing.T) {
 			rule: &config.Rule{Rule: "force", Clause: &config.Rule{Rule: "deny"}},
 		},
 	}
-	auth := Init("1", &crud.Module{})
+	auth := Init("1", &crud.Module{}, nil)
 	auth.makeHTTPRequest = func(ctx context.Context, method, url, token, scToken string, params, vPtr interface{}) error {
 		return nil
 	}
-	_ = auth.SetConfig("default", []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
+	_ = auth.SetConfig("default", "", []*config.Secret{}, "Olw6AhA/GzSxfhwKLxO7JJsUL6VUwwGEFTgxzoZPy9g=", config.Crud{}, &config.FileStore{}, &config.ServicesModule{}, &config.Eventing{})
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			r, err := m.matchRemove(context.Background(), "testID", test.rule, test.args, emptyAuth)

@@ -14,7 +14,7 @@ import (
 
 func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field, dbAlias, col, token string, req *model.ReadRequest, store utils.M, cb dbCallback) {
 	// Check if read op is authorised
-	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -39,7 +39,7 @@ func (graph *Module) execLinkedReadRequest(ctx context.Context, field *ast.Field
 			req.Options = &model.ReadOptions{}
 		}
 		req.Options.HasOptions = false
-		result, err := graph.crud.Read(ctx, dbAlias, col, req)
+		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 		_ = graph.auth.PostProcessMethod(actions, result)
 
 		cb(dbAlias, col, result, err)
@@ -70,7 +70,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 	}
 
 	// Check if read op is authorised
-	actions, _, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
+	actions, reqParams, err := graph.auth.IsReadOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
 	if err != nil {
 		cb("", "", nil, err)
 		return
@@ -80,7 +80,7 @@ func (graph *Module) execReadRequest(ctx context.Context, field *ast.Field, toke
 		//  batch operation cannot be performed with aggregation
 		req.IsBatch = !(len(req.Aggregate) > 0)
 		req.Options.HasOptions = hasOptions
-		result, err := graph.crud.Read(ctx, dbAlias, col, req)
+		result, err := graph.crud.Read(ctx, dbAlias, col, req, reqParams)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbAlias, col, result, err)
 	}()
@@ -102,14 +102,14 @@ func (graph *Module) execPreparedQueryRequest(ctx context.Context, field *ast.Fi
 	}
 	req := model.PreparedQueryRequest{Params: params}
 	// Check if PreparedQuery op is authorised
-	actions, auth, _, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
+	actions, reqParams, err := graph.auth.IsPreparedQueryAuthorised(ctx, graph.project, dbAlias, id, token, &req)
 	if err != nil {
 		cb("", "", nil, err)
 		return
 	}
 
 	go func() {
-		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, auth)
+		result, err := graph.crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
 		_ = graph.auth.PostProcessMethod(actions, result)
 		cb(dbAlias, id, result, err)
 	}()

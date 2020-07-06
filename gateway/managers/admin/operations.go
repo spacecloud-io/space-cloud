@@ -72,3 +72,8 @@ func (m *Manager) GetCredentials() map[string]interface{} {
 func (m *Manager) GetClusterID() string {
 	return m.clusterID
 }
+
+// GetSecret returns the admin secret
+func (m *Manager) GetSecret() string {
+	return m.user.Secret
+}

@@ -57,7 +57,7 @@ func (m *mockModulesInterface) SetProjectConfig(config *config.Project) error {
 	return m.Called(config).Error(0)
 }
 
-func (m *mockModulesInterface) SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error {
+func (m *mockModulesInterface) SetGlobalConfig(projectID, secretSource string, secrets []*config.Secret, aesKey string) error {
 	c := m.Called(projectID, secrets, aesKey)
 	return c.Error(0)
 }

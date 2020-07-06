@@ -223,7 +223,7 @@ func cleanIndexMap(v []*model.FieldType) []*model.FieldType {
 }
 
 // SchemaModifyAll modifies all the tables provided
-func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule, params model.RequestParams) error {
+func (s *Schema) SchemaModifyAll(ctx context.Context, dbAlias, logicalDBName string, tables map[string]*config.TableRule) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
