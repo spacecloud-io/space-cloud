@@ -10,8 +10,9 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generateService = &cobra.Command{
-		Use:  "remote-services",
-		RunE: actionGenerateService,
+		Use:     "remote-services [config-file-name]",
+		RunE:    actionGenerateService,
+		Example: "space-cli generate remote-services config.yaml --project myproject --log-level info",
 	}
 	return []*cobra.Command{generateService}
 }
@@ -57,7 +58,7 @@ func actionGetRemoteServices(cmd *cobra.Command, args []string) error {
 
 func actionGenerateService(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateService()
