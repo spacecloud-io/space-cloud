@@ -12,7 +12,7 @@ type ModulesInterface interface {
 	// SetProjectConfig sets the config all modules
 	SetProjectConfig(config *config.Project) error
 	// SetGlobalConfig sets the auth secret and AESKey
-	SetGlobalConfig(projectID string, secrets []*config.Secret, aesKey string) error
+	SetGlobalConfig(projectID, secretSource string, secrets []*config.Secret, aesKey string) error
 	// SetCrudConfig sets the config of crud, auth, schema and realtime modules
 	SetCrudConfig(projectID string, crudConfig config.Crud) error
 	// SetServicesConfig sets the config of auth and functions modules

@@ -59,6 +59,7 @@ type AllRequest struct {
 	Find      map[string]interface{} `json:"find"`
 	Update    map[string]interface{} `json:"update"`
 	Type      string                 `json:"type"`
+	DBAlias   string                 `json:"dBAlias"`
 }
 
 // BatchRequest is the http body for a batch request
