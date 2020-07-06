@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // SetProjectRoutes sets a projects routes
@@ -42,7 +43,7 @@ func (s *Manager) GetProjectRoutes(ctx context.Context, project string) (config.
 }
 
 // SetProjectRoute adds a route in specified project config
-func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *config.Route) error {
+func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *config.Route, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -75,7 +76,7 @@ func (s *Manager) SetProjectRoute(ctx context.Context, project, id string, c *co
 }
 
 // DeleteProjectRoute deletes a route from specified project config
-func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID string) error {
+func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -103,7 +104,7 @@ func (s *Manager) DeleteProjectRoute(ctx context.Context, project, routeID strin
 }
 
 // GetIngressRouting gets ingress routing from config
-func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string) ([]interface{}, error) {
+func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

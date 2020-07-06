@@ -184,7 +184,7 @@ func TestModule_QueueEvent(t *testing.T) {
 				{
 					method:         "IsEventingOpAuthorised",
 					args:           []interface{}{mock.Anything, mock.Anything, mock.Anything, mock.Anything},
-					paramsReturned: []interface{}{errors.New("some error")},
+					paramsReturned: []interface{}{model.RequestParams{}, errors.New("some error")},
 				},
 			},
 			wantErr: true,

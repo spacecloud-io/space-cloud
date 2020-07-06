@@ -39,7 +39,9 @@ func (m *Module) processStagedEvents(t *time.Time) {
 		},
 	}}
 
-	results, err := m.crud.Read(ctx, dbAlias, col, &readRequest)
+	attr := map[string]string{"project": m.project, "db": dbAlias, "col": col}
+	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
+	results, err := m.crud.Read(ctx, dbAlias, col, &readRequest, reqParams)
 	if err != nil {
 		logrus.Errorf("Eventing stage routine error - %s", err.Error())
 		return

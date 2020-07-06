@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_SetFileStore(t *testing.T) {
@@ -105,7 +106,7 @@ func TestManager_SetFileStore(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetFileStore(tt.args.ctx, tt.args.project, tt.args.value); (err != nil) != tt.wantErr {
+			if err := tt.s.SetFileStore(tt.args.ctx, tt.args.project, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetFileStore() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -301,7 +302,7 @@ func TestManager_SetFileRule(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetFileRule(tt.args.ctx, tt.args.project, tt.args.id, tt.args.value); (err != nil) != tt.wantErr {
+			if err := tt.s.SetFileRule(tt.args.ctx, tt.args.project, tt.args.id, tt.args.value, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetFileRule() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -405,7 +406,7 @@ func TestManager_SetDeleteFileRule(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			if err := tt.s.SetDeleteFileRule(tt.args.ctx, tt.args.project, tt.args.filename); (err != nil) != tt.wantErr {
+			if err := tt.s.SetDeleteFileRule(tt.args.ctx, tt.args.project, tt.args.filename, model.RequestParams{}); (err != nil) != tt.wantErr {
 				t.Errorf("Manager.SetDeleteFileRule() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -455,7 +456,7 @@ func TestManager_GetFileStoreRules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetFileStoreRules(tt.args.ctx, tt.args.project, tt.args.ruleID)
+			got, err := tt.s.GetFileStoreRules(tt.args.ctx, tt.args.project, tt.args.ruleID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetFileStoreRules() error = %v, wantErr %v", err, tt.wantErr)
 				return
