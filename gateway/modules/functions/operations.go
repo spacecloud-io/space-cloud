@@ -5,17 +5,18 @@ import (
 	"time"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // Call simply calls a function on a service
-func (m *Module) Call(service, function, token string, auth, params interface{}, timeout int) (interface{}, error) {
+func (m *Module) Call(service, function, token string, reqParams model.RequestParams, params interface{}, timeout int) (interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
 
-	result, err := m.handleCall(ctx, service, function, token, auth, params)
+	result, err := m.handleCall(ctx, service, function, token, reqParams.Claims, params)
 	if err != nil {
 		return nil, err
 	}
@@ -25,11 +26,11 @@ func (m *Module) Call(service, function, token string, auth, params interface{},
 
 // CallWithContext invokes function on a service. The response from the function is returned back along with
 // any errors if they occurred.
-func (m *Module) CallWithContext(ctx context.Context, service, function, token string, auth, params interface{}) (interface{}, error) {
+func (m *Module) CallWithContext(ctx context.Context, service, function, token string, reqParams model.RequestParams, params interface{}) (interface{}, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
-	result, err := m.handleCall(ctx, service, function, token, auth, params)
+	result, err := m.handleCall(ctx, service, function, token, reqParams.Claims, params)
 	if err != nil {
 		return nil, err
 	}

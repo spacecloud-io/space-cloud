@@ -10,22 +10,23 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) genrateUpdateReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
+func (graph *Module) genrateUpdateReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, *model.AllRequest, error) {
 	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
-		return nil, err
+		return model.RequestParams{}, nil, err
 	}
+
 	col := strings.TrimPrefix(field.Name.Value, "update_")
 	req, err := generateUpdateRequest(field, store)
 	if err != nil {
-		return nil, err
+		return model.RequestParams{}, nil, err
 	}
 
 	_, err = graph.auth.IsUpdateOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
 	if err != nil {
-		return nil, err
+		return model.RequestParams{}, nil, err
 	}
-	return generateUpdateAllRequest(req), nil
+	return model.RequestParams{}, generateUpdateAllRequest(req), nil
 }
 
 func generateUpdateAllRequest(req *model.UpdateRequest) *model.AllRequest {

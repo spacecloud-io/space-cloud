@@ -267,7 +267,7 @@ func (m *Module) validate(ctx context.Context, project, token string, event *mod
 		return nil
 	}
 
-	if err := m.auth.IsEventingOpAuthorised(ctx, project, token, event); err != nil {
+	if _, err := m.auth.IsEventingOpAuthorised(ctx, project, token, event); err != nil {
 		return err
 	}
 
