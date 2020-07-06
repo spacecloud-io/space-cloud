@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 func TestManager_GetEventSource(t *testing.T) {
@@ -393,7 +394,7 @@ func TestManager_ApplyProjectConfig(t *testing.T) {
 			tt.s.modules = &mockModules
 			tt.s.store = &mockStore
 
-			got, err := tt.s.ApplyProjectConfig(tt.args.ctx, tt.args.project)
+			got, err := tt.s.ApplyProjectConfig(tt.args.ctx, tt.args.project, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.ApplyProjectConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -708,7 +709,7 @@ func TestManager_GetProjectConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.s.GetProjectConfig(tt.args.projectID)
+			got, err := tt.s.GetProjectConfig(tt.args.projectID, model.RequestParams{})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Manager.GetProjectConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return

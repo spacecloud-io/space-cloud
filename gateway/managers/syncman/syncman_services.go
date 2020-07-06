@@ -7,10 +7,11 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // SetService adds a remote service
-func (s *Manager) SetService(ctx context.Context, project, service string, value *config.Service) error {
+func (s *Manager) SetService(ctx context.Context, project, service string, value *config.Service, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -35,7 +36,7 @@ func (s *Manager) SetService(ctx context.Context, project, service string, value
 }
 
 // DeleteService deletes a remotes service
-func (s *Manager) DeleteService(ctx context.Context, project, service string) error {
+func (s *Manager) DeleteService(ctx context.Context, project, service string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -55,7 +56,7 @@ func (s *Manager) DeleteService(ctx context.Context, project, service string) er
 }
 
 // GetServices gets a remotes service
-func (s *Manager) GetServices(ctx context.Context, project, serviceID string) ([]interface{}, error) {
+func (s *Manager) GetServices(ctx context.Context, project, serviceID string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

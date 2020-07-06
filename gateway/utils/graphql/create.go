@@ -13,34 +13,35 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) ([]*model.AllRequest, []interface{}, error) {
+func (graph *Module) generateWriteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, []*model.AllRequest, []interface{}, error) {
 	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
-		return nil, nil, err
+		return model.RequestParams{}, nil, nil, err
 	}
 
 	col := strings.TrimPrefix(field.Name.Value, "insert_")
 
 	docs, err := extractDocs(field.Arguments, store)
 	if err != nil {
-		return nil, nil, err
+		return model.RequestParams{}, nil, nil, err
 	}
 
 	reqs, returningDocs, err := graph.processNestedFields(docs, dbAlias, col)
 	if err != nil {
-		return nil, nil, err
+		return model.RequestParams{}, nil, nil, err
 	}
 
 	// Check if the requests are authorised
+	var reqParams model.RequestParams
 	for _, req := range reqs {
 		r := &model.CreateRequest{Document: req.Document, Operation: req.Operation}
-		_, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, dbAlias, req.Col, token, r)
+		reqParams, err = graph.auth.IsCreateOpAuthorised(ctx, graph.project, dbAlias, req.Col, token, r)
 		if err != nil {
-			return nil, nil, err
+			return model.RequestParams{}, nil, nil, err
 		}
 	}
 
-	return reqs, returningDocs, nil
+	return reqParams, reqs, returningDocs, nil
 }
 
 func (graph *Module) prepareDocs(doc map[string]interface{}, schemaFields model.Fields) {

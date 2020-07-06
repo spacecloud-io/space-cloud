@@ -16,6 +16,8 @@ type ClusterConfig struct {
 // Project holds the project level configuration
 type Project struct {
 	Secrets            []*Secret `json:"secrets,omitempty" yaml:"secrets,omitempty"`
+	SecretSource       string    `json:"secretSource,omitempty" yaml:"secretSource,omitempty"`
+	Integration        string    `json:"integration,omitempty" yaml:"integration,omitempty"`
 	AESKey             string    `json:"aesKey,omitempty" yaml:"aesKey,omitempty"`
 	ID                 string    `json:"id,omitempty" yaml:"id,omitempty"`
 	Name               string    `json:"name,omitempty" yaml:"name,omitempty"`
@@ -36,6 +38,7 @@ type Admin struct {
 	ClusterID     string         `json:"clusterId" yaml:"clusterId"`
 	ClusterKey    string         `json:"clusterKey" yaml:"clusterKey"`
 	License       string         `json:"license" yaml:"license"`
+	Integrations  Integrations   `json:"integrations" yaml:"integrations"`
 }
 
 // AdminUser holds the user credentials and scope
