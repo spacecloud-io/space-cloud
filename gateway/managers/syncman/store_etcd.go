@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 	"io/ioutil"
 	"log"
 	"os"
@@ -29,7 +30,22 @@ type ETCDStore struct {
 
 // GetAdminConfig returns the admin config
 func (s *ETCDStore) GetAdminConfig(ctx context.Context) (*config.Admin, error) {
-	panic("implement me")
+	res, err := s.kv.Get(ctx, fmt.Sprintf("sc/admin-config/%s", s.clusterID))
+	if err != nil {
+		return nil, utils.LogError("couldn't fetch key in etcd", "syncman", "getAdminConfig", err)
+	}
+
+	if len(res.Kvs) == 0 {
+		return nil, utils.LogError("specified key doesn't exists in etcd", "syncman", "getAdminConfig", err)
+	}
+
+	// we will get the latest value at index 0, as we haven't specified any revision option in get method
+	var cluster *config.Admin
+	if err := json.Unmarshal(res.Kvs[0].Value, &cluster); err != nil {
+		return nil, utils.LogError("couldn't unmarshal cluster config to json", "syncman", "getAdminConfig", err)
+	}
+
+	return cluster, nil
 }
 
 type trackedItemMeta struct {
