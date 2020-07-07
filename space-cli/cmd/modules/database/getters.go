@@ -120,19 +120,15 @@ func GetDbPreparedQuery(project, commandName string, params map[string]string) (
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
 		meta := map[string]string{"project": project, "db": obj["db"].(string), "id": obj["id"].(string)}
-		for _, value := range obj {
-
-			// delete unwanted keys from spec
-			delete(obj, "sql")
-			delete(obj, "rule")
-			delete(obj, "args")
-
-			s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{db}/prepared-queries/{id}", commandName, meta, value)
-			if err != nil {
-				return nil, err
-			}
-			objs = append(objs, s)
+		spec := make(map[string]interface{}, 0)
+		for key, val := range obj {
+			spec[key] = val
 		}
+		s, err := utils.CreateSpecObject("/v1/config/projects/{project}/database/{db}/prepared-queries/{id}", commandName, meta, spec)
+		if err != nil {
+			return nil, err
+		}
+		objs = append(objs, s)
 	}
 	return objs, nil
 }
