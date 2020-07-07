@@ -120,7 +120,7 @@ func GetDbPreparedQuery(project, commandName string, params map[string]string) (
 	for _, item := range payload.Result {
 		obj := item.(map[string]interface{})
 		meta := map[string]string{"project": project, "db": obj["db"].(string), "id": obj["id"].(string)}
-		spec := make(map[string]interface{}, 0)
+		spec := make(map[string]interface{})
 		for key, val := range obj {
 			spec[key] = val
 		}
