@@ -50,12 +50,12 @@ func (m *Modules) SetProjectConfig(config *config.Project) error {
 }
 
 // SetGlobalConfig sets the auth secret and AESKey
-func (m *Modules) SetGlobalConfig(projectID string, secret []*config.Secret, aesKey string) error {
+func (m *Modules) SetGlobalConfig(projectID, secretSource string, secret []*config.Secret, aesKey string) error {
 	module, err := m.loadModule(projectID)
 	if err != nil {
 		return err
 	}
-	return module.SetGlobalConfig(projectID, secret, aesKey)
+	return module.SetGlobalConfig(projectID, secretSource, secret, aesKey)
 }
 
 // SetCrudConfig sets the config of db, auth, schema and realtime modules

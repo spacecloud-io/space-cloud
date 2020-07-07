@@ -49,7 +49,7 @@ func newModule(nodeID string, managers *managers.Managers, globalMods *global.Gl
 	s := schema.Init(c)
 	c.SetSchema(s)
 
-	a := auth.Init(nodeID, c)
+	a := auth.Init(nodeID, c, adminMan)
 	a.SetMakeHTTPRequest(syncMan.MakeHTTPRequest)
 
 	fn := functions.Init(a, syncMan, metrics.AddFunctionOperation)

@@ -7,11 +7,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // SetEventingRule sets the eventing rules
-func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value config.EventingRule) error {
+func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string, value config.EventingRule, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -35,7 +36,7 @@ func (s *Manager) SetEventingRule(ctx context.Context, project, ruleName string,
 }
 
 // SetDeleteEventingRule deletes an eventing rule
-func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName string) error {
+func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -55,7 +56,7 @@ func (s *Manager) SetDeleteEventingRule(ctx context.Context, project, ruleName s
 }
 
 // SetEventingConfig sets the eventing config
-func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string, enabled bool) error {
+func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string, enabled bool, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -90,8 +91,22 @@ func (s *Manager) SetEventingConfig(ctx context.Context, project, dbAlias string
 	return s.setProject(ctx, projectConfig)
 }
 
+// GetEventingConfig returns the eventing config
+func (s *Manager) GetEventingConfig(project string, params model.RequestParams) (config.Eventing, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return config.Eventing{}, err
+	}
+
+	eventing := projectConfig.Modules.Eventing
+	return config.Eventing{DBAlias: eventing.DBAlias, Enabled: eventing.Enabled}, nil
+}
+
 // SetEventingSchema sets the schema for the given event type
-func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType string, schema string) error {
+func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType string, schema string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -117,7 +132,7 @@ func (s *Manager) SetEventingSchema(ctx context.Context, project string, evType 
 }
 
 // SetDeleteEventingSchema deletes the schema for the given event type
-func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, evType string) error {
+func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, evType string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -137,7 +152,7 @@ func (s *Manager) SetDeleteEventingSchema(ctx context.Context, project string, e
 }
 
 // SetEventingSecurityRules sets the securtiy rule for the given event type
-func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType string, rule *config.Rule) error {
+func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType string, rule *config.Rule, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -164,7 +179,7 @@ func (s *Manager) SetEventingSecurityRules(ctx context.Context, project, evType 
 }
 
 // SetDeleteEventingSecurityRules deletes the security rule for the given event type
-func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, evType string) error {
+func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, evType string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -184,7 +199,7 @@ func (s *Manager) SetDeleteEventingSecurityRules(ctx context.Context, project, e
 }
 
 // GetEventingTriggerRules gets trigger rules from config
-func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id string) ([]interface{}, error) {
+func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -209,7 +224,7 @@ func (s *Manager) GetEventingTriggerRules(ctx context.Context, project, id strin
 }
 
 // GetEventingSchema gets eventing schema from config
-func (s *Manager) GetEventingSchema(ctx context.Context, project, id string) ([]interface{}, error) {
+func (s *Manager) GetEventingSchema(ctx context.Context, project, id string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -234,7 +249,7 @@ func (s *Manager) GetEventingSchema(ctx context.Context, project, id string) ([]
 }
 
 // GetEventingSecurityRules gets eventing security rules from config
-func (s *Manager) GetEventingSecurityRules(ctx context.Context, project, id string) ([]interface{}, error) {
+func (s *Manager) GetEventingSecurityRules(ctx context.Context, project, id string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

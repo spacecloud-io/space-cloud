@@ -1,11 +1,14 @@
 package syncman
 
-import "github.com/spaceuptech/space-cloud/gateway/config"
+import (
+	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
+)
 
 // AdminSyncmanInterface is an interface consisting of functions of admin module used by eventing module
 type AdminSyncmanInterface interface {
 	GetInternalAccessToken() (string, error)
-	IsTokenValid(token, resource, op string, attr map[string]string) error
+	IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error)
 	IsRegistered() bool
 	GetSessionID() string
 	RenewLicense(bool) error

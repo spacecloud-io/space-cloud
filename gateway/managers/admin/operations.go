@@ -17,16 +17,16 @@ func (m *Manager) GetInternalAccessToken() (string, error) {
 }
 
 // IsTokenValid checks if the token is valid
-func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]string) error {
+func (m *Manager) IsTokenValid(token, resource, op string, attr map[string]string) (model.RequestParams, error) {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
 	if !m.isProd {
-		return nil
+		return model.RequestParams{}, nil
 	}
 
-	_, err := m.parseToken(token)
-	return err
+	claims, err := m.parseToken(token)
+	return model.RequestParams{Resource: resource, Op: op, Attributes: attr, Claims: claims}, err
 }
 
 // CheckToken simply checks the token
@@ -119,4 +119,9 @@ func (m *Manager) GetSessionID() string {
 
 func (m *Manager) GetEnterpriseClusterID() string {
 	return m.config.ClusterID
+}
+
+// GetSecret returns the admin secret
+func (m *Manager) GetSecret() string {
+	return m.user.Secret
 }

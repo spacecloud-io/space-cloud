@@ -7,10 +7,11 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // SetFileStore sets the file store module
-func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore) error {
+func (s *Manager) SetFileStore(ctx context.Context, project string, value *config.FileStore, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -35,7 +36,7 @@ func (s *Manager) SetFileStore(ctx context.Context, project string, value *confi
 }
 
 // SetFileRule sets the rule for file store
-func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *config.FileRule) error {
+func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *config.FileRule, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -68,7 +69,7 @@ func (s *Manager) SetFileRule(ctx context.Context, project, id string, value *co
 }
 
 // SetDeleteFileRule deletes a rule from file store
-func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename string) error {
+func (s *Manager) SetDeleteFileRule(ctx context.Context, project, filename string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -115,7 +116,7 @@ func (s *Manager) GetFileStoreConfig(ctx context.Context, project string) ([]int
 }
 
 // GetFileStoreRules gets file store rules from config
-func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string) ([]interface{}, error) {
+func (s *Manager) GetFileStoreRules(ctx context.Context, project, ruleID string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

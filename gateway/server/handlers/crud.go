@@ -49,20 +49,16 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the user is authenticated
-		actions, authArgs, status, err := auth.IsPreparedQueryAuthorised(ctx, project, dbAlias, id, token, &req)
+		actions, reqParams, err := auth.IsPreparedQueryAuthorised(ctx, project, dbAlias, id, token, &req)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(status)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		// Perform the PreparedQuery operation
-		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req, authArgs)
+		result, err := crud.ExecPreparedQuery(ctx, dbAlias, id, &req, reqParams)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
@@ -70,9 +66,7 @@ func HandleCrudPreparedQuery(modules *modules.Modules) http.HandlerFunc {
 		_ = auth.PostProcessMethod(actions, result)
 
 		// Give positive acknowledgement
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": result})
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"result": result})
 	}
 }
 
@@ -107,14 +101,14 @@ func HandleCrudCreate(modules *modules.Modules) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the user is authenticated
-		status, err := auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		reqParams, err := auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		// Perform the write operation
-		err = crud.Create(ctx, meta.dbType, meta.col, &req)
+		err = crud.Create(ctx, meta.dbType, meta.col, &req, reqParams)
 		if err != nil {
 
 			// Send http response
@@ -165,14 +159,14 @@ func HandleCrudRead(modules *modules.Modules) http.HandlerFunc {
 		}
 
 		// Check if the user is authenticated
-		actions, status, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		actions, reqParams, err := auth.IsReadOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		// Perform the read operation
-		result, err := crud.Read(ctx, meta.dbType, meta.col, &req)
+		result, err := crud.Read(ctx, meta.dbType, meta.col, &req, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -215,14 +209,14 @@ func HandleCrudUpdate(modules *modules.Modules) http.HandlerFunc {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		status, err := auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		reqParams, err := auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		// Perform the update operation
-		err = crud.Update(ctx, meta.dbType, meta.col, &req)
+		err = crud.Update(ctx, meta.dbType, meta.col, &req, reqParams)
 		if err != nil {
 
 			// Send http response
@@ -266,14 +260,14 @@ func HandleCrudDelete(modules *modules.Modules) http.HandlerFunc {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		status, err := auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		reqParams, err := auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		// Perform the delete operation
-		err = crud.Delete(ctx, meta.dbType, meta.col, &req)
+		err = crud.Delete(ctx, meta.dbType, meta.col, &req, reqParams)
 		if err != nil {
 			// Send http response
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
@@ -316,14 +310,14 @@ func HandleCrudAggregate(modules *modules.Modules) http.HandlerFunc {
 		_ = json.NewDecoder(r.Body).Decode(&req)
 		defer utils.CloseTheCloser(r.Body)
 
-		status, err := auth.IsAggregateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
+		reqParams, err := auth.IsAggregateOpAuthorised(ctx, meta.projectID, meta.dbType, meta.col, meta.token, &req)
 		if err != nil {
-			_ = utils.SendErrorResponse(w, status, err.Error())
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		// Perform the aggregate operation
-		result, err := crud.Aggregate(ctx, meta.dbType, meta.col, &req)
+		result, err := crud.Aggregate(ctx, meta.dbType, meta.col, &req, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -383,37 +377,39 @@ func HandleCrudBatch(modules *modules.Modules) http.HandlerFunc {
 		_ = json.NewDecoder(r.Body).Decode(&txRequest)
 		defer utils.CloseTheCloser(r.Body)
 
+		var reqParams model.RequestParams
 		for _, req := range txRequest.Requests {
 
-			// Make status and error variables
-			var status int
+			// Make error variables
 			var err error
 
 			switch req.Type {
 			case string(utils.Create):
 				r := model.CreateRequest{Document: req.Document, Operation: req.Operation}
-				status, err = auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
+				reqParams, err = auth.IsCreateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			case string(utils.Update):
 				r := model.UpdateRequest{Find: req.Find, Update: req.Update, Operation: req.Operation}
-				status, err = auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
+				reqParams, err = auth.IsUpdateOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			case string(utils.Delete):
 				r := model.DeleteRequest{Find: req.Find, Operation: req.Operation}
-				status, err = auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
+				reqParams, err = auth.IsDeleteOpAuthorised(ctx, meta.projectID, meta.dbType, req.Col, meta.token, &r)
 
 			}
 
 			// Send error response
 			if err != nil {
 				// Send http response
-				_ = utils.SendErrorResponse(w, status, err.Error())
+				_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 				return
 			}
 		}
 
 		// Perform the batch operation
-		if err := crud.Batch(ctx, meta.dbType, &txRequest); err != nil {
+		reqParams.Resource = "db-batch"
+		err = crud.Batch(ctx, meta.dbType, &txRequest, reqParams)
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}

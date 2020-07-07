@@ -6,36 +6,41 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // IsFuncCallAuthorised checks if the func call is authorised
-func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (map[string]interface{}, error) {
+func (m *Module) IsFuncCallAuthorised(ctx context.Context, project, service, function, token string, params interface{}) (*model.PostProcess, model.RequestParams, error) {
 	m.RLock()
 	defer m.RUnlock()
 
 	rule, err := m.getFunctionRule(service, function)
 	if err != nil {
-		return nil, err
+		return nil, model.RequestParams{}, err
 	}
-	if rule.Rule == "allow" {
-		if m.project == project {
-			return map[string]interface{}{}, nil
-		}
-		return map[string]interface{}{}, errors.New("invalid project details provided")
+
+	if m.project != project {
+		return nil, model.RequestParams{}, errors.New("invalid project details provided")
 	}
 
 	var auth map[string]interface{}
-	auth, err = m.parseToken(token)
-	if err != nil {
-		return nil, err
+	if rule.Rule != "allow" {
+		auth, err = m.parseToken(token)
+		if err != nil {
+			return nil, model.RequestParams{}, err
+		}
 	}
 
-	if _, err = m.matchRule(ctx, project, rule, map[string]interface{}{
+	actions, err := m.matchRule(ctx, project, rule, map[string]interface{}{
 		"args": map[string]interface{}{"auth": auth, "params": params, "token": token},
-	}, auth); err != nil {
-		return nil, err
+	}, auth)
+	if err != nil {
+		return nil, model.RequestParams{}, err
 	}
-	return auth, nil
+
+	attr := map[string]string{"project": project, "service": service, "endpoint": function}
+	reqParams := model.RequestParams{Resource: "service-call", Op: "access", Claims: auth, Attributes: attr}
+	return actions, reqParams, nil
 }
 
 func (m *Module) getFunctionRule(service, function string) (*config.Rule, error) {

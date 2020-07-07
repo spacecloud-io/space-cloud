@@ -194,7 +194,9 @@ func (m *Module) HookStage(ctx context.Context, intent *model.EventIntent, err e
 				Operation: utils.One,
 			}
 
-			result, err := m.crud.Read(ctx, dbEvent.DBType, dbEvent.Col, req)
+			attr := map[string]string{"project": m.project, "db": dbEvent.DBType, "col": dbEvent.Col}
+			reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
+			result, err := m.crud.Read(ctx, dbEvent.DBType, dbEvent.Col, req, reqParams)
 			if err != nil {
 				log.Println("Eventing Staging Error:", err)
 				continue

@@ -30,7 +30,8 @@ func HandleGetAllTableNames(adminMan *admin.Manager, modules *modules.Modules) h
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
+		_, err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -71,7 +72,8 @@ func HandleGetDatabaseConnectionState(adminMan *admin.Manager, modules *modules.
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
+		_, err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -108,7 +110,8 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -123,12 +126,8 @@ func HandleDeleteTable(adminMan *admin.Manager, modules *modules.Modules, syncma
 			return
 		}
 
-		if err := crud.DeleteTable(ctx, dbAlias, col); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncman.SetDeleteCollection(ctx, projectID, dbAlias, col, crud, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -153,7 +152,8 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -161,7 +161,8 @@ func HandleSetDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manager) 
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		if err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncman.SetDatabaseConnection(ctx, projectID, dbAlias, v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -187,14 +188,16 @@ func HandleGetDatabaseConfig(adminMan *admin.Manager, syncMan *syncman.Manager) 
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-config", "read", map[string]string{"project": projectID, "db": dbAlias})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias)
+		reqParams.Headers = r.Header
+		dbConfig, err := syncMan.GetDatabaseConfig(ctx, projectID, dbAlias, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -218,14 +221,16 @@ func HandleRemoveDatabaseConfig(adminMan *admin.Manager, syncman *syncman.Manage
 		token := utils.GetTokenFromHeader(r)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		if err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncman.RemoveDatabaseConfig(ctx, projectID, dbAlias, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -255,27 +260,23 @@ func HandleGetPreparedQuery(adminMan *admin.Manager, syncMan *syncman.Manager) h
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-prepared-query", "read", map[string]string{"project": projectID, "db": dbAlias, "id": id}); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		reqParams, err := adminMan.IsTokenValid(token, "db-prepared-query", "read", map[string]string{"project": projectID, "db": dbAlias, "id": id})
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id)
+		reqParams.Headers = r.Header
+		result, err := syncMan.GetPreparedQuery(ctx, projectID, dbAlias, id, reqParams)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(model.Response{Result: result})
+		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: result})
 	}
 }
 
@@ -296,26 +297,22 @@ func HandleSetPreparedQueries(adminMan *admin.Manager, syncman *syncman.Manager)
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-prepared-query", "modify", map[string]string{"project": projectID, "db": dbAlias, "id": id}); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		reqParams, err := adminMan.IsTokenValid(token, "db-prepared-query", "modify", map[string]string{"project": projectID, "db": dbAlias, "id": id})
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
-		if err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		reqParams.Headers = r.Header
+		if err := syncman.SetPreparedQueries(ctx, projectID, dbAlias, id, &v, reqParams); err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -334,25 +331,21 @@ func HandleRemovePreparedQueries(adminMan *admin.Manager, syncman *syncman.Manag
 		id := vars["id"]
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-prepared-query", "modify", map[string]string{"project": projectID, "db": dbAlias, "id": id}); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		reqParams, err := adminMan.IsTokenValid(token, "db-prepared-query", "modify", map[string]string{"project": projectID, "db": dbAlias, "id": id})
+		if err != nil {
+			_ = utils.SendErrorResponse(w, http.StatusForbidden, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 
+		reqParams.Headers = r.Header
 		if err := syncman.RemovePreparedQueries(ctx, projectID, dbAlias, id); err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK) // http status codee
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{})
+		_ = utils.SendOkayResponse(w)
 	}
 }
 
@@ -373,7 +366,8 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		_ = json.NewDecoder(r.Body).Decode(&v)
 		defer utils.CloseTheCloser(r.Body)
 
-		if err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -381,23 +375,9 @@ func HandleModifySchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		// Create a context of execution
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
-		logicalDBName, err := syncman.GetLogicalDatabaseName(ctx, projectID, dbAlias)
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-		schema, err := modules.Schema(projectID)
-		if err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
 
-		if err := schema.SchemaModifyAll(ctx, dbAlias, logicalDBName, map[string]*config.TableRule{col: &v}); err != nil {
-			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, v.Schema); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncman.SetModifySchema(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -427,7 +407,8 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -435,7 +416,8 @@ func HandleGetSchemas(adminMan *admin.Manager, syncMan *syncman.Manager) http.Ha
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col)
+		reqParams.Headers = r.Header
+		schemas, err := syncMan.GetSchemas(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -461,14 +443,17 @@ func HandleSetTableRules(adminMan *admin.Manager, syncman *syncman.Manager) http
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-rule", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-rule", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		if err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncman.SetCollectionRules(ctx, projectID, dbAlias, col, &v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -499,14 +484,16 @@ func HandleGetTableRules(adminMan *admin.Manager, syncMan *syncman.Manager) http
 		}
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-rule", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-rule", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col)
+		reqParams.Headers = r.Header
+		dbConfig, err := syncMan.GetCollectionRules(ctx, projectID, dbAlias, col, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
@@ -529,7 +516,8 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": "*"}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": "*"})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -538,22 +526,14 @@ func HandleReloadSchema(adminMan *admin.Manager, modules *modules.Modules, syncm
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		schema, err := modules.Schema(projectID)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			_ = json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-
-		colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, schema)
+		reqParams.Headers = r.Header
+		colResult, err := syncman.SetReloadSchema(ctx, dbAlias, projectID, reqParams)
 		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		_ = utils.SendResponse(w, http.StatusOK, model.Response{Result: colResult})
-		// return
 	}
 }
 
@@ -572,7 +552,8 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": col})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -596,7 +577,9 @@ func HandleInspectCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s); err != nil {
+
+		reqParams.Headers = r.Header
+		if err := syncman.SetSchemaInspection(ctx, projectID, dbAlias, col, s, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -619,7 +602,8 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		projectID := vars["project"]
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-config", "modify", map[string]string{"project": projectID, "db": dbAlias})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -628,7 +612,8 @@ func HandleUntrackCollectionSchema(adminMan *admin.Manager, modules *modules.Mod
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		if err := syncman.RemoveSchemaInspection(ctx, projectID, dbAlias, col); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncman.RemoveCollection(ctx, projectID, dbAlias, col, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -653,7 +638,8 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": "*"}); err != nil {
+		reqParams, err := adminMan.IsTokenValid(token, "db-schema", "modify", map[string]string{"project": projectID, "db": dbAlias, "col": "*"})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}
@@ -662,13 +648,13 @@ func HandleModifyAllSchema(adminMan *admin.Manager, syncman *syncman.Manager) ht
 		ctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
 
-		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v); err != nil {
+		reqParams.Headers = r.Header
+		if err := syncman.SetModifyAllSchema(ctx, dbAlias, projectID, v, reqParams); err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		_ = utils.SendOkayResponse(w)
-		// return
 	}
 }
 
@@ -687,7 +673,8 @@ func HandleInspectTrackedCollectionsSchema(adminMan *admin.Manager, modules *mod
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": "*"}); err != nil {
+		_, err := adminMan.IsTokenValid(token, "db-schema", "read", map[string]string{"project": projectID, "db": dbAlias, "col": "*"})
+		if err != nil {
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
 		}

@@ -10,23 +10,23 @@ import (
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
-func (graph *Module) genrateDeleteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (*model.AllRequest, error) {
+func (graph *Module) genrateDeleteReq(ctx context.Context, field *ast.Field, token string, store map[string]interface{}) (model.RequestParams, *model.AllRequest, error) {
 	dbAlias, err := graph.GetDBAlias(field)
 	if err != nil {
-		return nil, err
+		return model.RequestParams{}, nil, err
 	}
 	col := strings.TrimPrefix(field.Name.Value, "delete_")
 
 	req, err := generateDeleteRequest(field, store)
 	if err != nil {
-		return nil, err
+		return model.RequestParams{}, nil, err
 	}
 
 	_, err = graph.auth.IsDeleteOpAuthorised(ctx, graph.project, dbAlias, col, token, req)
 	if err != nil {
-		return nil, err
+		return model.RequestParams{}, nil, err
 	}
-	return generateDeleteAllRequest(req), nil
+	return model.RequestParams{}, generateDeleteAllRequest(req), nil
 
 }
 

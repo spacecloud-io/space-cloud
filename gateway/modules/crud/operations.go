@@ -11,7 +11,7 @@ import (
 )
 
 // Create inserts a documents (or multiple when op is "all") into the database based on dbType
-func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.CreateRequest) error {
+func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.CreateRequest, params model.RequestParams) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -54,7 +54,7 @@ func (m *Module) Create(ctx context.Context, dbAlias, col string, req *model.Cre
 }
 
 // Read returns the documents(s) which match a query from the database based on dbType
-func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest) (interface{}, error) {
+func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadRequest, params model.RequestParams) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -73,7 +73,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 	}
 
 	if req.IsBatch {
-		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req}
+		key := model.ReadRequestKey{DBType: dbAlias, Col: col, HasOptions: req.Options.HasOptions, Req: *req, ReqParams: params}
 		dataLoader, ok := m.getLoader(fmt.Sprintf("%s-%s-%s", m.project, dbAlias, col))
 		if !ok {
 			dataLoader = m.createLoader(fmt.Sprintf("%s-%s-%s", m.project, dbAlias, col))
@@ -98,7 +98,7 @@ func (m *Module) Read(ctx context.Context, dbAlias, col string, req *model.ReadR
 }
 
 // Update updates the documents(s) which match a query from the database based on dbType
-func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.UpdateRequest) error {
+func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.UpdateRequest, params model.RequestParams) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -140,7 +140,7 @@ func (m *Module) Update(ctx context.Context, dbAlias, col string, req *model.Upd
 }
 
 // Delete removes the documents(s) which match a query from the database based on dbType
-func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.DeleteRequest) error {
+func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.DeleteRequest, params model.RequestParams) error {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -178,7 +178,7 @@ func (m *Module) Delete(ctx context.Context, dbAlias, col string, req *model.Del
 }
 
 // ExecPreparedQuery executes PreparedQueries request
-func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, auth map[string]interface{}) (interface{}, error) {
+func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req *model.PreparedQueryRequest, params model.RequestParams) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 	crud, err := m.getCrudBlock(dbAlias)
@@ -199,7 +199,7 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 	// Load the arguments
 	var args []interface{}
 	for i := 0; i < len(preparedQuery.Arguments); i++ {
-		arg, err := utils.LoadValue(preparedQuery.Arguments[i], map[string]interface{}{"args": req.Params, "auth": auth})
+		arg, err := utils.LoadValue(preparedQuery.Arguments[i], map[string]interface{}{"args": req.Params, "auth": params.Claims})
 		if err != nil {
 			return nil, err
 		}
@@ -212,7 +212,7 @@ func (m *Module) ExecPreparedQuery(ctx context.Context, dbAlias, id string, req 
 }
 
 // Aggregate performs an aggregation defined via the pipeline
-func (m *Module) Aggregate(ctx context.Context, dbAlias, col string, req *model.AggregateRequest) (interface{}, error) {
+func (m *Module) Aggregate(ctx context.Context, dbAlias, col string, req *model.AggregateRequest, params model.RequestParams) (interface{}, error) {
 	m.RLock()
 	defer m.RUnlock()
 
@@ -229,7 +229,7 @@ func (m *Module) Aggregate(ctx context.Context, dbAlias, col string, req *model.
 }
 
 // Batch performs a batch operation on the database
-func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequest) error {
+func (m *Module) Batch(ctx context.Context, dbAlias string, req *model.BatchRequest, params model.RequestParams) error {
 	m.RLock()
 	defer m.RUnlock()
 
