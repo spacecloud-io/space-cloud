@@ -1,6 +1,7 @@
 package modules
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/spaceuptech/space-cloud/gateway/managers"
 	"github.com/spaceuptech/space-cloud/gateway/model"
 	"github.com/spaceuptech/space-cloud/gateway/modules/auth"
@@ -81,4 +82,25 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 // Delete deletes a project
 func (m *Modules) Delete(projectID string) {
 	// Close all the modules here
+
+	logrus.Debugln("closing config of db module")
+	if err := m.db.CloseConfig(); err != nil {
+		logrus.Errorf("error closing db module config - %s", err.Error())
+	}
+
+	logrus.Debugln("closing config of gcpstorage module")
+	if err := m.file.CloseConfig(); err != nil {
+		logrus.Errorf("error closing filestore module config - %s", err.Error())
+	}
+
+	logrus.Debugln("closing config of eventing module")
+	if err := m.eventing.CloseConfig(); err != nil {
+		logrus.Errorf("error closing eventing module config - %s", err.Error())
+	}
+
+	logrus.Debugln("closing config of realtime module")
+	if err := m.realtime.CloseConfig(); err != nil {
+		logrus.Errorf("error closing realtime module config - %s", err.Error())
+	}
+
 }

@@ -75,32 +75,6 @@ func (m *Modules) SetProjectConfig(c *config.Project) error {
 	return nil
 }
 
-// CloseProjectConfig close the config all modules
-func (m *Modules) CloseProjectConfig(c *config.Config) {
-	if c.Projects != nil && len(c.Projects) > 0 {
-
-		logrus.Debugln("closing config of db module")
-		if err := m.db.CloseConfig(); err != nil {
-			logrus.Errorf("error closing db module config - %s", err.Error())
-		}
-
-		logrus.Debugln("closing config of gcpstorage module")
-		if err := m.file.CloseConfig(); err != nil {
-			logrus.Errorf("error closing filestore module config - %s", err.Error())
-		}
-
-		logrus.Debugln("closing config of eventing module")
-		if err := m.eventing.CloseConfig(); err != nil {
-			logrus.Errorf("error closing eventing module config - %s", err.Error())
-		}
-
-		logrus.Debugln("closing config of realtime module")
-		if err := m.realtime.CloseConfig(); err != nil {
-			logrus.Errorf("error closing realtime module config - %s", err.Error())
-		}
-	}
-}
-
 // SetGlobalConfig sets the auth secret and AESKey
 func (m *Modules) SetGlobalConfig(projectID, secretSource string, secrets []*config.Secret, aesKey string) error {
 	m.auth.SetSecrets(secretSource, secrets)
