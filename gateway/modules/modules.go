@@ -82,7 +82,6 @@ func New(nodeID string, managers *managers.Managers, globalMods *global.Global) 
 // Delete deletes a project
 func (m *Modules) Delete(projectID string) {
 	// Close all the modules here
-
 	logrus.Debugln("closing config of db module")
 	if err := m.db.CloseConfig(); err != nil {
 		logrus.Errorf("error closing db module config - %s", err.Error())
@@ -102,5 +101,4 @@ func (m *Modules) Delete(projectID string) {
 	if err := m.realtime.CloseConfig(); err != nil {
 		logrus.Errorf("error closing realtime module config - %s", err.Error())
 	}
-
 }
