@@ -105,7 +105,7 @@ func (m *Module) initBlock(dbType utils.DBType, enabled bool, connection, dbName
 		}
 		return c, err
 	default:
-		return nil, utils.ErrInvalidParams
+		return nil, utils.ErrUnsupportedDatabase
 	}
 }
 

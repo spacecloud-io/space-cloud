@@ -104,12 +104,14 @@ func (s *Manager) GetFileStoreConfig(ctx context.Context, project string) ([]int
 	if err != nil {
 		return nil, err
 	}
+
 	return []interface{}{config.FileStore{
 		Enabled:   projectConfig.Modules.FileStore.Enabled,
 		StoreType: projectConfig.Modules.FileStore.StoreType,
 		Conn:      projectConfig.Modules.FileStore.Conn,
 		Endpoint:  projectConfig.Modules.FileStore.Endpoint,
 		Bucket:    projectConfig.Modules.FileStore.Bucket,
+		Secret:    projectConfig.Modules.FileStore.Secret,
 	}}, nil
 }
 
