@@ -19,7 +19,7 @@ func HandleGetCredentials(adminMan *admin.Manager) http.HandlerFunc {
 		defer utils.CloseTheCloser(r.Body)
 
 		// Check if the request is authorised
-		if err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r), "creds", "read", nil); err != nil {
+		if _, err := adminMan.IsTokenValid(utils.GetTokenFromHeader(r), "creds", "read", nil); err != nil {
 			logrus.Errorf("Failed to validate token for set eventing schema - %s", err.Error())
 			_ = utils.SendErrorResponse(w, http.StatusUnauthorized, err.Error())
 			return
@@ -39,8 +39,8 @@ func HandleLoadEnv(adminMan *admin.Manager, syncMan *syncman.Manager) http.Handl
 			return
 		}
 
-		isProd, plan, quotas := adminMan.LoadEnv()
-		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": isProd, "plan": plan, "quotas": quotas, "version": utils.BuildVersion, "clusterId": "", "clusterType": clusterType})
+		isProd, plan, quotas, loginURL := adminMan.LoadEnv()
+		_ = utils.SendResponse(w, http.StatusOK, map[string]interface{}{"isProd": isProd, "plan": plan, "quotas": quotas, "version": utils.BuildVersion, "clusterId": "", "clusterType": clusterType, "loginURL": loginURL})
 	}
 }
 
