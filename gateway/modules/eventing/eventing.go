@@ -37,7 +37,6 @@ type Module struct {
 	// stores mapping of batchID w.r.t channel for sending synchronous event response
 	eventChanMap sync.Map // key here is batchID
 	ticker       *time.Ticker
-	done         chan bool
 }
 
 // synchronous event response
@@ -60,11 +59,10 @@ func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, sch
 		metricHook: hook,
 		config:     &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
 		ticker:     &time.Ticker{},
-		done:       make(chan bool),
 	}
 
 	// Start the internal processes
-	m.ticker = time.NewTicker(5 * time.Second)
+	m.ticker = time.NewTicker(15 * time.Second)
 	go m.routineProcessIntents()
 	go m.routineProcessStaged()
 
@@ -129,11 +127,10 @@ func (m *Module) SetConfig(project string, eventing *config.Eventing) error {
 
 // CloseConfig closes the module config
 func (m *Module) CloseConfig() error {
-	//erase map
-	m.eventChanMap.Range(func(key interface{}, value interface{}) bool {
-		m.eventChanMap.Delete(key)
-		return true
-	})
+	// Acquire a lock
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
 	//erase map
 	m.processingEvents.Range(func(key interface{}, value interface{}) bool {
 		m.processingEvents.Delete(key)
@@ -156,6 +153,5 @@ func (m *Module) CloseConfig() error {
 		delete(m.config.Schemas, k)
 	}
 	m.ticker.Stop()
-	close(m.done)
 	return nil
 }
