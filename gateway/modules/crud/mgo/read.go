@@ -257,17 +257,23 @@ func splitAggregateAsColumnName(asColumnName string) (functionName string, colum
 }
 
 func getNestedObject(doc map[string]interface{}) {
-	resultObj := make(map[string]map[string]interface{})
+	resultObj := make(map[string]interface{})
 	for asColumnName, value := range doc {
 		functionName, columnName, isAggregateColumn := splitAggregateAsColumnName(asColumnName)
 		if isAggregateColumn {
 			delete(doc, asColumnName)
 			funcValue, ok := resultObj[functionName]
 			if !ok {
-				resultObj[functionName] = map[string]interface{}{columnName: value}
+
+				// NOTE: This case occurs for count function with no column name (using * operator instead)
+				if columnName == "" {
+					resultObj[functionName] = value
+				} else {
+					resultObj[functionName] = map[string]interface{}{columnName: value}
+				}
 				continue
 			}
-			funcValue[columnName] = value
+			funcValue.(map[string]interface{})[columnName] = value
 		}
 	}
 	if len(resultObj) > 0 {
