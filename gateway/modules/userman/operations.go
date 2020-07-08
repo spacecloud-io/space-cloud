@@ -37,13 +37,13 @@ func (m *Module) Profile(ctx context.Context, token, dbAlias, project, id string
 	req := &model.ReadRequest{Find: find, Operation: utils.One}
 
 	// Check if the user is authenticated
-	actions, status, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req)
+	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req)
 	if err != nil {
-		return status, nil, err
+		return http.StatusForbidden, nil, err
 	}
 
 	// Perform database read operation
-	res, err := m.crud.Read(ctx, dbAlias, "users", req)
+	res, err := m.crud.Read(ctx, dbAlias, "users", req, reqParams)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -68,12 +68,12 @@ func (m *Module) Profiles(ctx context.Context, token, dbAlias, project string) (
 	req := &model.ReadRequest{Find: find, Operation: utils.All}
 
 	// Check if the user is authenticated
-	actions, status, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req)
+	actions, reqParams, err := m.auth.IsReadOpAuthorised(ctx, project, dbAlias, "users", token, req)
 	if err != nil {
-		return status, nil, err
+		return http.StatusForbidden, nil, err
 	}
 
-	res, err := m.crud.Read(ctx, dbAlias, "users", req)
+	res, err := m.crud.Read(ctx, dbAlias, "users", req, reqParams)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
@@ -99,9 +99,10 @@ func (m *Module) EmailSignIn(ctx context.Context, dbAlias, project, email, passw
 	}
 
 	// Create read request
+	attr := map[string]string{"project": project, "db": dbAlias, "col": "users"}
+	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
-
-	user, err := m.crud.Read(ctx, dbAlias, "users", readReq)
+	user, err := m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
 	if err != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
 	}
@@ -154,8 +155,10 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 	}
 
 	// Create read request
+	attr := map[string]string{"project": project, "db": dbAlias, "col": "users"}
+	reqParams := model.RequestParams{Resource: "db-read", Op: "access", Attributes: attr}
 	readReq := &model.ReadRequest{Find: map[string]interface{}{"email": email}, Operation: utils.One}
-	_, err = m.crud.Read(ctx, dbAlias, "users", readReq)
+	_, err = m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
 	if err == nil {
 		return http.StatusConflict, nil, errors.New("User with provided email already exists")
 	}
@@ -176,8 +179,10 @@ func (m *Module) EmailSignUp(ctx context.Context, dbAlias, project, email, name,
 	} else {
 		req["id"] = id.String()
 	}
+
+	reqParams.Resource = "db-create"
 	createReq := &model.CreateRequest{Operation: utils.One, Document: req}
-	err = m.crud.Create(ctx, dbAlias, "users", createReq)
+	err = m.crud.Create(ctx, dbAlias, "users", createReq, reqParams)
 	if err != nil {
 		log.Println("Err: ", err)
 		return http.StatusInternalServerError, nil, errors.New("Failed to create user account")
@@ -241,18 +246,19 @@ func (m *Module) EmailEditProfile(ctx context.Context, token, dbAlias, project, 
 	req.Update = update
 	req.Operation = utils.One
 
-	status, err := m.auth.IsUpdateOpAuthorised(ctx, project, dbAlias, "users", token, req)
+	reqParams, err := m.auth.IsUpdateOpAuthorised(ctx, project, dbAlias, "users", token, req)
 	if err != nil {
-		return status, nil, err
+		return http.StatusForbidden, nil, err
 	}
 
-	err = m.crud.Update(ctx, dbAlias, "users", req)
+	err = m.crud.Update(ctx, dbAlias, "users", req, reqParams)
 	if err != nil {
 		return http.StatusInternalServerError, nil, err
 	}
 
+	reqParams.Resource = "db-read"
 	readReq := &model.ReadRequest{Find: map[string]interface{}{idString: id}, Operation: utils.One}
-	user, err1 := m.crud.Read(ctx, dbAlias, "users", readReq)
+	user, err1 := m.crud.Read(ctx, dbAlias, "users", readReq, reqParams)
 	if err1 != nil {
 		return http.StatusNotFound, nil, errors.New("User not found")
 	}
