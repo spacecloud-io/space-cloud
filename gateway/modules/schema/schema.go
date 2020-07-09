@@ -104,7 +104,7 @@ func (s *Schema) Parser(crud config.Crud) (model.Type, error) {
 			if len(value) <= 1 { // schema might have an id by default
 				continue
 			}
-			collection[strings.ToLower(collectionName[0:1])+collectionName[1:]] = value
+			collection[collectionName] = value
 		}
 		schema[dbName] = collection
 	}
