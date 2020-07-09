@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
@@ -39,7 +40,8 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 
 	// Finally we authorize the request
 	a := modules.Auth()
-	auth, err := a.AuthorizeRequest(ctx, route.Rule, route.Project, token, params)
+	args := map[string]interface{}{"params": params, "query": makeQueryArguments(req)}
+	auth, err := a.AuthorizeRequest(ctx, route.Rule, route.Project, token, args)
 	if err != nil {
 		return "", nil, http.StatusForbidden, err
 	}
@@ -105,4 +107,30 @@ func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token 
 	}
 
 	return nil
+}
+
+func makeQueryArguments(r *http.Request) map[string]interface{} {
+	// Prepare the query parameters
+	queryParams := r.URL.Query()
+	params := make(map[string]interface{}, len(queryParams))
+	for k, v := range queryParams {
+		params[k] = v[0]
+	}
+
+	// Prepare the headers
+	headers := make(map[string]interface{}, len(r.Header))
+	for k, v := range r.Header {
+		headers[k] = v[0]
+	}
+
+	// Prepare path array
+	pathArray := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
+
+	// Finally we return the entire query object
+	return map[string]interface{}{
+		"path":      r.URL.Path,
+		"pathArray": pathArray,
+		"params":    params,
+		"headers":   headers,
+	}
 }
