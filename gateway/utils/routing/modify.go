@@ -14,11 +14,6 @@ import (
 )
 
 func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, route *config.Route, req *http.Request) (string, interface{}, int, error) {
-	// Return if the rule is allow
-	if route.Rule == nil || route.Rule.Rule == "allow" {
-		return "", nil, http.StatusOK, nil
-	}
-
 	// Extract the token
 	token := utils.GetTokenFromHeader(req)
 
@@ -124,7 +119,11 @@ func makeQueryArguments(r *http.Request) map[string]interface{} {
 	}
 
 	// Prepare path array
-	pathArray := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
+	pathArrayTemp := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
+	pathArray := make([]interface{}, len(pathArrayTemp))
+	for i, v := range pathArrayTemp {
+		pathArray[i] = v
+	}
 
 	// Finally we return the entire query object
 	return map[string]interface{}{
