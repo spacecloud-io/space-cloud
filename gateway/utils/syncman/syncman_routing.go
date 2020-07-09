@@ -127,3 +127,40 @@ func (s *Manager) GetIngressRouting(ctx context.Context, project, routeID string
 	}
 	return routes, nil
 }
+
+// SetGlobalRouteConfig sets the project level ingress routing config
+func (s *Manager) SetGlobalRouteConfig(ctx context.Context, project string, globalConfig *config.GlobalRoutesConfig) error {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// Get the provided project's config
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return err
+	}
+
+	// Set config in project config object
+	projectConfig.Modules.GlobalRoutes = globalConfig
+
+	// Update the routing module
+	s.routing.SetGlobalConfig(globalConfig)
+
+	// Finally lets store the config
+	return s.setProject(ctx, projectConfig)
+}
+
+// GetGlobalRouteConfig returns the project level ingress routing config
+func (s *Manager) GetGlobalRouteConfig(ctx context.Context, project string) (*config.GlobalRoutesConfig, error) {
+	// Acquire a lock
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	// Get the provided project's config
+	projectConfig, err := s.getConfigWithoutLock(project)
+	if err != nil {
+		return nil, err
+	}
+
+	return projectConfig.Modules.GlobalRoutes, nil
+}

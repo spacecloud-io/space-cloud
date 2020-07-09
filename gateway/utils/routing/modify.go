@@ -46,22 +46,8 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 
 	// Set the headers
 	state := map[string]interface{}{"args": params, "auth": auth}
-	for _, header := range route.Modify.Headers {
-		// Load the string if it exists
-		value, err := utils.LoadValue(header.Value, state)
-		if err == nil {
-			temp, ok := value.(string)
-			if ok {
-				header.Value = temp
-			} else {
-				headerValue, _ := json.Marshal(value)
-				header.Value = string(headerValue)
-			}
-		}
-
-		// Set the header
-		req.Header.Add(header.Key, header.Value)
-	}
+	headers := append(r.globalConfig.RequestHeaders, route.Modify.RequestHeaders...)
+	prepareHeaders(headers, state).UpdateHeader(req.Header)
 
 	// Don't forget to reset the body
 	if params != nil {
@@ -82,20 +68,30 @@ func (r *Routing) modifyRequest(ctx context.Context, modules modulesInterface, r
 }
 
 func (r *Routing) modifyResponse(res *http.Response, route *config.Route, token string, auth interface{}) error {
-	if res.Header.Get("Content-Type") == "application/json" {
-		if route.Modify.Tmpl == "" {
-			return nil
-		}
-		data, err := ioutil.ReadAll(res.Body)
+	// Extract the params only if content-type is `application/json` and a response template is provided
+	var params interface{}
+	var data []byte
+	var err error
+
+	if res.Header.Get("Content-Type") == "application/json" && route.Modify.Tmpl == "" {
+		data, err = ioutil.ReadAll(res.Body)
 		if err != nil {
 			return err
 		}
 
-		var params interface{}
 		if err := json.Unmarshal(data, &params); err != nil {
-			return utils.LogError("Unable to unmarshal body to JSON", module, handleResponse, err)
+			utils.LogWarn("Unable to unmarshal response body to JSON", module, handleResponse)
+			res.Body = ioutil.NopCloser(bytes.NewBuffer(data))
 		}
+	}
 
+	// Set the headers
+	state := map[string]interface{}{"args": params, "auth": auth}
+	headers := append(r.globalConfig.ResponseHeaders, route.Modify.ResponseHeaders...)
+	prepareHeaders(headers, state).UpdateHeader(res.Header)
+
+	// If params is not nil we need to template the response
+	if params != nil {
 		newParams, err := r.adjustBody("response", route.Project, token, route, auth, params)
 		if err != nil {
 			return err
