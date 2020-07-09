@@ -111,6 +111,7 @@ func (s *Manager) GetFileStoreConfig(ctx context.Context, project string) ([]int
 		Conn:      projectConfig.Modules.FileStore.Conn,
 		Endpoint:  projectConfig.Modules.FileStore.Endpoint,
 		Bucket:    projectConfig.Modules.FileStore.Bucket,
+		Secret:    projectConfig.Modules.FileStore.Secret,
 	}}, nil
 }
 
