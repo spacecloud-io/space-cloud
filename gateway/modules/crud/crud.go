@@ -125,7 +125,6 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		return errors.New("crud module cannot have more than 1 db")
 	}
 
-	m.closeBatchOperation()
 	m.project = project
 
 	// Reset all existing prepared query
@@ -189,6 +188,8 @@ func (m *Module) SetConfig(project string, crud config.Crud) error {
 		m.block = c
 		m.alias = strings.TrimPrefix(k, "sql-")
 	}
+
+	m.closeBatchOperation()
 	m.initBatchOperation(project, crud)
 	return nil
 }
