@@ -87,7 +87,7 @@ func (m *Modules) Delete(projectID string) {
 		logrus.Errorf("error closing db module config - %s", err.Error())
 	}
 
-	logrus.Debugln("closing config of gcpstorage module")
+	logrus.Debugln("closing config of filestore module")
 	if err := m.file.CloseConfig(); err != nil {
 		logrus.Errorf("error closing filestore module config - %s", err.Error())
 	}

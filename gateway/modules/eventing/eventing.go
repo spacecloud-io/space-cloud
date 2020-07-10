@@ -58,7 +58,6 @@ func New(auth model.AuthEventingInterface, crud model.CrudEventingInterface, sch
 		fileStore:  file,
 		metricHook: hook,
 		config:     &config.Eventing{Enabled: false, InternalRules: map[string]config.EventingRule{}},
-		ticker:     &time.Ticker{},
 	}
 
 	// Start the internal processes
