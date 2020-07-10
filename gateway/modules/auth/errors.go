@@ -2,10 +2,10 @@ package auth
 
 import (
 	"errors"
-
-	"github.com/sirupsen/logrus"
+	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/utils"
 )
 
 // ErrRuleNotFound is thrown when an error is not present in the auth object
@@ -22,10 +22,13 @@ func formatError(rule *config.Rule, err error) error {
 	if err == nil {
 		return nil
 	}
-	if rule.Name == "" {
-		rule.Name = "no name"
+
+	name := rule.Name
+	if name == "" {
+		name = "no name"
 	}
-	logrus.Errorf("Rule (%s) of type (%s) failed", rule.Name, rule.Rule)
+
+	_ = utils.LogError(fmt.Sprintf("Rule (%s) of type (%s) failed", name, rule.Rule), "auth", "match", err)
 
 	if rule.Error == "" {
 		return err

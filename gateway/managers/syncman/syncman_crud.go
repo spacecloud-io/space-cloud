@@ -63,7 +63,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 		coll.Conn = v.Conn
 		coll.Enabled = v.Enabled
 		coll.Type = v.Type
-		// coll.Name = v.Name// TODO CHECK IF THIS IS REQUIRED
+		coll.DBName = v.DBName
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
@@ -457,12 +457,12 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 		if !ok {
 			return nil, fmt.Errorf("specified dbAlias (%s) not present in config", dbAlias)
 		}
-		return []interface{}{config.Crud{dbAlias: {Enabled: dbConfig.Enabled, Conn: dbConfig.Conn, Type: dbConfig.Type}}}, nil
+		return []interface{}{config.Crud{dbAlias: {Enabled: dbConfig.Enabled, Conn: dbConfig.Conn, Type: dbConfig.Type, DBName: dbConfig.DBName}}}, nil
 	}
 
 	services := []interface{}{}
 	for key, value := range projectConfig.Modules.Crud {
-		services = append(services, config.Crud{key: {Enabled: value.Enabled, Conn: value.Conn, Type: value.Type}})
+		services = append(services, config.Crud{key: {Enabled: value.Enabled, Conn: value.Conn, Type: value.Type, DBName: value.DBName}})
 	}
 	return services, nil
 }
