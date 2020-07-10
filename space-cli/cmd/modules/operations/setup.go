@@ -56,7 +56,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		key = generateRandomString(32)
 	}
 	if config == "" {
-		config = utils.GetSpaceCloudConfigFilePath(clusterName)
+		config = utils.GetMountConfigFilePath(clusterName)
 	}
 	if !strings.Contains(config, ".yaml") {
 		return fmt.Errorf("full path not provided for config file")
@@ -146,7 +146,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		},
 		{
 			Type:   mount.TypeBind,
-			Source: utils.GetMountConfigFilePath(clusterName),
+			Source: config,
 			Target: "/app/config.yaml",
 		},
 	}

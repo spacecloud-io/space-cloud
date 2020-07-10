@@ -17,6 +17,11 @@ func (d *Docker) CreateSecret(_ context.Context, projectID string, secretObj *mo
 	// create folder for project
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
 
+	// Try to create a secrets directory if it doesn't already exist
+	if err := d.createDir(projectPath); err != nil {
+		return err
+	}
+
 	// check if file exists
 	filePath := fmt.Sprintf("%s/%s.json", projectPath, secretObj.ID)
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -48,6 +53,13 @@ func (d *Docker) CreateSecret(_ context.Context, projectID string, secretObj *mo
 // ListSecrets list all the secrets of the project
 func (d *Docker) ListSecrets(_ context.Context, projectID string) ([]*model.Secret, error) {
 	projectPath := fmt.Sprintf("%s/%s", d.secretPath, projectID)
+
+	// Try to create a secrets directory if it doesn't already exist
+	if err := d.createDir(projectPath); err != nil {
+		return nil, err
+	}
+
+	// Read all the files
 	files, err := ioutil.ReadDir(projectPath)
 	if err != nil {
 		return nil, err
