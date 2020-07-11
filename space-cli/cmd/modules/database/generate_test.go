@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
-	"github.com/spaceuptech/space-cli/cmd/utils/input"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils/input"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -575,6 +575,197 @@ func Test_generateDBSchema(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("generateDBSchema() = %v, want %v", got, tt.want)
+			}
+
+			mockSurvey.AssertExpectations(t)
+		})
+	}
+}
+
+func Test_generateDBPreparedQuery(t *testing.T) {
+	// surveyReturnValue stores the values returned from the survey
+	surveyReturnValue := ""
+	type mockArgs struct {
+		method         string
+		args           []interface{}
+		paramsReturned []interface{}
+	}
+	tests := []struct {
+		name           string
+		surveyMockArgs []mockArgs
+		want           *model.SpecObject
+		wantErr        bool
+	}{
+		{
+			name: "error surveying project",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying db alias",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying id",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "dbAlias"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Prepared Query Name: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying query",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "dbAlias"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Prepared Query Name: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "prep"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter SQL query: ", Default: "select * from users"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "error surveying args",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "dbAlias"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Prepared Query Name: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "prep"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter SQL query: ", Default: "select * from users"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "select * from users where id = ?"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter arguments by comma seperated value: ", Default: "args.id"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{errors.New("unable to call AskOne"), ""},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "generated prepared query spec object successfully",
+			surveyMockArgs: []mockArgs{
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Project: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "project"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter DB Alias: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "dbAlias"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter Prepared Query Name: "}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "prep"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter SQL query: ", Default: "select * from users"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "select * from users where id = ?"},
+				},
+				{
+					method:         "AskOne",
+					args:           []interface{}{&survey.Input{Message: "Enter arguments by comma seperated value: ", Default: "args.id"}, &surveyReturnValue, mock.Anything},
+					paramsReturned: []interface{}{nil, "args.id"},
+				},
+			},
+			want: &model.SpecObject{
+				API:  "/v1/config/projects/{project}/database/{dbAlias}/prepared-queries/{id}",
+				Type: "db-prepared-query",
+				Meta: map[string]string{
+					"project": "project",
+					"dbAlias": "dbAlias",
+					"id":      "prep",
+				},
+				Spec: map[string]interface{}{
+					"sql": "select * from users where id = ?",
+					"rule": map[string]interface{}{
+						"rule": "allow",
+					},
+					"args": []string{"args.id"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			mockSurvey := utils.MockInputInterface{}
+
+			for _, m := range tt.surveyMockArgs {
+				mockSurvey.On(m.method, m.args...).Return(m.paramsReturned...)
+			}
+
+			input.Survey = &mockSurvey
+
+			got, err := generateDBPreparedQuery()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("generateDBPreparedQuery() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("generateDBPreparedQuery() = %v, want %v", got, tt.want)
 			}
 
 			mockSurvey.AssertExpectations(t)

@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
+	"github.com/spaceuptech/space-cloud/gateway/model"
 )
 
 // SetUserManagement sets the user management
-func (s *Manager) SetUserManagement(ctx context.Context, project, provider string, value *config.AuthStub) error {
+func (s *Manager) SetUserManagement(ctx context.Context, project, provider string, value *config.AuthStub, reqParams model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -28,7 +29,7 @@ func (s *Manager) SetUserManagement(ctx context.Context, project, provider strin
 }
 
 // GetUserManagement gets user management
-func (s *Manager) GetUserManagement(ctx context.Context, project, providerID string) ([]interface{}, error) {
+func (s *Manager) GetUserManagement(ctx context.Context, project, providerID string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()

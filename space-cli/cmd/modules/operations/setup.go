@@ -19,8 +19,8 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/txn2/txeh"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 func generateRandomString(length int) string {
@@ -56,7 +56,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		key = generateRandomString(32)
 	}
 	if config == "" {
-		config = utils.GetSpaceCloudConfigFilePath(clusterName)
+		config = utils.GetMountConfigFilePath(clusterName)
 	}
 	if !strings.Contains(config, ".yaml") {
 		return fmt.Errorf("full path not provided for config file")
@@ -146,7 +146,7 @@ func Setup(username, key, config, version, secret, clusterName string, dev bool,
 		},
 		{
 			Type:   mount.TypeBind,
-			Source: utils.GetMountConfigFilePath(clusterName),
+			Source: config,
 			Target: "/app/config.yaml",
 		},
 	}

@@ -92,7 +92,8 @@ func (m *Module) matchQuery(ctx context.Context, project string, rule *config.Ru
 	req := &model.ReadRequest{Find: rule.Find, Operation: utils.All}
 
 	// Execute the read request
-	data, err := crud.Read(ctx, rule.DB, rule.Col, req)
+	attr := map[string]string{"project": project, "db": rule.DB, "col": rule.Col}
+	data, err := crud.Read(ctx, rule.DB, rule.Col, req, model.RequestParams{Claims: auth, Resource: "db-read", Op: "access", Attributes: attr})
 	if err != nil {
 		return nil, formatError(rule, err)
 	}

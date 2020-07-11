@@ -6,16 +6,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/spaceuptech/space-cloud/gateway/model"
+	"github.com/spaceuptech/space-cloud/gateway/modules/crud"
 	"github.com/spaceuptech/space-cloud/gateway/utils"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/spaceuptech/space-cloud/gateway/config"
-	"github.com/spaceuptech/space-cloud/gateway/modules/schema"
 )
 
 // SetDeleteCollection deletes a collection from the database
-func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col string) error {
+func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col string, module *crud.Module, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -37,11 +38,15 @@ func (s *Manager) SetDeleteCollection(ctx context.Context, project, dbAlias, col
 		return err
 	}
 
+	if err := module.DeleteTable(ctx, dbAlias, col); err != nil {
+		return err
+	}
+
 	return s.setProject(ctx, projectConfig)
 }
 
 // SetDatabaseConnection sets the database connection
-func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias string, v config.CrudStub) error {
+func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias string, v config.CrudStub, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -58,7 +63,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 		coll.Conn = v.Conn
 		coll.Enabled = v.Enabled
 		coll.Type = v.Type
-		// coll.Name = v.Name// TODO CHECK IF THIS IS REQUIRED
+		coll.DBName = v.DBName
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
@@ -70,7 +75,7 @@ func (s *Manager) SetDatabaseConnection(ctx context.Context, project, dbAlias st
 }
 
 // RemoveDatabaseConfig removes the database config
-func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias string) error {
+func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -93,8 +98,6 @@ func (s *Manager) RemoveDatabaseConfig(ctx context.Context, project, dbAlias str
 
 // GetLogicalDatabaseName gets logical database name for provided db alias
 func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias string) (string, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
 		return "", err
@@ -107,7 +110,7 @@ func (s *Manager) GetLogicalDatabaseName(ctx context.Context, project, dbAlias s
 }
 
 // GetPreparedQuery gets preparedQuery from config
-func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id string) ([]interface{}, error) {
+func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -128,12 +131,12 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 			if !ok {
 				return nil, fmt.Errorf("Prepared Queries for id (%s) not present in config for dbAlias (%s) )", id, dbAlias)
 			}
-			return []interface{}{&preparedQueryResponse{ID: id, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments}}, nil
+			return []interface{}{&preparedQueryResponse{ID: id, DBAlias: dbAlias, SQL: preparedQuery.SQL, Arguments: preparedQuery.Arguments, Rule: preparedQuery.Rule}}, nil
 		}
 		preparedQuery := databaseConfig.PreparedQueries
 		var coll []interface{} = make([]interface{}, 0)
 		for key, value := range preparedQuery {
-			coll = append(coll, &preparedQueryResponse{ID: key, SQL: value.SQL, Arguments: value.Arguments})
+			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
 		}
 		return coll, nil
 	}
@@ -141,14 +144,14 @@ func (s *Manager) GetPreparedQuery(ctx context.Context, project, dbAlias, id str
 	coll := make([]interface{}, 0)
 	for _, dbInfo := range databases {
 		for key, value := range dbInfo.PreparedQueries {
-			coll = append(coll, &preparedQueryResponse{ID: key, SQL: value.SQL, Arguments: value.Arguments})
+			coll = append(coll, &preparedQueryResponse{ID: key, DBAlias: dbAlias, SQL: value.SQL, Arguments: value.Arguments, Rule: value.Rule})
 		}
 	}
 	return coll, nil
 }
 
 // SetPreparedQueries sets database preparedqueries
-func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id string, v *config.PreparedQuery) error {
+func (s *Manager) SetPreparedQueries(ctx context.Context, project, dbAlias, id string, v *config.PreparedQuery, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -206,7 +209,7 @@ func (s *Manager) RemovePreparedQueries(ctx context.Context, project, dbAlias, i
 }
 
 // SetModifySchema modifies the schema of table
-func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, schema string) error {
+func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col string, v *config.TableRule, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -221,14 +224,21 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, sc
 	if !ok {
 		return errors.New("specified database not present in config")
 	}
+
+	// Modify the schema
+	schemaMod := s.modules.GetSchemaModuleForSyncMan()
+	if err := schemaMod.SchemaModifyAll(ctx, dbAlias, collection.DBName, map[string]*config.TableRule{col: v}); err != nil {
+		return err
+	}
+
 	if collection.Collections == nil {
 		collection.Collections = map[string]*config.TableRule{}
 	}
 	temp, ok := collection.Collections[col]
 	if !ok {
-		collection.Collections[col] = &config.TableRule{Schema: schema, Rules: map[string]*config.Rule{}}
+		collection.Collections[col] = &config.TableRule{Schema: v.Schema, Rules: map[string]*config.Rule{}}
 	} else {
-		temp.Schema = schema
+		temp.Schema = v.Schema
 	}
 
 	if err := s.modules.SetCrudConfig(project, projectConfig.Modules.Crud); err != nil {
@@ -240,7 +250,7 @@ func (s *Manager) SetModifySchema(ctx context.Context, project, dbAlias, col, sc
 }
 
 // SetCollectionRules sets the collection rules of the database
-func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col string, v *config.TableRule) error {
+func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col string, v *config.TableRule, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -275,10 +285,13 @@ func (s *Manager) SetCollectionRules(ctx context.Context, project, dbAlias, col 
 }
 
 // SetReloadSchema reloads of the schema
-func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, schemaArg *schema.Schema) (map[string]interface{}, error) {
+func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, params model.RequestParams) (map[string]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
+
+	// Get the schema module
+	schemaMod := s.modules.GetSchemaModuleForSyncMan()
 
 	projectConfig, err := s.getConfigWithoutLock(project)
 	if err != nil {
@@ -294,7 +307,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 		if colName == "default" {
 			continue
 		}
-		result, err := schemaArg.SchemaInspection(ctx, dbAlias, collectionConfig.DBName, colName)
+		result, err := schemaMod.SchemaInspection(ctx, dbAlias, collectionConfig.DBName, colName)
 		if err != nil {
 			return nil, err
 		}
@@ -313,7 +326,7 @@ func (s *Manager) SetReloadSchema(ctx context.Context, dbAlias, project string, 
 }
 
 // SetSchemaInspection inspects the schema
-func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col, schema string) error {
+func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col, schema string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -347,8 +360,8 @@ func (s *Manager) SetSchemaInspection(ctx context.Context, project, dbAlias, col
 	return s.setProject(ctx, projectConfig)
 }
 
-// RemoveSchemaInspection removed the collection from the database collection schema in config
-func (s *Manager) RemoveSchemaInspection(ctx context.Context, project, dbAlias, col string) error {
+// RemoveCollection removed the collection from the database collection schema in config
+func (s *Manager) RemoveCollection(ctx context.Context, project, dbAlias, col string, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -379,7 +392,7 @@ func (s *Manager) RemoveSchemaInspection(ctx context.Context, project, dbAlias, 
 }
 
 // SetModifyAllSchema modifies schema of all tables
-func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, v config.CrudStub) error {
+func (s *Manager) SetModifyAllSchema(ctx context.Context, dbAlias, project string, v config.CrudStub, params model.RequestParams) error {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -430,7 +443,7 @@ func (s *Manager) applySchemas(ctx context.Context, project, dbAlias string, pro
 }
 
 // GetDatabaseConfig gets database config
-func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string) ([]interface{}, error) {
+func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -444,18 +457,18 @@ func (s *Manager) GetDatabaseConfig(ctx context.Context, project, dbAlias string
 		if !ok {
 			return nil, fmt.Errorf("specified dbAlias (%s) not present in config", dbAlias)
 		}
-		return []interface{}{config.Crud{dbAlias: {Enabled: dbConfig.Enabled, Conn: dbConfig.Conn, Type: dbConfig.Type}}}, nil
+		return []interface{}{config.Crud{dbAlias: {Enabled: dbConfig.Enabled, Conn: dbConfig.Conn, Type: dbConfig.Type, DBName: dbConfig.DBName}}}, nil
 	}
 
 	services := []interface{}{}
 	for key, value := range projectConfig.Modules.Crud {
-		services = append(services, config.Crud{key: {Enabled: value.Enabled, Conn: value.Conn, Type: value.Type}})
+		services = append(services, config.Crud{key: {Enabled: value.Enabled, Conn: value.Conn, Type: value.Type, DBName: value.DBName}})
 	}
 	return services, nil
 }
 
 // GetCollectionRules gets collection rules
-func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col string) ([]interface{}, error) {
+func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -488,7 +501,7 @@ func (s *Manager) GetCollectionRules(ctx context.Context, project, dbAlias, col 
 }
 
 // GetSchemas gets schemas from config
-func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string) ([]interface{}, error) {
+func (s *Manager) GetSchemas(ctx context.Context, project, dbAlias, col string, params model.RequestParams) ([]interface{}, error) {
 	// Acquire a lock
 	s.lock.Lock()
 	defer s.lock.Unlock()
