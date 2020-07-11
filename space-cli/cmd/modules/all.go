@@ -189,6 +189,14 @@ func getAllProjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	objs, err = database.GetDbPreparedQuery(projectName, "db-prepared-query", map[string]string{})
+	if err != nil {
+		return nil
+	}
+	if err := createConfigFile("18", "db-prepared-query", objs); err != nil {
+		return nil
+	}
+
 	return nil
 }
 

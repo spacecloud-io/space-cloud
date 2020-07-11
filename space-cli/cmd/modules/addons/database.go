@@ -32,7 +32,7 @@ func addDatabase(dbtype, username, password, alias, version string) error {
 	ctx := context.Background()
 	autoApply := viper.GetBool("auto-apply")
 	project := viper.GetString("project")
-	clusterName := viper.GetString("cluster-id")
+	clusterName := viper.GetString("cluster-name")
 
 	// change selected account according to cluster name provided
 	if err := utils.ChangeSelectedAccount(clusterName); err != nil {
