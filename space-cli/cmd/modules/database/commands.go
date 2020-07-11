@@ -33,6 +33,7 @@ func GenerateSubCommands() []*cobra.Command {
 	var generatePreparedQuery = &cobra.Command{
 		Use:  "db-prepared-query",
 		RunE: actionGenerateDBPreparedQuery,
+		Example: "space-cli generate db-prepared-query config.yaml --project myproject --log-level info",
 	}
 
 	return []*cobra.Command{generaterule, generateconfig, generateschema, generatePreparedQuery}
@@ -224,7 +225,7 @@ func actionGenerateDBSchema(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBPreparedQuery(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 
 	preparedQueryConfigFile := args[0]
