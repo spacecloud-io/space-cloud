@@ -15,10 +15,10 @@ import (
 	"github.com/spf13/viper"
 	"github.com/txn2/txeh"
 
-	"github.com/spaceuptech/space-cli/cmd/model"
-	"github.com/spaceuptech/space-cli/cmd/modules/database"
-	"github.com/spaceuptech/space-cli/cmd/modules/operations"
-	"github.com/spaceuptech/space-cli/cmd/utils"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/model"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/database"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/modules/operations"
+	"github.com/spaceuptech/space-cloud/space-cli/cmd/utils"
 )
 
 type loadEnvResponse struct {
