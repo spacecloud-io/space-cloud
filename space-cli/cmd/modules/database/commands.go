@@ -33,6 +33,7 @@ func GenerateSubCommands() []*cobra.Command {
 	var generatePreparedQuery = &cobra.Command{
 		Use:  "db-prepared-query",
 		RunE: actionGenerateDBPreparedQuery,
+		Aliases: []string{"db-prepared-queries"},
 		Example: "space-cli generate db-prepared-query config.yaml --project myproject --log-level info",
 	}
 
