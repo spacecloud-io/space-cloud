@@ -10,23 +10,31 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generatetrigger = &cobra.Command{
-		Use:  "eventing-triggers",
+		Use:  "eventing-trigger [path to config file]",
 		RunE: actionGenerateEventingTrigger,
+		Aliases: []string{"eventing-triggers"},
+		Example: "space-cli generate eventing-trigger config.yaml --project myproject --log-level info",
 	}
 
 	var generateconfig = &cobra.Command{
-		Use:  "eventing-config",
+		Use:  "eventing-config [path to config file]",
 		RunE: actionGenerateEventingConfig,
+		Aliases: []string{"eventing-configs"},
+		Example: "space-cli generate eventing-config config.yaml --project myproject --log-level info",
 	}
 
 	var generateschema = &cobra.Command{
-		Use:  "eventing-schema",
+		Use:  "eventing-schema [path to config file]",
 		RunE: actionGenerateEventingSchema,
+		Aliases: []string{"eventing-schemas"},
+		Example: "space-cli generate eventing-schema config.yaml --project myproject --log-level info",
 	}
 
 	var generaterule = &cobra.Command{
-		Use:  "eventing-rule",
+		Use:  "eventing-rule [path to config file]",
 		RunE: actionGenerateEventingRule,
+		Aliases: []string{"eventing-rules"},
+		Example: "space-cli generate eventing-rule config.yaml --project myproject --log-level info",
 	}
 
 	return []*cobra.Command{generatetrigger, generateconfig, generateschema, generaterule}
@@ -168,7 +176,7 @@ func actionGetEventingSecurityRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingRule()
@@ -181,7 +189,7 @@ func actionGenerateEventingRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingSchema()
@@ -194,7 +202,7 @@ func actionGenerateEventingSchema(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingConfig()
@@ -207,7 +215,7 @@ func actionGenerateEventingConfig(cmd *cobra.Command, args []string) error {
 
 func actionGenerateEventingTrigger(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateEventingTrigger()

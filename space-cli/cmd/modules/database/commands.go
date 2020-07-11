@@ -10,18 +10,24 @@ import (
 func GenerateSubCommands() []*cobra.Command {
 
 	var generaterule = &cobra.Command{
-		Use:  "db-rules",
+		Use:  "db-rule [path to config file]",
 		RunE: actionGenerateDBRule,
+		Aliases: []string{"db-rules"},
+		Example: "space-cli generate db-rule config.yaml --project myproject --log-level info",
 	}
 
 	var generateconfig = &cobra.Command{
-		Use:  "db-config",
+		Use:  "db-config [path to config file]",
 		RunE: actionGenerateDBConfig,
+		Aliases: []string{"db-configs"},
+		Example: "space-cli generate db-config config.yaml --project myproject --log-level info",
 	}
 
 	var generateschema = &cobra.Command{
-		Use:  "db-schema",
+		Use:  "db-schema [path to config file]",
 		RunE: actionGenerateDBSchema,
+		Aliases: []string{"db-schemas"},
+		Example: "space-cli generate db-schema config.yaml --project myproject --log-level info",
 	}
 	return []*cobra.Command{generaterule, generateconfig, generateschema}
 }
@@ -141,7 +147,7 @@ func actionGetDbSchema(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBRule()
@@ -154,7 +160,7 @@ func actionGenerateDBRule(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBConfig()
@@ -167,7 +173,7 @@ func actionGenerateDBConfig(cmd *cobra.Command, args []string) error {
 
 func actionGenerateDBSchema(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return utils.LogError("incorrect number of arguments", nil)
+		return utils.LogError("incorrect number of arguments. Use -h to check usage instructions", nil)
 	}
 	dbruleConfigFile := args[0]
 	dbrule, err := generateDBSchema()
